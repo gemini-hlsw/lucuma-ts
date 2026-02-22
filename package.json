@@ -23,14 +23,14 @@
     "prepare": "node .husky/install.js"
   },
   "devDependencies": {
-    "@eslint/js": "9.39.2",
+    "@eslint/js": "9.39.3",
     "@graphql-eslint/eslint-plugin": "4.4.0",
     "@tsconfig/node-ts": "23.6.4",
     "@tsconfig/node24": "24.0.4",
     "@tsconfig/strictest": "2.0.8",
     "@tsconfig/vite-react": "7.0.2",
     "@types/node": "24.10.13",
-    "eslint": "9.39.2",
+    "eslint": "9.39.3",
     "eslint-import-resolver-typescript": "4.4.4",
     "eslint-plugin-import-x": "4.16.1",
     "eslint-plugin-simple-import-sort": "12.1.1",
