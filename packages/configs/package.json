@@ -41,7 +41,7 @@
     "@eddeee888/gcg-typescript-resolver-files": "0.15.0",
     "@graphql-codegen/cli": "6.1.1",
     "@parcel/watcher": "2.5.6",
-    "@testcontainers/postgresql": "11.11.0",
+    "@testcontainers/postgresql": "11.12.0",
     "@types/node": "24.10.13",
     "lucuma-schemas": "0.177.0-20260217-2e3d340a"
   },
