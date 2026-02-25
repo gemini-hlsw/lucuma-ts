@@ -22,7 +22,7 @@
   "devDependencies": {
     "lucuma-common-ui": "workspace:*",
     "lucuma-ui-css": "0.175.0",
-    "tailwind-merge": "3.4.0"
+    "tailwind-merge": "3.5.0"
   },
   "bundlemon": {
     "baseDir": "./dist",
