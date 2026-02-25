@@ -36,6 +36,10 @@
       "matchPackageNames": ["/vite/", "@vitest/**"]
     },
     {
+      "groupName": "Tailwind packages",
+      "matchPackageNames": ["/tailwind/", "@tailwindcss/**"]
+    },
+    {
       "groupName": "TSConfig bases",
       "matchPackageNames": ["@tsconfig/**"]
     },
