@@ -123,7 +123,7 @@ export default defineConfig(({ mode }) => ({
     ],
     onConsoleLog(log) {
       // ignore the dev mode warning in test logs
-      if (log.includes('Unknown query named "%s" requested in refetchQueries options.include array')) return false;
+      if (log.includes('Unknown query named ')) return false;
       return;
     },
     browser: {
