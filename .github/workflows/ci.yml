@@ -1,4 +1,4 @@
-name: Navigate - CI
+name: Lucuma-TS - CI
 
 on:
   push:
@@ -27,11 +27,18 @@ jobs:
         with:
           name: dist-artifact
           path: packages/ui/dist
-      - name: Run BundleMon
+      - name: Run BundleMon on Navigate
         continue-on-error: true
         uses: lironer/bundlemon-action@v1
         with:
           working-directory: 'packages/ui'
+          bundlemon-args: --subProject "navigate-ui"
+      - name: Run BundleMon on Resource
+        continue-on-error: true
+        uses: lironer/bundlemon-action@v1
+        with:
+          working-directory: 'packages/resource-ui'
+          bundlemon-args: --subProject "resource-ui"
 
   lint:
     runs-on: ubuntu-latest
@@ -49,7 +56,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: ./.github/setup
-      - run: pnpm ui exec playwright install chromium --only-shell
+      - run: pnpm exec playwright install chromium --only-shell
       - run: pnpm -r codegen
       - run: pnpm -r generate
       - run: pnpm -r test
@@ -68,7 +75,7 @@ jobs:
       - name: Add hosts to /etc/hosts
         run: |
           sudo echo "127.0.0.1 navigate.lucuma.xyz" | sudo tee -a /etc/hosts
-      - run: pnpm e2e exec playwright install firefox
+      - run: pnpm exec playwright install firefox --only-shell
       - run: pnpm ui build
       - run: docker compose -f packages/e2e/docker-compose.yml up -d --wait
         env:
