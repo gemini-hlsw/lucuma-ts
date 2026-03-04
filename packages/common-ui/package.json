@@ -21,7 +21,7 @@
   },
   "dependencies": {
     "date-fns": "4.1.0",
-    "lucuma-core": "0.173.0"
+    "lucuma-core": "0.174.0"
   },
   "devDependencies": {
     "react": "19.2.4",
