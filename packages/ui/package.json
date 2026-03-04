@@ -33,7 +33,7 @@
     "graphql-ws": "6.0.7",
     "jotai": "2.18.0",
     "lucuma-common-ui": "workspace:*",
-    "lucuma-core": "0.173.0",
+    "lucuma-core": "0.174.0",
     "lucuma-schemas": "0.177.0-20260217-2e3d340a",
     "lucuma-ui-css": "0.175.0",
     "navigate-configs": "workspace:*",
