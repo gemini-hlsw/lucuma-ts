@@ -23,7 +23,7 @@ jobs:
       - uses: ./.github/setup
       - run: pnpm -r build
       - name: Archive production artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: dist-artifact
           path: packages/ui/dist
@@ -87,7 +87,7 @@ jobs:
           LUCUMA_REFRESH_TOKEN: ${{ secrets.LUCUMA_DEV_API_KEY }}
           DATABASE_URL: 'postgresql://jimmy:banana@127.0.0.1:5432/configs'
 
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:
           name: playwright-report
@@ -185,7 +185,7 @@ jobs:
         with:
           images: ${{ env.REGISTRY_IMAGE }}
 
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v8
         with:
           name: dist-artifact
           path: packages/ui/dist
