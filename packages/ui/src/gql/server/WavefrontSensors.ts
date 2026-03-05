@@ -3,7 +3,7 @@ import type { Dispatch } from 'react';
 
 import { graphql } from './gen';
 
-const OIWFS_OBSERVE = graphql(`
+export const OIWFS_OBSERVE = graphql(`
   mutation oiwfsObserve($period: TimeSpanInput!) {
     oiwfsObserve(period: $period) {
       result
@@ -33,7 +33,7 @@ export function useOiwfsStopObserve(setStale: Dispatch<boolean>) {
   });
 }
 
-const PWFS1_OBSERVE = graphql(`
+export const PWFS1_OBSERVE = graphql(`
   mutation pwfs1Observe($period: TimeSpanInput!) {
     pwfs1Observe(period: $period) {
       result
@@ -130,7 +130,7 @@ export type StopObserveResult = ReturnType<
   typeof useOiwfsStopObserve | typeof usePwfs1StopObserve | typeof usePwfs2StopObserve | typeof useAcStopObserve
 >;
 
-const TAKE_SKY = graphql(`
+export const TAKE_SKY = graphql(`
   mutation wfsSky($period: TimeSpanInput!, $wfs: GuideProbe!) {
     wfsSky(period: $period, wfs: $wfs) {
       result

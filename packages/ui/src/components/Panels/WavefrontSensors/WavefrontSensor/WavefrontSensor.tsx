@@ -1,6 +1,6 @@
 import imgUrl from '@assets/underconstruction.png';
 import { useConfiguration } from '@gql/configs/Configuration';
-import type { WfsType } from '@gql/configs/gen/graphql';
+import type { Instrument, WfsType } from '@gql/configs/gen/graphql';
 import type { GuideProbe } from '@gql/server/gen/graphql';
 import { useGuideState } from '@gql/server/GuideState';
 import {
@@ -26,18 +26,25 @@ import { clsx } from 'clsx';
 import { Button } from 'primereact/button';
 import { Checkbox } from 'primereact/checkbox';
 import { Dropdown } from 'primereact/dropdown';
-import { useEffect, useId, useState } from 'react';
+import { useId, useMemo, useState } from 'react';
 
+import { useServerConfigValue } from '@/components/atoms/config';
 import { Play, Stop } from '@/components/Icons';
 import { instrumentToOiwfs } from '@/Helpers/functions';
 
 const DEFAULT_FREQ_OPTIONS = {
-  OIWFS: [1, 2, 10, 20, 50, 100, 125, 200],
-  PWFS1: [0.2, 0.33, 0.5, 1, 2, 10, 20, 50, 100],
-  PWFS2: [1, 2, 10, 20, 50, 100, 200],
-  // Special cases
-  GMOS_OIWFS: [1, 2, 10, 20, 50, 100, 200],
-  FLAMINGOS2_OIWFS: [1, 2, 10, 20, 50, 125, 200],
+  GN: {
+    PWFS1: [50, 100, 200],
+    PWFS2: [50, 100, 200],
+    OIWFS: [50, 100, 200],
+  },
+  GS: {
+    PWFS1: [0.033, 0.05, 0.067, 0.1, 0.2, 0.33, 0.5, 1, 2, 10, 20, 50, 100],
+    PWFS2: [1, 2, 10, 20, 50, 100, 200],
+    GMOS_OIWFS: [1, 2, 10, 20, 50, 100, 200],
+    FLAMINGOS2_OIWFS: [1, 2, 10, 20, 50, 125, 200],
+    OIWFS: [1, 2, 10, 20, 50, 100, 200],
+  },
 };
 
 const DEFAULT_SELECTED_FREQ = {
@@ -45,6 +52,32 @@ const DEFAULT_SELECTED_FREQ = {
   PWFS1: 100,
   PWFS2: 200,
 };
+
+function useFreqOptions(wfs: Exclude<WfsType, 'NONE'>, obsInstrument: Instrument | null | undefined) {
+  const { site } = useServerConfigValue();
+
+  const freqOptions = useMemo(() => {
+    if (site === 'GS') {
+      if (wfs === 'OIWFS') {
+        if (obsInstrument?.includes('GMOS')) {
+          return DEFAULT_FREQ_OPTIONS.GS.GMOS_OIWFS;
+        } else if (obsInstrument === 'FLAMINGOS2') {
+          return DEFAULT_FREQ_OPTIONS.GS.FLAMINGOS2_OIWFS;
+        }
+      }
+    }
+
+    return DEFAULT_FREQ_OPTIONS[site][wfs];
+  }, [site, wfs, obsInstrument]);
+
+  const [freq, setFreq] = useState(DEFAULT_SELECTED_FREQ[wfs]);
+
+  if (!freqOptions.includes(freq)) {
+    setFreq(DEFAULT_SELECTED_FREQ[wfs]);
+  }
+
+  return [freq, setFreq, freqOptions] as const;
+}
 
 export default function WavefrontSensor({
   canEdit,
@@ -57,32 +90,10 @@ export default function WavefrontSensor({
 }) {
   const id = useId();
 
-  const [freq, setFreq] = useState(DEFAULT_SELECTED_FREQ[wfs]);
-  const [freqOptions, setFreqOptions] = useState(DEFAULT_FREQ_OPTIONS[wfs]);
-
   const { data: configData, loading: configLoading } = useConfiguration();
   const configuration = configData?.configuration;
 
-  useEffect(() => {
-    if (wfs === 'OIWFS') {
-      function checkFreqList(list: number[]) {
-        if (!list.includes(freq)) {
-          setFreq(DEFAULT_SELECTED_FREQ.OIWFS);
-        }
-        setFreqOptions(list);
-      }
-
-      if (!configuration?.obsInstrument) return;
-
-      if (configuration.obsInstrument.includes('GMOS')) {
-        checkFreqList(DEFAULT_FREQ_OPTIONS.GMOS_OIWFS);
-      } else if (configuration.obsInstrument === 'FLAMINGOS2') {
-        checkFreqList(DEFAULT_FREQ_OPTIONS.FLAMINGOS2_OIWFS);
-      } else {
-        checkFreqList(DEFAULT_FREQ_OPTIONS.OIWFS);
-      }
-    }
-  }, [configuration?.obsInstrument, freq, wfs]);
+  const [freq, setFreq, freqOptions] = useFreqOptions(wfs, configuration?.obsInstrument);
 
   let observeButton: React.ReactElement | undefined;
   let skyButton: React.ReactElement | undefined;
@@ -90,7 +101,13 @@ export default function WavefrontSensor({
   const saveProps: SaveCheckboxProps = { canEdit, inputId: `save-${id}` };
   if (wfs === 'OIWFS') {
     observeButton = <OiwfsObserveButton freq={freq} canEdit={canEdit && !configLoading} />;
-    skyButton = <TakeSkyButton freq={freq} wfs="GMOS_OIWFS" canEdit={canEdit} />;
+    skyButton = (
+      <TakeSkyButton
+        freq={freq}
+        wfs={configuration?.obsInstrument === 'FLAMINGOS2' ? 'FLAMINGOS2_OIWFS' : 'GMOS_OIWFS'}
+        canEdit={canEdit}
+      />
+    );
     saveButton = <OiwfsSaveCheckbox {...saveProps} />;
   } else if (wfs === 'PWFS1') {
     observeButton = <Pwfs1ObserveButton freq={freq} canEdit={canEdit && !configLoading} />;
@@ -119,6 +136,7 @@ export default function WavefrontSensor({
           value={freq}
           options={freqOptions.map((f) => ({ label: f.toString(), value: f }))}
           onChange={(e) => setFreq(e.value as number)}
+          placeholder="Select frequency"
         />
         {observeButton}
         <div className="save-inputs">
