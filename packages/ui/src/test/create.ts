@@ -18,6 +18,7 @@ import type {
   GuideConfigurationState,
   GuideQuality,
   PwfsMechsState,
+  WfsConfigStateItemFragment,
 } from '@/gql/server/gen/graphql';
 import type { TargetType } from '@/types';
 
@@ -242,6 +243,16 @@ export function createNonsidereal(overrides?: OverridePartial<NonsiderealTarget>
     keyType: 'MAJOR_BODY',
     des: '2024-001A',
     __typename: 'NonsiderealTarget',
+    ...overrides,
+  };
+}
+
+export function createWfsConfigState(
+  overrides?: OverridePartial<WfsConfigStateItemFragment>,
+): WfsConfigStateItemFragment {
+  return {
+    __typename: 'WfsConfigState',
+    saving: false,
     ...overrides,
   };
 }

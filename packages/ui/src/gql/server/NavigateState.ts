@@ -36,7 +36,7 @@ export const WFS_CONFIG_STATE_FRAGMENT = graphql(`
   }
 `);
 
-const OIWFS_CONFIG_STATE = graphql(`
+export const OIWFS_CONFIG_STATE = graphql(`
   query oiwfsConfigState {
     oiwfsConfigState {
       ...WfsConfigStateItem
@@ -44,7 +44,7 @@ const OIWFS_CONFIG_STATE = graphql(`
   }
 `);
 
-const OIWFS_CONFIG_STATE_SUBSCRIPTION = graphql(`
+export const OIWFS_CONFIG_STATE_SUBSCRIPTION = graphql(`
   subscription oiwfsConfigStateSub {
     oiwfsConfigState {
       ...WfsConfigStateItem
@@ -71,7 +71,7 @@ export function useSetOiwfsCircularBuffer(setStale: Dispatch<boolean>) {
   });
 }
 
-const PWFS1_CONFIG_STATE = graphql(`
+export const PWFS1_CONFIG_STATE = graphql(`
   query pwfs1ConfigState {
     pwfs1ConfigState {
       ...WfsConfigStateItem
@@ -79,7 +79,7 @@ const PWFS1_CONFIG_STATE = graphql(`
   }
 `);
 
-const PWFS1_CONFIG_STATE_SUBSCRIPTION = graphql(`
+export const PWFS1_CONFIG_STATE_SUBSCRIPTION = graphql(`
   subscription pwfs1ConfigStateSub {
     pwfs1ConfigState {
       ...WfsConfigStateItem
@@ -106,7 +106,7 @@ export function useSetPwfs1CircularBuffer(setStale: Dispatch<boolean>) {
   });
 }
 
-const PWFS2_CONFIG_STATE = graphql(`
+export const PWFS2_CONFIG_STATE = graphql(`
   query pwfs2ConfigState {
     pwfs2ConfigState {
       ...WfsConfigStateItem
@@ -114,7 +114,7 @@ const PWFS2_CONFIG_STATE = graphql(`
   }
 `);
 
-const PWFS2_CONFIG_STATE_SUBSCRIPTION = graphql(`
+export const PWFS2_CONFIG_STATE_SUBSCRIPTION = graphql(`
   subscription pwfs2ConfigStateSub {
     pwfs2ConfigState {
       ...WfsConfigStateItem
@@ -126,7 +126,7 @@ export function usePwfs2ConfigState() {
   return useQueryAndSubscription(PWFS2_CONFIG_STATE, PWFS2_CONFIG_STATE_SUBSCRIPTION, 'pwfs2ConfigState');
 }
 
-const PWFS2_CIRCULAR_BUFFER = graphql(`
+export const PWFS2_CIRCULAR_BUFFER = graphql(`
   mutation setPwfs2CircularBuffer($enabled: Boolean!) {
     pwfs2CircularBuffer(enable: $enabled) {
       result

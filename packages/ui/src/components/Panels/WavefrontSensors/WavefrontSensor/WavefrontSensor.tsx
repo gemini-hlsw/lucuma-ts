@@ -101,7 +101,13 @@ export default function WavefrontSensor({
   const saveProps: SaveCheckboxProps = { canEdit, inputId: `save-${id}` };
   if (wfs === 'OIWFS') {
     observeButton = <OiwfsObserveButton freq={freq} canEdit={canEdit && !configLoading} />;
-    skyButton = <TakeSkyButton freq={freq} wfs="GMOS_OIWFS" canEdit={canEdit} />;
+    skyButton = (
+      <TakeSkyButton
+        freq={freq}
+        wfs={configuration?.obsInstrument === 'FLAMINGOS2' ? 'FLAMINGOS2_OIWFS' : 'GMOS_OIWFS'}
+        canEdit={canEdit}
+      />
+    );
     saveButton = <OiwfsSaveCheckbox {...saveProps} />;
   } else if (wfs === 'PWFS1') {
     observeButton = <Pwfs1ObserveButton freq={freq} canEdit={canEdit && !configLoading} />;
@@ -130,6 +136,7 @@ export default function WavefrontSensor({
           value={freq}
           options={freqOptions.map((f) => ({ label: f.toString(), value: f }))}
           onChange={(e) => setFreq(e.value as number)}
+          placeholder="Select frequency"
         />
         {observeButton}
         <div className="save-inputs">
