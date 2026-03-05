@@ -36,7 +36,7 @@
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
     "@vitejs/plugin-react": "5.1.4",
-    "@vitest/browser-playwright": "4.1.0-beta.4",
+    "@vitest/browser-playwright": "4.1.0-beta.5",
     "babel-plugin-react-compiler": "1.0.0",
     "eslint": "9.39.3",
     "eslint-import-resolver-typescript": "4.4.4",
@@ -57,9 +57,9 @@
     "tailwindcss": "4.2.1",
     "typescript": "5.9.3",
     "typescript-eslint": "8.56.1",
-    "vite": "8.0.0-beta.15",
-    "vite-plugin-mkcert": "1.17.9",
-    "vitest": "4.1.0-beta.4",
+    "vite": "8.0.0-beta.16",
+    "vite-plugin-mkcert": "1.17.10",
+    "vitest": "4.1.0-beta.5",
     "vitest-browser-react": "2.0.5"
   },
   "lint-staged": {
@@ -68,7 +68,7 @@
   },
   "pnpm": {
     "overrides": {
-      "vite": "8.0.0-beta.15"
+      "vite": "8.0.0-beta.16"
     }
   }
 }
