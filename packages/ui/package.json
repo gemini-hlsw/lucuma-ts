@@ -34,7 +34,7 @@
     "jotai": "2.18.0",
     "lucuma-common-ui": "workspace:*",
     "lucuma-core": "0.174.0",
-    "lucuma-schemas": "0.177.0-20260217-2e3d340a",
+    "lucuma-schemas": "0.177.0-20260227-b92f10fa",
     "lucuma-ui-css": "0.175.0",
     "navigate-configs": "workspace:*",
     "primereact": "10.9.7",

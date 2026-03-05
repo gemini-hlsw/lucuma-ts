@@ -177,8 +177,8 @@ importers:
         specifier: 11.12.0
         version: 11.12.0
       lucuma-schemas:
-        specifier: 0.177.0-20260217-2e3d340a
-        version: 0.177.0-20260217-2e3d340a
+        specifier: 0.177.0-20260227-b92f10fa
+        version: 0.177.0-20260227-b92f10fa
 
   packages/e2e:
     devDependencies:
@@ -253,8 +253,8 @@ importers:
         specifier: 0.174.0
         version: 0.174.0
       lucuma-schemas:
-        specifier: 0.177.0-20260217-2e3d340a
-        version: 0.177.0-20260217-2e3d340a
+        specifier: 0.177.0-20260227-b92f10fa
+        version: 0.177.0-20260227-b92f10fa
       lucuma-ui-css:
         specifier: 0.175.0
         version: 0.175.0
@@ -3483,8 +3483,8 @@ packages:
   lucuma-core@0.174.0:
     resolution: {integrity: sha512-oiae82aHuydgBdNNlqN6omoH3PbdOQp0Octvx05evmhzpeVsM0G2v2ec/OlOcYgbpaz15e20AV09o/NuflvzYg==}
 
-  lucuma-schemas@0.177.0-20260217-2e3d340a:
-    resolution: {integrity: sha512-VU/8gJiL9EUWeTNUl/6iec2EdlXONfnAJNsbfjB4BFZhn0OjoxAT0Dh+PZ4TgNMPsTCy2lk099dNUUT+VQ6DOg==}
+  lucuma-schemas@0.177.0-20260227-b92f10fa:
+    resolution: {integrity: sha512-QYYkUd4Pd9jSoAvc2wlLjuhJPg0EzxxNQRdgwIaLyqXkagQMQR/Sq7T4MQanvuaBITBzsAT+C01Mft58eP4P8g==}
 
   lucuma-ui-css@0.175.0:
     resolution: {integrity: sha512-VwsYLqxRrrC9jdoz8Sg/BwcIuFjC4iWL1QRjQdvSmajGiG+Qdg3h/g7ZWAUR1ZBnKct+Crs2qWAw5BxO5zMLDg==}
@@ -8498,7 +8498,7 @@ snapshots:
 
   lucuma-core@0.174.0: {}
 
-  lucuma-schemas@0.177.0-20260217-2e3d340a: {}
+  lucuma-schemas@0.177.0-20260227-b92f10fa: {}
 
   lucuma-ui-css@0.175.0: {}
 
