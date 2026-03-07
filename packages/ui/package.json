@@ -29,7 +29,7 @@
     "@xyflow/react": "12.10.1",
     "clsx": "2.1.1",
     "date-fns": "4.1.0",
-    "graphql": "16.13.0",
+    "graphql": "16.13.1",
     "graphql-ws": "6.0.7",
     "jotai": "2.18.0",
     "lucuma-common-ui": "workspace:*",
