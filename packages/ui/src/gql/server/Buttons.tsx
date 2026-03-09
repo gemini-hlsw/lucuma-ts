@@ -317,7 +317,8 @@ function classNameForState(
   ];
 
   if (!usedSubsystem) {
-    return { classes: 'p-button-secondary', title, icons };
+    // Guiders not used: orange if following, grey otherwise
+    return { classes: state.follow === 'FOLLOWING' ? BTN_CLASSES.ERROR : 'p-button-secondary', title, icons };
   } else if (state.follow === 'FOLLOWING' && state.parked === 'NOT_PARKED') {
     return { classes: '', title, icons };
   } else {
