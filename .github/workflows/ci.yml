@@ -130,7 +130,7 @@ jobs:
           VERSION: ${{ github.ref }}
 
       - name: Build and push Docker image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         id: build
         with:
           context: .
@@ -191,7 +191,7 @@ jobs:
           path: packages/ui/dist
 
       - name: Build and push Docker image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: packages/ui
           # Only push on releases
