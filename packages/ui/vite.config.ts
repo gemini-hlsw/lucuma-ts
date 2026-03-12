@@ -1,7 +1,8 @@
 import { execSync } from 'node:child_process';
 
+import babel from '@rolldown/plugin-babel';
 import tailwindcss from '@tailwindcss/vite';
-import react from '@vitejs/plugin-react';
+import react, { reactCompilerPreset } from '@vitejs/plugin-react';
 import { playwright } from '@vitest/browser-playwright';
 import type { Plugin } from 'vite';
 import mkcert from 'vite-plugin-mkcert';
@@ -103,11 +104,8 @@ export default defineConfig(({ mode }) => ({
     },
   },
   plugins: [
-    react({
-      babel: {
-        plugins: ['babel-plugin-react-compiler'],
-      },
-    }),
+    react(),
+    babel({ presets: [reactCompilerPreset()], exclude: /[/\\](node_modules|common-ui)[/\\]/ }),
     mode === 'development' &&
       mkcert({ hosts: ['localhost', 'local.lucuma.xyz', 'navigate.lucuma.xyz', 'navigate.gemini.edu'] }),
     mode === 'production' && buildVersionFile(),
