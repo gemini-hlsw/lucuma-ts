@@ -19,6 +19,9 @@ export default defineConfig({
       },
     },
   },
+  resolve: {
+    tsconfigPaths: true,
+  },
   plugins: [
     react(),
     babel({ presets: [reactCompilerPreset()], exclude: /[/\\](node_modules|common-ui)[/\\]/ }),
@@ -43,6 +46,7 @@ export default defineConfig({
       instances: [
         {
           browser: 'chromium',
+          headless: true,
           name: 'chromium',
           retry: process.env.CI ? 2 : 0,
           viewport: { width: 834, height: 1112 },

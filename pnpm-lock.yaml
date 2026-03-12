@@ -191,12 +191,24 @@ importers:
 
   packages/resource-ui:
     dependencies:
+      '@fortawesome/fontawesome-svg-core':
+        specifier: 7.2.0
+        version: 7.2.0
+      '@fortawesome/pro-regular-svg-icons':
+        specifier: 7.2.0
+        version: 7.2.0
+      '@fortawesome/react-fontawesome':
+        specifier: 3.2.0
+        version: 3.2.0(@fortawesome/fontawesome-svg-core@7.2.0)(react@19.2.4)
       react:
         specifier: 19.2.5
         version: 19.2.5
       react-dom:
         specifier: 19.2.5
         version: 19.2.5(react@19.2.5)
+      react-router:
+        specifier: 7.13.1
+        version: 7.13.1(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
     devDependencies:
       '@gemini-hlsw/lucuma-common-ui':
         specifier: workspace:*

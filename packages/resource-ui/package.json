@@ -11,13 +11,18 @@
   },
   "scripts": {
     "dev": "vite",
+    "test": "vitest run",
     "build": "tsc && vite build",
     "lint:eslint": "eslint .",
     "preview": "vite preview"
   },
   "dependencies": {
+    "@fortawesome/fontawesome-svg-core": "7.2.0",
+    "@fortawesome/pro-regular-svg-icons": "7.2.0",
+    "@fortawesome/react-fontawesome": "3.2.0",
     "react": "19.2.5",
-    "react-dom": "19.2.5"
+    "react-dom": "19.2.5",
+    "react-router": "7.13.1"
   },
   "devDependencies": {
     "@gemini-hlsw/lucuma-common-ui": "workspace:*",

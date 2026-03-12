@@ -14,6 +14,7 @@
     "ui": "pnpm --filter @gemini-hlsw/navigate-ui",
     "configs": "pnpm --filter @gemini-hlsw/navigate-configs",
     "e2e": "pnpm --filter @gemini-hlsw/navigate-e2e",
+    "resource-ui": "pnpm --filter @gemini-hlsw/resource-ui",
     "all": "pnpm -r",
     "build": "tsc -b",
     "lint": "pnpm lint:prettier && pnpm lint:style && pnpm -r lint:eslint",
