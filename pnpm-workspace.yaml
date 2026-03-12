@@ -8,6 +8,8 @@ minimumReleaseAge: 2880
 minimumReleaseAgeExclude:
   - 'lucuma-core'
   - 'lucuma-schemas'
+  - '@rolldown/*'
+  - 'rolldown'
 
 trustPolicy: no-downgrade
 trustPolicyExclude:

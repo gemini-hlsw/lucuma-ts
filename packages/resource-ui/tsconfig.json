@@ -1,10 +1,12 @@
 {
   "extends": ["@tsconfig/strictest/tsconfig", "@tsconfig/vite-react/tsconfig.json"],
-
   "compilerOptions": {
     "lib": ["ES2024", "DOM", "DOM.Iterable"],
+    "paths": {
+      "@/*": ["./src/*"]
+    },
     "module": "ESNext",
-    "types": ["vite/client"],
+    "types": ["vite/client", "vitest/globals", "vitest", "@vitest/browser-playwright"],
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "forceConsistentCasingInFileNames": true,
