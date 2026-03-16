@@ -19,12 +19,11 @@ trustPolicyExclude:
 
 onlyBuiltDependencies:
   - '@parcel/watcher'
-  - '@prisma/client'
-  - '@prisma/engines'
-  - 'esbuild'
+  - '@prisma/*'
   - 'prisma'
 
 ignoredBuiltDependencies:
+  - 'esbuild'
   - 'cpu-features'
   - 'protobufjs'
   - 'ssh2'
