@@ -133,8 +133,8 @@ importers:
         specifier: 4.1.0
         version: 4.1.0
       lucuma-core:
-        specifier: 0.175.1
-        version: 0.175.1
+        specifier: 0.175.2
+        version: 0.175.2
     devDependencies:
       react:
         specifier: 19.2.4
@@ -164,8 +164,8 @@ importers:
         specifier: 5.18.1
         version: 5.18.1(graphql@16.13.1)
       lucuma-core:
-        specifier: 0.175.1
-        version: 0.175.1
+        specifier: 0.175.2
+        version: 0.175.2
       prisma:
         specifier: 7.4.2
         version: 7.4.2(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)
@@ -250,8 +250,8 @@ importers:
         specifier: workspace:*
         version: link:../common-ui
       lucuma-core:
-        specifier: 0.175.1
-        version: 0.175.1
+        specifier: 0.175.2
+        version: 0.175.2
       lucuma-schemas:
         specifier: 0.177.0-20260312-5f2aa6e3
         version: 0.177.0-20260312-5f2aa6e3
@@ -3492,8 +3492,8 @@ packages:
     resolution: {integrity: sha512-DqC6n3QQ77zdFpCMASA1a3Jlb64Hv2N2DciFGkO/4L9+q/IpIAuRlKOvCXabtRW6cQf8usbmM6BE/TOPysCdIA==}
     engines: {bun: '>=1.0.0', deno: '>=1.30.0', node: '>=8.0.0'}
 
-  lucuma-core@0.175.1:
-    resolution: {integrity: sha512-3N2aXVw2rsVUy9Yds2cu7GbbkAGzvMj4G5ocyj4ub8TDo4KX9hjIAtOiCuHSxzweTuSH8hEV3h5511D/YtwPXQ==}
+  lucuma-core@0.175.2:
+    resolution: {integrity: sha512-rgjtFvsWiEuZDVJAwKPm9aY4ctT/as47uRmOKF6l9QGuafThcCRd8kcxAS/kIg9GW6QQLt0ypOwSlKv4ir+SyA==}
 
   lucuma-schemas@0.177.0-20260312-5f2aa6e3:
     resolution: {integrity: sha512-gs0bhjrE/ZCBxnvLa4EYzAnqjIK8p+cREnniWeVFspGX+1PSeBcyR3kPa8D1QJyyAciohkiRJ6/lIB9PsdHNGA==}
@@ -8322,7 +8322,7 @@ snapshots:
 
   lru.min@1.1.4: {}
 
-  lucuma-core@0.175.1: {}
+  lucuma-core@0.175.2: {}
 
   lucuma-schemas@0.177.0-20260312-5f2aa6e3: {}
 
