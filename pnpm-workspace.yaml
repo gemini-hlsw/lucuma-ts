@@ -23,8 +23,8 @@ onlyBuiltDependencies:
   - 'prisma'
 
 ignoredBuiltDependencies:
-  - 'esbuild'
   - 'cpu-features'
+  - 'esbuild'
   - 'protobufjs'
   - 'ssh2'
   - 'unrs-resolver'
