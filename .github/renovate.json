@@ -53,5 +53,8 @@
       "schedule": ["* 0-4 * * *"],
       "minimumReleaseAge": "0 days"
     }
-  ]
+  ],
+  "toolSettings": {
+    "nodeMaxMemory": 1024
+  }
 }
