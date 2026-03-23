@@ -1,7 +1,7 @@
 @use 'sass:meta';
 
-@import url('lucuma-ui-css/lucuma-ui-common.scss');
-@import url('lucuma-ui-css/lucuma-ui-prime.scss');
+@use 'lucuma-ui-css/lucuma-ui-common.scss';
+@use 'lucuma-ui-css/lucuma-ui-prime.scss';
 
 .light {
   @include meta.load-css('lucuma-ui-css/light-theme');

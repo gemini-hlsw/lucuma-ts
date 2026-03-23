@@ -39,21 +39,6 @@ const buildVersionFile = (): Plugin => ({
   },
 });
 
-function fixCssRoot() {
-  return {
-    postcssPlugin: 'postcss-fix-nested-root',
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    Once(root: any) {
-      root.walkRules((rule: { selector: string }) => {
-        if (rule.selector.includes(' :root')) {
-          rule.selector = rule.selector.replace(' :root', '');
-        }
-      });
-    },
-  };
-}
-fixCssRoot.postcss = true;
-
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   define: {
@@ -99,8 +84,16 @@ export default defineConfig(({ mode }) => ({
     },
   },
   css: {
-    postcss: {
-      plugins: [fixCssRoot()],
+    transformer: 'lightningcss',
+    lightningcss: {
+      visitor: {
+        Selector(selector) {
+          // Filter out :root selectors that are not the first rule
+          if (selector.find((v, i) => v.type === 'pseudo-class' && v.kind === 'root' && i > 0)) {
+            return selector.filter((v, i) => i < 1 || !(v.type === 'pseudo-class' && v.kind === 'root'));
+          }
+        },
+      },
     },
   },
   plugins: [
