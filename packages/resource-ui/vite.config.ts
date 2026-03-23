@@ -4,26 +4,19 @@ import react, { reactCompilerPreset } from '@vitejs/plugin-react';
 import { playwright } from '@vitest/browser-playwright';
 import { defineConfig } from 'vitest/config';
 
-function fixCssRoot() {
-  return {
-    postcssPlugin: 'postcss-fix-nested-root',
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    Once(root: any) {
-      root.walkRules((rule: { selector: string }) => {
-        if (rule.selector.includes(' :root')) {
-          rule.selector = rule.selector.replace(' :root', '');
-        }
-      });
-    },
-  };
-}
-fixCssRoot.postcss = true;
-
 // https://vite.dev/config/
 export default defineConfig({
   css: {
-    postcss: {
-      plugins: [fixCssRoot()],
+    transformer: 'lightningcss',
+    lightningcss: {
+      visitor: {
+        Selector(selector) {
+          // Filter out :root selectors that are not the first rule
+          if (selector.find((v, i) => v.type === 'pseudo-class' && v.kind === 'root' && i > 0)) {
+            return selector.filter((v, i) => i < 1 || !(v.type === 'pseudo-class' && v.kind === 'root'));
+          }
+        },
+      },
     },
   },
   plugins: [
