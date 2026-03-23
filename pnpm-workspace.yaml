@@ -1,6 +1,13 @@
 packages:
   - packages/*
 
+ignoredBuiltDependencies:
+  - 'cpu-features'
+  - 'esbuild'
+  - 'protobufjs'
+  - 'ssh2'
+  - 'unrs-resolver'
+
 injectWorkspacePackages: true
 
 # 2 days, in minutes
@@ -9,6 +16,11 @@ minimumReleaseAgeExclude:
   - 'lucuma-core'
   - 'lucuma-schemas'
 
+onlyBuiltDependencies:
+  - '@parcel/watcher'
+  - '@prisma/engines'
+  - 'prisma'
+
 trustPolicy: no-downgrade
 trustPolicyExclude:
   - 'rxjs@7.8.2'
@@ -16,15 +28,3 @@ trustPolicyExclude:
   - chokidar
   - '@graphql-tools/*'
   - ua-parser-js
-
-onlyBuiltDependencies:
-  - '@parcel/watcher'
-  - '@prisma/*'
-  - 'prisma'
-
-ignoredBuiltDependencies:
-  - 'cpu-features'
-  - 'esbuild'
-  - 'protobufjs'
-  - 'ssh2'
-  - 'unrs-resolver'
