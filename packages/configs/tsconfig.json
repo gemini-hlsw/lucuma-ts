@@ -1,7 +1,8 @@
 {
-  "extends": ["@tsconfig/strictest/tsconfig", "@tsconfig/node24/tsconfig.json", "@tsconfig/node-ts/tsconfig.json"],
+  "extends": ["@tsconfig/strictest/tsconfig.json", "@tsconfig/node24/tsconfig.json", "@tsconfig/node-ts/tsconfig.json"],
   "compilerOptions": {
-    "rootDir": "src",
+    "lib": ["ES2024"],
+    "rootDir": "./src",
     "outDir": "dist",
     "sourceMap": true,
     "declaration": true,

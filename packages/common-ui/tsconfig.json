@@ -1,9 +1,10 @@
 {
-  "extends": ["@tsconfig/strictest/tsconfig", "@tsconfig/node24/tsconfig.json", "@tsconfig/node-ts/tsconfig.json"],
+  "extends": ["@tsconfig/strictest/tsconfig.json", "@tsconfig/node24/tsconfig.json", "@tsconfig/node-ts/tsconfig.json"],
   "compilerOptions": {
     "rootDir": "src",
     "noEmit": true,
-    "types": ["vitest/globals", "vitest", "@vitest/browser-playwright"],
+    "lib": ["ES2024", "DOM"],
+    "types": ["vite/client", "vitest/globals", "vitest", "@vitest/browser-playwright"],
     "resolveJsonModule": true,
     "forceConsistentCasingInFileNames": true,
     "exactOptionalPropertyTypes": false,
