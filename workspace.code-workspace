@@ -50,6 +50,7 @@
       },
     },
     "tailwindCSS.classFunctions": ["cn", "twMerge"],
+    "js/ts.tsdk.path": "root/node_modules/typescript/lib",
   },
   "tasks": {
     "version": "2.0.0",

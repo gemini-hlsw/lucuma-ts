@@ -1,5 +1,6 @@
 import { MockedProvider } from '@apollo/client/testing/react';
 import { GET_CONFIGURATION } from '@gql/configs/Configuration';
+import { GET_GUIDE_LOOP } from '@gql/configs/GuideLoop';
 import { GET_ROTATOR } from '@gql/configs/Rotator';
 import { DO_IMPORT_OBSERVATION } from '@gql/configs/Target';
 import { GET_CENTRAL_WAVELENGTH, GET_GUIDE_ENVIRONMENT } from '@gql/odb/Observation';
@@ -7,7 +8,7 @@ import type { MockedResponseOf } from '@gql/util';
 import { describe, expect, it, type Mock } from 'vitest';
 import { renderHook, type RenderHookResult } from 'vitest-browser-react';
 
-import { createConfiguration, createRotator } from '@/test/create';
+import { createConfiguration, createGuideLoop, createRotator } from '@/test/create';
 import type { OdbObservationType } from '@/types';
 
 import { useImportObservation } from './useImportObservation';
@@ -39,6 +40,7 @@ describe(useImportObservation.name, () => {
     expect(doImportObservationMock.request.variables).toHaveBeenCalledExactlyOnceWith({
       input: {
         configurationPk: 1,
+        guideLoopPk: 1,
         guideEnvironmentAngle: {
           degrees: 0,
         },
@@ -324,6 +326,17 @@ const mocks = [
       },
     }),
   } satisfies MockedResponseOf<typeof GET_GUIDE_ENVIRONMENT>,
+  {
+    request: {
+      query: GET_GUIDE_LOOP,
+      variables: () => true,
+    },
+    result: {
+      data: {
+        guideLoop: createGuideLoop(),
+      },
+    },
+  } satisfies MockedResponseOf<typeof GET_GUIDE_LOOP>,
 ];
 
 const doImportObservationMock = {
@@ -337,6 +350,7 @@ const doImportObservationMock = {
         __typename: 'ImportObservationResult',
         configuration: createConfiguration(),
         rotator: createRotator(),
+        guideLoop: createGuideLoop(),
       },
     },
   },

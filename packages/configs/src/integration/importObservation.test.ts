@@ -26,6 +26,7 @@ await describe('importObservation', async () => {
         input: {
           configurationPk: 1,
           rotatorPk: 1,
+          guideLoopPk: 1,
           observation: {
             id: 'o-123',
             title: 'obs title',
@@ -83,6 +84,7 @@ await describe('importObservation', async () => {
         input: {
           configurationPk: 1,
           rotatorPk: 1,
+          guideLoopPk: 1,
           observation: {
             id: 'o-456',
             title: 'obs title 2',
@@ -171,11 +173,244 @@ await describe('importObservation', async () => {
       selectedP2Target: null,
       selectedTarget: 1,
     });
+    assert.deepEqual(await fixture.prisma.guideLoop.findUnique({ where: { pk: 1 } }), {
+      pk: 1,
+      m2TipTiltEnable: true,
+      m2TipTiltSource: 'OIWFS',
+      m2FocusEnable: true,
+      m2FocusSource: 'OIWFS',
+      m2TipTiltFocusLink: true,
+      m2ComaEnable: false,
+      m1CorrectionsEnable: true,
+      m2ComaM1CorrectionsSource: 'OIWFS',
+      mountOffload: true,
+      daytimeMode: true,
+      probeTracking: 'NONE',
+      lightPath: 'Sky ➡ AO ➡ AC',
+    });
     assert.deepStrictEqual(response.data, {
       importObservation: {
         configuration: { pk: 1 },
         rotator: { pk: 1 },
       },
+    });
+  });
+
+  await it('sets guide correction source from selected PWFS guider', async () => {
+    await fixture.executeGraphql({
+      query,
+      variables: {
+        input: {
+          configurationPk: 1,
+          rotatorPk: 1,
+          guideLoopPk: 1,
+          observation: {
+            id: 'o-900',
+            title: 'obs title 900',
+            subtitle: 'obs subtitle 900',
+            reference: 'ref-900',
+            instrument: 'GMOS_NORTH',
+          },
+          targets: {
+            base: [],
+            oiwfs: [],
+            pwfs1: [
+              {
+                id: 't-900',
+                name: 'PWFS1 Target',
+                sidereal: {
+                  coord1: 10,
+                  coord2: 20,
+                },
+              },
+            ],
+            pwfs2: [],
+          },
+          guideEnvironmentAngle: { degrees: 3.1 },
+        } satisfies ImportObservationInput,
+      },
+    });
+
+    assert.deepEqual(await fixture.prisma.guideLoop.findUnique({ where: { pk: 1 } }), {
+      pk: 1,
+      m2TipTiltEnable: true,
+      m2TipTiltSource: 'PWFS1',
+      m2FocusEnable: true,
+      m2FocusSource: 'PWFS1',
+      m2TipTiltFocusLink: true,
+      m2ComaEnable: true,
+      m1CorrectionsEnable: true,
+      m2ComaM1CorrectionsSource: 'PWFS1',
+      mountOffload: true,
+      daytimeMode: true,
+      probeTracking: 'NONE',
+      lightPath: 'Sky ➡ AO ➡ AC',
+    });
+  });
+
+  await it('disables guide corrections when no guider targets are selected', async () => {
+    await fixture.executeGraphql({
+      query,
+      variables: {
+        input: {
+          configurationPk: 1,
+          rotatorPk: 1,
+          guideLoopPk: 1,
+          observation: {
+            id: 'o-800',
+            title: 'obs title 800',
+            subtitle: 'obs subtitle 800',
+            reference: 'ref-800',
+            instrument: 'GMOS_NORTH',
+          },
+          targets: {
+            base: [
+              {
+                id: 't-800',
+                name: 'Base Target Only',
+                type: 'SCIENCE',
+                sidereal: {
+                  coord1: 10,
+                  coord2: 20,
+                },
+              },
+            ],
+            oiwfs: [],
+            pwfs1: [],
+            pwfs2: [],
+          },
+          guideEnvironmentAngle: { degrees: 2.5 },
+        } satisfies ImportObservationInput,
+      },
+    });
+
+    assert.deepEqual(await fixture.prisma.guideLoop.findUnique({ where: { pk: 1 } }), {
+      pk: 1,
+      m2TipTiltEnable: false,
+      m2TipTiltSource: '',
+      m2FocusEnable: false,
+      m2FocusSource: '',
+      m2TipTiltFocusLink: true,
+      m2ComaEnable: false,
+      m1CorrectionsEnable: false,
+      m2ComaM1CorrectionsSource: '',
+      mountOffload: true,
+      daytimeMode: true,
+      probeTracking: 'NONE',
+      lightPath: 'Sky ➡ AO ➡ AC',
+    });
+  });
+
+  await it('disables guide corrections when multiple guider types are selected', async () => {
+    await fixture.executeGraphql({
+      query,
+      variables: {
+        input: {
+          configurationPk: 1,
+          rotatorPk: 1,
+          guideLoopPk: 1,
+          observation: {
+            id: 'o-850',
+            title: 'obs title 850',
+            subtitle: 'obs subtitle 850',
+            reference: 'ref-850',
+            instrument: 'GMOS_NORTH',
+          },
+          targets: {
+            base: [],
+            oiwfs: [
+              {
+                id: 't-4',
+                name: 'OIWFS Target',
+                sidereal: {
+                  coord1: 10,
+                  coord2: 20,
+                },
+              },
+            ],
+            pwfs1: [
+              {
+                id: 't-5',
+                name: 'PWFS1 Target',
+                sidereal: {
+                  coord1: 30,
+                  coord2: 40,
+                },
+              },
+            ],
+            pwfs2: [],
+          },
+          guideEnvironmentAngle: { degrees: 2.7 },
+        } satisfies ImportObservationInput,
+      },
+    });
+
+    assert.deepEqual(await fixture.prisma.guideLoop.findUnique({ where: { pk: 1 } }), {
+      pk: 1,
+      m2TipTiltEnable: false,
+      m2TipTiltSource: '',
+      m2FocusEnable: false,
+      m2FocusSource: '',
+      m2TipTiltFocusLink: true,
+      m2ComaEnable: false,
+      m1CorrectionsEnable: false,
+      m2ComaM1CorrectionsSource: '',
+      mountOffload: true,
+      daytimeMode: true,
+      probeTracking: 'NONE',
+      lightPath: 'Sky ➡ AO ➡ AC',
+    });
+  });
+
+  await it('sets guide correction source to PWFS2 when selected', async () => {
+    await fixture.executeGraphql({
+      query,
+      variables: {
+        input: {
+          configurationPk: 1,
+          rotatorPk: 1,
+          guideLoopPk: 1,
+          observation: {
+            id: 'o-950',
+            title: 'obs title 950',
+            subtitle: 'obs subtitle 950',
+            reference: 'ref-950',
+            instrument: 'GMOS_NORTH',
+          },
+          targets: {
+            base: [],
+            oiwfs: [],
+            pwfs1: [],
+            pwfs2: [
+              {
+                id: 't-950',
+                name: 'PWFS2 Target',
+                sidereal: {
+                  coord1: 50,
+                  coord2: 60,
+                },
+              },
+            ],
+          },
+          guideEnvironmentAngle: { degrees: 3.5 },
+        } satisfies ImportObservationInput,
+      },
+    });
+
+    assert.deepEqual(await fixture.prisma.guideLoop.findUnique({ where: { pk: 1 } }), {
+      pk: 1,
+      m2TipTiltEnable: true,
+      m2TipTiltSource: 'PWFS2',
+      m2FocusEnable: true,
+      m2FocusSource: 'PWFS2',
+      m2TipTiltFocusLink: true,
+      m2ComaEnable: true,
+      m1CorrectionsEnable: true,
+      m2ComaM1CorrectionsSource: 'PWFS2',
+      mountOffload: true,
+      daytimeMode: true,
+      probeTracking: 'NONE',
+      lightPath: 'Sky ➡ AO ➡ AC',
     });
   });
 
@@ -195,6 +430,7 @@ await describe('importObservation', async () => {
         input: {
           configurationPk: 1,
           rotatorPk: 1,
+          guideLoopPk: 1,
           observation: {
             id: 'o-789',
             title: 'obs title 3',
