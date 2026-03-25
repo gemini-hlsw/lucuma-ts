@@ -2,6 +2,7 @@
 #import PosInt, TargetId, Instrument, AngleInput, ObservationId from "lucuma-schemas/odb"
 #import Configuration from "./Configuration.graphql"
 #import Rotator from "./Rotator.graphql"
+#import GuideLoop from "./GuideLoop.graphql"
 
 enum TargetType {
   FIXED
@@ -164,6 +165,7 @@ input ImportObservationTargetsInput {
 input ImportObservationInput {
   configurationPk: PosInt!
   rotatorPk: PosInt!
+  guideLoopPk: PosInt!
   observation: ObservationInput!
   targets: ImportObservationTargetsInput!
   guideEnvironmentAngle: AngleInput
@@ -172,6 +174,7 @@ input ImportObservationInput {
 type ImportObservationResult {
   configuration: Configuration!
   rotator: Rotator!
+  guideLoop: GuideLoop!
 }
 
 type Mutation {

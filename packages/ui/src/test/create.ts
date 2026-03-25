@@ -3,6 +3,7 @@ import type {
   Configuration,
   Dec,
   GuideAlarm,
+  GuideLoop,
   InstrumentConfig,
   NonsiderealTarget,
   ProperMotion,
@@ -124,6 +125,26 @@ export function createGuideQuality(overrides?: OverridePartial<GuideQuality>): G
 
 export function createRotator(overrides?: OverridePartial<Rotator>): Rotator {
   return { pk: 1, angle: 0, tracking: 'TRACKING', __typename: 'Rotator', ...overrides };
+}
+
+export function createGuideLoop(overrides?: OverridePartial<GuideLoop>): GuideLoop {
+  return {
+    pk: 1,
+    m2TipTiltEnable: true,
+    m2TipTiltSource: 'OIWFS',
+    m2FocusEnable: true,
+    m2FocusSource: 'OIWFS',
+    m2TipTiltFocusLink: false,
+    m2ComaEnable: false,
+    m1CorrectionsEnable: true,
+    m2ComaM1CorrectionsSource: 'OIWFS',
+    mountOffload: true,
+    daytimeMode: true,
+    probeTracking: 'NONE',
+    lightPath: 'Sky ➡ AO ➡ AC',
+    __typename: 'GuideLoop',
+    ...overrides,
+  };
 }
 
 export function createAcMechs(overrides?: OverridePartial<AcMechs>): AcMechs {

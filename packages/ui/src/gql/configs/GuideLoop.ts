@@ -20,7 +20,7 @@ export const GUIDE_LOOP_FRAGMENT = graphql(`
   }
 `);
 
-const GET_GUIDE_LOOP = graphql(`
+export const GET_GUIDE_LOOP = graphql(`
   query getGuideLoop {
     guideLoop {
       ...GuideLoopItem

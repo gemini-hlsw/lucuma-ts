@@ -165,6 +165,9 @@ export const DO_IMPORT_OBSERVATION = graphql(`
       configuration {
         ...ConfigurationItem
       }
+      guideLoop {
+        ...GuideLoopItem
+      }
     }
   }
 `);

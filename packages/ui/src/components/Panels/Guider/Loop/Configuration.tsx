@@ -8,7 +8,6 @@ import { Button } from 'primereact/button';
 import { Checkbox } from 'primereact/checkbox';
 import { Dropdown } from 'primereact/dropdown';
 import { MultiSelect } from 'primereact/multiselect';
-import { ProgressSpinner } from 'primereact/progressspinner';
 import type { ReactNode } from 'react';
 import { useCallback, useEffect, useMemo } from 'react';
 
@@ -141,27 +140,21 @@ export function Configuration() {
             checked={state.m2TipTiltEnable}
             onChange={() => modifyGuideLoop('m2TipTiltEnable', !state.m2TipTiltEnable)}
           />
-          {loading ? (
-            <ProgressSpinner style={{ width: '20px', height: '20px' }} />
-          ) : (
-            <MultiSelect
-              inputId="m2TipTiltSource"
-              value={state.m2TipTiltSource ? state.m2TipTiltSource.split(',') : []}
-              onChange={(e) => modifyGuideLoop('m2TipTiltSource', (e.value as string[]).join(','))}
-              options={[
-                { label: 'OIWFS', value: 'OIWFS' },
-                { label: 'PWFS1', value: 'PWFS1' },
-                { label: 'PWFS2', value: 'PWFS2' },
-                // { label: "GAOS", value: "GAOS" },
-              ]}
-              placeholder="Select sources"
-              maxSelectedLabels={3}
-              showClear={false}
-              showSelectAll={false}
-              style={{ gridArea: 'd1' }}
-              disabled={disabled || !state.m2TipTiltEnable}
-            />
-          )}
+          <MultiSelect
+            inputId="m2TipTiltSource"
+            value={state.m2TipTiltSource ? state.m2TipTiltSource.split(',') : []}
+            onChange={(e) => modifyGuideLoop('m2TipTiltSource', (e.value as string[]).join(','))}
+            options={[
+              { label: 'OIWFS', value: 'OIWFS' },
+              { label: 'PWFS1', value: 'PWFS1' },
+              { label: 'PWFS2', value: 'PWFS2' },
+              // { label: "GAOS", value: "GAOS" },
+            ]}
+            placeholder="Select sources"
+            style={{ gridArea: 'd1' }}
+            disabled={disabled || !state.m2TipTiltEnable || loading}
+          />
+
           <div className="lever" onClick={() => modifyGuideLoop('m2TipTiltFocusLink', !state.m2TipTiltFocusLink)}>
             {state.m2TipTiltFocusLink ? <ConnectedChain /> : <BrokenChain />}
           </div>
@@ -179,35 +172,28 @@ export function Configuration() {
             checked={state.m2FocusEnable}
             onChange={() => modifyGuideLoop('m2FocusEnable', !state.m2FocusEnable)}
           />
-          {loading ? (
-            <ProgressSpinner style={{ width: '20px', height: '20px' }} />
-          ) : (
-            <MultiSelect
-              inputId="m2FocusSource"
-              value={
-                state.m2TipTiltFocusLink
-                  ? state.m2TipTiltSource
-                    ? state.m2TipTiltSource.split(',')
-                    : []
-                  : state.m2FocusSource
-                    ? state.m2FocusSource.split(',')
-                    : []
-              }
-              onChange={(e) => modifyGuideLoop('m2FocusSource', (e.value as string[]).join(','))}
-              options={[
-                { label: 'OIWFS', value: 'OIWFS' },
-                { label: 'PWFS1', value: 'PWFS1' },
-                { label: 'PWFS2', value: 'PWFS2' },
-                // { label: "GAOS", value: "GAOS" },
-              ]}
-              placeholder="Select sources"
-              maxSelectedLabels={3}
-              showClear={false}
-              showSelectAll={false}
-              style={{ gridArea: 'd2' }}
-              disabled={disabled || state.m2TipTiltFocusLink || !state.m2FocusEnable}
-            />
-          )}
+          <MultiSelect
+            inputId="m2FocusSource"
+            value={
+              state.m2TipTiltFocusLink
+                ? state.m2TipTiltSource
+                  ? state.m2TipTiltSource.split(',')
+                  : []
+                : state.m2FocusSource
+                  ? state.m2FocusSource.split(',')
+                  : []
+            }
+            onChange={(e) => modifyGuideLoop('m2FocusSource', (e.value as string[]).join(','))}
+            options={[
+              { label: 'OIWFS', value: 'OIWFS' },
+              { label: 'PWFS1', value: 'PWFS1' },
+              { label: 'PWFS2', value: 'PWFS2' },
+              // { label: "GAOS", value: "GAOS" },
+            ]}
+            placeholder="Select sources"
+            style={{ gridArea: 'd2' }}
+            disabled={disabled || state.m2TipTiltFocusLink || !state.m2FocusEnable || loading}
+          />
           <label
             htmlFor={state.m2ComaEnable ? 'm2ComaM1CorrectionsSource' : 'm2ComaEnable'}
             className="label"

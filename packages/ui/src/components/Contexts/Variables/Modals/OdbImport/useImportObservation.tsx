@@ -1,5 +1,6 @@
 import { useConfiguration } from '@gql/configs/Configuration';
 import type { TargetType } from '@gql/configs/gen/graphql';
+import { useGetGuideLoop } from '@gql/configs/GuideLoop';
 import { useRotator } from '@gql/configs/Rotator';
 import { useDoImportObservation } from '@gql/configs/Target';
 import { useGetCentralWavelength, useGetGuideEnvironment } from '@gql/odb/Observation';
@@ -16,6 +17,8 @@ export function useImportObservation() {
   const configuration = configurationData?.configuration;
   const { data: rotatorData, loading: rotatorLoading } = useRotator();
   const rotator = rotatorData?.rotator;
+  const { data: guideLoopData, loading: guideLoopLoading } = useGetGuideLoop();
+  const guideLoop = guideLoopData?.guideLoop;
 
   const [getGuideEnvironment, { loading: getGuideEnvironmentLoading }] = useGetGuideEnvironment();
   const [getCentralWavelength, { loading: getCentralWavelengthLoading }] = useGetCentralWavelength();
@@ -29,10 +32,11 @@ export function useImportObservation() {
     getGuideEnvironmentLoading ||
     getCentralWavelengthLoading ||
     doImportObservationLoading ||
+    guideLoopLoading ||
     isPending;
 
   function importObservation(selectedObservation: OdbObservationType): Promise<void> {
-    if (!configuration || !rotator) return Promise.resolve();
+    if (!configuration || !rotator || !guideLoop) return Promise.resolve();
 
     return startTransition(async () => {
       // First try to get a central wavelength associated to the observation
@@ -66,6 +70,7 @@ export function useImportObservation() {
           input: {
             configurationPk: configuration.pk,
             rotatorPk: rotator.pk,
+            guideLoopPk: guideLoop.pk,
             observation: {
               id: selectedObservation.id,
               title: selectedObservation.title,
