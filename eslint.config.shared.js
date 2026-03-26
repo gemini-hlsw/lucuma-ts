@@ -11,7 +11,6 @@ export default defineConfig(
   eslint.configs.recommended,
   ...configs.stylisticTypeChecked,
   ...configs.strictTypeChecked,
-  // @ts-expect-error - incorrect type
   importX.flatConfigs.recommended,
   importX.flatConfigs.typescript,
   {

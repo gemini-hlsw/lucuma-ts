@@ -13,7 +13,6 @@ export default defineConfig(
   ...shared,
   reactPlugin.configs.flat.recommended,
   reactPlugin.configs.flat['jsx-runtime'],
-  // @ts-expect-error incorrect type
   importX.flatConfigs.react,
   reactHooks.configs.flat['recommended-latest'],
   reactRefresh.configs.vite(),
@@ -38,7 +37,7 @@ export default defineConfig(
  *
  * @param {string | string[]} schema schema location
  * @param {string} base base directory for the TS files containing the GraphQL operations
- * @returns {import('typescript-eslint').ConfigWithExtends[]}
+ * @returns {Parameters<typeof defineConfig>} ESLint config for GraphQL files
  */
 function graphqlConfigForSchema(schema, base) {
   return [

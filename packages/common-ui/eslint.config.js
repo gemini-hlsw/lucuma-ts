@@ -12,7 +12,6 @@ export default defineConfig(
   ...shared,
   reactPlugin.configs.flat.recommended,
   reactPlugin.configs.flat['jsx-runtime'],
-  // @ts-expect-error incorrect type
   importX.flatConfigs.react,
   reactHooks.configs.flat['recommended-latest'],
   reactRefresh.configs.vite(),
