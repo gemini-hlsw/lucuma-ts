@@ -16,7 +16,7 @@ import { BotSubsystems, TopSubsystems } from './Subsystems';
 export function Systems() {
   const canEdit = useCanEdit();
   const { site } = useServerConfigValue();
-  const [collapsed, setCollapsed] = useState<boolean>(false);
+  const [collapsed, setCollapsed] = useState(false);
 
   function toggle() {
     setCollapsed(!collapsed);

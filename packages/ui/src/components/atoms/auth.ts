@@ -7,7 +7,7 @@ const lucumaRefreshTokenKey = 'lucuma-refresh-token';
 const initialStoredLucumaRefreshToken = sessionStorage.getItem(lucumaRefreshTokenKey);
 
 // Atom backed by sessionStorage, default value is retrieved from sessionStorage
-export const odbTokenAtom = atomWithStorage<string | null>(
+export const odbTokenAtom = atomWithStorage(
   lucumaRefreshTokenKey,
   initialStoredLucumaRefreshToken ? (JSON.parse(initialStoredLucumaRefreshToken) as string) : null,
   createJSONStorage(() => window.sessionStorage),

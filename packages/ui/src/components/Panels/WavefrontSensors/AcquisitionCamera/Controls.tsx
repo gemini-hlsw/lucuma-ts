@@ -75,7 +75,7 @@ export function AlignmentSelector({
   );
 }
 
-const steps = Object.freeze([0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 60] as const);
+const steps = Object.freeze([0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 60]);
 const nSteps = steps.length;
 
 function CoordinatesInput({
@@ -94,7 +94,7 @@ function CoordinatesInput({
 
   // Start at 0.5
   const [sliderStep, setSliderStep] = useState(2);
-  const [offset, setOffset] = useState<number>(steps[sliderStep]!);
+  const [offset, setOffset] = useState(steps[sliderStep]!);
 
   return (
     <div className="coordinates-input">

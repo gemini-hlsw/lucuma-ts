@@ -11,7 +11,7 @@ import type { PanelType } from '@/types';
 export default function Home() {
   const TOUCH_THRESHOLD = 50;
   const [panelDisplay, setPanelDisplay] = useState<PanelType>('telescope');
-  const [touchPos, setTouchPos] = useState<number>(0);
+  const [touchPos, setTouchPos] = useState(0);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     setTouchPos(e.touches[0]!.pageX);
