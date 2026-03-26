@@ -23,7 +23,7 @@
     "prepare": "node .husky/install.js"
   },
   "devDependencies": {
-    "@eslint/js": "9.39.4",
+    "@eslint/js": "10.0.1",
     "@graphql-codegen/cli": "6.2.1",
     "@graphql-eslint/eslint-plugin": "4.4.0",
     "@parcel/watcher": "2.5.6",
@@ -39,7 +39,7 @@
     "@vitejs/plugin-react": "6.0.1",
     "@vitest/browser-playwright": "4.1.0",
     "babel-plugin-react-compiler": "1.0.0",
-    "eslint": "9.39.4",
+    "eslint": "10.1.0",
     "eslint-import-resolver-typescript": "4.4.4",
     "eslint-plugin-import-x": "4.16.2",
     "eslint-plugin-react": "7.37.5",
