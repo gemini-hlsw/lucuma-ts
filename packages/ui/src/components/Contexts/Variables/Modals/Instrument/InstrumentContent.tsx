@@ -31,7 +31,7 @@ export function InstrumentContent({
   const { data: configuredInstrument, loading: configuredInstrumentLoading } = useConfiguredInstrument();
 
   const [name, setName] = useState<InstrumentName | null>(configuredInstrument?.name ?? null);
-  const [port, setPort] = useState<number | null>(configuredInstrument?.issPort ?? null);
+  const [port, setPort] = useState(configuredInstrument?.issPort ?? null);
 
   const [deleteInstrument, { loading: deleteInstrumentLoading }] = useDeleteInstrument();
 
