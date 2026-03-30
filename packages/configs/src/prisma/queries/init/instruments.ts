@@ -355,6 +355,19 @@ export const INITIAL_INSTRUMENTS: (Prisma.InstrumentCreateInput & { name: Instru
     isTemporary: false,
     comment: 'Initial configuration',
   },
+  {
+    wfs: 'PWFS2',
+    iaa: 0,
+    issPort: 5,
+    focusOffset: 0.0,
+    name: 'IGRINS2',
+    ao: false,
+    originX: 0.0,
+    originY: 0.0,
+    extraParams: {},
+    isTemporary: false,
+    comment: 'Initial configuration',
+  },
 ];
 
 export const INITIAL_GEMS_INSTRUMENT: Prisma.GemsInstrumentCreateInput = {
