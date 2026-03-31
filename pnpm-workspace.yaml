@@ -22,9 +22,4 @@ onlyBuiltDependencies:
   - 'prisma'
 
 trustPolicy: no-downgrade
-trustPolicyExclude:
-  - 'rxjs@7.8.2'
-  - semver
-  - chokidar
-  - '@graphql-tools/*'
-  - ua-parser-js
+trustPolicyIgnoreAfter: 20160 # 2 weeks
