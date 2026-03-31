@@ -1,13 +1,6 @@
 packages:
   - packages/*
 
-ignoredBuiltDependencies:
-  - 'cpu-features'
-  - 'esbuild'
-  - 'protobufjs'
-  - 'ssh2'
-  - 'unrs-resolver'
-
 injectWorkspacePackages: true
 
 # 2 days, in minutes
@@ -21,5 +14,14 @@ onlyBuiltDependencies:
   - '@prisma/engines'
   - 'prisma'
 
+ignoredBuiltDependencies:
+  - 'cpu-features'
+  - 'esbuild'
+  - 'protobufjs'
+  - 'ssh2'
+  - 'unrs-resolver'
+
 trustPolicy: no-downgrade
 trustPolicyIgnoreAfter: 20160 # 2 weeks
+
+blockExoticSubdeps: true
