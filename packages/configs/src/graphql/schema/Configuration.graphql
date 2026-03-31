@@ -1,4 +1,4 @@
-#import Instrument, ObservationId, PosInt from 'lucuma-schemas/odb'
+#import Instrument, ObservationId, PosInt from '@gemini-hlsw/lucuma-schemas/odb'
 
 enum GuidingType {
   NORMAL

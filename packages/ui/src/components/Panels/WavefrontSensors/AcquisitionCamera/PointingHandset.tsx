@@ -1,3 +1,4 @@
+import { when } from '@gemini-hlsw/lucuma-common-ui';
 import { useConfiguredInstrument, useUpdateInstrument } from '@gql/configs/Instrument';
 import {
   useAbsorbGuidePointingAdjustment,
@@ -6,7 +7,6 @@ import {
   useResetGuidePointingAdjustment,
   useResetLocalPointingAdjustment,
 } from '@gql/server/PointingHandset';
-import { when } from 'lucuma-common-ui';
 import { Button } from 'primereact/button';
 import { useState } from 'react';
 

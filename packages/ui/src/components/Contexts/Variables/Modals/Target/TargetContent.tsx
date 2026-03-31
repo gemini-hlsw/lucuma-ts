@@ -1,6 +1,6 @@
+import { deg2dms, deg2hms, dms2deg, hms2deg } from '@gemini-hlsw/lucuma-core';
 import type { EphemerisKeyType, NonsiderealTarget, SiderealTarget } from '@gql/configs/gen/graphql';
 import { isBaseTarget } from '@gql/util';
-import { deg2dms, deg2hms, dms2deg, hms2deg } from 'lucuma-core';
 import { Dropdown } from 'primereact/dropdown';
 import { InputNumber } from 'primereact/inputnumber';
 import { InputText } from 'primereact/inputtext';

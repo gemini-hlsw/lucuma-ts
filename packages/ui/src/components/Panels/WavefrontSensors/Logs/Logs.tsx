@@ -1,8 +1,8 @@
+import { formatDateTime } from '@gemini-hlsw/lucuma-common-ui';
 import type { LogMessage } from '@gql/server/gen/graphql';
 import { useLogMessages } from '@gql/server/Logs';
 import { Title } from '@Shared/Title/Title';
 import { parseJSON } from 'date-fns';
-import { formatDateTime } from 'lucuma-common-ui';
 import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
 

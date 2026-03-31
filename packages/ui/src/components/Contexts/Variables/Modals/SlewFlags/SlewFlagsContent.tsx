@@ -1,6 +1,6 @@
+import { isNullish } from '@gemini-hlsw/lucuma-common-ui';
 import type { UpdateSlewFlagsMutationVariables } from '@gql/configs/gen/graphql';
 import { useSlewFlags, useUpdateSlewFlags } from '@gql/configs/SlewFlags';
-import { isNullish } from 'lucuma-common-ui';
 import { InputSwitch } from 'primereact/inputswitch';
 import { useId } from 'react';
 

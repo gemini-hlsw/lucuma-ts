@@ -1,3 +1,4 @@
+import { isNotNullish } from '@gemini-hlsw/lucuma-common-ui';
 import type { PwfsFieldStop, PwfsFilter } from '@gql/server/gen/graphql';
 import type { PwfsFieldStopResult, PwfsFilterResult, PwfsMechsStateResult } from '@gql/server/MechsState';
 import {
@@ -8,7 +9,6 @@ import {
   usePwfs2Filter,
   usePwfs2MechsState,
 } from '@gql/server/MechsState';
-import { isNotNullish } from 'lucuma-common-ui';
 import { Dropdown } from 'primereact/dropdown';
 
 import { useMovingLabel } from './hooks';

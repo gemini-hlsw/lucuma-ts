@@ -1,3 +1,4 @@
+import { isNotNullish, when } from '@gemini-hlsw/lucuma-common-ui';
 import { useConfiguration } from '@gql/configs/Configuration';
 import type { Configuration } from '@gql/configs/gen/graphql';
 import { useConfiguredInstrument, useUpdateInstrument } from '@gql/configs/Instrument';
@@ -8,7 +9,6 @@ import {
   useResetTargetAdjustment,
   useTargetAdjustmentOffsets,
 } from '@gql/server/TargetsHandset';
-import { isNotNullish, when } from 'lucuma-common-ui';
 import { Button } from 'primereact/button';
 import { ButtonGroup } from 'primereact/buttongroup';
 import { Dropdown } from 'primereact/dropdown';

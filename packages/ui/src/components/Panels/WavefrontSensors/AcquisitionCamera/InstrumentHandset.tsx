@@ -1,3 +1,4 @@
+import { when } from '@gemini-hlsw/lucuma-common-ui';
 import { useConfiguredInstrument, useUpdateInstrument } from '@gql/configs/Instrument';
 import {
   useAbsorbOriginAdjustment,
@@ -5,7 +6,6 @@ import {
   useOriginAdjustmentOffset,
   useResetOriginAdjustment,
 } from '@gql/server/OriginHandset';
-import { when } from 'lucuma-common-ui';
 import { Button } from 'primereact/button';
 import { ButtonGroup } from 'primereact/buttongroup';
 import { useState } from 'react';

@@ -49,7 +49,7 @@
     },
     {
       "description": "Schedule schema updates to run daily",
-      "matchPackageNames": ["lucuma-schemas"],
+      "matchPackageNames": ["@gemini-hlsw/lucuma-schemas"],
       "schedule": ["* 0-4 * * *"],
       "minimumReleaseAge": "0 days"
     }

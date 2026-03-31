@@ -1,4 +1,4 @@
-import { isNullish } from 'lucuma-common-ui';
+import { isNullish } from '@gemini-hlsw/lucuma-common-ui';
 
 function App() {
   return (

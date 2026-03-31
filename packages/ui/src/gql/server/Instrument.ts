@@ -1,6 +1,6 @@
 import { skipToken, useQuery } from '@apollo/client/react';
+import { isNullish } from '@gemini-hlsw/lucuma-common-ui';
 import type { OptionsOf } from '@gql/util';
-import { isNullish } from 'lucuma-common-ui';
 
 import { graphql } from './gen';
 

@@ -1,4 +1,5 @@
 import { skipToken } from '@apollo/client/react';
+import { formatDateTime, when } from '@gemini-hlsw/lucuma-common-ui';
 import {
   useConfiguredInstrument,
   useDeleteInstrument,
@@ -7,7 +8,6 @@ import {
   useInstruments,
 } from '@gql/configs/Instrument';
 import type { Instrument as InstrumentName } from '@gql/odb/gen/graphql';
-import { formatDateTime, when } from 'lucuma-common-ui';
 import { FilterMatchMode, FilterService } from 'primereact/api';
 import { Button } from 'primereact/button';
 import { Column } from 'primereact/column';

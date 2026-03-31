@@ -1,4 +1,4 @@
-#import PosInt, Site from "lucuma-schemas/odb"
+#import PosInt, Site from "@gemini-hlsw/lucuma-schemas/odb"
 #import DateTime, Void from "./Scalars.graphql"
 
 type CalParams {

@@ -1,9 +1,9 @@
+import { isNotNullish } from '@gemini-hlsw/lucuma-common-ui';
 import type { GuideLoop, UpdateGuideLoopMutationVariables } from '@gql/configs/gen/graphql';
 import { useGetGuideLoop, useUpdateGuideLoop } from '@gql/configs/GuideLoop';
 import type { LightSink, LightSource } from '@gql/server/gen/graphql';
 import { useLightpathConfig } from '@gql/server/Lightpath';
 import { Title } from '@Shared/Title/Title';
-import { isNotNullish } from 'lucuma-common-ui';
 import { Button } from 'primereact/button';
 
 import { useCanEdit } from '@/components/atoms/auth';

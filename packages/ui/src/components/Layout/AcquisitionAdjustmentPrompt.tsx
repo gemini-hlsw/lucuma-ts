@@ -1,11 +1,11 @@
 import './AcquisitionAdjustmentToast.css';
 
+import { formatToSignedArcseconds, isNotNullish, when } from '@gemini-hlsw/lucuma-common-ui';
 import { useConfiguredInstrument, useUpdateInstrument } from '@gql/configs/Instrument';
 import { useRotator, useUpdateRotator } from '@gql/configs/Rotator';
 import type { useAcquisitionAdjustmentState } from '@gql/server/AcquisitionAdjustment';
 import { useAcquisitionAdjustment } from '@gql/server/AcquisitionAdjustment';
 import type { AcquistionAdjustmentCommand } from '@gql/server/gen/graphql';
-import { formatToSignedArcseconds, isNotNullish, when } from 'lucuma-common-ui';
 import { Button } from 'primereact/button';
 
 import { Check, XMark } from '../Icons';

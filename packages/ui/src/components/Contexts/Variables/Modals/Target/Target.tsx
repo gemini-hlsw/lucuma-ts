@@ -1,6 +1,6 @@
+import { isNullish, when } from '@gemini-hlsw/lucuma-common-ui';
 import { useUpdateTarget } from '@gql/configs/Target';
 import { RESET } from 'jotai/utils';
-import { isNullish, when } from 'lucuma-common-ui';
 import { Button } from 'primereact/button';
 import { Dialog } from 'primereact/dialog';
 import { lazy, startTransition, Suspense, useState } from 'react';

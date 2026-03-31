@@ -109,8 +109,8 @@ export default defineConfig(({ mode }) => ({
     globals: true,
     setupFiles: [
       'src/gql/dev-messages.ts',
-      'lucuma-common-ui/test/setup.ts',
-      'lucuma-common-ui/test/disable-animations.css',
+      '@gemini-hlsw/lucuma-common-ui/test/setup.ts',
+      '@gemini-hlsw/lucuma-common-ui/test/disable-animations.css',
     ],
     onConsoleLog(log) {
       // ignore the dev mode warning in test logs

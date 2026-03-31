@@ -1,6 +1,6 @@
+import { isNotNullish } from '@gemini-hlsw/lucuma-common-ui';
 import { useVersion as useConfigsVersion } from '@gql/configs/Version';
 import { useVersion as useServerVersion } from '@gql/server/Version';
-import { isNotNullish } from 'lucuma-common-ui';
 import { Button } from 'primereact/button';
 import type { ToastMessage } from 'primereact/toast';
 import { Toast } from 'primereact/toast';

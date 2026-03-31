@@ -22,7 +22,10 @@ export default defineConfig(
     },
   },
   ...graphqlConfigForSchema(
-    [import.meta.resolve('lucuma-schemas/odb'), import.meta.resolve('lucuma-schemas/navigate')],
+    [
+      import.meta.resolve('@gemini-hlsw/lucuma-schemas/odb'),
+      import.meta.resolve('@gemini-hlsw/lucuma-schemas/navigate'),
+    ],
     './src/gql/{server,odb}',
   ),
   // @graphql-eslint tries to merge all schemas, even if defined separately. Because some same names are used but with different types we can't enable linting for both server/odb and configs at the same time

@@ -1,3 +1,4 @@
+import { isNotNullish } from '@gemini-hlsw/lucuma-common-ui';
 import { useAltairGuideLoop, useUpdateAltairGuideLoop } from '@gql/configs/AltairGuideLoop';
 import { useGetGemsGuideLoop, useUpdateGemsGuideLoop } from '@gql/configs/GemsGuideLoop';
 import type {
@@ -5,7 +6,6 @@ import type {
   UpdateGemsGuideLoopMutationVariables,
 } from '@gql/configs/gen/graphql';
 import { Title } from '@Shared/Title/Title';
-import { isNotNullish } from 'lucuma-common-ui';
 import { Checkbox } from 'primereact/checkbox';
 
 import { useCanEdit } from '@/components/atoms/auth';

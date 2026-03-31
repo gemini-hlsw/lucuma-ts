@@ -1,7 +1,7 @@
+import { formatDateTime, when } from '@gemini-hlsw/lucuma-common-ui';
 import { useRevertCalParams } from '@gql/configs/CalParams';
 import type { CalParamsHistory as CalParamsHistoryType } from '@gql/configs/gen/graphql';
 import { CommentConfirmButton } from '@Shared/CommentConfirmButton';
-import { formatDateTime, when } from 'lucuma-common-ui';
 import { Button } from 'primereact/button';
 import { Dialog } from 'primereact/dialog';
 import { lazy, startTransition, Suspense, useState } from 'react';

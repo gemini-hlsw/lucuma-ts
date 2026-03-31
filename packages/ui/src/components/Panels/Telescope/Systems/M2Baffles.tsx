@@ -1,8 +1,8 @@
+import { isNotNullish, isNullish } from '@gemini-hlsw/lucuma-common-ui';
 import { useConfiguration, useUpdateConfiguration } from '@gql/configs/Configuration';
 import type { BaffleMode, UpdateConfigurationMutationVariables } from '@gql/configs/gen/graphql';
 import type { CentralBaffle, DeployableBaffle } from '@gql/server/gen/graphql';
 import { Title } from '@Shared/Title/Title';
-import { isNotNullish, isNullish } from 'lucuma-common-ui';
 import { Dropdown } from 'primereact/dropdown';
 
 const modeOptions: BaffleMode[] = ['AUTO', 'MANUAL', 'IGNORED'];

@@ -1,4 +1,4 @@
-import { deg2dms, deg2hms } from 'lucuma-core';
+import { deg2dms, deg2hms } from '@gemini-hlsw/lucuma-core';
 
 import type { PrismaClient } from './gen/client.ts';
 

@@ -1,5 +1,5 @@
 #import DateTime, Void, JSON from "./Scalars.graphql"
-#import Instrument, PosInt from "lucuma-schemas/odb"
+#import Instrument, PosInt from "@gemini-hlsw/lucuma-schemas/odb"
 
 enum WfsType {
   NONE

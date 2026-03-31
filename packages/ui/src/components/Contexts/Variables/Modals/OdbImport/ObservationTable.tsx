@@ -1,5 +1,5 @@
+import { dateToLocalObservingNight } from '@gemini-hlsw/lucuma-core';
 import { useObservationsByState } from '@gql/odb/Observation';
-import { dateToLocalObservingNight } from 'lucuma-core';
 import { FilterMatchMode } from 'primereact/api';
 import type { ColumnProps as PColumnProps } from 'primereact/column';
 import { Column } from 'primereact/column';

@@ -129,12 +129,12 @@ importers:
 
   packages/common-ui:
     dependencies:
+      '@gemini-hlsw/lucuma-core':
+        specifier: 0.179.1
+        version: 0.179.1
       date-fns:
         specifier: 4.1.0
         version: 4.1.0
-      lucuma-core:
-        specifier: 0.179.0
-        version: 0.179.0
     devDependencies:
       react:
         specifier: 19.2.4
@@ -148,6 +148,9 @@ importers:
 
   packages/configs:
     dependencies:
+      '@gemini-hlsw/lucuma-core':
+        specifier: 0.179.1
+        version: 0.179.1
       '@prisma/adapter-pg':
         specifier: 7.6.0
         version: 7.6.0
@@ -163,9 +166,6 @@ importers:
       graphql-yoga:
         specifier: 5.18.1
         version: 5.18.1(graphql@16.13.2)
-      lucuma-core:
-        specifier: 0.179.0
-        version: 0.179.0
       prisma:
         specifier: 7.6.0
         version: 7.6.0(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@6.0.2)
@@ -173,21 +173,21 @@ importers:
       '@eddeee888/gcg-typescript-resolver-files':
         specifier: 0.15.0
         version: 0.15.0(graphql@16.13.2)
+      '@gemini-hlsw/lucuma-schemas':
+        specifier: 0.177.1-20260331-a60c392e
+        version: 0.177.1-20260331-a60c392e
       '@testcontainers/postgresql':
         specifier: 11.13.0
         version: 11.13.0
-      lucuma-schemas:
-        specifier: 0.177.0-20260330-8dc0ec78
-        version: 0.177.0-20260330-8dc0ec78
 
   packages/e2e:
     devDependencies:
+      '@gemini-hlsw/navigate-configs':
+        specifier: workspace:*
+        version: link:../configs
       '@playwright/test':
         specifier: 1.58.2
         version: 1.58.2
-      navigate-configs:
-        specifier: workspace:*
-        version: link:../configs
 
   packages/resource-ui:
     dependencies:
@@ -198,12 +198,12 @@ importers:
         specifier: 19.2.4
         version: 19.2.4(react@19.2.4)
     devDependencies:
-      lucuma-common-ui:
+      '@gemini-hlsw/lucuma-common-ui':
         specifier: workspace:*
         version: link:../common-ui
-      lucuma-ui-css:
-        specifier: 0.175.0
-        version: 0.175.0
+      '@gemini-hlsw/lucuma-ui-css':
+        specifier: 0.176.0
+        version: 0.176.0
       tailwind-merge:
         specifier: 3.5.0
         version: 3.5.0
@@ -222,6 +222,21 @@ importers:
       '@fortawesome/react-fontawesome':
         specifier: 3.3.0
         version: 3.3.0(@fortawesome/fontawesome-svg-core@7.2.0)(react@19.2.4)
+      '@gemini-hlsw/lucuma-common-ui':
+        specifier: workspace:*
+        version: link:../common-ui
+      '@gemini-hlsw/lucuma-core':
+        specifier: 0.179.1
+        version: 0.179.1
+      '@gemini-hlsw/lucuma-schemas':
+        specifier: 0.177.1-20260331-a60c392e
+        version: 0.177.1-20260331-a60c392e
+      '@gemini-hlsw/lucuma-ui-css':
+        specifier: 0.176.0
+        version: 0.176.0
+      '@gemini-hlsw/navigate-configs':
+        specifier: workspace:*
+        version: link:../configs
       '@graphql-codegen/client-preset':
         specifier: 5.2.4
         version: 5.2.4(graphql@16.13.2)
@@ -246,21 +261,6 @@ importers:
       jotai:
         specifier: 2.19.0
         version: 2.19.0(@babel/core@7.29.0)(@babel/template@7.28.6)(@types/react@19.2.14)(react@19.2.4)
-      lucuma-common-ui:
-        specifier: workspace:*
-        version: link:../common-ui
-      lucuma-core:
-        specifier: 0.179.0
-        version: 0.179.0
-      lucuma-schemas:
-        specifier: 0.177.0-20260330-8dc0ec78
-        version: 0.177.0-20260330-8dc0ec78
-      lucuma-ui-css:
-        specifier: 0.175.0
-        version: 0.175.0
-      navigate-configs:
-        specifier: workspace:*
-        version: link:../configs
       primereact:
         specifier: 10.9.7
         version: 10.9.7(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -548,6 +548,15 @@ packages:
     peerDependencies:
       '@fortawesome/fontawesome-svg-core': ~6 || ~7
       react: ^18.0.0 || ^19.0.0
+
+  '@gemini-hlsw/lucuma-core@0.179.1':
+    resolution: {integrity: sha512-4BIKRsPcYZlBcP2eEz+x+NVQC70o+ixaLhN8tHaPM4MRUS4TW00Br7C7Ub70xEwP/SApYDtRsOPCm02M9j2/XA==}
+
+  '@gemini-hlsw/lucuma-schemas@0.177.1-20260331-a60c392e':
+    resolution: {integrity: sha512-NX4jGilmjZnv0OiD1zwK3z2hfKm1QRqZdIcFgcVAMqManRhbQKHsgsutuTKdYUg/SMjoKBnkgFcLUWf5xMn4Ow==}
+
+  '@gemini-hlsw/lucuma-ui-css@0.176.0':
+    resolution: {integrity: sha512-S9VAeheNz082WNPARYDdJQWY0KxPMG2zYosgKemFOTWGRGr5bGcX///IU0VzZO1+X8DOtS8J7EXFF/WNoYMl6g==}
 
   '@graphql-codegen/add@6.0.0':
     resolution: {integrity: sha512-biFdaURX0KTwEJPQ1wkT6BRgNasqgQ5KbCI1a3zwtLtO7XTo7/vKITPylmiU27K5DSOWYnY/1jfSqUAEBuhZrQ==}
@@ -3495,15 +3504,6 @@ packages:
     resolution: {integrity: sha512-DqC6n3QQ77zdFpCMASA1a3Jlb64Hv2N2DciFGkO/4L9+q/IpIAuRlKOvCXabtRW6cQf8usbmM6BE/TOPysCdIA==}
     engines: {bun: '>=1.0.0', deno: '>=1.30.0', node: '>=8.0.0'}
 
-  lucuma-core@0.179.0:
-    resolution: {integrity: sha512-pSctvXSY9KdqIIMz4w64GEvR89smhqyQWXvju42b4Rtm1qsrB9J5AN2XHC14Xu/pBKzJUhlAHy7qWjS3SNRxXw==}
-
-  lucuma-schemas@0.177.0-20260330-8dc0ec78:
-    resolution: {integrity: sha512-4xdgOge8b5HdFjrC1qZsNfW3Nc/NSx64QWYk83bIG23lbXAabaFomY09EP8fa+JKyF6Y1xgJZPKH8Kmid4jAhg==}
-
-  lucuma-ui-css@0.175.0:
-    resolution: {integrity: sha512-VwsYLqxRrrC9jdoz8Sg/BwcIuFjC4iWL1QRjQdvSmajGiG+Qdg3h/g7ZWAUR1ZBnKct+Crs2qWAw5BxO5zMLDg==}
-
   magic-string@0.30.21:
     resolution: {integrity: sha512-vd2F4YUyEXKGcLHoq+TEyCjxueSeHnFxyyjNp80yg0XV4vUhnDer/lvvlqM/arB5bXQN5K2/3oinyCRyx8T2CQ==}
 
@@ -5153,6 +5153,12 @@ snapshots:
     dependencies:
       '@fortawesome/fontawesome-svg-core': 7.2.0
       react: 19.2.4
+
+  '@gemini-hlsw/lucuma-core@0.179.1': {}
+
+  '@gemini-hlsw/lucuma-schemas@0.177.1-20260331-a60c392e': {}
+
+  '@gemini-hlsw/lucuma-ui-css@0.176.0': {}
 
   '@graphql-codegen/add@6.0.0(graphql@16.13.2)':
     dependencies:
@@ -8329,12 +8335,6 @@ snapshots:
       yallist: 3.1.1
 
   lru.min@1.1.4: {}
-
-  lucuma-core@0.179.0: {}
-
-  lucuma-schemas@0.177.0-20260330-8dc0ec78: {}
-
-  lucuma-ui-css@0.175.0: {}
 
   magic-string@0.30.21:
     dependencies:

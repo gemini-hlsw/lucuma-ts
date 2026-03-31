@@ -1,7 +1,7 @@
 #import DateTime from "./Scalars.graphql"
 #import RA, Az, El, Dec, TargetType, ProperMotion from "./Target.graphql"
-#import RotatorTrackingMode from 'lucuma-schemas/navigate'
-#import Instrument, PosInt from "lucuma-schemas/odb"
+#import RotatorTrackingMode from '@gemini-hlsw/lucuma-schemas/navigate'
+#import Instrument, PosInt from "@gemini-hlsw/lucuma-schemas/odb"
 #import BaffleMode, CentralBaffle, DeployableBaffle from './Configuration.graphql'
 
 type EngineeringTarget {

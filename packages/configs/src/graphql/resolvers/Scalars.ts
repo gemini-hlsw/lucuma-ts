@@ -1,5 +1,3 @@
-import { GraphQLScalarType, Kind } from 'graphql';
-import { PositiveIntResolver } from 'graphql-scalars';
 import {
   parseAttachmentId,
   parseCallForProposalsId,
@@ -14,7 +12,9 @@ import {
   parseTargetId,
   parseUserId,
   parseVisitId,
-} from 'lucuma-core';
+} from '@gemini-hlsw/lucuma-core';
+import { GraphQLScalarType, Kind } from 'graphql';
+import { PositiveIntResolver } from 'graphql-scalars';
 
 PositiveIntResolver.name = 'PosInt';
 export const PosIntResolver = PositiveIntResolver;
