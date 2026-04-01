@@ -1,6 +1,6 @@
+import { formatToSignedArcseconds, isNotNullish } from '@gemini-hlsw/lucuma-common-ui';
 import { useConfiguration } from '@gql/configs/Configuration';
 import type { WfsType } from '@gql/configs/gen/graphql';
-import { formatToSignedArcseconds, isNotNullish } from 'lucuma-common-ui';
 import { Button } from 'primereact/button';
 import { Divider } from 'primereact/divider';
 import { Dropdown } from 'primereact/dropdown';

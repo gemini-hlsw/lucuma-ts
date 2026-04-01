@@ -1,10 +1,10 @@
 import { ApolloProvider } from '@apollo/client/react';
 import { Authentication } from '@Contexts/Auth/Authentication';
 import { Modals } from '@Contexts/Variables/Modals/Modals';
+import { when } from '@gemini-hlsw/lucuma-common-ui';
 import { client } from '@gql/ApolloConfigs';
 import { useServerConfiguration } from '@gql/server/ServerConfiguration';
 import { Provider as AtomProvider } from 'jotai';
-import { when } from 'lucuma-common-ui';
 import { Message } from 'primereact/message';
 import { startTransition, useEffect, useState } from 'react';
 import { createBrowserRouter, RouterProvider } from 'react-router';

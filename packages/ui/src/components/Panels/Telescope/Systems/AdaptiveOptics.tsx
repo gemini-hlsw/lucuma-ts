@@ -1,10 +1,10 @@
+import { isNotNullish } from '@gemini-hlsw/lucuma-common-ui';
 import { useAltairInstrument, useUpdateAltairInstrument } from '@gql/configs/AltairInstrument';
 import { useGemsInstrument, useUpdateGemsInstrument } from '@gql/configs/GemsInstrument';
 import type {
   UpdateAltairInstrumentMutationVariables,
   UpdateGemsInstrumentMutationVariables,
 } from '@gql/configs/gen/graphql';
-import { isNotNullish } from 'lucuma-common-ui';
 import { Checkbox } from 'primereact/checkbox';
 import { Dropdown } from 'primereact/dropdown';
 import { InputNumber } from 'primereact/inputnumber';

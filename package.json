@@ -1,5 +1,5 @@
 {
-  "name": "navigate-ts",
+  "name": "@gemini-hlsw/navigate-ts",
   "description": "Monorepo for navigate typescript projects",
   "version": "1.0.0",
   "type": "module",
@@ -11,9 +11,9 @@
     "url": "git+https://github.com/gemini-hlsw/navigate-ts.git"
   },
   "scripts": {
-    "ui": "pnpm --filter navigate-ui",
-    "configs": "pnpm --filter navigate-configs",
-    "e2e": "pnpm --filter navigate-e2e",
+    "ui": "pnpm --filter @gemini-hlsw/navigate-ui",
+    "configs": "pnpm --filter @gemini-hlsw/navigate-configs",
+    "e2e": "pnpm --filter @gemini-hlsw/navigate-e2e",
     "all": "pnpm -r",
     "build": "tsc -b",
     "lint": "pnpm lint:prettier && pnpm lint:style && pnpm -r lint:eslint",

@@ -1,5 +1,5 @@
 {
-  "name": "lucuma-common-ui",
+  "name": "@gemini-hlsw/lucuma-common-ui",
   "version": "1.0.0",
   "type": "module",
   "private": true,
@@ -21,7 +21,7 @@
   },
   "dependencies": {
     "date-fns": "4.1.0",
-    "lucuma-core": "0.179.0"
+    "@gemini-hlsw/lucuma-core": "0.179.1"
   },
   "devDependencies": {
     "react": "19.2.4",

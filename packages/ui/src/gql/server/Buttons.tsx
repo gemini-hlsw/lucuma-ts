@@ -2,12 +2,12 @@
 
 import type { ApolloCache, DocumentNode, MutationUpdaterFunction, OperationVariables } from '@apollo/client';
 import { useMutation } from '@apollo/client/react';
+import { when } from '@gemini-hlsw/lucuma-common-ui';
 import { useConfiguration } from '@gql/configs/Configuration';
 import { useSlewFlags } from '@gql/configs/SlewFlags';
 import type { VariablesOf } from '@graphql-typed-document-node/core';
 import { useTcsConfigInput } from '@Telescope/Targets/inputs';
 import { clsx } from 'clsx';
-import { when } from 'lucuma-common-ui';
 import type { ButtonProps } from 'primereact/button';
 import { Button } from 'primereact/button';
 import type { ReactNode } from 'react';

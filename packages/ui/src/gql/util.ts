@@ -1,8 +1,8 @@
 import type { DocumentNode, OperationVariables } from '@apollo/client';
 import type { SkipToken, useQuery } from '@apollo/client/react';
 import type { MockLink } from '@apollo/client/testing';
+import { isNullish } from '@gemini-hlsw/lucuma-common-ui';
 import type { ResultOf, VariablesOf } from '@graphql-typed-document-node/core';
-import { isNullish } from 'lucuma-common-ui';
 
 import type { TargetType } from '@/types';
 

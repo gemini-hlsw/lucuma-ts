@@ -1,5 +1,5 @@
 {
-  "name": "resource-ui",
+  "name": "@gemini-hlsw/resource-ui",
   "version": "1.0.0",
   "type": "module",
   "private": true,
@@ -20,8 +20,8 @@
     "react-dom": "19.2.4"
   },
   "devDependencies": {
-    "lucuma-common-ui": "workspace:*",
-    "lucuma-ui-css": "0.175.0",
+    "@gemini-hlsw/lucuma-common-ui": "workspace:*",
+    "@gemini-hlsw/lucuma-ui-css": "0.176.0",
     "tailwind-merge": "3.5.0"
   },
   "bundlemon": {

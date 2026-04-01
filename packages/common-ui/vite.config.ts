@@ -7,7 +7,10 @@ export default defineConfig({
   test: {
     clearMocks: true,
     globals: true,
-    setupFiles: ['lucuma-common-ui/test/setup.ts', 'lucuma-common-ui/test/disable-animations.css'],
+    setupFiles: [
+      '@gemini-hlsw/lucuma-common-ui/test/setup.ts',
+      '@gemini-hlsw/lucuma-common-ui/test/disable-animations.css',
+    ],
     browser: {
       enabled: true,
       provider: playwright({

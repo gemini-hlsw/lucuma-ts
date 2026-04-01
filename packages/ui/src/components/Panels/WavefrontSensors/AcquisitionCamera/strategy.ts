@@ -1,5 +1,5 @@
+import { when } from '@gemini-hlsw/lucuma-common-ui';
 import type { GuideProbe, HandsetAdjustmentInput } from '@gql/server/gen/graphql';
-import { when } from 'lucuma-common-ui';
 
 import type { Alignment } from './Controls';
 

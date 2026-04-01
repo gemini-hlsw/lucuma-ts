@@ -1,8 +1,8 @@
+import { isNotNullish, when } from '@gemini-hlsw/lucuma-common-ui';
 import { useCalParams, useCalParamsHistory, useCreateCalParams } from '@gql/configs/CalParams';
 import type { CalParamsCreateInput } from '@gql/configs/gen/graphql';
 import { CommentConfirmButton } from '@Shared/CommentConfirmButton';
 import { clsx } from 'clsx';
-import { isNotNullish, when } from 'lucuma-common-ui';
 import { Button } from 'primereact/button';
 import { InputNumber, type InputNumberProps } from 'primereact/inputnumber';
 import { Tooltip } from 'primereact/tooltip';

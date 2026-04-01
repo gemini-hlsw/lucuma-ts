@@ -1,5 +1,5 @@
 #import DateTime from "./Scalars.graphql"
-#import PosInt, TargetId, Instrument, AngleInput, ObservationId from "lucuma-schemas/odb"
+#import PosInt, TargetId, Instrument, AngleInput, ObservationId from "@gemini-hlsw/lucuma-schemas/odb"
 #import Configuration from "./Configuration.graphql"
 #import Rotator from "./Rotator.graphql"
 #import GuideLoop from "./GuideLoop.graphql"

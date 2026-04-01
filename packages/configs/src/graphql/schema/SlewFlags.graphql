@@ -1,4 +1,4 @@
-#import PosInt from "lucuma-schemas/odb"
+#import PosInt from "@gemini-hlsw/lucuma-schemas/odb"
 
 type SlewFlags {
   "Record primary key"

@@ -1,5 +1,5 @@
+import { signedArcSeconds } from '@gemini-hlsw/lucuma-core';
 import { formatDate } from 'date-fns';
-import { signedArcSeconds } from 'lucuma-core';
 
 export function isNotNullish<T>(val: T | undefined | null): val is T {
   return !isNullish(val);

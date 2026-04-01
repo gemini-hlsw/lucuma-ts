@@ -1,8 +1,8 @@
 import './Navbar.css';
 
+import { when } from '@gemini-hlsw/lucuma-common-ui';
 import { useConfiguration } from '@gql/configs/Configuration';
 import { clsx } from 'clsx';
-import { when } from 'lucuma-common-ui';
 import { Button } from 'primereact/button';
 import type { MenuItem } from 'primereact/menuitem';
 import { SplitButton } from 'primereact/splitbutton';

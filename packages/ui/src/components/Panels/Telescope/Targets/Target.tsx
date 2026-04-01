@@ -1,5 +1,5 @@
+import { isNotNullish, round } from '@gemini-hlsw/lucuma-common-ui';
 import { clsx } from 'clsx';
-import { isNotNullish, round } from 'lucuma-common-ui';
 import { useRef } from 'react';
 
 import { useCanEdit } from '@/components/atoms/auth';

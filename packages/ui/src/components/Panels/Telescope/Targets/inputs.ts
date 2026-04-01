@@ -1,3 +1,4 @@
+import { when } from '@gemini-hlsw/lucuma-common-ui';
 import { useCalParams } from '@gql/configs/CalParams';
 import { useConfiguration } from '@gql/configs/Configuration';
 import type {
@@ -24,7 +25,6 @@ import type {
   TargetPropertiesInput,
   TcsConfigInput,
 } from '@gql/server/gen/graphql';
-import { when } from 'lucuma-common-ui';
 
 import { useServerConfigValue } from '@/components/atoms/config';
 import type { TypeOfTarget } from '@/types';

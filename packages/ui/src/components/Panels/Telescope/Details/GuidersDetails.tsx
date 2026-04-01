@@ -1,5 +1,5 @@
+import { round } from '@gemini-hlsw/lucuma-common-ui';
 import { Title } from '@Shared/Title/Title';
-import { round } from 'lucuma-common-ui';
 
 export function GuidersDetails() {
   const GUIDERS_VALUES = [
