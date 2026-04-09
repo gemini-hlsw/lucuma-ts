@@ -40,7 +40,7 @@
   "devDependencies": {
     "@eddeee888/gcg-typescript-resolver-files": "0.15.0",
     "@testcontainers/postgresql": "11.13.0",
-    "@gemini-hlsw/lucuma-schemas": "0.177.1-20260331-a60c392e"
+    "@gemini-hlsw/lucuma-schemas": "0.177.1-20260408-ccccaa9b"
   },
   "files": [
     "dist",

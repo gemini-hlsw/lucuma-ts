@@ -34,7 +34,7 @@
     "jotai": "2.19.0",
     "@gemini-hlsw/lucuma-common-ui": "workspace:*",
     "@gemini-hlsw/lucuma-core": "0.179.1",
-    "@gemini-hlsw/lucuma-schemas": "0.177.1-20260331-a60c392e",
+    "@gemini-hlsw/lucuma-schemas": "0.177.1-20260408-ccccaa9b",
     "@gemini-hlsw/lucuma-ui-css": "0.176.0",
     "@gemini-hlsw/navigate-configs": "workspace:*",
     "primereact": "10.9.7",
