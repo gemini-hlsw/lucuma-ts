@@ -121,7 +121,16 @@ const distinctInstrumentsMock = {
   maxUsageCount: Infinity,
   result: {
     data: {
-      distinctInstruments: ['ACQ_CAM', 'FLAMINGOS2', 'GHOST', 'GMOS_NORTH', 'GMOS_SOUTH', 'GSAOI', 'VISITOR'],
+      distinctInstruments: [
+        'ACQ_CAM',
+        'FLAMINGOS2',
+        'GHOST',
+        'GMOS_NORTH',
+        'GMOS_SOUTH',
+        'GSAOI',
+        'VISITOR',
+        'IGRINS2',
+      ],
     },
   },
 } satisfies MockedResponseOf<typeof GET_DISTINCT_INSTRUMENTS>;
