@@ -31,7 +31,7 @@
     "date-fns": "4.1.0",
     "graphql": "16.13.2",
     "graphql-ws": "6.0.8",
-    "jotai": "2.19.0",
+    "jotai": "2.19.1",
     "@gemini-hlsw/lucuma-common-ui": "workspace:*",
     "@gemini-hlsw/lucuma-core": "0.179.1",
     "@gemini-hlsw/lucuma-schemas": "0.177.1-20260408-ccccaa9b",
