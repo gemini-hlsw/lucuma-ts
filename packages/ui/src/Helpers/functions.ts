@@ -23,6 +23,7 @@ export function instrumentToOiwfs(instrument: Instrument | null | undefined): Gu
     case 'FLAMINGOS2':
       return 'FLAMINGOS2_OIWFS';
     case 'IGRINS2':
+    case 'GHOST':
       return 'PWFS2';
     default:
       return undefined;
