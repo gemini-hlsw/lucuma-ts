@@ -38,7 +38,7 @@
     "prisma": "7.7.0"
   },
   "devDependencies": {
-    "@eddeee888/gcg-typescript-resolver-files": "0.15.0",
+    "@eddeee888/gcg-typescript-resolver-files": "0.15.1",
     "@testcontainers/postgresql": "11.14.0",
     "@gemini-hlsw/lucuma-schemas": "0.177.1-20260418-212e941e"
   },
