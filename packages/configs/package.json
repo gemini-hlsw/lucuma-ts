@@ -34,7 +34,7 @@
     "graphql": "16.13.2",
     "graphql-scalars": "1.25.0",
     "graphql-yoga": "5.21.0",
-    "@gemini-hlsw/lucuma-core": "0.181.0",
+    "@gemini-hlsw/lucuma-core": "0.181.1",
     "prisma": "7.7.0"
   },
   "devDependencies": {
