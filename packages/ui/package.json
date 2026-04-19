@@ -33,7 +33,7 @@
     "graphql-ws": "6.0.8",
     "jotai": "2.19.1",
     "@gemini-hlsw/lucuma-common-ui": "workspace:*",
-    "@gemini-hlsw/lucuma-core": "0.181.0",
+    "@gemini-hlsw/lucuma-core": "0.181.1",
     "@gemini-hlsw/lucuma-schemas": "0.177.1-20260418-212e941e",
     "@gemini-hlsw/lucuma-ui-css": "0.176.0",
     "@gemini-hlsw/navigate-configs": "workspace:*",
