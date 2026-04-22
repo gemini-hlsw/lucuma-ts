@@ -1,10 +1,10 @@
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core';
-import { faCalendarDays, faMoonStars } from '@fortawesome/pro-regular-svg-icons';
+import { faCalendarDays, faMoonStars, faWrench } from '@fortawesome/pro-regular-svg-icons';
 
 /**
- * A single navigation item in the sidebar.
+ * A single sidebar menu item.
  */
-export interface SidebarNavItem {
+export interface SidebarMenuItem {
   /**
    * Human-readable label shown in the sidebar.
    */
@@ -24,36 +24,31 @@ export interface SidebarNavItem {
    * Whether the navigation item is disabled.
    */
   disabled?: boolean;
-
-  /**
-   * Optional badge content shown to the right of the label.
-   */
-  badge?: string;
 }
 
 /**
- * A section in the sidebar containing a header and multiple navigation items.
+ * A sidebar menu section.
  */
-export interface SidebarNavSection {
+export interface SidebarMenuSection {
   /**
    * Section label shown above the items.
    */
-  title: string;
+  label: string;
 
   /**
    * Items rendered under the section.
    */
-  items: SidebarNavItem[];
+  items: SidebarMenuItem[];
 }
 
 /**
- * Sidebar navigation configuration for the Resource UI.
+ * Sidebar menu configuration for the Resource UI.
  *
  * This is the single source of truth for sidebar structure.
  */
-export const SIDEBAR_NAV_SECTIONS: SidebarNavSection[] = [
+export const SIDEBAR_MENU_SECTIONS: SidebarMenuSection[] = [
   {
-    title: 'Overview',
+    label: 'Overview',
     items: [
       {
         label: 'Tonight',
@@ -64,21 +59,27 @@ export const SIDEBAR_NAV_SECTIONS: SidebarNavSection[] = [
     ],
   },
   {
-    title: 'Telescope',
+    label: 'Telescope',
     items: [
       {
         label: 'Schedule',
         to: '/telescope-schedule',
         icon: faCalendarDays,
       },
+      {
+        label: 'Test',
+        to: '/test',
+        icon: faWrench,
+        disabled: true,
+      },
     ],
   },
   {
-    title: 'Instruments',
+    label: 'Instruments',
     items: [],
   },
   {
-    title: 'Staff & Roles',
+    label: 'Staff & Roles',
     items: [],
   },
 ];

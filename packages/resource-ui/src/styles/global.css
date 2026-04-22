@@ -1,16 +1,17 @@
-@import url('./lucuma-ui.scss');
 @import 'tailwindcss';
-@import './theme.css';
 
-html,
-body,
-#root {
-  margin: 0;
-  min-height: 100%;
-}
+@theme {
+  /* GPP brand accent */
+  --color-gpp: hsl(120deg 73.4% 74.9% / 80%);
+  --color-gpp-dark: hsl(120deg 73.4% 69.9% / 80%);
+  --color-gpp-light: hsl(120deg 73.4% 79.9% / 80%);
 
-body {
-  min-height: 100vh;
-  background: var(--color-canvas);
-  color: var(--color-foreground);
+  /* Dark theme foundation */
+  --color-canvas: var(--color-neutral-950);
+  --color-surface: var(--color-neutral-900);
+  --color-surface-raised: var(--color-neutral-800);
+  --color-subtle: var(--color-neutral-700);
+  --color-foreground: var(--color-neutral-100);
+  --color-foreground-secondary: var(--color-neutral-400);
+  --color-foreground-muted: var(--color-neutral-500);
 }

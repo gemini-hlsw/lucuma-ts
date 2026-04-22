@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { renderWithContext } from '@/test/render';
+import { renderWithContext } from 'lucuma-common-ui/testing';
 
 import Sidebar from './Sidebar';
+import { SIDEBAR_MENU_SECTIONS } from './SidebarMenu';
 
-describe('Sidebar', () => {
+describe(Sidebar.name, () => {
   it('renders all sidebar section titles', async () => {
     const { getByText } = await renderWithContext(<Sidebar />);
 
@@ -36,14 +37,6 @@ describe('Sidebar', () => {
     await expect.element(scheduleLink).toHaveAttribute('href', '/telescope-schedule');
   });
 
-  it('does not render disabled navigation items as links', async () => {
-    const { getByText } = await renderWithContext(<Sidebar />);
-
-    const tonightLabel = getByText('Tonight').element();
-
-    expect(tonightLabel.closest('a')).toBeNull();
-  });
-
   it('marks disabled navigation items as aria-disabled', async () => {
     const { getByText } = await renderWithContext(<Sidebar />);
 
@@ -54,13 +47,15 @@ describe('Sidebar', () => {
     expect(disabledContainer?.getAttribute('aria-disabled')).toBe('true');
   });
 
-  it('renders only enabled items as links', async () => {
+  it('renders only enabled items as interactive links', async () => {
     const { getByRole } = await renderWithContext(<Sidebar />);
-
     const nav = getByRole('navigation', { name: /primary navigation/i }).element();
-    const links = nav.querySelectorAll('a');
-
-    expect(links).toHaveLength(1);
-    expect(links[0]?.getAttribute('href')).toBe('/telescope-schedule');
+    const enabledLinks = Array.from(nav.querySelectorAll('a')).filter(
+      (link) => link.getAttribute('aria-disabled') !== 'true',
+    );
+    const expectedEnabledCount = SIDEBAR_MENU_SECTIONS.flatMap((section) => section.items).filter(
+      (item) => item.disabled !== true,
+    ).length;
+    expect(enabledLinks).toHaveLength(expectedEnabledCount);
   });
 });

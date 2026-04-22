@@ -200,6 +200,9 @@ importers:
       '@fortawesome/react-fontawesome':
         specifier: 3.2.0
         version: 3.2.0(@fortawesome/fontawesome-svg-core@7.2.0)(react@19.2.4)
+      primereact:
+        specifier: 10.9.7
+        version: 10.9.7(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       react:
         specifier: 19.2.5
         version: 19.2.5

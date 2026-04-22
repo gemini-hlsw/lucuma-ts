@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
-import { SIDEBAR_NAV_SECTIONS } from './SidebarNavigation';
+import { SIDEBAR_MENU_SECTIONS } from './SidebarMenu';
 
-const items = SIDEBAR_NAV_SECTIONS.flatMap((section) => section.items);
+const items = SIDEBAR_MENU_SECTIONS.flatMap((section) => section.items);
 
-describe('SIDEBAR_NAV_SECTIONS', () => {
-  it('ensures every section title is unique', () => {
-    const titles = SIDEBAR_NAV_SECTIONS.map((section) => section.title);
+describe('SIDEBAR_MENU_SECTIONS', () => {
+  it('ensures every section label is unique', () => {
+    const labels = SIDEBAR_MENU_SECTIONS.map((section) => section.label);
 
-    expect(new Set(titles).size).toBe(titles.length);
+    expect(new Set(labels).size).toBe(labels.length);
   });
 
   it('ensures navigation item routes are unique across all sections', () => {
@@ -30,8 +30,8 @@ describe('SIDEBAR_NAV_SECTIONS', () => {
   });
 
   it('ensures section titles and labels are not empty', () => {
-    for (const section of SIDEBAR_NAV_SECTIONS) {
-      expect(section.title.trim()).not.toBe('');
+    for (const section of SIDEBAR_MENU_SECTIONS) {
+      expect(section.label.trim()).not.toBe('');
 
       for (const item of section.items) {
         expect(item.label.trim()).not.toBe('');

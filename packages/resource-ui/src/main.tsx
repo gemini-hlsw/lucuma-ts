@@ -1,4 +1,5 @@
 import './styles/global.css';
+import './styles/main.css';
 
 import { type ReactNode, StrictMode } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
