@@ -34,7 +34,7 @@ export function useGetGuideLoop() {
   });
 }
 
-const UPDATE_GUIDE_LOOP = graphql(`
+export const UPDATE_GUIDE_LOOP = graphql(`
   mutation updateGuideLoop(
     $pk: PosInt!
     $m2TipTiltEnable: Boolean

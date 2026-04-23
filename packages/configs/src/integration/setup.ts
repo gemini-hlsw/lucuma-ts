@@ -6,12 +6,13 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import type { StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import { PostgreSqlContainer } from '@testcontainers/postgresql';
 import type { ExecutionResult } from 'graphql';
+import type { YogaServerInstance } from 'graphql-yoga';
 
 import type { PrismaClient as Prisma } from '../prisma/db.ts';
 import { extendPrisma } from '../prisma/extend.ts';
 import { PrismaClient } from '../prisma/gen/client.ts';
 import { populateDb } from '../prisma/queries/main.ts';
-import { makeYogaServer } from '../server.ts';
+import { type GraphQLContext, makeYogaServer } from '../server.ts';
 
 interface ServerFixture {
   /**
@@ -26,6 +27,7 @@ interface ServerFixture {
     variables: TVariables;
   }) => Promise<ExecutionResult<TData>>;
   prisma: Prisma;
+  yoga: YogaServerInstance<GraphQLContext, object>;
 }
 
 /**
@@ -71,7 +73,8 @@ export function initializeServerFixture() {
       new PrismaClient({ adapter: new PrismaPg({ connectionString: container.getConnectionUri() }) }),
     );
 
-    const yoga = makeYogaServer({ prisma });
+    const yoga = makeYogaServer({ prisma, disposeOnProcessTerminate: false });
+    fixture.yoga = yoga;
 
     const executeGraphql: ServerFixture['executeGraphql'] = async <TData extends Record<string, unknown>>({
       query,
@@ -106,6 +109,7 @@ export function initializeServerFixture() {
   });
 
   afterEach(async () => {
+    await fixture.yoga.dispose();
     await fixture.prisma?.$disconnect();
   });
 
