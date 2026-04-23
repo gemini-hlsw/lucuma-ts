@@ -46,7 +46,6 @@ export default defineConfig({
       instances: [
         {
           browser: 'chromium',
-          headless: false,
           name: 'chromium',
           retry: process.env.CI ? 2 : 0,
           viewport: { width: 834, height: 1112 },
