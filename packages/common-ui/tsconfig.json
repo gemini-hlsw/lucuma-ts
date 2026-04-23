@@ -1,9 +1,10 @@
 {
-  "extends": ["@tsconfig/strictest/tsconfig.json", "@tsconfig/node24/tsconfig.json", "@tsconfig/node-ts/tsconfig.json"],
+  "extends": ["@tsconfig/strictest/tsconfig.json", "@tsconfig/vite-react/tsconfig.json"],
   "compilerOptions": {
     "rootDir": "src",
     "noEmit": true,
     "lib": ["ES2024", "DOM"],
+    "jsx": "react-jsx",
     "types": ["vite/client", "vitest/globals", "vitest", "@vitest/browser-playwright"],
     "resolveJsonModule": true,
     "forceConsistentCasingInFileNames": true,

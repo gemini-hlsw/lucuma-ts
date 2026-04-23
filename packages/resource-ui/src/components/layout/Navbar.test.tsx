@@ -1,6 +1,5 @@
-import { describe, expect, it } from 'vitest';
-
 import { renderWithContext } from '@gemini-hlsw/lucuma-common-ui/testing';
+import { describe, expect, it } from 'vitest';
 
 import Navbar from './Navbar';
 

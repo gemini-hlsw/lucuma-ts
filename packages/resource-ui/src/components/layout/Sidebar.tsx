@@ -72,7 +72,7 @@ export default function Sidebar(): JSX.Element {
           event.originalEvent.preventDefault();
 
           if (!item.disabled) {
-            navigate(item.to);
+            void navigate(item.to);
           }
         },
       };
@@ -88,10 +88,10 @@ export default function Sidebar(): JSX.Element {
             submenuHeader: {
               className: 'px-4 pb-2 pt-4 font-mono text-xs uppercase tracking-widest text-foreground-muted',
             },
-            content: ({ context }) => ({
+            content: (options) => ({
               className: getMenuContentClassName(
-                context?.item?.className === ACTIVE_CLASS_NAME,
-                context?.item?.disabled === true,
+                options?.context?.item?.className === ACTIVE_CLASS_NAME,
+                options?.context?.item?.disabled === true,
               ),
             }),
             action: {
