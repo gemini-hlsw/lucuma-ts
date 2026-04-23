@@ -2,7 +2,7 @@ import { useMutation } from '@apollo/client/react';
 
 import { graphql } from './gen';
 
-const LIGHTPATH_CONFIG_MUTATION = graphql(`
+export const LIGHTPATH_CONFIG_MUTATION = graphql(`
   mutation lightpathConfig($from: LightSource!, $to: LightSink!) {
     lightpathConfig(from: $from, to: $to) {
       result

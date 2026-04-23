@@ -10,12 +10,18 @@ export interface GraphQLContext extends YogaInitialContext {
 
 const schema = createSchema({ typeDefs, resolvers });
 
-export function makeYogaServer({ prisma }: { prisma: PrismaClient }) {
+export function makeYogaServer({
+  prisma,
+  disposeOnProcessTerminate,
+}: {
+  prisma: PrismaClient;
+  disposeOnProcessTerminate?: boolean;
+}) {
   return createYoga<GraphQLContext>({
     schema,
     graphqlEndpoint: '/*',
     context: { prisma },
     maskedErrors: false,
-    disposeOnProcessTerminate: true,
+    disposeOnProcessTerminate: disposeOnProcessTerminate ?? true,
   });
 }
