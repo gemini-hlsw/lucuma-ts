@@ -7,7 +7,7 @@ import { atomWithToggle } from './atomWithToggle';
 const themeBoolAtom = atomWithToggle(false);
 
 export const themeAtom = atom(
-  (get) => (get(themeBoolAtom) ? 'light' : 'dark') as ThemeType,
+  (get) => (get(themeBoolAtom) ? 'light' : 'dark'),
   (get, set, nextValue?: ThemeType) => {
     set(themeBoolAtom, nextValue ? nextValue === 'light' : !get(themeBoolAtom));
   },

@@ -1,4 +1,4 @@
-import type { GetGuideEnvironmentQuery, SourceProfile } from '@gql/odb/gen/graphql';
+import type { GetGuideEnvironmentQuery } from '@gql/odb/gen/graphql';
 
 import type { TargetInput } from '@/types';
 
@@ -9,7 +9,7 @@ export function extractGuideTargets(data: GetGuideEnvironmentQuery | undefined) 
     Record<'oiwfs' | 'pwfs1' | 'pwfs2', TargetInput[]>
   >(
     (acc, t, i) => {
-      const { name: band, value: magnitude } = extractMagnitude(t.sourceProfile as SourceProfile);
+      const { name: band, value: magnitude } = extractMagnitude(t.sourceProfile);
       const auxTarget: Omit<TargetInput, 'type'> = {
         id: `t-${i + 1}`,
         name: t.name,
