@@ -1,5 +1,6 @@
 import { signedArcSeconds } from '@gemini-hlsw/lucuma-core';
 import { formatDate } from 'date-fns';
+import { type ClassNameValue, twMerge } from 'tailwind-merge';
 
 export function isNotNullish<T>(val: T | undefined | null): val is T {
   return !isNullish(val);
@@ -84,4 +85,11 @@ export function groupBy<K extends PropertyKey, T>(arr: T[], criteria: (element: 
  */
 export function formatDateTime(date: Date | string, includeSeconds = true): string {
   return formatDate(new Date(date), includeSeconds ? 'yyyy-MM-dd HH:mm:ss' : 'yyyy-MM-dd HH:mm');
+}
+
+/**
+ * Merge Tailwind class names into a single string.
+ */
+export function cn(...classLists: ClassNameValue[]) {
+  return twMerge(classLists);
 }

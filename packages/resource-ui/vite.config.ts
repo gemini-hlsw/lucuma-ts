@@ -19,6 +19,9 @@ export default defineConfig({
       },
     },
   },
+  resolve: {
+    tsconfigPaths: true,
+  },
   plugins: [
     react(),
     babel({ presets: [reactCompilerPreset()], exclude: /[/\\](node_modules|common-ui)[/\\]/ }),
