@@ -125,7 +125,7 @@ jobs:
         if: ${{ startsWith(github.ref, 'refs/tags/v') }}
         run: |
           cd packages/configs
-          pnpm pkg set version="${VERSION:11}+$(date +'%Y%m%d').$(git rev-parse --short HEAD)"
+          npm pkg set version="${VERSION:11}+$(date +'%Y%m%d').$(git rev-parse --short HEAD)"
         env:
           VERSION: ${{ github.ref }}
 
