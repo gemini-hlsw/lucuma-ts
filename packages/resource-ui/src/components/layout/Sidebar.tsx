@@ -1,4 +1,5 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { cn } from '@gemini-hlsw/lucuma-common-ui';
 import { Menu } from 'primereact/menu';
 import type { MenuItem } from 'primereact/menuitem';
 import type { JSX } from 'react';
@@ -31,17 +32,17 @@ function isItemActive(pathname: string, to: string): boolean {
  * @returns Tailwind class string for the menu item content.
  */
 function getMenuContentClassName(isActive: boolean, isDisabled: boolean): string {
-  const baseClassName = 'border-l-2 px-4 py-2 text-sm';
+  const base = 'border-l-2 px-4 py-2 text-sm';
 
   if (isDisabled) {
-    return `${baseClassName} border-l-transparent text-foreground-muted`;
+    return cn(base, 'border-l-transparent text-foreground-muted');
   }
 
   if (isActive) {
-    return `${baseClassName} border-l-gpp bg-gpp/40 text-white`;
+    return cn(base, 'border-l-gpp bg-gpp/40 text-white');
   }
 
-  return `${baseClassName} border-l-transparent text-foreground-secondary hover:bg-surface-raised hover:text-foreground`;
+  return cn(base, 'border-l-transparent text-foreground-secondary hover:bg-surface-raised hover:text-foreground');
 }
 
 /**

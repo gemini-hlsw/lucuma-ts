@@ -4,7 +4,6 @@
     "rootDir": "src",
     "noEmit": true,
     "lib": ["ES2024", "DOM"],
-    "jsx": "react-jsx",
     "types": ["vite/client", "vitest/globals", "vitest", "@vitest/browser-playwright"],
     "resolveJsonModule": true,
     "forceConsistentCasingInFileNames": true,
