@@ -23,7 +23,7 @@
     "@apollo/client": "4.1.7",
     "@fortawesome/fontawesome-svg-core": "7.2.0",
     "@fortawesome/pro-regular-svg-icons": "7.2.0",
-    "@fortawesome/react-fontawesome": "3.3.0",
+    "@fortawesome/react-fontawesome": "3.3.1",
     "@gemini-hlsw/lucuma-common-ui": "workspace:*",
     "@gemini-hlsw/lucuma-core": "0.182.0",
     "@gemini-hlsw/lucuma-schemas": "0.177.1-20260422-334c87c5",
