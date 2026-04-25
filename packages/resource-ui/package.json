@@ -23,7 +23,7 @@
     "primereact": "10.9.7",
     "react": "19.2.5",
     "react-dom": "19.2.5",
-    "react-router": "7.13.1"
+    "react-router": "7.14.2"
   },
   "devDependencies": {
     "@gemini-hlsw/lucuma-common-ui": "workspace:*",
