@@ -36,7 +36,7 @@ export function createRotatorTrackingInput(rotator: Rotator): RotatorTrackingInp
 export function createInstrumentSpecificsInput(instrument: InstrumentConfig): InstrumentSpecificsInput {
   return {
     iaa: { degrees: instrument.iaa },
-    focusOffset: { micrometers: instrument.focusOffset },
+    focusOffset: { millimeters: instrument.focusOffset },
     agName: instrument.name,
     origin: { x: { arcseconds: instrument.originX }, y: { arcseconds: instrument.originY } },
   };

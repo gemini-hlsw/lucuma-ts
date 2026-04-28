@@ -58,7 +58,7 @@ describe(Slew.name, () => {
           "instParams": {
             "agName": "ACQ_CAM",
             "focusOffset": {
-              "micrometers": 0,
+              "millimeters": 0,
             },
             "iaa": {
               "degrees": 0,
