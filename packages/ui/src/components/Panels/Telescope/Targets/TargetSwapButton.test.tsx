@@ -57,7 +57,7 @@ describe(TargetSwapButton.name, () => {
         swapConfig: {
           acParams: {
             iaa: { degrees: 359.856 },
-            focusOffset: { micrometers: 0 },
+            focusOffset: { millimeters: 0 },
             agName: 'GMOS_NORTH',
             origin: { x: { arcseconds: 0 }, y: { arcseconds: 0 } },
           },
@@ -128,7 +128,7 @@ describe(TargetSwapButton.name, () => {
           instParams: {
             agName: 'GMOS_NORTH',
             focusOffset: {
-              micrometers: 0,
+              millimeters: 0,
             },
             iaa: {
               degrees: 359.856,
