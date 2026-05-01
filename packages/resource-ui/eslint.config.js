@@ -16,6 +16,15 @@ export default defineConfig(
   reactHooks.configs.flat['recommended-latest'],
   reactRefresh.configs.vite(),
   {
+    files: ['mock-server/**/*.ts', 'tasks/**/*.ts'],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+  },
+  {
     settings: {
       react: { version: 'detect' },
     },

@@ -60,6 +60,7 @@ const yoga = createYoga({
   graphqlEndpoint: GRAPHQL_ENDPOINT,
 });
 
+// eslint-disable-next-line @typescript-eslint/no-misused-promises
 const server = createServer(yoga);
 
 server.listen(PORT, () => {
