@@ -27,6 +27,11 @@ export default defineConfig({
     babel({ presets: [reactCompilerPreset()], exclude: /[/\\](node_modules|common-ui)[/\\]/ }),
     tailwindcss(),
   ],
+  server: {
+    proxy: {
+      '/graphql': 'http://localhost:4000',
+    },
+  },
   test: {
     clearMocks: true,
     globals: true,

@@ -2,6 +2,9 @@
   "extends": ["@tsconfig/strictest/tsconfig.json", "@tsconfig/vite-react/tsconfig.json"],
   "compilerOptions": {
     "rootDir": "./src",
+    "paths": {
+      "@/*": ["./src/*"]
+    },
     "lib": ["ES2024", "DOM"],
     "types": ["vite/client", "vitest/globals", "vitest", "@vitest/browser-playwright"],
     "resolveJsonModule": true,

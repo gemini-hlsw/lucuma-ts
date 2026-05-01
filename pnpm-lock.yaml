@@ -216,12 +216,33 @@ importers:
         specifier: 7.14.2
         version: 7.14.2(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
     devDependencies:
+      '@apollo/client':
+        specifier: 4.1.9
+        version: 4.1.9(graphql-ws@6.0.8(graphql@16.13.2)(ws@8.20.0))(graphql@16.13.2)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(rxjs@7.8.2)
       '@gemini-hlsw/lucuma-common-ui':
         specifier: workspace:*
         version: link:../common-ui
       '@gemini-hlsw/lucuma-ui-css':
         specifier: 0.176.0
         version: 0.176.0
+      '@graphql-codegen/client-preset':
+        specifier: 5.3.0
+        version: 5.3.0(graphql@16.13.2)
+      '@graphql-typed-document-node/core':
+        specifier: 3.2.0
+        version: 3.2.0(graphql@16.13.2)
+      graphql:
+        specifier: 16.13.2
+        version: 16.13.2
+      graphql-scalars:
+        specifier: 1.25.0
+        version: 1.25.0(graphql@16.13.2)
+      graphql-ws:
+        specifier: 6.0.8
+        version: 6.0.8(graphql@16.13.2)(ws@8.20.0)
+      graphql-yoga:
+        specifier: 5.21.0
+        version: 5.21.0(graphql@16.13.2)
 
   packages/ui:
     devDependencies:

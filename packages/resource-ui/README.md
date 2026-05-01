@@ -73,3 +73,65 @@ export default defineConfig([
   },
 ]);
 ```
+
+## Development Workflow
+
+This project uses a local mock GraphQL server and GraphQL code generation to power the UI.
+
+### 1. Start the mock GraphQL server
+
+```bash
+pnpm resource-ui dev:mock-server
+```
+
+This starts a local GraphQL API at:
+
+```
+http://localhost:4000/graphql
+```
+
+The UI proxies requests to this endpoint via Vite.
+
+---
+
+### 2. Generate GraphQL types
+
+```bash
+pnpm resource-ui codegen
+```
+
+This generates typed GraphQL operations into:
+
+```
+./src/gql/gen/
+```
+
+You must run this when:
+
+- The GraphQL schema changes (`./mock-server/schema.graphql`)
+- GraphQL queries change (`./src/gql/**/*.ts`)
+
+---
+
+### 3. Start the UI
+
+```bash
+pnpm resource-ui dev
+```
+
+This runs the Vite dev server at `http://localhost:5173`.
+
+---
+
+### Typical workflow
+
+In two terminals:
+
+```bash
+# Terminal 1
+pnpm resource-ui dev:mock-server
+
+# Terminal 2
+pnpm resource-ui codegen
+pnpm resource-ui dev
+```
