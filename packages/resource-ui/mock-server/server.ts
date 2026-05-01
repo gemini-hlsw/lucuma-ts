@@ -13,7 +13,7 @@ const PORT = 4000;
 const GRAPHQL_ENDPOINT = '/graphql';
 const SCHEMA_PATH = 'mock-server/schema.graphql';
 
-interface TelescopeNightTimelineProps {
+interface TelescopeNightTimelineArgs {
   site: string;
   observingDate: string;
 }
@@ -22,18 +22,18 @@ interface TelescopeNightTimelineProps {
  * Returns mock telescope night timeline data.
  *
  * @param _parent - Unused GraphQL parent resolver value.
- * @param props - Query properties from the GraphQL request.
+ * @param args - Query arguments from the GraphQL request.
  * @returns Matching mock telescope night timeline, or null if none exists.
  */
-function getMockTelescopeNightTimeline(_parent: unknown, props: TelescopeNightTimelineProps) {
-  console.info(`Looking up telescopeNightTimeline for site=${props.site}, observingDate=${props.observingDate}`);
+function getMockTelescopeNightTimeline(_parent: unknown, args: TelescopeNightTimelineArgs) {
+  console.info(`Looking up telescopeNightTimeline for site=${args.site}, observingDate=${args.observingDate}`);
 
   const timeline = mockTelescopeNightTimelines.find(
-    (entry) => entry.site === props.site && entry.observingDate === props.observingDate,
+    (entry) => entry.site === args.site && entry.observingDate === args.observingDate,
   );
 
   if (!timeline) {
-    console.warn(`No mock telescope night timeline found for site=${props.site}, observingDate=${props.observingDate}`);
+    console.warn(`No mock telescope night timeline found for site=${args.site}, observingDate=${args.observingDate}`);
 
     return null;
   }

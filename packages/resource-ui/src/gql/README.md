@@ -1,13 +1,29 @@
 # GraphQL (gql)
 
-This folder contains GraphQL queries and the generated types used by the Resource UI.
+This folder contains GraphQL queries and Apollo Client setup used by the Resource UI.
 
-- `gen/` — Auto-generated code (do not edit)
 - `ApolloConfigs.ts` — Apollo Client setup
+- `./gen/` — Generated GraphQL types and helpers
+
+## Generated Files
+
+The `./gen/` folder is not committed. It is created locally by GraphQL Codegen.
+
+Generate it with:
+
+```bash
+pnpm resource-ui codegen
+```
+
+Re-run codegen when:
+
+- The schema changes
+- Queries are added or modified
+- `./gen/` is missing
 
 ## Usage
 
-Define queries using the `graphql` helper:
+Define queries using the generated `graphql` helper:
 
 ```ts
 const QUERY = graphql(`
@@ -23,20 +39,7 @@ Use them with Apollo:
 useQuery(QUERY);
 ```
 
-## Codegen
-
-Generated files in `gen/` come from running:
-
-```bash
-pnpm resource-ui codegen
-```
-
-Re-run codegen when:
-
-- The schema changes
-- Queries are added or modified
-
 ## Notes
 
-- Do not edit anything in `gen/`
-- Enums are generated as string union types
+- Do not edit anything in `./gen/`
+- Generated files are recreated by codegen

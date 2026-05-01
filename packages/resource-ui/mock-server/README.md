@@ -23,7 +23,7 @@ pnpm resource-ui dev:mock-server
 Defined in:
 
 ```bash
-mock-server/schema.graphql
+./schema.graphql
 ```
 
 ## Data
@@ -31,7 +31,7 @@ mock-server/schema.graphql
 Mock data is stored in:
 
 ```bash
-mock-server/data/
+./data/
 ```
 
 This simulates backend responses.
