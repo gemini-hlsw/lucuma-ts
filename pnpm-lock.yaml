@@ -130,8 +130,8 @@ importers:
   packages/common-ui:
     dependencies:
       '@gemini-hlsw/lucuma-core':
-        specifier: 0.189.0
-        version: 0.189.0
+        specifier: 0.191.0
+        version: 0.191.0
       date-fns:
         specifier: 4.1.0
         version: 4.1.0
@@ -152,8 +152,8 @@ importers:
   packages/configs:
     dependencies:
       '@gemini-hlsw/lucuma-core':
-        specifier: 0.189.0
-        version: 0.189.0
+        specifier: 0.191.0
+        version: 0.191.0
       '@prisma/adapter-pg':
         specifier: 7.8.0
         version: 7.8.0
@@ -262,8 +262,8 @@ importers:
         specifier: workspace:*
         version: link:../common-ui
       '@gemini-hlsw/lucuma-core':
-        specifier: 0.189.0
-        version: 0.189.0
+        specifier: 0.191.0
+        version: 0.191.0
       '@gemini-hlsw/lucuma-schemas':
         specifier: 0.177.1-20260422-334c87c5
         version: 0.177.1-20260422-334c87c5
@@ -579,8 +579,8 @@ packages:
       '@fortawesome/fontawesome-svg-core': ~6 || ~7
       react: ^18.0.0 || ^19.0.0
 
-  '@gemini-hlsw/lucuma-core@0.189.0':
-    resolution: {integrity: sha512-WI4D6lrNt6FgMZyaxjAP71fV1vTgHUMIiDqLhiZra+dwUqb6HHkFkku/KTFxmazUvQJ5OG0FwsUl+TedwbOuog==}
+  '@gemini-hlsw/lucuma-core@0.191.0':
+    resolution: {integrity: sha512-sfBAwIszZSz6kG4btUPSbxC0wzDjl4Vgg/DqTPuZuxykH7PdZzxUhYSldPiGOwUUZp9bamrGKqBh6WqeR3VQZA==}
 
   '@gemini-hlsw/lucuma-schemas@0.177.1-20260422-334c87c5':
     resolution: {integrity: sha512-yyscsgNWNxZCV0Srnzo1PNZnATxxBuODTAlsSnb3wF4obNmjs0sx/pYeam4yMXX+3z4/bMWKB+vvlmDQ8DoX5A==}
@@ -5132,7 +5132,7 @@ snapshots:
       '@fortawesome/fontawesome-svg-core': 7.2.0
       react: 19.2.5
 
-  '@gemini-hlsw/lucuma-core@0.189.0': {}
+  '@gemini-hlsw/lucuma-core@0.191.0': {}
 
   '@gemini-hlsw/lucuma-schemas@0.177.1-20260422-334c87c5': {}
 
