@@ -1,8 +1,7 @@
 import './Navbar.css';
 
-import { when } from '@gemini-hlsw/lucuma-common-ui';
+import { cn, when } from '@gemini-hlsw/lucuma-common-ui';
 import { useConfiguration } from '@gql/configs/Configuration';
-import { clsx } from 'clsx';
 import { Button } from 'primereact/button';
 import type { MenuItem } from 'primereact/menuitem';
 import { SplitButton } from 'primereact/splitbutton';
@@ -71,7 +70,7 @@ export default function Navbar() {
   ];
 
   return (
-    <nav className={clsx('top-bar', alarm && 'animate-error-bg')}>
+    <nav className={cn('top-bar', alarm && 'animate-error-bg')}>
       <div className="left">
         <Link to="/">
           <Button
@@ -97,7 +96,7 @@ export default function Navbar() {
           label={user ? displayName(user) : 'Login'}
           icon={<User size="lg" />}
           className="p-button-text nav-btn"
-          buttonClassName={clsx(!user && 'menu-button-not-logged-in')}
+          buttonClassName={cn(!user && 'menu-button-not-logged-in')}
           model={items}
           onClick={() => when(!user, navigateToSignIn)}
           dropdownIcon={<ChevronDown size="lg" />}

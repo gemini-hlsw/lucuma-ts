@@ -1,5 +1,4 @@
-import { isNotNullish, round } from '@gemini-hlsw/lucuma-common-ui';
-import { clsx } from 'clsx';
+import { cn, isNotNullish, round } from '@gemini-hlsw/lucuma-common-ui';
 import { useRef } from 'react';
 
 import { useCanEdit } from '@/components/atoms/auth';
@@ -56,10 +55,7 @@ export function Target({
     }
   }
 
-  const classNames = clsx({
-    ['p-disabled']: disabled,
-    ['selected-target']: selectedTarget === target.pk,
-  });
+  const classNames = cn(disabled && 'p-disabled', selectedTarget === target.pk && 'selected-target');
 
   if (target.type === 'FIXED') {
     return (

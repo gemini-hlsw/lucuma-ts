@@ -1,4 +1,4 @@
-import { clsx } from 'clsx';
+import { cn } from '@gemini-hlsw/lucuma-common-ui';
 import { OverlayPanel } from 'primereact/overlaypanel';
 import type { MouseEventHandler } from 'react';
 import { useRef } from 'react';
@@ -36,7 +36,7 @@ export function Title({ title, prevPanel, nextPanel, children, rightSide, classN
     );
   }
   return (
-    <div className={clsx(className, 'title')}>
+    <div className={cn(className, 'title')}>
       {children}
       {prevPanelDisplay}
       <span className="title-title">{title}</span>

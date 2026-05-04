@@ -1,8 +1,7 @@
-import { isNotNullish, when } from '@gemini-hlsw/lucuma-common-ui';
+import { cn, isNotNullish, when } from '@gemini-hlsw/lucuma-common-ui';
 import { useCalParams, useCalParamsHistory, useCreateCalParams } from '@gql/configs/CalParams';
 import type { CalParamsCreateInput } from '@gql/configs/gen/graphql';
 import { CommentConfirmButton } from '@Shared/CommentConfirmButton';
-import { clsx } from 'clsx';
 import { Button } from 'primereact/button';
 import { InputNumber, type InputNumberProps } from 'primereact/inputnumber';
 import { Tooltip } from 'primereact/tooltip';
@@ -323,7 +322,7 @@ function CalParamInput({
       <label htmlFor={id}>{label}</label>
       <InputNumber
         {...props}
-        className={clsx('cal-param-input', { 'cal-param-input-filled': filled }, props.className)}
+        className={cn('cal-param-input', filled && 'cal-param-input-filled', props.className)}
         inputId={id}
         value={value ?? null}
         minFractionDigits={minFractionDigits}

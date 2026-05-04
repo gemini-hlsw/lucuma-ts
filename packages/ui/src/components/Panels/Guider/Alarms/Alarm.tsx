@@ -1,8 +1,7 @@
-import { isNotNullish, round } from '@gemini-hlsw/lucuma-common-ui';
+import { cn, isNotNullish, round } from '@gemini-hlsw/lucuma-common-ui';
 import type { GuideAlarm, UpdateGuideAlarmMutationVariables, WfsType } from '@gql/configs/gen/graphql';
 import type { GuideQuality } from '@gql/server/gen/graphql';
 import { Title } from '@Shared/Title/Title';
-import { clsx } from 'clsx';
 import type { InputNumberValueChangeEvent } from 'primereact/inputnumber';
 import { InputNumber } from 'primereact/inputnumber';
 import type { ToggleButtonChangeEvent } from 'primereact/togglebutton';
@@ -45,7 +44,7 @@ export function Alarm({
   return (
     <div
       data-testid={alarmState ? 'has-alarm' : 'no-alarm'}
-      className={clsx('alarm', alarmState && 'has-alarm animate-error-bg')}
+      className={cn('alarm', alarmState && 'has-alarm animate-error-bg')}
     >
       <div className="title-bar">
         <Title title={wfs} />

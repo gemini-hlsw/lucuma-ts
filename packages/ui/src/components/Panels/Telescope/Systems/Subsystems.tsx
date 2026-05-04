@@ -1,7 +1,7 @@
+import { cn } from '@gemini-hlsw/lucuma-common-ui';
 import type { UpdateMechanismMutationVariables } from '@gql/configs/gen/graphql';
 import { useMechanism, useUpdateMechanism } from '@gql/configs/Mechanism';
 import { CrcsPark, McsPark, OiwfsPark, Pwfs1Park, Pwfs2Park } from '@gql/server/Buttons';
-import { clsx } from 'clsx';
 import { Button } from 'primereact/button';
 import { Dropdown } from 'primereact/dropdown';
 import { InputNumber } from 'primereact/inputnumber';
@@ -78,27 +78,27 @@ export function BotSubsystems({ canEdit }: { canEdit: boolean }) {
         loading={loading}
         style={{ gridArea: 'g11' }}
         label="Park"
-        className={clsx(BTN_CLASSES[state.oiwfsPark], 'under-construction')}
+        className={cn(BTN_CLASSES[state.oiwfsPark], 'under-construction')}
       /> */}
       <Button
         disabled={!canEdit}
         loading={loading}
         style={{ gridArea: 'g21' }}
         label="Park"
-        className={clsx(BTN_CLASSES[state.odgwPark], 'under-construction')}
+        className={cn(BTN_CLASSES[state.odgwPark], 'under-construction')}
       />
       <Button
         disabled={!canEdit}
         style={{ gridArea: 'g31' }}
         label="Park"
-        className={clsx(BTN_CLASSES[state.aowfsPark], 'under-construction')}
+        className={cn(BTN_CLASSES[state.aowfsPark], 'under-construction')}
       />
       <Button
         disabled={!canEdit}
         loading={loading}
         style={{ gridArea: 'g41' }}
         label="Park"
-        className={clsx(BTN_CLASSES[state.domePark], 'under-construction')}
+        className={cn(BTN_CLASSES[state.domePark], 'under-construction')}
       />
       <label
         htmlFor="dome-mode"
@@ -131,7 +131,7 @@ export function BotSubsystems({ canEdit }: { canEdit: boolean }) {
         disabled={!canEdit}
         style={{ gridArea: 'g51' }}
         label="Park"
-        className={clsx(BTN_CLASSES[state.shuttersPark], 'under-construction')}
+        className={cn(BTN_CLASSES[state.shuttersPark], 'under-construction')}
       />
       <label
         htmlFor="shutter-mode"
@@ -188,7 +188,7 @@ export function BotSubsystems({ canEdit }: { canEdit: boolean }) {
         disabled={!canEdit}
         style={{ gridArea: 'g61' }}
         label="Close"
-        className={clsx(BTN_CLASSES[state.wVGateClose], 'under-construction')}
+        className={cn(BTN_CLASSES[state.wVGateClose], 'under-construction')}
       />
       <InputNumber
         disabled={!canEdit}
@@ -216,7 +216,7 @@ export function BotSubsystems({ canEdit }: { canEdit: boolean }) {
         disabled={!canEdit}
         style={{ gridArea: 'g71' }}
         label="Close"
-        className={clsx(BTN_CLASSES[state.eVGateClose], 'under-construction')}
+        className={cn(BTN_CLASSES[state.eVGateClose], 'under-construction')}
       />
       <InputNumber
         disabled={!canEdit}

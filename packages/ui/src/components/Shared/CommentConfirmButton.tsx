@@ -1,4 +1,4 @@
-import { clsx } from 'clsx';
+import { cn } from '@gemini-hlsw/lucuma-common-ui';
 import { Button, type ButtonProps } from 'primereact/button';
 import { ConfirmPopup, confirmPopup } from 'primereact/confirmpopup';
 import { InputTextarea } from 'primereact/inputtextarea';
@@ -114,7 +114,7 @@ function CommentConfirmPopup({
   const rows = Math.max((comment.match(/\n/g)?.length ?? 0) + 2, 6);
 
   return (
-    <div className={clsx(className, 'confirm-button-popup')}>
+    <div className={cn(className, 'confirm-button-popup')}>
       <Title title={message} />
       {commentLabel && (
         <label className="confirm-button-comment-label" htmlFor="comment-confirm-textarea">

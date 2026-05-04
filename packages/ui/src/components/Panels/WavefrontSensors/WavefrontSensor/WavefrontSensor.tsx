@@ -1,4 +1,5 @@
 import imgUrl from '@assets/underconstruction.png';
+import { cn } from '@gemini-hlsw/lucuma-common-ui';
 import { useConfiguration } from '@gql/configs/Configuration';
 import type { Instrument, WfsType } from '@gql/configs/gen/graphql';
 import type { GuideProbe } from '@gql/server/gen/graphql';
@@ -22,7 +23,6 @@ import {
   usePwfs2StopObserve,
   useTakeSky,
 } from '@gql/server/WavefrontSensors';
-import { clsx } from 'clsx';
 import { Button } from 'primereact/button';
 import { Checkbox } from 'primereact/checkbox';
 import { Dropdown } from 'primereact/dropdown';
@@ -122,7 +122,7 @@ export default function WavefrontSensor({
   }
 
   return (
-    <div className={clsx('wfs', className)} data-testid={`${wfs.toLowerCase()}-controls`}>
+    <div className={cn('wfs', className)} data-testid={`${wfs.toLowerCase()}-controls`}>
       <span className="wfs-name">{wfs}</span>
       <img src={imgUrl} alt="wfs" />
       <div className="controls">
