@@ -32,7 +32,7 @@
     "@apollo/client": "4.1.9",
     "@gemini-hlsw/lucuma-common-ui": "workspace:*",
     "@gemini-hlsw/lucuma-ui-css": "0.176.0",
-    "@graphql-codegen/client-preset": "5.3.0",
+    "@graphql-codegen/client-preset": "6.0.0",
     "@graphql-typed-document-node/core": "3.2.0",
     "graphql": "16.13.2",
     "graphql-scalars": "1.25.0",

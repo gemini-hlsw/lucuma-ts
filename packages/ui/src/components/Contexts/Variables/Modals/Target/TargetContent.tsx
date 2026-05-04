@@ -1,5 +1,9 @@
 import { deg2dms, deg2hms, dms2deg, hms2deg } from '@gemini-hlsw/lucuma-core';
-import type { EphemerisKeyType, NonsiderealTarget, SiderealTarget } from '@gql/configs/gen/graphql';
+import type {
+  EphemerisKeyType,
+  NonsiderealTargetItemFragment,
+  SiderealTargetItemFragment,
+} from '@gql/configs/gen/graphql';
 import { isBaseTarget } from '@gql/util';
 import { Dropdown } from 'primereact/dropdown';
 import { InputNumber } from 'primereact/inputnumber';
@@ -110,8 +114,8 @@ function SiderealInput({
   setc2String,
 }: {
   type: string;
-  auxTarget: SiderealTarget | null;
-  setAuxTarget: Dispatch<(prevState: SiderealTarget | null) => SiderealTarget | null>;
+  auxTarget: SiderealTargetItemFragment | null;
+  setAuxTarget: Dispatch<(prevState: SiderealTargetItemFragment | null) => SiderealTargetItemFragment | null>;
   disabled: boolean;
   loading: boolean;
   isTargetBase: boolean;
@@ -343,8 +347,8 @@ function NonsiderealInput({
   disabled,
   loading,
 }: {
-  auxTarget: NonsiderealTarget | null;
-  setAuxTarget: Dispatch<(prevState: NonsiderealTarget | null) => NonsiderealTarget | null>;
+  auxTarget: NonsiderealTargetItemFragment | null;
+  setAuxTarget: Dispatch<(prevState: NonsiderealTargetItemFragment | null) => NonsiderealTargetItemFragment | null>;
   disabled: boolean;
   loading: boolean;
 }) {

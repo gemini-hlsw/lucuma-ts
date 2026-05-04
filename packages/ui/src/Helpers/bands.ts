@@ -40,7 +40,7 @@ export function extractMagnitude(sourceProfile: OdbSourceProfileType | undefined
   return { name, value };
 }
 
-function getBandClosestTo(brightnesses: OdbBandBrightnessType[], wavelength = 600000) {
+function getBandClosestTo(brightnesses: readonly OdbBandBrightnessType[], wavelength = 600000) {
   BANDS.sort((a, b) => Math.abs(a.center - wavelength) - Math.abs(b.center - wavelength));
   for (const band of BANDS) {
     const brightness = brightnesses.find((b) => b.band === band.odbName);

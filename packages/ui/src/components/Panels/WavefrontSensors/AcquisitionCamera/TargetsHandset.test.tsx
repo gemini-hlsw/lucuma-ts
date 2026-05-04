@@ -1,13 +1,8 @@
 import type { MockLink } from '@apollo/client/testing';
 import { GET_CONFIGURATION } from '@gql/configs/Configuration';
-import type { InstrumentConfig } from '@gql/configs/gen/graphql';
+import type { InstrumentItemFragment } from '@gql/configs/gen/graphql';
 import { GET_INSTRUMENT, UPDATE_INSTRUMENT } from '@gql/configs/Instrument';
-import type {
-  AdjustTarget,
-  MutationAdjustOriginArgs,
-  MutationAdjustPointingArgs,
-  MutationAdjustTargetArgs,
-} from '@gql/server/gen/graphql';
+import type { AdjustTarget } from '@gql/server/gen/graphql';
 import { GET_INSTRUMENT_PORT } from '@gql/server/Instrument';
 import {
   ABSORB_TARGET_ADJUSTMENT_MUTATION,
@@ -17,8 +12,8 @@ import {
   TARGET_ADJUSTMENT_OFFSETS_SUBSCRIPTION,
 } from '@gql/server/TargetsHandset';
 import type { MockedResponseOf } from '@gql/util';
-import type { ResultOf } from '@graphql-typed-document-node/core';
-import type { Mock } from 'vitest';
+import type { ResultOf, VariablesOf } from '@graphql-typed-document-node/core';
+import type { DocumentNode } from 'graphql';
 import { userEvent } from 'vitest/browser';
 
 import { createConfiguration, createFocalPlaneOffset, createInstrumentConfig } from '@/test/create';
@@ -141,7 +136,7 @@ describe(TargetsHandset.name, () => {
     ],
   ])('inputs for Az/El %s matches %s', async (testId, label, expectedInput) => {
     await selectAlignment('Az/El');
-    await testDirectionButtonClick(testId, label, adjustTargetMutationMock.request.variables, {
+    await testDirectionButtonClick<typeof ADJUST_TARGET_MUTATION>(testId, label, adjustTargetMutationMock, {
       target: 'OIWFS',
       offset: { horizontalAdjustment: expectedInput },
       openLoops: true,
@@ -183,7 +178,7 @@ describe(TargetsHandset.name, () => {
     ],
   ])('inputs for AC %s matches %s', async (testId, label, expectedInput) => {
     await userEvent.click(sut.getByLabelText('Open loops'));
-    await testDirectionButtonClick(testId, label, adjustTargetMutationMock.request.variables, {
+    await testDirectionButtonClick<typeof ADJUST_TARGET_MUTATION>(testId, label, adjustTargetMutationMock, {
       target: 'OIWFS',
       openLoops: false,
       offset: { focalPlaneAdjustment: expectedInput },
@@ -225,7 +220,7 @@ describe(TargetsHandset.name, () => {
     ],
   ])('inputs for Instrument %s matches %s', async (testId, label, expectedInput) => {
     await selectAlignment('Instrument');
-    await testDirectionButtonClick(testId, label, adjustTargetMutationMock.request.variables, {
+    await testDirectionButtonClick<typeof ADJUST_TARGET_MUTATION>(testId, label, adjustTargetMutationMock, {
       target: 'OIWFS',
       offset: { instrumentAdjustment: expectedInput },
       openLoops: true,
@@ -267,7 +262,7 @@ describe(TargetsHandset.name, () => {
     ],
   ])('inputs for RA/Dec %s matches %s', async (testId, label, expectedInput) => {
     await selectAlignment('RA/Dec');
-    await testDirectionButtonClick(testId, label, adjustTargetMutationMock.request.variables, {
+    await testDirectionButtonClick<typeof ADJUST_TARGET_MUTATION>(testId, label, adjustTargetMutationMock, {
       target: 'OIWFS',
       offset: { equatorialAdjustment: expectedInput },
       openLoops: true,
@@ -313,7 +308,7 @@ describe(TargetsHandset.name, () => {
     });
     await sut.rerender(<TargetsHandset canEdit={true} />);
     await selectAlignment('PWFS2');
-    await testDirectionButtonClick(testId, undefined, adjustTargetMutationMock.request.variables, {
+    await testDirectionButtonClick<typeof ADJUST_TARGET_MUTATION>(testId, undefined, adjustTargetMutationMock, {
       target: 'OIWFS',
       openLoops: true,
       offset: { probeFrameAdjustment: { ...expectedInput, probeFrame: 'PWFS2' } },
@@ -328,17 +323,17 @@ describe(TargetsHandset.name, () => {
     await selectDropdownOption(sut, 'Select target', target);
   }
 
-  async function testDirectionButtonClick(
+  async function testDirectionButtonClick<T extends DocumentNode>(
     testId: string,
     label: string | undefined,
-    mock: Mock,
-    expectedInput: MutationAdjustOriginArgs | MutationAdjustPointingArgs | MutationAdjustTargetArgs,
+    mock: MockedResponseOf<T>,
+    expectedInput: VariablesOf<T>,
   ) {
     const button = sut.getByTestId(testId);
     if (label) await expect.element(button).toHaveAttribute('aria-label', label);
     await userEvent.click(button);
 
-    expect(mock).toHaveBeenCalledWith(expectedInput);
+    expect(mock.request.variables).toHaveBeenCalledWith(expectedInput);
   }
 });
 
@@ -408,7 +403,7 @@ const updateInstrumentMock = {
     data: {
       updateInstrument: createInstrumentConfig({
         wfs: 'OIWFS',
-        ...(arg as Partial<InstrumentConfig>),
+        ...(arg as Partial<InstrumentItemFragment>),
       }),
     },
   }),

@@ -3,8 +3,43 @@ import { isBaseTarget, isOiTarget, isP1Target, isP2Target } from '@gql/util';
 import { useMemo } from 'react';
 
 import { graphql } from './gen';
-import type { Target } from './gen/graphql';
+import type { ConfigsTargetItemFragment } from './gen/graphql';
 import { GET_INSTRUMENT } from './Instrument';
+
+export const RA_FRAGMENT = graphql(`
+  fragment RaItem on RA {
+    degrees
+    hms
+  }
+`);
+
+export const DEC_FRAGMENT = graphql(`
+  fragment DecItem on Dec {
+    degrees
+    dms
+  }
+`);
+
+export const PROPER_MOTION_FRAGMENT = graphql(`
+  fragment ProperMotionItem on ProperMotion {
+    ra
+    dec
+  }
+`);
+
+export const AZ_FRAGMENT = graphql(`
+  fragment AzItem on Az {
+    degrees
+    dms
+  }
+`);
+
+export const EL_FRAGMENT = graphql(`
+  fragment ElItem on El {
+    degrees
+    dms
+  }
+`);
 
 export const TARGET_FRAGMENT = graphql(`
   fragment ConfigsTargetItem on Target {
@@ -29,24 +64,20 @@ export const SIDEREAL_TARGET_FRAGMENT = graphql(`
   fragment SiderealTargetItem on SiderealTarget {
     pk
     ra {
-      degrees
-      hms
+      ...RaItem
     }
     dec {
       degrees
       dms
     }
     az {
-      degrees
-      dms
+      ...AzItem
     }
     el {
-      degrees
-      dms
+      ...ElItem
     }
     properMotion {
-      ra
-      dec
+      ...ProperMotionItem
     }
     radialVelocity
     parallax
@@ -76,7 +107,7 @@ export function useTargets() {
   });
 
   return useMemo(() => {
-    const targets: Target[] = result.data?.targets ?? [];
+    const targets: readonly ConfigsTargetItemFragment[] = result.data?.targets ?? [];
 
     const oiTargets = targets.filter(isOiTarget);
     const p1Targets = targets.filter(isP1Target);

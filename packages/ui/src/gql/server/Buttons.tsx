@@ -24,7 +24,11 @@ import {
   ROTATOR_FOLLOW_MUTATION,
   SCS_FOLLOW_MUTATION,
 } from './follow';
-import type { MechSystemState, RunSlewMutationVariables, TelescopeState } from './gen/graphql';
+import type {
+  MechSystemStateItemFragment as MechSystemState,
+  RunSlewMutationVariables,
+  TelescopeStateItemFragment as TelescopeState,
+} from './gen/graphql';
 import {
   MOUNT_PARK_MUTATION,
   OIWFS_PARK_MUTATION,

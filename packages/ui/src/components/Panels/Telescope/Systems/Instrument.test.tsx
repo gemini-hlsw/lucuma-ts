@@ -1,6 +1,6 @@
 import type { MockLink } from '@apollo/client/testing';
 import { GET_CONFIGURATION } from '@gql/configs/Configuration';
-import type { InstrumentConfig } from '@gql/configs/gen/graphql';
+import type { InstrumentItemFragment } from '@gql/configs/gen/graphql';
 import { GET_INSTRUMENT, SET_TEMPORARY_INSTRUMENT, UPDATE_INSTRUMENT } from '@gql/configs/Instrument';
 import { GET_INSTRUMENT_PORT } from '@gql/server/Instrument';
 import type { MockedResponseOf } from '@gql/util';
@@ -136,7 +136,7 @@ const updateInstrumentMock = {
     data: {
       updateInstrument: createInstrumentConfig({
         ...getInstrumentMock.result.data.instrument,
-        ...(arg as Partial<InstrumentConfig>),
+        ...(arg as Partial<InstrumentItemFragment>),
       }),
     },
   }),

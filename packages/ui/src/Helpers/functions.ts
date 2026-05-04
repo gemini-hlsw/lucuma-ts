@@ -1,8 +1,8 @@
 import { isNotNullish } from '@gemini-hlsw/lucuma-common-ui';
-import type { Configuration, WfsType } from '@gql/configs/gen/graphql';
+import type { ConfigurationItemFragment, WfsType } from '@gql/configs/gen/graphql';
 import type { GuideProbe, Instrument } from '@gql/server/gen/graphql';
 
-export function getConfigWfs(configuration: Configuration | undefined | null): WfsType {
+export function getConfigWfs(configuration: ConfigurationItemFragment | undefined | null): WfsType {
   const { selectedGuiderTarget, selectedOiTarget, selectedP1Target, selectedP2Target } = configuration ?? {};
 
   if (isNotNullish(selectedOiTarget) && selectedGuiderTarget === selectedOiTarget) return 'OIWFS';

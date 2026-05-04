@@ -1,5 +1,5 @@
 import type { MockLink } from '@apollo/client/testing';
-import type { GuideAlarm } from '@gql/configs/gen/graphql';
+import type { WfsItemFragment } from '@gql/configs/gen/graphql';
 import { GET_GUIDE_ALARMS, UPDATE_GUIDE_ALARM } from '@gql/configs/GuideAlarm';
 import { GUIDE_QUALITY_QUERY, GUIDE_QUALITY_SUBSCRIPTION } from '@gql/server/GuideQuality';
 import { GUIDE_STATE_QUERY, GUIDE_STATE_SUBSCRIPTION } from '@gql/server/GuideState';
@@ -121,7 +121,7 @@ const mocks: MockLink.MockedResponse[] = [
       data: {
         updateGuideAlarm: createGuideAlarm({
           wfs: 'PWFS1',
-          ...(arg as Partial<GuideAlarm>),
+          ...(arg as Partial<WfsItemFragment>),
         }),
       },
     }),

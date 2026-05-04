@@ -29,7 +29,7 @@
     "@gemini-hlsw/lucuma-schemas": "0.177.1-20260422-334c87c5",
     "@gemini-hlsw/lucuma-ui-css": "0.176.0",
     "@gemini-hlsw/navigate-configs": "workspace:*",
-    "@graphql-codegen/client-preset": "5.3.0",
+    "@graphql-codegen/client-preset": "6.0.0",
     "@graphql-typed-document-node/core": "3.2.0",
     "@xyflow/react": "12.10.2",
     "date-fns": "4.1.0",

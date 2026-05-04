@@ -1,5 +1,3 @@
-import { join } from 'node:path';
-
 import type { CodegenConfig } from '@graphql-codegen/cli';
 import type { ClientPresetConfig } from '@graphql-codegen/client-preset';
 
@@ -58,10 +56,7 @@ const scalars = {
 
 const sharedConfig = {
   scalars,
-  // Generate union types (`'foo' | 'bar'`) for enums instead of non-standard typescript enums
-  enumsAsTypes: true,
   useTypeImports: true,
-  defaultScalarType: 'unknown',
   avoidOptionals: {
     field: true,
     inputValue: false,
@@ -79,21 +74,21 @@ export default {
   ignoreNoDocuments: true,
   generates: {
     './src/gql/odb/gen/': {
-      schema: require.resolve('@gemini-hlsw/lucuma-schemas/odb'),
+      schema: import.meta.resolve('@gemini-hlsw/lucuma-schemas/odb'),
       documents: './src/gql/odb/*.{ts,tsx}',
       config: sharedConfig,
       preset: 'client',
       presetConfig,
     },
     './src/gql/server/gen/': {
-      schema: require.resolve('@gemini-hlsw/lucuma-schemas/navigate'),
+      schema: import.meta.resolve('@gemini-hlsw/lucuma-schemas/navigate'),
       documents: './src/gql/server/*.{ts,tsx}',
       config: sharedConfig,
       preset: 'client',
       presetConfig,
     },
     './src/gql/configs/gen/': {
-      schema: join('..', 'configs', 'src/**/*.graphql'),
+      schema: '../configs/src/**/*.graphql',
       documents: './src/gql/configs/*.{ts,tsx}',
       config: sharedConfig,
       preset: 'client',

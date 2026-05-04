@@ -1,4 +1,4 @@
-import type { OperationOutcome } from '@gql/server/gen/graphql';
+import type { GuideEnableMutation } from '@gql/server/gen/graphql';
 import { type LocatorSelectors, page, userEvent } from 'vitest/browser';
 
 /**
@@ -37,3 +37,5 @@ export const operationOutcome: OperationOutcome = {
   result: 'SUCCESS',
   msg: null,
 };
+
+export type OperationOutcome = GuideEnableMutation['guideEnable'];

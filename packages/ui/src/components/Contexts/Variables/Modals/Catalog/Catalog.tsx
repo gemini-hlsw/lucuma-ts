@@ -1,5 +1,5 @@
 import { useConfiguration, useUpdateConfiguration } from '@gql/configs/Configuration';
-import type { EngineeringTarget } from '@gql/configs/gen/graphql';
+import type { EngineeringTargetItemFragment } from '@gql/configs/gen/graphql';
 import { useRotator, useUpdateRotator } from '@gql/configs/Rotator';
 import { useRemoveAndCreateBaseTargets } from '@gql/configs/Target';
 import { Button } from 'primereact/button';
@@ -18,7 +18,7 @@ export function Catalog() {
   const [catalogVisible, setCatalogVisible] = useCatalogVisible();
   const canEdit = useCanEdit();
 
-  const [selectedTarget, setSelectedTarget] = useState<EngineeringTarget | null>(null);
+  const [selectedTarget, setSelectedTarget] = useState<EngineeringTargetItemFragment | null>(null);
 
   const [updateTarget, { loading }] = useUpdateTarget();
 
@@ -69,7 +69,7 @@ function useUpdateTarget() {
     rotatorLoading ||
     isPending;
 
-  function updateTarget(selectedTarget: EngineeringTarget) {
+  function updateTarget(selectedTarget: EngineeringTargetItemFragment) {
     if (!configuration) return Promise.resolve();
 
     return startTransition(async () => {
