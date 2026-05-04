@@ -1,9 +1,9 @@
 import './Home.css';
 
+import { cn } from '@gemini-hlsw/lucuma-common-ui';
 import { Guider } from '@Guider/Guider';
 import { Telescope } from '@Telescope/Telescope';
 import { WavefrontSensors } from '@WavefrontSensors/WavefrontSensors';
-import { clsx } from 'clsx';
 import { useState } from 'react';
 
 import type { PanelType } from '@/types';
@@ -59,7 +59,7 @@ export default function Home() {
   };
 
   return (
-    <div className={clsx('main-body', panelDisplay)} onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+    <div className={cn('main-body', panelDisplay)} onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
       <div className="panel telescope">
         <Telescope prevPanel={prevPanel} nextPanel={nextPanel} />
       </div>
