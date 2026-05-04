@@ -1,6 +1,6 @@
 import { isNotNullish } from '@gemini-hlsw/lucuma-common-ui';
 import { useConfiguration } from '@gql/configs/Configuration';
-import type { GuideLoop, UpdateGuideLoopMutationVariables } from '@gql/configs/gen/graphql';
+import type { GuideLoopItemFragment, UpdateGuideLoopMutationVariables } from '@gql/configs/gen/graphql';
 import { useGetGuideLoop, useUpdateGuideLoop } from '@gql/configs/GuideLoop';
 import type { Instrument, LightSink, LightSource } from '@gql/server/gen/graphql';
 import { useLightpathConfig } from '@gql/server/Lightpath';
@@ -45,7 +45,7 @@ export function LightPath() {
 
   const { data, loading: getLoading } = useGetGuideLoop();
   const [updateGuideLoop, { loading: updateLoading }] = useUpdateGuideLoop();
-  const state = data?.guideLoop ?? ({} as Partial<GuideLoop>);
+  const state = data?.guideLoop ?? ({} as Partial<GuideLoopItemFragment>);
   const lightPath = state.lightPath;
   const { data: configurationData, loading: instrumentLoading } = useConfiguration();
   const instrument = configurationData?.configuration?.obsInstrument;

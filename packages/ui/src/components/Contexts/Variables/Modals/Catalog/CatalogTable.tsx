@@ -1,5 +1,5 @@
 import { useEngineeringTargets } from '@gql/configs/EngineeringTarget';
-import type { EngineeringTarget } from '@gql/configs/gen/graphql';
+import type { EngineeringTargetItemFragment } from '@gql/configs/gen/graphql';
 import { FilterMatchMode } from 'primereact/api';
 import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
@@ -9,8 +9,8 @@ import { InputText } from 'primereact/inputtext';
 import { useState } from 'react';
 
 interface ParamsInterface {
-  selectedTarget: EngineeringTarget | null;
-  setSelectedTarget: (_: EngineeringTarget | null) => void;
+  selectedTarget: EngineeringTargetItemFragment | null;
+  setSelectedTarget: (_: EngineeringTargetItemFragment | null) => void;
   headerItems?: React.ReactNode;
 }
 
@@ -52,7 +52,7 @@ export function CatalogTable({ selectedTarget, setSelectedTarget, headerItems }:
         paginator
         selectionMode="single"
         selection={selectedTarget}
-        onSelectionChange={(e) => setSelectedTarget(e.value as EngineeringTarget)}
+        onSelectionChange={(e) => setSelectedTarget(e.value as EngineeringTargetItemFragment)}
         className="p-datatable-customers"
         rows={15}
         dataKey="id"

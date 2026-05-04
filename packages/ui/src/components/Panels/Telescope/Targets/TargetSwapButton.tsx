@@ -1,6 +1,6 @@
 import { groupBy, isNullish } from '@gemini-hlsw/lucuma-common-ui';
 import { useUpdateConfiguration } from '@gql/configs/Configuration';
-import type { Target } from '@gql/configs/gen/graphql';
+import type { ConfigsTargetItemFragment as Target } from '@gql/configs/gen/graphql';
 import { useNavigateState } from '@gql/server/NavigateState';
 import { useRestoreTarget, useSwapTarget } from '@gql/server/TargetSwap';
 import { Button } from 'primereact/button';

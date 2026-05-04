@@ -1,5 +1,5 @@
 import { GET_CONFIGURATION } from '@gql/configs/Configuration';
-import type { GuideLoop } from '@gql/configs/gen/graphql';
+import type { GuideLoopItemFragment } from '@gql/configs/gen/graphql';
 import { GET_GUIDE_LOOP, UPDATE_GUIDE_LOOP } from '@gql/configs/GuideLoop';
 import type { Instrument } from '@gql/server/gen/graphql';
 import { LIGHTPATH_CONFIG_MUTATION } from '@gql/server/Lightpath';
@@ -109,7 +109,7 @@ const updateGuideLoopMock = {
       updateGuideLoop: {
         ...createGuideLoop(),
         ...arg,
-      } as GuideLoop,
+      } as GuideLoopItemFragment,
     },
   }),
 } satisfies MockedResponseOf<typeof UPDATE_GUIDE_LOOP>;

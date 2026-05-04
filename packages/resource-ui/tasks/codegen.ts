@@ -14,6 +14,12 @@ const config: CodegenConfig = {
       config: {
         useTypeImports: true,
         enumsAsTypes: true,
+        skipTypeNameForRoot: true,
+        // Required for fragments to work in tests
+        nonOptionalTypename: true,
+      },
+      presetConfig: {
+        fragmentMasking: false,
       },
     },
   },

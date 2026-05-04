@@ -3,13 +3,19 @@ import type { OptionsOf } from '@gql/util';
 
 import { graphql } from './gen';
 
+export const SERVER_CONFIGURATION_FRAGMENT = graphql(`
+  fragment ServerConfigurationItem on ServerConfiguration {
+    version
+    site
+    odbUri
+    ssoUri
+  }
+`);
+
 const SERVER_CONFIGURATION = graphql(`
   query serverConfiguration {
     serverConfiguration {
-      version
-      site
-      odbUri
-      ssoUri
+      ...ServerConfigurationItem
     }
   }
 `);

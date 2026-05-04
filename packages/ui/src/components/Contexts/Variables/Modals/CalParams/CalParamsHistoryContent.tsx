@@ -1,6 +1,6 @@
 import { formatDateTime } from '@gemini-hlsw/lucuma-common-ui';
 import { useCalParamsHistory, useDeleteCalParams } from '@gql/configs/CalParams';
-import type { CalParamsHistory as CalParamsHistoryType } from '@gql/configs/gen/graphql';
+import type { CalParamsItemFragment as CalParamsHistoryType } from '@gql/configs/gen/graphql';
 import { Button } from 'primereact/button';
 import { Column } from 'primereact/column';
 import { ConfirmPopup, confirmPopup } from 'primereact/confirmpopup';

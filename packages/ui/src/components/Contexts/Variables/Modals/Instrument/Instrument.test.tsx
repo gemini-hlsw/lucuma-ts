@@ -1,5 +1,5 @@
 import { GET_CONFIGURATION, UPDATE_CONFIGURATION } from '@gql/configs/Configuration';
-import type { Configuration, InstrumentConfig } from '@gql/configs/gen/graphql';
+import type { ConfigurationItemFragment, InstrumentItemFragment } from '@gql/configs/gen/graphql';
 import {
   GET_DISTINCT_INSTRUMENTS,
   GET_DISTINCT_PORTS,
@@ -179,7 +179,7 @@ const setTemporaryInstrumentMock = {
     data: {
       setTemporaryInstrument: {
         ...getInstrumentMock.result.data.instrument,
-        ...(arg as InstrumentConfig),
+        ...(arg as InstrumentItemFragment),
         pk: 1,
         isTemporary: true,
         comment: null,
@@ -198,7 +198,7 @@ const updateConfigurationMock = {
     data: {
       updateConfiguration: {
         ...getConfigurationMock.result.data.configuration,
-        ...(arg as Configuration),
+        ...(arg as ConfigurationItemFragment),
       },
     },
   }),

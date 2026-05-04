@@ -25,7 +25,13 @@
     },
     {
       "groupName": "GraphQL packages",
-      "matchPackageNames": ["@graphql-codegen/**", "@graphql-typed-document-node/**", "/graphql/", "@apollo/**"]
+      "matchPackageNames": [
+        "@graphql-codegen/**",
+        "@graphql-typed-document-node/**",
+        "/graphql/",
+        "@apollo/**",
+        "@eddeee888/**"
+      ]
     },
     {
       "groupName": "Types",

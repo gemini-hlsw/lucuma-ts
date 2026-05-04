@@ -1,6 +1,6 @@
 import { isNotNullish, when } from '@gemini-hlsw/lucuma-common-ui';
 import { useConfiguration } from '@gql/configs/Configuration';
-import type { Configuration } from '@gql/configs/gen/graphql';
+import type { ConfigurationItemFragment } from '@gql/configs/gen/graphql';
 import { useConfiguredInstrument, useUpdateInstrument } from '@gql/configs/Instrument';
 import type { AdjustTarget, GetTargetAdjustmentOffsetsQuery } from '@gql/server/gen/graphql';
 import {
@@ -160,7 +160,7 @@ export default function TargetsHandset({ canEdit }: { canEdit: boolean }) {
 const targetOptionsBase: {
   label: string;
   value: AdjustTarget;
-  show: (c: Configuration | undefined | null) => boolean;
+  show: (c: ConfigurationItemFragment | undefined | null) => boolean;
 }[] = [
   { value: 'OIWFS', label: 'OIWFS', show: (c) => isNotNullish(c?.selectedOiTarget) },
   { value: 'PWFS1', label: 'PWFS1', show: (c) => isNotNullish(c?.selectedP1Target) },

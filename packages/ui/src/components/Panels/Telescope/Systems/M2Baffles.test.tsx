@@ -1,5 +1,5 @@
 import { GET_CONFIGURATION, UPDATE_CONFIGURATION } from '@gql/configs/Configuration';
-import type { Configuration } from '@gql/configs/gen/graphql';
+import type { ConfigurationItemFragment as Configuration } from '@gql/configs/gen/graphql';
 import type { MockedResponseOf } from '@gql/util';
 
 import { createConfiguration } from '@/test/create';

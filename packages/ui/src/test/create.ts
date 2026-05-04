@@ -1,35 +1,34 @@
 import type {
-  CalParams,
-  Configuration,
-  Dec,
-  GuideAlarm,
-  GuideLoop,
-  InstrumentConfig,
-  NonsiderealTarget,
-  ProperMotion,
-  Ra,
-  Rotator,
-  SiderealTarget,
+  CalParamsItemFragment,
+  ConfigurationItemFragment,
+  DecItemFragment,
+  GuideLoopItemFragment,
+  InstrumentItemFragment,
+  NonsiderealTargetItemFragment,
+  ProperMotionItemFragment,
+  RaItemFragment,
+  RotatorItemFragment,
+  SiderealTargetItemFragment,
+  WfsItemFragment,
 } from '@gql/configs/gen/graphql';
-import type { Angle as OdbAngle } from '@gql/odb/gen/graphql';
+import type {} from '@gql/odb/gen/graphql';
 
 import type {
-  AcMechs,
+  AcMechsItemFragment,
   FocalPlaneOffsetItemFragment,
-  GuideConfigurationState,
-  GuideQuality,
-  PwfsMechsState,
+  GuideQualityItemFragment,
+  GuideStateItemFragment,
+  PwfsMechsItemFragment,
   WfsConfigStateItemFragment,
 } from '@/gql/server/gen/graphql';
 import type { TargetType } from '@/types';
 
 // Create helpers for GraphQL types
-
-type Angle = Pick<OdbAngle, '__typename' | 'arcseconds'>;
+type Angle = FocalPlaneOffsetItemFragment['deltaX'];
 
 type OverridePartial<T extends { __typename: string }> = Omit<Partial<T>, '__typename'>;
 
-export function createPwfsMechState(overrides?: OverridePartial<PwfsMechsState>): PwfsMechsState {
+export function createPwfsMechState(overrides?: OverridePartial<PwfsMechsItemFragment>): PwfsMechsItemFragment {
   return {
     filter: 'NEUTRAL',
     fieldStop: 'PRISM',
@@ -38,7 +37,7 @@ export function createPwfsMechState(overrides?: OverridePartial<PwfsMechsState>)
   };
 }
 
-export function createInstrumentConfig(overrides?: OverridePartial<InstrumentConfig>): InstrumentConfig {
+export function createInstrumentConfig(overrides?: OverridePartial<InstrumentItemFragment>): InstrumentItemFragment {
   return {
     __typename: 'InstrumentConfig',
     pk: 1,
@@ -59,7 +58,7 @@ export function createInstrumentConfig(overrides?: OverridePartial<InstrumentCon
   };
 }
 
-export function createConfiguration(overrides?: OverridePartial<Configuration>): Configuration {
+export function createConfiguration(overrides?: OverridePartial<ConfigurationItemFragment>): ConfigurationItemFragment {
   return {
     pk: 1,
     selectedTarget: 1,
@@ -83,7 +82,7 @@ export function createConfiguration(overrides?: OverridePartial<Configuration>):
   };
 }
 
-export function createGuideAlarm(overrides?: OverridePartial<GuideAlarm>): GuideAlarm {
+export function createGuideAlarm(overrides?: OverridePartial<WfsItemFragment>): WfsItemFragment {
   return {
     wfs: 'OIWFS',
     limit: 1000,
@@ -93,7 +92,7 @@ export function createGuideAlarm(overrides?: OverridePartial<GuideAlarm>): Guide
   };
 }
 
-export function createGuideState(overrides: OverridePartial<GuideConfigurationState> = {}): GuideConfigurationState {
+export function createGuideState(overrides: OverridePartial<GuideStateItemFragment> = {}): GuideStateItemFragment {
   return {
     __typename: 'GuideConfigurationState',
     m1Input: 'OIWFS',
@@ -114,7 +113,7 @@ export function createGuideState(overrides: OverridePartial<GuideConfigurationSt
   };
 }
 
-export function createGuideQuality(overrides?: OverridePartial<GuideQuality>): GuideQuality {
+export function createGuideQuality(overrides?: OverridePartial<GuideQualityItemFragment>): GuideQualityItemFragment {
   return {
     centroidDetected: false,
     flux: 999,
@@ -123,11 +122,11 @@ export function createGuideQuality(overrides?: OverridePartial<GuideQuality>): G
   };
 }
 
-export function createRotator(overrides?: OverridePartial<Rotator>): Rotator {
+export function createRotator(overrides?: OverridePartial<RotatorItemFragment>): RotatorItemFragment {
   return { pk: 1, angle: 0, tracking: 'TRACKING', __typename: 'Rotator', ...overrides };
 }
 
-export function createGuideLoop(overrides?: OverridePartial<GuideLoop>): GuideLoop {
+export function createGuideLoop(overrides?: OverridePartial<GuideLoopItemFragment>): GuideLoopItemFragment {
   return {
     pk: 1,
     m2TipTiltEnable: true,
@@ -147,7 +146,7 @@ export function createGuideLoop(overrides?: OverridePartial<GuideLoop>): GuideLo
   };
 }
 
-export function createAcMechs(overrides?: OverridePartial<AcMechs>): AcMechs {
+export function createAcMechs(overrides?: OverridePartial<AcMechsItemFragment>): AcMechsItemFragment {
   return {
     lens: 'AC',
     filter: 'B_BLUE',
@@ -174,11 +173,11 @@ export function createFocalPlaneOffset(
     __typename: 'FocalPlaneOffset',
   };
 }
-export function createRA(overrides?: OverridePartial<Ra>): Ra {
+export function createRA(overrides?: OverridePartial<RaItemFragment>): RaItemFragment {
   return { degrees: 12.497148925, hms: '00:49:59.315741', __typename: 'RA', ...overrides };
 }
 
-export function createDec(overrides?: OverridePartial<Dec>): Dec {
+export function createDec(overrides?: OverridePartial<DecItemFragment>): DecItemFragment {
   return {
     degrees: 310.1999390236111,
     dms: '-49:48:00.219525',
@@ -187,7 +186,7 @@ export function createDec(overrides?: OverridePartial<Dec>): Dec {
   };
 }
 
-export function createProperMotion(overrides?: OverridePartial<ProperMotion>): ProperMotion {
+export function createProperMotion(overrides?: OverridePartial<ProperMotionItemFragment>): ProperMotionItemFragment {
   return {
     ra: 0,
     dec: 0,
@@ -196,7 +195,7 @@ export function createProperMotion(overrides?: OverridePartial<ProperMotion>): P
   };
 }
 
-export function createCalParams(overrides?: OverridePartial<CalParams>): CalParams {
+export function createCalParams(overrides?: OverridePartial<CalParamsItemFragment>): CalParamsItemFragment {
   return {
     __typename: 'CalParams',
     pk: 1,
@@ -242,7 +241,7 @@ export function createTarget(overrides?: OverridePartial<TargetType>): TargetTyp
   };
 }
 
-export function createSidereal(overrides?: OverridePartial<SiderealTarget>): SiderealTarget {
+export function createSidereal(overrides?: OverridePartial<SiderealTargetItemFragment>): SiderealTargetItemFragment {
   return {
     pk: 1,
     ra: createRA(),
@@ -258,7 +257,9 @@ export function createSidereal(overrides?: OverridePartial<SiderealTarget>): Sid
   };
 }
 
-export function createNonsidereal(overrides?: OverridePartial<NonsiderealTarget>): NonsiderealTarget {
+export function createNonsidereal(
+  overrides?: OverridePartial<NonsiderealTargetItemFragment>,
+): NonsiderealTargetItemFragment {
   return {
     pk: 1,
     keyType: 'MAJOR_BODY',

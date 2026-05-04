@@ -1,26 +1,24 @@
 import type {
-  AltairGuideLoop as AltairGuideLoopType,
-  AltairInstrument as AltairInstrumentType,
-  Configuration as ConfigurationType,
-  GemsGuideLoop as GemsGuideLoopType,
-  GemsInstrument as GemsInstrumentType,
-  GuideLoop as GuideLoopType,
+  AltairGuideLoopItemFragment as AltairGuideLoopType,
+  AltairInstrumentItemFragment as AltairInstrumentType,
+  ConfigsTargetItemFragment as TargetType,
+  ConfigurationItemFragment as ConfigurationType,
+  GemsGuideLoopItemFragment as GemsGuideLoopType,
+  GemsInstrumentItemFragment as GemsInstrumentType,
+  GuideLoopItemFragment as GuideLoopType,
   GuidingType,
-  InstrumentConfig as InstrumentType,
-  Mechanism as MechanismType,
-  Rotator as RotatorType,
+  InstrumentItemFragment as InstrumentType,
+  MechanismItemFragment as MechanismType,
+  RotatorItemFragment as RotatorType,
   Site as SiteType,
-  SlewFlags as SlewFlagsType,
+  SlewFlagsItemFragment as SlewFlagsType,
   StatusType,
-  Target as TargetType,
   TargetInput,
   TargetType as TypeOfTarget,
-  User as UserType,
 } from '@gql/configs/gen/graphql';
 import type {
   BrightnessItemFragment,
   ObservationItemFragment,
-  Scalars as OdbScalars,
   SourceProfileItemFragment,
   TargetItemFragment,
 } from '@gql/odb/gen/graphql';
@@ -64,5 +62,3 @@ export interface TargetEditType {
   isVisible: boolean;
   target: TargetType | null;
 }
-
-export type Semester = OdbScalars['Semester']['input'];
