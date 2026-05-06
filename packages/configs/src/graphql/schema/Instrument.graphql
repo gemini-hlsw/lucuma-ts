@@ -1,5 +1,5 @@
 #import DateTime, Void, JSON from "./Scalars.graphql"
-#import Instrument, PosInt from "@gemini-hlsw/lucuma-schemas/odb"
+#import Instrument, PosInt, Site from "@gemini-hlsw/lucuma-schemas/odb"
 
 enum WfsType {
   NONE
@@ -43,7 +43,7 @@ type Query {
 
   instruments(name: Instrument, issPort: Int, wfs: WfsType, extraParams: JSON): [InstrumentConfig!]!
 
-  distinctInstruments: [Instrument!]!
+  distinctInstruments(site: Site!): [Instrument!]!
 
   distinctPorts(name: Instrument): [Int!]!
 }

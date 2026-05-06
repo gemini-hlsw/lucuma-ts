@@ -27,7 +27,8 @@ describe(LightPath.name, () => {
     ['GMOS_SOUTH', 'GMOS'],
     ['GHOST', 'GHOST'],
     ['IGRINS2', 'IGRINS2'],
-    ['VISITOR', 'VISITOR'],
+    ['VISITOR_NORTH', 'VISITOR'],
+    ['VISITOR_SOUTH', 'VISITOR'],
   ] satisfies [Instrument, string][])(
     'sends correct light sink for instrument %s',
     async (instrument, expectedSink) => {

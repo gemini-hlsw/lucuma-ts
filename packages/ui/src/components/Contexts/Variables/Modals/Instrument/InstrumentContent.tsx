@@ -18,6 +18,7 @@ import { useMountEffect } from 'primereact/hooks';
 import { MultiSelect } from 'primereact/multiselect';
 import { useRef, useState } from 'react';
 
+import { useServerConfigValue } from '@/components/atoms/config';
 import { CircleCheck, CircleXMark, Trash } from '@/components/Icons';
 import type { InstrumentType } from '@/types';
 
@@ -28,6 +29,7 @@ export function InstrumentContent({
   instrument: InstrumentType | null;
   setInstrument: (_: InstrumentType | null) => void;
 }) {
+  const { site } = useServerConfigValue();
   const { data: configuredInstrument, loading: configuredInstrumentLoading } = useConfiguredInstrument();
 
   const [name, setName] = useState<InstrumentName | null>(configuredInstrument?.name ?? null);
@@ -35,7 +37,9 @@ export function InstrumentContent({
 
   const [deleteInstrument, { loading: deleteInstrumentLoading }] = useDeleteInstrument();
 
-  const { data: distinctInstrumentsData, loading: distinctInstrumentsLoading } = useDistinctInstruments({});
+  const { data: distinctInstrumentsData, loading: distinctInstrumentsLoading } = useDistinctInstruments({
+    variables: { site },
+  });
   const { data: distinctPortsData, loading: distinctPortsLoading } = useDistinctPorts(
     !name ? skipToken : { variables: { name } },
   );

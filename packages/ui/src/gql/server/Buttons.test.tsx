@@ -56,7 +56,7 @@ describe(Slew.name, () => {
             },
           },
           "instParams": {
-            "agName": "ACQ_CAM",
+            "agName": "ACQ_CAM_NORTH",
             "focusOffset": {
               "millimeters": 0,
             },
@@ -72,7 +72,7 @@ describe(Slew.name, () => {
               },
             },
           },
-          "instrument": "ACQ_CAM",
+          "instrument": "ACQ_CAM_NORTH",
           "oiwfs": undefined,
           "pwfs1": undefined,
           "pwfs2": undefined,
@@ -231,7 +231,7 @@ const instrumentMock = {
   result: {
     data: {
       instrument: createInstrumentConfig({
-        name: 'ACQ_CAM',
+        name: 'ACQ_CAM_NORTH',
         iaa: 0,
         issPort: 1,
       }),
