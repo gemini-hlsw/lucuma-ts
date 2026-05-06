@@ -16,8 +16,6 @@ type Models = TypeMap['model'];
 type FindInput<T extends keyof Models> = Models[T]['operations']['findFirst']['args'];
 type CreateManyInput<T extends keyof Models> = Models[T]['operations']['createMany']['args']['data'];
 
-const site: Site = process.env.SITE?.toLowerCase().endsWith('gs') ? 'GS' : 'GN';
-
 async function createRecord<TModel extends keyof Models>(
   prisma: PrismaClient,
   subject: TModel,
@@ -98,7 +96,7 @@ async function createCalParams(prisma: PrismaClient, log: (msg: string) => void)
 }
 
 async function updateInstrumentSite(prisma: PrismaClient, log: (msg: string) => void) {
-  log('Updating instrument site');
+  const site: Site = process.env.SITE?.toLowerCase().endsWith('gs') ? 'GS' : 'GN';
 
   async function updateSite(from: string, toNorth: Instrument, toSouth: Instrument) {
     const to = site === 'GS' ? toSouth : toNorth;
@@ -137,6 +135,4 @@ export async function write(client: PrismaClient, log: (msg: string) => void) {
   await createGuideAlarms(client, log);
   await createEngineeringTargets(client, log);
   await createCalParams(client, log);
-
-  await updateInstrumentSite(client, log);
 }
