@@ -116,7 +116,7 @@ const getInstrumentMock = {
 const distinctInstrumentsMock = {
   request: {
     query: GET_DISTINCT_INSTRUMENTS,
-    variables: {},
+    variables: () => true,
   },
   maxUsageCount: Infinity,
   result: {

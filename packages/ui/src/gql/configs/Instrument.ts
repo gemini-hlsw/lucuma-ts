@@ -9,12 +9,12 @@ import { useConfiguration } from './Configuration';
 import { graphql } from './gen';
 
 export const GET_DISTINCT_INSTRUMENTS = graphql(`
-  query getDistinctInstruments {
-    distinctInstruments
+  query getDistinctInstruments($site: Site!) {
+    distinctInstruments(site: $site)
   }
 `);
 
-export function useDistinctInstruments(options: OptionsOf<typeof GET_DISTINCT_INSTRUMENTS> = {}) {
+export function useDistinctInstruments(options: OptionsOf<typeof GET_DISTINCT_INSTRUMENTS>) {
   return useQuery(
     GET_DISTINCT_INSTRUMENTS,
     options === skipToken

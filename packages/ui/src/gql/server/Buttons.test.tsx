@@ -56,7 +56,7 @@ describe(Slew.name, () => {
             },
           },
           "instParams": {
-            "agName": "ACQ_CAM",
+            "agName": "ACQ_CAM_NORTH",
             "focusOffset": {
               "millimeters": 0,
             },
@@ -72,7 +72,7 @@ describe(Slew.name, () => {
               },
             },
           },
-          "instrument": "ACQ_CAM",
+          "instrument": "ACQ_CAM_NORTH",
           "oiwfs": undefined,
           "pwfs1": undefined,
           "pwfs2": undefined,
