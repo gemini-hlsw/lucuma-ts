@@ -231,7 +231,7 @@ const instrumentMock = {
   result: {
     data: {
       instrument: createInstrumentConfig({
-        name: 'ACQ_CAM',
+        name: 'ACQ_CAM_NORTH',
         iaa: 0,
         issPort: 1,
       }),

@@ -122,13 +122,15 @@ const distinctInstrumentsMock = {
   result: {
     data: {
       distinctInstruments: [
-        'ACQ_CAM',
+        'ACQ_CAM_NORTH',
+        'ACQ_CAM_SOUTH',
         'FLAMINGOS2',
         'GHOST',
         'GMOS_NORTH',
         'GMOS_SOUTH',
         'GSAOI',
-        'VISITOR',
+        'VISITOR_NORTH',
+        'VISITOR_SOUTH',
         'IGRINS2',
       ],
     },

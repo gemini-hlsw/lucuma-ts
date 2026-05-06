@@ -117,9 +117,11 @@ export function LightPath() {
   );
 }
 
-function lightSinkForInstrument(instrument: Instrument): LightSink {
+function lightSinkForInstrument(instrument: Instrument | 'ACQ_CAM' | 'VISITOR'): LightSink {
   switch (instrument) {
     case 'ACQ_CAM':
+    case 'ACQ_CAM_NORTH':
+    case 'ACQ_CAM_SOUTH':
       return 'AC';
     case 'FLAMINGOS2':
       return 'F2';
@@ -140,6 +142,8 @@ function lightSinkForInstrument(instrument: Instrument): LightSink {
       // TODO: which NIRI?
       return 'NIRI_F6';
     case 'VISITOR':
+    case 'VISITOR_NORTH':
+    case 'VISITOR_SOUTH':
       return 'VISITOR';
 
     case 'ALOPEKE':
