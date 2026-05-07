@@ -7,6 +7,7 @@ import type { StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import { PostgreSqlContainer } from '@testcontainers/postgresql';
 import type { ExecutionResult } from 'graphql';
 import type { YogaServerInstance } from 'graphql-yoga';
+import { createLogger } from 'graphql-yoga';
 
 import type { PrismaClient as Prisma } from '../prisma/db.ts';
 import { extendPrisma } from '../prisma/extend.ts';
@@ -130,7 +131,5 @@ async function migrateAndPopulateDb(client: Prisma) {
     const migrationSqlContent = await fs.readFile(`./prisma/migrations/${dir}/migration.sql`, 'utf-8');
     await client.$executeRawUnsafe(migrationSqlContent);
   }
-  await populateDb(client, () => {
-    /* don't log db initialization */
-  });
+  await populateDb(client, createLogger('silent'));
 }

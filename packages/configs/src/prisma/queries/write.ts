@@ -1,3 +1,5 @@
+import type { YogaLogger } from 'graphql-yoga';
+
 import type { Instrument } from '../../graphql/gen/types.generated.ts';
 import type { PrismaClient } from '../db.ts';
 import type { Site } from '../gen/enums.ts';
@@ -21,7 +23,7 @@ async function createRecord<TModel extends keyof Models>(
   subject: TModel,
   initialRecord: CreateManyInput<TModel>,
   recordName: string,
-  log: (msg: string) => void,
+  log: YogaLogger,
   findInput: FindInput<TModel> = {},
 ) {
   // Transform 'EngineeringTarget' to 'engineeringTarget'
@@ -30,18 +32,18 @@ async function createRecord<TModel extends keyof Models>(
   const client = prisma[lowercaseFirstLetter(subject)];
   // @ts-expect-error Generic types are difficult with prisma
   if (await client.findFirst(findInput)) {
-    log(`${recordName} already exist`);
+    log.info(`${recordName} already exist`);
     return;
   }
 
-  log(`Creating ${recordName}`);
+  log.info(`Creating ${recordName}`);
   // @ts-expect-error Generic types are difficult with prisma
   await client.createMany({
     data: initialRecord,
   });
 }
 
-async function createInstruments(prisma: PrismaClient, log: (msg: string) => void) {
+async function createInstruments(prisma: PrismaClient, log: YogaLogger) {
   await updateInstrumentSite(prisma, log);
 
   const groupedInstruments = Object.groupBy(INITIAL_INSTRUMENTS, (inst) => inst.name);
@@ -54,30 +56,30 @@ async function createInstruments(prisma: PrismaClient, log: (msg: string) => voi
   await createRecord(prisma, 'GemsInstrument', INITIAL_GEMS_INSTRUMENT, 'Gems instrument', log);
 }
 
-async function createRotator(prisma: PrismaClient, log: (msg: string) => void) {
+async function createRotator(prisma: PrismaClient, log: YogaLogger) {
   await createRecord(prisma, 'Rotator', INITIAL_ROTATOR, 'Rotator', log);
 }
 
-async function createSlewFlags(prisma: PrismaClient, log: (msg: string) => void) {
+async function createSlewFlags(prisma: PrismaClient, log: YogaLogger) {
   await createRecord(prisma, 'SlewFlags', INITIAL_SLEW_FLAGS, 'Slew flags', log);
 }
 
-async function createConfiguration(prisma: PrismaClient, log: (msg: string) => void) {
+async function createConfiguration(prisma: PrismaClient, log: YogaLogger) {
   await createRecord(prisma, 'Configuration', INITIAL_CONFIGURATION, 'Configuration', log);
 }
 
-async function createGuideLoopInfo(prisma: PrismaClient, log: (msg: string) => void) {
+async function createGuideLoopInfo(prisma: PrismaClient, log: YogaLogger) {
   await createRecord(prisma, 'AltairGuideLoop', INITIAL_ALTAIR_GUIDE_LOOP, 'Altair guide loop info', log);
   await createRecord(prisma, 'GemsGuideLoop', INITIAL_GEMS_GUIDE_LOOP, 'Gems guide loop info', log);
   await createRecord(prisma, 'GuideLoop', INITIAL_GUIDE_LOOP, 'General guide loop info', log);
 }
 
-async function createMechanism(prisma: PrismaClient, log: (msg: string) => void) {
+async function createMechanism(prisma: PrismaClient, log: YogaLogger) {
   await createRecord(prisma, 'Mechanism', INITIAL_MECHANISM, 'Mechanism', log);
 }
 
-async function createGuideAlarms(prisma: PrismaClient, log: (msg: string) => void) {
-  log('Creating guide alarms');
+async function createGuideAlarms(prisma: PrismaClient, log: YogaLogger) {
+  log.info('Creating guide alarms');
   for (const guideAlarm of INITIAL_GUIDE_ALARMS) {
     await prisma.guideAlarm.upsert({
       where: { wfs: guideAlarm.wfs },
@@ -87,15 +89,15 @@ async function createGuideAlarms(prisma: PrismaClient, log: (msg: string) => voi
   }
 }
 
-async function createEngineeringTargets(prisma: PrismaClient, log: (msg: string) => void) {
+async function createEngineeringTargets(prisma: PrismaClient, log: YogaLogger) {
   await createRecord(prisma, 'EngineeringTarget', INITIAL_ENGINEERING_TARGETS, 'Engineering targets', log);
 }
 
-async function createCalParams(prisma: PrismaClient, log: (msg: string) => void) {
+async function createCalParams(prisma: PrismaClient, log: YogaLogger) {
   await createRecord(prisma, 'CalParams', INITIAL_CAL_PARAMS, 'CalParams', log);
 }
 
-async function updateInstrumentSite(prisma: PrismaClient, log: (msg: string) => void) {
+async function updateInstrumentSite(prisma: PrismaClient, log: YogaLogger) {
   const site: Site = (process.env.SITE ?? process.env.NAVIGATE_SITE)?.toLowerCase().endsWith('gs') ? 'GS' : 'GN';
 
   async function updateSite(from: string, toNorth: Instrument, toSouth: Instrument) {
@@ -115,7 +117,7 @@ async function updateInstrumentSite(prisma: PrismaClient, log: (msg: string) => 
       }),
     ]);
     if (a.count > 0 || b.count > 0 || c.count > 0) {
-      log(
+      log.info(
         `Updated ${a.count} configurations, ${b.count} instruments and ${c.count} engineering targets from ${from} to ${to}`,
       );
     }
@@ -125,7 +127,7 @@ async function updateInstrumentSite(prisma: PrismaClient, log: (msg: string) => 
   await updateSite('ACQ_CAM', 'ACQ_CAM_NORTH', 'ACQ_CAM_SOUTH');
 }
 
-export async function write(client: PrismaClient, log: (msg: string) => void) {
+export async function write(client: PrismaClient, log: YogaLogger) {
   await createInstruments(client, log);
   await createSlewFlags(client, log);
   await createRotator(client, log);

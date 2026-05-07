@@ -6,26 +6,31 @@ import type { Configuration, MutationResolvers, TargetInput, TargetType } from '
 export const importObservation: NonNullable<MutationResolvers['importObservation']> = async (
   _parent,
   args,
-  { prisma },
+  { prisma, log },
 ) =>
   // Use a transaction to ensure all operations complete successfully together
   prisma.$transaction(async (prisma) => {
     const { configurationPk, rotatorPk, observation, targets, guideEnvironmentAngle, guideLoopPk } = args.input;
 
-    await prisma.target.deleteMany({
+    const { count } = await prisma.target.deleteMany({
       where: {},
     });
+    log.debug(`Deleted ${count} existing targets for observation import`);
 
     //
     // Targets
     //
     const newTargets: Pick<Target, 'pk' | 'type'>[] = [];
-    for (const t of [
+    const newTargetsToCreate = [
       ...targets.base,
       ...targets.oiwfs.map(setWfs('OIWFS')),
       ...targets.pwfs1.map(setWfs('PWFS1')),
       ...targets.pwfs2.map(setWfs('PWFS2')),
-    ]) {
+    ];
+    log.debug(
+      `Creating ${newTargetsToCreate.length} targets (${targets.base.length} base), (${targets.oiwfs.length} OIWFS), (${targets.pwfs1.length} PWFS1), (${targets.pwfs2.length} PWFS2) for observation import`,
+    );
+    for (const t of newTargetsToCreate) {
       // Create each target individually to handle sidereal and nonsidereal relations
       newTargets.push(
         await prisma.target.create({
@@ -115,6 +120,7 @@ export const importObservation: NonNullable<MutationResolvers['importObservation
       prisma.instrument.deleteMany({ where: { name: observation.instrument, isTemporary: true } }),
     ]);
 
+    log.debug(`Observation import for ${observation.id} completed`);
     return { configuration, rotator, guideLoop };
   });
 
