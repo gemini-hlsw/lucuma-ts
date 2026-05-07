@@ -3,8 +3,9 @@ import type { Instrument, QueryResolvers } from './../../gen/types.generated.ts'
 export const distinctInstruments: NonNullable<QueryResolvers['distinctInstruments']> = async (
   _parent,
   args,
-  { prisma },
+  { prisma, log },
 ) => {
+  log.debug(`Fetching distinct instruments for site ${args.site}`);
   const results = await prisma.instrument.findMany({
     distinct: ['name'],
     select: { name: true },

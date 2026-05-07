@@ -2,6 +2,7 @@ import cluster from 'node:cluster';
 import { createServer } from 'node:http';
 import os from 'node:os';
 
+import { log } from './logger.ts';
 import { prisma } from './prisma/db.ts';
 import { populateDb } from './prisma/queries/main.ts';
 import { makeYogaServer } from './server.ts';
@@ -9,7 +10,7 @@ import { makeYogaServer } from './server.ts';
 if (process.argv.includes('populate')) {
   // Populate DB
   try {
-    await populateDb(prisma);
+    await populateDb(prisma, log);
   } finally {
     await prisma.$disconnect();
   }
@@ -25,13 +26,13 @@ function forkWorkers() {
   const numOfWorkers =
     parseInt(process.env.HEROKU_AVAILABLE_PARALLELISM ?? process.env.WEB_CONCURRENCY!, 10) || os.availableParallelism();
 
-  console.log(`🚀 Primary [${process.pid}] running with ${numOfWorkers} workers`);
+  log.info(`🚀 Primary running with ${numOfWorkers} workers`);
   for (let i = 0; i < numOfWorkers; i++) {
     cluster.fork();
   }
 
   cluster.on('exit', (worker, code, signal) => {
-    console.log(`worker [${worker.process.pid}] died (${signal || code})`);
+    log.error(`worker [${worker.process.pid}] died (${signal || code})`);
   });
 }
 
@@ -42,6 +43,6 @@ function startServer() {
   const server = createServer(yoga);
 
   server.listen(port, () => {
-    console.log(`Worker [${process.pid}] ready at http://localhost:${port}`);
+    log.info(`Worker ready at http://localhost:${port}`);
   });
 }
