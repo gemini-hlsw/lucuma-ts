@@ -1,64 +1,41 @@
-import type {
-  AltairGuideLoopItemFragment as AltairGuideLoopType,
-  AltairInstrumentItemFragment as AltairInstrumentType,
-  ConfigsTargetItemFragment as TargetType,
-  ConfigurationItemFragment as ConfigurationType,
-  GemsGuideLoopItemFragment as GemsGuideLoopType,
-  GemsInstrumentItemFragment as GemsInstrumentType,
-  GuideLoopItemFragment as GuideLoopType,
-  GuidingType,
-  InstrumentItemFragment as InstrumentType,
-  MechanismItemFragment as MechanismType,
-  RotatorItemFragment as RotatorType,
-  Site as SiteType,
-  SlewFlagsItemFragment as SlewFlagsType,
-  StatusType,
-  TargetInput,
-  TargetType as TypeOfTarget,
-} from '@gql/configs/gen/graphql';
-import type {
-  BrightnessItemFragment,
-  ObservationItemFragment,
-  SourceProfileItemFragment,
-  TargetItemFragment,
-} from '@gql/odb/gen/graphql';
-import type { RotatorTrackingMode as TrackingType } from '@gql/server/gen/graphql';
-
-export type ThemeType = 'light' | 'dark';
-
-export type OdbObservationType = ObservationItemFragment;
-
-export type OdbTargetType = TargetItemFragment;
-
-export type OdbBandBrightnessType = BrightnessItemFragment;
-
-export type OdbSourceProfileType = SourceProfileItemFragment;
-
 export type {
-  AltairGuideLoopType,
-  AltairInstrumentType,
-  ConfigurationType,
-  GemsGuideLoopType,
-  GemsInstrumentType,
-  GuideLoopType,
-  GuidingType,
-  InstrumentType,
-  MechanismType,
-  OdbObservationType,
-  RotatorType,
-  SiteType,
-  SlewFlagsType,
-  StatusType,
-  TargetInput,
-  TargetType,
-  TrackingType,
-  TypeOfTarget,
-  UserType,
-};
-
-export type PanelType = 'telescope' | 'wavefront-sensors' | 'guider';
-
-export interface TargetEditType {
-  isVisible: boolean;
-  target: TargetType | null;
-}
+  AltairGuideLoopItemFragment as AltairGuideLoop,
+  AltairInstrumentItemFragment as AltairInstrument,
+  AzItemFragment as Az,
+  CalParamsItemFragment as CalParams,
+  ConfigurationItemFragment as Configuration,
+  DecItemFragment as Dec,
+  ElItemFragment as El,
+  EngineeringTargetItemFragment as EngineeringTarget,
+  GemsGuideLoopItemFragment as GemsGuideLoop,
+  GemsInstrumentItemFragment as GemsInstrument,
+  GuideAlarmItemFragment as GuideAlarm,
+  GuideLoopItemFragment as GuideLoop,
+  InstrumentConfigItemFragment as InstrumentConfig,
+  MechanismItemFragment as Mechanism,
+  NonsiderealTargetItemFragment as NonsiderealTarget,
+  ProperMotionItemFragment as ProperMotion,
+  RaItemFragment as RA,
+  RotatorItemFragment as Rotator,
+  SiderealTargetItemFragment as SiderealTarget,
+  SlewFlagsItemFragment as SlewFlags,
+  ConfigsTargetItemFragment as Target,
+} from '@gql/configs/gen/graphql';
+export type {
+  BrightnessIntegratedItemFragment as OdbBandBrightness,
+  ObservationItemFragment as OdbObservation,
+  SourceProfileItemFragment as OdbSourceProfile,
+  TargetItemFragment as OdbTarget,
+} from '@gql/odb/gen/graphql';
+export type {
+  AcMechsItemFragment as AcMechs,
+  FocalPlaneOffsetItemFragment as FocalPlaneOffset,
+  GuideQualityItemFragment as GuideQuality,
+  GuideConfigurationStateItemFragment as GuideState,
+  LogMessageItemFragment as LogMessage,
+  MechSystemStateItemFragment as MechSystemState,
+  PwfsMechsStateItemFragment as PwfsMechs,
+  ServerConfigurationItemFragment as ServerConfiguration,
+  TelescopeStateItemFragment as TelescopeState,
+  WfsConfigStateItemFragment as WfsConfigState,
+} from '@gql/server/gen/graphql';

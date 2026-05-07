@@ -7,7 +7,7 @@ import { lazy, startTransition, Suspense, useState } from 'react';
 
 import { useCanEdit } from '@/components/atoms/auth';
 import { useTargetEdit } from '@/components/atoms/target';
-import type { TargetType } from '@/types';
+import type { Target } from '@/types';
 
 import { ModalSolarProgress } from '../ModalSolarProgress';
 
@@ -17,7 +17,7 @@ export function Target() {
   const canEdit = useCanEdit();
 
   const [targetEdit, setTargetEdit] = useTargetEdit();
-  const [auxTarget, setAuxTarget] = useState<TargetType | null>(null);
+  const [auxTarget, setAuxTarget] = useState<Target | null>(null);
 
   const [updateObservation, { loading }] = useUpdateObservation();
 
@@ -59,7 +59,7 @@ export function Target() {
 function useUpdateObservation() {
   const [updateTarget, result] = useUpdateTarget();
 
-  async function updateObservation(target: TargetType) {
+  async function updateObservation(target: Target) {
     await updateTarget({
       variables: {
         ...target,

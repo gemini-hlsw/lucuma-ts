@@ -5,11 +5,11 @@ import { InputSwitch } from 'primereact/inputswitch';
 import { useId } from 'react';
 
 import { useCanEdit } from '@/components/atoms/auth';
-import type { SlewFlagsType } from '@/types';
+import type { SlewFlags } from '@/types';
 
 export function SlewFlagsContent() {
   const { data, loading } = useSlewFlags();
-  const slewFlags = data?.slewFlags ?? ({} as SlewFlagsType);
+  const slewFlags = data?.slewFlags ?? ({} as SlewFlags);
 
   return (
     <div className="slew-flags">
@@ -51,7 +51,7 @@ function SlewFlagInput({
 }: {
   flag: keyof UpdateSlewFlagsMutationVariables;
   label: string;
-  flags: SlewFlagsType;
+  flags: SlewFlags;
   loading: boolean;
 }) {
   const canEdit = useCanEdit();

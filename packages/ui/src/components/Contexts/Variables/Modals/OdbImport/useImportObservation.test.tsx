@@ -9,7 +9,7 @@ import { describe, expect, it, type Mock } from 'vitest';
 import { renderHook, type RenderHookResult } from 'vitest-browser-react';
 
 import { createConfiguration, createGuideLoop, createRotator } from '@/test/create';
-import type { OdbObservationType } from '@/types';
+import type { OdbObservation } from '@/types';
 
 import { useImportObservation } from './useImportObservation';
 
@@ -98,12 +98,11 @@ describe(useImportObservation.name, () => {
   });
 });
 
-const selectedObservation: OdbObservationType = {
+const selectedObservation: OdbObservation = {
   __typename: 'Observation',
   id: 'o-2e5',
   title: 'Mayall V',
   subtitle: null,
-  instrument: 'GMOS_NORTH',
   reference: {
     label: 'G-2025B-0571-Q-0003',
     __typename: 'ObservationReference',
@@ -195,6 +194,7 @@ const mocks = [
     result: {
       data: {
         executionConfig: {
+          instrument: 'GMOS_NORTH',
           gmosNorth: {
             acquisition: {
               nextAtom: {
@@ -242,6 +242,8 @@ const mocks = [
           },
           gmosSouth: null,
           flamingos2: null,
+          ghost: null,
+          igrins2: null,
           __typename: 'ExecutionConfig',
         },
       },

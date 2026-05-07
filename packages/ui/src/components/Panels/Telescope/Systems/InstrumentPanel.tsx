@@ -11,7 +11,7 @@ import { useId } from 'react';
 import { useSetImportInstrument } from '@/components/atoms/instrument';
 import { FloppyDisk, List } from '@/components/Icons';
 
-export function Instrument({ canEdit }: { canEdit: boolean }) {
+export function InstrumentPanel({ canEdit }: { canEdit: boolean }) {
   const [updateInstrument, { loading: updateInstrumentLoading }] = useUpdateInstrument();
   const [setTemporaryInstrument, { loading: setTemporaryInstrumentLoading }] = useSetTemporaryInstrument();
   const setImportInstrument = useSetImportInstrument();

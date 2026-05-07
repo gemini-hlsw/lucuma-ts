@@ -1,10 +1,9 @@
 import { isNotNullish } from '@gemini-hlsw/lucuma-common-ui';
+import type { RotatorTrackingMode } from '@gql/configs/gen/graphql';
 import { useRotator, useUpdateRotator } from '@gql/configs/Rotator';
 import { Title } from '@Shared/Title/Title';
 import { Dropdown } from 'primereact/dropdown';
 import { InputNumber } from 'primereact/inputnumber';
-
-import type { TrackingType } from '@/types';
 
 export function Rotator({ canEdit }: { canEdit: boolean }) {
   const { data: rotatorData, loading: rotatorLoading } = useRotator();
@@ -24,10 +23,10 @@ export function Rotator({ canEdit }: { canEdit: boolean }) {
           inputId="rotator-mode"
           disabled={!canEdit}
           value={rotator?.tracking ?? null}
-          options={['TRACKING', 'FIXED'] satisfies TrackingType[]}
+          options={['TRACKING', 'FIXED'] satisfies RotatorTrackingMode[]}
           loading={loading}
           onChange={async (e) => {
-            const tracking = e.value as TrackingType;
+            const tracking = e.value as RotatorTrackingMode;
             if (isNotNullish(rotator?.pk)) await updateRotator({ variables: { pk: rotator.pk, tracking } });
           }}
           placeholder="Select a tracking"

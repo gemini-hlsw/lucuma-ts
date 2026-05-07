@@ -44,8 +44,8 @@ export function useDistinctPorts(options: OptionsOf<typeof GET_DISTINCT_PORTS>) 
   );
 }
 
-export const INSTRUMENT_FRAGMENT = graphql(`
-  fragment InstrumentItem on InstrumentConfig {
+export const INSTRUMENT_CONFIG_FRAGMENT = graphql(`
+  fragment InstrumentConfigItem on InstrumentConfig {
     pk
     name
     iaa
@@ -66,7 +66,7 @@ export const INSTRUMENT_FRAGMENT = graphql(`
 export const GET_INSTRUMENTS = graphql(`
   query getInstruments($name: Instrument!, $issPort: Int, $wfs: WfsType) {
     instruments(name: $name, issPort: $issPort, wfs: $wfs) {
-      ...InstrumentItem
+      ...InstrumentConfigItem
     }
   }
 `);
@@ -86,7 +86,7 @@ export function useInstruments(options: OptionsOf<typeof GET_INSTRUMENTS>) {
 export const GET_INSTRUMENT = graphql(`
   query getInstrument($name: Instrument!, $issPort: Int, $wfs: WfsType) {
     instrument(name: $name, issPort: $issPort, wfs: $wfs) {
-      ...InstrumentItem
+      ...InstrumentConfigItem
     }
   }
 `);
@@ -129,7 +129,7 @@ export const SET_TEMPORARY_INSTRUMENT = graphql(`
       extraParams: $extraParams
       alignAngle: $alignAngle
     ) {
-      ...InstrumentItem
+      ...InstrumentConfigItem
     }
   }
 `);
@@ -173,7 +173,7 @@ export const UPDATE_INSTRUMENT = graphql(`
       alignAngle: $alignAngle
       comment: $comment
     ) {
-      ...InstrumentItem
+      ...InstrumentConfigItem
     }
   }
 `);

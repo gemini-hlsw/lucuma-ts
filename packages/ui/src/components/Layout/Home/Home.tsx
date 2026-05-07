@@ -6,7 +6,7 @@ import { Telescope } from '@Telescope/Telescope';
 import { WavefrontSensors } from '@WavefrontSensors/WavefrontSensors';
 import { useState } from 'react';
 
-import type { PanelType } from '@/types';
+type PanelType = 'telescope' | 'wavefront-sensors' | 'guider';
 
 export default function Home() {
   const TOUCH_THRESHOLD = 50;

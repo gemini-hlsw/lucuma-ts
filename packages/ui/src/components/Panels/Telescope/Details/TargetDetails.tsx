@@ -1,8 +1,8 @@
 import { Title } from '@Shared/Title/Title';
 
-import type { TargetType } from '@/types';
+import type { Target } from '@/types';
 
-export function TargetDetails({ target }: { target: TargetType | undefined }) {
+export function TargetDetails({ target }: { target: Target | undefined }) {
   return (
     <div>
       <Title title={`Selected target ${target?.name ?? ''}`} />

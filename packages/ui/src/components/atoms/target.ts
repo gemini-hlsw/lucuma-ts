@@ -1,9 +1,14 @@
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { atomWithReset } from 'jotai/utils';
 
-import type { TargetEditType } from '@/types';
+import type { Target } from '@/types';
 
-export const targetEditAtom = atomWithReset<TargetEditType>({
+interface TargetEdit {
+  isVisible: boolean;
+  target: Target | null;
+}
+
+export const targetEditAtom = atomWithReset<TargetEdit>({
   isVisible: false,
   target: null,
 });

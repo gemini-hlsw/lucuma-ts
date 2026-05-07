@@ -1,5 +1,4 @@
 import type { MockLink } from '@apollo/client/testing';
-import type { WfsItemFragment } from '@gql/configs/gen/graphql';
 import { GET_GUIDE_ALARMS, UPDATE_GUIDE_ALARM } from '@gql/configs/GuideAlarm';
 import { GUIDE_QUALITY_QUERY, GUIDE_QUALITY_SUBSCRIPTION } from '@gql/server/GuideQuality';
 import { GUIDE_STATE_QUERY, GUIDE_STATE_SUBSCRIPTION } from '@gql/server/GuideState';
@@ -10,6 +9,7 @@ import { page, userEvent } from 'vitest/browser';
 import { guideAlarmSoundAtom } from '@/components/atoms/alarm';
 import { createGuideAlarm, createGuideQuality, createGuideState } from '@/test/create';
 import { renderWithContext } from '@/test/render';
+import type { GuideAlarm } from '@/types';
 
 import { Alarms } from './Alarms';
 
@@ -121,7 +121,7 @@ const mocks: MockLink.MockedResponse[] = [
       data: {
         updateGuideAlarm: createGuideAlarm({
           wfs: 'PWFS1',
-          ...(arg as Partial<WfsItemFragment>),
+          ...(arg as Partial<GuideAlarm>),
         }),
       },
     }),

@@ -1,6 +1,6 @@
 import { isNotNullish, when } from '@gemini-hlsw/lucuma-common-ui';
 import { useConfiguration } from '@gql/configs/Configuration';
-import type { TargetType } from '@gql/configs/gen/graphql';
+import type { TargetInput, TargetType } from '@gql/configs/gen/graphql';
 import { useGetGuideLoop } from '@gql/configs/GuideLoop';
 import { useRotator } from '@gql/configs/Rotator';
 import { useDoImportObservation } from '@gql/configs/Target';
@@ -10,7 +10,7 @@ import { extractMagnitude } from '@/Helpers/bands';
 import { extractGuideTargets } from '@/Helpers/guideTargets';
 import { useTransitionPromise } from '@/Helpers/hooks';
 import { extractCentralWavelength } from '@/Helpers/wavelength';
-import type { OdbObservationType, OdbTargetType, TargetInput } from '@/types';
+import type { OdbObservation, OdbTarget } from '@/types';
 
 export function useImportObservation() {
   const { data: configurationData, loading: configurationLoading } = useConfiguration();
@@ -35,7 +35,7 @@ export function useImportObservation() {
     guideLoopLoading ||
     isPending;
 
-  function importObservation(selectedObservation: OdbObservationType): Promise<void> {
+  function importObservation(selectedObservation: OdbObservation): Promise<void> {
     if (!configuration || !rotator || !guideLoop) return Promise.resolve();
 
     return startTransition(async () => {
@@ -52,7 +52,7 @@ export function useImportObservation() {
         }),
       ]);
 
-      const wavelength = extractCentralWavelength(selectedObservation.instrument, obsWithWavelength.data);
+      const wavelength = extractCentralWavelength(obsWithWavelength.data);
 
       const { blindOffsetTarget, firstScienceTarget } = selectedObservation.targetEnvironment ?? {};
 
@@ -76,7 +76,7 @@ export function useImportObservation() {
               title: selectedObservation.title,
               subtitle: selectedObservation.subtitle,
               reference: selectedObservation.reference?.label,
-              instrument: selectedObservation.instrument,
+              instrument: obsWithWavelength.data?.executionConfig?.instrument,
             },
             targets: {
               base: base,
@@ -99,7 +99,7 @@ export function useImportObservation() {
   return [importObservation, { loading }] as const;
 }
 
-function createBaseTarget(target: OdbTargetType, type: TargetType, wavelength: number | undefined): TargetInput {
+function createBaseTarget(target: OdbTarget, type: TargetType, wavelength: number | undefined): TargetInput {
   const { name: band, value: magnitude } = extractMagnitude(target.sourceProfile);
   return {
     id: target.id,

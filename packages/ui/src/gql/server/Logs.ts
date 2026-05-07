@@ -1,12 +1,13 @@
 import { useSubscription } from '@apollo/client/react';
 import { useState } from 'react';
 
+import type { LogMessage } from '@/types';
+
 import { graphql } from './gen';
-import type { LogMessageItemFragment } from './gen/graphql';
 
-type LogMessageWithId = LogMessageItemFragment & { id: string };
+type LogMessageWithId = LogMessage & { id: string };
 
-export const LOG_FRAGMENT = graphql(`
+export const LOG_MESSAGE_FRAGMENT = graphql(`
   fragment LogMessageItem on LogMessage {
     timestamp
     level

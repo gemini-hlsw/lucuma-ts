@@ -4,7 +4,7 @@ import type { MockLink } from '@apollo/client/testing';
 import { isNullish } from '@gemini-hlsw/lucuma-common-ui';
 import type { ResultOf, VariablesOf } from '@graphql-typed-document-node/core';
 
-import type { TargetType } from '@/types';
+import type { Target } from '@/types';
 
 /**
  * Options for useQuery hook.
@@ -14,17 +14,17 @@ export type OptionsOf<T extends DocumentNode> =
     ? SkipToken | Omit<useQuery.Options<ResultOf<T>, VariablesOf<T>>, 'context'>
     : never;
 
-export function isBaseTarget(target: Pick<TargetType, 'type'> | undefined | null) {
+export function isBaseTarget(target: Pick<Target, 'type'> | undefined | null) {
   if (isNullish(target)) return false;
   else return ['SCIENCE', 'BLINDOFFSET', 'FIXED'].includes(target.type);
 }
-export function isOiTarget(target: Pick<TargetType, 'type'> | undefined) {
+export function isOiTarget(target: Pick<Target, 'type'> | undefined) {
   return target?.type === 'OIWFS';
 }
-export function isP1Target(target: Pick<TargetType, 'type'> | undefined) {
+export function isP1Target(target: Pick<Target, 'type'> | undefined) {
   return target?.type === 'PWFS1';
 }
-export function isP2Target(target: Pick<TargetType, 'type'> | undefined) {
+export function isP2Target(target: Pick<Target, 'type'> | undefined) {
   return target?.type === 'PWFS2';
 }
 

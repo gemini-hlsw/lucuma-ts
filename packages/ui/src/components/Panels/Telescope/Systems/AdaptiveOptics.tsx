@@ -9,12 +9,12 @@ import { Checkbox } from 'primereact/checkbox';
 import { Dropdown } from 'primereact/dropdown';
 import { InputNumber } from 'primereact/inputnumber';
 
-import type { AltairInstrumentType, GemsInstrumentType } from '@/types';
+import type { AltairInstrument, GemsInstrument } from '@/types';
 
 import { Title } from '../../../Shared/Title/Title';
 
 export function GeMS({ canEdit }: { canEdit: boolean }) {
-  const state = useGemsInstrument().data?.gemsInstrument ?? ({} as GemsInstrumentType);
+  const state = useGemsInstrument().data?.gemsInstrument ?? ({} as GemsInstrument);
   const [updateGemsInstrument, { loading }] = useUpdateGemsInstrument();
 
   async function modifyGemsInstrument<T extends keyof UpdateGemsInstrumentMutationVariables>(
@@ -67,7 +67,7 @@ export function GeMS({ canEdit }: { canEdit: boolean }) {
 }
 
 export function Altair({ canEdit }: { canEdit: boolean }) {
-  const state = useAltairInstrument().data?.altairInstrument ?? ({} as AltairInstrumentType);
+  const state = useAltairInstrument().data?.altairInstrument ?? ({} as AltairInstrument);
   const [updateAltairInstrument, { loading }] = useUpdateAltairInstrument();
 
   async function modifyAltairInstrument<T extends keyof UpdateAltairInstrumentMutationVariables>(

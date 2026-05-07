@@ -1,6 +1,5 @@
 import { formatDateTime, when } from '@gemini-hlsw/lucuma-common-ui';
 import { useRevertCalParams } from '@gql/configs/CalParams';
-import type { CalParamsItemFragment as CalParamsHistoryType } from '@gql/configs/gen/graphql';
 import { CommentConfirmButton } from '@Shared/CommentConfirmButton';
 import { Button } from 'primereact/button';
 import { Dialog } from 'primereact/dialog';
@@ -9,6 +8,7 @@ import { lazy, startTransition, Suspense, useState } from 'react';
 import { useCanEdit } from '@/components/atoms/auth';
 import { useCalParamsHistoryVisible } from '@/components/atoms/calparams';
 import { useToast } from '@/Helpers/toast';
+import type { CalParams } from '@/types';
 
 import { ModalSolarProgress } from '../ModalSolarProgress';
 
@@ -20,7 +20,7 @@ export function CalParamsHistory() {
   const [visible, setVisible] = useCalParamsHistoryVisible();
   const canEdit = useCanEdit();
 
-  const [selection, setSelection] = useState<CalParamsHistoryType | null>(null);
+  const [selection, setSelection] = useState<CalParams | null>(null);
 
   const [onRevertParams, { loading }] = useRevertParams();
 
@@ -65,7 +65,7 @@ function useRevertParams() {
   const [revertParams, { loading }] = useRevertCalParams();
   const toast = useToast();
 
-  const onRevertParams = async (comment: string | null, selection: CalParamsHistoryType) => {
+  const onRevertParams = async (comment: string | null, selection: CalParams) => {
     await revertParams({ variables: { pk: selection.pk, comment } });
     toast?.show({
       severity: 'success',

@@ -1,6 +1,5 @@
 import { groupBy, isNullish } from '@gemini-hlsw/lucuma-common-ui';
 import { useUpdateConfiguration } from '@gql/configs/Configuration';
-import type { ConfigsTargetItemFragment as Target } from '@gql/configs/gen/graphql';
 import { useNavigateState } from '@gql/server/NavigateState';
 import { useRestoreTarget, useSwapTarget } from '@gql/server/TargetSwap';
 import { Button } from 'primereact/button';
@@ -8,6 +7,7 @@ import { SplitButton } from 'primereact/splitbutton';
 
 import { useCanEdit } from '@/components/atoms/auth';
 import { useToast } from '@/Helpers/toast';
+import type { Target } from '@/types';
 
 import { createTargetPropertiesInput, createUpdateSelectedTargetVariables, useTcsConfigInput } from './inputs';
 

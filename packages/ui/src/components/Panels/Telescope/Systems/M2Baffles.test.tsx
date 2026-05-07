@@ -1,10 +1,10 @@
 import { GET_CONFIGURATION, UPDATE_CONFIGURATION } from '@gql/configs/Configuration';
-import type { ConfigurationItemFragment as Configuration } from '@gql/configs/gen/graphql';
 import type { MockedResponseOf } from '@gql/util';
 
 import { createConfiguration } from '@/test/create';
 import { selectDropdownOption } from '@/test/helpers';
 import { type RenderResultWithStore, renderWithContext } from '@/test/render';
+import type { Configuration } from '@/types';
 
 import { M2Baffles } from './M2Baffles';
 

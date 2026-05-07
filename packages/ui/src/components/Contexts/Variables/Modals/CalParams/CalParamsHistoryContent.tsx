@@ -1,6 +1,5 @@
 import { formatDateTime } from '@gemini-hlsw/lucuma-common-ui';
 import { useCalParamsHistory, useDeleteCalParams } from '@gql/configs/CalParams';
-import type { CalParamsItemFragment as CalParamsHistoryType } from '@gql/configs/gen/graphql';
 import { Button } from 'primereact/button';
 import { Column } from 'primereact/column';
 import { ConfirmPopup, confirmPopup } from 'primereact/confirmpopup';
@@ -9,6 +8,7 @@ import { useRef } from 'react';
 
 import { useServerConfigValue } from '@/components/atoms/config';
 import { Trash } from '@/components/Icons';
+import type { CalParams } from '@/types';
 
 export function CalParamsHistoryContent({
   canEdit,
@@ -17,8 +17,8 @@ export function CalParamsHistoryContent({
   loading: loadingProp,
 }: {
   canEdit: boolean;
-  selection: CalParamsHistoryType | null;
-  setSelection: (_: CalParamsHistoryType | null) => void;
+  selection: CalParams | null;
+  setSelection: (_: CalParams | null) => void;
   loading: boolean;
 }) {
   const { site } = useServerConfigValue();
@@ -30,7 +30,7 @@ export function CalParamsHistoryContent({
   const loading = loadingProp || historyLoading || deleteLoading;
   const disabled = loading || !canEdit;
 
-  const isCurrentEntry = (entry: CalParamsHistoryType) => entry.pk === historyData?.calParamsHistory?.[0]?.pk;
+  const isCurrentEntry = (entry: CalParams) => entry.pk === historyData?.calParamsHistory?.[0]?.pk;
 
   const tableData =
     historyData?.calParamsHistory?.map((entry) => ({
@@ -43,14 +43,14 @@ export function CalParamsHistoryContent({
       <DataTable
         value={tableData}
         selection={selection}
-        onSelectionChange={(e) => setSelection(e.value as CalParamsHistoryType)}
+        onSelectionChange={(e) => setSelection(e.value as CalParams)}
         selectionMode="single"
         scrollable
         disabled={disabled}
         scrollHeight="flex"
         dataKey="pk"
         loading={loading}
-        isDataSelectable={(e) => !isCurrentEntry(e.data as CalParamsHistoryType)}
+        isDataSelectable={(e) => !isCurrentEntry(e.data as CalParams)}
         filterDisplay="row"
         emptyMessage="No calibration parameters history available."
       >
@@ -59,7 +59,7 @@ export function CalParamsHistoryContent({
           header="Created"
           sortable
           dataType="date"
-          body={(c: CalParamsHistoryType) => formatDateTime(c.createdAt, false)}
+          body={(c: CalParams) => formatDateTime(c.createdAt, false)}
         />
         <Column
           field="comment"
@@ -71,7 +71,7 @@ export function CalParamsHistoryContent({
           header="Actions"
           headerStyle={{ width: '5rem', textAlign: 'center' }}
           bodyStyle={{ textAlign: 'center', overflow: 'visible' }}
-          body={(c: CalParamsHistoryType) =>
+          body={(c: CalParams) =>
             isCurrentEntry(c) ? null : (
               <DeleteCalParamsButton onDelete={() => deleteParams({ variables: { pk: c.pk } })} />
             )

@@ -2,12 +2,13 @@ import { useMutation, useQuery } from '@apollo/client/react';
 import { isBaseTarget, isOiTarget, isP1Target, isP2Target } from '@gql/util';
 import { useMemo } from 'react';
 
+import type { Target } from '@/types';
+
 import { graphql } from './gen';
-import type { ConfigsTargetItemFragment } from './gen/graphql';
 import { GET_INSTRUMENT } from './Instrument';
 
 export const RA_FRAGMENT = graphql(`
-  fragment RaItem on RA {
+  fragment RAItem on RA {
     degrees
     hms
   }
@@ -64,7 +65,7 @@ export const SIDEREAL_TARGET_FRAGMENT = graphql(`
   fragment SiderealTargetItem on SiderealTarget {
     pk
     ra {
-      ...RaItem
+      ...RAItem
     }
     dec {
       degrees
@@ -107,7 +108,7 @@ export function useTargets() {
   });
 
   return useMemo(() => {
-    const targets: readonly ConfigsTargetItemFragment[] = result.data?.targets ?? [];
+    const targets: readonly Target[] = result.data?.targets ?? [];
 
     const oiTargets = targets.filter(isOiTarget);
     const p1Targets = targets.filter(isP1Target);

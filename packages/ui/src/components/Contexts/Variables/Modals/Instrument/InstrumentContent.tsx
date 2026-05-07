@@ -20,14 +20,14 @@ import { useRef, useState } from 'react';
 
 import { useServerConfigValue } from '@/components/atoms/config';
 import { CircleCheck, CircleXMark, Trash } from '@/components/Icons';
-import type { InstrumentType } from '@/types';
+import type { InstrumentConfig } from '@/types';
 
 export function InstrumentContent({
   instrument,
   setInstrument,
 }: {
-  instrument: InstrumentType | null;
-  setInstrument: (_: InstrumentType | null) => void;
+  instrument: InstrumentConfig | null;
+  setInstrument: (_: InstrumentConfig | null) => void;
 }) {
   const { site } = useServerConfigValue();
   const { data: configuredInstrument, loading: configuredInstrumentLoading } = useConfiguredInstrument();
@@ -107,9 +107,9 @@ function InstrumentTable({
   deleteInstrument,
   loading,
 }: {
-  instruments: InstrumentType[];
-  selectedInstrument: InstrumentType | null;
-  setInstrument: (_: InstrumentType) => void;
+  instruments: InstrumentConfig[];
+  selectedInstrument: InstrumentConfig | null;
+  setInstrument: (_: InstrumentConfig) => void;
   deleteInstrument: (pk: number) => void;
   loading: boolean;
 }) {
@@ -117,7 +117,7 @@ function InstrumentTable({
 
   const uniqueWfs = Array.from(new Set(tableData.map((i) => i.wfs)));
 
-  const makeDeleteInstrumentButton = (i: InstrumentType) => (
+  const makeDeleteInstrumentButton = (i: InstrumentConfig) => (
     <DeleteInstrumentButton instrument={i} onDelete={deleteInstrument} />
   );
 
@@ -132,7 +132,7 @@ function InstrumentTable({
       <DataTable
         value={tableData}
         selection={selectedInstrument}
-        onSelectionChange={(e) => setInstrument(e.value as InstrumentType)}
+        onSelectionChange={(e) => setInstrument(e.value as InstrumentConfig)}
         selectionMode="single"
         scrollable
         scrollHeight="flex"
@@ -146,7 +146,7 @@ function InstrumentTable({
           header="Created"
           sortable
           dataType="date"
-          body={(i: InstrumentType) => formatDateTime(i.createdAt, false)}
+          body={(i: InstrumentConfig) => formatDateTime(i.createdAt, false)}
         />
         <Column
           field="wfs"
@@ -172,7 +172,7 @@ function InstrumentTable({
           filter
           filterPlaceholder="Filter params"
           filterMatchMode={FilterMatchMode.CUSTOM}
-          body={(i: InstrumentType) => JSON.stringify(i.extraParams, undefined, 2)}
+          body={(i: InstrumentConfig) => JSON.stringify(i.extraParams, undefined, 2)}
           showFilterMenu={false}
         />
         <Column
@@ -180,7 +180,7 @@ function InstrumentTable({
           header="AO"
           headerTooltip="Adaptive Optics"
           dataType="boolean"
-          body={(i: InstrumentType) => (i.ao ? <CircleCheck /> : <CircleXMark />)}
+          body={(i: InstrumentConfig) => (i.ao ? <CircleCheck /> : <CircleXMark />)}
           style={{ minWidth: '3rem' }}
         />
         <Column field="originX" header="Origin X" dataType="numeric" style={{ minWidth: '4rem' }} />
@@ -203,7 +203,7 @@ function DeleteInstrumentButton({
   onDelete,
   instrument,
 }: {
-  instrument: InstrumentType;
+  instrument: InstrumentConfig;
   onDelete: (pk: number) => void;
 }) {
   const ref = useRef<Button>(null);

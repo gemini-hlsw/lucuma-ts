@@ -7,7 +7,7 @@ import { targetEditAtom } from '@/components/atoms/target';
 import { createDec, createSidereal, createTarget } from '@/test/create';
 import { expiredJwt } from '@/test/helpers';
 import { renderWithContext } from '@/test/render';
-import type { TargetType } from '@/types';
+import type { Target as TargetType } from '@/types';
 
 import { Target } from './Target';
 

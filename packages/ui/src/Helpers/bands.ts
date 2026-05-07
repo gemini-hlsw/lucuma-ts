@@ -1,6 +1,6 @@
 import type { Band } from '@gql/odb/gen/graphql';
 
-import type { OdbBandBrightnessType, OdbSourceProfileType } from '@/types';
+import type { OdbBandBrightness, OdbSourceProfile } from '@/types';
 
 const BANDS: { odbName: Band; name: string; start: number; center: number; end: number }[] = [
   { odbName: 'SLOAN_U', name: 'u', start: 333000, center: 356000, end: 379000 },
@@ -27,7 +27,7 @@ const BANDS: { odbName: Band; name: string; start: number; center: number; end: 
   { odbName: 'GAIA_RP', name: 'G_RP', start: 626000, center: 778000, end: 1051000 },
 ];
 
-export function extractMagnitude(sourceProfile: OdbSourceProfileType | undefined) {
+export function extractMagnitude(sourceProfile: OdbSourceProfile | undefined) {
   if (!sourceProfile?.point?.bandNormalized?.brightnesses.length) return { name: undefined, value: undefined };
 
   const brightness =
@@ -40,7 +40,7 @@ export function extractMagnitude(sourceProfile: OdbSourceProfileType | undefined
   return { name, value };
 }
 
-function getBandClosestTo(brightnesses: readonly OdbBandBrightnessType[], wavelength = 600000) {
+function getBandClosestTo(brightnesses: readonly OdbBandBrightness[], wavelength = 600000) {
   BANDS.sort((a, b) => Math.abs(a.center - wavelength) - Math.abs(b.center - wavelength));
   for (const band of BANDS) {
     const brightness = brightnesses.find((b) => b.band === band.odbName);
