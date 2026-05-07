@@ -96,7 +96,7 @@ async function createCalParams(prisma: PrismaClient, log: (msg: string) => void)
 }
 
 async function updateInstrumentSite(prisma: PrismaClient, log: (msg: string) => void) {
-  const site: Site = process.env.SITE?.toLowerCase().endsWith('gs') ? 'GS' : 'GN';
+  const site: Site = (process.env.SITE ?? process.env.NAVIGATE_SITE)?.toLowerCase().endsWith('gs') ? 'GS' : 'GN';
 
   async function updateSite(from: string, toNorth: Instrument, toSouth: Instrument) {
     const to = site === 'GS' ? toSouth : toNorth;
