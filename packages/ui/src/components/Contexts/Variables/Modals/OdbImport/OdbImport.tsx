@@ -4,7 +4,7 @@ import { lazy, startTransition, Suspense, useState } from 'react';
 
 import { useCanEdit } from '@/components/atoms/auth';
 import { useOdbVisible } from '@/components/atoms/odb';
-import type { OdbObservationType } from '@/types';
+import type { OdbObservation } from '@/types';
 
 import { ModalSolarProgress } from '../ModalSolarProgress';
 import { useImportObservation } from './useImportObservation';
@@ -14,7 +14,7 @@ const ObservationTable = lazy(() => import('../ModalContent').then((module) => (
 export function OdbImport() {
   const canEdit = useCanEdit();
   const [odbVisible, setOdbVisible] = useOdbVisible();
-  const [selectedObservation, setSelectedObservation] = useState<OdbObservationType | null>(null);
+  const [selectedObservation, setSelectedObservation] = useState<OdbObservation | null>(null);
 
   const [importObservation, { loading }] = useImportObservation();
 

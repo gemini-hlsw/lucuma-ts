@@ -1,17 +1,12 @@
-import type { GetCentralWavelengthQuery, Instrument } from '@gql/odb/gen/graphql';
+import type { GetCentralWavelengthQuery } from '@gql/odb/gen/graphql';
 
-export function extractCentralWavelength(
-  instrument: Instrument | undefined | null,
-  data: GetCentralWavelengthQuery | undefined,
-) {
-  if (!instrument) return undefined;
-
+export function extractCentralWavelength(data: GetCentralWavelengthQuery | undefined) {
   const config = data?.executionConfig;
   if (!config) return undefined;
 
   // TODO: Add other instruments when odb supports them
   let instrumentName: keyof typeof config;
-  switch (instrument) {
+  switch (config.instrument) {
     case 'FLAMINGOS2':
       instrumentName = 'flamingos2';
       break;
@@ -21,9 +16,19 @@ export function extractCentralWavelength(
     case 'GMOS_SOUTH':
       instrumentName = 'gmosSouth';
       break;
+    case 'GHOST':
+      instrumentName = 'ghost';
+      break;
+    case 'IGRINS2':
+      instrumentName = 'igrins2';
+      break;
     default:
       return undefined;
   }
 
-  return config[instrumentName]?.acquisition?.nextAtom.steps[0]?.instrumentConfig.centralWavelength?.nanometers;
+  if (instrumentName === 'ghost' || instrumentName === 'igrins2') {
+    return config[instrumentName]?.science?.nextAtom.steps[0]?.instrumentConfig.centralWavelength?.nanometers;
+  } else {
+    return config[instrumentName]?.acquisition?.nextAtom.steps[0]?.instrumentConfig.centralWavelength?.nanometers;
+  }
 }

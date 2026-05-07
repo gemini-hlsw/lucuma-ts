@@ -3,8 +3,8 @@ import { useQueryAndSubscription } from '@gql/use-query-and-subscription';
 
 import { graphql } from './gen';
 
-export const GUIDE_STATE_FRAGMENT = graphql(`
-  fragment GuideStateItem on GuideConfigurationState {
+export const GUIDE_CONFIGURATION_STATE_FRAGMENT = graphql(`
+  fragment GuideConfigurationStateItem on GuideConfigurationState {
     m2Inputs
     m2Coma
     m1Input
@@ -22,7 +22,7 @@ export const GUIDE_STATE_FRAGMENT = graphql(`
 export const GUIDE_STATE_SUBSCRIPTION = graphql(`
   subscription guideState {
     guideState {
-      ...GuideStateItem
+      ...GuideConfigurationStateItem
     }
   }
 `);
@@ -30,7 +30,7 @@ export const GUIDE_STATE_SUBSCRIPTION = graphql(`
 export const GUIDE_STATE_QUERY = graphql(`
   query getGuideState {
     guideState {
-      ...GuideStateItem
+      ...GuideConfigurationStateItem
     }
   }
 `);

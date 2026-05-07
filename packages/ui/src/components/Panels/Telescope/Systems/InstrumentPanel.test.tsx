@@ -1,6 +1,5 @@
 import type { MockLink } from '@apollo/client/testing';
 import { GET_CONFIGURATION } from '@gql/configs/Configuration';
-import type { InstrumentItemFragment } from '@gql/configs/gen/graphql';
 import { GET_INSTRUMENT, SET_TEMPORARY_INSTRUMENT, UPDATE_INSTRUMENT } from '@gql/configs/Instrument';
 import { GET_INSTRUMENT_PORT } from '@gql/server/Instrument';
 import type { MockedResponseOf } from '@gql/util';
@@ -10,13 +9,14 @@ import { importInstrumentAtom } from '@/components/atoms/instrument';
 import { createConfiguration, createInstrumentConfig } from '@/test/create';
 import type { RenderResultWithStore } from '@/test/render';
 import { renderWithContext } from '@/test/render';
+import type { InstrumentConfig } from '@/types';
 
-import { Instrument } from './Instrument';
+import { InstrumentPanel } from './InstrumentPanel';
 
-describe(Instrument.name, () => {
+describe(InstrumentPanel.name, () => {
   let sut: RenderResultWithStore;
   beforeEach(async () => {
-    sut = await renderWithContext(<Instrument canEdit={true} />, {
+    sut = await renderWithContext(<InstrumentPanel canEdit={true} />, {
       mocks: [...mocks, getInstrumentMock, updateInstrumentMock, setTempInstrumentMock],
     });
   });
@@ -136,7 +136,7 @@ const updateInstrumentMock = {
     data: {
       updateInstrument: createInstrumentConfig({
         ...getInstrumentMock.result.data.instrument,
-        ...(arg as Partial<InstrumentItemFragment>),
+        ...(arg as Partial<InstrumentConfig>),
       }),
     },
   }),

@@ -5,7 +5,7 @@ import { useQueryAndSubscription } from '@gql/use-query-and-subscription';
 import { graphql } from './gen';
 
 export const TARGET_OFFSETS_FRAGMENT = graphql(`
-  fragment TargetAdjustmentOffsetItem on TargetOffsets {
+  fragment TargetOffsetsItem on TargetOffsets {
     sourceA {
       ...FocalPlaneOffsetItem
     }
@@ -35,7 +35,7 @@ export const FOCAL_PLANE_OFFSET_FRAGMENT = graphql(`
 export const TARGET_ADJUSTMENT_OFFSETS_QUERY = graphql(`
   query getTargetAdjustmentOffsets {
     targetAdjustmentOffsets {
-      ...TargetAdjustmentOffsetItem
+      ...TargetOffsetsItem
     }
   }
 `);
@@ -43,7 +43,7 @@ export const TARGET_ADJUSTMENT_OFFSETS_QUERY = graphql(`
 export const TARGET_ADJUSTMENT_OFFSETS_SUBSCRIPTION = graphql(`
   subscription targetAdjustmentOffsets {
     targetAdjustmentOffsets {
-      ...TargetAdjustmentOffsetItem
+      ...TargetOffsetsItem
     }
   }
 `);

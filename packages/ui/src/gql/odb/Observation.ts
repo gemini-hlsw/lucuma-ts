@@ -8,7 +8,6 @@ export const OBSERVATION_FRAGMENT = graphql(`
     id
     title
     subtitle
-    instrument
     reference {
       label
     }
@@ -84,12 +83,11 @@ export const NONSIDEREAL_FRAGMENT = graphql(`
   fragment NonsiderealItem on Nonsidereal {
     des
     keyType
-    key
   }
 `);
 
-export const BRIGHTNESS_FRAGMENT = graphql(`
-  fragment BrightnessItem on BandBrightnessIntegrated {
+export const BRIGHTNESS_INTEGRATED_FRAGMENT = graphql(`
+  fragment BrightnessIntegratedItem on BandBrightnessIntegrated {
     band
     value
   }
@@ -100,7 +98,7 @@ export const SOURCE_PROFILE_FRAGMENT = graphql(`
     point {
       bandNormalized {
         brightnesses {
-          ...BrightnessItem
+          ...BrightnessIntegratedItem
         }
       }
     }
@@ -183,9 +181,16 @@ export function useGetGuideEnvironment() {
   return useLazyQuery(GET_GUIDE_ENVIRONMENT, { errorPolicy: 'all', fetchPolicy: 'network-only' });
 }
 
+export const CENTRAL_WAVELENGTH_FRAGMENT = graphql(`
+  fragment WavelengthItem on Wavelength {
+    nanometers
+  }
+`);
+
 export const GET_CENTRAL_WAVELENGTH = graphql(`
   query getCentralWavelength($obsId: ObservationId!) {
     executionConfig(observationId: $obsId) {
+      instrument
       gmosNorth {
         acquisition {
           nextAtom {
@@ -194,7 +199,7 @@ export const GET_CENTRAL_WAVELENGTH = graphql(`
               id
               instrumentConfig {
                 centralWavelength {
-                  nanometers
+                  ...WavelengthItem
                 }
               }
             }
@@ -209,7 +214,7 @@ export const GET_CENTRAL_WAVELENGTH = graphql(`
               id
               instrumentConfig {
                 centralWavelength {
-                  nanometers
+                  ...WavelengthItem
                 }
               }
             }
@@ -224,7 +229,37 @@ export const GET_CENTRAL_WAVELENGTH = graphql(`
               id
               instrumentConfig {
                 centralWavelength {
-                  nanometers
+                  ...WavelengthItem
+                }
+              }
+            }
+          }
+        }
+      }
+      ghost {
+        science {
+          nextAtom {
+            id
+            steps {
+              id
+              instrumentConfig {
+                centralWavelength {
+                  ...WavelengthItem
+                }
+              }
+            }
+          }
+        }
+      }
+      igrins2 {
+        science {
+          nextAtom {
+            id
+            steps {
+              id
+              instrumentConfig {
+                centralWavelength {
+                  ...WavelengthItem
                 }
               }
             }

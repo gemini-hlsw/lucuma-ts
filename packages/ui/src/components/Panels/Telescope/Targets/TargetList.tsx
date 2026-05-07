@@ -1,11 +1,12 @@
 import { useConfiguration, useUpdateConfiguration } from '@gql/configs/Configuration';
+import type { TargetType } from '@gql/configs/gen/graphql';
 
-import type { TargetType, TypeOfTarget } from '@/types';
+import type { Target as ConfigsTarget } from '@/types';
 
 import { createUpdateSelectedTargetVariables } from './inputs';
 import { Target } from './Target';
 
-export function TargetList({ targets, type }: { targets: TargetType[]; type?: TypeOfTarget }) {
+export function TargetList({ targets, type }: { targets: ConfigsTarget[]; type?: TargetType }) {
   const { data: configurationData, loading: configurationLoading } = useConfiguration();
   const configuration = configurationData?.configuration;
 
@@ -39,7 +40,7 @@ export function TargetList({ targets, type }: { targets: TargetType[]; type?: Ty
     }
   }
 
-  const displayTargets = targets.map((target: TargetType) => (
+  const displayTargets = targets.map((target: ConfigsTarget) => (
     <Target
       key={`obsTarget-${target.pk ?? ''}-${target.id ?? ''}`}
       target={target}
@@ -54,7 +55,7 @@ export function TargetList({ targets, type }: { targets: TargetType[]; type?: Ty
     displayTargets.push(
       <Target
         key="obsTarget-0"
-        target={{} as TargetType}
+        target={{} as ConfigsTarget}
         updateSelectedTarget={() => undefined}
         selectedTarget={0}
         disabled={loading}

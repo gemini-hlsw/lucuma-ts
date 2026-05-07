@@ -7,7 +7,7 @@ import { lazy, startTransition, Suspense, useState } from 'react';
 import { useImportInstrument } from '@/components/atoms/instrument';
 import { useTransitionPromise } from '@/Helpers/hooks';
 import { useToast } from '@/Helpers/toast';
-import type { InstrumentType } from '@/types';
+import type { InstrumentConfig } from '@/types';
 
 import { ModalSolarProgress } from '../ModalSolarProgress';
 
@@ -18,7 +18,7 @@ const InstrumentContent = lazy(() =>
 export function Instrument() {
   const [importInstrument, setImportInstrument] = useImportInstrument();
 
-  const [instrument, setInstrument] = useState<InstrumentType | null>(null);
+  const [instrument, setInstrument] = useState<InstrumentConfig | null>(null);
 
   const [modifyInstrument, { loading }] = useModifyInstrument();
 
@@ -63,7 +63,7 @@ function useModifyInstrument() {
 
   const loading = setTemporaryInstrumentLoading || updateConfigurationLoading || configurationLoading || isPending;
 
-  const modifyInstrument = (instrument: InstrumentType) => {
+  const modifyInstrument = (instrument: InstrumentConfig) => {
     if (!configuration) return Promise.resolve();
 
     return startTransition(async () => {

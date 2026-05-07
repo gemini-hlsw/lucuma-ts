@@ -14,7 +14,7 @@ import type { ReactNode } from 'react';
 import { Crosshairs, CrosshairsSlash, Parking, ParkingSlash } from '@/components/Icons';
 import { BTN_CLASSES } from '@/Helpers/constants';
 import type { SetStale } from '@/Helpers/hooks';
-import type { SlewFlagsType } from '@/types';
+import type { MechSystemState, SlewFlags, TelescopeState } from '@/types';
 
 import {
   MOUNT_FOLLOW_MUTATION,
@@ -24,11 +24,7 @@ import {
   ROTATOR_FOLLOW_MUTATION,
   SCS_FOLLOW_MUTATION,
 } from './follow';
-import type {
-  MechSystemStateItemFragment as MechSystemState,
-  RunSlewMutationVariables,
-  TelescopeStateItemFragment as TelescopeState,
-} from './gen/graphql';
+import type { RunSlewMutationVariables } from './gen/graphql';
 import {
   MOUNT_PARK_MUTATION,
   OIWFS_PARK_MUTATION,
@@ -255,7 +251,7 @@ export function Pwfs2Park(props: ButtonProps) {
 // SLEW
 export function Slew(props: ButtonProps) {
   const { data, loading: slewLoading } = useSlewFlags();
-  const slewFlags = data?.slewFlags ?? ({} as SlewFlagsType);
+  const slewFlags = data?.slewFlags ?? ({} as SlewFlags);
 
   const { data: configData, loading: configLoading } = useConfiguration();
   const configuration = configData?.configuration;

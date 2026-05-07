@@ -8,7 +8,7 @@ import { ChevronRight } from '@/components/Icons';
 import { Altair, GeMS } from './AdaptiveOptics';
 import { AgMechanism } from './AgMechanism';
 import { Indicators } from './Indicators';
-import { Instrument } from './Instrument';
+import { InstrumentPanel } from './InstrumentPanel';
 import { M2Baffles } from './M2Baffles';
 import { Rotator } from './Rotator';
 import { BotSubsystems, TopSubsystems } from './Subsystems';
@@ -41,7 +41,7 @@ export function Systems() {
         </div>
       </div>
       <div className="right">
-        <Instrument canEdit={canEdit} />
+        <InstrumentPanel canEdit={canEdit} />
         <Rotator canEdit={canEdit} />
         <M2Baffles canEdit={canEdit} />
         {aoSystem}

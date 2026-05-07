@@ -1,6 +1,5 @@
 import { cn, isNotNullish, round } from '@gemini-hlsw/lucuma-common-ui';
-import type { UpdateGuideAlarmMutationVariables, WfsItemFragment, WfsType } from '@gql/configs/gen/graphql';
-import type { GuideQualityItemFragment } from '@gql/server/gen/graphql';
+import type { UpdateGuideAlarmMutationVariables, WfsType } from '@gql/configs/gen/graphql';
 import { Title } from '@Shared/Title/Title';
 import type { InputNumberValueChangeEvent } from 'primereact/inputnumber';
 import { InputNumber } from 'primereact/inputnumber';
@@ -10,6 +9,7 @@ import { useId } from 'react';
 
 import type { AlarmType } from '@/components/atoms/alarm';
 import { Volume, VolumeSlash } from '@/components/Icons';
+import type { GuideAlarm, GuideQuality } from '@/types';
 
 export function Alarm({
   wfs,
@@ -21,8 +21,8 @@ export function Alarm({
 }: {
   wfs: WfsType;
   disabled: boolean;
-  guideQuality: GuideQualityItemFragment | undefined;
-  alarm: WfsItemFragment | undefined;
+  guideQuality: GuideQuality | undefined;
+  alarm: GuideAlarm | undefined;
   onUpdateAlarm: (alarm: UpdateGuideAlarmMutationVariables) => void;
   alarmState: AlarmType | undefined;
 }) {

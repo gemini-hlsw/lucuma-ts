@@ -1,6 +1,6 @@
 import { isNotNullish } from '@gemini-hlsw/lucuma-common-ui';
 import { useConfiguration } from '@gql/configs/Configuration';
-import type { GuideLoopItemFragment, UpdateGuideLoopMutationVariables } from '@gql/configs/gen/graphql';
+import type { UpdateGuideLoopMutationVariables } from '@gql/configs/gen/graphql';
 import { useGetGuideLoop, useUpdateGuideLoop } from '@gql/configs/GuideLoop';
 import type { GuideConfigurationInput, GuideProbe, M1CorrectionSource, TipTiltSource } from '@gql/server/gen/graphql';
 import { useGuideDisable, useGuideEnable } from '@gql/server/GuideState';
@@ -14,6 +14,7 @@ import { useCallback, useEffect, useMemo } from 'react';
 import { useCanEdit } from '@/components/atoms/auth';
 import { useServerConfigValue } from '@/components/atoms/config';
 import { instrumentToOiwfs } from '@/Helpers/functions';
+import type { GuideLoop } from '@/types';
 
 import { Altair, GeMS } from './AdaptiveOptics';
 import { BrokenChain, ConnectedChain } from './Chain';
@@ -31,7 +32,7 @@ export function Configuration() {
       ({
         m1CorrectionsEnable: true,
         m2ComaM1CorrectionsSource: 'OIWFS',
-      } as GuideLoopItemFragment),
+      } as GuideLoop),
     [data?.guideLoop],
   );
 

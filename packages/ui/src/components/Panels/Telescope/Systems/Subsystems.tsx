@@ -9,7 +9,7 @@ import { Slider } from 'primereact/slider';
 import { startTransition, useEffect, useState } from 'react';
 
 import { BTN_CLASSES } from '@/Helpers/constants';
-import type { MechanismType } from '@/types';
+import type { Mechanism } from '@/types';
 
 export function TopSubsystems({ canEdit }: { canEdit: boolean }) {
   return (
@@ -61,7 +61,7 @@ export function BotSubsystems({ canEdit }: { canEdit: boolean }) {
       }
     });
   }, [data]);
-  const state = data?.mechanism ?? ({} as MechanismType);
+  const state = data?.mechanism ?? ({} as Mechanism);
 
   const [updateMechanism, { loading: updateLoading }] = useUpdateMechanism();
 

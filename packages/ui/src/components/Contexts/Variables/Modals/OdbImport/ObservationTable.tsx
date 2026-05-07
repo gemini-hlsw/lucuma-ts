@@ -12,11 +12,11 @@ import { useState } from 'react';
 
 import { useServerConfigValue } from '@/components/atoms/config';
 import { Search } from '@/components/Icons';
-import type { OdbObservationType } from '@/types';
+import type { OdbObservation } from '@/types';
 
 interface ParamsInterface {
-  selectedObservation: OdbObservationType | null;
-  setSelectedObservation: (_: OdbObservationType | null) => void;
+  selectedObservation: OdbObservation | null;
+  setSelectedObservation: (_: OdbObservation | null) => void;
 }
 
 interface ColumnProps extends PColumnProps {
@@ -152,7 +152,7 @@ export function ObservationTable({ selectedObservation, setSelectedObservation }
         paginator
         selectionMode="single"
         selection={selectedObservation}
-        onSelectionChange={(e) => setSelectedObservation(e.value as OdbObservationType | null)}
+        onSelectionChange={(e) => setSelectedObservation(e.value as OdbObservation | null)}
         className="p-datatable-customers"
         rows={15}
         dataKey="id"

@@ -1,6 +1,5 @@
+import type { TargetInput } from '@gql/configs/gen/graphql';
 import type { GetGuideEnvironmentQuery } from '@gql/odb/gen/graphql';
-
-import type { TargetInput } from '@/types';
 
 import { extractMagnitude } from './bands';
 

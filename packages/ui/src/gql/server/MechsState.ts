@@ -83,8 +83,8 @@ export function useAcWindowSize() {
   return useMutation(AC_WINDOW_SIZE);
 }
 
-export const PWFS_MECHS_FRAGMENT = graphql(`
-  fragment PwfsMechsItem on PwfsMechsState {
+export const PWFS_MECHS_STATE_FRAGMENT = graphql(`
+  fragment PwfsMechsStateItem on PwfsMechsState {
     filter
     fieldStop
   }
@@ -93,7 +93,7 @@ export const PWFS_MECHS_FRAGMENT = graphql(`
 export const PWFS1_MECHS_STATE = graphql(`
   query pwfs1MechsState {
     pwfs1MechsState {
-      ...PwfsMechsItem
+      ...PwfsMechsStateItem
     }
   }
 `);
@@ -101,7 +101,7 @@ export const PWFS1_MECHS_STATE = graphql(`
 export const PWFS1_MECHS_STATE_SUB = graphql(`
   subscription pwfs1MechsStateSub {
     pwfs1MechsState {
-      ...PwfsMechsItem
+      ...PwfsMechsStateItem
     }
   }
 `);
@@ -113,7 +113,7 @@ export function usePwfs1MechsState() {
 export const PWFS2_MECHS_STATE = graphql(`
   query pwfs2MechsState {
     pwfs2MechsState {
-      ...PwfsMechsItem
+      ...PwfsMechsStateItem
     }
   }
 `);
@@ -121,7 +121,7 @@ export const PWFS2_MECHS_STATE = graphql(`
 export const PWFS2_MECHS_STATE_SUB = graphql(`
   subscription pwfs2MechsStateSub {
     pwfs2MechsState {
-      ...PwfsMechsItem
+      ...PwfsMechsStateItem
     }
   }
 `);

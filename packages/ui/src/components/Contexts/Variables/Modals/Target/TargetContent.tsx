@@ -1,9 +1,5 @@
 import { deg2dms, deg2hms, dms2deg, hms2deg } from '@gemini-hlsw/lucuma-core';
-import type {
-  EphemerisKeyType,
-  NonsiderealTargetItemFragment,
-  SiderealTargetItemFragment,
-} from '@gql/configs/gen/graphql';
+import type { EphemerisKeyType } from '@gql/configs/gen/graphql';
 import { isBaseTarget } from '@gql/util';
 import { Dropdown } from 'primereact/dropdown';
 import { InputNumber } from 'primereact/inputnumber';
@@ -12,7 +8,7 @@ import type { Dispatch, SetStateAction } from 'react';
 import { startTransition, useEffect, useState } from 'react';
 
 import { useTargetEditValue } from '@/components/atoms/target';
-import type { TargetType } from '@/types';
+import type { NonsiderealTarget, SiderealTarget, Target } from '@/types';
 
 export function TargetContent({
   auxTarget,
@@ -20,8 +16,8 @@ export function TargetContent({
   disabled,
   loading,
 }: {
-  auxTarget: TargetType | null;
-  setAuxTarget: Dispatch<SetStateAction<TargetType | null>>;
+  auxTarget: Target | null;
+  setAuxTarget: Dispatch<SetStateAction<Target | null>>;
   disabled: boolean;
   loading: boolean;
 }) {
@@ -114,8 +110,8 @@ function SiderealInput({
   setc2String,
 }: {
   type: string;
-  auxTarget: SiderealTargetItemFragment | null;
-  setAuxTarget: Dispatch<(prevState: SiderealTargetItemFragment | null) => SiderealTargetItemFragment | null>;
+  auxTarget: SiderealTarget | null;
+  setAuxTarget: Dispatch<(prevState: SiderealTarget | null) => SiderealTarget | null>;
   disabled: boolean;
   loading: boolean;
   isTargetBase: boolean;
@@ -347,8 +343,8 @@ function NonsiderealInput({
   disabled,
   loading,
 }: {
-  auxTarget: NonsiderealTargetItemFragment | null;
-  setAuxTarget: Dispatch<(prevState: NonsiderealTargetItemFragment | null) => NonsiderealTargetItemFragment | null>;
+  auxTarget: NonsiderealTarget | null;
+  setAuxTarget: Dispatch<(prevState: NonsiderealTarget | null) => NonsiderealTarget | null>;
   disabled: boolean;
   loading: boolean;
 }) {

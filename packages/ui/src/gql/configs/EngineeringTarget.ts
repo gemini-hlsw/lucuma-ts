@@ -9,7 +9,7 @@ export const ENGINEERING_TARGET_FRAGMENT = graphql(`
     id
     name
     ra {
-      ...RaItem
+      ...RAItem
     }
     dec {
       ...DecItem

@@ -1,10 +1,11 @@
 import { cn, isNotNullish, round } from '@gemini-hlsw/lucuma-common-ui';
+import type { TargetType } from '@gql/configs/gen/graphql';
 import { useRef } from 'react';
 
 import { useCanEdit } from '@/components/atoms/auth';
 import { useSetTargetEdit } from '@/components/atoms/target';
 import { useLongPress } from '@/Helpers/longPress';
-import type { TargetType, TypeOfTarget } from '@/types';
+import type { Target } from '@/types';
 
 export function Target({
   target,
@@ -12,7 +13,7 @@ export function Target({
   selectedTarget,
   disabled,
 }: {
-  target: TargetType;
+  target: Target;
   updateSelectedTarget: (target: number) => void | Promise<void>;
   selectedTarget?: number | null;
   disabled?: boolean;
@@ -89,7 +90,7 @@ export function Target({
   }
 }
 
-function targetTypeLabel(type: TypeOfTarget) {
+function targetTypeLabel(type: TargetType) {
   switch (type) {
     case 'BLINDOFFSET':
       return 'Blind Offset';

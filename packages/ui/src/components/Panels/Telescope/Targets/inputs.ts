@@ -1,16 +1,7 @@
 import { when } from '@gemini-hlsw/lucuma-common-ui';
 import { useCalParams } from '@gql/configs/CalParams';
 import { useConfiguration } from '@gql/configs/Configuration';
-import type {
-  CalParamsItemFragment,
-  ConfigsTargetItemFragment,
-  ConfigurationItemFragment,
-  InstrumentItemFragment,
-  NonsiderealTargetItemFragment,
-  RotatorItemFragment,
-  SiderealTargetItemFragment,
-  UpdateConfigurationMutationVariables,
-} from '@gql/configs/gen/graphql';
+import type { TargetType, UpdateConfigurationMutationVariables } from '@gql/configs/gen/graphql';
 import { useConfiguredInstrument } from '@gql/configs/Instrument';
 import { useRotator } from '@gql/configs/Rotator';
 import { useTargets } from '@gql/configs/Target';
@@ -27,13 +18,21 @@ import type {
 } from '@gql/server/gen/graphql';
 
 import { useServerConfigValue } from '@/components/atoms/config';
-import type { TypeOfTarget } from '@/types';
+import type {
+  CalParams,
+  Configuration,
+  InstrumentConfig,
+  NonsiderealTarget,
+  Rotator,
+  SiderealTarget,
+  Target,
+} from '@/types';
 
-export function createRotatorTrackingInput(rotator: RotatorItemFragment): RotatorTrackingInput {
+export function createRotatorTrackingInput(rotator: Rotator): RotatorTrackingInput {
   return { ipa: { degrees: rotator.angle }, mode: rotator.tracking };
 }
 
-export function createInstrumentSpecificsInput(instrument: InstrumentItemFragment): InstrumentSpecificsInput {
+export function createInstrumentSpecificsInput(instrument: InstrumentConfig): InstrumentSpecificsInput {
   return {
     iaa: { degrees: instrument.iaa },
     focusOffset: { millimeters: instrument.focusOffset },
@@ -42,7 +41,7 @@ export function createInstrumentSpecificsInput(instrument: InstrumentItemFragmen
   };
 }
 
-export function createTargetPropertiesInput(target: ConfigsTargetItemFragment): TargetPropertiesInput {
+export function createTargetPropertiesInput(target: Target): TargetPropertiesInput {
   return {
     id: target.id,
     name: target.name,
@@ -53,7 +52,7 @@ export function createTargetPropertiesInput(target: ConfigsTargetItemFragment): 
   };
 }
 
-function createAzElTargetInput(target: ConfigsTargetItemFragment): AzElTargetInput | undefined {
+function createAzElTargetInput(target: Target): AzElTargetInput | undefined {
   return when(target.sidereal?.az, (az) =>
     when(target.sidereal?.el, (el) => ({
       azimuth: { degrees: az.degrees },
@@ -62,7 +61,7 @@ function createAzElTargetInput(target: ConfigsTargetItemFragment): AzElTargetInp
   );
 }
 
-export function createSiderealInput(target: SiderealTargetItemFragment): SiderealInput {
+export function createSiderealInput(target: SiderealTarget): SiderealInput {
   return {
     ra: when(target.ra, ({ hms }) => ({ hms })),
     dec: when(target.dec, ({ dms }) => ({ dms })),
@@ -84,7 +83,7 @@ export function createSiderealInput(target: SiderealTargetItemFragment): Siderea
   };
 }
 
-export function createNonsiderealInput(target: NonsiderealTargetItemFragment): NonsiderealInput {
+export function createNonsiderealInput(target: NonsiderealTarget): NonsiderealInput {
   return {
     des: target.des,
     keyType: target.keyType,
@@ -92,8 +91,8 @@ export function createNonsiderealInput(target: NonsiderealTargetItemFragment): N
 }
 
 export function createBafflesInput(
-  calParams: Pick<CalParamsItemFragment, 'baffleVisible' | 'baffleNearIR'>,
-  configuration: Pick<ConfigurationItemFragment, 'baffleMode' | 'centralBaffle' | 'deployableBaffle'>,
+  calParams: Pick<CalParams, 'baffleVisible' | 'baffleNearIR'>,
+  configuration: Pick<Configuration, 'baffleMode' | 'centralBaffle' | 'deployableBaffle'>,
 ): BaffleConfigInput | undefined {
   switch (configuration.baffleMode) {
     case 'AUTO':
@@ -118,7 +117,7 @@ export function createBafflesInput(
   }
 }
 
-function createGuiderConfig(target: ConfigsTargetItemFragment): GuiderConfig {
+function createGuiderConfig(target: Target): GuiderConfig {
   return {
     tracking: {
       // TODO: this should be selected depending on the "GuiderFooter" dropdown value!
@@ -136,14 +135,14 @@ function createGuiderConfig(target: ConfigsTargetItemFragment): GuiderConfig {
 }
 
 export function createTcsConfigInput(
-  instrument: InstrumentItemFragment,
-  rotator: RotatorItemFragment,
-  target: ConfigsTargetItemFragment,
-  oiTarget: ConfigsTargetItemFragment | undefined,
-  p1Target: ConfigsTargetItemFragment | undefined,
-  p2Target: ConfigsTargetItemFragment | undefined,
-  calParams: Pick<CalParamsItemFragment, 'baffleVisible' | 'baffleNearIR'>,
-  configuration: Pick<ConfigurationItemFragment, 'baffleMode' | 'centralBaffle' | 'deployableBaffle'>,
+  instrument: InstrumentConfig,
+  rotator: Rotator,
+  target: Target,
+  oiTarget: Target | undefined,
+  p1Target: Target | undefined,
+  p2Target: Target | undefined,
+  calParams: Pick<CalParams, 'baffleVisible' | 'baffleNearIR'>,
+  configuration: Pick<Configuration, 'baffleMode' | 'centralBaffle' | 'deployableBaffle'>,
 ): TcsConfigInput {
   const rotatorInput = createRotatorTrackingInput(rotator);
 
@@ -231,7 +230,7 @@ export function useTcsConfigInput():
 
 export function createUpdateSelectedTargetVariables(
   configurationPk: number,
-  type: TypeOfTarget | undefined,
+  type: TargetType | undefined,
   targetPk: number,
 ) {
   const variables: Pick<

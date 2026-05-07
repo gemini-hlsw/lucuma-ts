@@ -1,10 +1,10 @@
-import type { WfsItemFragment, WfsType } from '@gql/configs/gen/graphql';
-import type { GuideQualityItemFragment, GuideStateItemFragment } from '@gql/server/gen/graphql';
+import type { WfsType } from '@gql/configs/gen/graphql';
 
 import type { AlarmType } from '@/components/atoms/alarm';
+import type { GuideAlarm, GuideQuality, GuideState as GuideStateFull } from '@/types';
 
 type GuideState = Pick<
-  GuideStateItemFragment,
+  GuideStateFull,
   'm1Input' | 'm2Inputs' | 'mountOffload' | 'p1Integrating' | 'p2Integrating' | 'oiIntegrating'
 >;
 
@@ -12,8 +12,8 @@ type GuideState = Pick<
  * Alarms should trigger only for active WFS that are being used for correction M2 or M1, and only if the guide quality is below the limit or the centroid is not detected.
  */
 export function evaluateAlarm(
-  alarm: WfsItemFragment | undefined,
-  guideQuality: GuideQualityItemFragment | undefined,
+  alarm: GuideAlarm | undefined,
+  guideQuality: GuideQuality | undefined,
   guideState: GuideState | undefined,
 ): AlarmType | undefined {
   if (!alarm || !guideQuality || !guideState) return undefined;
@@ -36,8 +36,8 @@ export function evaluateAlarm(
  * Disabling alarms should only stop the sound.
  */
 export function evaluateAlarmSound(
-  alarm: WfsItemFragment,
-  guideQuality: GuideQualityItemFragment,
+  alarm: GuideAlarm,
+  guideQuality: GuideQuality,
   guideState: GuideState,
 ): AlarmType | undefined {
   const correctingM2TipTilt = ((guideState.m2Inputs ?? []) as WfsType[]).includes(alarm.wfs);
@@ -48,7 +48,7 @@ export function evaluateAlarmSound(
   return undefined;
 }
 
-function alarmIsActive(guideState: GuideState, alarm: WfsItemFragment): boolean {
+function alarmIsActive(guideState: GuideState, alarm: GuideAlarm): boolean {
   switch (alarm.wfs) {
     case 'OIWFS':
       return guideState.oiIntegrating;

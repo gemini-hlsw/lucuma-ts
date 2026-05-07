@@ -1,6 +1,5 @@
 import type { MockLink } from '@apollo/client/testing';
 import { GET_CONFIGURATION } from '@gql/configs/Configuration';
-import type { InstrumentItemFragment } from '@gql/configs/gen/graphql';
 import { GET_INSTRUMENT, UPDATE_INSTRUMENT } from '@gql/configs/Instrument';
 import type { AdjustTarget } from '@gql/server/gen/graphql';
 import { GET_INSTRUMENT_PORT } from '@gql/server/Instrument';
@@ -19,6 +18,7 @@ import { userEvent } from 'vitest/browser';
 import { createConfiguration, createFocalPlaneOffset, createInstrumentConfig } from '@/test/create';
 import { operationOutcome, selectDropdownOption } from '@/test/helpers';
 import { type RenderResultWithStore, renderWithContext } from '@/test/render';
+import type { InstrumentConfig } from '@/types';
 
 import type { Alignment } from './Controls';
 import TargetsHandset from './TargetsHandset';
@@ -403,7 +403,7 @@ const updateInstrumentMock = {
     data: {
       updateInstrument: createInstrumentConfig({
         wfs: 'OIWFS',
-        ...(arg as Partial<InstrumentItemFragment>),
+        ...(arg as Partial<InstrumentConfig>),
       }),
     },
   }),
