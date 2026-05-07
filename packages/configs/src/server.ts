@@ -3,7 +3,6 @@ import { createSchema, createYoga, useReadinessCheck } from 'graphql-yoga';
 
 import { resolvers } from './graphql/gen/resolvers.generated.ts';
 import { typeDefs } from './graphql/gen/typeDefs.generated.ts';
-import { log } from './logger.ts';
 import type { PrismaClient } from './prisma/db.ts';
 
 export interface GraphQLContext extends YogaInitialContext {
@@ -15,9 +14,11 @@ const schema = createSchema({ typeDefs, resolvers });
 
 export function makeYogaServer({
   prisma,
+  log,
   disposeOnProcessTerminate,
 }: {
   prisma: PrismaClient;
+  log: YogaLogger;
   disposeOnProcessTerminate?: boolean;
 }) {
   return createYoga<GraphQLContext>({

@@ -38,7 +38,7 @@ function forkWorkers() {
 
 function startServer() {
   const port = parseInt(process.env.SERVER_PORT ?? process.env.PORT!, 10) || 4000;
-  const yoga = makeYogaServer({ prisma });
+  const yoga = makeYogaServer({ prisma, log });
   // eslint-disable-next-line @typescript-eslint/no-misused-promises
   const server = createServer(yoga);
 

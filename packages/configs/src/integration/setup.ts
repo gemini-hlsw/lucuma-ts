@@ -15,6 +15,8 @@ import { PrismaClient } from '../prisma/gen/client.ts';
 import { populateDb } from '../prisma/queries/main.ts';
 import { type GraphQLContext, makeYogaServer } from '../server.ts';
 
+const noopLogger = createLogger('silent');
+
 interface ServerFixture {
   /**
    * Execute a graphql operation and return the result.
@@ -74,7 +76,7 @@ export function initializeServerFixture() {
       new PrismaClient({ adapter: new PrismaPg({ connectionString: container.getConnectionUri() }) }),
     );
 
-    const yoga = makeYogaServer({ prisma, disposeOnProcessTerminate: false });
+    const yoga = makeYogaServer({ prisma, log: noopLogger, disposeOnProcessTerminate: false });
     fixture.yoga = yoga;
 
     const executeGraphql: ServerFixture['executeGraphql'] = async <TData extends Record<string, unknown>>({
@@ -131,5 +133,5 @@ async function migrateAndPopulateDb(client: Prisma) {
     const migrationSqlContent = await fs.readFile(`./prisma/migrations/${dir}/migration.sql`, 'utf-8');
     await client.$executeRawUnsafe(migrationSqlContent);
   }
-  await populateDb(client, createLogger('silent'));
+  await populateDb(client, noopLogger);
 }
