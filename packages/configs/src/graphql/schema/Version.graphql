@@ -1,6 +1,5 @@
 type Version {
   serverVersion: String!
-  databaseVersion: String!
 }
 
 type Query {

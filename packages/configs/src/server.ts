@@ -1,4 +1,5 @@
-import { createSchema, createYoga, type YogaInitialContext } from 'graphql-yoga';
+import type { YogaInitialContext } from 'graphql-yoga';
+import { createSchema, createYoga, useReadinessCheck } from 'graphql-yoga';
 
 import { resolvers } from './graphql/gen/resolvers.generated.ts';
 import { typeDefs } from './graphql/gen/typeDefs.generated.ts';
@@ -23,5 +24,14 @@ export function makeYogaServer({
     context: { prisma },
     maskedErrors: false,
     disposeOnProcessTerminate: disposeOnProcessTerminate ?? true,
+    healthCheckEndpoint: '/health',
+    plugins: [
+      useReadinessCheck({
+        endpoint: '/ready',
+        check: async () => {
+          await prisma.$queryRaw`SELECT 1`;
+        },
+      }),
+    ],
   });
 }
