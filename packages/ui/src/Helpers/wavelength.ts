@@ -29,6 +29,8 @@ export function extractCentralWavelength(data: GetCentralWavelengthQuery | undef
   if (instrumentName === 'ghost' || instrumentName === 'igrins2') {
     return config[instrumentName]?.science?.nextAtom.steps[0]?.instrumentConfig.centralWavelength?.nanometers;
   } else {
-    return config[instrumentName]?.acquisition?.nextAtom.steps[0]?.instrumentConfig.centralWavelength?.nanometers;
+    return (
+      config[instrumentName]?.acquisition?.nextAtom.steps[0] ?? config[instrumentName]?.science?.nextAtom.steps[0]
+    )?.instrumentConfig.centralWavelength?.nanometers;
   }
 }

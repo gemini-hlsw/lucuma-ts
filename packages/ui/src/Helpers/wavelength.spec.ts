@@ -66,6 +66,37 @@ describe(extractCentralWavelength.name, () => {
               ],
             },
           },
+          science: {
+            __typename: 'Flamingos2ExecutionSequence',
+            nextAtom: {
+              __typename: 'Flamingos2Atom',
+              id: 'atom3',
+              steps: [
+                {
+                  __typename: 'Flamingos2Step',
+                  id: 'step3',
+                  instrumentConfig: {
+                    __typename: 'Flamingos2Dynamic',
+                    centralWavelength: {
+                      __typename: 'Wavelength',
+                      nanometers: 3500,
+                    },
+                  },
+                },
+                {
+                  __typename: 'Flamingos2Step',
+                  id: 'step4',
+                  instrumentConfig: {
+                    __typename: 'Flamingos2Dynamic',
+                    centralWavelength: {
+                      __typename: 'Wavelength',
+                      nanometers: 4500,
+                    },
+                  },
+                },
+              ],
+            },
+          },
         },
         gmosNorth: null,
         gmosSouth: null,
@@ -75,6 +106,62 @@ describe(extractCentralWavelength.name, () => {
       },
     };
     expect(extractCentralWavelength(data)).toBe(1500);
+  });
+
+  it('returns science central wavelength if acquisition is not present', () => {
+    const data: GetCentralWavelengthQuery = {
+      executionConfig: {
+        instrument: 'FLAMINGOS2',
+        flamingos2: {
+          __typename: 'Flamingos2ExecutionConfig',
+          acquisition: {
+            __typename: 'Flamingos2ExecutionSequence',
+            nextAtom: {
+              __typename: 'Flamingos2Atom',
+              id: 'atom1',
+              steps: [],
+            },
+          },
+          science: {
+            __typename: 'Flamingos2ExecutionSequence',
+            nextAtom: {
+              __typename: 'Flamingos2Atom',
+              id: 'atom3',
+              steps: [
+                {
+                  __typename: 'Flamingos2Step',
+                  id: 'step3',
+                  instrumentConfig: {
+                    __typename: 'Flamingos2Dynamic',
+                    centralWavelength: {
+                      __typename: 'Wavelength',
+                      nanometers: 3500,
+                    },
+                  },
+                },
+                {
+                  __typename: 'Flamingos2Step',
+                  id: 'step4',
+                  instrumentConfig: {
+                    __typename: 'Flamingos2Dynamic',
+                    centralWavelength: {
+                      __typename: 'Wavelength',
+                      nanometers: 4500,
+                    },
+                  },
+                },
+              ],
+            },
+          },
+        },
+        gmosNorth: null,
+        gmosSouth: null,
+        ghost: null,
+        igrins2: null,
+        __typename: 'ExecutionConfig',
+      },
+    };
+    expect(extractCentralWavelength(data)).toBe(3500);
   });
 
   it('returns the central wavelength for GMOS_NORTH', () => {
@@ -103,6 +190,7 @@ describe(extractCentralWavelength.name, () => {
               ],
             },
           },
+          science: null,
         },
         gmosSouth: null,
         flamingos2: null,
@@ -142,6 +230,7 @@ describe(extractCentralWavelength.name, () => {
               ],
             },
           },
+          science: null,
         },
         ghost: null,
         igrins2: null,

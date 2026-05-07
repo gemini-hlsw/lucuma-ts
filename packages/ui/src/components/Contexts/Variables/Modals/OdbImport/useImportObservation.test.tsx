@@ -238,6 +238,7 @@ const mocks = [
               },
               __typename: 'GmosNorthExecutionSequence',
             },
+            science: null,
             __typename: 'GmosNorthExecutionConfig',
           },
           gmosSouth: null,

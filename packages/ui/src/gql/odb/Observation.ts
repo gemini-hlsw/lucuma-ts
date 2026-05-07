@@ -187,83 +187,122 @@ export const CENTRAL_WAVELENGTH_FRAGMENT = graphql(`
   }
 `);
 
+export const GMOS_NORTH_EXECUTION_SEQUENCE_FRAGMENT = graphql(`
+  fragment GmosNorthExecutionSequenceItem on GmosNorthExecutionSequence {
+    nextAtom {
+      id
+      steps {
+        id
+        instrumentConfig {
+          centralWavelength {
+            ...WavelengthItem
+          }
+        }
+      }
+    }
+  }
+`);
+
+export const GMOS_SOUTH_EXECUTION_SEQUENCE_FRAGMENT = graphql(`
+  fragment GmosSouthExecutionSequenceItem on GmosSouthExecutionSequence {
+    nextAtom {
+      id
+      steps {
+        id
+        instrumentConfig {
+          centralWavelength {
+            ...WavelengthItem
+          }
+        }
+      }
+    }
+  }
+`);
+
+export const FLAMINGOS2_EXECUTION_SEQUENCE_FRAGMENT = graphql(`
+  fragment Flamingos2ExecutionSequenceItem on Flamingos2ExecutionSequence {
+    nextAtom {
+      id
+      steps {
+        id
+        instrumentConfig {
+          centralWavelength {
+            ...WavelengthItem
+          }
+        }
+      }
+    }
+  }
+`);
+
+export const GHOST_EXECUTION_SEQUENCE_FRAGMENT = graphql(`
+  fragment GhostExecutionSequenceItem on GhostExecutionSequence {
+    nextAtom {
+      id
+      steps {
+        id
+        instrumentConfig {
+          centralWavelength {
+            ...WavelengthItem
+          }
+        }
+      }
+    }
+  }
+`);
+
+export const IGRINS2_EXECUTION_SEQUENCE_FRAGMENT = graphql(`
+  fragment Igrins2ExecutionSequenceItem on Igrins2ExecutionSequence {
+    nextAtom {
+      id
+      steps {
+        id
+        instrumentConfig {
+          centralWavelength {
+            ...WavelengthItem
+          }
+        }
+      }
+    }
+  }
+`);
+
 export const GET_CENTRAL_WAVELENGTH = graphql(`
   query getCentralWavelength($obsId: ObservationId!) {
     executionConfig(observationId: $obsId) {
       instrument
       gmosNorth {
         acquisition {
-          nextAtom {
-            id
-            steps {
-              id
-              instrumentConfig {
-                centralWavelength {
-                  ...WavelengthItem
-                }
-              }
-            }
-          }
+          ...GmosNorthExecutionSequenceItem
+        }
+        science {
+          ...GmosNorthExecutionSequenceItem
         }
       }
       gmosSouth {
         acquisition {
-          nextAtom {
-            id
-            steps {
-              id
-              instrumentConfig {
-                centralWavelength {
-                  ...WavelengthItem
-                }
-              }
-            }
-          }
+          ...GmosSouthExecutionSequenceItem
+        }
+        science {
+          ...GmosSouthExecutionSequenceItem
         }
       }
       flamingos2 {
         acquisition {
-          nextAtom {
-            id
-            steps {
-              id
-              instrumentConfig {
-                centralWavelength {
-                  ...WavelengthItem
-                }
-              }
-            }
-          }
+          ...Flamingos2ExecutionSequenceItem
+        }
+        science {
+          ...Flamingos2ExecutionSequenceItem
         }
       }
       ghost {
         science {
-          nextAtom {
-            id
-            steps {
-              id
-              instrumentConfig {
-                centralWavelength {
-                  ...WavelengthItem
-                }
-              }
-            }
-          }
+          ...GhostExecutionSequenceItem
         }
       }
       igrins2 {
         science {
-          nextAtom {
-            id
-            steps {
-              id
-              instrumentConfig {
-                centralWavelength {
-                  ...WavelengthItem
-                }
-              }
-            }
-          }
+          ...Igrins2ExecutionSequenceItem
         }
       }
     }
