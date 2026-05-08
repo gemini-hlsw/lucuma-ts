@@ -25,7 +25,7 @@ RUN corepack install
 
 FROM base AS build
 COPY --chown=software:software . .
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile --prefer-offline
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm ci --prefer-offline
 RUN pnpm -r build
 RUN pnpm deploy --filter=navigate-configs --prod pruned
 # Add pnpm to packageManager field
