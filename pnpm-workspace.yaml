@@ -8,19 +8,15 @@ minimumReleaseAge: 2880
 minimumReleaseAgeExclude:
   - '@gemini-hlsw/*'
 
-onlyBuiltDependencies:
-  - '@parcel/watcher'
-  - '@prisma/engines'
-  - 'prisma'
-
-ignoredBuiltDependencies:
-  - 'cpu-features'
-  - 'esbuild'
-  - 'protobufjs'
-  - 'ssh2'
-  - 'unrs-resolver'
-
 trustPolicy: no-downgrade
 trustPolicyIgnoreAfter: 20160 # 2 weeks
 
-blockExoticSubdeps: true
+allowBuilds:
+  '@parcel/watcher': true
+  '@prisma/engines': true
+  prisma: true
+  cpu-features: false
+  esbuild: false
+  protobufjs: false
+  ssh2: false
+  unrs-resolver: false

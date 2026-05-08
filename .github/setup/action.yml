@@ -19,6 +19,6 @@ runs:
         node-version-file: '.nvmrc'
         cache: 'pnpm'
         registry-url: 'https://registry.npmjs.org/'
-    - run: pnpm install --frozen-lockfile --prefer-offline
+    - run: pnpm ci --prefer-offline
       if: ${{ inputs.install-deps == 'true' }}
       shell: bash
