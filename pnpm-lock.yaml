@@ -100,11 +100,11 @@ importers:
         specifier: 1.99.0
         version: 1.99.0
       stylelint:
-        specifier: 17.11.0
-        version: 17.11.0(typescript@6.0.3)
+        specifier: 17.11.1
+        version: 17.11.1(typescript@6.0.3)
       stylelint-config-standard:
         specifier: 40.0.0
-        version: 40.0.0(stylelint@17.11.0(typescript@6.0.3))
+        version: 40.0.0(stylelint@17.11.1(typescript@6.0.3))
       tailwindcss:
         specifier: 4.3.0
         version: 4.3.0
@@ -3243,10 +3243,6 @@ packages:
     resolution: {integrity: sha512-lJJV/5dYS+RcL8uQdBDW9c9uWFLLBNRyFhnAKXw5tVqLlKZ4RMGZKv+YQ/IA3OhD+RpbJa1LLFM1FQPGyIXvOA==}
     engines: {node: '>=12'}
 
-  is-plain-object@5.0.0:
-    resolution: {integrity: sha512-VRSzKkbMm5jMDoKLbltAkFQ5Qr7VDiTFGXxYFXXowVj387GeGNOCsOH6Msy00SGZ3Fp84b1Naa1psqgcCIEP5Q==}
-    engines: {node: '>=0.10.0'}
-
   is-property@1.0.2:
     resolution: {integrity: sha512-Ks/IoX00TtClbGQr4TWXemAnktAQvYB7HzcCxDGqEZU6oCmb2INHuOoKxbtR+HFkmYWBKv/dOZtGRiAjDhj92g==}
 
@@ -4408,8 +4404,8 @@ packages:
     peerDependencies:
       stylelint: ^17.0.0
 
-  stylelint@17.11.0:
-    resolution: {integrity: sha512-/3czzmbF9XdGWvReDF3Ex4R23Ajolo7j8RB2bFNEqk6Ht356nlpVV+G5bG2Qt8AW1ofJzXztBRDnAtd7cgowWA==}
+  stylelint@17.11.1:
+    resolution: {integrity: sha512-+smN/HqVTggUx3iuAzOi9fPh8SrH+cJWlZrYVldXoJ06orWBhZ4Ue/QEp64oei6pVrAh4w3tG+Y12Vw7MbCFRQ==}
     engines: {node: '>=20.19.0'}
     hasBin: true
 
@@ -8140,8 +8136,6 @@ snapshots:
 
   is-path-inside@4.0.0: {}
 
-  is-plain-object@5.0.0: {}
-
   is-property@1.0.2: {}
 
   is-regex@1.2.1:
@@ -9265,16 +9259,16 @@ snapshots:
 
   strip-json-comments@3.1.1: {}
 
-  stylelint-config-recommended@18.0.0(stylelint@17.11.0(typescript@6.0.3)):
+  stylelint-config-recommended@18.0.0(stylelint@17.11.1(typescript@6.0.3)):
     dependencies:
-      stylelint: 17.11.0(typescript@6.0.3)
+      stylelint: 17.11.1(typescript@6.0.3)
 
-  stylelint-config-standard@40.0.0(stylelint@17.11.0(typescript@6.0.3)):
+  stylelint-config-standard@40.0.0(stylelint@17.11.1(typescript@6.0.3)):
     dependencies:
-      stylelint: 17.11.0(typescript@6.0.3)
-      stylelint-config-recommended: 18.0.0(stylelint@17.11.0(typescript@6.0.3))
+      stylelint: 17.11.1(typescript@6.0.3)
+      stylelint-config-recommended: 18.0.0(stylelint@17.11.1(typescript@6.0.3))
 
-  stylelint@17.11.0(typescript@6.0.3):
+  stylelint@17.11.1(typescript@6.0.3):
     dependencies:
       '@csstools/css-calc': 3.2.0(@csstools/css-parser-algorithms@4.0.0(@csstools/css-tokenizer@4.0.0))(@csstools/css-tokenizer@4.0.0)
       '@csstools/css-parser-algorithms': 4.0.0(@csstools/css-tokenizer@4.0.0)
@@ -9297,7 +9291,6 @@ snapshots:
       html-tags: 5.1.0
       ignore: 7.0.5
       import-meta-resolve: 4.2.0
-      is-plain-object: 5.0.0
       mathml-tag-names: 4.0.0
       meow: 14.1.0
       micromatch: 4.0.8
