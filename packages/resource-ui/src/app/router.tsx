@@ -24,7 +24,7 @@ const routes: RouteObject[] = [
       {
         path: 'tonight',
         element: <TonightPage />,
-      }
+      },
     ],
   },
 ];

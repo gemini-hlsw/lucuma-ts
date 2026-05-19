@@ -39,7 +39,7 @@ describe(Sidebar.name, () => {
   it('marks disabled navigation items as aria-disabled', async () => {
     const { getByText } = await renderWithContext(<Sidebar />);
 
-    const tonightLabel = getByText('Tonight').element();
+    const tonightLabel = getByText('Test').element();
     const disabledContainer = tonightLabel.closest('[aria-disabled="true"]');
 
     expect(disabledContainer).not.toBeNull();
