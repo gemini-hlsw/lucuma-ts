@@ -1,13 +1,13 @@
 /**
  * GraphQL Codegen config for generating typed client queries
- * from the live Resource GraphQL service.
+ * from the local mock GraphQL server.
  */
 
 import type { CodegenConfig } from '@graphql-codegen/cli';
 
 const config: CodegenConfig = {
   overwrite: true,
-  schema: 'https://lucuma-resource-dev-f85504a9f5e4.herokuapp.com/resource/graphql',
+  schema: './mock-server/*.graphql',
   documents: ['src/gql/**/*.ts', 'src/**/*.tsx'],
   generates: {
     'src/gql/gen/': {

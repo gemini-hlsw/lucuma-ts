@@ -2,6 +2,7 @@ import { createBrowserRouter, Navigate, type RouteObject } from 'react-router';
 
 import Layout from '../components/layout/Layout';
 import TelescopeSchedulePage from '../features/telescope-schedule/TelescopeSchedulePage';
+import TonightPage from '../features/tonight/TonightPage';
 
 /**
  * Defines the application's routing structure.
@@ -20,6 +21,10 @@ const routes: RouteObject[] = [
         path: 'telescope-schedule',
         element: <TelescopeSchedulePage />,
       },
+      {
+        path: 'tonight',
+        element: <TonightPage />,
+      }
     ],
   },
 ];

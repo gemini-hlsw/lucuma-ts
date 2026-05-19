@@ -54,7 +54,7 @@ export const SIDEBAR_MENU_SECTIONS: SidebarMenuSection[] = [
         label: 'Tonight',
         to: '/tonight',
         icon: faMoonStars,
-        disabled: true,
+        disabled: false,
       },
     ],
   },
