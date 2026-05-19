@@ -4,10 +4,10 @@ import { graphql } from './gen';
 import type { Site } from './gen/graphql';
 
 export const GET_TELESCOPE_NIGHT_TIMELINE = graphql(`
-  query getTelescopeNightTimeline($site: Site!, $observingDate: Date!) {
-    telescopeNightTimeline(site: $site, observingDate: $observingDate) {
+  query getTelescopeNightTimeline($site: Site!, $observingNight: Date!) {
+    telescopeNightTimeline(site: $site, observingNight: $observingNight) {
       site
-      observingDate
+      observingNight
       displayInterval {
         start
         end
@@ -45,11 +45,11 @@ export const GET_TELESCOPE_NIGHT_TIMELINE = graphql(`
   }
 `);
 
-export function useTelescopeNightTimeline(site: Site, observingDate: string) {
+export function useTelescopeNightTimeline(site: Site, observingNight: string) {
   return useQuery(GET_TELESCOPE_NIGHT_TIMELINE, {
     variables: {
       site,
-      observingDate,
+      observingNight,
     },
   });
 }

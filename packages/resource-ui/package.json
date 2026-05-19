@@ -13,6 +13,7 @@
     "dev": "vite",
     "dev:mock-server": "node --watch --enable-source-maps ./mock-server/server.ts",
     "codegen": "graphql-codegen --config tasks/codegen.ts",
+    "codegen:mock": "graphql-codegen --config tasks/codegen.mock.ts",
     "prebuild": "pnpm run codegen",
     "test": "vitest run",
     "build": "tsc && vite build",
