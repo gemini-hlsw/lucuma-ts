@@ -177,8 +177,8 @@ importers:
         specifier: 0.16.0
         version: 0.16.0(graphql@16.14.0)
       '@gemini-hlsw/lucuma-schemas':
-        specifier: 0.177.1-20260514-7cbecf8b
-        version: 0.177.1-20260514-7cbecf8b
+        specifier: 0.177.2-20260520-02baa34d
+        version: 0.177.2-20260520-02baa34d
       '@testcontainers/postgresql':
         specifier: 11.14.0
         version: 11.14.0
@@ -222,6 +222,9 @@ importers:
       '@gemini-hlsw/lucuma-common-ui':
         specifier: workspace:*
         version: link:../common-ui
+      '@gemini-hlsw/lucuma-schemas':
+        specifier: 0.177.2-20260520-02baa34d
+        version: 0.177.2-20260520-02baa34d
       '@gemini-hlsw/lucuma-ui-css':
         specifier: 0.176.0
         version: 0.176.0
@@ -265,8 +268,8 @@ importers:
         specifier: 0.198.0
         version: 0.198.0
       '@gemini-hlsw/lucuma-schemas':
-        specifier: 0.177.1-20260514-7cbecf8b
-        version: 0.177.1-20260514-7cbecf8b
+        specifier: 0.177.2-20260520-02baa34d
+        version: 0.177.2-20260520-02baa34d
       '@gemini-hlsw/lucuma-ui-css':
         specifier: 0.176.0
         version: 0.176.0
@@ -579,8 +582,8 @@ packages:
   '@gemini-hlsw/lucuma-core@0.198.0':
     resolution: {integrity: sha512-OoI7hRzb//CsbQ1isszIMMOJNn5g1UHZ6vxZ1CAu0skHfINo8O35YycRw51DDyNxjeTzJljA/IvF9htIkTLZVA==}
 
-  '@gemini-hlsw/lucuma-schemas@0.177.1-20260514-7cbecf8b':
-    resolution: {integrity: sha512-EtgYYDhLZmY2GfzbG5I6jdbzaSJ2eHTTliVsaH8H+tB49RgADU9uj6sROWRwyp/IgajUKlI4CwE7HCW5ysgU/Q==}
+  '@gemini-hlsw/lucuma-schemas@0.177.2-20260520-02baa34d':
+    resolution: {integrity: sha512-ckSYFj2plrQWq9c/iNttIJ/ew6rAKA0DgyYVp8UeWovUp4tHQuLGPhZwd1PCjgOWw6ZfE6jbwxMyh3H0vjgsNg==}
 
   '@gemini-hlsw/lucuma-ui-css@0.176.0':
     resolution: {integrity: sha512-S9VAeheNz082WNPARYDdJQWY0KxPMG2zYosgKemFOTWGRGr5bGcX///IU0VzZO1+X8DOtS8J7EXFF/WNoYMl6g==}
@@ -5088,7 +5091,7 @@ snapshots:
 
   '@gemini-hlsw/lucuma-core@0.198.0': {}
 
-  '@gemini-hlsw/lucuma-schemas@0.177.1-20260514-7cbecf8b': {}
+  '@gemini-hlsw/lucuma-schemas@0.177.2-20260520-02baa34d': {}
 
   '@gemini-hlsw/lucuma-ui-css@0.176.0': {}
 

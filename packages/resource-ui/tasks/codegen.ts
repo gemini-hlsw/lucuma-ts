@@ -7,7 +7,7 @@ import type { CodegenConfig } from '@graphql-codegen/cli';
 
 const config: CodegenConfig = {
   overwrite: true,
-  schema: 'https://lucuma-resource-dev-f85504a9f5e4.herokuapp.com/resource/graphql',
+  schema: import.meta.resolve('@gemini-hlsw/lucuma-schemas/resource'),
   documents: ['src/gql/**/*.ts', 'src/**/*.tsx'],
   generates: {
     'src/gql/gen/': {
