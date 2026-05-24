@@ -38,7 +38,7 @@
     "@types/react": "19.2.15",
     "@types/react-dom": "19.2.3",
     "@vitejs/plugin-react": "6.0.2",
-    "@vitest/browser-playwright": "4.1.6",
+    "@vitest/browser-playwright": "4.1.7",
     "babel-plugin-react-compiler": "1.0.0",
     "eslint": "9.39.4",
     "eslint-import-resolver-typescript": "4.4.4",
@@ -59,9 +59,9 @@
     "tailwindcss": "4.3.0",
     "typescript": "6.0.3",
     "typescript-eslint": "8.59.3",
-    "vite": "8.0.13",
+    "vite": "8.0.14",
     "vite-plugin-mkcert": "2.0.0",
-    "vitest": "4.1.6",
+    "vitest": "4.1.7",
     "vitest-browser-react": "2.2.0"
   },
   "lint-staged": {
