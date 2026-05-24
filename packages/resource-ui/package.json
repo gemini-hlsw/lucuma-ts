@@ -32,7 +32,7 @@
   "devDependencies": {
     "@apollo/client": "4.1.9",
     "@gemini-hlsw/lucuma-common-ui": "workspace:*",
-    "@gemini-hlsw/lucuma-schemas": "0.177.2-20260520-02baa34d",
+    "@gemini-hlsw/lucuma-schemas": "0.177.2-20260522-98199fb8",
     "@gemini-hlsw/lucuma-ui-css": "0.176.0",
     "@graphql-codegen/client-preset": "6.0.0",
     "@graphql-typed-document-node/core": "3.2.0",
