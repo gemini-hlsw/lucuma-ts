@@ -1,9 +1,8 @@
-import type { DocumentNode } from '@apollo/client';
+import type { OperationVariables } from '@apollo/client';
 import { useQuery } from '@apollo/client/react';
-import type { ResultOf } from '@graphql-typed-document-node/core';
+import type { TypedDocumentNode } from '@graphql-typed-document-node/core';
 import { useEffect } from 'react';
 
-import type { SetStale } from '@/Helpers/hooks';
 import { useStale } from '@/Helpers/hooks';
 
 export interface QueryAndSubscriptionOptions {
@@ -21,21 +20,21 @@ export interface QueryAndSubscriptionOptions {
  * Subscription data is preferred over query data. Until the subscription data is received, the query data is used.
  */
 export function useQueryAndSubscription<
-  TQuery extends DocumentNode,
-  TSub extends DocumentNode,
-  K extends keyof Omit<ResultOf<TQuery | TSub>, '__typename'>,
+  TResult,
+  TVariables extends OperationVariables,
+  TResultSub,
+  TVariablesSub extends OperationVariables,
+  K extends keyof Omit<TResult | TResultSub, '__typename'>,
 >(
-  queryNode: TQuery,
-  subscriptionNode: TSub,
+  queryNode: TypedDocumentNode<TResult, TVariables>,
+  subscriptionNode: TypedDocumentNode<TResultSub, TVariablesSub>,
   key: K,
   options: QueryAndSubscriptionOptions = { useStale: true },
-): Pick<useQuery.Result<TQuery | TSub>, 'error' | 'loading'> & {
-  data: ResultOf<TQuery | TSub>[K] | undefined;
-  setStale: SetStale;
-} {
+) {
   const [stale, setStale] = useStale();
 
-  const { subscribeToMore, data, ...query } = useQuery<ResultOf<TQuery | TSub>>(queryNode, {
+  // eslint-disable-next-line @typescript-eslint/no-deprecated
+  const { subscribeToMore, data, ...query } = useQuery<TResult | TResultSub>(queryNode, {
     nextFetchPolicy: 'cache-only',
   });
 
@@ -43,7 +42,7 @@ export function useQueryAndSubscription<
     () =>
       subscribeToMore({
         document: subscriptionNode,
-        updateQuery: (prev, { subscriptionData }) => subscriptionData.data ?? (prev as ResultOf<TQuery>),
+        updateQuery: (prev, { subscriptionData }) => subscriptionData.data ?? (prev as TResult),
       }),
     [subscribeToMore, subscriptionNode],
   );
