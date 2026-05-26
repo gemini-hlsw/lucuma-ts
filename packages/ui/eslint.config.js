@@ -60,6 +60,7 @@ function graphqlConfigForSchema(schema, base) {
         },
       },
       plugins: {
+        // @ts-expect-error - incorrect type
         '@graphql-eslint': graphqlPlugin,
       },
       rules: {
