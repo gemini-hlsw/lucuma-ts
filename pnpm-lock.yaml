@@ -204,8 +204,8 @@ importers:
         specifier: 3.3.1
         version: 3.3.1(@fortawesome/fontawesome-svg-core@7.2.0)(react@19.2.6)
       primereact:
-        specifier: 10.9.7
-        version: 10.9.7(@types/react@19.2.15)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
+        specifier: 10.9.8
+        version: 10.9.8(@types/react@19.2.15)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       react:
         specifier: 19.2.6
         version: 19.2.6
@@ -298,8 +298,8 @@ importers:
         specifier: 2.20.0
         version: 2.20.0(@babel/core@7.29.0)(@babel/template@7.28.6)(@types/react@19.2.15)(react@19.2.6)
       primereact:
-        specifier: 10.9.7
-        version: 10.9.7(@types/react@19.2.15)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
+        specifier: 10.9.8
+        version: 10.9.8(@types/react@19.2.15)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       react:
         specifier: 19.2.6
         version: 19.2.6
@@ -3900,8 +3900,8 @@ packages:
     engines: {node: '>=14'}
     hasBin: true
 
-  primereact@10.9.7:
-    resolution: {integrity: sha512-Ap/lg9GGaS8Pq7IIlzguuG3qlaU6PYF6E0cCRo0rnWauRw/SQGvfreSVIIxqEhtR6xqlf7OV759lyvVOvBzmsQ==}
+  primereact@10.9.8:
+    resolution: {integrity: sha512-kX0hOce2WpG24CzRJWlHrRPsvbCsOyBDqsHCC/p4W8okxHIdkOxxIkQBUVO0gRuh0Lxl5o7lmEEtUMzrlicf8g==}
     engines: {node: '>=14.0.0'}
     peerDependencies:
       '@types/react': ^17.0.0 || ^18.0.0 || ^19.0.0
@@ -8504,7 +8504,7 @@ snapshots:
 
   prettier@3.8.3: {}
 
-  primereact@10.9.7(@types/react@19.2.15)(react-dom@19.2.6(react@19.2.6))(react@19.2.6):
+  primereact@10.9.8(@types/react@19.2.15)(react-dom@19.2.6(react@19.2.6))(react@19.2.6):
     dependencies:
       '@types/react-transition-group': 4.4.12(@types/react@19.2.15)
       react: 19.2.6
