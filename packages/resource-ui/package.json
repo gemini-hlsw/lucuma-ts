@@ -30,7 +30,7 @@
     "react-router": "7.15.1"
   },
   "devDependencies": {
-    "@apollo/client": "4.1.9",
+    "@apollo/client": "4.2.0",
     "@gemini-hlsw/lucuma-common-ui": "workspace:*",
     "@gemini-hlsw/lucuma-schemas": "0.177.2-20260525-93c7d128",
     "@gemini-hlsw/lucuma-ui-css": "0.176.0",

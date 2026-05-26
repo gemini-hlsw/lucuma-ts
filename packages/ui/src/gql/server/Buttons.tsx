@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/prefer-nullish-coalescing */
 
-import type { ApolloCache, DocumentNode, MutationUpdaterFunction, OperationVariables } from '@apollo/client';
+import type { ApolloCache, MutationUpdaterFunction, OperationVariables } from '@apollo/client';
 import { useMutation } from '@apollo/client/react';
 import { cn, when } from '@gemini-hlsw/lucuma-common-ui';
 import { useConfiguration } from '@gql/configs/Configuration';
 import { useSlewFlags } from '@gql/configs/SlewFlags';
-import type { VariablesOf } from '@graphql-typed-document-node/core';
+import type { TypedDocumentNode } from '@graphql-typed-document-node/core';
 import { useTcsConfigInput } from '@Telescope/Targets/inputs';
 import type { ButtonProps } from 'primereact/button';
 import { Button } from 'primereact/button';
@@ -36,10 +36,7 @@ import { SLEW_MUTATION } from './Slew';
 import { GET_TELESCOPE_STATE } from './TelescopeState';
 
 // Generic mutation button
-function MutationButton<
-  T extends DocumentNode,
-  V extends VariablesOf<T> extends OperationVariables ? VariablesOf<T> : never,
->({
+function MutationButton<TResult, TVariables extends OperationVariables>({
   mutation,
   variables,
   setStale,
@@ -48,13 +45,14 @@ function MutationButton<
   update,
   ...props
 }: {
-  mutation: T;
-  variables: V;
+  mutation: TypedDocumentNode<TResult, TVariables>;
+  variables: TVariables;
   icons?: ReactNode[];
   setStale?: SetStale;
-  update?: MutationUpdaterFunction<T, V, ApolloCache>;
+  update?: MutationUpdaterFunction<TResult, TVariables, ApolloCache>;
 } & ButtonProps) {
-  const [mutationFunction, { loading }] = useMutation<T, V>(mutation, {
+  // eslint-disable-next-line @typescript-eslint/no-deprecated
+  const [mutationFunction, { loading }] = useMutation<TResult, TVariables>(mutation, {
     variables: variables,
     onCompleted: () => setStale?.(true),
   });

@@ -1,5 +1,6 @@
 // @ts-check
 
+import graphqlPlugin from '@graphql-eslint/eslint-plugin';
 import { defineConfig } from 'eslint/config';
 import { importX } from 'eslint-plugin-import-x';
 import reactPlugin from 'eslint-plugin-react';
@@ -15,6 +16,32 @@ export default defineConfig(
   importX.flatConfigs.react,
   reactHooks.configs.flat['recommended-latest'],
   reactRefresh.configs.vite(),
+  {
+    files: [`./src/gql/*.{ts,tsx}`],
+    processor: graphqlPlugin.processor,
+  },
+  {
+    files: [`./src/gql/**/*.graphql`],
+    languageOptions: {
+      parser: graphqlPlugin.parser,
+      parserOptions: {
+        graphQLConfig: {
+          schema: import.meta.resolve('@gemini-hlsw/lucuma-schemas/resource'),
+          documents: [`./src/gql/**/*.{ts,tsx}`],
+        },
+      },
+    },
+    plugins: {
+      // @ts-expect-error - incorrect type
+      '@graphql-eslint': graphqlPlugin,
+    },
+    rules: {
+      ...graphqlPlugin.configs['flat/operations-recommended'].rules,
+
+      '@graphql-eslint/naming-convention': ['error', { types: 'PascalCase', FieldDefinition: 'camelCase' }],
+      '@graphql-eslint/require-selections': ['error', { fieldName: ['id', 'pk'] }],
+    },
+  },
   {
     files: ['mock-server/**/*.ts', 'tasks/**/*.ts'],
     languageOptions: {
