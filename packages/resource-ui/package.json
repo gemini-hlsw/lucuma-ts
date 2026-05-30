@@ -34,7 +34,7 @@
     "@gemini-hlsw/lucuma-common-ui": "workspace:*",
     "@gemini-hlsw/lucuma-schemas": "0.177.2-20260530-a608cf0d",
     "@gemini-hlsw/lucuma-ui-css": "0.176.0",
-    "@graphql-codegen/client-preset": "6.0.0",
+    "@graphql-codegen/client-preset": "6.0.1",
     "@graphql-typed-document-node/core": "3.2.0",
     "graphql": "16.14.0",
     "graphql-scalars": "1.25.0",
