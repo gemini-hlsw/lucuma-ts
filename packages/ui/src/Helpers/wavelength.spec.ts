@@ -45,6 +45,7 @@ describe(extractCentralWavelength.name, () => {
                   __typename: 'Flamingos2Step',
                   id: 'step1',
                   instrumentConfig: {
+                    fpu: null,
                     __typename: 'Flamingos2Dynamic',
                     centralWavelength: {
                       __typename: 'Wavelength',
@@ -56,6 +57,7 @@ describe(extractCentralWavelength.name, () => {
                   __typename: 'Flamingos2Step',
                   id: 'step2',
                   instrumentConfig: {
+                    fpu: null,
                     __typename: 'Flamingos2Dynamic',
                     centralWavelength: {
                       __typename: 'Wavelength',
@@ -76,6 +78,7 @@ describe(extractCentralWavelength.name, () => {
                   __typename: 'Flamingos2Step',
                   id: 'step3',
                   instrumentConfig: {
+                    fpu: null,
                     __typename: 'Flamingos2Dynamic',
                     centralWavelength: {
                       __typename: 'Wavelength',
@@ -87,6 +90,7 @@ describe(extractCentralWavelength.name, () => {
                   __typename: 'Flamingos2Step',
                   id: 'step4',
                   instrumentConfig: {
+                    fpu: null,
                     __typename: 'Flamingos2Dynamic',
                     centralWavelength: {
                       __typename: 'Wavelength',
@@ -105,7 +109,7 @@ describe(extractCentralWavelength.name, () => {
         __typename: 'ExecutionConfig',
       },
     };
-    expect(extractCentralWavelength(data)).toBe(1500);
+    expect(extractCentralWavelength(data)).deep.eq({ wavelength: 1500, fpu: null });
   });
 
   it('returns science central wavelength if acquisition is not present', () => {
@@ -132,6 +136,7 @@ describe(extractCentralWavelength.name, () => {
                   __typename: 'Flamingos2Step',
                   id: 'step3',
                   instrumentConfig: {
+                    fpu: null,
                     __typename: 'Flamingos2Dynamic',
                     centralWavelength: {
                       __typename: 'Wavelength',
@@ -143,6 +148,7 @@ describe(extractCentralWavelength.name, () => {
                   __typename: 'Flamingos2Step',
                   id: 'step4',
                   instrumentConfig: {
+                    fpu: null,
                     __typename: 'Flamingos2Dynamic',
                     centralWavelength: {
                       __typename: 'Wavelength',
@@ -161,7 +167,7 @@ describe(extractCentralWavelength.name, () => {
         __typename: 'ExecutionConfig',
       },
     };
-    expect(extractCentralWavelength(data)).toBe(3500);
+    expect(extractCentralWavelength(data)).deep.eq({ wavelength: 3500, fpu: null });
   });
 
   it('returns the central wavelength for GMOS_NORTH', () => {
@@ -180,6 +186,7 @@ describe(extractCentralWavelength.name, () => {
                   __typename: 'GmosNorthStep',
                   id: 'step1',
                   instrumentConfig: {
+                    fpu: null,
                     __typename: 'GmosNorthDynamic',
                     centralWavelength: {
                       __typename: 'Wavelength',
@@ -199,7 +206,7 @@ describe(extractCentralWavelength.name, () => {
         __typename: 'ExecutionConfig',
       },
     };
-    expect(extractCentralWavelength(data)).toBe(500);
+    expect(extractCentralWavelength(data)).deep.eq({ wavelength: 500, fpu: null });
   });
 
   it('returns central wavelength for GMOS_SOUTH', () => {
@@ -220,6 +227,7 @@ describe(extractCentralWavelength.name, () => {
                   __typename: 'GmosSouthStep',
                   id: 'step1',
                   instrumentConfig: {
+                    fpu: null,
                     __typename: 'GmosSouthDynamic',
                     centralWavelength: {
                       __typename: 'Wavelength',
@@ -237,7 +245,7 @@ describe(extractCentralWavelength.name, () => {
         __typename: 'ExecutionConfig',
       },
     };
-    expect(extractCentralWavelength(data)).toBe(1500);
+    expect(extractCentralWavelength(data)).deep.eq({ wavelength: 1500, fpu: null });
   });
 
   it('returns central wavelength for GHOST', () => {
@@ -285,7 +293,7 @@ describe(extractCentralWavelength.name, () => {
         __typename: 'ExecutionConfig',
       },
     };
-    expect(extractCentralWavelength(data)).toBe(2000);
+    expect(extractCentralWavelength(data)).deep.eq({ wavelength: 2000, fpu: null });
   });
 
   it('returns central wavelength for IGRINS2', () => {
@@ -322,6 +330,6 @@ describe(extractCentralWavelength.name, () => {
         __typename: 'ExecutionConfig',
       },
     };
-    expect(extractCentralWavelength(data)).toBe(2500);
+    expect(extractCentralWavelength(data)).deep.eq({ wavelength: 2500, fpu: null });
   });
 });

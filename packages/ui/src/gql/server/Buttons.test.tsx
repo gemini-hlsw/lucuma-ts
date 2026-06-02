@@ -73,6 +73,7 @@ describe(Slew.name, () => {
             },
           },
           "instrument": "ACQ_CAM_NORTH",
+          "lightSinkVariant": undefined,
           "oiwfs": undefined,
           "pwfs1": undefined,
           "pwfs2": undefined,

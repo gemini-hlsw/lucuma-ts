@@ -32,6 +32,7 @@ model Configuration {
   baffleMode           BaffleMode        @default(AUTO)
   centralBaffle        CentralBaffle?
   deployableBaffle     DeployableBaffle?
+  fpu Fpu?
 }
 
 enum GuidingType {
@@ -134,6 +135,36 @@ enum TargetType {
   OIWFS
   PWFS1
   PWFS2
+}
+
+enum Fpu {
+  LONG_SLIT_1
+  LONG_SLIT_2
+  LONG_SLIT_3
+  LONG_SLIT_4
+  LONG_SLIT_6
+  LONG_SLIT_8
+  PINHOLE
+  SUB_PIX_PINHOLE
+  IFU2_SLITS
+  IFU_BLUE
+  IFU_RED
+  LONG_SLIT_0_25
+  LONG_SLIT_0_50
+  LONG_SLIT_0_75
+  LONG_SLIT_1_00
+  LONG_SLIT_1_50
+  LONG_SLIT_2_00
+  LONG_SLIT_5_00
+  NS0
+  NS1
+  NS2
+  NS3
+  NS4
+  NS5
+  IFU_NS2_SLITS
+  IFU_NS_BLUE
+  IFU_NS_RED
 }
 
 model Instrument {

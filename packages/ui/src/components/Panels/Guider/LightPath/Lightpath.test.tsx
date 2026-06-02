@@ -1,6 +1,6 @@
 import { GET_CONFIGURATION } from '@gql/configs/Configuration';
 import { GET_GUIDE_LOOP, UPDATE_GUIDE_LOOP } from '@gql/configs/GuideLoop';
-import type { Instrument } from '@gql/server/gen/graphql';
+import type { Instrument, LightSinkVariant } from '@gql/server/gen/graphql';
 import { LIGHTPATH_CONFIG_MUTATION } from '@gql/server/Lightpath';
 import type { MockedResponseOf } from '@gql/util';
 import { userEvent } from 'vitest/browser';
@@ -8,58 +8,70 @@ import { userEvent } from 'vitest/browser';
 import { createConfiguration, createGuideLoop } from '@/test/create';
 import { operationOutcome } from '@/test/helpers';
 import { renderWithContext } from '@/test/render';
-import type { GuideLoop } from '@/types';
+import type { Fpu, GuideLoop } from '@/types';
 
 import { LightPath } from './LightPath';
 
 describe(LightPath.name, () => {
   it('should render', async () => {
     const sut = await renderWithContext(<LightPath />, {
-      mocks: [getGuideLoopMock, getConfigurationMock('GMOS_NORTH')],
+      mocks: [getGuideLoopMock, getConfigurationMock('GMOS_NORTH', null)],
     });
 
     await expect.element(sut.getByText('Sky → Instrument')).toBeVisible();
   });
 
+  // TODO: only send IFU for ifu targets
   it.each([
-    ['FLAMINGOS2', 'F2'],
-    ['GMOS_NORTH', 'GMOS'],
-    ['GMOS_SOUTH', 'GMOS'],
-    ['GHOST', 'GHOST'],
-    ['IGRINS2', 'IGRINS2'],
-    ['VISITOR_NORTH', 'VISITOR'],
-    ['VISITOR_SOUTH', 'VISITOR'],
-  ] satisfies [Instrument, string][])(
-    'sends correct light sink for instrument %s',
-    async (instrument, expectedSink) => {
+    ['FLAMINGOS2', null, undefined],
+    ['GMOS_NORTH', null, undefined],
+    ['GMOS_SOUTH', null, undefined],
+    ['GHOST', null, undefined],
+    ['IGRINS2', null, undefined],
+    ['VISITOR_NORTH', null, undefined],
+    ['VISITOR_SOUTH', null, undefined],
+    ['FLAMINGOS2', 'IFU2_SLITS', undefined],
+    ['GMOS_NORTH', 'LONG_SLIT_3', undefined],
+    ['GMOS_NORTH', 'IFU_BLUE', 'GMOS_IFU'],
+    ['GMOS_SOUTH', 'IFU2_SLITS', 'GMOS_IFU'],
+  ] satisfies [Instrument, Fpu | null, LightSinkVariant | undefined][])(
+    'sends correct light sink for instrument %s with fpu %s',
+    async (instrument, fpu, lightSinkVariant) => {
       const sut = await renderWithContext(<LightPath />, {
-        mocks: [getGuideLoopMock, getConfigurationMock(instrument), lightpathConfigMock, updateGuideLoopMock],
+        mocks: [getGuideLoopMock, getConfigurationMock(instrument, fpu), lightpathConfigMock, updateGuideLoopMock],
       });
 
       const button = sut.getByRole('button', { name: 'Sky → Instrument' });
       await userEvent.click(button);
 
-      expect(lightpathConfigMock.request.variables).toHaveBeenCalledWith({
+      expect(lightpathConfigMock.request.variables).toHaveBeenCalledExactlyOnceWith({
         from: 'SKY',
-        to: expectedSink,
+        instrument,
+        lightSinkVariant,
       });
-      expect(updateGuideLoopMock.request.variables).toHaveBeenCalledWith({ pk: 1, lightPath: 'Sky → Instrument' });
+      expect(updateGuideLoopMock.request.variables).toHaveBeenCalledExactlyOnceWith({
+        pk: 1,
+        lightPath: 'Sky → Instrument',
+      });
     },
   );
 
   it('sends AO to correct sink for instrument', async () => {
     const sut = await renderWithContext(<LightPath />, {
-      mocks: [getGuideLoopMock, getConfigurationMock('FLAMINGOS2'), lightpathConfigMock, updateGuideLoopMock],
+      mocks: [getGuideLoopMock, getConfigurationMock('FLAMINGOS2', null), lightpathConfigMock, updateGuideLoopMock],
     });
 
     const button = sut.getByRole('button', { name: 'Sky → AO → AC' });
     await userEvent.click(button);
 
-    expect(lightpathConfigMock.request.variables).toHaveBeenCalledWith({
+    expect(lightpathConfigMock.request.variables).toHaveBeenCalledExactlyOnceWith({
       from: 'AO',
-      to: 'AC',
+      instrument: 'ACQ_CAM_NORTH',
     });
-    expect(updateGuideLoopMock.request.variables).toHaveBeenCalledWith({ pk: 1, lightPath: 'Sky → AO → AC' });
+    expect(updateGuideLoopMock.request.variables).toHaveBeenCalledExactlyOnceWith({
+      pk: 1,
+      lightPath: 'Sky → AO → AC',
+    });
   });
 });
 
@@ -75,7 +87,7 @@ const getGuideLoopMock = {
   },
 } satisfies MockedResponseOf<typeof GET_GUIDE_LOOP>;
 
-const getConfigurationMock = (instrument: Instrument) =>
+const getConfigurationMock = (instrument: Instrument, fpu: Fpu | null) =>
   ({
     request: {
       query: GET_CONFIGURATION,
@@ -83,7 +95,7 @@ const getConfigurationMock = (instrument: Instrument) =>
     },
     result: {
       data: {
-        configuration: createConfiguration({ obsInstrument: instrument }),
+        configuration: createConfiguration({ obsInstrument: instrument, fpu }),
       },
     },
   }) satisfies MockedResponseOf<typeof GET_CONFIGURATION>;

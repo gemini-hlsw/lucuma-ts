@@ -3,6 +3,7 @@ import { GET_CONFIGURATION } from '@gql/configs/Configuration';
 import { GET_INSTRUMENT } from '@gql/configs/Instrument';
 import { GET_ROTATOR } from '@gql/configs/Rotator';
 import { GET_TARGETS } from '@gql/configs/Target';
+import type { LightSinkVariant, RestoreTargetMutationVariables } from '@gql/server/gen/graphql';
 import { GET_INSTRUMENT_PORT } from '@gql/server/Instrument';
 import { NAVIGATE_STATE, NAVIGATE_STATE_SUBSCRIPTION } from '@gql/server/NavigateState';
 import { RESTORE_TARGET_MUTATION, SWAP_TARGET_MUTATION } from '@gql/server/TargetSwap';
@@ -22,6 +23,7 @@ import {
 } from '@/test/create';
 import { operationOutcome } from '@/test/helpers';
 import { renderWithContext } from '@/test/render';
+import type { Fpu } from '@/types';
 
 import { TargetSwapButton } from './TargetSwapButton';
 
@@ -143,6 +145,7 @@ describe(TargetSwapButton.name, () => {
             },
           },
           instrument: 'GMOS_NORTH',
+          lightSinkVariant: undefined,
           oiwfs: undefined,
           pwfs1: undefined,
           pwfs2: undefined,
@@ -187,6 +190,45 @@ describe(TargetSwapButton.name, () => {
       });
     });
   });
+
+  describe('with fpu', () => {
+    it.each([
+      [null, undefined],
+      ['IFU2_SLITS', 'GMOS_IFU'],
+    ] satisfies [Fpu | null, LightSinkVariant | undefined][])(
+      'sends correct light sink for fpu %s',
+      async (fpu, lightSinkVariant) => {
+        configurationMock.result.mockReturnValue({
+          data: {
+            configuration: createConfiguration({
+              selectedTarget: 3,
+              selectedOiTarget: 8,
+              fpu,
+            }),
+          },
+        });
+        sut = await renderWithContext(
+          <TargetSwapButton
+            configurationPk={1}
+            guiderTargets={[selectedOi]}
+            selectedGuider={selectedOi}
+            loading={false}
+          />,
+          {
+            mocks: [...mocks, ...navigateStatesMock(true)],
+          },
+        );
+
+        await expect.element(sut.getByRole('button')).toHaveTextContent('Point to Base');
+        await expect.element(sut.getByRole('button')).toHaveClass('p-button-danger');
+
+        await userEvent.click(sut.getByRole('button'));
+        expect(restoreTargetMock.request.variables).toHaveBeenCalledOnce();
+        const variables = restoreTargetMock.request.variables.mock.calls[0]![0] as RestoreTargetMutationVariables;
+        expect(variables.config.lightSinkVariant).toBe(lightSinkVariant);
+      },
+    );
+  });
 });
 
 const selectedTarget = createTarget({
@@ -227,6 +269,21 @@ const swapTargetMock = {
   },
 } satisfies MockedResponseOf<typeof SWAP_TARGET_MUTATION>;
 
+const configurationMock = {
+  request: {
+    query: GET_CONFIGURATION,
+    variables: () => true,
+  },
+  result: vi.fn().mockReturnValue({
+    data: {
+      configuration: createConfiguration({
+        selectedTarget: 3,
+        selectedOiTarget: 8,
+      }),
+    },
+  }),
+} satisfies MockedResponseOf<typeof GET_CONFIGURATION>;
+
 const mocks = [
   {
     request: {
@@ -255,20 +312,7 @@ const mocks = [
   } satisfies MockedResponseOf<typeof GET_INSTRUMENT>,
   swapTargetMock,
   restoreTargetMock,
-  {
-    request: {
-      query: GET_CONFIGURATION,
-      variables: () => true,
-    },
-    result: {
-      data: {
-        configuration: createConfiguration({
-          selectedTarget: 3,
-          selectedOiTarget: 8,
-        }),
-      },
-    },
-  } satisfies MockedResponseOf<typeof GET_CONFIGURATION>,
+  configurationMock,
   {
     request: {
       query: GET_INSTRUMENT_PORT,

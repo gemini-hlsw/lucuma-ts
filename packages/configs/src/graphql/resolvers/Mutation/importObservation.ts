@@ -69,6 +69,7 @@ export const importObservation: NonNullable<MutationResolvers['importObservation
       selectedP1Target,
       selectedP2Target,
       selectedGuiderTarget,
+      fpu: observation.fpu,
     };
 
     //

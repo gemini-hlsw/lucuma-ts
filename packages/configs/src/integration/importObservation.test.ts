@@ -68,6 +68,7 @@ await describe('importObservation', async () => {
       selectedP1Target: null,
       selectedP2Target: null,
       selectedTarget: null,
+      fpu: null,
     });
     assert.deepStrictEqual(response.data, {
       importObservation: {
@@ -172,6 +173,7 @@ await describe('importObservation', async () => {
       selectedP1Target: null,
       selectedP2Target: null,
       selectedTarget: 1,
+      fpu: null,
     });
     assert.deepEqual(await fixture.prisma.guideLoop.findUnique({ where: { pk: 1 } }), {
       pk: 1,

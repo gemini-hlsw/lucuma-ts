@@ -73,6 +73,7 @@ export function createConfiguration(overrides?: OverridePartial<Configuration>):
     baffleMode: 'AUTO',
     centralBaffle: null,
     deployableBaffle: null,
+    fpu: null,
     __typename: 'Configuration',
     ...overrides,
   };

@@ -194,6 +194,9 @@ export const GMOS_NORTH_EXECUTION_SEQUENCE_FRAGMENT = graphql(`
       steps {
         id
         instrumentConfig {
+          fpu {
+            builtin
+          }
           centralWavelength {
             ...WavelengthItem
           }
@@ -210,6 +213,9 @@ export const GMOS_SOUTH_EXECUTION_SEQUENCE_FRAGMENT = graphql(`
       steps {
         id
         instrumentConfig {
+          fpu {
+            builtin
+          }
           centralWavelength {
             ...WavelengthItem
           }
@@ -226,6 +232,9 @@ export const FLAMINGOS2_EXECUTION_SEQUENCE_FRAGMENT = graphql(`
       steps {
         id
         instrumentConfig {
+          fpu {
+            builtin
+          }
           centralWavelength {
             ...WavelengthItem
           }
