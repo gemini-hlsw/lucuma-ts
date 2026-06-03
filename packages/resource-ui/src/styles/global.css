@@ -14,4 +14,13 @@
   --color-foreground: var(--color-neutral-100);
   --color-foreground-secondary: var(--color-neutral-400);
   --color-foreground-muted: var(--color-neutral-500);
+
+  /* Muted operational colors */
+  --color-resource-info: var(--color-sky-800);
+  --color-resource-success: var(--color-emerald-800);
+  --color-resource-warning: var(--color-amber-800);
+  --color-resource-danger: var(--color-rose-900);
+  --color-resource-special: var(--color-violet-800);
+  --color-resource-visitor: var(--color-indigo-800);
+  --color-resource-neutral: var(--color-neutral-700);
 }
