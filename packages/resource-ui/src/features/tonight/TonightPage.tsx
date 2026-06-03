@@ -2,15 +2,14 @@
  * Main page component for the Tonight feature, displaying the telescope night timeline.
  */
 import type { JSX } from 'react';
-
 import { useState } from 'react';
 
+import { useTelescopeNightTimeline } from '../../gql/telescope';
 import { toTimelineRows } from './adapters';
 import { Header } from './Header';
-import { Timeline } from './Timeline';
 import type { TimelineTimeDisplay } from './time';
+import { Timeline } from './Timeline';
 import type { TimelineBlock } from './types';
-import { useTelescopeNightTimeline } from '../../gql/telescope';
 
 export default function TonightPage(): JSX.Element {
   const SITE = 'GN';
@@ -41,7 +40,7 @@ export default function TonightPage(): JSX.Element {
   };
 
   return (
-    <main className="min-h-screen">
+    <section>
       <Header timeline={timeline} timeDisplay={timeDisplay} onTimeDisplayChange={setTimeDisplay} />
 
       <Timeline
@@ -51,6 +50,6 @@ export default function TonightPage(): JSX.Element {
         rows={rows}
         onBlockSelect={handleBlockSelect}
       />
-    </main>
+    </section>
   );
 }

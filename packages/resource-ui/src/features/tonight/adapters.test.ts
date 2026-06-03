@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { toTimelineRows } from './adapters';
 import { createTelescopeNightTimeline, timelineFactory } from '../../test/factories';
+import { toTimelineRows } from './adapters';
 
 describe(toTimelineRows.name, () => {
   it('creates the mode row', () => {
@@ -80,9 +80,13 @@ describe(toTimelineRows.name, () => {
       tooStatus: [timelineFactory.tooStatus('NONE', '2026-08-01T19:00:00-10:00', '2026-08-02T08:00:00-10:00')],
     });
 
-    expect(toTimelineRows(timeline)[2].blocks[0]).toMatchObject({
-      label: 'NONE',
-      variant: 'unknown',
-    });
+    const tooRow = toTimelineRows(timeline).find((row) => row.id === 'too');
+
+    expect(tooRow?.blocks).toContainEqual(
+      expect.objectContaining({
+        label: 'NONE',
+        variant: 'unknown',
+      }),
+    );
   });
 });

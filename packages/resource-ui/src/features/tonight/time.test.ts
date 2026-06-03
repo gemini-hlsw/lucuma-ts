@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { formatTime, getNowTimestamp, getTimestamp, isWithinInterval } from './time';
 import { timelineFactory } from '../../test/factories';
+import { formatTime, getNowTimestamp, getTimestamp, isWithinInterval } from './time';
 
 const observingNightInterval = timelineFactory.interval('2026-08-01T19:00:00-10:00', '2026-08-02T08:00:00-10:00');
 

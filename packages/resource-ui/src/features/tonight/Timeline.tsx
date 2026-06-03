@@ -1,17 +1,16 @@
 /**
  * Component for rendering the telescope night timeline chart, using Highcharts.
  */
-import type { JSX } from 'react';
-import { useMemo } from 'react';
+import './timelineChart.css';
 
 import { Chart, PlotOptions, Tooltip, XAxis, YAxis } from '@highcharts/react';
 import { XRangeSeries } from '@highcharts/react/series/XRange';
+import type { JSX } from 'react';
 
-import { createTimelineChartConfig } from './timelineChartConfig';
-import './timelineChart.css';
-import type { TimelineTimeDisplay } from './time';
-import type { TimelineBlock, TimelineRowData, TimestampInterval } from './types';
 import type { Site } from '../../gql/gen/graphql';
+import type { TimelineTimeDisplay } from './time';
+import { createTimelineChartConfig } from './timelineChartConfig';
+import type { TimelineBlock, TimelineRowData, TimestampInterval } from './types';
 
 interface TimelineProps {
   site: Site;
@@ -25,17 +24,13 @@ interface TimelineProps {
  * Renders the observing-night timeline chart.
  */
 export function Timeline({ site, timeDisplay, displayInterval, rows, onBlockSelect }: TimelineProps): JSX.Element {
-  const config = useMemo(
-    () =>
-      createTimelineChartConfig({
-        site,
-        timeDisplay,
-        displayInterval,
-        rows,
-        onBlockSelect,
-      }),
-    [displayInterval, onBlockSelect, rows, site, timeDisplay],
-  );
+  const config = createTimelineChartConfig({
+    site,
+    timeDisplay,
+    displayInterval,
+    rows,
+    onBlockSelect,
+  });
 
   return (
     <section>

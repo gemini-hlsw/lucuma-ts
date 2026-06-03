@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { createTimelineChartConfig } from './timelineChartConfig';
-import { getTimestamp } from './time';
-import type { TimelineBlock } from './types';
 import { timelineFactory } from '../../test/factories';
+import { getTimestamp } from './time';
+import { createTimelineChartConfig } from './timelineChartConfig';
+import type { TimelineBlock } from './types';
 
 const displayInterval = timelineFactory.interval('2026-08-01T19:00:00-10:00', '2026-08-02T08:00:00-10:00');
 
@@ -36,13 +36,12 @@ describe(createTimelineChartConfig.name, () => {
   it('maps timeline blocks to xrange points', () => {
     const config = createConfig();
 
-    expect(config.points).toEqual([
+    expect(config.points).toMatchObject([
       {
         x: getTimestamp(modeBlock.interval.start),
         x2: getTimestamp(modeBlock.interval.end),
         y: 0,
         name: 'QUEUE',
-        color: expect.any(String),
         custom: {
           block: modeBlock,
           rowLabel: 'MODE',

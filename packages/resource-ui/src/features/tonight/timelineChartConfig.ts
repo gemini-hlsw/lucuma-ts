@@ -1,26 +1,25 @@
 /**
  * Highcharts configuration generator for the telescope night timeline chart.
  */
-import type { ComponentProps } from 'react';
-import type Highcharts from 'highcharts';
-
 import type { PlotOptions, Tooltip, XAxis, YAxis } from '@highcharts/react';
 import type { XRangeSeries } from '@highcharts/react/series/XRange';
+import type { Options, Point, XrangePointOptionsObject } from 'highcharts';
+import type { ComponentProps } from 'react';
 
-import { timelineChartTheme } from './timelineChartTheme';
-import { formatTime, getNowTimestamp, getTimestamp, isWithinInterval } from './time';
-import type { TimelineTimeDisplay } from './time';
-import type { TimelineBlock, TimelineRowData, TimestampInterval } from './types';
 import type { Site } from '../../gql/gen/graphql';
+import type { TimelineTimeDisplay } from './time';
+import { formatTime, getNowTimestamp, getTimestamp, isWithinInterval } from './time';
+import { timelineChartTheme } from './timelineChartTheme';
+import type { TimelineBlock, TimelineRowData, TimestampInterval } from './types';
 
-interface TimelinePoint extends Highcharts.XrangePointOptionsObject {
+interface TimelinePoint extends XrangePointOptionsObject {
   custom: {
     block: TimelineBlock;
     rowLabel: string;
   };
 }
 
-interface TimelineChartPoint extends Highcharts.Point {
+interface TimelineChartPoint extends Point {
   custom: {
     block: TimelineBlock;
     rowLabel: string;
@@ -28,7 +27,7 @@ interface TimelineChartPoint extends Highcharts.Point {
 }
 
 export interface TimelineChartConfig {
-  chartOptions: Highcharts.Options;
+  chartOptions: Options;
   bottomAxisProps: ComponentProps<typeof XAxis>;
   topAxisProps: ComponentProps<typeof XAxis>;
   yAxisProps: ComponentProps<typeof YAxis>;
@@ -48,7 +47,7 @@ interface CreateTimelineChartConfigArgs {
 
 const theme = timelineChartTheme;
 
-const getTimelineChartPoint = (point: Highcharts.Point): TimelineChartPoint => point as TimelineChartPoint;
+const getTimelineChartPoint = (point: Point): TimelineChartPoint => point as TimelineChartPoint;
 
 const getNowLabel = (now: Date, site: Site, timeDisplay: TimelineTimeDisplay): string => `
   <span
@@ -191,7 +190,7 @@ export const createTimelineChartConfig = ({
   const now = new Date(getNowTimestamp());
   const showNow = isWithinInterval(now, displayInterval);
 
-  const chartOptions: Highcharts.Options = {
+  const chartOptions: Options = {
     chart: {
       type: 'xrange',
       backgroundColor: theme.color.background,

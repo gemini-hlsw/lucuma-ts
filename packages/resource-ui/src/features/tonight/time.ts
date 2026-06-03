@@ -2,7 +2,6 @@
  * Time and interval utilities for the tonight timeline.
  */
 import type { Site } from '../../gql/gen/graphql';
-
 import type { TimestampInterval } from './types';
 
 const DEMO_NOW = '2026-08-02T00:30:00-10:00';

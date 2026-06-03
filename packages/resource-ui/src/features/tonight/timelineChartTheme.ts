@@ -10,7 +10,7 @@ export const timelineChartTheme = {
     rowHeight: 66,
     pointWidth: 42,
     marginLeft: 116,
-    marginRight: 40,
+    marginRight: 25,
     spacing: [0, 0, 0, 0] as number[],
   },
 

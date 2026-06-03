@@ -1,10 +1,10 @@
-import { userEvent } from 'vitest/browser';
+import { renderWithContext } from '@gemini-hlsw/lucuma-common-ui/testing';
 import { describe, expect, it, vi } from 'vitest';
+import { userEvent } from 'vitest/browser';
 
+import { createTelescopeNightTimeline } from '../../test/factories';
 import { Header } from './Header';
 import type { TimelineTimeDisplay } from './time';
-import { createTelescopeNightTimeline } from '../../test/factories';
-import { renderWithContext } from '@gemini-hlsw/lucuma-common-ui/testing';
 
 const renderHeader = async (timeDisplay: TimelineTimeDisplay = 'site', onTimeDisplayChange = vi.fn()) => {
   const timeline = createTelescopeNightTimeline();

@@ -10,7 +10,6 @@ const scalars = {
   Date: 'string',
   Timestamp: 'string',
 } satisfies Record<string, string>;
-/*eslint-disable sort-keys*/
 
 const sharedConfig = {
   useTypeImports: true,

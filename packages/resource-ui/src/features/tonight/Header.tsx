@@ -1,13 +1,12 @@
 /**
  * Header component for the Tonight feature.
  */
+import { SelectButton, type SelectButtonChangeEvent } from 'primereact/selectbutton';
 import type { JSX } from 'react';
 
-import { SelectButton, type SelectButtonChangeEvent } from 'primereact/selectbutton';
-
+import type { Site } from '../../gql/gen/graphql';
 import type { TimelineTimeDisplay } from './time';
 import type { TelescopeNightTimeline } from './types';
-import type { Site } from '../../gql/gen/graphql';
 
 interface HeaderProps {
   timeline: TelescopeNightTimeline;
