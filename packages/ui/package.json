@@ -31,7 +31,7 @@
     "@gemini-hlsw/navigate-configs": "workspace:*",
     "@graphql-codegen/client-preset": "6.0.1",
     "@graphql-typed-document-node/core": "3.2.0",
-    "@xyflow/react": "12.10.2",
+    "@xyflow/react": "12.11.0",
     "date-fns": "4.4.0",
     "graphql": "16.14.1",
     "graphql-ws": "6.0.8",
