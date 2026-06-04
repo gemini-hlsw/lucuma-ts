@@ -2,42 +2,51 @@ import { isNotNullish } from '@gemini-hlsw/lucuma-common-ui';
 import { useConfiguration } from '@gql/configs/Configuration';
 import type { UpdateGuideLoopMutationVariables } from '@gql/configs/gen/graphql';
 import { useGetGuideLoop, useUpdateGuideLoop } from '@gql/configs/GuideLoop';
-import type { Instrument, LightSink, LightSource } from '@gql/server/gen/graphql';
+import type {
+  Instrument,
+  LightpathConfigMutationVariables,
+  LightSinkVariant,
+  LightSource,
+  Site,
+} from '@gql/server/gen/graphql';
 import { useLightpathConfig } from '@gql/server/Lightpath';
 import { Title } from '@Shared/Title/Title';
+import { createLightSinkVariant } from '@Telescope/Targets/inputs';
 import { Button } from 'primereact/button';
-import type { ToastMessage } from 'primereact/toast';
-import { useEffect } from 'react';
 
 import { useCanEdit } from '@/components/atoms/auth';
+import { useServerConfigValue } from '@/components/atoms/config';
 import { Check } from '@/components/Icons';
-import { useToast } from '@/Helpers/toast';
-import type { GuideLoop } from '@/types';
+import type { Fpu, GuideLoop } from '@/types';
 
-interface LightPathConfiguration {
+interface LightPathConfiguration extends LightpathConfigMutationVariables {
   label: string;
-  from: LightSource;
-  to: LightSink;
 }
 
 /**
- * | UI Option               | LightSource | LightSink |
- * | ----------------------- | ----------- | --------- |
- * | Sky -> Instrument       | Sky         | GMOS      |
- * | Sky -> AO -> Instrument | AO          | GMOS      |
- * | Sky -> AC               | Sky         | AC        |
- * | Sky -> AO -> AC         | AO          | AC        |
- * | GCAL -> Instrument      | GCAL        | GMOS      |
+ * | UI Option               | LightSource | LightSink    |
+ * | ----------------------- | ----------- | ------------ |
+ * | Sky -> Instrument       | Sky         | <instrument> |
+ * | Sky -> AO -> Instrument | AO          | <instrument> |
+ * | Sky -> AC               | Sky         | ACQ_CAM      |
+ * | Sky -> AO -> AC         | AO          | ACQ_CAM      |
+ * | GCAL -> Instrument      | GCAL        | <instrument> |
  *
  */
-function lightPathConfigForInstrument(instrument: Instrument | null | undefined): LightPathConfiguration[] {
-  const toSink = instrument ? lightSinkForInstrument(instrument) : 'GMOS';
+function lightPathConfigForInstrument(
+  instrument: Instrument | null | undefined,
+  site: Site,
+  fpu: Fpu | null | undefined,
+): LightPathConfiguration[] {
+  const lightSinkVariant = createLightSinkVariant(instrument, fpu);
+  const acqCam: Instrument = site === 'GN' ? 'ACQ_CAM_NORTH' : 'ACQ_CAM_SOUTH';
+
   return [
-    { label: 'Sky → Instrument', from: 'SKY', to: toSink },
-    { label: 'Sky → AO → Instrument', from: 'AO', to: toSink },
-    { label: 'Sky → AC', from: 'SKY', to: 'AC' },
-    { label: 'Sky → AO → AC', from: 'AO', to: 'AC' },
-    { label: 'GCAL → Instrument', from: 'GCAL', to: toSink },
+    { label: 'Sky → Instrument', from: 'SKY', instrument: instrument!, lightSinkVariant },
+    { label: 'Sky → AO → Instrument', from: 'AO', instrument: instrument!, lightSinkVariant },
+    { label: 'Sky → AC', from: 'SKY', instrument: acqCam, lightSinkVariant: createLightSinkVariant(acqCam, fpu) },
+    { label: 'Sky → AO → AC', from: 'AO', instrument: acqCam, lightSinkVariant: createLightSinkVariant(acqCam, fpu) },
+    { label: 'GCAL → Instrument', from: 'GCAL', instrument: instrument!, lightSinkVariant },
   ];
 }
 
@@ -50,6 +59,8 @@ export function LightPath() {
   const lightPath = state.lightPath;
   const { data: configurationData, loading: instrumentLoading } = useConfiguration();
   const instrument = configurationData?.configuration?.obsInstrument;
+  const fpu = configurationData?.configuration?.fpu;
+  const { site } = useServerConfigValue();
 
   const [updateLightpathConfig, { loading: lightpathConfigLoading }] = useLightpathConfig();
 
@@ -62,46 +73,25 @@ export function LightPath() {
   const disabled = !canEdit;
   const loading = getLoading || updateLoading || lightpathConfigLoading || instrumentLoading;
 
-  async function onClick(newLightPath: string, from: LightSource, to: LightSink) {
+  async function onClick(
+    newLightPath: string,
+    from: LightSource | null | undefined,
+    instrument: Instrument,
+    lightSinkVariant: LightSinkVariant | null | undefined,
+  ) {
     await Promise.all([
       modifyGuideLoop('lightPath', newLightPath),
-      updateLightpathConfig({
-        variables: { from, to },
-      }),
+      updateLightpathConfig({ variables: { from, instrument, lightSinkVariant } }),
     ]);
   }
 
-  const toast = useToast();
-
-  let lightPathConfigurations: LightPathConfiguration[];
-  try {
-    lightPathConfigurations = lightPathConfigForInstrument(instrument);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  } catch (e) {
-    lightPathConfigurations = lightPathConfigForInstrument('GMOS_NORTH');
-  }
-
-  useEffect(() => {
-    try {
-      if (instrument) lightSinkForInstrument(instrument);
-      return;
-    } catch (e) {
-      const toastMessage: ToastMessage = {
-        severity: 'error',
-        summary: 'Error configuring light path',
-        detail: (e as Error).message,
-        life: 10_000,
-      };
-      toast?.show(toastMessage);
-      return () => toast?.remove(toastMessage);
-    }
-  }, [instrument, toast, lightPath]);
+  const lightPathConfigurations = lightPathConfigForInstrument(instrument, site, fpu);
 
   return (
     <div className="light-path">
       <Title title="Light path" />
       <div className="body">
-        {lightPathConfigurations.map(({ label, from, to }) => {
+        {lightPathConfigurations.map(({ label, from, instrument, lightSinkVariant }) => {
           return (
             <Button
               icon={label === lightPath && <Check size="lg" />}
@@ -109,52 +99,11 @@ export function LightPath() {
               loading={loading}
               disabled={disabled}
               label={label}
-              onClick={() => onClick(label, from, to)}
+              onClick={() => onClick(label, from, instrument, lightSinkVariant)}
             />
           );
         })}
       </div>
     </div>
   );
-}
-
-function lightSinkForInstrument(instrument: Instrument | 'ACQ_CAM' | 'VISITOR'): LightSink {
-  switch (instrument) {
-    case 'ACQ_CAM':
-    case 'ACQ_CAM_NORTH':
-    case 'ACQ_CAM_SOUTH':
-      return 'AC';
-    case 'FLAMINGOS2':
-      return 'F2';
-    case 'GHOST':
-      return 'GHOST';
-    case 'GMOS_NORTH':
-    case 'GMOS_SOUTH':
-      return 'GMOS';
-    case 'GNIRS':
-      return 'GNIRS';
-    case 'GPI':
-      return 'GPI';
-    case 'GSAOI':
-      return 'GSAOI';
-    case 'IGRINS2':
-      return 'IGRINS2';
-    case 'NIRI':
-      // TODO: which NIRI?
-      return 'NIRI_F6';
-    case 'VISITOR':
-    case 'VISITOR_NORTH':
-    case 'VISITOR_SOUTH':
-      return 'VISITOR';
-
-    case 'ALOPEKE':
-    case 'ZORRO':
-      return 'VISITOR';
-
-    case 'SCORPIO':
-    default:
-      throw new Error(
-        `Instrument ${instrument} is not (yet) supported in light path configuration. Contact the developers.`,
-      );
-  }
 }

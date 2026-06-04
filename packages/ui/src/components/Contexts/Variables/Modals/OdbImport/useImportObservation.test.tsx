@@ -50,6 +50,7 @@ describe(useImportObservation.name, () => {
           reference: 'G-2025B-0571-Q-0003',
           subtitle: null,
           title: 'Mayall V',
+          fpu: null,
         },
         rotatorPk: 1,
         targets: {
@@ -203,6 +204,7 @@ const mocks = [
                   {
                     id: 's-20ab2eeb-b3f4-3462-9044-0a1176a7e349',
                     instrumentConfig: {
+                      fpu: null,
                       centralWavelength: {
                         nanometers: 630.0,
                         __typename: 'Wavelength',
@@ -214,6 +216,7 @@ const mocks = [
                   {
                     id: 's-b803cf26-55db-310d-b965-e01b5acb4621',
                     instrumentConfig: {
+                      fpu: null,
                       centralWavelength: {
                         nanometers: 630.0,
                         __typename: 'Wavelength',
@@ -225,6 +228,7 @@ const mocks = [
                   {
                     id: 's-0efe1e18-ca7a-3ae5-8395-007c99c446d6',
                     instrumentConfig: {
+                      fpu: null,
                       centralWavelength: {
                         nanometers: 630.0,
                         __typename: 'Wavelength',

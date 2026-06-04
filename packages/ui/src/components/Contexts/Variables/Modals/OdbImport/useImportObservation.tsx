@@ -52,7 +52,7 @@ export function useImportObservation() {
         }),
       ]);
 
-      const wavelength = extractCentralWavelength(obsWithWavelength.data);
+      const { wavelength, fpu } = extractCentralWavelength(obsWithWavelength.data) ?? {};
 
       const { blindOffsetTarget, firstScienceTarget } = selectedObservation.targetEnvironment ?? {};
 
@@ -77,6 +77,7 @@ export function useImportObservation() {
               subtitle: selectedObservation.subtitle,
               reference: selectedObservation.reference?.label,
               instrument: obsWithWavelength.data?.executionConfig?.instrument,
+              fpu,
             },
             targets: {
               base: base,

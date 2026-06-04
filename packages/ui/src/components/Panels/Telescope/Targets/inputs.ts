@@ -9,7 +9,9 @@ import type {
   AzElTargetInput,
   BaffleConfigInput,
   GuiderConfig,
+  Instrument,
   InstrumentSpecificsInput,
+  LightSinkVariant,
   NonsiderealInput,
   RotatorTrackingInput,
   SiderealInput,
@@ -21,6 +23,7 @@ import { useServerConfigValue } from '@/components/atoms/config';
 import type {
   CalParams,
   Configuration,
+  Fpu,
   InstrumentConfig,
   NonsiderealTarget,
   Rotator,
@@ -142,7 +145,7 @@ export function createTcsConfigInput(
   p1Target: Target | undefined,
   p2Target: Target | undefined,
   calParams: Pick<CalParams, 'baffleVisible' | 'baffleNearIR'>,
-  configuration: Pick<Configuration, 'baffleMode' | 'centralBaffle' | 'deployableBaffle'>,
+  configuration: Pick<Configuration, 'baffleMode' | 'centralBaffle' | 'deployableBaffle' | 'fpu'>,
 ): TcsConfigInput {
   const rotatorInput = createRotatorTrackingInput(rotator);
 
@@ -151,6 +154,8 @@ export function createTcsConfigInput(
   const targetInput = createTargetPropertiesInput(target);
 
   const bafflesInput = createBafflesInput(calParams, configuration);
+
+  const lightSinkVariant = createLightSinkVariant(instrument.name, configuration.fpu);
 
   return {
     instrument: instrument.name,
@@ -161,7 +166,16 @@ export function createTcsConfigInput(
     oiwfs: when(oiTarget, createGuiderConfig),
     pwfs1: when(p1Target, createGuiderConfig),
     pwfs2: when(p2Target, createGuiderConfig),
+    lightSinkVariant,
   };
+}
+
+export function createLightSinkVariant(
+  instrument: Instrument | null | undefined,
+  fpu: Fpu | null | undefined,
+): LightSinkVariant | undefined {
+  if (fpu?.startsWith('IFU') && instrument?.startsWith('GMOS_')) return 'GMOS_IFU';
+  else return undefined;
 }
 
 /**

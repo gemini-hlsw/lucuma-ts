@@ -1,3 +1,5 @@
+import type { Flamingos2Fpu, GmosNorthBuiltinFpu, GmosSouthBuiltinFpu } from '@gql/odb/gen/graphql';
+
 export type {
   AltairGuideLoopItemFragment as AltairGuideLoop,
   AltairInstrumentItemFragment as AltairInstrument,
@@ -22,6 +24,8 @@ export type {
   ConfigsTargetItemFragment as Target,
 } from '@gql/configs/gen/graphql';
 export type {
+  GmosNorthBuiltinFpu,
+  GmosSouthBuiltinFpu,
   BrightnessIntegratedItemFragment as OdbBandBrightness,
   ObservationItemFragment as OdbObservation,
   SourceProfileItemFragment as OdbSourceProfile,
@@ -39,3 +43,5 @@ export type {
   TelescopeStateItemFragment as TelescopeState,
   WfsConfigStateItemFragment as WfsConfigState,
 } from '@gql/server/gen/graphql';
+
+export type Fpu = Flamingos2Fpu | GmosNorthBuiltinFpu | GmosSouthBuiltinFpu;

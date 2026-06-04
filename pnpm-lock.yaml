@@ -177,8 +177,8 @@ importers:
         specifier: 0.16.0
         version: 0.16.0(graphql@16.14.0)
       '@gemini-hlsw/lucuma-schemas':
-        specifier: 0.177.2-20260530-a608cf0d
-        version: 0.177.2-20260530-a608cf0d
+        specifier: 0.177.2-20260603-dfc2d9d6
+        version: 0.177.2-20260603-dfc2d9d6
       '@testcontainers/postgresql':
         specifier: 12.0.1
         version: 12.0.1
@@ -274,8 +274,8 @@ importers:
         specifier: 0.203.0
         version: 0.203.0
       '@gemini-hlsw/lucuma-schemas':
-        specifier: 0.177.2-20260530-a608cf0d
-        version: 0.177.2-20260530-a608cf0d
+        specifier: 0.177.2-20260603-dfc2d9d6
+        version: 0.177.2-20260603-dfc2d9d6
       '@gemini-hlsw/lucuma-ui-css':
         specifier: 0.176.0
         version: 0.176.0
@@ -587,9 +587,6 @@ packages:
 
   '@gemini-hlsw/lucuma-core@0.203.0':
     resolution: {integrity: sha512-X4cBNUWVuKbyl2EcJCc5dmKaU1H6RbQxV6V/chdc/sHtoM/pnCkS7omFINWremWTPL1J7XgR66Cg8YZxx8ajWA==}
-
-  '@gemini-hlsw/lucuma-schemas@0.177.2-20260530-a608cf0d':
-    resolution: {integrity: sha512-WxGaVqIYfJ1Z7hLHHBXOEdr0vS2GNl/0pE4CNwbP5yC3pWTRYrVAe5PlFYvCvI1GPhd3BWAToUPIawL8+j8iGw==}
 
   '@gemini-hlsw/lucuma-schemas@0.177.2-20260603-dfc2d9d6':
     resolution: {integrity: sha512-wTQnaMX3rueJa7mbFwBLUwfMfa5citXlKPylvmHFW9yh/LW9HW3TEWItXdqBxki4yOojNFRlrLoy4BZiG7USWQ==}
@@ -5140,8 +5137,6 @@ snapshots:
       react: 19.2.6
 
   '@gemini-hlsw/lucuma-core@0.203.0': {}
-
-  '@gemini-hlsw/lucuma-schemas@0.177.2-20260530-a608cf0d': {}
 
   '@gemini-hlsw/lucuma-schemas@0.177.2-20260603-dfc2d9d6': {}
 

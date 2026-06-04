@@ -21,6 +21,7 @@ export const CONFIGURATION_FRAGMENT = graphql(`
     baffleMode
     centralBaffle
     deployableBaffle
+    fpu
   }
 `);
 
@@ -57,6 +58,7 @@ export const UPDATE_CONFIGURATION = graphql(`
     $baffleMode: BaffleMode
     $centralBaffle: CentralBaffle
     $deployableBaffle: DeployableBaffle
+    $fpu: Fpu
   ) {
     updateConfiguration(
       pk: $pk
@@ -76,6 +78,7 @@ export const UPDATE_CONFIGURATION = graphql(`
       baffleMode: $baffleMode
       centralBaffle: $centralBaffle
       deployableBaffle: $deployableBaffle
+      fpu: $fpu
     ) {
       ...ConfigurationItem
     }
