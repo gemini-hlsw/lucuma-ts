@@ -64,8 +64,8 @@ export const INSTRUMENT_CONFIG_FRAGMENT = graphql(`
 `);
 
 export const GET_INSTRUMENTS = graphql(`
-  query getInstruments($name: Instrument!, $issPort: Int, $wfs: WfsType) {
-    instruments(name: $name, issPort: $issPort, wfs: $wfs) {
+  query getInstruments($name: Instrument!, $issPort: Int, $wfs: WfsType, $extraParams: JSON) {
+    instruments(name: $name, issPort: $issPort, wfs: $wfs, extraParams: $extraParams) {
       ...InstrumentConfigItem
     }
   }
@@ -84,8 +84,8 @@ export function useInstruments(options: OptionsOf<typeof GET_INSTRUMENTS>) {
 }
 
 export const GET_INSTRUMENT = graphql(`
-  query getInstrument($name: Instrument!, $issPort: Int, $wfs: WfsType) {
-    instrument(name: $name, issPort: $issPort, wfs: $wfs) {
+  query getInstrument($name: Instrument!, $issPort: Int, $wfs: WfsType, $extraParams: JSON) {
+    instrument(name: $name, issPort: $issPort, wfs: $wfs, extraParams: $extraParams) {
       ...InstrumentConfigItem
     }
   }
@@ -218,6 +218,7 @@ export function useConfiguredInstrument() {
             name: configuration.obsInstrument,
             issPort: instrumentPortData?.instrumentPort ?? undefined,
             wfs: getConfigWfs(configuration),
+            extraParams: configuration.fpu?.startsWith('IFU') ? { ifu: true } : undefined,
           },
         },
   );
