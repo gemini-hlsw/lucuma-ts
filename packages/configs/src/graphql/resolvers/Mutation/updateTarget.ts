@@ -1,6 +1,7 @@
+import { resolveSelectFields } from '../query-fields.ts';
 import type { MutationResolvers } from './../../gen/types.generated.ts';
 
-export const updateTarget: NonNullable<MutationResolvers['updateTarget']> = (_parent, args, { prisma }) => {
+export const updateTarget: NonNullable<MutationResolvers['updateTarget']> = (_parent, args, { prisma }, info) => {
   return prisma.target.update({
     where: { pk: args.pk },
     data: {
@@ -10,9 +11,6 @@ export const updateTarget: NonNullable<MutationResolvers['updateTarget']> = (_pa
         : undefined,
       nonsidereal: args.nonsidereal ? { update: { where: { targetPk: args.pk }, data: args.nonsidereal } } : undefined,
     },
-    include: {
-      sidereal: true,
-      nonsidereal: true,
-    },
+    ...resolveSelectFields<'Target'>(info),
   });
 };
