@@ -21,19 +21,21 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@apollo/client": "4.2.0",
     "@fortawesome/fontawesome-svg-core": "7.2.0",
     "@fortawesome/pro-regular-svg-icons": "7.2.0",
     "@fortawesome/react-fontawesome": "3.3.1",
+    "@gemini-hlsw/lucuma-common-ui": "workspace:*",
+    "@gemini-hlsw/lucuma-ui-css": "0.176.0",
+    "@highcharts/react": "^5.0.1",
+    "highcharts": "^12.6.0",
     "primereact": "10.9.7",
     "react": "19.2.6",
     "react-dom": "19.2.6",
     "react-router": "7.16.0"
   },
   "devDependencies": {
-    "@apollo/client": "4.2.0",
-    "@gemini-hlsw/lucuma-common-ui": "workspace:*",
-    "@gemini-hlsw/lucuma-schemas": "0.177.2-20260602-cff03ce6",
-    "@gemini-hlsw/lucuma-ui-css": "0.176.0",
+    "@gemini-hlsw/lucuma-schemas": "0.177.2-20260603-dfc2d9d6",
     "@graphql-codegen/client-preset": "6.0.1",
     "@graphql-typed-document-node/core": "3.2.0",
     "graphql": "16.14.0",

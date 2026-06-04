@@ -21,7 +21,6 @@ describe(LightPath.name, () => {
     await expect.element(sut.getByText('Sky → Instrument')).toBeVisible();
   });
 
-  // TODO: only send IFU for ifu targets
   it.each([
     ['FLAMINGOS2', null, undefined],
     ['GMOS_NORTH', null, undefined],

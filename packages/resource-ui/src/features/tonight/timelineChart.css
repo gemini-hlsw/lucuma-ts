@@ -1,0 +1,20 @@
+/**
+ * CSS variables for the Tonight timeline chart
+ */
+:root {
+  --timeline-text: var(--color-foreground);
+  --timeline-muted-text: var(--color-foreground-secondary);
+  --timeline-grid: var(--color-neutral-800);
+  --timeline-axis: var(--color-foreground-muted);
+  --timeline-block-border: rgb(255 255 255 / 12%);
+  --timeline-now: var(--color-gpp);
+  --timeline-queue: var(--color-neutral-700);
+  --timeline-classical: var(--color-neutral-700);
+  --timeline-commissioning: var(--color-neutral-700);
+  --timeline-engineering: var(--color-neutral-700);
+  --timeline-priority-visitor: var(--color-neutral-700);
+  --timeline-open: var(--color-neutral-700);
+  --timeline-too: var(--color-neutral-700);
+  --timeline-closed: var(--color-rose-700);
+  --timeline-unknown: var(--color-amber-700);
+}
