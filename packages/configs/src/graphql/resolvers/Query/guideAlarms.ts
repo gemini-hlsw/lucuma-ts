@@ -1,5 +1,4 @@
-import type { FieldNode } from 'graphql';
-
+import { resolveSelectFields } from '../query-fields.ts';
 import type { GuideAlarm, QueryResolvers, WfsType } from './../../gen/types.generated.ts';
 
 export const guideAlarms: NonNullable<QueryResolvers['guideAlarms']> = async (
@@ -8,12 +7,8 @@ export const guideAlarms: NonNullable<QueryResolvers['guideAlarms']> = async (
   { prisma, log },
   info,
 ) => {
-  // Get the wfs types to query for from the graphql info object
-  const wfsTypesToQuery =
-    ((info.fieldNodes[0]?.selectionSet?.selections as FieldNode[])
-      .map((selection) => selection.name.value)
-      .filter((wfs) => wfs !== '__typename') as WfsType[]) ?? [];
-
+  const resolvedFields = resolveSelectFields<'GuideAlarm'>(info);
+  const wfsTypesToQuery = Object.keys(resolvedFields.select ?? {}) as WfsType[];
   const alarms = await prisma.guideAlarm.findMany({
     where: {
       wfs: {
