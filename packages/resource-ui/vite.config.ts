@@ -30,7 +30,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/resource/graphql': {
-        target: 'https://lucuma-resource-dev-f85504a9f5e4.herokuapp.com',
+        target: 'https://lucuma-resource-dev.lucuma.xyz',
         changeOrigin: true,
         secure: true,
       },

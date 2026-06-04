@@ -4,6 +4,25 @@
  */
 
 import type { CodegenConfig } from '@graphql-codegen/cli';
+import type { ClientPresetConfig } from '@graphql-codegen/client-preset';
+
+const scalars = {
+  Date: 'string',
+  Timestamp: 'string',
+} satisfies Record<string, string>;
+
+const sharedConfig = {
+  useTypeImports: true,
+  enumsAsTypes: true,
+  skipTypeNameForRoot: true,
+  // Required for fragments to work in tests
+  nonOptionalTypename: true,
+  scalars,
+};
+
+const presetConfig = {
+  fragmentMasking: false,
+} satisfies ClientPresetConfig;
 
 const config: CodegenConfig = {
   overwrite: true,
@@ -12,16 +31,8 @@ const config: CodegenConfig = {
   generates: {
     'src/gql/gen/': {
       preset: 'client',
-      config: {
-        useTypeImports: true,
-        enumsAsTypes: true,
-        skipTypeNameForRoot: true,
-        // Required for fragments to work in tests
-        nonOptionalTypename: true,
-      },
-      presetConfig: {
-        fragmentMasking: false,
-      },
+      config: sharedConfig,
+      presetConfig,
     },
   },
 };
