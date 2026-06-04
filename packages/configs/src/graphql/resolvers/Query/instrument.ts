@@ -1,8 +1,16 @@
+import type { InputJsonValue } from '@prisma/client/runtime/client';
+
+import type { InstrumentWhereInput, JsonFilter } from '../../../prisma/gen/models.ts';
 import type { InstrumentConfig, QueryResolvers } from './../../gen/types.generated.ts';
 
-export const instrument: NonNullable<QueryResolvers['instrument']> = async (_parent, args, { prisma }) => {
+export const instrument: NonNullable<QueryResolvers['instrument']> = async (_parent, args, { prisma, log }) => {
+  const baseWhereArgs = {
+    ...args,
+    extraParams: createExtraParamsFilter(args.extraParams),
+  } satisfies InstrumentWhereInput;
+
   let instrument = await prisma.instrument.findFirst({
-    where: args,
+    where: baseWhereArgs,
     orderBy: [{ isTemporary: 'desc' }, { createdAt: 'desc' }],
   });
   if (instrument) {
@@ -12,13 +20,18 @@ export const instrument: NonNullable<QueryResolvers['instrument']> = async (_par
   // Try to get the instrument using wfs NONE
   if (args.wfs !== 'NONE') {
     instrument = await prisma.instrument.findFirst({
-      where: { ...args, wfs: 'NONE', isTemporary: false },
+      where: {
+        ...baseWhereArgs,
+        wfs: 'NONE',
+        isTemporary: false,
+      },
       orderBy: { createdAt: 'desc' },
     });
   }
   // Create a default configuration to be manually modified if instrument was not found
   // Otherwise use the NONE wfs as default parameters
   if (!instrument) {
+    log.debug(`No instrument found for ${JSON.stringify(args, undefined, 2)}, creating default configuration`);
     instrument = await prisma.instrument.create({
       data: {
         name: args.name ?? '',
@@ -35,6 +48,10 @@ export const instrument: NonNullable<QueryResolvers['instrument']> = async (_par
       },
     });
   } else {
+    log.debug(
+      `No instrument found for ${JSON.stringify(args, undefined, 2)}, creating default configuration using parameters from previous configuration with pk ${instrument.pk}`,
+    );
+
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { pk, ...instArgs } = instrument;
     instrument = await prisma.instrument.create({
@@ -49,3 +66,10 @@ export const instrument: NonNullable<QueryResolvers['instrument']> = async (_par
   }
   return instrument as InstrumentConfig;
 };
+
+export function createExtraParamsFilter(args: unknown): JsonFilter<'Instrument'> | undefined {
+  return Object.entries(args ?? {}).map(([key, value]) => ({
+    path: [key],
+    equals: value as InputJsonValue,
+  }))[0];
+}

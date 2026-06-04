@@ -31,7 +31,7 @@ await describe('Instrument', async () => {
     });
   });
 
-  await describe('get unexistent instrument configuration', async () => {
+  await describe('get nonexistent instrument configuration', async () => {
     await it('returns previous configuration as fallback', async () => {
       const response = await fixture.executeGraphql<QueryinstrumentArgs, { instrument: InstrumentConfig }>({
         query: `#graphql
@@ -72,6 +72,46 @@ await describe('Instrument', async () => {
           'Default fallback configuration, using empty configuration please modify manually',
         ),
       );
+    });
+
+    await it('gets instrument with extraParams', async () => {
+      const response = await fixture.executeGraphql<QueryinstrumentArgs, { instrument: InstrumentConfig }>({
+        query: `#graphql
+          query instrument($extraParams: JSON) {
+            instrument(extraParams: $extraParams) {
+              pk
+              name
+              issPort
+              extraParams
+            }
+          }`,
+        variables: {
+          extraParams: { ifu: true },
+        },
+      });
+
+      assert.deepStrictEqual(response.data?.instrument?.extraParams, { ifu: true });
+    });
+
+    await it('gets instruments without extraParams', async () => {
+      const response = await fixture.executeGraphql<QueryinstrumentArgs, { instrument: InstrumentConfig }>({
+        query: `#graphql
+          query instrument($name: Instrument!, $issPort: Int!, $wfs: WfsType!, $extraParams: JSON) {
+            instrument(name: $name, issPort: $issPort, wfs: $wfs, extraParams: $extraParams) {
+              name
+              issPort
+              wfs
+              extraParams
+            }
+          }`,
+        variables: { wfs: 'OIWFS', name: 'GMOS_SOUTH', issPort: 3, extraParams: { ifu: false } },
+      });
+      assert.deepStrictEqual(response.data?.instrument, {
+        name: 'GMOS_SOUTH',
+        issPort: 3,
+        wfs: 'OIWFS',
+        extraParams: {},
+      });
     });
   });
 });
