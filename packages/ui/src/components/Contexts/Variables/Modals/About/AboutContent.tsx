@@ -13,7 +13,7 @@ export function AboutContent() {
       ? 'development'
       : 'production';
 
-  const configsVersion = useConfigsVersion().data.version.serverVersion;
+  const { serverVersion: configsVersion, schemaVersion } = useConfigsVersion().data.version;
   const serverVersion = useServerVersion().data.serverVersion;
 
   return (
@@ -39,6 +39,10 @@ export function AboutContent() {
           <tr>
             <td>Server</td>
             <td>{serverVersion}</td>
+          </tr>
+          <tr>
+            <td>Schema</td>
+            <td>{schemaVersion}</td>
           </tr>
         </tbody>
       </table>

@@ -7,6 +7,7 @@ export const GET_VERSION = graphql(`
   query version {
     version {
       serverVersion
+      schemaVersion
     }
   }
 `);
