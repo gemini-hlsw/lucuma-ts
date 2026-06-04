@@ -213,10 +213,10 @@ importers:
         specifier: 0.176.0
         version: 0.176.0
       '@highcharts/react':
-        specifier: ^5.0.1
+        specifier: 5.0.1
         version: 5.0.1(@types/react@19.2.15)(highcharts@12.6.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       highcharts:
-        specifier: ^12.6.0
+        specifier: 12.6.0
         version: 12.6.0
       primereact:
         specifier: 10.9.7
