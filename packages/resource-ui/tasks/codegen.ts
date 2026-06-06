@@ -7,6 +7,7 @@ import type { CodegenConfig } from '@graphql-codegen/cli';
 import type { ClientPresetConfig } from '@graphql-codegen/client-preset';
 
 const scalars = {
+  BigDecimal: 'string | number',
   Date: 'string',
   Timestamp: 'string',
 } satisfies Record<string, string>;

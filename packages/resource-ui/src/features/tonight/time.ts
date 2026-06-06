@@ -41,6 +41,6 @@ export const getNowTimestamp = (): string => DEMO_NOW;
 /**
  * Formats the duration of an interval for display in timeline labels.
  */
-export const getDurationLabel = (seconds: number): string => {
-  return formatDuration(intervalToDuration({ start: 0, end: seconds * 1000 }));
+export const getDurationLabel = (seconds: string | number): string => {
+  return formatDuration(intervalToDuration({ start: 0, end: Number(seconds) * 1000 }));
 };
