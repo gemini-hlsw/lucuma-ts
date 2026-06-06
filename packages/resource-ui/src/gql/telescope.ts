@@ -3,19 +3,34 @@ import { useQuery } from '@apollo/client/react';
 import { graphql } from './gen';
 import type { Site } from './gen/graphql';
 
+export const TIME_SPAN_FRAGMENT = graphql(`
+  fragment TimeSpanItem on TimeSpan {
+    iso
+    seconds
+  }
+`);
+
+export const TIMESTAMP_INTERVAL_FRAGMENT = graphql(`
+  fragment TimestampIntervalItem on TimestampInterval {
+    start
+    end
+    duration {
+      ...TimeSpanItem
+    }
+  }
+`);
+
 export const GET_TELESCOPE_NIGHT_TIMELINE = graphql(`
   query getTelescopeNightTimeline($site: Site!, $observingNight: Date!) {
     telescopeNightTimeline(site: $site, observingNight: $observingNight) {
       site
       observingNight
       displayInterval {
-        start
-        end
+        ...TimestampIntervalItem
       }
       availability {
         interval {
-          start
-          end
+          ...TimestampIntervalItem
         }
         availability
         reason
@@ -24,16 +39,14 @@ export const GET_TELESCOPE_NIGHT_TIMELINE = graphql(`
       }
       tooStatus {
         interval {
-          start
-          end
+          ...TimestampIntervalItem
         }
         tooSupport
         site
       }
       modes {
         interval {
-          start
-          end
+          ...TimestampIntervalItem
         }
         site
         mode {

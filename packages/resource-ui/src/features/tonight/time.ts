@@ -1,8 +1,9 @@
 /**
  * Time and interval utilities for the tonight timeline.
  */
+import { formatDuration, intervalToDuration } from 'date-fns';
+
 import type { Site } from '../../gql/gen/graphql';
-import type { TimestampInterval } from './types';
 
 const DEMO_NOW = '2026-08-02T00:30:00-10:00';
 
@@ -38,10 +39,8 @@ export const formatTime = (value: string | Date, site: Site, timeDisplay: Timeli
 export const getNowTimestamp = (): string => DEMO_NOW;
 
 /**
- * Returns true when a timestamp falls within a half-open interval.
+ * Formats the duration of an interval for display in timeline labels.
  */
-export const isWithinInterval = (value: string | Date, interval: TimestampInterval): boolean => {
-  const timestamp = value instanceof Date ? value.getTime() : getTimestamp(value);
-
-  return timestamp >= getTimestamp(interval.start) && timestamp < getTimestamp(interval.end);
+export const getDurationLabel = (seconds: number): string => {
+  return formatDuration(intervalToDuration({ start: 0, end: seconds * 1000 }));
 };

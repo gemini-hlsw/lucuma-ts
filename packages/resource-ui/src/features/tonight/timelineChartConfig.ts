@@ -6,11 +6,13 @@ import type { XRangeSeries } from '@highcharts/react/series/XRange';
 import type { Options, Point, XrangePointOptionsObject } from 'highcharts';
 import type { ComponentProps } from 'react';
 
+import type { TimestampInterval } from '@/types';
+
 import type { Site } from '../../gql/gen/graphql';
 import type { TimelineTimeDisplay } from './time';
-import { formatTime, getNowTimestamp, getTimestamp, isWithinInterval } from './time';
+import { formatTime, getDurationLabel, getNowTimestamp, getTimestamp } from './time';
 import { timelineChartTheme } from './timelineChartTheme';
-import type { TimelineBlock, TimelineRowData, TimestampInterval } from './types';
+import type { TimelineBlock, TimelineRowData } from './types';
 
 interface TimelinePoint extends XrangePointOptionsObject {
   custom: {
@@ -67,7 +69,7 @@ const getTooltipHtml = (
   <strong>${rowLabel}: ${block.label}</strong><br />
   Start: ${formatTime(block.interval.start, site, timeDisplay)}<br />
   End: ${formatTime(block.interval.end, site, timeDisplay)}<br />
-  Duration: ${getDurationLabel(block.interval.start, block.interval.end)}
+  Duration: ${getDurationLabel(block.interval.duration.seconds)}
 `;
 
 const getBlockLabelHtml = (block: TimelineBlock, site: Site, timeDisplay: TimelineTimeDisplay): string => `
@@ -87,22 +89,6 @@ const getBlockLabelHtml = (block: TimelineBlock, site: Site, timeDisplay: Timeli
     ${formatTime(block.interval.end, site, timeDisplay)}
   </span>
 `;
-
-const getDurationLabel = (start: string, end: string): string => {
-  const durationMinutes = Math.max(0, Math.round((getTimestamp(end) - getTimestamp(start)) / 60000));
-  const hours = Math.floor(durationMinutes / 60);
-  const minutes = durationMinutes % 60;
-
-  if (hours === 0) {
-    return `${minutes}m`;
-  }
-
-  if (minutes === 0) {
-    return `${hours}h`;
-  }
-
-  return `${hours}h ${minutes}m`;
-};
 
 const getChartHeight = (rowCount: number): number =>
   theme.layout.topAxisHeight + theme.layout.bottomAxisHeight + rowCount * theme.layout.rowHeight;
@@ -188,7 +174,6 @@ export const createTimelineChartConfig = ({
   const categories = rows.map((row) => row.label);
   const points = toTimelinePoints(rows);
   const now = new Date(getNowTimestamp());
-  const showNow = isWithinInterval(now, displayInterval);
 
   const chartOptions: Options = {
     chart: {
@@ -218,7 +203,7 @@ export const createTimelineChartConfig = ({
   const bottomAxisProps: ComponentProps<typeof XAxis> = {
     ...createTimeAxisProps(site, timeDisplay, displayInterval, false),
     offset: theme.axis.offset,
-    plotLines: showNow ? [createNowPlotLine(now, site, timeDisplay)] : [],
+    plotLines: [createNowPlotLine(now, site, timeDisplay)],
   };
 
   const topAxisProps: ComponentProps<typeof XAxis> = {
