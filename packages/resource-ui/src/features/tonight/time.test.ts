@@ -1,9 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { timelineFactory } from '../../test/factories';
-import { formatTime, getNowTimestamp, getTimestamp, isWithinInterval } from './time';
-
-const observingNightInterval = timelineFactory.interval('2026-08-01T19:00:00-10:00', '2026-08-02T08:00:00-10:00');
+import { formatTime, getDurationLabel, getNowTimestamp, getTimestamp } from './time';
 
 describe(getTimestamp.name, () => {
   it('converts an ISO timestamp to epoch milliseconds', () => {
@@ -31,20 +28,16 @@ describe(getNowTimestamp.name, () => {
   });
 });
 
-describe(isWithinInterval.name, () => {
-  it('returns true for a timestamp inside the interval', () => {
-    expect(isWithinInterval('2026-08-02T00:30:00-10:00', observingNightInterval)).toBe(true);
+describe(getDurationLabel.name, () => {
+  it('formats seconds as minutes', () => {
+    expect(getDurationLabel(45 * 60)).toBe('45 minutes');
   });
 
-  it('includes the interval start', () => {
-    expect(isWithinInterval('2026-08-01T19:00:00-10:00', observingNightInterval)).toBe(true);
+  it('formats seconds as hours and minutes', () => {
+    expect(getDurationLabel(11.5 * 60 * 60)).toBe('11 hours 30 minutes');
   });
 
-  it('excludes the interval end', () => {
-    expect(isWithinInterval('2026-08-02T08:00:00-10:00', observingNightInterval)).toBe(false);
-  });
-
-  it('accepts Date values', () => {
-    expect(isWithinInterval(new Date('2026-08-02T00:30:00-10:00'), observingNightInterval)).toBe(true);
+  it('formats seconds as days and hours', () => {
+    expect(getDurationLabel((2 * 24 + 4) * 60 * 60)).toBe('2 days 4 hours');
   });
 });

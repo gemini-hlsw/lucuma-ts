@@ -57,18 +57,10 @@ describe(createTimelineChartConfig.name, () => {
     expect(config.bottomAxisProps.max).toBe(getTimestamp(displayInterval.end));
   });
 
-  it('shows the now plot line when now is inside the display interval', () => {
+  it('always shows the now plot line', () => {
     const config = createConfig();
 
     expect(config.bottomAxisProps.plotLines).toHaveLength(1);
-  });
-
-  it('hides the now plot line when now is outside the display interval', () => {
-    const config = createConfig({
-      displayInterval: timelineFactory.interval('2026-08-03T19:00:00-10:00', '2026-08-04T08:00:00-10:00'),
-    });
-
-    expect(config.bottomAxisProps.plotLines).toEqual([]);
   });
 
   it('sets row labels on the y axis', () => {

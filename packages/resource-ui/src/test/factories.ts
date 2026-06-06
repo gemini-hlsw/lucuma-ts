@@ -1,10 +1,19 @@
+import type { TimeSpan, TimestampInterval } from '@/types';
+
 import type { TelescopeNightTimeline, TimelineBlock, TimelineRowData } from '../features/tonight/types';
 import type { TelescopeAvailability, TelescopeModeType, TooSupport } from '../gql/gen/graphql';
 
-const createInterval = (start: string, end: string) => ({
-  __typename: 'TimestampInterval' as const,
+const defaultDuration: TimeSpan = {
+  __typename: 'TimeSpan',
+  iso: 'PT2H30M',
+  seconds: 9000,
+};
+
+const createInterval = (start: string, end: string, duration: TimeSpan = defaultDuration): TimestampInterval => ({
+  __typename: 'TimestampInterval',
   start,
   end,
+  duration,
 });
 
 const createModeStatus = (

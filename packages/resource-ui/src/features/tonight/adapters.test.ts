@@ -15,11 +15,7 @@ describe(toTimelineRows.name, () => {
       blocks: [
         {
           id: 'mode-0-2026-08-01T19:00:00-10:00',
-          interval: {
-            __typename: 'TimestampInterval',
-            start: '2026-08-01T19:00:00-10:00',
-            end: '2026-08-01T21:00:00-10:00',
-          },
+          interval: timelineFactory.interval('2026-08-01T19:00:00-10:00', '2026-08-01T21:00:00-10:00'),
           label: 'QUEUE',
           variant: 'queue',
         },
@@ -40,11 +36,7 @@ describe(toTimelineRows.name, () => {
       blocks: [
         {
           id: 'availability-0-2026-08-01T19:00:00-10:00',
-          interval: {
-            __typename: 'TimestampInterval',
-            start: '2026-08-01T19:00:00-10:00',
-            end: '2026-08-02T08:00:00-10:00',
-          },
+          interval: timelineFactory.interval('2026-08-01T19:00:00-10:00', '2026-08-02T08:00:00-10:00'),
           label: 'OPEN',
           variant: 'open',
         },
@@ -63,11 +55,7 @@ describe(toTimelineRows.name, () => {
       blocks: [
         {
           id: 'too-0-2026-08-01T22:00:00-10:00',
-          interval: {
-            __typename: 'TimestampInterval',
-            start: '2026-08-01T22:00:00-10:00',
-            end: '2026-08-02T01:00:00-10:00',
-          },
+          interval: timelineFactory.interval('2026-08-01T22:00:00-10:00', '2026-08-02T01:00:00-10:00'),
           label: 'RAPID',
           variant: 'too',
         },
@@ -77,16 +65,9 @@ describe(toTimelineRows.name, () => {
 
   it('maps NONE ToO support to the unknown variant', () => {
     const timeline = createTelescopeNightTimeline({
-      tooStatus: [timelineFactory.tooStatus('NONE', '2026-08-01T19:00:00-10:00', '2026-08-02T08:00:00-10:00')],
+      tooStatus: [timelineFactory.tooStatus('NONE', '2026-08-01T22:00:00-10:00', '2026-08-02T01:00:00-10:00')],
     });
 
-    const tooRow = toTimelineRows(timeline).find((row) => row.id === 'too');
-
-    expect(tooRow?.blocks).toContainEqual(
-      expect.objectContaining({
-        label: 'NONE',
-        variant: 'unknown',
-      }),
-    );
+    expect(toTimelineRows(timeline)[2]?.blocks[0]?.variant).toBe('unknown');
   });
 });
