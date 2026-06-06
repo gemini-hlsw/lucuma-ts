@@ -30,7 +30,7 @@
   },
   "dependencies": {
     "@gemini-hlsw/lucuma-core": "0.205.1",
-    "@gemini-hlsw/lucuma-schemas": "0.177.2-20260604-4e397134",
+    "@gemini-hlsw/lucuma-schemas": "0.177.2-20260605-7a6a4b8c",
     "@prisma/adapter-pg": "7.8.0",
     "@prisma/client": "7.8.0",
     "graphql": "16.14.1",
