@@ -13,11 +13,13 @@
   "scripts": {
     "test:e2e": "playwright test",
     "lint:eslint": "eslint .",
-    "build": "tsc -b"
+    "build": "tsc -b",
+    "e2e:docker-up": "docker compose -f ./docker-compose.yml up -d --wait"
   },
   "dependencies": {},
   "devDependencies": {
     "@playwright/test": "1.60.0",
-    "@gemini-hlsw/navigate-configs": "workspace:*"
+    "@gemini-hlsw/navigate-configs": "workspace:*",
+    "@gemini-hlsw/navigate-ui": "workspace:*"
   }
 }
