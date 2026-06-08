@@ -17,6 +17,6 @@ Dockerfile
 packages/ui
 packages/resource-ui
 packages/common-ui
-.npmrc
 gen
 packages/configs/src/{graphql,prisma}/gen
+pruned
