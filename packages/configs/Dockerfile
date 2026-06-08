@@ -25,8 +25,8 @@ RUN corepack install
 
 FROM base AS build
 COPY --chown=software:software . .
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm ci --prefer-offline
-RUN pnpm -r build
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm --filter "@gemini-hlsw/navigate-configs" ci --prefer-offline
+RUN pnpm configs build
 RUN pnpm deploy --filter=navigate-configs --prod pruned
 # Add pnpm to packageManager field
 RUN PNPM_VERSION="$(pnpm -v)" && cd pruned && npm pkg set packageManager="pnpm@$PNPM_VERSION"
