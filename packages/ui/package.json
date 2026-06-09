@@ -26,7 +26,7 @@
     "@fortawesome/react-fontawesome": "3.3.1",
     "@gemini-hlsw/lucuma-common-ui": "workspace:*",
     "@gemini-hlsw/lucuma-core": "0.207.3",
-    "@gemini-hlsw/lucuma-schemas": "0.177.2-20260608-426fbc1b",
+    "@gemini-hlsw/lucuma-schemas": "0.177.2-20260609-821db596",
     "@gemini-hlsw/lucuma-ui-css": "0.176.0",
     "@gemini-hlsw/navigate-configs": "workspace:*",
     "@graphql-codegen/client-preset": "6.0.1",
