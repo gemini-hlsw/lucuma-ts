@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { timelineFactory } from '../../test/factories';
+import { timelineFactory } from '@/test/factories';
 import { getTimestamp } from './time';
 import { createTimelineChartConfig } from './timelineChartConfig';
 import type { TimelineBlock } from './types';

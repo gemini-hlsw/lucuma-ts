@@ -9,4 +9,4 @@ export type {
   TimeSpanItemFragment as TimeSpan,
   TimestampIntervalItemFragment as TimestampInterval,
   TooSupport,
-} from './gql/gen/graphql';
+} from '@gql/gen/graphql';

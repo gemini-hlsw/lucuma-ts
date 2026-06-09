@@ -4,7 +4,7 @@
 import type { JSX } from 'react';
 import { useState } from 'react';
 
-import { useTelescopeNightTimeline } from '../../gql/telescope';
+import { useTelescopeNightTimeline } from '@gql/telescope';
 import { toTimelineRows } from './adapters';
 import { Header } from './Header';
 import type { TimelineTimeDisplay } from './time';
