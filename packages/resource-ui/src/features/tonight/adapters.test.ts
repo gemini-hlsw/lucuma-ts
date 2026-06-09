@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { createTelescopeNightTimeline, timelineFactory } from '../../test/factories';
+import { createTelescopeNightTimeline, timelineFactory } from '@/test/factories';
+
 import { toTimelineRows } from './adapters';
 
 describe(toTimelineRows.name, () => {

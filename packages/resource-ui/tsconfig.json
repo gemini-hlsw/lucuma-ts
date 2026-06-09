@@ -3,6 +3,7 @@
   "compilerOptions": {
     "rootDir": "./src",
     "paths": {
+      "@gql/*": ["./src/gql/*"],
       "@/*": ["./src/*"]
     },
     "lib": ["ES2024", "DOM"],

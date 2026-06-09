@@ -1,7 +1,7 @@
 import { renderWithContext } from '@gemini-hlsw/lucuma-common-ui/testing';
 import { describe, expect, it, vi } from 'vitest';
 
-import { createTelescopeNightTimeline } from '../../test/factories';
+import { createTelescopeNightTimeline } from '@/test/factories';
 
 vi.mock('./Timeline', () => ({
   Timeline: () => <div data-testid="timeline" />,
@@ -9,7 +9,7 @@ vi.mock('./Timeline', () => ({
 
 const useTelescopeNightTimeline = vi.fn();
 
-vi.mock('../../gql/telescope', () => ({
+vi.mock('@gql/telescope', () => ({
   // eslint-disable-next-line @typescript-eslint/no-unsafe-return
   useTelescopeNightTimeline: () => useTelescopeNightTimeline(),
 }));
