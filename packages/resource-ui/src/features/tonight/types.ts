@@ -3,10 +3,6 @@
  */
 import type { TimestampInterval } from '@/types';
 
-import type { GetTelescopeNightTimelineQuery } from '../../gql/gen/graphql';
-
-export type TelescopeNightTimeline = NonNullable<GetTelescopeNightTimelineQuery['telescopeNightTimeline']>;
-
 export type TimelineVariant =
   | 'queue'
   | 'classical'
