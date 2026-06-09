@@ -24,6 +24,7 @@ export type {
   ConfigsTargetItemFragment as Target,
 } from '@gql/configs/gen/graphql';
 export type {
+  BasePositionItemFragment as BasePosition,
   GmosNorthBuiltinFpu,
   GmosSouthBuiltinFpu,
   BrightnessIntegratedItemFragment as OdbBandBrightness,

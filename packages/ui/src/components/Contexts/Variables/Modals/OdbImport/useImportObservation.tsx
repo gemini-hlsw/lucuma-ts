@@ -4,13 +4,17 @@ import type { TargetInput, TargetType } from '@gql/configs/gen/graphql';
 import { useGetGuideLoop } from '@gql/configs/GuideLoop';
 import { useRotator } from '@gql/configs/Rotator';
 import { useDoImportObservation } from '@gql/configs/Target';
+import type {
+  BasePositionItemFragment as BasePosition,
+  ObservationItemFragment as OdbObservation,
+  TargetItemFragment as OdbTarget,
+} from '@gql/odb/gen/graphql';
 import { useGetCentralWavelength, useGetGuideEnvironment } from '@gql/odb/Observation';
 
 import { extractMagnitude } from '@/Helpers/bands';
 import { extractGuideTargets } from '@/Helpers/guideTargets';
 import { useTransitionPromise } from '@/Helpers/hooks';
 import { extractCentralWavelength } from '@/Helpers/wavelength';
-import type { OdbObservation, OdbTarget } from '@/types';
 
 export function useImportObservation() {
   const { data: configurationData, loading: configurationLoading } = useConfiguration();
@@ -54,14 +58,11 @@ export function useImportObservation() {
 
       const { wavelength, fpu } = extractCentralWavelength(obsWithWavelength.data) ?? {};
 
-      const { blindOffsetTarget, firstScienceTarget } = selectedObservation.targetEnvironment ?? {};
-
-      const base = [
-        blindOffsetTarget && { target: blindOffsetTarget, type: 'BLINDOFFSET' as const satisfies TargetType },
-        firstScienceTarget && { target: firstScienceTarget, type: 'SCIENCE' as const satisfies TargetType },
-      ]
-        .filter(isNotNullish)
-        .map(({ target, type }) => createBaseTarget(target, type, wavelength));
+      const base = createBaseTargets(
+        selectedObservation,
+        guideEnv.data?.observation?.targetEnvironment.basePosition,
+        wavelength,
+      );
 
       const { oiwfs, pwfs1, pwfs2 } = extractGuideTargets(guideEnv.data);
 
@@ -123,4 +124,120 @@ function createBaseTarget(target: OdbTarget, type: TargetType, wavelength: numbe
     type,
     wavelength,
   };
+}
+
+function createBaseTargets(
+  observation: OdbObservation,
+  basePosition: BasePosition | null | undefined,
+  wavelength: number | undefined,
+): TargetInput[] {
+  const targetEnvironment = observation.targetEnvironment;
+
+  const asterism = targetEnvironment.asterism;
+  const fallbackTargets = [targetEnvironment.blindOffsetTarget, targetEnvironment.firstScienceTarget].filter(
+    isNotNullish,
+  );
+  const sourceTargets = asterism.length > 0 ? asterism : fallbackTargets;
+
+  const matchingBaseTarget = when(basePosition, (base) =>
+    sourceTargets.find((target) => isSameBaseTarget(base, target)),
+  );
+  const orderedBaseTargets: TargetInput[] = [];
+  const seenTargetIds = new Set<string>();
+
+  const baseTarget = createBasePositionTarget(basePosition, matchingBaseTarget, targetEnvironment, wavelength);
+  if (baseTarget) {
+    orderedBaseTargets.push(baseTarget);
+    seenTargetIds.add(baseTarget.id);
+  }
+
+  for (const target of sourceTargets) {
+    if (seenTargetIds.has(target.id)) continue;
+    orderedBaseTargets.push(createBaseTarget(target, getBaseTargetType(target, targetEnvironment), wavelength));
+    seenTargetIds.add(target.id);
+  }
+
+  return orderedBaseTargets;
+}
+
+function getBaseTargetType(
+  target: OdbTarget,
+  targetEnvironment: NonNullable<OdbObservation['targetEnvironment']>,
+): TargetType {
+  return target.id === targetEnvironment.blindOffsetTarget?.id ? 'BLINDOFFSET' : 'SCIENCE';
+}
+
+function createBasePositionTarget(
+  basePosition: BasePosition | null | undefined,
+  matchingTarget: OdbTarget | undefined,
+  targetEnvironment: NonNullable<OdbObservation['targetEnvironment']>,
+  wavelength: number | undefined,
+): TargetInput | undefined {
+  if (!basePosition) return undefined;
+  if (matchingTarget)
+    return createBaseTarget(matchingTarget, getBaseTargetType(matchingTarget, targetEnvironment), wavelength);
+
+  const defaultTargetInput = {
+    id: 't-base-position',
+    name: basePosition.name,
+    type: 'SCIENCE',
+    wavelength,
+  } satisfies Partial<TargetInput>;
+
+  if (basePosition.nonsidereal) {
+    return {
+      ...defaultTargetInput,
+      nonsidereal: basePosition.nonsidereal,
+    };
+  }
+
+  if (basePosition.sidereal) {
+    return {
+      ...defaultTargetInput,
+      sidereal: {
+        coord1: parseNumber(basePosition.sidereal.ra.degrees),
+        coord2: parseNumber(basePosition.sidereal.dec.degrees),
+        pmRa: basePosition.sidereal.properMotion?.ra.microarcsecondsPerYear,
+        pmDec: basePosition.sidereal.properMotion?.dec.microarcsecondsPerYear,
+        radialVelocity: basePosition.sidereal.radialVelocity?.centimetersPerSecond,
+        parallax: basePosition.sidereal.parallax?.microarcseconds,
+        epoch: basePosition.sidereal.epoch,
+      },
+    };
+  }
+
+  if (basePosition.coordinates) {
+    return {
+      ...defaultTargetInput,
+      sidereal: {
+        coord1: parseNumber(basePosition.coordinates.ra.degrees),
+        coord2: parseNumber(basePosition.coordinates.dec.degrees),
+      },
+    };
+  }
+
+  return undefined;
+}
+
+function isSameBaseTarget(basePosition: BasePosition, target: OdbTarget): boolean {
+  if (basePosition.nonsidereal && target.nonsidereal) {
+    return (
+      basePosition.nonsidereal.des === target.nonsidereal.des &&
+      basePosition.nonsidereal.keyType === target.nonsidereal.keyType
+    );
+  }
+
+  const baseCoordinates = basePosition.sidereal ?? basePosition.coordinates;
+  if (baseCoordinates && target.sidereal) {
+    return (
+      parseNumber(baseCoordinates.ra.degrees) === parseNumber(target.sidereal.ra.degrees) &&
+      parseNumber(baseCoordinates.dec.degrees) === parseNumber(target.sidereal.dec.degrees)
+    );
+  }
+
+  return false;
+}
+
+function parseNumber(value: number | string): number {
+  return typeof value === 'string' ? parseFloat(value) : value;
 }

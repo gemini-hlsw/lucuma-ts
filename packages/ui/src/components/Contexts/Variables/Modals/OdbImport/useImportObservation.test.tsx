@@ -1,5 +1,6 @@
 import { MockedProvider } from '@apollo/client/testing/react';
 import { GET_CONFIGURATION } from '@gql/configs/Configuration';
+import type { ImportObservationInput } from '@gql/configs/gen/graphql';
 import { GET_GUIDE_LOOP } from '@gql/configs/GuideLoop';
 import { GET_ROTATOR } from '@gql/configs/Rotator';
 import { DO_IMPORT_OBSERVATION } from '@gql/configs/Target';
@@ -97,6 +98,79 @@ describe(useImportObservation.name, () => {
       },
     });
   });
+
+  it('should place basePosition first and avoid duplicates from asterism', async () => {
+    const mocksWithoutGuideEnvironment = mocks.filter((mock) => mock.request.query !== GET_GUIDE_ENVIRONMENT);
+    const sutWithBasePosition = await renderHook(() => useImportObservation(), {
+      wrapper: ({ children }) => (
+        <MockedProvider
+          mocks={[...mocksWithoutGuideEnvironment, guideEnvironmentWithBasePositionMock, doImportObservationMock]}
+        >
+          {children}
+        </MockedProvider>
+      ),
+    });
+    await expect.poll(() => sutWithBasePosition.result.current[1].loading).toBe(false);
+
+    const [importObservation] = sutWithBasePosition.result.current;
+    await sutWithBasePosition.act(async () => {
+      await importObservation(selectedObservationWithBlindOffset);
+    });
+
+    expect(doImportObservationMock.request.variables).toHaveBeenCalledOnce();
+    const firstCall = doImportObservationMock.request.variables.mock.calls[0];
+    expect(firstCall).toBeDefined();
+    const variables = firstCall![0] as { input: ImportObservationInput };
+
+    expect(variables.input.targets.base).toHaveLength(2);
+    expect(variables.input.targets.base[0]).toMatchObject({
+      id: 't-60d',
+      name: 'Mayall V',
+      type: 'SCIENCE',
+    });
+    expect(variables.input.targets.base[1]).toMatchObject({
+      id: 't-60e',
+      name: 'Mayall V Blind',
+      type: 'BLINDOFFSET',
+    });
+  });
+
+  it('should use Base position name for coordinate-only basePosition', async () => {
+    const mocksWithoutGuideEnvironment = mocks.filter((mock) => mock.request.query !== GET_GUIDE_ENVIRONMENT);
+    const sutWithCoordinateBasePosition = await renderHook(() => useImportObservation(), {
+      wrapper: ({ children }) => (
+        <MockedProvider
+          mocks={[
+            ...mocksWithoutGuideEnvironment,
+            guideEnvironmentWithCoordinateOnlyBasePositionMock,
+            doImportObservationMock,
+          ]}
+        >
+          {children}
+        </MockedProvider>
+      ),
+    });
+    await expect.poll(() => sutWithCoordinateBasePosition.result.current[1].loading).toBe(false);
+
+    const [importObservation] = sutWithCoordinateBasePosition.result.current;
+    await sutWithCoordinateBasePosition.act(async () => {
+      await importObservation(selectedObservation);
+    });
+
+    const firstCall = doImportObservationMock.request.variables.mock.calls[0];
+    expect(firstCall).toBeDefined();
+    const variables = firstCall![0] as { input: ImportObservationInput };
+
+    expect(variables.input.targets.base[0]).toMatchObject({
+      id: 't-base-position',
+      name: 'Base position name',
+      type: 'SCIENCE',
+      sidereal: {
+        coord1: 11.25,
+        coord2: 40.75,
+      },
+    });
+  });
 });
 
 const selectedObservation: OdbObservation = {
@@ -160,7 +234,104 @@ const selectedObservation: OdbObservation = {
       __typename: 'Target',
     },
     blindOffsetTarget: null,
+    asterism: [],
     __typename: 'TargetEnvironment',
+  },
+};
+
+const selectedObservationWithBlindOffset: OdbObservation = {
+  ...selectedObservation,
+  targetEnvironment: {
+    ...selectedObservation.targetEnvironment,
+    blindOffsetTarget: {
+      id: 't-60e',
+      name: 'Mayall V Blind',
+      sidereal: {
+        epoch: 'J2000.000',
+        ra: {
+          hms: '00:50:09.964808',
+          degrees: 12.541520033333333,
+          __typename: 'RightAscension',
+        },
+        dec: {
+          dms: '+41:41:00.000000',
+          degrees: 41.68333333333333,
+          __typename: 'Declination',
+        },
+        properMotion: null,
+        parallax: null,
+        radialVelocity: null,
+        __typename: 'Sidereal',
+      },
+      sourceProfile: {
+        point: null,
+        __typename: 'SourceProfile',
+      },
+      nonsidereal: null,
+      __typename: 'Target',
+    },
+    asterism: [
+      {
+        id: 't-60d',
+        name: 'Mayall V',
+        sidereal: {
+          epoch: 'J2000.000',
+          ra: {
+            hms: '00:50:09.964808',
+            degrees: 12.541520033333333,
+            __typename: 'RightAscension',
+          },
+          dec: {
+            dms: '+41:41:01.034928',
+            degrees: 41.683620813333334,
+            __typename: 'Declination',
+          },
+          properMotion: null,
+          parallax: {
+            microarcseconds: 0,
+            __typename: 'Parallax',
+          },
+          radialVelocity: {
+            centimetersPerSecond: -33200000,
+            __typename: 'RadialVelocity',
+          },
+          __typename: 'Sidereal',
+        },
+        sourceProfile: {
+          point: null,
+          __typename: 'SourceProfile',
+        },
+        nonsidereal: null,
+        __typename: 'Target',
+      },
+      {
+        id: 't-60e',
+        name: 'Mayall V Blind',
+        sidereal: {
+          epoch: 'J2000.000',
+          ra: {
+            hms: '00:50:09.964808',
+            degrees: 12.541520033333333,
+            __typename: 'RightAscension',
+          },
+          dec: {
+            dms: '+41:41:00.000000',
+            degrees: 41.68333333333333,
+            __typename: 'Declination',
+          },
+          properMotion: null,
+          parallax: null,
+          radialVelocity: null,
+          __typename: 'Sidereal',
+        },
+        sourceProfile: {
+          point: null,
+          __typename: 'SourceProfile',
+        },
+        nonsidereal: null,
+        __typename: 'Target',
+      },
+    ],
   },
 };
 
@@ -265,6 +436,7 @@ const mocks = [
           __typename: 'Observation',
           id: arg.obsId,
           targetEnvironment: {
+            basePosition: null,
             guideEnvironment: {
               posAngle: {
                 hms: '00:00:00.000000',
@@ -345,6 +517,110 @@ const mocks = [
     },
   } satisfies MockedResponseOf<typeof GET_GUIDE_LOOP>,
 ];
+
+const guideEnvironmentWithBasePositionMock = {
+  request: {
+    query: GET_GUIDE_ENVIRONMENT,
+    variables: () => true,
+  },
+  result: (arg: { obsId: string }) => ({
+    data: {
+      observation: {
+        __typename: 'Observation',
+        id: arg.obsId,
+        targetEnvironment: {
+          basePosition: {
+            __typename: 'BasePosition',
+            type: 'EXPLICIT_BASE',
+            name: 'Mayall V',
+            sidereal: {
+              __typename: 'Sidereal',
+              epoch: 'J2000.000',
+              ra: {
+                __typename: 'RightAscension',
+                hms: '00:50:09.964808',
+                degrees: 12.541520033333333,
+              },
+              dec: {
+                __typename: 'Declination',
+                dms: '+41:41:01.034928',
+                degrees: 41.683620813333334,
+              },
+              properMotion: null,
+              parallax: {
+                __typename: 'Parallax',
+                microarcseconds: 0,
+              },
+              radialVelocity: {
+                __typename: 'RadialVelocity',
+                centimetersPerSecond: -33200000,
+              },
+            },
+            nonsidereal: null,
+            coordinates: null,
+          },
+          guideEnvironment: {
+            posAngle: {
+              hms: '00:00:00.000000',
+              degrees: 0,
+              __typename: 'Angle',
+            },
+            guideTargets: [],
+            __typename: 'GuideEnvironment',
+          },
+          __typename: 'TargetEnvironment',
+        },
+      },
+    },
+  }),
+} satisfies MockedResponseOf<typeof GET_GUIDE_ENVIRONMENT>;
+
+const guideEnvironmentWithCoordinateOnlyBasePositionMock = {
+  request: {
+    query: GET_GUIDE_ENVIRONMENT,
+    variables: () => true,
+  },
+  result: (arg: { obsId: string }) => ({
+    data: {
+      observation: {
+        __typename: 'Observation',
+        id: arg.obsId,
+        targetEnvironment: {
+          basePosition: {
+            __typename: 'BasePosition',
+            type: 'EXPLICIT_BASE',
+            name: 'Base position name',
+            sidereal: null,
+            nonsidereal: null,
+            coordinates: {
+              __typename: 'Coordinates',
+              ra: {
+                __typename: 'RightAscension',
+                hms: '00:45:00.000000',
+                degrees: 11.25,
+              },
+              dec: {
+                __typename: 'Declination',
+                dms: '+40:45:00.000000',
+                degrees: 40.75,
+              },
+            },
+          },
+          guideEnvironment: {
+            posAngle: {
+              hms: '00:00:00.000000',
+              degrees: 0,
+              __typename: 'Angle',
+            },
+            guideTargets: [],
+            __typename: 'GuideEnvironment',
+          },
+          __typename: 'TargetEnvironment',
+        },
+      },
+    },
+  }),
+} satisfies MockedResponseOf<typeof GET_GUIDE_ENVIRONMENT>;
 
 const doImportObservationMock = {
   request: {
