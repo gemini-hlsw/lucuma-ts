@@ -1,8 +1,9 @@
 /**
  * Adapts GraphQL timeline data into generic timeline rows.
  */
-import type { TelescopeAvailability, TelescopeModeType, TooSupport } from '../../gql/gen/graphql';
-import type { TelescopeNightTimeline, TimelineRowData, TimelineVariant } from './types';
+import type { TelescopeAvailability, TelescopeModeType, TelescopeNightTimeline, TooSupport } from '@/types';
+
+import type { TimelineRowData, TimelineVariant } from './types';
 
 const modeVariants = {
   QUEUE: 'queue',

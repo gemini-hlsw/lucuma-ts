@@ -1,7 +1,16 @@
-import type { TimeSpan, TimestampInterval } from '@/types';
+import type {
+  TelescopeAvailability,
+  TelescopeAvailabilityStatus,
+  TelescopeModeStatus,
+  TelescopeModeType,
+  TelescopeNightTimeline,
+  TelescopeTooStatus,
+  TimeSpan,
+  TimestampInterval,
+  TooSupport,
+} from '@/types';
 
-import type { TelescopeNightTimeline, TimelineBlock, TimelineRowData } from '../features/tonight/types';
-import type { TelescopeAvailability, TelescopeModeType, TooSupport } from '../gql/gen/graphql';
+import type { TimelineBlock, TimelineRowData } from '../features/tonight/types';
 
 const defaultDuration: TimeSpan = {
   __typename: 'TimeSpan',
@@ -21,29 +30,33 @@ const createModeStatus = (
   start: string,
   end: string,
   programReference: string | null = null,
-) => ({
-  __typename: 'TelescopeModeStatus' as const,
-  site: 'GN' as const,
+): TelescopeModeStatus => ({
+  __typename: 'TelescopeModeStatus',
+  site: 'GN',
   interval: createInterval(start, end),
   mode: {
-    __typename: 'TelescopeMode' as const,
+    __typename: 'TelescopeMode',
     type,
     programReference,
   },
 });
 
-const createAvailabilityStatus = (availability: TelescopeAvailability, start: string, end: string) => ({
-  __typename: 'TelescopeAvailabilityStatus' as const,
-  site: 'GN' as const,
+const createAvailabilityStatus = (
+  availability: TelescopeAvailability,
+  start: string,
+  end: string,
+): TelescopeAvailabilityStatus => ({
+  __typename: 'TelescopeAvailabilityStatus',
+  site: 'GN',
   interval: createInterval(start, end),
   availability,
   reason: null,
   plannedAvailability: null,
 });
 
-const createTooStatus = (tooSupport: TooSupport, start: string, end: string) => ({
-  __typename: 'TelescopeTooStatus' as const,
-  site: 'GN' as const,
+const createTooStatus = (tooSupport: TooSupport, start: string, end: string): TelescopeTooStatus => ({
+  __typename: 'TelescopeTooStatus',
+  site: 'GN',
   interval: createInterval(start, end),
   tooSupport,
 });

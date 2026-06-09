@@ -20,40 +20,64 @@ export const TIMESTAMP_INTERVAL_FRAGMENT = graphql(`
   }
 `);
 
+export const TELESCOPE_MODE_STATUS_FRAGMENT = graphql(`
+  fragment TelescopeModeStatusItem on TelescopeModeStatus {
+    site
+    interval {
+      ...TimestampIntervalItem
+    }
+    mode {
+      type
+      programReference
+    }
+  }
+`);
+
+export const TELESCOPE_AVAILABILITY_STATUS_FRAGMENT = graphql(`
+  fragment TelescopeAvailabilityStatusItem on TelescopeAvailabilityStatus {
+    site
+    interval {
+      ...TimestampIntervalItem
+    }
+    availability
+    reason
+    plannedAvailability
+  }
+`);
+
+export const TELESCOPE_TOO_STATUS_FRAGMENT = graphql(`
+  fragment TelescopeTooStatusItem on TelescopeTooStatus {
+    site
+    interval {
+      ...TimestampIntervalItem
+    }
+    tooSupport
+  }
+`);
+
+export const TELESCOPE_NIGHT_TIMELINE_FRAGMENT = graphql(`
+  fragment TelescopeNightTimelineItem on TelescopeNightTimeline {
+    site
+    observingNight
+    displayInterval {
+      ...TimestampIntervalItem
+    }
+    availability {
+      ...TelescopeAvailabilityStatusItem
+    }
+    tooStatus {
+      ...TelescopeTooStatusItem
+    }
+    modes {
+      ...TelescopeModeStatusItem
+    }
+  }
+`);
+
 export const GET_TELESCOPE_NIGHT_TIMELINE = graphql(`
   query getTelescopeNightTimeline($site: Site!, $observingNight: Date!) {
     telescopeNightTimeline(site: $site, observingNight: $observingNight) {
-      site
-      observingNight
-      displayInterval {
-        ...TimestampIntervalItem
-      }
-      availability {
-        interval {
-          ...TimestampIntervalItem
-        }
-        availability
-        reason
-        plannedAvailability
-        site
-      }
-      tooStatus {
-        interval {
-          ...TimestampIntervalItem
-        }
-        tooSupport
-        site
-      }
-      modes {
-        interval {
-          ...TimestampIntervalItem
-        }
-        site
-        mode {
-          type
-          programReference
-        }
-      }
+      ...TelescopeNightTimelineItem
     }
   }
 `);

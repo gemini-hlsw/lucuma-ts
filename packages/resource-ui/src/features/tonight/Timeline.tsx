@@ -7,9 +7,8 @@ import { Chart, PlotOptions, Tooltip, XAxis, YAxis } from '@highcharts/react';
 import { XRangeSeries } from '@highcharts/react/series/XRange';
 import type { JSX } from 'react';
 
-import type { TimestampInterval } from '@/types';
+import type { Site, TimestampInterval } from '@/types';
 
-import type { Site } from '../../gql/gen/graphql';
 import type { TimelineTimeDisplay } from './time';
 import { createTimelineChartConfig } from './timelineChartConfig';
 import type { TimelineBlock, TimelineRowData } from './types';

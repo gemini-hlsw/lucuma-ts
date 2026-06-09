@@ -6,9 +6,8 @@ import type { XRangeSeries } from '@highcharts/react/series/XRange';
 import type { Options, Point, XrangePointOptionsObject } from 'highcharts';
 import type { ComponentProps } from 'react';
 
-import type { TimestampInterval } from '@/types';
+import type { Site, TimestampInterval } from '@/types';
 
-import type { Site } from '../../gql/gen/graphql';
 import type { TimelineTimeDisplay } from './time';
 import { formatTime, getDurationLabel, getNowTimestamp, getTimestamp } from './time';
 import { timelineChartTheme } from './timelineChartTheme';

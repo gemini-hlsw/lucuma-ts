@@ -4,9 +4,9 @@
 import { SelectButton, type SelectButtonChangeEvent } from 'primereact/selectbutton';
 import type { JSX } from 'react';
 
-import type { Site } from '../../gql/gen/graphql';
+import type { Site, TelescopeNightTimeline } from '@/types';
+
 import type { TimelineTimeDisplay } from './time';
-import type { TelescopeNightTimeline } from './types';
 
 interface HeaderProps {
   timeline: TelescopeNightTimeline;

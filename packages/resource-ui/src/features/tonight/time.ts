@@ -3,7 +3,7 @@
  */
 import { formatDuration, intervalToDuration } from 'date-fns';
 
-import type { Site } from '../../gql/gen/graphql';
+import type { Site } from '@/types';
 
 const DEMO_NOW = '2026-08-02T00:30:00-10:00';
 
