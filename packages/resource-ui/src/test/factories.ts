@@ -1,3 +1,4 @@
+import type { TimelineBlock, TimelineRowData } from '@/features/tonight/types';
 import type {
   TelescopeAvailability,
   TelescopeAvailabilityStatus,
@@ -9,8 +10,6 @@ import type {
   TimestampInterval,
   TooSupport,
 } from '@/types';
-
-import type { TimelineBlock, TimelineRowData } from '@/features/tonight/types';
 
 const defaultDuration: TimeSpan = {
   __typename: 'TimeSpan',

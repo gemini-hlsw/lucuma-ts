@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { userEvent } from 'vitest/browser';
 
 import { createTelescopeNightTimeline } from '@/test/factories';
+
 import { Header } from './Header';
 import type { TimelineTimeDisplay } from './time';
 
