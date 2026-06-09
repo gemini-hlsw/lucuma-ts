@@ -23,8 +23,8 @@ jobs:
       - uses: ./.github/setup
         with:
           only-changed: true
-      - run: pnpm --filter "...[origin/main]..." codegen
-      - run: pnpm --filter "...[origin/main]..." build
+      - run: pnpm --filter "...[origin/main]..." --if-present codegen
+      - run: pnpm --filter "...[origin/main]..." --if-present build
       - name: Archive production artifacts
         uses: actions/upload-artifact@v7
         with:
@@ -51,9 +51,9 @@ jobs:
       - uses: ./.github/setup
         with:
           only-changed: true
-      - run: pnpm --filter "...[origin/main]..." codegen
-      - run: pnpm --filter "...[origin/main]..." generate
-      - run: pnpm --filter '...[origin/main]' lint:eslint
+      - run: pnpm --filter "...[origin/main]..." --if-present codegen
+      - run: pnpm --filter "...[origin/main]..." --if-present generate
+      - run: pnpm --filter "...[origin/main]" --if-present lint:eslint
       - run: pnpm lint
 
   test:
@@ -65,9 +65,9 @@ jobs:
         with:
           only-changed: true
       - run: pnpm exec playwright install chromium --only-shell
-      - run: pnpm --filter "...[origin/main]..." codegen
-      - run: pnpm --filter "...[origin/main]..." generate
-      - run: pnpm --filter "...[origin/main]" test
+      - run: pnpm --filter "...[origin/main]..." --if-present codegen
+      - run: pnpm --filter "...[origin/main]..." --if-present generate
+      - run: pnpm --filter "...[origin/main]" --if-present test
 
   e2e:
     timeout-minutes: 10
@@ -86,13 +86,13 @@ jobs:
         run: |
           sudo echo "127.0.0.1 navigate.lucuma.xyz" | sudo tee -a /etc/hosts
       - run: pnpm exec playwright install firefox --only-shell
-      - run: pnpm --filter "...@gemini-hlsw/navigate-e2e[origin/main]..." build
-      - run: pnpm --filter "...@gemini-hlsw/navigate-e2e[origin/main]..." e2e:docker-up
+      - run: pnpm --filter "...@gemini-hlsw/navigate-e2e[origin/main]..." --if-present build
+      - run: pnpm --filter "...@gemini-hlsw/navigate-e2e[origin/main]..." --if-present e2e:docker-up
         env:
           LUCUMA_REFRESH_TOKEN: ${{ secrets.LUCUMA_DEV_API_KEY }}
 
       - name: Run Playwright tests
-        run: pnpm --filter "...@gemini-hlsw/navigate-e2e[origin/main]..." test:e2e
+        run: pnpm --filter "...@gemini-hlsw/navigate-e2e[origin/main]..." --if-present test:e2e
         env:
           LUCUMA_REFRESH_TOKEN: ${{ secrets.LUCUMA_DEV_API_KEY }}
           DATABASE_URL: 'postgresql://jimmy:banana@127.0.0.1:5432/configs'
