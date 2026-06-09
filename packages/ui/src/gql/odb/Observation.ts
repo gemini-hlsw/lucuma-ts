@@ -31,6 +31,9 @@ export const OBSERVATION_FRAGMENT = graphql(`
       blindOffsetTarget {
         ...TargetItem
       }
+      asterism {
+        ...TargetItem
+      }
     }
   }
 `);
@@ -105,6 +108,29 @@ export const SOURCE_PROFILE_FRAGMENT = graphql(`
   }
 `);
 
+export const BASE_POSITION_FRAGMENT = graphql(`
+  fragment BasePositionItem on BasePosition {
+    type
+    name
+    sidereal {
+      ...SiderealItem
+    }
+    nonsidereal {
+      ...NonsiderealItem
+    }
+    coordinates {
+      ra {
+        hms
+        degrees
+      }
+      dec {
+        dms
+        degrees
+      }
+    }
+  }
+`);
+
 const GET_OBSERVATION_BY_ID = graphql(`
   query getObservationById($obsId: ObservationId!) {
     observation(observationId: $obsId) {
@@ -154,6 +180,9 @@ export const GET_GUIDE_ENVIRONMENT = graphql(`
     observation(observationId: $obsId) {
       id
       targetEnvironment {
+        basePosition {
+          ...BasePositionItem
+        }
         guideEnvironment {
           posAngle {
             degrees

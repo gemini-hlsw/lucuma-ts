@@ -68,8 +68,7 @@ export const SIDEREAL_TARGET_FRAGMENT = graphql(`
       ...RAItem
     }
     dec {
-      degrees
-      dms
+      ...DecItem
     }
     az {
       ...AzItem

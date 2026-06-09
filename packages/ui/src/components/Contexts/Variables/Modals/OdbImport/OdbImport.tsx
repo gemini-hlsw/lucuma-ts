@@ -24,13 +24,11 @@ export function OdbImport() {
       setSelectedObservation(null);
     });
 
-  const { firstScienceTarget, blindOffsetTarget } = selectedObservation?.targetEnvironment ?? {};
-
   const footer = (
     <div className="modal-footer">
       <Button text severity="danger" label="Cancel" onClick={close} />
       <Button
-        disabled={!canEdit || !selectedObservation || !(firstScienceTarget?.name ?? blindOffsetTarget?.name)}
+        disabled={!canEdit || !selectedObservation}
         label="Import to Navigate"
         loading={loading}
         onClick={() => importObservation(selectedObservation!).then(close)}
