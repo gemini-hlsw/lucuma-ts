@@ -15,7 +15,7 @@
       "type": "node",
       "request": "launch",
       "name": "Run Vitest Browser",
-      "program": "${workspaceRoot}/node_modules/vitest/vitest.mjs",
+      "program": "${workspaceRoot}/../../node_modules/vitest/vitest.mjs",
       "console": "integratedTerminal",
       "args": ["--inspect-brk", "--browser", "--no-file-parallelism"]
     },

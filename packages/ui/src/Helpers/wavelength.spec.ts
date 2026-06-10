@@ -23,6 +23,7 @@ describe(extractCentralWavelength.name, () => {
         gmosSouth: null,
         ghost: null,
         igrins2: null,
+        gnirs: null,
         __typename: 'ExecutionConfig',
       },
     };
@@ -106,6 +107,7 @@ describe(extractCentralWavelength.name, () => {
         gmosSouth: null,
         ghost: null,
         igrins2: null,
+        gnirs: null,
         __typename: 'ExecutionConfig',
       },
     };
@@ -164,6 +166,7 @@ describe(extractCentralWavelength.name, () => {
         gmosSouth: null,
         ghost: null,
         igrins2: null,
+        gnirs: null,
         __typename: 'ExecutionConfig',
       },
     };
@@ -203,6 +206,7 @@ describe(extractCentralWavelength.name, () => {
         flamingos2: null,
         ghost: null,
         igrins2: null,
+        gnirs: null,
         __typename: 'ExecutionConfig',
       },
     };
@@ -242,6 +246,7 @@ describe(extractCentralWavelength.name, () => {
         },
         ghost: null,
         igrins2: null,
+        gnirs: null,
         __typename: 'ExecutionConfig',
       },
     };
@@ -290,6 +295,7 @@ describe(extractCentralWavelength.name, () => {
           },
         },
         igrins2: null,
+        gnirs: null,
         __typename: 'ExecutionConfig',
       },
     };
@@ -317,6 +323,65 @@ describe(extractCentralWavelength.name, () => {
                   id: 'step1',
                   instrumentConfig: {
                     __typename: 'Igrins2Dynamic',
+                    centralWavelength: {
+                      __typename: 'Wavelength',
+                      nanometers: 2500,
+                    },
+                  },
+                },
+              ],
+            },
+          },
+        },
+        gnirs: null,
+        __typename: 'ExecutionConfig',
+      },
+    };
+    expect(extractCentralWavelength(data)).deep.eq({ wavelength: 2500, fpu: null });
+  });
+
+  it('returns central wavelength for GNIRS', () => {
+    const data: GetCentralWavelengthQuery = {
+      executionConfig: {
+        instrument: 'GNIRS',
+        flamingos2: null,
+        gmosNorth: null,
+        gmosSouth: null,
+        ghost: null,
+        igrins2: null,
+        gnirs: {
+          __typename: 'GnirsExecutionConfig',
+          science: {
+            __typename: 'GnirsExecutionSequence',
+            nextAtom: {
+              __typename: 'GnirsAtom',
+              id: 'atom1',
+              steps: [
+                {
+                  __typename: 'GnirsStep',
+                  id: 'step1',
+                  instrumentConfig: {
+                    __typename: 'GnirsDynamic',
+                    centralWavelength: {
+                      __typename: 'Wavelength',
+                      nanometers: 2500,
+                    },
+                  },
+                },
+              ],
+            },
+          },
+          acquisition: {
+            __typename: 'GnirsExecutionSequence',
+            nextAtom: {
+              __typename: 'GnirsAtom',
+              id: 'atom1',
+              steps: [
+                {
+                  __typename: 'GnirsStep',
+                  id: 'step1',
+                  instrumentConfig: {
+                    __typename: 'GnirsDynamic',
                     centralWavelength: {
                       __typename: 'Wavelength',
                       nanometers: 2500,
