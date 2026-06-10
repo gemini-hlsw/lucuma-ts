@@ -1,6 +1,10 @@
 import type { GetCentralWavelengthQuery } from '@gql/odb/gen/graphql';
 
-export function extractCentralWavelength(data: GetCentralWavelengthQuery | undefined) {
+import type { Fpu } from '@/types';
+
+export function extractCentralWavelength(
+  data: GetCentralWavelengthQuery | undefined,
+): undefined | { wavelength: number | undefined; fpu: Fpu | null } {
   const config = data?.executionConfig;
   if (!config) return undefined;
 
@@ -22,21 +26,23 @@ export function extractCentralWavelength(data: GetCentralWavelengthQuery | undef
     case 'IGRINS2':
       instrumentName = 'igrins2';
       break;
+    case 'GNIRS':
+      instrumentName = 'gnirs';
+      break;
     default:
       return undefined;
   }
 
-  if (instrumentName === 'ghost' || instrumentName === 'igrins2') {
-    return {
-      wavelength: config[instrumentName]?.science?.nextAtom.steps[0]?.instrumentConfig.centralWavelength?.nanometers,
-      fpu: null,
-    };
-  } else {
-    return {
-      wavelength: (
-        config[instrumentName]?.acquisition?.nextAtom.steps[0] ?? config[instrumentName]?.science?.nextAtom.steps[0]
-      )?.instrumentConfig.centralWavelength?.nanometers,
-      fpu: config[instrumentName]?.acquisition?.nextAtom.steps[0]?.instrumentConfig.fpu?.builtin ?? null,
-    };
-  }
+  const instrumentConfig = config[instrumentName];
+  const acqusitionStep =
+    instrumentConfig && 'acquisition' in instrumentConfig
+      ? instrumentConfig?.acquisition?.nextAtom.steps[0]?.instrumentConfig
+      : undefined;
+  const scienceStep = instrumentConfig?.science?.nextAtom.steps[0]?.instrumentConfig;
+  const step = acqusitionStep ?? scienceStep;
+
+  return {
+    wavelength: step?.centralWavelength?.nanometers,
+    fpu: step && 'fpu' in step ? (step.fpu?.builtin ?? null) : null,
+  };
 }

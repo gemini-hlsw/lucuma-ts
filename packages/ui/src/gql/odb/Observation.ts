@@ -305,6 +305,22 @@ export const IGRINS2_EXECUTION_SEQUENCE_FRAGMENT = graphql(`
   }
 `);
 
+export const GNIRS_EXECUTION_SEQUENCE_FRAGMENT = graphql(`
+  fragment GnirsExecutionSequenceItem on GnirsExecutionSequence {
+    nextAtom {
+      id
+      steps {
+        id
+        instrumentConfig {
+          centralWavelength {
+            ...WavelengthItem
+          }
+        }
+      }
+    }
+  }
+`);
+
 export const GET_CENTRAL_WAVELENGTH = graphql(`
   query getCentralWavelength($obsId: ObservationId!) {
     executionConfig(observationId: $obsId) {
@@ -341,6 +357,14 @@ export const GET_CENTRAL_WAVELENGTH = graphql(`
       igrins2 {
         science {
           ...Igrins2ExecutionSequenceItem
+        }
+      }
+      gnirs {
+        acquisition {
+          ...GnirsExecutionSequenceItem
+        }
+        science {
+          ...GnirsExecutionSequenceItem
         }
       }
     }

@@ -420,6 +420,7 @@ const mocks = [
           flamingos2: null,
           ghost: null,
           igrins2: null,
+          gnirs: null,
           __typename: 'ExecutionConfig',
         },
       },
