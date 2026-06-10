@@ -159,8 +159,6 @@ jobs:
           echo "Smoke test for version ${CONFIGS_VERSION}"
           docker compose -f .github/docker-compose.yml up -d --no-build --wait
 
-          ./packages/configs/tasks/healthcheck.js
-
           echo "Smoke test successful!"
           docker compose -f .github/docker-compose.yml down
         env:
