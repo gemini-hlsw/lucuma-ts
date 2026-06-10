@@ -36,7 +36,9 @@ export function Configuration() {
     [data?.guideLoop],
   );
 
-  const m2ComaNotAllowed = state.m2TipTiltSource?.includes('OIWFS');
+  const source = state.m2TipTiltSource;
+  const m2ComaNotAllowed =
+    source?.includes('OIWFS') || source?.includes('PWFS2') || (source?.includes('PWFS1') && site === 'GN');
 
   const [updateGuideLoop, { loading: updateLoading }] = useUpdateGuideLoop();
   const [guideEnable, { loading: enableLoading }] = useGuideEnable();
