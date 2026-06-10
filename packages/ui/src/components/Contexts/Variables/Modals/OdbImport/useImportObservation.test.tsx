@@ -135,6 +135,32 @@ describe(useImportObservation.name, () => {
     });
   });
 
+  it('should use visitor wavelength when present in observing mode', async () => {
+    const mocksWithVisitor = mocks.map((mock) => {
+      if (mock.request.query === GET_GUIDE_ENVIRONMENT) return guideEnvironmentWithVisitorMock;
+      if (mock.request.query === GET_CENTRAL_WAVELENGTH) return centralWavelengthNoConfigMock;
+      return mock;
+    });
+    const sutWithVisitor = await renderHook(() => useImportObservation(), {
+      wrapper: ({ children }) => (
+        <MockedProvider mocks={[...mocksWithVisitor, doImportObservationMock]}>{children}</MockedProvider>
+      ),
+    });
+    await expect.poll(() => sutWithVisitor.result.current[1].loading).toBe(false);
+
+    const [importObservation] = sutWithVisitor.result.current;
+    await sutWithVisitor.act(async () => {
+      await importObservation(selectedObservation);
+    });
+
+    const firstCall = doImportObservationMock.request.variables.mock.calls[0];
+    expect(firstCall).toBeDefined();
+    const variables = firstCall![0] as { input: ImportObservationInput };
+
+    expect(variables.input.observation.instrument).toBeUndefined();
+    expect(variables.input.targets.base[0]).toMatchObject({ wavelength: 750 });
+  });
+
   it('should use Base position name for coordinate-only basePosition', async () => {
     const mocksWithoutGuideEnvironment = mocks.filter((mock) => mock.request.query !== GET_GUIDE_ENVIRONMENT);
     const sutWithCoordinateBasePosition = await renderHook(() => useImportObservation(), {
@@ -436,6 +462,7 @@ const mocks = [
         observation: {
           __typename: 'Observation',
           id: arg.obsId,
+          observingMode: null,
           targetEnvironment: {
             basePosition: null,
             guideEnvironment: {
@@ -529,6 +556,7 @@ const guideEnvironmentWithBasePositionMock = {
       observation: {
         __typename: 'Observation',
         id: arg.obsId,
+        observingMode: null,
         targetEnvironment: {
           basePosition: {
             __typename: 'BasePosition',
@@ -586,6 +614,7 @@ const guideEnvironmentWithCoordinateOnlyBasePositionMock = {
       observation: {
         __typename: 'Observation',
         id: arg.obsId,
+        observingMode: null,
         targetEnvironment: {
           basePosition: {
             __typename: 'BasePosition',
@@ -607,6 +636,56 @@ const guideEnvironmentWithCoordinateOnlyBasePositionMock = {
               },
             },
           },
+          guideEnvironment: {
+            posAngle: {
+              hms: '00:00:00.000000',
+              degrees: 0,
+              __typename: 'Angle',
+            },
+            guideTargets: [],
+            __typename: 'GuideEnvironment',
+          },
+          __typename: 'TargetEnvironment',
+        },
+      },
+    },
+  }),
+} satisfies MockedResponseOf<typeof GET_GUIDE_ENVIRONMENT>;
+
+const centralWavelengthNoConfigMock = {
+  request: {
+    query: GET_CENTRAL_WAVELENGTH,
+    variables: () => true,
+  },
+  result: {
+    data: {
+      executionConfig: null,
+    },
+  },
+} satisfies MockedResponseOf<typeof GET_CENTRAL_WAVELENGTH>;
+
+const guideEnvironmentWithVisitorMock = {
+  request: {
+    query: GET_GUIDE_ENVIRONMENT,
+    variables: () => true,
+  },
+  result: (arg: { obsId: string }) => ({
+    data: {
+      observation: {
+        __typename: 'Observation',
+        id: arg.obsId,
+        observingMode: {
+          __typename: 'ObservingMode',
+          visitor: {
+            __typename: 'Visitor',
+            centralWavelength: {
+              __typename: 'Wavelength',
+              nanometers: 750,
+            },
+          },
+        },
+        targetEnvironment: {
+          basePosition: null,
           guideEnvironment: {
             posAngle: {
               hms: '00:00:00.000000',

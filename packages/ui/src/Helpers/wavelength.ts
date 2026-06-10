@@ -1,12 +1,20 @@
 import type { GetCentralWavelengthQuery } from '@gql/odb/gen/graphql';
 
-import type { Fpu } from '@/types';
+import type { Fpu, Visitor } from '@/types';
 
 export function extractCentralWavelength(
   data: GetCentralWavelengthQuery | undefined,
-): undefined | { wavelength: number | undefined; fpu: Fpu | null } {
+  visitor: Visitor | undefined | null,
+): { wavelength: number | undefined; fpu: Fpu | null | undefined } {
+  if (visitor) {
+    return {
+      wavelength: visitor.centralWavelength.nanometers,
+      fpu: null,
+    };
+  }
+
   const config = data?.executionConfig;
-  if (!config) return undefined;
+  if (!config) return { wavelength: undefined, fpu: undefined };
 
   // TODO: Add other instruments when odb supports them
   let instrumentName: keyof typeof config;
@@ -30,7 +38,8 @@ export function extractCentralWavelength(
       instrumentName = 'gnirs';
       break;
     default:
-      return undefined;
+      console.warn(`Unknown instrument ${config.instrument}`);
+      return { wavelength: undefined, fpu: undefined };
   }
 
   const instrumentConfig = config[instrumentName];

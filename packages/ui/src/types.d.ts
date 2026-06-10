@@ -31,6 +31,7 @@ export type {
   ObservationItemFragment as OdbObservation,
   SourceProfileItemFragment as OdbSourceProfile,
   TargetItemFragment as OdbTarget,
+  VisitorItemFragment as Visitor,
 } from '@gql/odb/gen/graphql';
 export type {
   AcMechsItemFragment as AcMechs,

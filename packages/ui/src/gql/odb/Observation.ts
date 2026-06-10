@@ -131,6 +131,14 @@ export const BASE_POSITION_FRAGMENT = graphql(`
   }
 `);
 
+export const VISITOR_FRAGMENT = graphql(`
+  fragment VisitorItem on Visitor {
+    centralWavelength {
+      ...WavelengthItem
+    }
+  }
+`);
+
 const GET_OBSERVATION_BY_ID = graphql(`
   query getObservationById($obsId: ObservationId!) {
     observation(observationId: $obsId) {
@@ -179,6 +187,11 @@ export const GET_GUIDE_ENVIRONMENT = graphql(`
   query getGuideEnvironment($obsId: ObservationId!) {
     observation(observationId: $obsId) {
       id
+      observingMode {
+        visitor {
+          ...VisitorItem
+        }
+      }
       targetEnvironment {
         basePosition {
           ...BasePositionItem

@@ -56,7 +56,10 @@ export function useImportObservation() {
         }),
       ]);
 
-      const { wavelength, fpu } = extractCentralWavelength(obsWithWavelength.data) ?? {};
+      const { wavelength, fpu } = extractCentralWavelength(
+        obsWithWavelength.data,
+        guideEnv.data?.observation?.observingMode?.visitor,
+      );
 
       const base = createBaseTargets(
         selectedObservation,
