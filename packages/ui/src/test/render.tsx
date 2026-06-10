@@ -14,6 +14,7 @@ import { render } from 'vitest-browser-react';
 import { odbTokenAtom } from '@/components/atoms/auth';
 import { serverConfigAtom } from '@/components/atoms/config';
 import { longExpirationJwt } from '@/test/helpers';
+import type { ServerConfiguration } from '@/types';
 
 interface CreateOptions<T> {
   mocks?: MockLink.MockedResponse[];
@@ -78,7 +79,7 @@ function addIfNotPresent(tuples: AtomTuples | undefined, atom: AtomTuples[number
   else return [atom];
 }
 
-const serverConfig = {
+export const serverConfig: ServerConfiguration = {
   version: '20251204-19269419',
   site: 'GN',
   odbUri: 'https://lucuma-postgres-odb-dev.herokuapp.com/odb',
