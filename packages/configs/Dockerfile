@@ -40,11 +40,10 @@ ENV NODE_ENV=production
 COPY --from=build --chown=software:software /usr/src/app/pruned /usr/src/app
 RUN pnpm exec prisma generate
 
-ENV COREPACK_ENABLE_NETWORK=0
 ENV PORT=4000
 EXPOSE 4000
 
-HEALTHCHECK --start-period=2s CMD ["./tasks/healthcheck.js"]
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 CMD ["./tasks/healthcheck.js"]
 
 # Start command
 CMD ["pnpm", "production"]
