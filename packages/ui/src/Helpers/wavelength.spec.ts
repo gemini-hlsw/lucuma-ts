@@ -1,17 +1,19 @@
 import type { GetCentralWavelengthQuery } from '@gql/odb/gen/graphql';
 
+import type { Visitor } from '@/types';
+
 import { extractCentralWavelength } from './wavelength';
 
 describe(extractCentralWavelength.name, () => {
   it('returns undefined if no data is provided', () => {
-    expect(extractCentralWavelength(undefined)).toBeUndefined();
+    expect(extractCentralWavelength(undefined, undefined)).deep.eq({ wavelength: undefined, fpu: undefined });
   });
 
   it('returns undefined if executionConfig is not present', () => {
     const data = {
       executionConfig: null,
     };
-    expect(extractCentralWavelength(data)).toBeUndefined();
+    expect(extractCentralWavelength(data, undefined)).deep.eq({ wavelength: undefined, fpu: undefined });
   });
 
   it('returns undefined for unsupported instruments', () => {
@@ -27,7 +29,7 @@ describe(extractCentralWavelength.name, () => {
         __typename: 'ExecutionConfig',
       },
     };
-    expect(extractCentralWavelength(data)).toBeUndefined();
+    expect(extractCentralWavelength(data, undefined)).deep.eq({ wavelength: undefined, fpu: undefined });
   });
 
   it('returns the central wavelength for FLAMINGOS2', () => {
@@ -111,7 +113,7 @@ describe(extractCentralWavelength.name, () => {
         __typename: 'ExecutionConfig',
       },
     };
-    expect(extractCentralWavelength(data)).deep.eq({ wavelength: 1500, fpu: null });
+    expect(extractCentralWavelength(data, undefined)).deep.eq({ wavelength: 1500, fpu: null });
   });
 
   it('returns science central wavelength if acquisition is not present', () => {
@@ -170,7 +172,7 @@ describe(extractCentralWavelength.name, () => {
         __typename: 'ExecutionConfig',
       },
     };
-    expect(extractCentralWavelength(data)).deep.eq({ wavelength: 3500, fpu: null });
+    expect(extractCentralWavelength(data, undefined)).deep.eq({ wavelength: 3500, fpu: null });
   });
 
   it('returns the central wavelength for GMOS_NORTH', () => {
@@ -210,7 +212,7 @@ describe(extractCentralWavelength.name, () => {
         __typename: 'ExecutionConfig',
       },
     };
-    expect(extractCentralWavelength(data)).deep.eq({ wavelength: 500, fpu: null });
+    expect(extractCentralWavelength(data, undefined)).deep.eq({ wavelength: 500, fpu: null });
   });
 
   it('returns central wavelength for GMOS_SOUTH', () => {
@@ -250,7 +252,7 @@ describe(extractCentralWavelength.name, () => {
         __typename: 'ExecutionConfig',
       },
     };
-    expect(extractCentralWavelength(data)).deep.eq({ wavelength: 1500, fpu: null });
+    expect(extractCentralWavelength(data, undefined)).deep.eq({ wavelength: 1500, fpu: null });
   });
 
   it('returns central wavelength for GHOST', () => {
@@ -299,7 +301,7 @@ describe(extractCentralWavelength.name, () => {
         __typename: 'ExecutionConfig',
       },
     };
-    expect(extractCentralWavelength(data)).deep.eq({ wavelength: 2000, fpu: null });
+    expect(extractCentralWavelength(data, undefined)).deep.eq({ wavelength: 2000, fpu: null });
   });
 
   it('returns central wavelength for IGRINS2', () => {
@@ -337,7 +339,7 @@ describe(extractCentralWavelength.name, () => {
         __typename: 'ExecutionConfig',
       },
     };
-    expect(extractCentralWavelength(data)).deep.eq({ wavelength: 2500, fpu: null });
+    expect(extractCentralWavelength(data, undefined)).deep.eq({ wavelength: 2500, fpu: null });
   });
 
   it('returns central wavelength for GNIRS', () => {
@@ -395,6 +397,55 @@ describe(extractCentralWavelength.name, () => {
         __typename: 'ExecutionConfig',
       },
     };
-    expect(extractCentralWavelength(data)).deep.eq({ wavelength: 2500, fpu: null });
+    expect(extractCentralWavelength(data, undefined)).deep.eq({ wavelength: 2500, fpu: null });
+  });
+
+  it('returns the central wavelength from visitor when data is undefined', () => {
+    const visitor: Visitor = {
+      __typename: 'Visitor',
+      centralWavelength: { __typename: 'Wavelength', nanometers: 1234 },
+    };
+    expect(extractCentralWavelength(undefined, visitor)).deep.eq({ wavelength: 1234, fpu: null });
+  });
+
+  it('returns the central wavelength from visitor when data is also present', () => {
+    const visitor: Visitor = {
+      __typename: 'Visitor',
+      centralWavelength: { __typename: 'Wavelength', nanometers: 1234 },
+    };
+    const data: GetCentralWavelengthQuery = {
+      executionConfig: {
+        instrument: 'GMOS_NORTH',
+        gmosNorth: {
+          __typename: 'GmosNorthExecutionConfig',
+          acquisition: {
+            __typename: 'GmosNorthExecutionSequence',
+            nextAtom: {
+              __typename: 'GmosNorthAtom',
+              id: 'atom1',
+              steps: [
+                {
+                  __typename: 'GmosNorthStep',
+                  id: 'step1',
+                  instrumentConfig: {
+                    fpu: null,
+                    __typename: 'GmosNorthDynamic',
+                    centralWavelength: { __typename: 'Wavelength', nanometers: 500 },
+                  },
+                },
+              ],
+            },
+          },
+          science: null,
+        },
+        gmosSouth: null,
+        flamingos2: null,
+        ghost: null,
+        igrins2: null,
+        gnirs: null,
+        __typename: 'ExecutionConfig',
+      },
+    };
+    expect(extractCentralWavelength(data, visitor)).deep.eq({ wavelength: 1234, fpu: null });
   });
 });
