@@ -47,6 +47,12 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     tsconfigPaths: true,
   },
+  optimizeDeps: {
+    include:
+      mode === 'test'
+        ? ['@gemini-hlsw/lucuma-core', '@apollo/client/testing/react', '@apollo/client/testing']
+        : ['@gemini-hlsw/lucuma-core'],
+  },
   build: {
     rolldownOptions: {
       output: {
