@@ -2,6 +2,7 @@ import imgUrl from '@assets/underconstruction.png';
 import { cn } from '@gemini-hlsw/lucuma-common-ui';
 import { useConfiguration } from '@gql/configs/Configuration';
 import type { Instrument, WfsType } from '@gql/configs/gen/graphql';
+import type { Site } from '@gql/odb/gen/graphql';
 import type { GuideProbe } from '@gql/server/gen/graphql';
 import { useGuideState } from '@gql/server/GuideState';
 import {
@@ -48,10 +49,17 @@ const DEFAULT_FREQ_OPTIONS = {
 };
 
 const DEFAULT_SELECTED_FREQ = {
-  OIWFS: 200,
-  PWFS1: 100,
-  PWFS2: 200,
-};
+  GN: {
+    OIWFS: 200,
+    PWFS1: 200,
+    PWFS2: 200,
+  },
+  GS: {
+    OIWFS: 200,
+    PWFS1: 100,
+    PWFS2: 200,
+  },
+} satisfies Record<Site, Record<Exclude<WfsType, 'NONE'>, number>>;
 
 function useFreqOptions(wfs: Exclude<WfsType, 'NONE'>, obsInstrument: Instrument | null | undefined) {
   const { site } = useServerConfigValue();
@@ -70,10 +78,10 @@ function useFreqOptions(wfs: Exclude<WfsType, 'NONE'>, obsInstrument: Instrument
     return DEFAULT_FREQ_OPTIONS[site][wfs];
   }, [site, wfs, obsInstrument]);
 
-  const [freq, setFreq] = useState(DEFAULT_SELECTED_FREQ[wfs]);
+  const [freq, setFreq] = useState(DEFAULT_SELECTED_FREQ[site][wfs]);
 
   if (!freqOptions.includes(freq)) {
-    setFreq(DEFAULT_SELECTED_FREQ[wfs]);
+    setFreq(DEFAULT_SELECTED_FREQ[site][wfs]);
   }
 
   return [freq, setFreq, freqOptions] as const;
