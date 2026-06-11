@@ -193,6 +193,7 @@ export const GET_GUIDE_ENVIRONMENT = graphql(`
         }
       }
       targetEnvironment {
+        cassRotator
         basePosition {
           ...BasePositionItem
         }

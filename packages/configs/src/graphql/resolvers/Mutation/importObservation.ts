@@ -1,16 +1,16 @@
 import type { Target, WfsType } from '../../../prisma/gen/client.ts';
-import type { ConfigurationUpdateInput, GuideLoopUpdateInput, RotatorUpdateInput } from '../../../prisma/gen/models.ts';
+import type { ConfigurationUpdateInput, GuideLoopUpdateInput } from '../../../prisma/gen/models.ts';
 import { firstIfOnlyOne } from '../../../util.ts';
 import type { Configuration, MutationResolvers, TargetInput, TargetType } from './../../gen/types.generated.js';
 
 export const importObservation: NonNullable<MutationResolvers['importObservation']> = async (
   _parent,
-  args,
+  { input },
   { prisma, log },
 ) =>
   // Use a transaction to ensure all operations complete successfully together
   prisma.$transaction(async (prisma) => {
-    const { configurationPk, rotatorPk, observation, targets, guideEnvironmentAngle, guideLoopPk } = args.input;
+    const { configurationPk, rotator, observation, targets, guideLoopPk } = input;
 
     const { count } = await prisma.target.deleteMany({
       where: {},
@@ -73,18 +73,6 @@ export const importObservation: NonNullable<MutationResolvers['importObservation
     };
 
     //
-    // Rotator
-    //
-    const angleParsed =
-      typeof guideEnvironmentAngle?.degrees === 'string'
-        ? parseFloat(guideEnvironmentAngle.degrees)
-        : (guideEnvironmentAngle?.degrees ?? 0);
-    const rotatorData: RotatorUpdateInput = {
-      angle: angleParsed,
-      tracking: 'TRACKING',
-    };
-
-    //
     // Guide loop
     //
     const selectedGuideSource = determineGuideSource({
@@ -105,14 +93,14 @@ export const importObservation: NonNullable<MutationResolvers['importObservation
     };
 
     // Update configuration, guide loop, and rotator in parallel
-    const [configuration, rotator, guideLoop] = await Promise.all([
+    const [configuration, newRotator, guideLoop] = await Promise.all([
       prisma.configuration.update({
         where: { pk: configurationPk },
         data: configurationData,
       }) as Promise<Configuration>,
       prisma.rotator.update({
-        where: { pk: rotatorPk },
-        data: rotatorData,
+        where: { pk: rotator.pk },
+        data: rotator,
       }),
       prisma.guideLoop.update({
         where: { pk: guideLoopPk },
@@ -122,7 +110,7 @@ export const importObservation: NonNullable<MutationResolvers['importObservation
     ]);
 
     log.debug(`Observation import for ${observation.id} completed`);
-    return { configuration, rotator, guideLoop };
+    return { configuration, rotator: newRotator, guideLoop };
   });
 
 /**

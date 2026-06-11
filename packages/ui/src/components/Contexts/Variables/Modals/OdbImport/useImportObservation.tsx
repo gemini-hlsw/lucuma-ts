@@ -10,6 +10,7 @@ import type {
   TargetItemFragment as OdbTarget,
 } from '@gql/odb/gen/graphql';
 import { useGetCentralWavelength, useGetGuideEnvironment } from '@gql/odb/Observation';
+import { toTrackingMode } from '@Telescope/Targets/inputs';
 
 import { extractMagnitude } from '@/Helpers/bands';
 import { extractGuideTargets } from '@/Helpers/guideTargets';
@@ -73,7 +74,6 @@ export function useImportObservation() {
         variables: {
           input: {
             configurationPk: configuration.pk,
-            rotatorPk: rotator.pk,
             guideLoopPk: guideLoop.pk,
             observation: {
               id: selectedObservation.id,
@@ -89,12 +89,11 @@ export function useImportObservation() {
               pwfs1,
               pwfs2,
             },
-            guideEnvironmentAngle: when(
-              guideEnv.data?.observation?.targetEnvironment.guideEnvironment.posAngle.degrees,
-              (degrees) => ({
-                degrees,
-              }),
-            ),
+            rotator: {
+              pk: rotator.pk,
+              angle: when(guideEnv.data?.observation?.targetEnvironment.guideEnvironment.posAngle.degrees, parseNumber),
+              tracking: when(guideEnv.data?.observation?.targetEnvironment.cassRotator, toTrackingMode),
+            },
           },
         },
       });
