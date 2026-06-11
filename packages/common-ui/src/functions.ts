@@ -93,3 +93,9 @@ export function formatDateTime(date: Date | string, includeSeconds = true): stri
 export function cn(...classLists: ClassNameValue[]) {
   return twMerge(classLists);
 }
+
+export function parseNumber<T extends number | string>(
+  value: T | undefined,
+): T extends undefined ? number | undefined : number {
+  return typeof value === 'string' ? parseFloat(value) : (value as T extends undefined ? number | undefined : number);
+}

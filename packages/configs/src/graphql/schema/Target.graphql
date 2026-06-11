@@ -1,5 +1,5 @@
 #import DateTime from "./Scalars.graphql"
-#import PosInt, TargetId, Instrument, AngleInput, ObservationId from "@gemini-hlsw/lucuma-schemas/odb"
+#import PosInt, TargetId, Instrument, ObservationId, EphemerisKeyType, Declination, ProperMotion, RightAscension, Angle, EpochString from "@gemini-hlsw/lucuma-schemas/odb"
 #import RotatorTrackingMode from '@gemini-hlsw/lucuma-schemas/navigate'
 #import Configuration, Fpu from "./Configuration.graphql"
 #import Rotator from "./Rotator.graphql"
@@ -12,39 +12,6 @@ enum TargetType {
   PWFS1
   PWFS2
   OIWFS
-}
-
-enum EphemerisKeyType {
-  ASTEROID_NEW
-  ASTEROID_OLD
-  COMET
-  MAJOR_BODY
-  USER_SUPPLIED
-}
-
-type RA {
-  degrees: Float!
-  hms: String!
-}
-
-type Dec {
-  degrees: Float!
-  dms: String!
-}
-
-type ProperMotion {
-  ra: Float!
-  dec: Float!
-}
-
-type Az {
-  degrees: Float!
-  dms: String!
-}
-
-type El {
-  degrees: Float!
-  dms: String!
 }
 
 type Target {
@@ -74,13 +41,13 @@ type SiderealTarget {
   "Primary Key"
   pk: PosInt!
   "Right Ascension"
-  ra: RA
+  ra: RightAscension
   "Azimuth"
-  az: Az
+  az: Angle
   "Elevation"
-  el: El
+  el: Angle
   "Declination"
-  dec: Dec
+  dec: Declination
   "Proper Motions RA & Dec"
   properMotion: ProperMotion
   "Radial Velocity"

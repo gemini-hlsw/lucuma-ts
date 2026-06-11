@@ -1,5 +1,6 @@
+import { parseNumber } from '@gemini-hlsw/lucuma-common-ui';
 import { deg2dms, deg2hms, dms2deg, hms2deg } from '@gemini-hlsw/lucuma-core';
-import type { EphemerisKeyType } from '@gql/configs/gen/graphql';
+import type { EphemerisKeyType } from '@gql/odb/gen/graphql';
 import { isBaseTarget } from '@gql/util';
 import { Dropdown } from 'primereact/dropdown';
 import { InputNumber } from 'primereact/inputnumber';
@@ -139,8 +140,8 @@ function SiderealInput({
           let stringC2 = '';
           const value = e.value as string;
           if (value === 'celestial' && coordsType === 'horizontal') {
-            stringC1 = deg2hms(auxTarget?.az?.degrees ?? 0);
-            stringC2 = deg2dms(auxTarget?.el?.degrees ?? 0);
+            stringC1 = deg2hms(parseNumber(auxTarget?.az?.degrees ?? 0));
+            stringC2 = deg2dms(parseNumber(auxTarget?.el?.degrees ?? 0));
             setAuxTarget((prev) => ({
               ...prev!,
               ra: prev!.az && {
@@ -158,19 +159,19 @@ function SiderealInput({
               type: 'SCIENCE',
             }));
           } else if (value === 'horizontal' && coordsType === 'celestial') {
-            stringC1 = deg2dms(auxTarget?.ra?.degrees ?? 0);
-            stringC2 = deg2dms(auxTarget?.dec?.degrees ?? 0);
+            stringC1 = deg2dms(parseNumber(auxTarget?.ra?.degrees ?? 0));
+            stringC2 = deg2dms(parseNumber(auxTarget?.dec?.degrees ?? 0));
             setAuxTarget((prev) => ({
               ...prev!,
               az: prev!.ra && {
                 ...prev!.az!,
                 degrees: prev!.ra.degrees,
-                dms: deg2dms(prev?.ra?.degrees ?? 0),
+                dms: deg2dms(parseNumber(prev?.ra?.degrees ?? 0)),
               },
               el: prev!.dec && {
                 ...prev!.el!,
-                degrees: prev!.dec.degrees,
-                dms: deg2dms(prev?.dec?.degrees ?? 0),
+                degrees: parseNumber(prev!.dec.degrees),
+                dms: deg2dms(parseNumber(prev?.dec?.degrees ?? 0)),
               },
               ra: null,
               dec: null,
@@ -190,7 +191,7 @@ function SiderealInput({
         inputId="raAzDegrees"
         disabled={disabled || loading}
         style={{ gridArea: 'c11' }}
-        value={(coordsType === 'celestial' ? auxTarget?.ra?.degrees : auxTarget?.az?.degrees) ?? null}
+        value={parseNumber(coordsType === 'celestial' ? auxTarget?.ra?.degrees : auxTarget?.az?.degrees) ?? null}
         suffix="°"
         onValueChange={(e) => {
           let stringC1 = '';
@@ -257,7 +258,7 @@ function SiderealInput({
         inputId="decElDegrees"
         disabled={disabled || loading}
         style={{ gridArea: 'c21' }}
-        value={(coordsType === 'celestial' ? auxTarget?.dec?.degrees : auxTarget?.el?.degrees) ?? null}
+        value={parseNumber(coordsType === 'celestial' ? auxTarget?.dec?.degrees : auxTarget?.el?.degrees) ?? null}
         suffix="°"
         onValueChange={(e) => {
           const stringC2 = deg2dms(e.target.value ?? 0);

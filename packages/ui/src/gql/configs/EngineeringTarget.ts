@@ -9,16 +9,16 @@ export const ENGINEERING_TARGET_FRAGMENT = graphql(`
     id
     name
     ra {
-      ...RAItem
+      ...RightAscensionItem
     }
     dec {
-      ...DecItem
+      ...DeclinationItem
     }
     az {
-      ...AzItem
+      ...AngleItem
     }
     el {
-      ...ElItem
+      ...AngleItem
     }
     properMotion {
       ...ProperMotionItem

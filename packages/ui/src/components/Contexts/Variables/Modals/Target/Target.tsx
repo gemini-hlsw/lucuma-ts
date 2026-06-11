@@ -1,4 +1,4 @@
-import { isNullish, when } from '@gemini-hlsw/lucuma-common-ui';
+import { isNullish, parseNumber, when } from '@gemini-hlsw/lucuma-common-ui';
 import { useUpdateTarget } from '@gql/configs/Target';
 import { RESET } from 'jotai/utils';
 import { Button } from 'primereact/button';
@@ -64,8 +64,8 @@ function useUpdateObservation() {
       variables: {
         ...target,
         sidereal: when(target.sidereal, (s) => ({
-          coord1: s.ra?.degrees ?? s.az?.degrees,
-          coord2: s.dec?.degrees ?? s.el?.degrees,
+          coord1: parseNumber(s.ra?.degrees ?? s.az?.degrees),
+          coord2: parseNumber(s.dec?.degrees ?? s.el?.degrees),
         })),
       },
     });

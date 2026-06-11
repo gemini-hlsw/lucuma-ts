@@ -1,3 +1,4 @@
+import { parseNumber } from '@gemini-hlsw/lucuma-common-ui';
 import { useConfiguration, useUpdateConfiguration } from '@gql/configs/Configuration';
 import { useRotator, useUpdateRotator } from '@gql/configs/Rotator';
 import { useRemoveAndCreateBaseTargets } from '@gql/configs/Target';
@@ -85,8 +86,12 @@ function useUpdateTarget() {
               type: selectedTarget.type,
               wavelength: selectedTarget.wavelength,
               sidereal: {
-                coord1: selectedTarget.type === 'FIXED' ? selectedTarget.az!.degrees : selectedTarget.ra!.degrees,
-                coord2: selectedTarget.type === 'FIXED' ? selectedTarget.el!.degrees : selectedTarget.dec!.degrees,
+                coord1: parseNumber(
+                  selectedTarget.type === 'FIXED' ? selectedTarget.az!.degrees : selectedTarget.ra!.degrees,
+                ),
+                coord2: parseNumber(
+                  selectedTarget.type === 'FIXED' ? selectedTarget.el!.degrees : selectedTarget.dec!.degrees,
+                ),
                 epoch: selectedTarget.epoch,
                 pmRa: null,
                 pmDec: null,

@@ -130,8 +130,8 @@ importers:
   packages/common-ui:
     dependencies:
       '@gemini-hlsw/lucuma-core':
-        specifier: 0.207.3
-        version: 0.207.3
+        specifier: 0.210.5
+        version: 0.210.5
       date-fns:
         specifier: 4.4.0
         version: 4.4.0
@@ -152,8 +152,8 @@ importers:
   packages/configs:
     dependencies:
       '@gemini-hlsw/lucuma-core':
-        specifier: 0.207.3
-        version: 0.207.3
+        specifier: 0.210.5
+        version: 0.210.5
       '@gemini-hlsw/lucuma-schemas':
         specifier: 0.177.2-20260611-f6b1ead9
         version: 0.177.2-20260611-f6b1ead9
@@ -280,8 +280,8 @@ importers:
         specifier: workspace:*
         version: link:../common-ui
       '@gemini-hlsw/lucuma-core':
-        specifier: 0.207.3
-        version: 0.207.3
+        specifier: 0.210.5
+        version: 0.210.5
       '@gemini-hlsw/lucuma-schemas':
         specifier: 0.177.2-20260611-f6b1ead9
         version: 0.177.2-20260611-f6b1ead9
@@ -594,8 +594,8 @@ packages:
       '@fortawesome/fontawesome-svg-core': ~6 || ~7
       react: ^18.0.0 || ^19.0.0
 
-  '@gemini-hlsw/lucuma-core@0.207.3':
-    resolution: {integrity: sha512-MRcLR2QMEeSm9q6Tby8xxuXsm4+2THo+JbuRbE/NrUAbyjPytYKlnhMuzU2MX08dzc9y2uqQJIJFagY3VDOGJQ==}
+  '@gemini-hlsw/lucuma-core@0.210.5':
+    resolution: {integrity: sha512-baczf1PvIDl7tB2zCukisvK1ItS/lnEoLyEz8cj0lbfIe8WhrCAfYzbtf4/Te0jw7Xr0Z/4+RwJmRGOHUsbonA==}
 
   '@gemini-hlsw/lucuma-schemas@0.177.2-20260611-f6b1ead9':
     resolution: {integrity: sha512-3utrLQGR3vkxj1b5KLjkThv3n5X0PCnbrAXksDWF8QQ313VzcHzCFTF3RERyFM0xsTn/+NPNBN5GJ7VN2KROvg==}
@@ -5145,7 +5145,7 @@ snapshots:
       '@fortawesome/fontawesome-svg-core': 7.2.0
       react: 19.2.7
 
-  '@gemini-hlsw/lucuma-core@0.207.3': {}
+  '@gemini-hlsw/lucuma-core@0.210.5': {}
 
   '@gemini-hlsw/lucuma-schemas@0.177.2-20260611-f6b1ead9': {}
 
@@ -5153,7 +5153,7 @@ snapshots:
 
   '@gemini-hlsw/navigate-configs@file:packages/configs(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@6.0.3)':
     dependencies:
-      '@gemini-hlsw/lucuma-core': 0.207.3
+      '@gemini-hlsw/lucuma-core': 0.210.5
       '@gemini-hlsw/lucuma-schemas': 0.177.2-20260611-f6b1ead9
       '@prisma/adapter-pg': 7.8.0
       '@prisma/client': 7.8.0(prisma@7.8.0(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@6.0.3))(typescript@6.0.3)

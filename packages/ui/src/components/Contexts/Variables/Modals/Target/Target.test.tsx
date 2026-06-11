@@ -4,7 +4,7 @@ import { page, userEvent } from 'vitest/browser';
 
 import { odbTokenAtom } from '@/components/atoms/auth';
 import { targetEditAtom } from '@/components/atoms/target';
-import { createDec, createSidereal, createTarget } from '@/test/create';
+import { createDeclination, createSidereal, createTarget } from '@/test/create';
 import { expiredJwt } from '@/test/helpers';
 import { renderWithContext } from '@/test/render';
 import type { Target as TargetType } from '@/types';
@@ -69,7 +69,7 @@ describe(Target.name, () => {
 
 const target: TargetType = createTarget({
   sidereal: createSidereal({
-    dec: createDec({ degrees: 41.69727150555556, dms: '+41:41:50.177415' }),
+    dec: createDeclination({ degrees: 41.69727150555556, dms: '+41:41:50.177415' }),
   }),
 });
 

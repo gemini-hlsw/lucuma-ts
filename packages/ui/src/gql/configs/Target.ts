@@ -7,38 +7,47 @@ import type { Target } from '@/types';
 import { graphql } from './gen';
 import { GET_INSTRUMENT } from './Instrument';
 
-export const RA_FRAGMENT = graphql(`
-  fragment RAItem on RA {
+export const ANGLE_FRAGMENT = graphql(`
+  fragment AngleItem on Angle {
+    degrees
+    dms
+  }
+`);
+
+export const RIGHT_ASCENSION_FRAGMENT = graphql(`
+  fragment RightAscensionItem on RightAscension {
     degrees
     hms
   }
 `);
 
 export const DEC_FRAGMENT = graphql(`
-  fragment DecItem on Dec {
+  fragment DeclinationItem on Declination {
     degrees
     dms
+  }
+`);
+
+export const PROPER_MOTION_RA_FRAGMENT = graphql(`
+  fragment ProperMotionRAItem on ProperMotionRA {
+    microarcsecondsPerYear
+  }
+`);
+
+export const PROPER_MOTION_DECLINATION_FRAGMENT = graphql(`
+  fragment ProperMotionDeclinationItem on ProperMotionDeclination {
+    microarcsecondsPerYear
   }
 `);
 
 export const PROPER_MOTION_FRAGMENT = graphql(`
   fragment ProperMotionItem on ProperMotion {
-    ra
-    dec
-  }
-`);
-
-export const AZ_FRAGMENT = graphql(`
-  fragment AzItem on Az {
-    degrees
-    dms
-  }
-`);
-
-export const EL_FRAGMENT = graphql(`
-  fragment ElItem on El {
-    degrees
-    dms
+    ra {
+      ...ProperMotionRAItem
+    }
+    dec {
+      ...ProperMotionDeclinationItem
+    }
   }
 `);
 
@@ -65,16 +74,16 @@ export const SIDEREAL_TARGET_FRAGMENT = graphql(`
   fragment SiderealTargetItem on SiderealTarget {
     pk
     ra {
-      ...RAItem
+      ...RightAscensionItem
     }
     dec {
-      ...DecItem
+      ...DeclinationItem
     }
     az {
-      ...AzItem
+      ...AngleItem
     }
     el {
-      ...ElItem
+      ...AngleItem
     }
     properMotion {
       ...ProperMotionItem

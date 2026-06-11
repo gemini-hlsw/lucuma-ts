@@ -1,5 +1,6 @@
-import { deg2dms, deg2hms } from '@gemini-hlsw/lucuma-core';
+import { toAngle, toDeclination, toProperMotion, toRightAscension } from '@gemini-hlsw/lucuma-core';
 
+import type { Angle, Declination, ProperMotion, RightAscension } from '../graphql/gen/types.generated.ts';
 import type { PrismaClient } from './gen/client.ts';
 
 /**
@@ -11,38 +12,29 @@ export function extendPrisma(prisma: PrismaClient) {
       siderealTarget: {
         ra: {
           needs: { type: true, coord1: true },
-          compute(target) {
+          compute(target): RightAscension | undefined {
             if (target.type === 'FIXED') {
               return undefined;
             } else {
-              return {
-                hms: deg2hms(target.coord1),
-                degrees: target.coord1,
-              };
+              return toRightAscension(target.coord1);
             }
           },
         },
         dec: {
           needs: { type: true, coord2: true },
-          compute(target) {
+          compute(target): Declination | undefined {
             if (target.type === 'FIXED') {
               return undefined;
             } else {
-              return {
-                dms: deg2dms(target.coord2),
-                degrees: target.coord2,
-              };
+              return toDeclination(target.coord2);
             }
           },
         },
         az: {
           needs: { type: true, coord1: true },
-          compute(target) {
+          compute(target): Angle | undefined {
             if (target.type === 'FIXED') {
-              return {
-                dms: deg2dms(target.coord1),
-                degrees: target.coord1,
-              };
+              return toAngle(target.coord1);
             } else {
               return undefined;
             }
@@ -50,12 +42,9 @@ export function extendPrisma(prisma: PrismaClient) {
         },
         el: {
           needs: { type: true, coord2: true },
-          compute(target) {
+          compute(target): Angle | undefined {
             if (target.type === 'FIXED') {
-              return {
-                dms: deg2dms(target.coord2),
-                degrees: target.coord2,
-              };
+              return toAngle(target.coord2);
             } else {
               return undefined;
             }
@@ -63,14 +52,11 @@ export function extendPrisma(prisma: PrismaClient) {
         },
         properMotion: {
           needs: { type: true, pmRa: true, pmDec: true },
-          compute(target) {
+          compute(target): ProperMotion | undefined {
             if (target.type === 'FIXED' || target.pmRa === null || target.pmDec === null) {
               return undefined;
             } else {
-              return {
-                ra: target.pmRa,
-                dec: target.pmDec,
-              };
+              return toProperMotion(target.pmRa, target.pmDec);
             }
           },
         },
@@ -78,38 +64,29 @@ export function extendPrisma(prisma: PrismaClient) {
       engineeringTarget: {
         ra: {
           needs: { type: true, coord1: true },
-          compute(target) {
+          compute(target): RightAscension | undefined {
             if (target.type === 'FIXED') {
               return undefined;
             } else {
-              return {
-                hms: deg2hms(target.coord1),
-                degrees: target.coord1,
-              };
+              return toRightAscension(target.coord1);
             }
           },
         },
         dec: {
           needs: { type: true, coord2: true },
-          compute(target) {
+          compute(target): Declination | undefined {
             if (target.type === 'FIXED') {
               return undefined;
             } else {
-              return {
-                dms: deg2dms(target.coord2),
-                degrees: target.coord2,
-              };
+              return toDeclination(target.coord2);
             }
           },
         },
         az: {
           needs: { type: true, coord1: true },
-          compute(target) {
+          compute(target): Angle | undefined {
             if (target.type === 'FIXED') {
-              return {
-                dms: deg2dms(target.coord1),
-                degrees: target.coord1,
-              };
+              return toAngle(target.coord1);
             } else {
               return undefined;
             }
@@ -117,12 +94,9 @@ export function extendPrisma(prisma: PrismaClient) {
         },
         el: {
           needs: { type: true, coord2: true },
-          compute(target) {
+          compute(target): Angle | undefined {
             if (target.type === 'FIXED') {
-              return {
-                dms: deg2dms(target.coord2),
-                degrees: target.coord2,
-              };
+              return toAngle(target.coord2);
             } else {
               return undefined;
             }
@@ -130,14 +104,11 @@ export function extendPrisma(prisma: PrismaClient) {
         },
         properMotion: {
           needs: { type: true, pmRa: true, pmDec: true },
-          compute(target) {
+          compute(target): ProperMotion | undefined {
             if (target.type === 'FIXED' || target.pmRa === null || target.pmDec === null) {
               return undefined;
             } else {
-              return {
-                ra: target.pmRa,
-                dec: target.pmDec,
-              };
+              return toProperMotion(target.pmRa, target.pmDec);
             }
           },
         },

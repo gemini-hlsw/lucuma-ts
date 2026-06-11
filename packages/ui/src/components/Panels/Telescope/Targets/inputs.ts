@@ -73,10 +73,10 @@ export function createSiderealInput(target: SiderealTarget): SiderealInput {
     epoch: target.epoch,
     properMotion: when(target.properMotion, ({ ra, dec }) => ({
       ra: {
-        microarcsecondsPerYear: ra,
+        microarcsecondsPerYear: ra.microarcsecondsPerYear,
       },
       dec: {
-        microarcsecondsPerYear: dec,
+        microarcsecondsPerYear: dec.microarcsecondsPerYear,
       },
     })),
     radialVelocity: when(target.radialVelocity, (rv) => ({
