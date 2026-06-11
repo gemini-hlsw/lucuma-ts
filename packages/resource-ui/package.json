@@ -36,7 +36,7 @@
     "react-router": "7.17.0"
   },
   "devDependencies": {
-    "@gemini-hlsw/lucuma-schemas": "0.177.2-20260609-821db596",
+    "@gemini-hlsw/lucuma-schemas": "0.177.2-20260611-f6b1ead9",
     "@graphql-codegen/client-preset": "6.0.1",
     "@graphql-typed-document-node/core": "3.2.0",
     "graphql": "16.14.1",
