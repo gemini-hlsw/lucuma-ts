@@ -42,9 +42,6 @@ describe(useImportObservation.name, () => {
       input: {
         configurationPk: 1,
         guideLoopPk: 1,
-        guideEnvironmentAngle: {
-          degrees: 0,
-        },
         observation: {
           id: 'o-2e5',
           instrument: 'GMOS_NORTH',
@@ -53,7 +50,11 @@ describe(useImportObservation.name, () => {
           title: 'Mayall V',
           fpu: null,
         },
-        rotatorPk: 1,
+        rotator: {
+          pk: 1,
+          angle: 0,
+          tracking: 'TRACKING',
+        },
         targets: {
           base: [
             {
@@ -132,6 +133,9 @@ describe(useImportObservation.name, () => {
       id: 't-60e',
       name: 'Mayall V Blind',
       type: 'BLINDOFFSET',
+    });
+    expect(variables.input.rotator).toMatchObject({
+      tracking: 'FIXED',
     });
   });
 
@@ -464,6 +468,7 @@ const mocks = [
           id: arg.obsId,
           observingMode: null,
           targetEnvironment: {
+            cassRotator: 'FOLLOWING',
             basePosition: null,
             guideEnvironment: {
               posAngle: {
@@ -558,6 +563,7 @@ const guideEnvironmentWithBasePositionMock = {
         id: arg.obsId,
         observingMode: null,
         targetEnvironment: {
+          cassRotator: 'FIXED',
           basePosition: {
             __typename: 'BasePosition',
             type: 'EXPLICIT_BASE',
@@ -616,6 +622,7 @@ const guideEnvironmentWithCoordinateOnlyBasePositionMock = {
         id: arg.obsId,
         observingMode: null,
         targetEnvironment: {
+          cassRotator: 'FOLLOWING',
           basePosition: {
             __typename: 'BasePosition',
             type: 'EXPLICIT_BASE',
@@ -685,6 +692,7 @@ const guideEnvironmentWithVisitorMock = {
           },
         },
         targetEnvironment: {
+          cassRotator: 'FOLLOWING',
           basePosition: null,
           guideEnvironment: {
             posAngle: {

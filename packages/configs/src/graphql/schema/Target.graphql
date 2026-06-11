@@ -1,5 +1,6 @@
 #import DateTime from "./Scalars.graphql"
 #import PosInt, TargetId, Instrument, AngleInput, ObservationId from "@gemini-hlsw/lucuma-schemas/odb"
+#import RotatorTrackingMode from '@gemini-hlsw/lucuma-schemas/navigate'
 #import Configuration, Fpu from "./Configuration.graphql"
 #import Rotator from "./Rotator.graphql"
 #import GuideLoop from "./GuideLoop.graphql"
@@ -163,13 +164,18 @@ input ImportObservationTargetsInput {
   pwfs2: [TargetInput!]!
 }
 
+input ImportObservationRotatorInput {
+  pk: PosInt!
+  angle: Float
+  tracking: RotatorTrackingMode
+}
+
 input ImportObservationInput {
   configurationPk: PosInt!
-  rotatorPk: PosInt!
   guideLoopPk: PosInt!
   observation: ObservationInput!
   targets: ImportObservationTargetsInput!
-  guideEnvironmentAngle: AngleInput
+  rotator: ImportObservationRotatorInput!
 }
 
 type ImportObservationResult {

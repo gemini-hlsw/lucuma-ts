@@ -25,7 +25,6 @@ await describe('importObservation', async () => {
       variables: {
         input: {
           configurationPk: 1,
-          rotatorPk: 1,
           guideLoopPk: 1,
           observation: {
             id: 'o-123',
@@ -40,7 +39,7 @@ await describe('importObservation', async () => {
             pwfs1: [],
             pwfs2: [],
           },
-          guideEnvironmentAngle: { degrees: 1.1 },
+          rotator: { pk: 1, angle: 1.1, tracking: 'TRACKING' },
         } satisfies ImportObservationInput,
       },
     });
@@ -84,7 +83,6 @@ await describe('importObservation', async () => {
       variables: {
         input: {
           configurationPk: 1,
-          rotatorPk: 1,
           guideLoopPk: 1,
           observation: {
             id: 'o-456',
@@ -128,7 +126,7 @@ await describe('importObservation', async () => {
             pwfs1: [],
             pwfs2: [],
           },
-          guideEnvironmentAngle: { degrees: 2.2 },
+          rotator: { pk: 1, angle: 2.2, tracking: 'TRACKING' },
         } satisfies ImportObservationInput,
       },
     });
@@ -204,7 +202,6 @@ await describe('importObservation', async () => {
       variables: {
         input: {
           configurationPk: 1,
-          rotatorPk: 1,
           guideLoopPk: 1,
           observation: {
             id: 'o-900',
@@ -228,7 +225,7 @@ await describe('importObservation', async () => {
             ],
             pwfs2: [],
           },
-          guideEnvironmentAngle: { degrees: 3.1 },
+          rotator: { pk: 1, angle: 3.1, tracking: 'TRACKING' },
         } satisfies ImportObservationInput,
       },
     });
@@ -256,7 +253,6 @@ await describe('importObservation', async () => {
       variables: {
         input: {
           configurationPk: 1,
-          rotatorPk: 1,
           guideLoopPk: 1,
           observation: {
             id: 'o-800',
@@ -281,7 +277,7 @@ await describe('importObservation', async () => {
             pwfs1: [],
             pwfs2: [],
           },
-          guideEnvironmentAngle: { degrees: 2.5 },
+          rotator: { pk: 1, angle: 2.5, tracking: 'TRACKING' },
         } satisfies ImportObservationInput,
       },
     });
@@ -309,7 +305,6 @@ await describe('importObservation', async () => {
       variables: {
         input: {
           configurationPk: 1,
-          rotatorPk: 1,
           guideLoopPk: 1,
           observation: {
             id: 'o-850',
@@ -342,7 +337,7 @@ await describe('importObservation', async () => {
             ],
             pwfs2: [],
           },
-          guideEnvironmentAngle: { degrees: 2.7 },
+          rotator: { pk: 1, angle: 2.7, tracking: 'TRACKING' },
         } satisfies ImportObservationInput,
       },
     });
@@ -370,7 +365,6 @@ await describe('importObservation', async () => {
       variables: {
         input: {
           configurationPk: 1,
-          rotatorPk: 1,
           guideLoopPk: 1,
           observation: {
             id: 'o-950',
@@ -394,7 +388,7 @@ await describe('importObservation', async () => {
               },
             ],
           },
-          guideEnvironmentAngle: { degrees: 3.5 },
+          rotator: { pk: 1, angle: 3.5, tracking: 'TRACKING' },
         } satisfies ImportObservationInput,
       },
     });
@@ -431,7 +425,6 @@ await describe('importObservation', async () => {
       variables: {
         input: {
           configurationPk: 1,
-          rotatorPk: 1,
           guideLoopPk: 1,
           observation: {
             id: 'o-789',
@@ -446,7 +439,7 @@ await describe('importObservation', async () => {
             pwfs1: [],
             pwfs2: [],
           },
-          guideEnvironmentAngle: { degrees: 3.3 },
+          rotator: { pk: 1, angle: 3.3, tracking: 'TRACKING' },
         } satisfies ImportObservationInput,
       },
     });

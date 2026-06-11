@@ -5,6 +5,7 @@ import type { TargetType, UpdateConfigurationMutationVariables } from '@gql/conf
 import { useConfiguredInstrument } from '@gql/configs/Instrument';
 import { useRotator } from '@gql/configs/Rotator';
 import { useTargets } from '@gql/configs/Target';
+import type { CassRotator } from '@gql/odb/gen/graphql';
 import type {
   AzElTargetInput,
   BaffleConfigInput,
@@ -14,6 +15,7 @@ import type {
   LightSinkVariant,
   NonsiderealInput,
   RotatorTrackingInput,
+  RotatorTrackingMode,
   SiderealInput,
   TargetPropertiesInput,
   TcsConfigInput,
@@ -273,3 +275,10 @@ export function createUpdateSelectedTargetVariables(
   }
   return variables;
 }
+
+const rotatorToTrackingMode: Record<CassRotator, RotatorTrackingMode> = {
+  FIXED: 'FIXED',
+  FOLLOWING: 'TRACKING',
+};
+
+export const toTrackingMode = (rotator: CassRotator): RotatorTrackingMode => rotatorToTrackingMode[rotator];
