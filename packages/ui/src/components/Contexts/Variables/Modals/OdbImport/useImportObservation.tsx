@@ -181,7 +181,7 @@ function createBasePositionTarget(
     return createBaseTarget(matchingTarget, getBaseTargetType(matchingTarget, targetEnvironment), wavelength);
 
   const defaultTargetInput = {
-    id: 't-base-position',
+    id: 't-101',
     name: basePosition.name,
     type: 'SCIENCE',
     wavelength,

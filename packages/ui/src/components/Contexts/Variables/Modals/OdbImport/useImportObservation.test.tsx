@@ -188,7 +188,7 @@ describe(useImportObservation.name, () => {
     const variables = firstCall![0] as { input: ImportObservationInput };
 
     expect(variables.input.targets.base[0]).toMatchObject({
-      id: 't-base-position',
+      id: 't-101',
       name: 'Base position name',
       type: 'SCIENCE',
       sidereal: {
