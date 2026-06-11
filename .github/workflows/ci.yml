@@ -215,7 +215,7 @@ jobs:
       name: navigate-dev-gn
       url: https://navigate-dev.lucuma.xyz/
     if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v'))
-    needs: [publish-ui]
+    needs: [build-docker, publish-ui]
     runs-on: ubuntu-latest
     env:
       REGISTRY_USERNAME: 'nlsoftware'
@@ -242,7 +242,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: navigate-configs-dev-gn
     if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v'))
-    needs: [build-docker]
+    needs: [build-docker, publish-ui]
     env:
       REGISTRY_USERNAME: 'nlsoftware'
       REGISTRY_IMAGE: noirlab/gpp-nav-configs
