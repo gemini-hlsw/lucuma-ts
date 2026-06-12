@@ -1,8 +1,9 @@
 #import DateTime from "./Scalars.graphql"
-#import RA, Az, El, Dec, TargetType, ProperMotion from "./Target.graphql"
+#import TargetType from "./Target.graphql"
 #import RotatorTrackingMode from '@gemini-hlsw/lucuma-schemas/navigate'
-#import Instrument, PosInt from "@gemini-hlsw/lucuma-schemas/odb"
-#import BaffleMode, CentralBaffle, DeployableBaffle from './Configuration.graphql'
+#import Instrument, PosInt, Declination, ProperMotion, RightAscension, Angle from "@gemini-hlsw/lucuma-schemas/odb"
+#import BaffleMode from './Configuration.graphql'
+#import CentralBaffle, DeployableBaffle from '@gemini-hlsw/lucuma-schemas/navigate'
 
 type EngineeringTarget {
   "Primary Key"
@@ -12,13 +13,13 @@ type EngineeringTarget {
   "Name of the target"
   name: String!
   "Right Ascention"
-  ra: RA
+  ra: RightAscension
   "Azimuth"
-  az: Az
+  az: Angle
   "Elevation"
-  el: El
+  el: Angle
   "Declination"
-  dec: Dec
+  dec: Declination
   "Proper Motion RA & Dec"
   properMotion: ProperMotion
   "Radial Velocity"

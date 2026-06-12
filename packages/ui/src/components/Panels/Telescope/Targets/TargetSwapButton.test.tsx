@@ -14,9 +14,9 @@ import type { RenderResult } from 'vitest-browser-react';
 import {
   createCalParams,
   createConfiguration,
-  createDec,
+  createDeclination,
   createInstrumentConfig,
-  createRA,
+  createRightAscension,
   createRotator,
   createSidereal,
   createTarget,
@@ -67,16 +67,19 @@ describe(TargetSwapButton.name, () => {
           guideTarget: {
             id: selectedOi.id,
             name: selectedOi.name,
+            azel: undefined,
+            nonsidereal: undefined,
+            wavelength: undefined,
             sidereal: {
               ra: { hms: selectedOi.sidereal!.ra!.hms },
               dec: { dms: selectedOi.sidereal!.dec!.dms },
               epoch: selectedOi.sidereal!.epoch,
               properMotion: {
                 ra: {
-                  microarcsecondsPerYear: selectedOi.sidereal?.properMotion?.ra,
+                  microarcsecondsPerYear: selectedOi.sidereal?.properMotion?.ra.microarcsecondsPerYear,
                 },
                 dec: {
-                  microarcsecondsPerYear: selectedOi.sidereal?.properMotion?.dec,
+                  microarcsecondsPerYear: selectedOi.sidereal?.properMotion?.dec.microarcsecondsPerYear,
                 },
               },
               radialVelocity: {
@@ -159,6 +162,7 @@ describe(TargetSwapButton.name, () => {
             azel: undefined,
             id: 't-19e',
             name: 'TYC 4517-185-1',
+            nonsidereal: undefined,
             sidereal: {
               dec: {
                 dms: '+80:04:21.618990',
@@ -233,11 +237,11 @@ describe(TargetSwapButton.name, () => {
 
 const selectedTarget = createTarget({
   sidereal: createSidereal({
-    ra: createRA({
+    ra: createRightAscension({
       degrees: 56.69542085833334,
       hms: '03:46:46.901006',
     }),
-    dec: createDec({ degrees: 80.07267194527778, dms: '+80:04:21.618990' }),
+    dec: createDeclination({ degrees: 80.07267194527778, dms: '+80:04:21.618990' }),
   }),
 });
 

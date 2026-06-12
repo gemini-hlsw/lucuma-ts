@@ -1,4 +1,4 @@
-import { isNotNullish, when } from '@gemini-hlsw/lucuma-common-ui';
+import { isNotNullish, parseNumber, when } from '@gemini-hlsw/lucuma-common-ui';
 import { useConfiguration } from '@gql/configs/Configuration';
 import type { TargetInput, TargetType } from '@gql/configs/gen/graphql';
 import { useGetGuideLoop } from '@gql/configs/GuideLoop';
@@ -238,8 +238,4 @@ function isSameBaseTarget(basePosition: BasePosition, target: OdbTarget): boolea
   }
 
   return false;
-}
-
-function parseNumber(value: number | string): number {
-  return typeof value === 'string' ? parseFloat(value) : value;
 }

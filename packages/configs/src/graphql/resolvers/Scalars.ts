@@ -2,8 +2,11 @@ import {
   parseAttachmentId,
   parseCallForProposalsId,
   parseDatasetId,
+  parseDmsString,
+  parseEpochString,
   parseExecutionEventId,
   parseGroupId,
+  parseHmsString,
   parseObservationId,
   parseProgramId,
   parseProgramNoteId,
@@ -88,3 +91,33 @@ export const BigDecimalResolver = new GraphQLScalarType<unknown, number>({
     throw new Error(`Value is not a valid BigDecimal: ${ast.kind}`);
   },
 });
+
+const graphQlParserResolver = (name: string, parser: (maybe: string) => string | undefined) =>
+  new GraphQLScalarType<unknown, string>({
+    name,
+    serialize(value) {
+      if (typeof value === 'string') {
+        const parsed = parser(value);
+        if (parsed !== undefined) return parsed;
+      }
+      throw new Error(`Value is not a valid ${name}: ${String(value)}`);
+    },
+    parseValue(value) {
+      if (typeof value === 'string') {
+        const parsed = parser(value);
+        if (parsed !== undefined) return parsed;
+      }
+      throw new Error(`Value is not a valid ${name}: ${String(value)}`);
+    },
+    parseLiteral(ast) {
+      if (ast.kind === Kind.STRING) {
+        const parsed = parser(ast.value);
+        if (parsed !== undefined) return parsed;
+      }
+      throw new Error(`Value is not a valid ${name}: ${ast.kind}`);
+    },
+  });
+
+export const DmsStringResolver = graphQlParserResolver('DmsString', parseDmsString);
+export const HmsStringResolver = graphQlParserResolver('HmsString', parseHmsString);
+export const EpochStringResolver = graphQlParserResolver('EpochString', parseEpochString);

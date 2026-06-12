@@ -1,4 +1,5 @@
 #import Instrument, ObservationId, PosInt from '@gemini-hlsw/lucuma-schemas/odb'
+#import CentralBaffle, DeployableBaffle from '@gemini-hlsw/lucuma-schemas/navigate'
 
 enum GuidingType {
   NORMAL
@@ -8,18 +9,6 @@ enum BaffleMode {
   AUTO
   MANUAL
   IGNORED
-}
-
-enum CentralBaffle {
-  CLOSED
-  OPEN
-}
-
-enum DeployableBaffle {
-  EXTENDED
-  NEAR_IR
-  THERMAL_IR
-  VISIBLE
 }
 
 enum Fpu {

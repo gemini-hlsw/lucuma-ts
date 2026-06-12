@@ -2,7 +2,7 @@ import type {
   AcMechs,
   CalParams,
   Configuration,
-  Dec,
+  Declination,
   FocalPlaneOffset,
   GuideAlarm,
   GuideLoop,
@@ -11,8 +11,10 @@ import type {
   InstrumentConfig,
   NonsiderealTarget,
   ProperMotion,
+  ProperMotionDeclination,
+  ProperMotionRA,
   PwfsMechs,
-  RA,
+  RightAscension,
   Rotator,
   SiderealTarget,
   Target,
@@ -20,7 +22,7 @@ import type {
 } from '@/types';
 
 // Create helpers for GraphQL types
-type Angle = FocalPlaneOffset['deltaX'];
+type FocalPlaneAngle = FocalPlaneOffset['deltaX'];
 
 type OverridePartial<T extends { __typename: string }> = Omit<Partial<T>, '__typename'>;
 
@@ -153,7 +155,7 @@ export function createAcMechs(overrides?: OverridePartial<AcMechs>): AcMechs {
   };
 }
 
-export function createAngle(overrides?: OverridePartial<Angle>): Angle {
+export function createAngle(overrides?: OverridePartial<FocalPlaneAngle>): FocalPlaneAngle {
   return {
     arcseconds: 0,
     __typename: 'Angle',
@@ -168,26 +170,35 @@ export function createFocalPlaneOffset(overrides?: OverridePartial<FocalPlaneOff
     __typename: 'FocalPlaneOffset',
   };
 }
-export function createRA(overrides?: OverridePartial<RA>): RA {
-  return { degrees: 12.497148925, hms: '00:49:59.315741', __typename: 'RA', ...overrides };
+export function createRightAscension(overrides?: OverridePartial<RightAscension>): RightAscension {
+  return { degrees: 12.497148925, hms: '00:49:59.315741', __typename: 'RightAscension', ...overrides };
 }
 
-export function createDec(overrides?: OverridePartial<Dec>): Dec {
+export function createDeclination(overrides?: OverridePartial<Declination>): Declination {
   return {
     degrees: 310.1999390236111,
     dms: '-49:48:00.219525',
-    __typename: 'Dec',
+    __typename: 'Declination',
     ...overrides,
   };
 }
 
 export function createProperMotion(overrides?: OverridePartial<ProperMotion>): ProperMotion {
   return {
-    ra: 0,
-    dec: 0,
     __typename: 'ProperMotion',
+    ra: createProperMotionRA(overrides?.ra),
+    dec: createProperMotionDeclination(overrides?.dec),
     ...overrides,
   };
+}
+export function createProperMotionRA(overrides?: OverridePartial<ProperMotionRA>): ProperMotionRA {
+  return { __typename: 'ProperMotionRA', microarcsecondsPerYear: 0, ...overrides };
+}
+
+export function createProperMotionDeclination(
+  overrides?: OverridePartial<ProperMotionDeclination>,
+): ProperMotionDeclination {
+  return { __typename: 'ProperMotionDeclination', microarcsecondsPerYear: 0, ...overrides };
 }
 
 export function createCalParams(overrides?: OverridePartial<CalParams>): CalParams {
@@ -239,8 +250,8 @@ export function createTarget(overrides?: OverridePartial<Target>): Target {
 export function createSidereal(overrides?: OverridePartial<SiderealTarget>): SiderealTarget {
   return {
     pk: 1,
-    ra: createRA(),
-    dec: createDec(),
+    ra: createRightAscension(),
+    dec: createDeclination(),
     az: null,
     el: null,
     properMotion: createProperMotion(),

@@ -20,10 +20,7 @@ export default {
       resolverRelativeTargetDir: '../resolvers',
       emitLegacyCommonJSImports: false,
       scalarsOverrides: {
-        PosInt: {
-          resolver: '../resolvers/Scalars.ts.ts#PosIntResolver',
-          type: 'number',
-        },
+        PosInt: { resolver: '../resolvers/Scalars.ts.ts#PosIntResolver', type: 'number' },
         BigDecimal: { type: 'string|number', resolver: '../resolvers/Scalars.ts.ts#BigDecimalResolver' },
         AttachmentId: { type: 'string', resolver: '../resolvers/Scalars.ts.ts#AttachmentIdResolver' },
         CallForProposalsId: { type: 'string', resolver: '../resolvers/Scalars.ts.ts#CallForProposalsIdResolver' },
@@ -38,6 +35,9 @@ export default {
         TargetId: { type: 'string', resolver: '../resolvers/Scalars.ts.ts#TargetIdResolver' },
         UserId: { type: 'string', resolver: '../resolvers/Scalars.ts.ts#UserIdResolver' },
         VisitId: { type: 'string', resolver: '../resolvers/Scalars.ts.ts#VisitIdResolver' },
+        DmsString: { type: 'string', resolver: '../resolvers/Scalars.ts.ts#DmsStringResolver' },
+        HmsString: { type: 'string', resolver: '../resolvers/Scalars.ts.ts#HmsStringResolver' },
+        EpochString: { type: 'string', resolver: '../resolvers/Scalars.ts.ts#EpochStringResolver' },
       },
     }),
   },
