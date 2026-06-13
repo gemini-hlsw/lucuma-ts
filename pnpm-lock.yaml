@@ -219,8 +219,8 @@ importers:
         specifier: 0.176.0
         version: 0.176.0
       '@highcharts/react':
-        specifier: 5.0.1
-        version: 5.0.1(@types/react@19.2.17)(highcharts@12.6.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+        specifier: 5.1.0
+        version: 5.1.0(@types/react@19.2.17)(highcharts@12.6.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       date-fns:
         specifier: 4.4.0
         version: 4.4.0
@@ -894,8 +894,8 @@ packages:
     engines: {node: '>=6'}
     hasBin: true
 
-  '@highcharts/react@5.0.1':
-    resolution: {integrity: sha512-F2PNUw2+6YGAmjei2LFQbToaG0VBs8cXXWCHa2adipPQd1H6sU7vdwIZNBWxm/aQsbnm+da30ooWoiLIWwEX1A==}
+  '@highcharts/react@5.1.0':
+    resolution: {integrity: sha512-oD96SBeQLaP/iy8W52oqrjA4ixxP0GHHfroLLls/4cjwW9KeUJStpGmxVouUtUS65SN57da5J5hCQX1YJNqv6w==}
     peerDependencies:
       '@types/react': '>=18'
       highcharts: '>=12.0.0'
@@ -5648,7 +5648,7 @@ snapshots:
       protobufjs: 7.6.2
       yargs: 17.7.2
 
-  '@highcharts/react@5.0.1(@types/react@19.2.17)(highcharts@12.6.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
+  '@highcharts/react@5.1.0(@types/react@19.2.17)(highcharts@12.6.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
     dependencies:
       highcharts: 12.6.0
       react: 19.2.7
