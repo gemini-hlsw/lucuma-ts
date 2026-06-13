@@ -20,7 +20,7 @@
     "codegen": "graphql-codegen --config tasks/codegen.ts"
   },
   "devDependencies": {
-    "@apollo/client": "4.2.2",
+    "@apollo/client": "4.2.3",
     "@fortawesome/fontawesome-svg-core": "7.2.0",
     "@fortawesome/pro-regular-svg-icons": "7.2.0",
     "@fortawesome/react-fontawesome": "3.3.1",
@@ -33,7 +33,7 @@
     "@graphql-typed-document-node/core": "3.2.0",
     "@xyflow/react": "12.11.0",
     "date-fns": "4.4.0",
-    "graphql": "16.14.1",
+    "graphql": "16.14.2",
     "graphql-ws": "6.0.8",
     "jotai": "2.20.0",
     "primereact": "10.9.7",
