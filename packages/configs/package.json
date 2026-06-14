@@ -41,7 +41,7 @@
   },
   "devDependencies": {
     "@eddeee888/gcg-typescript-resolver-files": "0.16.0",
-    "@testcontainers/postgresql": "12.0.1"
+    "@testcontainers/postgresql": "12.0.2"
   },
   "files": [
     "dist",
