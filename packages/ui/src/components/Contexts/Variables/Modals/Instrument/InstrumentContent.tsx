@@ -25,9 +25,13 @@ import type { InstrumentConfig } from '@/types';
 export function InstrumentContent({
   instrument,
   setInstrument,
+  onImport,
+  loading: importLoading,
 }: {
   instrument: InstrumentConfig | null;
   setInstrument: (_: InstrumentConfig | null) => void;
+  onImport: (_: InstrumentConfig) => void;
+  loading: boolean;
 }) {
   const { site } = useServerConfigValue();
   const { data: configuredInstrument, loading: configuredInstrumentLoading } = useConfiguredInstrument();
@@ -51,6 +55,7 @@ export function InstrumentContent({
   const portOptions = distinctPortsData?.distinctPorts ?? [];
 
   const loading =
+    importLoading ||
     distinctInstrumentsLoading ||
     distinctPortsLoading ||
     instrumentsLoading ||
@@ -92,6 +97,7 @@ export function InstrumentContent({
           instruments={instrumentsData?.instruments ?? []}
           selectedInstrument={instrument}
           setInstrument={setInstrument}
+          onImport={onImport}
           deleteInstrument={(pk) => deleteInstrument({ variables: { pk } })}
           loading={loading}
         />
@@ -104,12 +110,14 @@ function InstrumentTable({
   instruments,
   selectedInstrument,
   setInstrument,
+  onImport,
   deleteInstrument,
   loading,
 }: {
   instruments: InstrumentConfig[];
   selectedInstrument: InstrumentConfig | null;
   setInstrument: (_: InstrumentConfig) => void;
+  onImport: (_: InstrumentConfig) => void;
   deleteInstrument: (pk: number) => void;
   loading: boolean;
 }) {
@@ -133,6 +141,7 @@ function InstrumentTable({
         value={tableData}
         selection={selectedInstrument}
         onSelectionChange={(e) => setInstrument(e.value as InstrumentConfig)}
+        onRowDoubleClick={(e) => onImport(e.data as InstrumentConfig)}
         selectionMode="single"
         scrollable
         scrollHeight="flex"

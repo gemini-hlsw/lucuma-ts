@@ -29,6 +29,11 @@ export function Catalog() {
       setSelectedTarget(null);
     });
 
+  const importAndClose = (target: EngineeringTarget) => {
+    if (!canEdit) return;
+    return updateTarget(target).then(close);
+  };
+
   const footer = (
     <div className="modal-footer">
       <Button text severity="danger" label="Cancel" onClick={close} />
@@ -36,7 +41,7 @@ export function Catalog() {
         disabled={!canEdit || !selectedTarget}
         label="Import to Navigate"
         loading={loading}
-        onClick={async () => updateTarget(selectedTarget!).then(close)}
+        onClick={() => importAndClose(selectedTarget!)}
       />
     </div>
   );
@@ -44,7 +49,12 @@ export function Catalog() {
   return (
     <Dialog header="Import from catalog" footer={footer} visible={catalogVisible} modal onHide={close}>
       <Suspense fallback={<ModalSolarProgress />}>
-        <CatalogTable selectedTarget={selectedTarget} setSelectedTarget={setSelectedTarget} />
+        <CatalogTable
+          selectedTarget={selectedTarget}
+          setSelectedTarget={setSelectedTarget}
+          onImport={importAndClose}
+          loading={loading}
+        />
       </Suspense>
     </Dialog>
   );

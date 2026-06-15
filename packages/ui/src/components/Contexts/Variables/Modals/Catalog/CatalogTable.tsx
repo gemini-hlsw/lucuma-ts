@@ -12,10 +12,12 @@ import type { EngineeringTarget } from '@/types';
 interface ParamsInterface {
   selectedTarget: EngineeringTarget | null;
   setSelectedTarget: (_: EngineeringTarget | null) => void;
+  onImport: (_: EngineeringTarget) => void;
+  loading: boolean;
   headerItems?: React.ReactNode;
 }
 
-export function CatalogTable({ selectedTarget, setSelectedTarget, headerItems }: ParamsInterface) {
+export function CatalogTable({ selectedTarget, setSelectedTarget, onImport, loading, headerItems }: ParamsInterface) {
   const [filters, setFilters] = useState({
     name: { value: '', matchMode: FilterMatchMode.CONTAINS },
     type: { value: '', matchMode: FilterMatchMode.CONTAINS },
@@ -33,7 +35,7 @@ export function CatalogTable({ selectedTarget, setSelectedTarget, headerItems }:
     setGlobalFilterValue(value);
   }
 
-  const { data: engineeringTargets, loading } = useEngineeringTargets();
+  const { data: engineeringTargets, loading: engineeringTargetsLoading } = useEngineeringTargets();
 
   const header = (
     <div className="header-table">
@@ -54,12 +56,13 @@ export function CatalogTable({ selectedTarget, setSelectedTarget, headerItems }:
         selectionMode="single"
         selection={selectedTarget}
         onSelectionChange={(e) => setSelectedTarget(e.value as EngineeringTarget)}
+        onRowDoubleClick={(e) => onImport(e.data as EngineeringTarget)}
         className="p-datatable-customers"
         rows={15}
         dataKey="id"
         filters={filters}
         filterDisplay="row"
-        loading={loading}
+        loading={loading || engineeringTargetsLoading}
         globalFilterFields={['id', 'name', 'type']}
         header={header}
         emptyMessage="No observations found."
