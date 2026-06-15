@@ -17,6 +17,8 @@ import type { OdbObservation } from '@/types';
 interface ParamsInterface {
   selectedObservation: OdbObservation | null;
   setSelectedObservation: (_: OdbObservation | null) => void;
+  onImport: (_: OdbObservation) => void;
+  loading: boolean;
 }
 
 interface ColumnProps extends PColumnProps {
@@ -73,7 +75,7 @@ interface FilterValue {
 }
 type Filters = Record<string, FilterValue>;
 
-export function ObservationTable({ selectedObservation, setSelectedObservation }: ParamsInterface) {
+export function ObservationTable({ selectedObservation, setSelectedObservation, onImport, loading }: ParamsInterface) {
   const { site } = useServerConfigValue();
   const observingNight = dateToLocalObservingNight(new Date());
 
@@ -94,7 +96,7 @@ export function ObservationTable({ selectedObservation, setSelectedObservation }
     ),
   );
 
-  const { data, loading } = useObservationsByState({
+  const { data, loading: observationsLoading } = useObservationsByState({
     variables: {
       date: observingNight,
       site,
@@ -153,12 +155,13 @@ export function ObservationTable({ selectedObservation, setSelectedObservation }
         selectionMode="single"
         selection={selectedObservation}
         onSelectionChange={(e) => setSelectedObservation(e.value as OdbObservation | null)}
+        onRowDoubleClick={(e) => onImport(e.data as OdbObservation)}
         className="p-datatable-customers"
         rows={15}
         dataKey="id"
         filters={filters}
         filterDisplay="row"
-        loading={loading}
+        loading={loading || observationsLoading}
         onFilter={(e) => setFilters(e.filters as Filters)}
         globalFilterFields={visibleColumns.map((c) => c.field)}
         header={header}

@@ -24,6 +24,11 @@ export function OdbImport() {
       setSelectedObservation(null);
     });
 
+  const importAndClose = (observation: OdbObservation) => {
+    if (!canEdit) return;
+    return importObservation(observation).then(close);
+  };
+
   const footer = (
     <div className="modal-footer">
       <Button text severity="danger" label="Cancel" onClick={close} />
@@ -31,7 +36,7 @@ export function OdbImport() {
         disabled={!canEdit || !selectedObservation}
         label="Import to Navigate"
         loading={loading}
-        onClick={() => importObservation(selectedObservation!).then(close)}
+        onClick={() => importAndClose(selectedObservation!)}
       />
     </div>
   );
@@ -39,7 +44,12 @@ export function OdbImport() {
   return (
     <Dialog header="Import from ODB" footer={footer} visible={odbVisible} modal onHide={close}>
       <Suspense fallback={<ModalSolarProgress />}>
-        <ObservationTable selectedObservation={selectedObservation} setSelectedObservation={setSelectedObservation} />
+        <ObservationTable
+          selectedObservation={selectedObservation}
+          setSelectedObservation={setSelectedObservation}
+          onImport={importAndClose}
+          loading={loading}
+        />
       </Suspense>
     </Dialog>
   );

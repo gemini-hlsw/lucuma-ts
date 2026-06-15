@@ -28,6 +28,8 @@ export function Instrument() {
       setInstrument(null);
     });
 
+  const importAndClose = (instrument: InstrumentConfig) => modifyInstrument(instrument).then(close);
+
   const footer = (
     <div className="modal-footer">
       <Button text severity="danger" label="Cancel" onClick={close} />
@@ -35,7 +37,7 @@ export function Instrument() {
         label="Import"
         disabled={!instrument}
         loading={loading}
-        onClick={() => modifyInstrument(instrument!).then(close)}
+        onClick={() => importAndClose(instrument!)}
         data-testid="import-button"
       />
     </div>
@@ -44,7 +46,12 @@ export function Instrument() {
   return (
     <Dialog header="Import instrument" visible={importInstrument} footer={footer} modal onHide={close}>
       <Suspense fallback={<ModalSolarProgress />}>
-        <InstrumentContent instrument={instrument} setInstrument={setInstrument} />
+        <InstrumentContent
+          instrument={instrument}
+          setInstrument={setInstrument}
+          onImport={importAndClose}
+          loading={loading}
+        />
       </Suspense>
     </Dialog>
   );
