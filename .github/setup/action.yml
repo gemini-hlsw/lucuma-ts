@@ -11,6 +11,9 @@ inputs:
     description: 'Only run pnpm install on changed packages'
     required: false
     default: 'false'
+  FONTAWESOME_NPM_AUTH_TOKEN:
+    description: 'Fontawesome auth token (required if install-deps is true)'
+    required: false
 
 runs:
   using: 'composite'
@@ -26,6 +29,9 @@ runs:
         node-version-file: '.nvmrc'
         cache: 'pnpm'
         registry-url: 'https://registry.npmjs.org/'
+    - run: pnpm config set "//npm.fontawesome.com/:_authToken" "${{ inputs.FONTAWESOME_NPM_AUTH_TOKEN }}"
+      if: ${{ inputs.install-deps == 'true' }}
+      shell: bash
     - run: pnpm ci --prefer-offline
       if: ${{ inputs.install-deps == 'true' && inputs.only-changed == 'false' }}
       shell: bash

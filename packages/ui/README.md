@@ -8,22 +8,26 @@ This tool will be used to configure the telescope and its subsystems to point an
 
 Make sure you have installed [NodeJS](https://nodejs.org/en/) and [ni](https://github.com/antfu/ni) in your machine.
 
+```bash
+$ corepack enable
+```
+
 We are now using FontAwesome Pro which requires a license. To build the app locally request a TOKEN
-from the admins and you need to setup an env variable containing it like
+from the admins and you need to setup the registry access like:
 
 ```bash
-export FONTAWESOME_NPM_AUTH_TOKEN=...
+$ pnpm config set "//npm.fontawesome.com/:_authToken" "$FONTAWESOME_NPM_AUTH_TOKEN"
 ```
 
 - Install dependencies
 
   ```bash
-  ni
+  pnpm install
   ```
 
 - Run the web app
   ```bash
-  nr dev
+  pnpm dev
   ```
 
 ## Test modules
@@ -32,27 +36,16 @@ Some project modules can be tested using vitest
 
 - Run vitest
   ```bash
-  nlx vitest
+  pnpm vitest
   ```
 
 ## Navigate backend
 
-To connect to the Navigate backend [this repository](https://github.com/gemini-hlsw/navigate-server) should be cloned and run. The project was developed using Scala, then a proper Scala and sbt installation should be provided.
+To connect to the Navigate backend [this repository](https://github.com/gemini-hlsw/lucuma-apps) should be cloned and run. The project was developed using Scala, then a proper Scala and sbt installation should be provided.
 
 In the repository directory run
 
 ```bash
-sbt
-```
-
-In sbt compile everything using
-
-```bash
-compile
-```
-
-Once compiled, to run the server
-
-```
-navigate_web_server/reStart
+export SITE=GN
+sbt '~navigate_web_server/reStart'
 ```

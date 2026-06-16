@@ -45,10 +45,10 @@ $ corepack enable
 ```
 
 We are now using FontAwesome Pro which requires a license. To build the app locally request a TOKEN
-from the admins and you need to setup an env variable containing it like
+from the admins and you need to setup the registry access like:
 
 ```bash
-export FONTAWESOME_NPM_AUTH_TOKEN=...
+$ pnpm config set "//npm.fontawesome.com/:_authToken" "$FONTAWESOME_NPM_AUTH_TOKEN"
 ```
 
 ```bash
