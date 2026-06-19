@@ -87,13 +87,13 @@ jobs:
         run: |
           sudo echo "127.0.0.1 navigate.lucuma.xyz" | sudo tee -a /etc/hosts
       - run: pnpm exec playwright install firefox --only-shell
-      - run: pnpm --filter "...@gemini-hlsw/navigate-e2e[origin/main]..." --if-present build
-      - run: pnpm --filter "...@gemini-hlsw/navigate-e2e[origin/main]..." --if-present e2e:docker-up
+      - run: pnpm --filter "...navigate-e2e[origin/main]..." --if-present build
+      - run: pnpm --filter "...navigate-e2e[origin/main]..." --if-present e2e:docker-up
         env:
           LUCUMA_REFRESH_TOKEN: ${{ secrets.LUCUMA_DEV_API_KEY }}
 
       - name: Run Playwright tests
-        run: pnpm --filter "...@gemini-hlsw/navigate-e2e[origin/main]..." --if-present test:e2e
+        run: pnpm --filter "...navigate-e2e[origin/main]..." --if-present test:e2e
         env:
           LUCUMA_REFRESH_TOKEN: ${{ secrets.LUCUMA_DEV_API_KEY }}
           DATABASE_URL: 'postgresql://jimmy:banana@127.0.0.1:5432/configs'
@@ -265,3 +265,32 @@ jobs:
         env:
           HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
         run: ./deploy/deploy-heroku.sh
+
+  deploy-resource:
+    runs-on: ubuntu-latest
+    if: (github.ref == 'refs/heads/main' && github.repository_owner == 'gemini')
+    timeout-minutes: 10
+    environment:
+      name: resource-ui-dev
+      url: 'https://resource-dev.lucuma.xyz'
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/setup
+        with:
+          only-changed: true
+          FONTAWESOME_NPM_AUTH_TOKEN: ${{ secrets.FONTAWESOME_NPM_AUTH_TOKEN }}
+      - run: pnpm --filter "...resource-ui[origin/main]..." --if-present build
+
+      # Set env.DEPLOY_RESOURCE if there are changes
+      - run: pnpm --filter "...resource-ui[origin/main]..." --if-present ci:set-deploy-flag
+
+      - name: Deploy staging app to Firebase
+        if: env.DEPLOY_RESOURCE == 'true'
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          projectId: ${{ vars.FIREBASE_PROJECT_ID }}
+          entryPoint: ./packages/resource-ui
+          target: dev
+          channelId: live

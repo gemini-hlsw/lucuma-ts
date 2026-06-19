@@ -1,0 +1,14 @@
+{
+  "projects": {
+    "default": "resource-ae0b7"
+  },
+  "targets": {
+    "resource-ae0b7": {
+      "hosting": {
+        "dev": ["resource-ae0b7-dev"],
+        "staging": ["resource-ae0b7-staging"],
+        "production": ["resource-ae0b7"]
+      }
+    }
+  }
+}

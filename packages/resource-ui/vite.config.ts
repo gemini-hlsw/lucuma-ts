@@ -2,10 +2,29 @@ import babel from '@rolldown/plugin-babel';
 import tailwindcss from '@tailwindcss/vite';
 import react, { reactCompilerPreset } from '@vitejs/plugin-react';
 import { playwright } from '@vitest/browser-playwright';
+import { execSync } from 'child_process';
 import { defineConfig } from 'vitest/config';
+
+import pkgJson from './package.json' with { type: 'json' };
+
+const version = (process.env.GITHUB_REF_NAME || `v${pkgJson.version}`).trim();
+const commitHash = (process.env.GITHUB_SHA || execSync('git rev-parse --short HEAD').toString()).trim().slice(0, 7);
+
+const buildTime = new Date();
+function formatDate(date: Date) {
+  const years = date.getFullYear();
+  // Months are 0-indexed
+  const months = date.getMonth() + 1;
+  const days = date.getDate();
+  return `${years}${months.toString().padStart(2, '0')}${days.toString().padStart(2, '0')}`;
+}
+const frontendVersion = `${version}+${formatDate(buildTime)}.${commitHash}`;
 
 // https://vite.dev/config/
 export default defineConfig({
+  define: {
+    'import.meta.env.FRONTEND_VERSION': JSON.stringify(frontendVersion),
+  },
   css: {
     transformer: 'lightningcss',
     lightningcss: {
@@ -28,6 +47,7 @@ export default defineConfig({
     tailwindcss(),
   ],
   server: {
+    allowedHosts: ['localhost', '.lucuma.xyz', '.gemini.edu'],
     proxy: {
       '/resource/graphql': {
         target: 'https://lucuma-resource-dev.lucuma.xyz',

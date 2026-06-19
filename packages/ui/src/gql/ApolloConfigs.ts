@@ -11,6 +11,7 @@ import {
 import { SetContextLink } from '@apollo/client/link/context';
 import { ErrorLink } from '@apollo/client/link/error';
 import { GraphQLWsLink } from '@apollo/client/link/subscriptions';
+import { withAbsoluteUri } from '@gemini-hlsw/lucuma-common-ui';
 import { OperationTypeNode } from 'graphql/language';
 import { createClient as createWsClient } from 'graphql-ws';
 
@@ -19,16 +20,6 @@ import { serverConfigAtom } from '@/components/atoms/config';
 import { wsIsConnectedAtom } from '@/components/atoms/connection';
 import { store } from '@/components/atoms/store';
 import { toastAtom } from '@/Helpers/toast';
-
-/**
- * Converts a relative URI to an absolute URI based on the current window origin.
- */
-const withAbsoluteUri = (uri: string, isWs = false) => {
-  if (!uri.startsWith('/')) return uri;
-
-  const newUri = window.location.origin + uri;
-  return isWs ? newUri.replace(/^http/, 'ws') : newUri;
-};
 
 const navigateServerURI = withAbsoluteUri('/navigate/graphql');
 const navigateServerWsURI = withAbsoluteUri('/navigate/ws', true);

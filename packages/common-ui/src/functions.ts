@@ -99,3 +99,13 @@ export function parseNumber<T extends number | string>(
 ): T extends undefined ? number | undefined : number {
   return typeof value === 'string' ? parseFloat(value) : (value as T extends undefined ? number | undefined : number);
 }
+
+/**
+ * Converts a relative URI to an absolute URI based on the current window origin.
+ */
+export const withAbsoluteUri = (uri: string, isWs = false) => {
+  if (!uri.startsWith('/')) return uri;
+
+  const newUri = window.location.origin + uri;
+  return isWs ? newUri.replace(/^http/, 'ws') : newUri;
+};
