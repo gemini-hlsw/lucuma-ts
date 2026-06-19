@@ -29,7 +29,7 @@
     "production": "pnpm prisma migrate deploy && pnpm prisma db seed && pnpm preview"
   },
   "dependencies": {
-    "@gemini-hlsw/lucuma-core": "0.211.2",
+    "@gemini-hlsw/lucuma-core": "0.212.0",
     "@gemini-hlsw/lucuma-schemas": "0.177.2-20260616-80e4ae44",
     "@prisma/adapter-pg": "7.8.0",
     "@prisma/client": "7.8.0",
