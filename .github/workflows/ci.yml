@@ -291,11 +291,10 @@ jobs:
           fetch-depth: 0
       - uses: ./.github/setup
         with:
-          install-deps: false
+          only-changed: true
+          FONTAWESOME_NPM_AUTH_TOKEN: ${{ secrets.FONTAWESOME_NPM_AUTH_TOKEN }}
       - id: detect
-        run: |
-          pnpm config set trustLockfile true
-          pnpm --filter "...resource-ui[${{ env.CHANGED_SINCE }}]..." --if-present ci:set-deploy-flag
+        run: pnpm --filter "...resource-ui[${{ env.CHANGED_SINCE }}]..." --if-present ci:set-deploy-flag
 
   deploy-resource:
     runs-on: ubuntu-latest
