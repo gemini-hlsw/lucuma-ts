@@ -99,13 +99,13 @@ jobs:
         run: |
           sudo echo "127.0.0.1 navigate.lucuma.xyz" | sudo tee -a /etc/hosts
       - run: pnpm exec playwright install firefox --only-shell
-      - run: pnpm --filter "...navigate-e2e[${{ env.CHANGED_SINCE }}]..." --if-present build
-      - run: pnpm --filter "...navigate-e2e[${{ env.CHANGED_SINCE }}]..." --if-present e2e:docker-up
+      - run: pnpm --filter "...[${{ env.CHANGED_SINCE }}]..." --if-present build
+      - run: pnpm --filter "...[${{ env.CHANGED_SINCE }}]..." --if-present e2e:docker-up
         env:
           LUCUMA_REFRESH_TOKEN: ${{ secrets.LUCUMA_DEV_API_KEY }}
 
       - name: Run Playwright tests
-        run: pnpm --filter "...navigate-e2e[${{ env.CHANGED_SINCE }}]..." --if-present test:e2e
+        run: pnpm --filter "...[${{ env.CHANGED_SINCE }}]..." --if-present test:e2e
         env:
           LUCUMA_REFRESH_TOKEN: ${{ secrets.LUCUMA_DEV_API_KEY }}
           DATABASE_URL: 'postgresql://jimmy:banana@127.0.0.1:5432/configs'
@@ -294,7 +294,7 @@ jobs:
           only-changed: true
           FONTAWESOME_NPM_AUTH_TOKEN: ${{ secrets.FONTAWESOME_NPM_AUTH_TOKEN }}
       - id: detect
-        run: pnpm --filter "...resource-ui[${{ env.CHANGED_SINCE }}]..." --if-present ci:set-deploy-flag
+        run: pnpm --filter "...[${{ env.CHANGED_SINCE }}]" --if-present ci:set-deploy-flag
 
   deploy-resource:
     runs-on: ubuntu-latest
@@ -310,7 +310,7 @@ jobs:
         with:
           only-changed: true
           FONTAWESOME_NPM_AUTH_TOKEN: ${{ secrets.FONTAWESOME_NPM_AUTH_TOKEN }}
-      - run: pnpm --filter "...resource-ui" build
+      - run: pnpm --filter "resource-ui..." build
 
       - name: Deploy staging app to Firebase
         uses: FirebaseExtended/action-hosting-deploy@v0
