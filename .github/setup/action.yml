@@ -35,6 +35,8 @@ runs:
     - run: pnpm ci --prefer-offline
       if: ${{ inputs.install-deps == 'true' && inputs.only-changed == 'false' }}
       shell: bash
-    - run: pnpm --filter "...[origin/main]..." ci --prefer-offline
+    # CHANGED_SINCE is set by the calling workflow's top-level env (previous main tip on a
+    # push to main, origin/main otherwise); fall back to origin/main if it isn't provided.
+    - run: pnpm --filter "...[${CHANGED_SINCE:-origin/main}]..." ci --prefer-offline
       if: ${{ inputs.install-deps == 'true' && inputs.only-changed == 'true' }}
       shell: bash
