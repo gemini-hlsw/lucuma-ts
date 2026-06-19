@@ -278,28 +278,42 @@ jobs:
           HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
         run: ./deploy/deploy-heroku.sh
 
-  deploy-resource:
+  # Detects whether resource-ui (or a dependency) changed in this push and exposes it as a job output
+  resource-changes:
     runs-on: ubuntu-latest
     if: (github.ref == 'refs/heads/main' && github.repository_owner == 'gemini-hlsw')
     timeout-minutes: 10
-    environment:
-      name: resource-ui-dev
-      url: 'https://resource-dev.lucuma.xyz'
+    outputs:
+      should_deploy: ${{ steps.detect.outputs.should_deploy }}
     steps:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - uses: ./.github/setup
         with:
+          install-deps: false
+      - id: detect
+        run: |
+          pnpm config set trustLockfile true
+          pnpm --filter "...resource-ui[${{ env.CHANGED_SINCE }}]..." --if-present ci:set-deploy-flag
+
+  deploy-resource:
+    runs-on: ubuntu-latest
+    needs: resource-changes
+    if: needs.resource-changes.outputs.should_deploy == 'true'
+    timeout-minutes: 10
+    environment:
+      name: resource-ui-dev
+      url: 'https://resource-dev.lucuma.xyz'
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/setup
+        with:
           only-changed: true
           FONTAWESOME_NPM_AUTH_TOKEN: ${{ secrets.FONTAWESOME_NPM_AUTH_TOKEN }}
-      - run: pnpm --filter "...resource-ui[${{ env.CHANGED_SINCE }}]..." --if-present build
-
-      # Set env.DEPLOY_RESOURCE if there are changes
-      - run: pnpm --filter "...resource-ui[${{ env.CHANGED_SINCE }}]..." --if-present ci:set-deploy-flag
+      - run: pnpm --filter "...resource-ui" build
 
       - name: Deploy staging app to Firebase
-        if: env.DEPLOY_RESOURCE == 'true'
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
