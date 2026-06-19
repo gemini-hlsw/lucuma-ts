@@ -306,6 +306,8 @@ jobs:
       url: 'https://resource-dev.lucuma.xyz'
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
       - uses: ./.github/setup
         with:
           only-changed: true

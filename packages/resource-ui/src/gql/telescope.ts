@@ -84,6 +84,9 @@ export const GET_TELESCOPE_NIGHT_TIMELINE = graphql(`
 
 export function useTelescopeNightTimeline(site: Site, observingNight: string) {
   return useQuery(GET_TELESCOPE_NIGHT_TIMELINE, {
-    variables: { site, observingNight },
+    variables: {
+      site,
+      observingNight,
+    },
   });
 }
