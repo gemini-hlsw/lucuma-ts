@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - uses: ./.github/setup
@@ -51,7 +51,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - uses: ./.github/setup
@@ -67,7 +67,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - uses: ./.github/setup
@@ -83,7 +83,7 @@ jobs:
     timeout-minutes: 10
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - uses: ./.github/setup
@@ -123,7 +123,7 @@ jobs:
       REGISTRY_USERNAME: 'nlsoftware'
       REGISTRY_IMAGE: noirlab/gpp-nav-configs
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: ./.github/setup
         with:
           install-deps: false
@@ -188,7 +188,7 @@ jobs:
       REGISTRY_USERNAME: 'nlsoftware'
       REGISTRY_IMAGE: noirlab/gpp-nav
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -236,7 +236,7 @@ jobs:
       REGISTRY_IMAGE: noirlab/gpp-nav
       HEROKU_APP_NAME: navigate-dev-gn
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Log in to the Container registry
         uses: docker/login-action@v4
         with:
@@ -262,7 +262,7 @@ jobs:
       REGISTRY_IMAGE: noirlab/gpp-nav-configs
       HEROKU_APP_NAME: navigate-configs-dev-gn
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Log in to the Container registry
         uses: docker/login-action@v4
         with:
@@ -286,7 +286,7 @@ jobs:
     outputs:
       should_deploy: ${{ steps.detect.outputs.should_deploy }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - uses: ./.github/setup
@@ -305,7 +305,7 @@ jobs:
       name: resource-ui-dev
       url: 'https://resource-dev.lucuma.xyz'
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - uses: ./.github/setup
