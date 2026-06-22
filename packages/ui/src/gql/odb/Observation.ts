@@ -8,6 +8,7 @@ export const OBSERVATION_FRAGMENT = graphql(`
     id
     title
     subtitle
+    instrument
     reference {
       label
     }

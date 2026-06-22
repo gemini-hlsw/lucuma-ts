@@ -208,6 +208,7 @@ const selectedObservation: OdbObservation = {
   id: 'o-2e5',
   title: 'Mayall V',
   subtitle: null,
+  instrument: 'GMOS_NORTH',
   reference: {
     label: 'G-2025B-0571-Q-0003',
     __typename: 'ObservationReference',
