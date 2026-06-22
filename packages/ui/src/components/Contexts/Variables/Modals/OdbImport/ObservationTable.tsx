@@ -1,5 +1,7 @@
 import { dateToLocalObservingNight } from '@gemini-hlsw/lucuma-core';
 import { useObservationsByState } from '@gql/odb/Observation';
+import { useAtom } from 'jotai';
+import { atomWithStorage } from 'jotai/utils';
 import { FilterMatchMode } from 'primereact/api';
 import type { ColumnProps as PColumnProps } from 'primereact/column';
 import { Column } from 'primereact/column';
@@ -75,15 +77,13 @@ interface FilterValue {
 }
 type Filters = Record<string, FilterValue>;
 
+const observationTableColsAtom = atomWithStorage('observationTableColumns', defaultColumns);
+
 export function ObservationTable({ selectedObservation, setSelectedObservation, onImport, loading }: ParamsInterface) {
   const { site } = useServerConfigValue();
   const observingNight = dateToLocalObservingNight(new Date());
 
-  const [columns, setColumns] = useState(
-    localStorage.getItem('observationTableColumns')
-      ? (JSON.parse(localStorage.getItem('observationTableColumns')!) as ColumnProps[])
-      : defaultColumns,
-  );
+  const [columns, setColumns] = useAtom(observationTableColsAtom);
   const visibleColumns = columns.filter((c) => c.visible);
 
   const [filters, setFilters] = useState(() =>
@@ -112,9 +112,8 @@ export function ObservationTable({ selectedObservation, setSelectedObservation, 
     }));
 
   const onMultiSelectChange = (e: { value: ColumnProps[] }) => {
-    const newColumns = columns.map((c) => ({ ...c, visible: e.value.some((v) => v.field === c.field) }));
+    const newColumns: ColumnProps[] = columns.map((c) => ({ ...c, visible: e.value.some((v) => v.field === c.field) }));
     setColumns(newColumns);
-    localStorage.setItem('observationTableColumns', JSON.stringify(newColumns));
   };
 
   const header = (
