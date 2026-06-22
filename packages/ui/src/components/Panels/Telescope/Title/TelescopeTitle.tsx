@@ -75,17 +75,42 @@ export function TelescopeTitle({ prevPanel, nextPanel }: ParamsInterface) {
   return (
     <Title title="TELESCOPE SETUP" prevPanel={prevPanel} nextPanel={nextPanel}>
       <TitleDropdown icon={<List />}>
-        <Button disabled={!canEdit} text label="Import new observation from ODB" onClick={() => setOdbVisible(true)} />
+        <Button
+          disabled={!canEdit}
+          text
+          severity="info"
+          label="Import new observation from ODB"
+          onClick={() => setOdbVisible(true)}
+        />
         <Button
           disabled={!canEdit || loading || isNullish(configuration?.obsId)}
           text
+          severity="info"
           label="Reimport current observation from ODB"
           onClick={reimportObservation}
         />
-        <Button disabled={!canEdit} text label="Import from catalog" onClick={() => setCatalogVisible(true)} />
-        <Button disabled={!canEdit || loading} text label="Refresh TCS ephemerides" onClick={refreshEphemerides} />
+        <Button
+          disabled={!canEdit}
+          text
+          severity="info"
+          label="Import from catalog"
+          onClick={() => setCatalogVisible(true)}
+        />
+        <Button
+          disabled={!canEdit || loading}
+          text
+          severity="info"
+          label="Refresh TCS ephemerides"
+          onClick={refreshEphemerides}
+        />
         <Divider />
-        <Button disabled={!canEdit} className="p-button-text under-construction" label="Edit targets" />
+        <Button
+          disabled={!canEdit}
+          text
+          severity="warning"
+          className="p-button-text under-construction"
+          label="Edit targets"
+        />
       </TitleDropdown>
     </Title>
   );

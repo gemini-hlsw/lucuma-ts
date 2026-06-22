@@ -19,6 +19,7 @@ export function Footer() {
           disabled={!canEdit}
           className="p-button-text"
           label="Set slew flags"
+          severity="info"
           onClick={() => setSlewVisible(true)}
         />
       </TitleDropdown>
