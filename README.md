@@ -41,7 +41,7 @@ $ code workspace.code-workspace
 To install needed dependencies you can use PNPM. You can enable it with [corepack](https://nodejs.org/api/corepack.html) by running the following command:
 
 ```bash
-$ corepack enable
+$ npm install -g corepack && corepack enable
 ```
 
 We are now using FontAwesome Pro which requires a license. To build the app locally request a TOKEN

@@ -11,7 +11,7 @@ Make sure you have installed [NodeJS](https://nodejs.org/en/) in your machine.
 To install needed dependencies you can use PNPM. You can enable it with [corepack](https://nodejs.org/api/corepack.html) by running the following command:
 
 ```bash
-corepack enable
+$ npm install -g corepack && corepack enable
 ```
 
 ### Using PNPM
