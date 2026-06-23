@@ -1,5 +1,5 @@
 # Base image with Node.js and pnpm and a custom user
-FROM node:24-alpine AS base
+FROM node:26-alpine AS base
 
 # Create app directory
 WORKDIR /usr/src/app
@@ -8,7 +8,7 @@ RUN apk add --no-cache openssl
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 
-RUN corepack enable
+RUN npm install -g corepack && corepack enable
 
 # Create software user
 RUN addgroup -S software -g 3624 && adduser -S software -u 3624 -G software
