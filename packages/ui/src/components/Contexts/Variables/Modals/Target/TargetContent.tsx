@@ -1,15 +1,17 @@
-import { parseNumber } from '@gemini-hlsw/lucuma-common-ui';
-import { deg2dms, deg2hms, dms2deg, hms2deg } from '@gemini-hlsw/lucuma-core';
+import { isNullish, parseNumber, when } from '@gemini-hlsw/lucuma-common-ui';
+import { dms2deg, hms2deg, toAngle, toDeclination, toRightAscension } from '@gemini-hlsw/lucuma-core';
 import type { EphemerisKeyType } from '@gql/odb/gen/graphql';
 import { isBaseTarget } from '@gql/util';
 import { Dropdown } from 'primereact/dropdown';
 import { InputNumber } from 'primereact/inputnumber';
 import { InputText } from 'primereact/inputtext';
-import type { Dispatch, SetStateAction } from 'react';
+import type { CSSProperties, Dispatch, SetStateAction } from 'react';
 import { startTransition, useEffect, useState } from 'react';
 
 import { useTargetEditValue } from '@/components/atoms/target';
 import type { NonsiderealTarget, SiderealTarget, Target } from '@/types';
+
+type CoordsType = 'celestial' | 'horizontal';
 
 export function TargetContent({
   auxTarget,
@@ -22,9 +24,7 @@ export function TargetContent({
   disabled: boolean;
   loading: boolean;
 }) {
-  const [coordsType, setCoordsType] = useState('celestial');
-  const [c1String, setc1String] = useState<string | undefined>('');
-  const [c2String, setc2String] = useState<string | undefined>('');
+  const [coordsType, setCoordsType] = useState<CoordsType>('celestial');
 
   const targetEdit = useTargetEditValue();
 
@@ -33,13 +33,9 @@ export function TargetContent({
       startTransition(() => {
         setAuxTarget(() => targetEdit.target ?? null);
         if (targetEdit.target?.type === 'FIXED') {
-          setc1String(targetEdit.target.sidereal?.az?.dms ?? '');
-          setc2String(targetEdit.target.sidereal?.el?.dms ?? '');
           setCoordsType('horizontal');
         } else {
           setCoordsType('celestial');
-          setc1String(targetEdit.target?.sidereal?.ra?.hms ?? '');
-          setc2String(targetEdit.target?.sidereal?.dec?.dms ?? '');
         }
       });
     }
@@ -62,32 +58,18 @@ export function TargetContent({
         <SiderealInput
           type={auxTarget.type}
           auxTarget={auxTarget.sidereal}
-          setAuxTarget={(setState) =>
-            setAuxTarget((prev) => ({
-              ...prev!,
-              sidereal: setState(prev?.sidereal ?? null),
-            }))
-          }
+          setAuxTarget={setAuxTarget}
           disabled={disabled}
           loading={loading}
           isTargetBase={isBaseTarget(auxTarget)}
           coordsType={coordsType}
           setCoordsType={setCoordsType}
-          c1String={c1String}
-          setc1String={setc1String}
-          c2String={c2String}
-          setc2String={setc2String}
         />
       )}
       {auxTarget?.nonsidereal && (
         <NonsiderealInput
           auxTarget={auxTarget.nonsidereal}
-          setAuxTarget={(setState) =>
-            setAuxTarget((prev) => ({
-              ...prev!,
-              nonsidereal: setState(prev?.nonsidereal ?? null),
-            }))
-          }
+          setAuxTarget={setAuxTarget}
           disabled={disabled}
           loading={loading}
         />
@@ -105,24 +87,22 @@ function SiderealInput({
   isTargetBase,
   coordsType,
   setCoordsType,
-  c1String,
-  setc1String,
-  c2String,
-  setc2String,
 }: {
   type: string;
   auxTarget: SiderealTarget | null;
-  setAuxTarget: Dispatch<(prevState: SiderealTarget | null) => SiderealTarget | null>;
+  setAuxTarget: Dispatch<SetStateAction<Target | null>>;
   disabled: boolean;
   loading: boolean;
   isTargetBase: boolean;
-  coordsType: string;
-  setCoordsType: Dispatch<SetStateAction<string>>;
-  c1String: string | undefined;
-  setc1String: Dispatch<SetStateAction<string | undefined>>;
-  c2String: string | undefined;
-  setc2String: Dispatch<SetStateAction<string | undefined>>;
+  coordsType: CoordsType;
+  setCoordsType: Dispatch<SetStateAction<CoordsType>>;
 }) {
+  const setSidereal = (setState: (prev: SiderealTarget | null) => SiderealTarget | null) =>
+    setAuxTarget((prev) => ({ ...prev!, sidereal: setState(prev?.sidereal ?? null) }));
+
+  const c1String = coordsType === 'celestial' ? auxTarget?.ra?.hms : auxTarget?.az?.dms;
+  const c2String = coordsType === 'celestial' ? auxTarget?.dec?.dms : auxTarget?.el?.dms;
+
   return (
     <>
       <label htmlFor="coordsType" style={{ gridArea: 'l1' }} className="label">
@@ -136,51 +116,45 @@ function SiderealInput({
         value={coordsType}
         options={['celestial', 'horizontal']}
         onChange={(e) => {
-          let stringC1 = '';
-          let stringC2 = '';
           const value = e.value as string;
           if (value === 'celestial' && coordsType === 'horizontal') {
-            stringC1 = deg2hms(parseNumber(auxTarget?.az?.degrees ?? 0));
-            stringC2 = deg2dms(parseNumber(auxTarget?.el?.degrees ?? 0));
             setAuxTarget((prev) => ({
               ...prev!,
-              ra: prev!.az && {
-                ...prev!.ra!,
-                degrees: prev!.az.degrees,
-                hms: stringC1,
+              sidereal: {
+                ...prev!.sidereal!,
+                ra: when(prev?.sidereal?.az, (az) => ({
+                  ...prev!.sidereal!.ra!,
+                  ...tryToRightAscension(az.degrees),
+                })),
+                dec: when(prev?.sidereal?.el, (el) => ({
+                  ...prev!.sidereal!.dec!,
+                  ...tryToDeclination(el.degrees),
+                })),
+                az: null,
+                el: null,
               },
-              dec: prev!.el && {
-                ...prev!.dec!,
-                degrees: prev!.el.degrees,
-                dms: stringC2,
-              },
-              az: null,
-              el: null,
               type: 'SCIENCE',
             }));
           } else if (value === 'horizontal' && coordsType === 'celestial') {
-            stringC1 = deg2dms(parseNumber(auxTarget?.ra?.degrees ?? 0));
-            stringC2 = deg2dms(parseNumber(auxTarget?.dec?.degrees ?? 0));
             setAuxTarget((prev) => ({
               ...prev!,
-              az: prev!.ra && {
-                ...prev!.az!,
-                degrees: prev!.ra.degrees,
-                dms: deg2dms(parseNumber(prev?.ra?.degrees ?? 0)),
+              sidereal: {
+                ...prev!.sidereal!,
+                az: when(prev?.sidereal?.ra, (ra) => ({
+                  ...prev!.sidereal!.az!,
+                  ...tryToAngle(ra.degrees),
+                })),
+                el: when(prev?.sidereal?.dec, (dec) => ({
+                  ...prev!.sidereal!.el!,
+                  ...tryToAngle(dec.degrees),
+                })),
+                ra: null,
+                dec: null,
               },
-              el: prev!.dec && {
-                ...prev!.el!,
-                degrees: parseNumber(prev!.dec.degrees),
-                dms: deg2dms(parseNumber(prev?.dec?.degrees ?? 0)),
-              },
-              ra: null,
-              dec: null,
               type: 'FIXED',
             }));
           }
-          setc1String(stringC1);
-          setc2String(stringC2);
-          setCoordsType(value);
+          setCoordsType(value as CoordsType);
         }}
         placeholder="Select coordinates type"
       />
@@ -194,58 +168,45 @@ function SiderealInput({
         value={parseNumber(coordsType === 'celestial' ? auxTarget?.ra?.degrees : auxTarget?.az?.degrees) ?? null}
         suffix="°"
         onValueChange={(e) => {
-          let stringC1 = '';
           if (coordsType === 'celestial') {
-            stringC1 = deg2hms(e.target.value ?? 0);
-            setAuxTarget((prev) => ({
+            setSidereal((prev) => ({
               ...prev!,
               ra: {
                 ...prev!.ra!,
-                degrees: e.target.value!,
-                hms: stringC1,
+                ...tryToRightAscension(e.target.value ?? 0),
               },
             }));
           } else {
-            stringC1 = deg2dms(e.target.value ?? 0);
-            setAuxTarget((prev) => ({
+            setSidereal((prev) => ({
               ...prev!,
               az: {
                 ...prev!.az!,
-                degrees: e.target.value!,
-                dms: stringC1,
+                ...tryToAngle(e.target.value ?? 0),
               },
             }));
-          }
-        }}
-        onBlur={() => {
-          if (coordsType === 'celestial') {
-            setc1String(auxTarget?.ra?.hms ?? undefined);
-          } else {
-            setc1String(auxTarget?.az?.dms ?? undefined);
           }
         }}
       />
       <label htmlFor="raAzDegrees" style={{ gridArea: 'f11' }} className="label">
         degrees
       </label>
-      <InputText
+      <AngleTextInput
         id="raAzHmsDms"
         disabled={disabled || loading}
         style={{ gridArea: 'c12' }}
         value={c1String}
-        onChange={(e) => {
+        onCommit={(text) => {
           if (coordsType === 'celestial') {
-            setAuxTarget((prev) => ({
+            setSidereal((prev) => ({
               ...prev!,
-              ra: { ...prev!.ra!, degrees: hms2deg(e.target.value), hms: e.target.value },
+              ra: { ...prev!.ra!, ...tryToRightAscension(text) },
             }));
           } else {
-            setAuxTarget((prev) => ({
+            setSidereal((prev) => ({
               ...prev!,
-              az: { ...prev!.az!, degrees: dms2deg(e.target.value), dms: e.target.value },
+              az: { ...prev!.az!, ...tryToAngle(text) },
             }));
           }
-          setc1String(e.target.value);
         }}
       />
       <label htmlFor="raAzHmsDms" style={{ gridArea: 'f12' }} className="label">
@@ -261,64 +222,51 @@ function SiderealInput({
         value={parseNumber(coordsType === 'celestial' ? auxTarget?.dec?.degrees : auxTarget?.el?.degrees) ?? null}
         suffix="°"
         onValueChange={(e) => {
-          const stringC2 = deg2dms(e.target.value ?? 0);
           if (coordsType === 'celestial') {
-            setAuxTarget((prev) => ({
+            setSidereal((prev) => ({
               ...prev!,
               dec: {
                 ...prev!.dec!,
-                degrees: e.target.value!,
-                dms: stringC2,
+                ...tryToDeclination(e.target.value ?? 0),
               },
             }));
           } else {
-            setAuxTarget((prev) => ({
+            setSidereal((prev) => ({
               ...prev!,
               el: {
                 ...prev!.el!,
-                degrees: e.target.value!,
-                dms: stringC2,
+                ...tryToAngle(e.target.value ?? 0),
               },
             }));
-          }
-        }}
-        onBlur={() => {
-          if (coordsType === 'celestial') {
-            setc2String(auxTarget?.dec?.dms ?? undefined);
-          } else {
-            setc2String(auxTarget?.el?.dms ?? undefined);
           }
         }}
       />
       <label htmlFor="decElDegrees" style={{ gridArea: 'f21' }} className="label">
         degrees
       </label>
-      <InputText
+      <AngleTextInput
         id="decElDms"
         disabled={disabled || loading}
         style={{ gridArea: 'c22' }}
         value={c2String}
-        onChange={(e) => {
+        onCommit={(text) => {
           if (coordsType === 'celestial') {
-            setAuxTarget((prev) => ({
+            setSidereal((prev) => ({
               ...prev!,
               dec: {
                 ...prev!.dec!,
-                degrees: dms2deg(e.target.value),
-                dms: e.target.value,
+                ...tryToDeclination(text),
               },
             }));
           } else {
-            setAuxTarget((prev) => ({
+            setSidereal((prev) => ({
               ...prev!,
               el: {
                 ...prev!.el!,
-                degrees: dms2deg(e.target.value),
-                dms: e.target.value,
+                ...tryToAngle(text),
               },
             }));
           }
-          setc2String(e.target.value);
         }}
       />
       <label htmlFor="decElDms" style={{ gridArea: 'f22' }} className="label">
@@ -332,9 +280,53 @@ function SiderealInput({
         disabled={disabled || loading}
         style={{ gridArea: 's4' }}
         value={(type === 'FIXED' ? '' : auxTarget?.epoch) ?? ''}
-        onChange={(e) => setAuxTarget((prev) => ({ ...prev!, epoch: e.target.value }))}
+        onChange={(e) => setSidereal((prev) => ({ ...prev!, epoch: e.target.value }))}
       />
     </>
+  );
+}
+
+/**
+ * Text input for an hms/dms angle that keeps the user's in-progress text while editing
+ */
+function AngleTextInput({
+  id,
+  value,
+  disabled,
+  style,
+  onCommit,
+}: {
+  id: string;
+  value: string | undefined;
+  disabled: boolean;
+  style: CSSProperties;
+  onCommit: (text: string) => void;
+}) {
+  const [draft, setDraft] = useState<string | undefined>(undefined);
+  const isEditing = draft !== undefined;
+
+  const commit = () => {
+    if (isEditing) {
+      onCommit(draft);
+      setDraft(undefined);
+    }
+  };
+
+  return (
+    <InputText
+      id={id}
+      disabled={disabled}
+      style={style}
+      value={isEditing ? draft : (value ?? '')}
+      onChange={(e) => setDraft(e.target.value)}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') {
+          commit();
+          e.currentTarget.blur();
+        }
+      }}
+    />
   );
 }
 
@@ -345,10 +337,13 @@ function NonsiderealInput({
   loading,
 }: {
   auxTarget: NonsiderealTarget | null;
-  setAuxTarget: Dispatch<(prevState: NonsiderealTarget | null) => NonsiderealTarget | null>;
+  setAuxTarget: Dispatch<SetStateAction<Target | null>>;
   disabled: boolean;
   loading: boolean;
 }) {
+  const setNonsidereal = (setState: (prev: NonsiderealTarget | null) => NonsiderealTarget | null) =>
+    setAuxTarget((prev) => ({ ...prev!, nonsidereal: setState(prev?.nonsidereal ?? null) }));
+
   const keyTypeOptions: EphemerisKeyType[] = ['ASTEROID_NEW', 'ASTEROID_OLD', 'COMET', 'MAJOR_BODY', 'USER_SUPPLIED'];
 
   return (
@@ -361,7 +356,7 @@ function NonsiderealInput({
         disabled={disabled || loading}
         style={{ gridArea: 's6' }}
         value={auxTarget?.des ?? ''}
-        onChange={(e) => setAuxTarget((prev) => ({ ...prev!, des: e.target.value }))}
+        onChange={(e) => setNonsidereal((prev) => ({ ...prev!, des: e.target.value }))}
       />
 
       <label htmlFor="nonsiderealKeyType" style={{ gridArea: 's7' }} className="label">
@@ -373,9 +368,31 @@ function NonsiderealInput({
         style={{ gridArea: 's8' }}
         value={auxTarget?.keyType ?? null}
         options={keyTypeOptions}
-        onChange={(e) => setAuxTarget((prev) => ({ ...prev!, keyType: e.value as EphemerisKeyType }))}
+        onChange={(e) => setNonsidereal((prev) => ({ ...prev!, keyType: e.value as EphemerisKeyType }))}
         placeholder="Select key type"
       />
     </>
   );
 }
+
+function makeTryToConverter<T>(
+  parseColon: (value: string) => number,
+  convert: (degrees: number) => T,
+): (value: string | number) => T | undefined {
+  return (value) => {
+    try {
+      const num = typeof value === 'string' && value.includes(':') ? parseColon(value) : parseNumber(value);
+      if (!isNullish(num) && !isNaN(num)) {
+        return convert(num);
+      } else {
+        return undefined;
+      }
+    } catch {
+      return undefined;
+    }
+  };
+}
+
+const tryToAngle = makeTryToConverter(dms2deg, toAngle);
+const tryToDeclination = makeTryToConverter(dms2deg, toDeclination);
+const tryToRightAscension = makeTryToConverter(hms2deg, toRightAscension);
