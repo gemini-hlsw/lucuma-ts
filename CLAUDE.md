@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 `lucuma-ts` (`@gemini-hlsw/lucuma-ts`) is a pnpm monorepo (`pnpm`, Node + corepack) of TypeScript apps and libs supporting GPP. Individual package names mix `navigate-*`, `lucuma-*`, and `resource-*` prefixes — don't assume a package's name from its folder.
 
+TypeScript runs **directly under Node** (native type stripping) in dev and tests — there's no ts-node and no build step before running. `configs` dev/tests execute `.ts`/`.test.ts` files as-is (`node --watch ./src/index.ts`, `node --test 'src/**/*.test.ts'`).
+
 Packages (under `packages/*`):
 
 - **ui** (`@gemini-hlsw/navigate-ui`) — React 19 web UI to configure the telescope. PrimeReact + Tailwind v4, Jotai state, Apollo Client, react-router.

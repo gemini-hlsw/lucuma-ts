@@ -24,7 +24,8 @@ function formatDate(date: Date) {
 const frontendVersion = `${version}+${formatDate(buildTime)}.${commitHash}`;
 
 /**
- * Adds a 'version.txt' file with the current version to the build output
+ * Adds a 'version.txt' and a `version.json` file with the current version to the build output, e.g. `{ "version": "v0.1.0+..." }`.
+ * UI polls this to detect when a newer build has been deployed, navigate-server can use it to log the frontend version
  */
 const buildVersionFile = (): Plugin => ({
   name: 'build-version-file',
@@ -35,6 +36,12 @@ const buildVersionFile = (): Plugin => ({
       fileName: 'version.txt',
       name: 'version.txt',
       source: frontendVersion,
+    });
+    this.emitFile({
+      type: 'asset',
+      fileName: 'version.json',
+      name: 'version.json',
+      source: JSON.stringify({ version: frontendVersion }),
     });
   },
 });
