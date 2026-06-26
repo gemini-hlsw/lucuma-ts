@@ -5,9 +5,12 @@ import { when } from '@gemini-hlsw/lucuma-common-ui';
 import { client } from '@gql/ApolloConfigs';
 import { useServerConfiguration } from '@gql/server/ServerConfiguration';
 import { Provider as AtomProvider } from 'jotai';
+import { useHydrateAtoms } from 'jotai/utils';
 import { Message } from 'primereact/message';
-import { startTransition, useEffect, useState } from 'react';
+import { type PropsWithChildren, useEffect, useState } from 'react';
 import { createBrowserRouter, RouterProvider } from 'react-router';
+
+import type { ServerConfiguration } from '@/types';
 
 import { serverConfigAtom } from './components/atoms/config';
 import { store } from './components/atoms/store';
@@ -33,38 +36,29 @@ export function App() {
     document.body.classList.value = theme;
   }, [theme]);
 
-  const [loading, setLoading] = useState(true);
-  const { data, error, refetch } = useServerConfiguration({ client });
-
-  useEffect(() => {
-    if (data?.serverConfiguration) {
-      startTransition(() => {
-        store.set(serverConfigAtom, data.serverConfiguration);
-        setLoading(false);
-      });
-    }
-  }, [data?.serverConfiguration]);
+  const { data, error, loading, refetch } = useServerConfiguration({ client });
+  const serverConfiguration = data?.serverConfiguration;
 
   const [retryInSeconds, setRetryInSeconds] = useState<number | null>(null);
 
   // On an error, retry after 10 seconds. And show a countdown.
   useEffect(() => {
-    if (error) {
-      const startRetryInSeconds = 10;
-      startTransition(() => setRetryInSeconds(startRetryInSeconds));
-      // eslint-disable-next-line @typescript-eslint/no-misused-promises
-      const timeout = setTimeout(() => refetch(), startRetryInSeconds * 1000);
-      const interval = setInterval(
-        () => setRetryInSeconds((prev) => (prev === null || prev <= 0 ? null : prev - 1)),
-        1000,
-      );
+    if (!error) return;
 
-      return () => {
-        clearTimeout(timeout);
+    const retryAt = Date.now() + 10_000;
+    const update = () => {
+      const remaining = Math.max(0, Math.round((retryAt - Date.now()) / 1000));
+      setRetryInSeconds(remaining);
+      if (remaining <= 0) {
         clearInterval(interval);
-      };
-    }
-    return;
+        setRetryInSeconds(null);
+        void refetch();
+      }
+    };
+
+    update();
+    const interval = setInterval(update, 1000);
+    return () => clearInterval(interval);
   }, [error, refetch]);
 
   if (error) {
@@ -88,20 +82,30 @@ export function App() {
     );
   }
 
-  if (loading) {
+  if (loading || !serverConfiguration) {
     return <SolarProgress />;
   }
 
   return (
     <AtomProvider store={store}>
-      <ApolloProvider client={client}>
-        <ToastProvider>
-          <Authentication />
-          <Modals />
-          <RouterProvider router={router} />
-          <VersionManager />
-        </ToastProvider>
-      </ApolloProvider>
+      <HydrateServerConfig serverConfiguration={serverConfiguration}>
+        <ApolloProvider client={client}>
+          <ToastProvider>
+            <Authentication />
+            <Modals />
+            <RouterProvider router={router} />
+            <VersionManager />
+          </ToastProvider>
+        </ApolloProvider>
+      </HydrateServerConfig>
     </AtomProvider>
   );
+}
+
+function HydrateServerConfig({
+  serverConfiguration,
+  children,
+}: PropsWithChildren<{ serverConfiguration: ServerConfiguration }>) {
+  useHydrateAtoms([[serverConfigAtom, serverConfiguration]]);
+  return children;
 }
