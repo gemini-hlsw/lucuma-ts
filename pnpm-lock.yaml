@@ -101,10 +101,10 @@ importers:
         version: 1.101.0
       stylelint:
         specifier: 17.14.0
-        version: 17.14.0(typescript@6.0.3)
+        version: 17.14.0(supports-color@10.2.2)(typescript@6.0.3)
       stylelint-config-standard:
         specifier: 40.0.0
-        version: 40.0.0(stylelint@17.14.0(typescript@6.0.3))
+        version: 40.0.0(stylelint@17.14.0(supports-color@10.2.2)(typescript@6.0.3))
       tailwindcss:
         specifier: 4.3.1
         version: 4.3.1
@@ -204,14 +204,14 @@ importers:
         specifier: 4.2.3
         version: 4.2.3(graphql-ws@6.0.8(graphql@16.14.2)(ws@8.21.0))(graphql@16.14.2)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
       '@fortawesome/fontawesome-svg-core':
-        specifier: 7.2.0
-        version: 7.2.0
+        specifier: 7.3.0
+        version: 7.3.0
       '@fortawesome/pro-regular-svg-icons':
-        specifier: 7.2.0
-        version: 7.2.0
+        specifier: 7.3.0
+        version: 7.3.0
       '@fortawesome/react-fontawesome':
         specifier: 3.3.1
-        version: 3.3.1(@fortawesome/fontawesome-svg-core@7.2.0)(react@19.2.7)
+        version: 3.3.1(@fortawesome/fontawesome-svg-core@7.3.0)(react@19.2.7)
       '@gemini-hlsw/lucuma-common-ui':
         specifier: workspace:*
         version: link:../common-ui
@@ -268,14 +268,14 @@ importers:
         specifier: 4.2.3
         version: 4.2.3(graphql-ws@6.0.8(graphql@16.14.2)(ws@8.21.0))(graphql@16.14.2)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rxjs@7.8.2)
       '@fortawesome/fontawesome-svg-core':
-        specifier: 7.2.0
-        version: 7.2.0
+        specifier: 7.3.0
+        version: 7.3.0
       '@fortawesome/pro-regular-svg-icons':
-        specifier: 7.2.0
-        version: 7.2.0
+        specifier: 7.3.0
+        version: 7.3.0
       '@fortawesome/react-fontawesome':
         specifier: 3.3.1
-        version: 3.3.1(@fortawesome/fontawesome-svg-core@7.2.0)(react@19.2.7)
+        version: 3.3.1(@fortawesome/fontawesome-svg-core@7.3.0)(react@19.2.7)
       '@gemini-hlsw/lucuma-common-ui':
         specifier: workspace:*
         version: link:../common-ui
@@ -584,16 +584,16 @@ packages:
   '@fastify/busboy@3.2.0':
     resolution: {integrity: sha512-m9FVDXU3GT2ITSe0UaMA5rU3QkfC/UXtCU8y0gSN/GugTqtVldOBWIB5V6V3sbmenVZUIpU6f+mPEO2+m5iTaA==}
 
-  '@fortawesome/fontawesome-common-types@7.2.0':
-    resolution: {integrity: sha512-IpR0bER9FY25p+e7BmFH25MZKEwFHTfRAfhOyJubgiDnoJNsSvJ7nigLraHtp4VOG/cy8D7uiV0dLkHOne5Fhw==}
+  '@fortawesome/fontawesome-common-types@7.3.0':
+    resolution: {integrity: sha512-X/vND0Y1l9fVJ9O79UgtZnXSpz4aNF3bXlDxiJAEAm6kgeSftp9wjjBPgqzazJV8YlmxfRoeXNfSCJ48sf/Hhw==}
     engines: {node: '>=6'}
 
-  '@fortawesome/fontawesome-svg-core@7.2.0':
-    resolution: {integrity: sha512-6639htZMjEkwskf3J+e6/iar+4cTNM9qhoWuRfj9F3eJD6r7iCzV1SWnQr2Mdv0QT0suuqU8BoJCZUyCtP9R4Q==}
+  '@fortawesome/fontawesome-svg-core@7.3.0':
+    resolution: {integrity: sha512-MFbTNLDWkLJwbozDvHOZ7hwyDjQcBMBattlcOQ6ZmV5YD9bBrqdl1rNtmVjQ/lzqveXXX3sMz2Ew6fAgXoxmkw==}
     engines: {node: '>=6'}
 
-  '@fortawesome/pro-regular-svg-icons@7.2.0':
-    resolution: {integrity: sha512-FU6amNj6Dbsb2m19T8ABiL8HoImIGm8AhxnPAgQDDZcslGezu6R7HrDicBPJuVTNFSxFGRRAXIRs/z44xg7ftA==}
+  '@fortawesome/pro-regular-svg-icons@7.3.0':
+    resolution: {integrity: sha512-yXDwyqPNISZSmbN9HTL7rZD3G4FCzaXb4OPI119zhe4qqp6SNsN3Xj0rZT/pNUWKCDM9wqvAZvZiVlgKDoqxNQ==}
     engines: {node: '>=6'}
 
   '@fortawesome/react-fontawesome@3.3.1':
@@ -5149,19 +5149,19 @@ snapshots:
 
   '@fastify/busboy@3.2.0': {}
 
-  '@fortawesome/fontawesome-common-types@7.2.0': {}
+  '@fortawesome/fontawesome-common-types@7.3.0': {}
 
-  '@fortawesome/fontawesome-svg-core@7.2.0':
+  '@fortawesome/fontawesome-svg-core@7.3.0':
     dependencies:
-      '@fortawesome/fontawesome-common-types': 7.2.0
+      '@fortawesome/fontawesome-common-types': 7.3.0
 
-  '@fortawesome/pro-regular-svg-icons@7.2.0':
+  '@fortawesome/pro-regular-svg-icons@7.3.0':
     dependencies:
-      '@fortawesome/fontawesome-common-types': 7.2.0
+      '@fortawesome/fontawesome-common-types': 7.3.0
 
-  '@fortawesome/react-fontawesome@3.3.1(@fortawesome/fontawesome-svg-core@7.2.0)(react@19.2.7)':
+  '@fortawesome/react-fontawesome@3.3.1(@fortawesome/fontawesome-svg-core@7.3.0)(react@19.2.7)':
     dependencies:
-      '@fortawesome/fontawesome-svg-core': 7.2.0
+      '@fortawesome/fontawesome-svg-core': 7.3.0
       react: 19.2.7
 
   '@gemini-hlsw/lucuma-core@0.213.1': {}
@@ -9123,16 +9123,16 @@ snapshots:
 
   strip-json-comments@3.1.1: {}
 
-  stylelint-config-recommended@18.0.0(stylelint@17.14.0(typescript@6.0.3)):
+  stylelint-config-recommended@18.0.0(stylelint@17.14.0(supports-color@10.2.2)(typescript@6.0.3)):
     dependencies:
-      stylelint: 17.14.0(typescript@6.0.3)
+      stylelint: 17.14.0(supports-color@10.2.2)(typescript@6.0.3)
 
-  stylelint-config-standard@40.0.0(stylelint@17.14.0(typescript@6.0.3)):
+  stylelint-config-standard@40.0.0(stylelint@17.14.0(supports-color@10.2.2)(typescript@6.0.3)):
     dependencies:
-      stylelint: 17.14.0(typescript@6.0.3)
-      stylelint-config-recommended: 18.0.0(stylelint@17.14.0(typescript@6.0.3))
+      stylelint: 17.14.0(supports-color@10.2.2)(typescript@6.0.3)
+      stylelint-config-recommended: 18.0.0(stylelint@17.14.0(supports-color@10.2.2)(typescript@6.0.3))
 
-  stylelint@17.14.0(typescript@6.0.3):
+  stylelint@17.14.0(supports-color@10.2.2)(typescript@6.0.3):
     dependencies:
       '@csstools/css-calc': 3.2.1(@csstools/css-parser-algorithms@4.0.0(@csstools/css-tokenizer@4.0.0))(@csstools/css-tokenizer@4.0.0)
       '@csstools/css-parser-algorithms': 4.0.0(@csstools/css-tokenizer@4.0.0)
