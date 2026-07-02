@@ -93,15 +93,8 @@ export const BigDecimalResolver = new GraphQLScalarType<unknown, number>({
 });
 
 const graphQlParserResolver = (name: string, parser: (maybe: string) => string | undefined) =>
-  new GraphQLScalarType<unknown, string>({
+  new GraphQLScalarType<string, string>({
     name,
-    serialize(value) {
-      if (typeof value === 'string') {
-        const parsed = parser(value);
-        if (parsed !== undefined) return parsed;
-      }
-      throw new Error(`Value is not a valid ${name}: ${String(value)}`);
-    },
     parseValue(value) {
       if (typeof value === 'string') {
         const parsed = parser(value);
