@@ -53,7 +53,7 @@ pnpm e2e test:e2e            # playwright test
 
 Run a single test:
 
-- UI/resource-ui (vitest): `pnpm ui test <path-or-name>` or `pnpm ui exec vitest run -t "<test name>"`.
+- UI/resource-ui (vitest): `pnpm ui test <path-or-name>` or `pnpm ui exec vitest run -t "<test name>" --brower.headless`. Prefer to use `--browser.headless` when running tests.
 - configs (node:test): `pnpm configs exec node --test --enable-source-maps src/integration/<file>.test.ts` (Docker must be running for the Postgres testcontainer).
 
 ## Architecture
@@ -80,7 +80,15 @@ App state lives in Jotai atoms under `packages/ui/src/components/atoms/` (auth t
 
 ### UI tests run in a real browser
 
-Vitest is configured with the Playwright browser provider (`packages/ui/vite.config.ts`) — tests execute in chromium, not jsdom. Shared setup comes from `@gemini-hlsw/lucuma-common-ui/test/setup.ts`. Use `vitest-browser-react` for rendering.
+Vitest is configured with the Playwright browser provider (`packages/ui/vite.config.ts`) — tests execute in chromium, not jsdom. Shared setup comes from `@gemini-hlsw/lucuma-common-ui/test/setup.ts`. Use `vitest-browser-react` for rendering. When running, prefer to add `--browser.headless` to Vitest. Also use `vitest run` or `vitest --no-watch` to make sure the process ends after a single test run.
+
+When writing Vitest tests:
+
+- **Test behavior, not implementation.** If the internals changed but the output stayed correct, the test shouldn't break. Render real components and drive them through real interactions (`userEvent`, or dispatch real `MouseEvent`/`TouchEvent`) rather than `renderHook` + calling returned handlers with hand-built fake event objects (`{ ... } as unknown as React.MouseEvent` is over-mocking). Assert on observable outcomes (rendered DOM, spy calls), not private state.
+- **Never `sleep` to wait for state** — it's flaky and slow. Wait on the real thing: `await expect.element(locator).toBeVisible()/.toHaveTextContent(...)` or `expect.poll(() => ...)` (these retry on real timers — don't mix them with fake timers). To surface an async React commit for a test to await, reflect it in the DOM and wait on that.
+- **Fake timers only for negative-timing assertions** (e.g. "this timer must _never_ fire"). Scope them to what's needed — `vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })` keeps React's scheduler real — advance with `vi.advanceTimersByTime(...)`, and restore with `vi.useRealTimers()` in `afterEach`.
+- **Render helpers:** `render(...)` returns locators + `container` but **no `act`**; `renderHook(...)` returns `{ result, act, unmount }`. Use `sut.act(() => vi.advanceTimersByTime(...))` to flush timer-driven state updates when testing a hook directly.
+- Use `vi.fn()`/`vi.mock()` (never the `jest` equivalents), recreate spies per test in `beforeEach`, and prefer real dependencies over mocks.
 
 ### configs backend
 

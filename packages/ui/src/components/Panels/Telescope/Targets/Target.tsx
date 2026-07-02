@@ -37,7 +37,10 @@ export function Target({
 
   function targetClicked(e: React.MouseEvent | React.TouchEvent) {
     if (!canEdit || disabled) return;
-    switch (e.detail) {
+    // Touch events don't populate `detail` (it's a mouse click-count), so a tap
+    // reports 0. Treat a tap as a single click/select; long-press handles edit.
+    const clickCount = e.type === 'touchend' ? 1 : e.detail;
+    switch (clickCount) {
       case 1:
         if (selectedTarget === target.pk) return;
         clickRef.current = setTimeout(() => {
