@@ -4,13 +4,13 @@ import { atomWithStorage, createJSONStorage } from 'jotai/utils';
 import type { User } from '@/auth/user';
 
 const lucumaRefreshTokenKey = 'lucuma-refresh-token';
-const initialStoredLucumaRefreshToken = sessionStorage.getItem(lucumaRefreshTokenKey);
 
 // Atom backed by sessionStorage, default value is retrieved from sessionStorage
-export const odbTokenAtom = atomWithStorage(
+export const odbTokenAtom = atomWithStorage<string | null>(
   lucumaRefreshTokenKey,
-  initialStoredLucumaRefreshToken ? (JSON.parse(initialStoredLucumaRefreshToken) as string) : null,
+  null,
   createJSONStorage(() => window.sessionStorage),
+  { getOnInit: true },
 );
 
 export const useOdbToken = () => useAtom(odbTokenAtom);

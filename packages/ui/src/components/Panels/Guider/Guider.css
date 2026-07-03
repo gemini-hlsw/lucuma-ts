@@ -155,7 +155,7 @@
 
       > .body {
         display: flex;
-        flex-wrap: wrap;
+        flex-direction: row;
         grid-template-columns: repeat(3, 1fr);
         gap: 4px;
         padding: 4px;

@@ -1,5 +1,6 @@
 import { dateToLocalObservingNight } from '@gemini-hlsw/lucuma-core';
 import { useObservationsByState } from '@gql/odb/Observation';
+import { useServerConfigValue } from '@gql/server/ServerConfiguration';
 import { useAtom } from 'jotai';
 import { atomWithStorage } from 'jotai/utils';
 import { FilterMatchMode } from 'primereact/api';
@@ -12,7 +13,6 @@ import { InputText } from 'primereact/inputtext';
 import { MultiSelect } from 'primereact/multiselect';
 import { useState } from 'react';
 
-import { useServerConfigValue } from '@/components/atoms/config';
 import { Search } from '@/components/Icons';
 import type { OdbObservation } from '@/types';
 

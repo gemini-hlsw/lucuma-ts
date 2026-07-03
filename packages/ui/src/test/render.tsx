@@ -3,6 +3,7 @@ import type { MockLink } from '@apollo/client/testing';
 import { MockedProvider } from '@apollo/client/testing/react';
 import { makeCache } from '@gql/ApolloConfigs';
 import { GET_SLEW_FLAGS } from '@gql/configs/SlewFlags';
+import { SERVER_CONFIGURATION } from '@gql/server/ServerConfiguration';
 import type { MockedResponseOf } from '@gql/util';
 import type { WritableAtom } from 'jotai';
 import { createStore, Provider } from 'jotai';
@@ -12,13 +13,15 @@ import type { ComponentRenderOptions } from 'vitest-browser-react';
 import { render } from 'vitest-browser-react';
 
 import { odbTokenAtom } from '@/components/atoms/auth';
-import { serverConfigAtom } from '@/components/atoms/config';
 import { longExpirationJwt } from '@/test/helpers';
 import type { ServerConfiguration } from '@/types';
+
+import { createServerConfiguration, type OverridePartial } from './create';
 
 interface CreateOptions<T> {
   mocks?: MockLink.MockedResponse[];
   initialValues?: InferAtomTuples<T>;
+  serverConfig?: OverridePartial<ServerConfiguration>;
 }
 
 function HydrateAtoms<T extends AtomTuples>({
@@ -43,16 +46,22 @@ export async function renderWithContext<T extends AtomTuples>(
 
   // Add the default atom values to the initial value, if they are not already present
   const initialValues = [
-    ...addIfNotPresent(createOptions.initialValues, [serverConfigAtom, serverConfig]),
     ...addIfNotPresent(createOptions.initialValues, [odbTokenAtom, longExpirationJwt]),
     ...(createOptions.initialValues ?? []),
   ];
+
+  // Pre-populate the cache with the server configuration
+  const cache = makeCache();
+  cache.writeQuery({
+    query: SERVER_CONFIGURATION,
+    data: { serverConfiguration: createServerConfiguration(createOptions.serverConfig) },
+  });
 
   const renderResult = await render(
     <Provider store={store}>
       <HydrateAtoms initialValues={initialValues}>
         <MockedProvider
-          cache={makeCache()}
+          cache={cache}
           mocks={[...mocks, ...(createOptions.mocks ?? [])]?.map((m) => ({
             ...m,
             maxUsageCount: m.maxUsageCount ?? Infinity,
@@ -78,14 +87,6 @@ function addIfNotPresent(tuples: AtomTuples | undefined, atom: AtomTuples[number
   if (tuples?.find(([a]) => a === atom[0])) return [];
   else return [atom];
 }
-
-export const serverConfig: ServerConfiguration = {
-  version: '20251204-19269419',
-  site: 'GN',
-  odbUri: 'https://lucuma-postgres-odb-dev.herokuapp.com/odb',
-  ssoUri: 'https://sso-dev.gpp.lucuma.xyz',
-  __typename: 'ServerConfiguration',
-};
 
 const mocks: MockLink.MockedResponse[] = [
   {

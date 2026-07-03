@@ -12,11 +12,11 @@ import { SetContextLink } from '@apollo/client/link/context';
 import { ErrorLink } from '@apollo/client/link/error';
 import { GraphQLWsLink } from '@apollo/client/link/subscriptions';
 import { withAbsoluteUri } from '@gemini-hlsw/lucuma-common-ui';
+import { SERVER_CONFIGURATION } from '@gql/server/ServerConfiguration';
 import { OperationTypeNode } from 'graphql/language';
 import { createClient as createWsClient } from 'graphql-ws';
 
 import { odbTokenAtom } from '@/components/atoms/auth';
-import { serverConfigAtom } from '@/components/atoms/config';
 import { wsIsConnectedAtom } from '@/components/atoms/connection';
 import { store } from '@/components/atoms/store';
 import { toastAtom } from '@/Helpers/toast';
@@ -55,6 +55,8 @@ const errorLink = new ErrorLink(({ error, result, operation }) => {
 });
 
 function createClient() {
+  const cache = makeCache();
+
   const navigateCommandServer = new HttpLink({ uri: navigateServerURI });
 
   const navigateConfigs = new HttpLink({ uri: navigateConfigsURI });
@@ -75,7 +77,9 @@ function createClient() {
     };
   });
 
-  const odbLink = new HttpLink({ uri: () => store.get(serverConfigAtom)?.odbUri });
+  const odbLink = new HttpLink({
+    uri: () => cache.readQuery({ query: SERVER_CONFIGURATION })?.serverConfiguration?.odbUri ?? '',
+  });
 
   const subscriptionClient = createWsClient({
     url: navigateServerWsURI,
@@ -120,7 +124,7 @@ function createClient() {
         ),
       ),
     ]),
-    cache: makeCache(),
+    cache,
   });
 }
 

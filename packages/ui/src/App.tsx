@@ -5,14 +5,10 @@ import { when } from '@gemini-hlsw/lucuma-common-ui';
 import { client } from '@gql/ApolloConfigs';
 import { useServerConfiguration } from '@gql/server/ServerConfiguration';
 import { Provider as AtomProvider } from 'jotai';
-import { useHydrateAtoms } from 'jotai/utils';
 import { Message } from 'primereact/message';
-import { type PropsWithChildren, useEffect, useState } from 'react';
+import { type PropsWithChildren, Suspense, useEffect, useState } from 'react';
 import { createBrowserRouter, RouterProvider } from 'react-router';
 
-import type { ServerConfiguration } from '@/types';
-
-import { serverConfigAtom } from './components/atoms/config';
 import { store } from './components/atoms/store';
 import { useThemeValue } from './components/atoms/theme';
 import Home from './components/Layout/Home/Home';
@@ -23,8 +19,8 @@ import { VersionManager } from './components/VersionManager/VersionManager';
 import { ToastProvider } from './Helpers/ToastProvider';
 
 const router = createBrowserRouter([
-  { path: '/', element: <Layout />, children: [{ index: true, element: <Home /> }] },
-  { path: '/login', element: <Login /> },
+  { path: '/', Component: Layout, children: [{ index: true, Component: Home }] },
+  { path: '/login', Component: Login },
 ]);
 
 const formatTime = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
@@ -36,8 +32,26 @@ export function App() {
     document.body.classList.value = theme;
   }, [theme]);
 
-  const { data, error, loading, refetch } = useServerConfiguration({ client });
-  const serverConfiguration = data?.serverConfiguration;
+  return (
+    <AtomProvider store={store}>
+      <ApolloProvider client={client}>
+        <ToastProvider>
+          <Suspense fallback={<SolarProgress />}>
+            <ServerConfigGate>
+              <Authentication />
+              <Modals />
+              <RouterProvider router={router} useTransitions />
+              <VersionManager />
+            </ServerConfigGate>
+          </Suspense>
+        </ToastProvider>
+      </ApolloProvider>
+    </AtomProvider>
+  );
+}
+
+function ServerConfigGate({ children }: PropsWithChildren) {
+  const { data, error, refetch } = useServerConfiguration();
 
   const [retryInSeconds, setRetryInSeconds] = useState<number | null>(null);
 
@@ -61,7 +75,7 @@ export function App() {
     return () => clearInterval(interval);
   }, [error, refetch]);
 
-  if (error) {
+  if (error || !data) {
     return (
       <div className="error-container">
         <Message
@@ -70,7 +84,7 @@ export function App() {
               <p>
                 <b>Could not load server configuration.</b>
               </p>
-              <p>{error.message}</p>
+              <p>{error?.message}</p>
               {when(retryInSeconds, (retryInSeconds) => (
                 <p>Retrying {formatTime.format(retryInSeconds, 'second')}...</p>
               ))}
@@ -82,30 +96,5 @@ export function App() {
     );
   }
 
-  if (loading || !serverConfiguration) {
-    return <SolarProgress />;
-  }
-
-  return (
-    <AtomProvider store={store}>
-      <HydrateServerConfig serverConfiguration={serverConfiguration}>
-        <ApolloProvider client={client}>
-          <ToastProvider>
-            <Authentication />
-            <Modals />
-            <RouterProvider router={router} />
-            <VersionManager />
-          </ToastProvider>
-        </ApolloProvider>
-      </HydrateServerConfig>
-    </AtomProvider>
-  );
-}
-
-function HydrateServerConfig({
-  serverConfiguration,
-  children,
-}: PropsWithChildren<{ serverConfiguration: ServerConfiguration }>) {
-  useHydrateAtoms([[serverConfigAtom, serverConfiguration]]);
   return children;
 }

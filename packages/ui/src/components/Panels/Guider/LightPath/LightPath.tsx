@@ -10,12 +10,12 @@ import type {
   Site,
 } from '@gql/server/gen/graphql';
 import { useLightpathConfig } from '@gql/server/Lightpath';
+import { useServerConfigValue } from '@gql/server/ServerConfiguration';
 import { Title } from '@Shared/Title/Title';
 import { createLightSinkVariant } from '@Telescope/Targets/inputs';
 import { Button } from 'primereact/button';
 
 import { useCanEdit } from '@/components/atoms/auth';
-import { useServerConfigValue } from '@/components/atoms/config';
 import { Check } from '@/components/Icons';
 import type { Fpu, GuideLoop } from '@/types';
 

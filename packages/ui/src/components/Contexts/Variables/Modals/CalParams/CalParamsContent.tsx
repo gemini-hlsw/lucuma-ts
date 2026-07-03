@@ -1,6 +1,7 @@
 import { cn, isNotNullish, when } from '@gemini-hlsw/lucuma-common-ui';
 import { useCalParams, useCalParamsHistory, useCreateCalParams } from '@gql/configs/CalParams';
 import type { CalParamsCreateInput } from '@gql/configs/gen/graphql';
+import { useServerConfigValue } from '@gql/server/ServerConfiguration';
 import { CommentConfirmButton } from '@Shared/CommentConfirmButton';
 import { Button } from 'primereact/button';
 import { InputNumber, type InputNumberProps } from 'primereact/inputnumber';
@@ -9,7 +10,6 @@ import { startTransition, useEffect, useId, useState } from 'react';
 
 import { useCanEdit } from '@/components/atoms/auth';
 import { useSetCalParamsHistoryVisible } from '@/components/atoms/calparams';
-import { useServerConfigValue } from '@/components/atoms/config';
 import { ClockRotateLeft, FloppyDisk, TriangleExclamation } from '@/components/Icons';
 
 /**

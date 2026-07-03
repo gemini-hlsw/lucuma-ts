@@ -1,8 +1,8 @@
+import { useServerConfigValue } from '@gql/server/ServerConfiguration';
 import { useCallback, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 
 import { useSetOdbToken } from '@/components/atoms/auth';
-import { useServerConfigValue } from '@/components/atoms/config';
 import { useToast } from '@/Helpers/toast';
 
 import type { StandardRole } from './user';

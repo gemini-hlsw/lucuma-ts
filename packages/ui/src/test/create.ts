@@ -16,6 +16,7 @@ import type {
   PwfsMechs,
   RightAscension,
   Rotator,
+  ServerConfiguration,
   SiderealTarget,
   Target,
   WfsConfigState,
@@ -24,7 +25,7 @@ import type {
 // Create helpers for GraphQL types
 type FocalPlaneAngle = FocalPlaneOffset['deltaX'];
 
-type OverridePartial<T extends { __typename: string }> = Omit<Partial<T>, '__typename'>;
+export type OverridePartial<T extends { __typename: string }> = Omit<Partial<T>, '__typename'>;
 
 export function createPwfsMechState(overrides?: OverridePartial<PwfsMechs>): PwfsMechs {
   return {
@@ -277,6 +278,16 @@ export function createWfsConfigState(overrides?: OverridePartial<WfsConfigState>
   return {
     __typename: 'WfsConfigState',
     saving: false,
+    ...overrides,
+  };
+}
+
+export function createServerConfiguration(overrides?: OverridePartial<ServerConfiguration>): ServerConfiguration {
+  return {
+    __typename: 'ServerConfiguration',
+    site: 'GN',
+    odbUri: 'https://lucuma-postgres-odb-dev.herokuapp.com/odb',
+    ssoUri: 'https://sso-dev.gpp.lucuma.xyz',
     ...overrides,
   };
 }
