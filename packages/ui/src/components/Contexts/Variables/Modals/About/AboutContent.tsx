@@ -1,7 +1,7 @@
 import { useSuspenseVersion as useConfigsVersion } from '@gql/configs/Version';
+import { useServerConfigValue } from '@gql/server/ServerConfiguration';
 import { useSuspenseVersion as useServerVersion } from '@gql/server/Version';
 
-import { useServerConfigValue } from '@/components/atoms/config';
 import { frontendVersion } from '@/Helpers/constants';
 
 export function AboutContent() {

@@ -8,6 +8,7 @@ import {
   useInstruments,
 } from '@gql/configs/Instrument';
 import type { Instrument as InstrumentName } from '@gql/odb/gen/graphql';
+import { useServerConfigValue } from '@gql/server/ServerConfiguration';
 import { FilterMatchMode, FilterService } from 'primereact/api';
 import { Button } from 'primereact/button';
 import { Column } from 'primereact/column';
@@ -18,7 +19,6 @@ import { useMountEffect } from 'primereact/hooks';
 import { MultiSelect } from 'primereact/multiselect';
 import { useRef, useState } from 'react';
 
-import { useServerConfigValue } from '@/components/atoms/config';
 import { CircleCheck, CircleXMark, Trash } from '@/components/Icons';
 import type { InstrumentConfig } from '@/types';
 

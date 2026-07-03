@@ -13,6 +13,7 @@ import {
   useSetPwfs1CircularBuffer,
   useSetPwfs2CircularBuffer,
 } from '@gql/server/NavigateState';
+import { useServerConfigValue } from '@gql/server/ServerConfiguration';
 import {
   type ObserveResult,
   type StopObserveResult,
@@ -29,7 +30,6 @@ import { Checkbox } from 'primereact/checkbox';
 import { Dropdown } from 'primereact/dropdown';
 import { useId, useMemo, useState } from 'react';
 
-import { useServerConfigValue } from '@/components/atoms/config';
 import { Play, Stop } from '@/components/Icons';
 import { instrumentToOiwfs } from '@/Helpers/functions';
 

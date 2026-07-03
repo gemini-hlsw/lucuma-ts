@@ -1,18 +1,16 @@
-import { useQuery } from '@apollo/client/react';
-import type { OptionsOf } from '@gql/util';
+import { useSuspenseQuery } from '@apollo/client/react';
 
 import { graphql } from './gen';
 
 export const SERVER_CONFIGURATION_FRAGMENT = graphql(`
   fragment ServerConfigurationItem on ServerConfiguration {
-    version
     site
     odbUri
     ssoUri
   }
 `);
 
-const SERVER_CONFIGURATION = graphql(`
+export const SERVER_CONFIGURATION = graphql(`
   query serverConfiguration {
     serverConfiguration {
       ...ServerConfigurationItem
@@ -20,6 +18,10 @@ const SERVER_CONFIGURATION = graphql(`
   }
 `);
 
-export function useServerConfiguration(options: OptionsOf<typeof SERVER_CONFIGURATION> = {}) {
-  return useQuery(SERVER_CONFIGURATION, options);
+export function useServerConfiguration() {
+  return useSuspenseQuery(SERVER_CONFIGURATION, { errorPolicy: 'all' });
+}
+
+export function useServerConfigValue() {
+  return useSuspenseQuery(SERVER_CONFIGURATION).data.serverConfiguration;
 }

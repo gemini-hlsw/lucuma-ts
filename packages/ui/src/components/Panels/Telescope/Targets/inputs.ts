@@ -20,8 +20,8 @@ import type {
   TargetPropertiesInput,
   TcsConfigInput,
 } from '@gql/server/gen/graphql';
+import { useServerConfigValue } from '@gql/server/ServerConfiguration';
 
-import { useServerConfigValue } from '@/components/atoms/config';
 import type {
   CalParams,
   Configuration,

@@ -2,9 +2,8 @@ import { GET_CONFIGURATION } from '@gql/configs/Configuration';
 import { GET_GUIDE_LOOP, UPDATE_GUIDE_LOOP } from '@gql/configs/GuideLoop';
 import type { MockedResponseOf } from '@gql/util';
 
-import { serverConfigAtom } from '@/components/atoms/config';
 import { createConfiguration, createGuideLoop } from '@/test/create';
-import { renderWithContext, serverConfig } from '@/test/render';
+import { renderWithContext } from '@/test/render';
 import type { GuideLoop } from '@/types';
 
 import { Configuration } from './Configuration';
@@ -27,7 +26,7 @@ describe(Configuration.name, () => {
     ] as const)('source=%s site=%s -> disabled=%s', async (source, site, shouldBeDisabled) => {
       const sut = await renderWithContext(<Configuration />, {
         mocks: [guideLoopMock(source), configurationMock],
-        initialValues: [[serverConfigAtom, { ...serverConfig, site }]],
+        serverConfig: { site },
       });
 
       const checkbox = sut.getByRole('checkbox', { name: 'M2 Coma' });

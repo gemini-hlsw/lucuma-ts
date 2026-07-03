@@ -4,6 +4,7 @@ import type { UpdateGuideLoopMutationVariables } from '@gql/configs/gen/graphql'
 import { useGetGuideLoop, useUpdateGuideLoop } from '@gql/configs/GuideLoop';
 import type { GuideConfigurationInput, GuideProbe, M1CorrectionSource, TipTiltSource } from '@gql/server/gen/graphql';
 import { useGuideDisable, useGuideEnable } from '@gql/server/GuideState';
+import { useServerConfigValue } from '@gql/server/ServerConfiguration';
 import { Button } from 'primereact/button';
 import { Checkbox } from 'primereact/checkbox';
 import { Dropdown } from 'primereact/dropdown';
@@ -12,7 +13,6 @@ import type { ReactNode } from 'react';
 import { useCallback, useEffect, useMemo } from 'react';
 
 import { useCanEdit } from '@/components/atoms/auth';
-import { useServerConfigValue } from '@/components/atoms/config';
 import { instrumentToOiwfs } from '@/Helpers/functions';
 import type { GuideLoop } from '@/types';
 

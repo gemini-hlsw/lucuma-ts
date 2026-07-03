@@ -1,8 +1,8 @@
+import { useServerConfigValue } from '@gql/server/ServerConfiguration';
 import type { ReactNode } from 'react';
 import { useState } from 'react';
 
 import { useCanEdit } from '@/components/atoms/auth';
-import { useServerConfigValue } from '@/components/atoms/config';
 import { ChevronRight } from '@/components/Icons';
 
 import { Altair, GeMS } from './AdaptiveOptics';

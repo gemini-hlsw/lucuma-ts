@@ -41,6 +41,16 @@
   }
 
   .left {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+
+    > a {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+    }
+
     > .site {
       margin-left: 20px;
       color: var(--primary-color-text);
@@ -53,6 +63,11 @@
   }
 
   .center {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+
     > .observation {
       color: var(--primary-color-text);
     }
@@ -63,6 +78,12 @@
       margin-left: 10px;
       color: var(--primary-color);
     }
+  }
+
+  .right {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
   }
 
   .main-title {

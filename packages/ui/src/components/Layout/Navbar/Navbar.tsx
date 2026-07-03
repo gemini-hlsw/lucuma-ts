@@ -2,6 +2,7 @@ import './Navbar.css';
 
 import { cn, when } from '@gemini-hlsw/lucuma-common-ui';
 import { useConfiguration } from '@gql/configs/Configuration';
+import { useServerConfigValue } from '@gql/server/ServerConfiguration';
 import { Button } from 'primereact/button';
 import type { MenuItem } from 'primereact/menuitem';
 import { SplitButton } from 'primereact/splitbutton';
@@ -13,7 +14,6 @@ import { useSetAboutVisible } from '@/components/atoms/about';
 import { useAlarmValue } from '@/components/atoms/alarm';
 import { useIsLoggedIn, useUser } from '@/components/atoms/auth';
 import { useSetCalParamsVisible } from '@/components/atoms/calparams';
-import { useServerConfigValue } from '@/components/atoms/config';
 import { useTheme } from '@/components/atoms/theme';
 import { ChevronDown, Info, Map, Moon, SignIn, SignOut, Sliders, Sun, User } from '@/components/Icons';
 
@@ -89,7 +89,7 @@ export default function Navbar() {
         {configuration?.obsTitle && <span className="observation">{configuration.obsTitle}</span>}
         {configuration?.obsReference && <span className="observation-ref">{configuration.obsReference}</span>}
       </div>
-      <div>
+      <div className="right">
         <ConnectionLost />
 
         <SplitButton
