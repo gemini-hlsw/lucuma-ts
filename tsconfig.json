@@ -14,6 +14,9 @@
       "path": "./packages/resource-ui"
     },
     {
+      "path": "./packages/admin-ui"
+    },
+    {
       "path": "./packages/common-ui"
     }
   ]

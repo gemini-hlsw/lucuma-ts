@@ -37,6 +37,7 @@ coverage/
 /packages/ui/src/gql/*/gen/
 /packages/configs/src/*/gen/
 /packages/resource-ui/src/*/gen/
+/packages/admin-ui/src/*/gen/
 
 # Playwright
 test-results/

@@ -24,6 +24,10 @@
       "path": "packages/resource-ui",
       "name": "resource-ui",
     },
+    {
+      "path": "packages/admin-ui",
+      "name": "admin-ui",
+    },
   ],
   "extensions": {
     "recommendations": [

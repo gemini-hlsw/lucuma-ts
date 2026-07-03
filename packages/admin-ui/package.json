@@ -1,0 +1,53 @@
+{
+  "name": "@gemini-hlsw/admin-ui",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "license": "BSD-3-Clause",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gemini-hlsw/navigate-ts.git",
+    "directory": "packages/admin-ui"
+  },
+  "scripts": {
+    "dev": "vite",
+    "codegen": "graphql-codegen --config tasks/codegen.ts",
+    "ci:set-admin-deploy-flag": "echo \"should_deploy=true\" >> \"$GITHUB_OUTPUT\"",
+    "prebuild": "pnpm run codegen",
+    "test": "vitest run",
+    "build": "tsc -b && vite build",
+    "lint:eslint": "eslint .",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@apollo/client": "4.2.5",
+    "@gemini-hlsw/lucuma-common-ui": "workspace:*",
+    "@gemini-hlsw/lucuma-ui-css": "0.176.0",
+    "jotai": "2.20.1",
+    "primeicons": "7.0.0",
+    "primereact": "10.9.7",
+    "react": "19.2.7",
+    "react-dom": "19.2.7",
+    "react-router": "8.1.0"
+  },
+  "devDependencies": {
+    "@gemini-hlsw/lucuma-schemas": "0.177.2-20260707-a941fcea",
+    "@graphql-codegen/client-preset": "6.0.1",
+    "@graphql-typed-document-node/core": "3.2.0",
+    "graphql": "16.14.2"
+  },
+  "bundlemon": {
+    "baseDir": "./dist",
+    "pathLabels": {
+      "hash": "[a-zA-Z0-9\\-_]+"
+    },
+    "files": [
+      {
+        "path": "assets/*-<hash>.{js,css}"
+      }
+    ],
+    "reportOutput": [
+      "github"
+    ]
+  }
+}

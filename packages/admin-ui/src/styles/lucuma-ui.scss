@@ -1,0 +1,12 @@
+@use 'sass:meta';
+
+@use '@gemini-hlsw/lucuma-ui-css/lucuma-ui-common.scss';
+@use '@gemini-hlsw/lucuma-ui-css/lucuma-ui-prime.scss';
+
+.light {
+  @include meta.load-css('@gemini-hlsw/lucuma-ui-css/light-theme');
+}
+
+.dark {
+  @include meta.load-css('@gemini-hlsw/lucuma-ui-css/dark-theme');
+}
