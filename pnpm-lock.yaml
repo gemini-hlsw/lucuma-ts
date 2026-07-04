@@ -183,8 +183,8 @@ importers:
         specifier: 0.16.0
         version: 0.16.0(graphql@16.14.2)
       '@testcontainers/postgresql':
-        specifier: 12.0.3
-        version: 12.0.3(supports-color@10.2.2)
+        specifier: 12.0.4
+        version: 12.0.4
 
   packages/e2e:
     devDependencies:
@@ -1616,8 +1616,8 @@ packages:
     peerDependencies:
       vite: ^5.2.0 || ^6 || ^7 || ^8
 
-  '@testcontainers/postgresql@12.0.3':
-    resolution: {integrity: sha512-y0l/ItWxNfdMU783EOZ66lMq90uuuXPqE+fo1jNSRfMbtfUq/9Ez/wluDxxaS+D/i3I0juep+jmz/WVuip8i9Q==}
+  '@testcontainers/postgresql@12.0.4':
+    resolution: {integrity: sha512-a/pLU6j5lpKKAlUTPwqweqMGhOSjgTSb6HBX69TOrXn32ifU37nnQDmNFTj8ddOAw+BQL9oTRkeOxVbZkqhgZA==}
 
   '@ts-morph/common@0.23.0':
     resolution: {integrity: sha512-m7Lllj9n/S6sOkCkRftpM7L24uvmfXQFedlW/4hENcuJH1HHm9u5EgxZb9uVjQSCGrbBWBkOGgcTxNg36r6ywA==}
@@ -2905,9 +2905,9 @@ packages:
   get-port-please@3.2.0:
     resolution: {integrity: sha512-I9QVvBw5U/hw3RmWpYKRumUeaDgxTPd401x364rLmWBJcOQ753eov1eTgzDqRG9bqFIfDc7gfzcQEWrUri3o1A==}
 
-  get-port@7.2.0:
-    resolution: {integrity: sha512-afP4W205ONCuMoPBqcR6PSXnzX35KTcJygfJfcp+QY+uwm3p20p1YczWXhlICIzGMCxYBQcySEcOgsJcrkyobg==}
-    engines: {node: '>=16'}
+  get-port@5.1.1:
+    resolution: {integrity: sha512-g/Q1aTSDOxFpchXC4i8ZWvxA1lnPqx/JHqcpIw0/LX9T8x/GBbi6YnlN5nhaKIFkT8oFsscUKgDJYxfwfS6QsQ==}
+    engines: {node: '>=8'}
 
   get-proto@1.0.1:
     resolution: {integrity: sha512-sTSfBjoXBp89JvIKIefqw7U2CCebsc74kiY6awiGogKtoSGbgjYE/G/+l9sF3MWFPNc9IcoOC4ODfKHfxFmp0g==}
@@ -4438,8 +4438,8 @@ packages:
   teex@1.0.1:
     resolution: {integrity: sha512-eYE6iEI62Ni1H8oIa7KlDU6uQBtqr4Eajni3wX7rpfXD8ysFx8z0+dri+KWEPWpBsxXfxu58x/0jvTVT1ekOSg==}
 
-  testcontainers@12.0.3:
-    resolution: {integrity: sha512-6vfiL9CWIX0rWhTJitzrzHcv4Q/sUfUdBV12jMz6HZ58Lz6ZtXVecO6jljd1O3ookEWQHNICiYoYNEPpDLzuRw==}
+  testcontainers@12.0.4:
+    resolution: {integrity: sha512-QIR/8xF1+F/26cIM+9B4yyxNTbKJxAv3hygZyhPRgZ8Q2AhlPZjDdpXRuk16V37X4bgJRI3hXFhoEICMBA7Adg==}
 
   text-decoder@1.2.7:
     resolution: {integrity: sha512-vlLytXkeP4xvEq2otHeJfSQIRyWxo/oZGEbXrtEEF9Hnmrdly59sUbzZ/QgyWuLYHctCHxFF4tRQZNQ9k60ExQ==}
@@ -5847,7 +5847,7 @@ snapshots:
 
   '@kurkle/color@0.3.4': {}
 
-  '@kwsites/file-exists@1.1.1(supports-color@10.2.2)':
+  '@kwsites/file-exists@1.1.1':
     dependencies:
       debug: 4.4.3(supports-color@10.2.2)
     transitivePeerDependencies:
@@ -6259,9 +6259,9 @@ snapshots:
       tailwindcss: 4.3.1
       vite: 8.1.0(@types/node@26.0.1)(jiti@2.7.0)(sass@1.101.0)(yaml@2.9.0)
 
-  '@testcontainers/postgresql@12.0.3(supports-color@10.2.2)':
+  '@testcontainers/postgresql@12.0.4':
     dependencies:
-      testcontainers: 12.0.3(supports-color@10.2.2)
+      testcontainers: 12.0.4
     transitivePeerDependencies:
       - bare-abort-controller
       - bare-buffer
@@ -7223,7 +7223,7 @@ snapshots:
     dependencies:
       yaml: 2.9.0
 
-  docker-modem@5.0.7(supports-color@10.2.2):
+  docker-modem@5.0.7:
     dependencies:
       debug: 4.4.3(supports-color@10.2.2)
       readable-stream: 3.6.2
@@ -7232,12 +7232,12 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  dockerode@5.0.1(supports-color@10.2.2):
+  dockerode@5.0.1:
     dependencies:
       '@balena/dockerignore': 1.0.2
       '@grpc/grpc-js': 1.14.4
       '@grpc/proto-loader': 0.7.15
-      docker-modem: 5.0.7(supports-color@10.2.2)
+      docker-modem: 5.0.7
       protobufjs: 7.6.4
       tar-fs: 2.1.4
     transitivePeerDependencies:
@@ -7724,7 +7724,7 @@ snapshots:
 
   get-port-please@3.2.0: {}
 
-  get-port@7.2.0: {}
+  get-port@5.1.1: {}
 
   get-proto@1.0.1:
     dependencies:
@@ -8675,9 +8675,9 @@ snapshots:
       retry: 0.12.0
       signal-exit: 3.0.7
 
-  properties-reader@3.0.1(supports-color@10.2.2):
+  properties-reader@3.0.1:
     dependencies:
-      '@kwsites/file-exists': 1.1.1(supports-color@10.2.2)
+      '@kwsites/file-exists': 1.1.1
       mkdirp: 3.0.1
     transitivePeerDependencies:
       - supports-color
@@ -9256,7 +9256,7 @@ snapshots:
       - bare-abort-controller
       - react-native-b4a
 
-  testcontainers@12.0.3(supports-color@10.2.2):
+  testcontainers@12.0.4:
     dependencies:
       '@balena/dockerignore': 1.0.2
       '@types/dockerode': 4.0.1
@@ -9265,10 +9265,10 @@ snapshots:
       byline: 5.0.0
       debug: 4.4.3(supports-color@10.2.2)
       docker-compose: 1.4.2
-      dockerode: 5.0.1(supports-color@10.2.2)
-      get-port: 7.2.0
+      dockerode: 5.0.1
+      get-port: 5.1.1
       proper-lockfile: 4.1.2
-      properties-reader: 3.0.1(supports-color@10.2.2)
+      properties-reader: 3.0.1
       ssh-remote-port-forward: 1.0.4
       tar-fs: 3.1.2
       tmp: 0.2.7
