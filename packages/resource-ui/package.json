@@ -28,7 +28,7 @@
     "@fortawesome/react-fontawesome": "3.3.1",
     "@gemini-hlsw/lucuma-common-ui": "workspace:*",
     "@gemini-hlsw/lucuma-ui-css": "0.176.0",
-    "@highcharts/react": "5.2.0",
+    "@highcharts/react": "5.2.2",
     "date-fns": "4.4.0",
     "highcharts": "12.6.0",
     "primereact": "10.9.7",
