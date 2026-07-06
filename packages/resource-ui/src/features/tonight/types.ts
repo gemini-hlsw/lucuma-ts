@@ -4,15 +4,7 @@
 import type { TimestampInterval } from '@/types';
 
 export type TimelineVariant =
-  | 'queue'
-  | 'classical'
-  | 'commissioning'
-  | 'engineering'
-  | 'priorityVisitor'
-  | 'open'
-  | 'closed'
-  | 'too'
-  | 'unknown';
+  'queue' | 'classical' | 'commissioning' | 'engineering' | 'priorityVisitor' | 'open' | 'closed' | 'too' | 'unknown';
 
 export interface TimelineBlock {
   id: string;
