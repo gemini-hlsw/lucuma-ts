@@ -15,12 +15,13 @@ doc chapter 11). Five views:
   `deleteRole` (sc-8978).
 - **Calls for Proposals** (sc-9098) — create & edit calls.
 
-Two GraphQL services back it: the **ODB** (programs, proposals, change
-requests, calls — codegen-typed via `@gemini-hlsw/lucuma-schemas/odb`) and
-**SSO** (the Users view's roster and role mutations, hand-written in
-`src/auth/ssoGraphql.ts` since that schema isn't published). The SSO `users`
-roster query is in development upstream (sc-9059); until it deploys, the
-Users view surfaces SSO's error. The sc-9244 duplication check calls
+Two GraphQL services back one Apollo client (split on the operation's
+`clientName` context): the **ODB** (programs, proposals, change requests,
+calls — codegen-typed via `@gemini-hlsw/lucuma-schemas/odb`) and **SSO**
+(the Users view's roster and role mutations — codegen-typed against the
+schema checked in at `src/gql/sso/Sso.graphql`, since SSO doesn't publish
+one). The SSO `users` roster query is in development upstream (sc-9059);
+until it deploys, the Users view surfaces SSO's error. The sc-9244 duplication check calls
 archive.gemini.edu, which sends no CORS headers — the dev server proxies
 `/archive`; a deployed equivalent (hosting proxy or archive-side CORS) is an
 open question.
