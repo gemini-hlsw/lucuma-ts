@@ -2,6 +2,7 @@ import { useSetAtom } from 'jotai';
 import { useEffect, useRef } from 'react';
 
 import { odbTokenAtom, useOdbTokenValue, useTokenExp, useUser } from '@/components/atoms/auth';
+import { useToast } from '@/components/toastContext';
 
 import { EXPIRATION_ANTICIPATION_SECONDS } from './environments';
 import * as sso from './ssoClient';
@@ -16,6 +17,7 @@ import * as sso from './ssoClient';
  * Renders nothing; mount once inside the Jotai provider.
  */
 export function AuthSession(): null {
+  const toast = useToast();
   const token = useOdbTokenValue();
   const user = useUser();
   const exp = useTokenExp();
@@ -27,12 +29,12 @@ export function AuthSession(): null {
   const isLoggedIn = user !== null && exp !== null && exp > new Date();
   useEffect(() => {
     if (isLoggedIn) return;
-    let cancelled = false;
-    void sso.refreshToken().then((fresh) => {
-      if (!cancelled && fresh) setToken(fresh);
+    const controller = new AbortController();
+    void sso.refreshToken(controller.signal).then((fresh) => {
+      if (fresh && !controller.signal.aborted) setToken(fresh);
     });
     return () => {
-      cancelled = true;
+      controller.abort();
     };
   }, [isLoggedIn, setToken]);
 
@@ -42,6 +44,7 @@ export function AuthSession(): null {
   const expMs = exp?.getTime();
   useEffect(() => {
     if (expMs === undefined) return;
+    const controller = new AbortController();
     let inFlight = false;
     let nextAttempt = 0;
     const id = window.setInterval(() => {
@@ -50,16 +53,19 @@ export function AuthSession(): null {
       if (expMs - EXPIRATION_ANTICIPATION_SECONDS * 1000 >= now) return;
       inFlight = true;
       void sso
-        .refreshToken()
+        .refreshToken(controller.signal)
         .then((fresh) => {
-          if (fresh) setToken(fresh);
+          if (fresh && !controller.signal.aborted) setToken(fresh);
           else nextAttempt = Date.now() + 30_000;
         })
         .finally(() => {
           inFlight = false;
         });
     }, 1000);
-    return () => window.clearInterval(id);
+    return () => {
+      window.clearInterval(id);
+      controller.abort();
+    };
   }, [expMs, setToken]);
 
   // Auto-switch to a staff/admin role when the active role is lower.
@@ -70,9 +76,14 @@ export function AuthSession(): null {
     const staffRole = user.otherRoles.find((r) => r.type === 'staff' || r.type === 'admin');
     if (staffRole) {
       switchedFor.current = token;
-      void sso.setRole(staffRole.id).then((fresh) => fresh && setToken(fresh));
+      sso
+        .setRole(staffRole.id)
+        .then(setToken)
+        .catch((err: unknown) => {
+          toast.error('Role switch failed', err instanceof Error ? err.message : String(err));
+        });
     }
-  }, [token, user, setToken]);
+  }, [token, user, setToken, toast]);
 
   return null;
 }

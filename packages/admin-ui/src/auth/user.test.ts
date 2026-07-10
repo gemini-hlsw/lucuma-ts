@@ -7,7 +7,7 @@ import { accessAtLeast, canAccessAdmin, currentAccess, displayName, type Standar
 const guest: User = { type: 'guest', id: 'g-1' };
 const service: User = { type: 'service', id: 's-1', name: 'scheduler' };
 
-describe('currentAccess', () => {
+describe(currentAccess.name, () => {
   it('reads the active standard role', () => {
     expect(currentAccess(standardUser('staff'))).toBe('staff');
   });
@@ -35,7 +35,7 @@ describe('accessAtLeast (hierarchy guest<pi<ngo<staff<admin<service)', () => {
   });
 });
 
-describe('canAccessAdmin', () => {
+describe(canAccessAdmin.name, () => {
   it('admits staff and admin, rejects pi/ngo/guest', () => {
     expect(canAccessAdmin(standardUser('staff'))).toBe(true);
     expect(canAccessAdmin(standardUser('admin'))).toBe(true);
@@ -45,7 +45,7 @@ describe('canAccessAdmin', () => {
   });
 });
 
-describe('displayName', () => {
+describe(displayName.name, () => {
   it('prefers given + family name', () => {
     expect(displayName(standardUser('pi'))).toBe('Ada Lovelace');
   });

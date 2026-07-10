@@ -1,9 +1,10 @@
 import './AuthGate.css';
 
+import { useSetAtom } from 'jotai';
 import { Button } from 'primereact/button';
 import type { JSX, ReactNode } from 'react';
 
-import { useCanAccessAdmin, useIsLoggedIn, useUser } from '@/components/atoms/auth';
+import { odbTokenAtom, useCanAccessAdmin, useIsLoggedIn, useUser } from '@/components/atoms/auth';
 
 import * as sso from './ssoClient';
 import { currentAccess } from './user';
@@ -18,6 +19,18 @@ export function AuthGate({ children }: { children: ReactNode }): JSX.Element {
   const user = useUser();
   const isLoggedIn = useIsLoggedIn();
   const canAccessAdmin = useCanAccessAdmin();
+  const setToken = useSetAtom(odbTokenAtom);
+
+  // Drop the local token first — that alone signs the app out — then end the
+  // SSO session. If that call fails the cookie just expires on its own.
+  const signOut = async (): Promise<void> => {
+    setToken(null);
+    try {
+      await sso.logout();
+    } catch {
+      // Nothing actionable from the gate; the local sign-out already happened.
+    }
+  };
 
   if (!isLoggedIn) {
     return (
@@ -46,12 +59,7 @@ export function AuthGate({ children }: { children: ReactNode }): JSX.Element {
           view.
         </p>
         <div className="gate-actions">
-          <Button
-            label="Sign out"
-            icon="pi pi-sign-out"
-            outlined
-            onClick={() => void sso.logout().then(() => window.location.reload())}
-          />
+          <Button label="Sign out" icon="pi pi-sign-out" outlined onClick={() => void signOut()} />
         </div>
       </GateScreen>
     );

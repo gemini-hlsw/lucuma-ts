@@ -11,10 +11,10 @@ import { CURRENT_ENV } from '@/auth/environments';
 import * as sso from '@/auth/ssoClient';
 import { displayName, type StandardRole } from '@/auth/user';
 import { odbTokenAtom, useIsLoggedIn, useUser } from '@/components/atoms/auth';
+import { useToast } from '@/components/toastContext';
 
 /** The Admin views (Shortcut epic 5747), in rail order. Views register here
- *  and in app/router.tsx as their stories land; each tip describes what the
- *  view does and its backing GraphQL operations. */
+ *  and in app/router.tsx. */
 interface NavItem {
   readonly to: string;
   readonly label: string;
@@ -25,27 +25,27 @@ const NAV_ITEMS: readonly NavItem[] = [
   {
     to: '/programs',
     label: 'Programs',
-    tip: 'Edit administrative parameters of an awarded program (class, ToO, contact scientists, band, active period, time awards). Backed by the ODB updatePrograms + setAllocations mutations. [sc-9090]',
+    tip: 'Edit administrative parameters of an awarded program: class, ToO status, contact scientists, active period, and time awards.',
   },
   {
     to: '/proposals',
     label: 'Proposals',
-    tip: 'Review & respond to special proposals — Director\u2019s Time and Poor Weather. Accept/reject sets ODB ProposalStatus via setProposalStatus. [sc-9092]',
+    tip: 'Review & respond to special proposals — Director\u2019s Time and Poor Weather.',
   },
   {
     to: '/change-requests',
     label: 'Change Requests',
-    tip: 'Review & respond to PI configuration-change requests (ODB ConfigurationRequest). Approve/deny via updateConfigurationRequests. [sc-9094]',
+    tip: 'Review & respond to configuration-change requests from PIs.',
   },
   {
     to: '/users',
     label: 'Users',
-    tip: 'Assign staff & NGO roles to users. Role changes call the SSO addRole / deleteRole mutations (not the ODB). Requires an admin role to actually apply. [sc-9096]',
+    tip: 'Assign staff & NGO roles to users (changes require the admin role).',
   },
   {
     to: '/cfp',
     label: 'Calls for Proposals',
-    tip: 'Create & update Calls for Proposals (type, semester, active window, coordinate limits, instruments, partner deadlines). ODB createCallForProposals / updateCallsForProposals. [sc-9098]',
+    tip: 'Create & update Calls for Proposals: type, semester, active window, coordinate limits, instruments, and partner deadlines.',
   },
 ];
 
@@ -59,6 +59,7 @@ export default function Layout(): JSX.Element {
   // Keep the lucuma-ui-css dark theme class on <body> (explore is dark-only).
   useTheme('dark');
 
+  const toast = useToast();
   const user = useUser();
   const isLoggedIn = useIsLoggedIn();
   const setToken = useSetAtom(odbTokenAtom);
@@ -69,13 +70,22 @@ export default function Layout(): JSX.Element {
     r.type === 'ngo' && r.partner ? `NGO · ${r.partner.toUpperCase()}` : r.type.toUpperCase();
 
   const switchRole = async (next: StandardRole): Promise<void> => {
-    const fresh = await sso.setRole(next.id);
-    if (fresh) setToken(fresh);
+    try {
+      setToken(await sso.setRole(next.id));
+    } catch (err) {
+      toast.error('Role switch failed', err instanceof Error ? err.message : String(err));
+    }
   };
 
+  // Drop the local token first — that alone signs the app out — then end the
+  // SSO session, reporting a failure (the cookie expires on its own).
   const signOut = async (): Promise<void> => {
-    await sso.logout();
     setToken(null);
+    try {
+      await sso.logout();
+    } catch (err) {
+      toast.error('Sign-out incomplete', err instanceof Error ? err.message : String(err));
+    }
   };
 
   return (
