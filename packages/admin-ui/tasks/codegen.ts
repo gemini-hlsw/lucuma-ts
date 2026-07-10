@@ -27,6 +27,10 @@ const scalars = {
   IntPercent: 'number',
   ProgramReferenceLabel: 'string',
   ProposalReferenceLabel: 'string',
+  ObservationReferenceLabel: 'string',
+  HmsString: 'string',
+  DmsString: 'string',
+  TargetId: 'string',
 } satisfies Record<string, string>;
 
 const sharedConfig = {

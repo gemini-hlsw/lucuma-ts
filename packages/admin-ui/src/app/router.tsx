@@ -4,6 +4,7 @@ import Layout from '@/components/layout/Layout';
 import { Tile } from '@/components/Tile';
 import CfpPage from '@/features/cfp/CfpPage';
 import ProgramsPage from '@/features/programs/ProgramsPage';
+import ProposalsPage from '@/features/proposals/ProposalsPage';
 import UsersPage from '@/features/users/UsersPage';
 
 // Views register here and in Layout's NAV_ITEMS, one story at a time.
@@ -21,6 +22,7 @@ const routes: RouteObject[] = [
         ),
       },
       { path: 'programs', element: <ProgramsPage /> },
+      { path: 'proposals', element: <ProposalsPage /> },
       { path: 'users', element: <UsersPage /> },
       { path: 'cfp', element: <CfpPage /> },
     ],

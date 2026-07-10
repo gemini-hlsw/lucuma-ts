@@ -1,0 +1,35 @@
+/* Shared styling for the sc-9243 conflicts and sc-9244 duplicates tables. */
+
+.check-section {
+  margin-top: 1rem;
+}
+
+.check-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 0.4rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.check-spinner {
+  font-size: 0.85rem;
+  color: var(--text-color-secondary);
+}
+
+.check-error {
+  color: var(--red-400, #f87171);
+  font-size: 0.85rem;
+  margin-bottom: 0.4rem;
+}
+
+.check-note {
+  color: var(--text-color-secondary);
+  font-size: 0.85rem;
+  margin-bottom: 0.4rem;
+}
+
+.check-section a {
+  color: var(--primary-color);
+}

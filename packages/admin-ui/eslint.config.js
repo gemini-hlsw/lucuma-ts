@@ -40,6 +40,11 @@ export default defineConfig(
 
       '@graphql-eslint/naming-convention': ['error', { types: 'PascalCase', FieldDefinition: 'camelCase' }],
       '@graphql-eslint/require-selections': ['error', { fieldName: ['id', 'pk'] }],
+      // Observation rows nested under program matches reach coordinates at
+      // depth 9 (programs > matches > observations > matches > target
+      // environment > target > sidereal > ra) — intrinsic ODB nesting, not
+      // an over-fetch.
+      '@graphql-eslint/selection-set-depth': ['error', { maxDepth: 9 }],
     },
   },
   {

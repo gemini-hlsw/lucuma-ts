@@ -53,6 +53,17 @@ export default defineConfig({
         secure: true,
         rewrite: (path) => path.replace(/^\/sso-graphql/, '/graphql'),
       },
+      // The archive's public jsonsummary API (sc-9244 duplication check)
+      // sends no CORS headers, so the browser must reach it same-origin.
+      // Deployed builds need an equivalent (hosting-level proxy or
+      // archive-side CORS); until then the duplicates table degrades with
+      // the fetch error rather than faking an empty result.
+      '/archive': {
+        target: 'https://archive.gemini.edu',
+        changeOrigin: true,
+        secure: true,
+        rewrite: (path) => path.replace(/^\/archive/, ''),
+      },
     },
   },
   test: {

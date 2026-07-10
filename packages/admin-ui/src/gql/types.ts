@@ -155,3 +155,51 @@ export interface Program {
   readonly privateNote: string;
   readonly privateNoteId: string | null;
 }
+
+// --- Proposals view (ODB Proposal, special types) --------------------------
+
+/** Gemini science subtypes the Admin "Proposals" view reviews (DD / Poor Weather). */
+export type SpecialProposalType = 'DIRECTORS_TIME' | 'POOR_WEATHER';
+
+export const SPECIAL_PROPOSAL_TYPE_LABEL: Record<SpecialProposalType, string> = {
+  DIRECTORS_TIME: "Director's Time",
+  POOR_WEATHER: 'Poor Weather',
+};
+
+/** ProposalStatus — accept/reject map to ACCEPTED / NOT_ACCEPTED. */
+export type ProposalStatus = 'NOT_SUBMITTED' | 'SUBMITTED' | 'ACCEPTED' | 'NOT_ACCEPTED';
+
+/** One observation row in a proposal/change-request detail table. */
+export interface ObservationRow {
+  readonly id: string;
+  readonly target: string;
+  /** RA "02:39:12" / Dec "+10:50:49"; "—" for non-sidereal targets. */
+  readonly ra: string;
+  readonly dec: string;
+  /** Coordinates in degrees for the sc-9243/9244 checks; null for
+   *  non-sidereal targets (nothing fixed to cone-search around). */
+  readonly raDeg: number | null;
+  readonly decDeg: number | null;
+  /** ODB ObservingModeType ("GMOS_SOUTH_LONG_SLIT"), driving the checks'
+   *  similar-instrument + mode search; null when mode-less. */
+  readonly modeType: string | null;
+  readonly instrument: string;
+  /** Instrument + observing-mode summary, e.g. "GMOS-S, LongSlit". */
+  readonly config: string;
+  /** Compact conditions, e.g. "IQ<0.8″ / CC70 / SB80 / WV80". */
+  readonly conditions: string;
+  readonly hours: number;
+}
+
+export interface Proposal {
+  readonly id: string;
+  readonly reference: string; // e.g. "G-2027B-0123"
+  /** Semester token from the reference ("2027B"); "—" when unreferenced. */
+  readonly semester: string;
+  readonly pi: string;
+  readonly title: string;
+  readonly type: SpecialProposalType;
+  readonly status: ProposalStatus;
+  readonly abstract: string;
+  readonly observations: readonly ObservationRow[];
+}
