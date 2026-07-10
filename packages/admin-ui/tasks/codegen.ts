@@ -1,10 +1,10 @@
 /**
  * GraphQL Codegen config for the Admin UI's ODB operations.
  *
- * The Users view's SSO operations (roster + addRole) are NOT generated here:
- * the SSO schema isn't published in @gemini-hlsw/lucuma-schemas, and its
- * `users` query only exists on lucuma-sso's add-users-query branch. Generate
- * SSO types once that schema ships.
+ * The Users view's SSO operations (roster + role mutations) are NOT generated
+ * here: the SSO schema isn't published in @gemini-hlsw/lucuma-schemas, and
+ * its `users` query is still in development upstream (sc-9059). Generate SSO
+ * types once that schema ships.
  */
 
 import type { CodegenConfig } from '@graphql-codegen/cli';
