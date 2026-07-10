@@ -3,6 +3,8 @@
  * the editable Program shape. See Program's doc comments in types.ts for
  * where each field lives in the schema.
  */
+import { useMutation, useQuery } from '@apollo/client/react';
+
 import type { DocumentType } from './gen';
 import { graphql } from './gen';
 import type { AllocationInput, GeminiProposalTypeInput, ProgramPropertiesInput } from './gen/graphql';
@@ -78,6 +80,13 @@ export const PROGRAMS_QUERY = graphql(`
   }
 `);
 
+/** The accepted-programs list — cached rows render immediately, refreshed in
+ *  background. Saving is multi-step, so pages refetch() once at the end
+ *  rather than per mutation. */
+export function usePrograms() {
+  return useQuery(PROGRAMS_QUERY, { fetchPolicy: 'cache-and-network' });
+}
+
 const CONTACT_SCIENTIST_ROLES = new Set(['SUPPORT_PRIMARY', 'SUPPORT_SECONDARY']);
 
 /** The updatePrograms SET for a draft's directly-editable program properties. */
@@ -99,6 +108,10 @@ export const UPDATE_PROGRAM_MUTATION = graphql(`
   }
 `);
 
+export function useUpdateProgram() {
+  return useMutation(UPDATE_PROGRAM_MUTATION);
+}
+
 export const SET_ALLOCATIONS_MUTATION = graphql(`
   mutation AdminSetAllocations($programId: ProgramId!, $allocations: [AllocationInput!]!) {
     setAllocations(input: { programId: $programId, allocations: $allocations }) {
@@ -108,6 +121,10 @@ export const SET_ALLOCATIONS_MUTATION = graphql(`
     }
   }
 `);
+
+export function useSetAllocations() {
+  return useMutation(SET_ALLOCATIONS_MUTATION);
+}
 
 /** Time-awards grid rows → `[AllocationInput!]` (hours → TimeSpanInput).
  *  Zero-hour cells are editing state (they keep a partner's grid row alive),
@@ -131,6 +148,10 @@ export const UPDATE_PROPOSAL_TYPE_MUTATION = graphql(`
     }
   }
 `);
+
+export function useUpdateProposalType() {
+  return useMutation(UPDATE_PROPOSAL_TYPE_MUTATION);
+}
 
 /** ToO / minPercentTime / band-3 edits → `GeminiProposalTypeInput` (a oneOf),
  *  keyed by the program's class. Only Queue proposals carry ToO and band-3. */
@@ -156,6 +177,10 @@ export const CREATE_PROGRAM_NOTE_MUTATION = graphql(`
   }
 `);
 
+export function useCreateProgramNote() {
+  return useMutation(CREATE_PROGRAM_NOTE_MUTATION);
+}
+
 export const UPDATE_PROGRAM_NOTE_MUTATION = graphql(`
   mutation AdminUpdatePrivateNote($noteId: ProgramNoteId!, $text: NonEmptyString) {
     updateProgramNotes(input: { WHERE: { id: { EQ: $noteId } }, SET: { text: $text } }) {
@@ -165,6 +190,10 @@ export const UPDATE_PROGRAM_NOTE_MUTATION = graphql(`
     }
   }
 `);
+
+export function useUpdateProgramNote() {
+  return useMutation(UPDATE_PROGRAM_NOTE_MUTATION);
+}
 
 export const ADD_PROGRAM_USER_MUTATION = graphql(`
   mutation AdminAddContact($programId: ProgramId!) {
@@ -176,6 +205,10 @@ export const ADD_PROGRAM_USER_MUTATION = graphql(`
   }
 `);
 
+export function useAddProgramUser() {
+  return useMutation(ADD_PROGRAM_USER_MUTATION);
+}
+
 export const LINK_USER_MUTATION = graphql(`
   mutation AdminLinkContact($programUserId: ProgramUserId!, $userId: UserId!) {
     linkUser(input: { programUserId: $programUserId, userId: $userId }) {
@@ -186,6 +219,10 @@ export const LINK_USER_MUTATION = graphql(`
   }
 `);
 
+export function useLinkUser() {
+  return useMutation(LINK_USER_MUTATION);
+}
+
 export const DELETE_PROGRAM_USER_MUTATION = graphql(`
   mutation AdminRemoveContact($programUserId: ProgramUserId!) {
     deleteProgramUser(input: { programUserId: $programUserId }) {
@@ -193,6 +230,10 @@ export const DELETE_PROGRAM_USER_MUTATION = graphql(`
     }
   }
 `);
+
+export function useDeleteProgramUser() {
+  return useMutation(DELETE_PROGRAM_USER_MUTATION);
+}
 
 export type AdminProgramsResult = DocumentType<typeof PROGRAMS_QUERY>;
 type RawProgram = AdminProgramsResult['programs']['matches'][number];

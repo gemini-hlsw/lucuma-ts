@@ -24,10 +24,11 @@ interface FetchedDuplicates {
 const NOTHING_FETCHED: FetchedDuplicates = { forKey: '', rows: [], error: null };
 
 /** Run the sc-9244 duplication check whenever the sources change. Aborts the
- *  in-flight archive queries when the selection moves on. The check depends
- *  only on each source's search inputs — the fetch effect is keyed on those,
- *  so a re-mapped array with identical content doesn't refetch; the array
- *  itself is read through a ref (same pattern as useOdbData). */
+ *  in-flight archive queries when the selection moves on. This one stays a
+ *  hand-rolled effect: the archive is a REST endpoint (jsonsummary), not
+ *  GraphQL, so Apollo hooks don't apply. The fetch effect is keyed on each
+ *  source's search inputs, so a re-mapped array with identical content
+ *  doesn't refetch; the array itself is read through a ref. */
 function useDuplicates(sources: readonly DuplicateSource[]): DuplicatesState {
   const [fetched, setFetched] = useState<FetchedDuplicates>(NOTHING_FETCHED);
   const sourcesRef = useRef(sources);

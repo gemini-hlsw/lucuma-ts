@@ -14,15 +14,15 @@ import { DuplicatesTable } from '@/components/DuplicatesTable';
 import { Tile } from '@/components/Tile';
 import { useToast } from '@/components/toastContext';
 import {
-  CHANGE_REQUESTS_QUERY,
   groupChangeRequestsByProgram,
   mapChangeRequests,
   mapObservationsById,
-  OBSERVATIONS_BY_ID_QUERY,
-  UPDATE_CONFIGURATION_REQUESTS_MUTATION,
+  useChangeRequests,
+  useObservationsByIds,
+  useUpdateConfigurationRequests,
 } from '@/gql/changeRequests';
+import { friendlyError } from '@/gql/errors';
 import type { ChangeRequest, ConfigurationRequestStatus, ObservationRow, ProgramCrStatus, Site } from '@/gql/types';
-import { useOdbData, useOdbDataByIds, useOdbMutation } from '@/gql/useOdbData';
 
 const EMPTY: ChangeRequest[] = [];
 
@@ -63,9 +63,9 @@ const ALL = 'ALL';
  */
 export default function ChangeRequestsPage(): JSX.Element {
   const toast = useToast();
-  const { data: requests, status, error, refetch } = useOdbData(CHANGE_REQUESTS_QUERY, mapChangeRequests, EMPTY);
-  const mutate = useOdbMutation();
-  const [saving, setSaving] = useState(false);
+  const { data, loading, error } = useChangeRequests();
+  const requests = useMemo(() => (data ? mapChangeRequests(data) : EMPTY), [data]);
+  const [updateRequests, { loading: saving }] = useUpdateConfigurationRequests();
   const programs = useMemo(() => groupChangeRequestsByProgram(requests), [requests]);
 
   const [semester, setSemester] = useState<string>(ALL);
@@ -104,7 +104,11 @@ export default function ChangeRequestsPage(): JSX.Element {
     () => Array.from(new Set(programRequests.flatMap((r) => r.observationIds))),
     [programRequests],
   );
-  const { data: observationsById } = useOdbDataByIds(observationIds, OBSERVATIONS_BY_ID_QUERY, mapObservationsById);
+  const { data: observationsData } = useObservationsByIds(observationIds);
+  const observationsById = useMemo(
+    () => (observationsData ? mapObservationsById(observationsData) : new Map<string, ObservationRow>()),
+    [observationsData],
+  );
   const visibleRequests = useMemo(
     () =>
       programRequests.map((r) => ({
@@ -159,9 +163,8 @@ export default function ChangeRequestsPage(): JSX.Element {
   async function confirm(): Promise<void> {
     if (!decision || selectedRequests.length === 0) return;
     const ids = selectedRequests.map((r) => r.id);
-    setSaving(true);
     try {
-      await mutate(UPDATE_CONFIGURATION_REQUESTS_MUTATION, { ids, status: decision });
+      await updateRequests({ variables: { ids, status: decision } });
       toast.success(
         decision === 'APPROVED' ? 'Change requests approved' : 'Change requests denied',
         `${ids.length} request${ids.length === 1 ? '' : 's'} in ${selectedProgram?.programReference ?? ''}`,
@@ -174,11 +177,8 @@ export default function ChangeRequestsPage(): JSX.Element {
       setSelectedIds(new Set());
       setDecision(null);
       setResponse('');
-      refetch();
     } catch (err) {
-      toast.error('Update failed', err instanceof Error ? err.message : String(err));
-    } finally {
-      setSaving(false);
+      toast.error('Update failed', friendlyError(err));
     }
   }
 
@@ -212,7 +212,7 @@ export default function ChangeRequestsPage(): JSX.Element {
         onChange={(e) => setStatusFilter(e.value as ProgramCrStatus | typeof ALL)}
         title="Facet the programs by their synthesized change-request status."
       />
-      <DataSourceBadge status={status} error={error} empty={programs.length === 0} />
+      <DataSourceBadge loading={loading} error={error && friendlyError(error)} empty={programs.length === 0} />
     </>
   );
 

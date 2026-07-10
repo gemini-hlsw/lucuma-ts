@@ -22,7 +22,6 @@ import { useOdbTokenValue } from '@/components/atoms/auth';
 import { DataSourceBadge } from '@/components/DataSourceBadge';
 import { Tile } from '@/components/Tile';
 import { useToast } from '@/components/toastContext';
-import type { DataStatus } from '@/gql/useOdbData';
 
 /** Does the user currently hold this role? NGO roles must match the partner. */
 function hasRole(user: RosterUser, type: RoleType, partner?: Partner): boolean {
@@ -51,7 +50,9 @@ export default function UsersPage(): JSX.Element {
   const toast = useToast();
   const token = useOdbTokenValue();
   const [users, setUsers] = useState<RosterUser[]>([]);
-  const [status, setStatus] = useState<DataStatus>(token ? 'loading' : 'no-token');
+  // Hand-rolled loading/error state, pending the SSO schema joining Apollo
+  // codegen (sc-9059) — at which point this becomes a useQuery result.
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | undefined>(undefined);
   const [globalFilter, setGlobalFilter] = useState('');
   const [roleFilter, setRoleFilter] = useState<RoleKey | null>(null);
@@ -63,12 +64,11 @@ export default function UsersPage(): JSX.Element {
     void fetchAllUsers().then((result) => {
       if (cancelled) return;
       if (typeof result === 'string') {
-        setStatus('error');
         setError(result);
       } else {
         setUsers(result);
-        setStatus('ready');
       }
+      setLoading(false);
     });
 
     return () => {
@@ -167,7 +167,7 @@ export default function UsersPage(): JSX.Element {
 
   const controls = (
     <>
-      <DataSourceBadge status={status} error={error} empty={users.length === 0} />
+      <DataSourceBadge loading={loading} error={error} empty={users.length === 0} />
       <span className="users-count" title="Users shown / users loaded from SSO.">
         {visibleUsers.length}/{users.length}
       </span>
@@ -191,15 +191,7 @@ export default function UsersPage(): JSX.Element {
         scrollable
         scrollHeight="calc(100vh - 240px)"
         emptyMessage={
-          status === 'loading'
-            ? 'Loading users…'
-            : status === 'no-token'
-              ? 'Sign in to load users.'
-              : status === 'error'
-                ? (error ?? 'Could not load users.')
-                : users.length > 0
-                  ? 'No users match the filters.'
-                  : 'No users found.'
+          loading ? 'Loading users…' : (error ?? (users.length > 0 ? 'No users match the filters.' : 'No users found.'))
         }
       >
         <Column

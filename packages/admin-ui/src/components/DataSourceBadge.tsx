@@ -2,38 +2,30 @@ import './DataSourceBadge.css';
 
 import type { JSX } from 'react';
 
-import type { DataStatus } from '@/gql/useOdbData';
-
 /** Small status chip for a view's live query: loading, live, empty, or the
  *  error itself — the view never fakes data to cover a failure. */
 export function DataSourceBadge({
-  status,
+  loading,
   error,
   empty,
 }: {
-  status: DataStatus;
+  loading: boolean;
+  /** Present when the query failed (expired token, access denied, …). */
   error?: string;
   /** True when the query succeeded but returned nothing for this token. */
   empty?: boolean;
 }): JSX.Element {
-  if (status === 'loading') {
+  if (loading) {
     return (
       <span className="ds-badge ds-loading" title="Querying…">
         <i className="pi pi-spin pi-spinner" /> Loading…
       </span>
     );
   }
-  if (status === 'no-token') {
-    return (
-      <span className="ds-badge ds-warn" title="Sign in to load data.">
-        <i className="pi pi-circle" /> Not signed in
-      </span>
-    );
-  }
-  if (status === 'error') {
+  if (error !== undefined) {
     return (
       <span className="ds-badge ds-warn" title={error}>
-        <i className="pi pi-exclamation-triangle" /> {error ?? 'Query error'}
+        <i className="pi pi-exclamation-triangle" /> {error}
       </span>
     );
   }

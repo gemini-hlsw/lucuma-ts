@@ -19,20 +19,21 @@ import { DataSourceBadge } from '@/components/DataSourceBadge';
 import { Tile } from '@/components/Tile';
 import { TimeAwardsGrid } from '@/components/TimeAwardsGrid';
 import { useToast } from '@/components/toastContext';
+import { friendlyError } from '@/gql/errors';
 import {
-  ADD_PROGRAM_USER_MUTATION,
   allocationsInput,
-  CREATE_PROGRAM_NOTE_MUTATION,
-  DELETE_PROGRAM_USER_MUTATION,
-  LINK_USER_MUTATION,
   mapPrograms,
   programPropertiesInput,
-  PROGRAMS_QUERY,
   proposalTypeInput,
-  SET_ALLOCATIONS_MUTATION,
-  UPDATE_PROGRAM_MUTATION,
-  UPDATE_PROGRAM_NOTE_MUTATION,
-  UPDATE_PROPOSAL_TYPE_MUTATION,
+  useAddProgramUser,
+  useCreateProgramNote,
+  useDeleteProgramUser,
+  useLinkUser,
+  usePrograms,
+  useSetAllocations,
+  useUpdateProgram,
+  useUpdateProgramNote,
+  useUpdateProposalType,
 } from '@/gql/programs';
 import {
   type ContactScientist,
@@ -44,7 +45,6 @@ import {
   TOO_STATUSES,
   type TooStatus,
 } from '@/gql/types';
-import { useOdbData, useOdbMutation } from '@/gql/useOdbData';
 
 /** "Show everything" sentinel for the Class facet (PrimeReact mishandles null
  *  option values). */
@@ -62,9 +62,59 @@ const EMPTY_PROGRAMS: Program[] = [];
  */
 export default function ProgramsPage(): JSX.Element {
   const toast = useToast();
-  const { data: programs, status, error, refetch } = useOdbData(PROGRAMS_QUERY, mapPrograms, EMPTY_PROGRAMS);
-  const mutate = useOdbMutation();
-  const [saving, setSaving] = useState(false);
+  const { data, loading, error, refetch } = usePrograms();
+  const programs = useMemo(() => (data ? mapPrograms(data) : EMPTY_PROGRAMS), [data]);
+
+  const [updateProgram, { loading: updatingProgram }] = useUpdateProgram();
+  const [updateProposalType, { loading: updatingProposalType }] = useUpdateProposalType();
+  const [setAllocations, { loading: settingAllocations }] = useSetAllocations();
+  const [createNote, { loading: creatingNote }] = useCreateProgramNote();
+  const [updateNote, { loading: updatingNote }] = useUpdateProgramNote();
+  const [addProgramUser, { loading: addingUser }] = useAddProgramUser();
+  const [linkUser, { loading: linkingUser }] = useLinkUser();
+  const [deleteProgramUser, { loading: deletingUser }] = useDeleteProgramUser();
+  const saving =
+    updatingProgram ||
+    updatingProposalType ||
+    settingAllocations ||
+    creatingNote ||
+    updatingNote ||
+    addingUser ||
+    linkingUser ||
+    deletingUser;
+
+  /** Persist every edited aspect of the program through its own mutation.
+   *  Order matters only in that program properties validate first; each
+   *  remaining step is independent. Throws on the first failure so the user
+   *  sees exactly what broke (the ODB is transactional per mutation). */
+  async function saveProgram(original: Program, draft: Program): Promise<void> {
+    await updateProgram({ variables: { programId: draft.id, SET: programPropertiesInput(draft) } });
+
+    await updateProposalType({ variables: { programId: draft.id, gemini: proposalTypeInput(draft) } });
+
+    if (JSON.stringify(draft.allocations) !== JSON.stringify(original.allocations)) {
+      await setAllocations({ variables: { programId: draft.id, allocations: allocationsInput(draft.allocations) } });
+    }
+
+    if (draft.privateNote !== original.privateNote && draft.privateNote.trim() !== '') {
+      if (draft.privateNoteId) {
+        await updateNote({ variables: { noteId: draft.privateNoteId, text: draft.privateNote } });
+      } else {
+        await createNote({ variables: { programId: draft.id, text: draft.privateNote } });
+      }
+    }
+
+    // Contact scientists: link roster picks that are new, unlink removals.
+    const draftIds = new Set(draft.contactScientists.map((c) => c.programUserId).filter(Boolean));
+    for (const removed of original.contactScientists.filter((c) => !draftIds.has(c.programUserId))) {
+      await deleteProgramUser({ variables: { programUserId: removed.programUserId ?? '' } });
+    }
+    for (const added of draft.contactScientists.filter((c) => !c.programUserId && c.userId)) {
+      const res = await addProgramUser({ variables: { programId: draft.id } });
+      const programUserId = res.data?.addProgramUser.programUser.id;
+      if (programUserId) await linkUser({ variables: { programUserId, userId: added.userId ?? '' } });
+    }
+  }
 
   const [classFilter, setClassFilter] = useState<ProgramClass | typeof ALL>(ALL);
   const [search, setSearch] = useState('');
@@ -85,7 +135,7 @@ export default function ProgramsPage(): JSX.Element {
 
   const tileControls = (
     <>
-      <DataSourceBadge status={status} error={error} empty={programs.length === 0} />
+      <DataSourceBadge loading={loading} error={error && friendlyError(error)} empty={programs.length === 0} />
       <Dropdown
         value={classFilter}
         options={[
@@ -123,15 +173,13 @@ export default function ProgramsPage(): JSX.Element {
           scrollHeight="19rem"
           className="programs-table"
           emptyMessage={
-            status === 'loading'
+            loading
               ? 'Loading programs…'
-              : status === 'no-token'
-                ? 'Sign in to load programs.'
-                : status === 'error'
-                  ? (error ?? 'Could not load programs.')
-                  : programs.length > 0
-                    ? 'No programs match the filters.'
-                    : 'No accepted programs are visible to your role.'
+              : error
+                ? friendlyError(error)
+                : programs.length > 0
+                  ? 'No programs match the filters.'
+                  : 'No accepted programs are visible to your role.'
           }
         >
           <Column
@@ -168,60 +216,18 @@ export default function ProgramsPage(): JSX.Element {
           original={original}
           saving={saving}
           onSave={async (draft) => {
-            setSaving(true);
             try {
-              await saveProgram(mutate, original, draft);
+              await saveProgram(original, draft);
               toast.success('Program saved', draft.reference);
-              refetch();
+              void refetch();
             } catch (err) {
-              toast.error('Save failed', err instanceof Error ? err.message : String(err));
-            } finally {
-              setSaving(false);
+              toast.error('Save failed', friendlyError(err));
             }
           }}
         />
       )}
     </>
   );
-}
-
-/** Persist every edited aspect of the program through its own mutation. Order
- *  matters only in that program properties validate first; each remaining step
- *  is independent. Throws on the first failure so the user sees exactly what
- *  broke (the ODB is transactional per mutation). */
-async function saveProgram(
-  mutate: ReturnType<typeof useOdbMutation>,
-  original: Program,
-  draft: Program,
-): Promise<void> {
-  await mutate(UPDATE_PROGRAM_MUTATION, { programId: draft.id, SET: programPropertiesInput(draft) });
-
-  await mutate(UPDATE_PROPOSAL_TYPE_MUTATION, { programId: draft.id, gemini: proposalTypeInput(draft) });
-
-  if (JSON.stringify(draft.allocations) !== JSON.stringify(original.allocations)) {
-    await mutate(SET_ALLOCATIONS_MUTATION, { programId: draft.id, allocations: allocationsInput(draft.allocations) });
-  }
-
-  if (draft.privateNote !== original.privateNote && draft.privateNote.trim() !== '') {
-    if (draft.privateNoteId) {
-      await mutate(UPDATE_PROGRAM_NOTE_MUTATION, { noteId: draft.privateNoteId, text: draft.privateNote });
-    } else {
-      await mutate(CREATE_PROGRAM_NOTE_MUTATION, { programId: draft.id, text: draft.privateNote });
-    }
-  }
-
-  // Contact scientists: link roster picks that are new, unlink removals.
-  const originalIds = new Set(original.contactScientists.map((c) => c.programUserId));
-  const draftIds = new Set(draft.contactScientists.map((c) => c.programUserId).filter(Boolean));
-  for (const removed of original.contactScientists.filter((c) => !draftIds.has(c.programUserId))) {
-    await mutate(DELETE_PROGRAM_USER_MUTATION, { programUserId: removed.programUserId ?? '' });
-  }
-  for (const added of draft.contactScientists.filter((c) => !c.programUserId && c.userId)) {
-    const data = await mutate(ADD_PROGRAM_USER_MUTATION, { programId: draft.id });
-    const programUserId = data.addProgramUser.programUser.id;
-    await mutate(LINK_USER_MUTATION, { programUserId, userId: added.userId ?? '' });
-  }
-  void originalIds;
 }
 
 /** The Selected Program editor. Keyed by program id from the parent, so

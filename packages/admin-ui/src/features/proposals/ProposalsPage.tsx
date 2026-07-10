@@ -7,9 +7,10 @@ import { type JSX, useMemo, useState } from 'react';
 import { DataSourceBadge } from '@/components/DataSourceBadge';
 import { TimeAwardsGrid } from '@/components/TimeAwardsGrid';
 import { useToast } from '@/components/toastContext';
+import { friendlyError } from '@/gql/errors';
 import type { ProgramPropertiesInput } from '@/gql/gen/graphql';
-import { allocationsInput, SET_ALLOCATIONS_MUTATION, UPDATE_PROGRAM_MUTATION } from '@/gql/programs';
-import { mapProposals, PROPOSALS_QUERY, SET_PROPOSAL_STATUS_MUTATION } from '@/gql/proposals';
+import { allocationsInput, useSetAllocations, useUpdateProgram } from '@/gql/programs';
+import { mapProposals, useProposals, useSetProposalStatus } from '@/gql/proposals';
 import {
   type Allocation,
   type Proposal,
@@ -17,7 +18,6 @@ import {
   SPECIAL_PROPOSAL_TYPE_LABEL,
   type SpecialProposalType,
 } from '@/gql/types';
-import { useOdbData, useOdbMutation } from '@/gql/useOdbData';
 
 import { type Decision, type ReviewColumn, type ReviewItem, ReviewView } from '../review/ReviewView';
 
@@ -75,9 +75,12 @@ const BLANK_AWARD: AwardDraft = {
  */
 export default function ProposalsPage(): JSX.Element {
   const toast = useToast();
-  const { data: proposals, status, error, refetch } = useOdbData(PROPOSALS_QUERY, mapProposals, EMPTY);
-  const mutate = useOdbMutation();
-  const [resolving, setResolving] = useState(false);
+  const { data, loading, error, refetch } = useProposals();
+  const proposals = useMemo(() => (data ? mapProposals(data) : EMPTY), [data]);
+  const [setProposalStatus, { loading: settingStatus }] = useSetProposalStatus();
+  const [setAllocations, { loading: settingAllocations }] = useSetAllocations();
+  const [updateProgram, { loading: updatingProgram }] = useUpdateProgram();
+  const resolving = settingStatus || settingAllocations || updatingProgram;
 
   const [statusFilter, setStatusFilter] = useState<ProposalStatus | typeof ALL>(ALL);
   const [typeFilter, setTypeFilter] = useState<SpecialProposalType | typeof ALL>(ALL);
@@ -114,7 +117,6 @@ export default function ProposalsPage(): JSX.Element {
    *  via setAllocations, active period + proprietary months via
    *  updatePrograms. Returns true when everything landed. */
   async function onResolve(p: ReviewProposal, decision: Decision): Promise<boolean> {
-    setResolving(true);
     try {
       if (decision === 'ACCEPT') {
         const award = awards.get(p.id) ?? BLANK_AWARD;
@@ -126,23 +128,21 @@ export default function ProposalsPage(): JSX.Element {
         };
         // Status first — it validates the proposal is decidable before any
         // program properties are touched.
-        await mutate(SET_PROPOSAL_STATUS_MUTATION, { programId: p.id, status: 'ACCEPTED' });
+        await setProposalStatus({ variables: { programId: p.id, status: 'ACCEPTED' } });
         if (allocations.length > 0) {
-          await mutate(SET_ALLOCATIONS_MUTATION, { programId: p.id, allocations });
+          await setAllocations({ variables: { programId: p.id, allocations } });
         }
-        await mutate(UPDATE_PROGRAM_MUTATION, { programId: p.id, SET });
+        await updateProgram({ variables: { programId: p.id, SET } });
         toast.success('Proposal accepted', p.reference);
       } else {
-        await mutate(SET_PROPOSAL_STATUS_MUTATION, { programId: p.id, status: 'NOT_ACCEPTED' });
+        await setProposalStatus({ variables: { programId: p.id, status: 'NOT_ACCEPTED' } });
         toast.success('Proposal rejected', p.reference);
       }
-      refetch();
+      void refetch();
       return true;
     } catch (err) {
-      toast.error('Resolve failed', err instanceof Error ? err.message : String(err));
+      toast.error('Resolve failed', friendlyError(err));
       return false;
-    } finally {
-      setResolving(false);
     }
   }
 
@@ -176,7 +176,7 @@ export default function ProposalsPage(): JSX.Element {
     <ReviewView<ReviewProposal>
       title="Proposals"
       blurb="Review & respond to Director’s Time and Poor Weather proposals."
-      badge={<DataSourceBadge status={status} error={error} empty={items.length === 0} />}
+      badge={<DataSourceBadge loading={loading} error={error && friendlyError(error)} empty={items.length === 0} />}
       controls={controls}
       resolving={resolving}
       items={items}

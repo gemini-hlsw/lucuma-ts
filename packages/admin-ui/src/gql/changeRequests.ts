@@ -2,6 +2,8 @@
  * Change Requests view (sc-9094): ODB ConfigurationRequest, presented as a
  * program → request master-detail — see ChangeRequestsPage.
  */
+import { skipToken, useMutation, useQuery } from '@apollo/client/react';
+
 import type { DocumentType } from './gen';
 import { graphql } from './gen';
 import { formatConditions, mapObservationRow } from './shared';
@@ -116,6 +118,12 @@ export function mapChangeRequests(raw: AdminChangeRequestsResult): ChangeRequest
 
 /** Resolve ConfigurationRequest.applicableObservations into observation rows
  *  in one round-trip. */
+/** The change-requests list — cached rows render immediately, refreshed in
+ *  background. */
+export function useChangeRequests() {
+  return useQuery(CHANGE_REQUESTS_QUERY, { fetchPolicy: 'cache-and-network' });
+}
+
 export const OBSERVATIONS_BY_ID_QUERY = graphql(`
   query AdminObservationsById($ids: [ObservationId!]!) {
     observations(WHERE: { id: { IN: $ids } }, LIMIT: 1000) {
@@ -130,6 +138,13 @@ export type AdminObservationsByIdResult = DocumentType<typeof OBSERVATIONS_BY_ID
 
 export function mapObservationsById(raw: AdminObservationsByIdResult): ReadonlyMap<string, ObservationRow> {
   return new Map(raw.observations.matches.map((o) => [o.id, mapObservationRow(o)]));
+}
+
+/** Resolve gathered observation ids to rows in one batched round-trip (a
+ *  ConfigurationRequest carries only applicableObservations ids). Skipped
+ *  while there's nothing to resolve. */
+export function useObservationsByIds(ids: readonly string[]) {
+  return useQuery(OBSERVATIONS_BY_ID_QUERY, ids.length === 0 ? skipToken : { variables: { ids: [...ids] } });
 }
 
 export const UPDATE_CONFIGURATION_REQUESTS_MUTATION = graphql(`
@@ -174,5 +189,12 @@ export function groupChangeRequestsByProgram(requests: readonly ChangeRequest[])
       status,
       requests: reqs,
     };
+  });
+}
+
+export function useUpdateConfigurationRequests() {
+  return useMutation(UPDATE_CONFIGURATION_REQUESTS_MUTATION, {
+    refetchQueries: [CHANGE_REQUESTS_QUERY],
+    awaitRefetchQueries: true,
   });
 }

@@ -13,7 +13,8 @@ import { type Partner, PARTNER_NAME, PARTNERS } from '@/auth/ssoGraphql';
 import { DataSourceBadge } from '@/components/DataSourceBadge';
 import { Tile } from '@/components/Tile';
 import { useToast } from '@/components/toastContext';
-import { cfpPropertiesInput, CFPS_QUERY, CREATE_CFP_MUTATION, mapCfps, UPDATE_CFP_MUTATION } from '@/gql/cfp';
+import { cfpPropertiesInput, mapCfps, useCfps, useCreateCfp, useUpdateCfp } from '@/gql/cfp';
+import { friendlyError } from '@/gql/errors';
 import type { CallForProposalsPropertiesInput } from '@/gql/gen/graphql';
 import {
   type CallForProposals,
@@ -23,7 +24,6 @@ import {
   INSTRUMENTS,
   type SiteCoordinateLimits,
 } from '@/gql/types';
-import { useOdbData, useOdbMutation } from '@/gql/useOdbData';
 
 const CFP_TYPES = Object.keys(CFP_TYPE_LABEL) as CfpType[];
 const EMPTY_CFPS: CallForProposals[] = [];
@@ -63,9 +63,11 @@ function semesterDates(semester: string): { activeStart: string; activeEnd: stri
  */
 export default function CfpPage(): JSX.Element {
   const toast = useToast();
-  const { data: cfps, status, error, refetch } = useOdbData(CFPS_QUERY, mapCfps, EMPTY_CFPS);
-  const mutate = useOdbMutation();
-  const [saving, setSaving] = useState(false);
+  const { data, loading, error } = useCfps();
+  const cfps = useMemo(() => (data ? mapCfps(data) : EMPTY_CFPS), [data]);
+  const [updateCfp, { loading: updating }] = useUpdateCfp();
+  const [createCfp, { loading: creating }] = useCreateCfp();
+  const saving = updating || creating;
 
   const [typeFilter, setTypeFilter] = useState<CfpType | 'all'>('all');
   const [openFilter, setOpenFilter] = useState<OpenFilter>('all');
@@ -84,32 +86,24 @@ export default function CfpPage(): JSX.Element {
   const original = useMemo(() => cfps.find((c) => c.id === activeId) ?? cfps[0], [cfps, activeId]);
 
   async function save(draft: CallForProposals): Promise<void> {
-    setSaving(true);
     try {
-      await mutate(UPDATE_CFP_MUTATION, { id: draft.id, SET: cfpPropertiesInput(draft) });
+      await updateCfp({ variables: { id: draft.id, SET: cfpPropertiesInput(draft) } });
       toast.success('Call saved', draft.title || draft.id);
-      refetch();
     } catch (err) {
-      toast.error('Save failed', err instanceof Error ? err.message : String(err));
-    } finally {
-      setSaving(false);
+      toast.error('Save failed', friendlyError(err));
     }
   }
 
   /** Create a call and select it. `SET` is a fresh minimal call for New, or the
    *  selected call's full properties for Copy. */
   async function create(SET: CallForProposalsPropertiesInput, verb: string): Promise<void> {
-    setSaving(true);
     try {
-      const data = await mutate(CREATE_CFP_MUTATION, { SET });
-      const newId = data.createCallForProposals.callForProposals?.id;
+      const res = await createCfp({ variables: { SET } });
+      const newId = res.data?.createCallForProposals.callForProposals?.id;
       if (newId) setSelectedId(newId);
       toast.success(`Call ${verb}`, newId ?? '');
-      refetch();
     } catch (err) {
-      toast.error(`${verb === 'created' ? 'Create' : 'Copy'} failed`, err instanceof Error ? err.message : String(err));
-    } finally {
-      setSaving(false);
+      toast.error(`${verb === 'created' ? 'Create' : 'Copy'} failed`, friendlyError(err));
     }
   }
 
@@ -120,7 +114,7 @@ export default function CfpPage(): JSX.Element {
         flush
         controls={
           <>
-            <DataSourceBadge status={status} error={error} empty={cfps.length === 0} />
+            <DataSourceBadge loading={loading} error={error && friendlyError(error)} empty={cfps.length === 0} />
             <Dropdown
               value={openFilter}
               options={[...OPEN_FILTER_OPTIONS]}
@@ -181,15 +175,13 @@ export default function CfpPage(): JSX.Element {
           onSelectionChange={(e) => setSelectedId((e.value as CallForProposals | null)?.id ?? null)}
           className="cfp-calls-table"
           emptyMessage={
-            status === 'loading'
+            loading
               ? 'Loading…'
-              : status === 'no-token'
-                ? 'Sign in to load calls.'
-                : status === 'error'
-                  ? (error ?? 'Could not load calls.')
-                  : cfps.length > 0
-                    ? 'No calls match the filters.'
-                    : 'No calls visible to your role.'
+              : error
+                ? friendlyError(error)
+                : cfps.length > 0
+                  ? 'No calls match the filters.'
+                  : 'No calls visible to your role.'
           }
         >
           <Column

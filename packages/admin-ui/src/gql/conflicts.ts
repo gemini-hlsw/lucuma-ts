@@ -13,6 +13,9 @@
  * here from coordinates in degrees. Once sc-9240 lands, that last filter
  * moves into the WHERE clause.
  */
+import { skipToken, useQuery } from '@apollo/client/react';
+import { useMemo } from 'react';
+
 import { searchRadiusArcsec, separationArcsec } from '@/lib/geminiArchive';
 
 import type { DocumentType } from './gen';
@@ -155,6 +158,30 @@ export const CONFLICTS_QUERY = graphql(`
 `);
 
 export type AdminConflictCheckResult = DocumentType<typeof CONFLICTS_QUERY>;
+
+/**
+ * Fetch both sc-9243 candidate pools for the union of the sources' similar
+ * observing modes, live from the ODB (check-time data — never cached). The
+ * query re-runs whenever the union of modes changes; the per-source cone
+ * match happens afterwards in matchConflicts.
+ */
+export function useConflictCandidates(sources: readonly { readonly modeType: string | null }[]) {
+  const modeTypes = useMemo(
+    () => Array.from(new Set(sources.flatMap((s) => similarModeTypes(s.modeType)))).sort(),
+    [sources],
+  );
+  const { data, loading, error } = useQuery(
+    CONFLICTS_QUERY,
+    modeTypes.length === 0
+      ? skipToken
+      : {
+          variables: { modeTypes: [...modeTypes], today: new Date().toISOString().slice(0, 10) },
+          fetchPolicy: 'network-only',
+        },
+  );
+  const candidates = useMemo(() => (data ? mapConflictCandidates(data) : []), [data]);
+  return { candidates, loading, error };
+}
 
 /** One planned observation elsewhere that could yield equivalent data. */
 export interface ConflictCandidate {

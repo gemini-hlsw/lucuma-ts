@@ -1,84 +1,17 @@
 import './checkTables.css';
 
-import { useApolloClient } from '@apollo/client/react';
 import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
-import { type JSX, useEffect, useMemo, useRef, useState } from 'react';
+import { type JSX, useMemo } from 'react';
 
 import {
-  type ConflictCandidate,
   type ConflictRow,
-  CONFLICTS_QUERY,
   type ConflictSource,
   formatModeType,
-  mapConflictCandidates,
   matchConflicts,
-  similarModeTypes,
+  useConflictCandidates,
 } from '@/gql/conflicts';
-import { hasOdbToken } from '@/gql/useOdbData';
-
-interface CandidatesState {
-  readonly candidates: readonly ConflictCandidate[];
-  readonly loading: boolean;
-  readonly error: string | null;
-}
-
-/** The last fetch's result, tagged with the key it answers. Loading is
- *  derived (result key ≠ current key), so the effect never sets state
- *  synchronously — only from the query callbacks. */
-interface FetchedCandidates {
-  readonly forKey: string;
-  readonly candidates: readonly ConflictCandidate[];
-  readonly error: string | null;
-}
-
-const NOTHING_FETCHED: FetchedCandidates = { forKey: '', candidates: [], error: null };
-
-/** Fetch both sc-9243 candidate pools for the union of the sources' similar
- *  observing modes. Keyed on that union — reselecting sources with the same
- *  modes reuses the response; the per-source cone match happens in a memo. */
-function useConflictCandidates(sources: readonly ConflictSource[]): CandidatesState {
-  const apollo = useApolloClient();
-  const [fetched, setFetched] = useState<FetchedCandidates>(NOTHING_FETCHED);
-  const modeTypes = Array.from(new Set(sources.flatMap((s) => similarModeTypes(s.modeType)))).sort();
-  const key = modeTypes.join(',');
-  const modeTypesRef = useRef(modeTypes);
-  useEffect(() => {
-    modeTypesRef.current = modeTypes;
-  });
-  useEffect(() => {
-    if (key === '' || !hasOdbToken()) return;
-    let cancelled = false;
-    apollo
-      .query({
-        query: CONFLICTS_QUERY,
-        variables: { modeTypes: [...modeTypesRef.current], today: new Date().toISOString().slice(0, 10) },
-        fetchPolicy: 'network-only',
-      })
-      .then((res) => {
-        if (cancelled) return;
-        if (res.data === undefined) {
-          setFetched({ forKey: key, candidates: [], error: 'Query returned no data.' });
-        } else {
-          setFetched({ forKey: key, candidates: mapConflictCandidates(res.data), error: null });
-        }
-      })
-      .catch((err: unknown) => {
-        if (cancelled) return;
-        setFetched({ forKey: key, candidates: [], error: err instanceof Error ? err.message : String(err) });
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [apollo, key]);
-  if (key === '' || !hasOdbToken()) return { candidates: [], loading: false, error: null };
-  const current = fetched.forKey === key;
-  return {
-    candidates: current ? fetched.candidates : [],
-    loading: !current,
-    error: current ? fetched.error : null,
-  };
-}
+import { friendlyError } from '@/gql/errors';
 
 /**
  * "Potential Conflicts" table (sc-9243): active programs planning equivalent
@@ -109,7 +42,7 @@ export function ConflictsTable({
       </h3>
       {error && (
         <p className="check-error">
-          <i className="pi pi-exclamation-triangle" /> Conflict check failed: {error}
+          <i className="pi pi-exclamation-triangle" /> Conflict check failed: {friendlyError(error)}
         </p>
       )}
       <DataTable

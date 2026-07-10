@@ -7,6 +7,8 @@
  * only matches with GeminiCallProperties and the editor writes them back
  * under `gemini` in CallForProposalsPropertiesInput.
  */
+import { useMutation, useQuery } from '@apollo/client/react';
+
 import type { DocumentType } from './gen';
 import { graphql } from './gen';
 import type { CallForProposalsPropertiesInput } from './gen/graphql';
@@ -70,6 +72,11 @@ export const CFPS_QUERY = graphql(`
     }
   }
 `);
+
+/** The calls list — cached rows render immediately, refreshed in background. */
+export function useCfps() {
+  return useQuery(CFPS_QUERY, { fetchPolicy: 'cache-and-network' });
+}
 
 export type AdminCfpsResult = DocumentType<typeof CFPS_QUERY>;
 type RawCfp = AdminCfpsResult['callsForProposals']['matches'][number];
@@ -141,6 +148,14 @@ export const CREATE_CFP_MUTATION = graphql(`
     }
   }
 `);
+
+export function useUpdateCfp() {
+  return useMutation(UPDATE_CFP_MUTATION, { refetchQueries: [CFPS_QUERY], awaitRefetchQueries: true });
+}
+
+export function useCreateCfp() {
+  return useMutation(CREATE_CFP_MUTATION, { refetchQueries: [CFPS_QUERY], awaitRefetchQueries: true });
+}
 
 /** Serialize an edited call into `CallForProposalsPropertiesInput`. Also used
  *  verbatim by Copy (create-from-selected), so it must cover every editable

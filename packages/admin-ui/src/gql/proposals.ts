@@ -3,6 +3,8 @@
  * Weather), reached via programs.proposal — the ODB scopes this to what the
  * token can see.
  */
+import { useMutation, useQuery } from '@apollo/client/react';
+
 import type { DocumentType } from './gen';
 import { graphql } from './gen';
 import { mapObservationRow } from './shared';
@@ -76,6 +78,13 @@ export function mapProposals(raw: AdminProposalsResult): Proposal[] {
   return out;
 }
 
+/** The special-proposals list — cached rows render immediately, refreshed in
+ *  background. Accepting is multi-step (status + allocations + properties),
+ *  so the page refetch()es once at the end rather than per mutation. */
+export function useProposals() {
+  return useQuery(PROPOSALS_QUERY, { fetchPolicy: 'cache-and-network' });
+}
+
 export const SET_PROPOSAL_STATUS_MUTATION = graphql(`
   mutation AdminSetProposalStatus($programId: ProgramId!, $status: ProposalStatus!) {
     setProposalStatus(input: { programId: $programId, status: $status }) {
@@ -91,4 +100,8 @@ export const SET_PROPOSAL_STATUS_MUTATION = graphql(`
 export function semesterOfReference(reference: string): string {
   const m = /-(\d{4}[AB])/.exec(reference);
   return m ? m[1]! : '—';
+}
+
+export function useSetProposalStatus() {
+  return useMutation(SET_PROPOSAL_STATUS_MUTATION);
 }
