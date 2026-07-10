@@ -1,0 +1,33 @@
+/* The role-filter search sits in the tile's control area; keep it a sensible
+   width so it doesn't crowd the title bar. */
+.xp-tile-controls .p-icon-field .p-inputtext {
+  width: 20rem;
+  max-width: 28vw;
+}
+
+/* Shown / loaded counter beside the search box. */
+.users-count {
+  font-size: 0.8rem;
+  color: var(--text-color-secondary, #9a9aa2);
+  white-space: nowrap;
+}
+
+/* Role-column header facets: plain header text that acts as a toggle. */
+.users-role-facet {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-weight: 600;
+  color: inherit;
+  cursor: pointer;
+}
+
+.users-role-facet:hover {
+  text-decoration: underline;
+}
+
+.users-role-facet-active {
+  color: var(--primary-color, #59b2ff);
+  text-decoration: underline;
+}

@@ -21,7 +21,13 @@ interface NavItem {
   readonly tip: string;
 }
 
-const NAV_ITEMS: readonly NavItem[] = [];
+const NAV_ITEMS: readonly NavItem[] = [
+  {
+    to: '/users',
+    label: 'Users',
+    tip: 'Assign staff & NGO roles to users. Role changes call the SSO addRole / deleteRole mutations (not the ODB). Requires an admin role to actually apply. [sc-9096]',
+  },
+];
 
 /**
  * App shell styled after the explore GPP app: a dark masthead (letter-spaced
