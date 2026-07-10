@@ -9,6 +9,15 @@ export const MECH_SYSTEM_STATE_FRAGMENT = graphql(`
   }
 `);
 
+export const ENCLOSURE_STATE_FRAGMENT = graphql(`
+  fragment EnclosureStateItem on EnclosureState {
+    domeEnabled
+    shuttersEnabled
+    eastVentGateOpen
+    westVentGateOpen
+  }
+`);
+
 export const TELESCOPE_STATE_FRAGMENT = graphql(`
   fragment TelescopeStateItem on TelescopeState {
     mount {
@@ -28,6 +37,9 @@ export const TELESCOPE_STATE_FRAGMENT = graphql(`
     }
     oiwfs {
       ...MechSystemStateItem
+    }
+    enclosure {
+      ...EnclosureStateItem
     }
   }
 `);
