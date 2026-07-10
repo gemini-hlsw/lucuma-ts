@@ -1,4 +1,6 @@
 @import url('./lucuma-ui.scss');
+@import url('primeicons/primeicons.css');
+@import url('./shell.css');
 
 html,
 body,
@@ -9,6 +11,6 @@ body,
 
 body {
   min-height: 100vh;
-  background: var(--color-canvas);
-  color: var(--color-foreground);
+  background: var(--color-background);
+  color: var(--xp-text);
 }
