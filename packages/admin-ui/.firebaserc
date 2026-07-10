@@ -1,0 +1,20 @@
+{
+  "projects": {
+    "default": "admin-679f7"
+  },
+  "targets": {
+    "admin-679f7": {
+      "hosting": {
+        "dev": [
+          "admin-679f7-dev"
+        ],
+        "staging": [
+          "admin-679f7-staging"
+        ],
+        "production": [
+          "admin-679f7"
+        ]
+      }
+    }
+  }
+}
