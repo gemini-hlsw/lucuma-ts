@@ -44,3 +44,7 @@ test-results/
 playwright-report/
 blob-report/
 playwright/.cache/
+
+# Vitest browser-mode failure artifacts
+__screenshots__/
+.vitest-attachments/
