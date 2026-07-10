@@ -1,4 +1,4 @@
-import { ApolloClient, HttpLink, InMemoryCache } from '@apollo/client';
+import { ApolloClient, ApolloLink, HttpLink, InMemoryCache } from '@apollo/client';
 import { SetContextLink } from '@apollo/client/link/context';
 import { withAbsoluteUri } from '@gemini-hlsw/lucuma-common-ui';
 
@@ -7,13 +7,16 @@ import { odbTokenAtom } from '@/components/atoms/auth';
 import { store } from '@/components/atoms/store';
 
 /*
- * Apollo client for the ODB. The endpoint comes from the hostname-resolved
+ * One Apollo client fronting the app's two GraphQL endpoints, split on the
+ * operation's `clientName` context (the navigate-ui pattern): operations with
+ * `clientName: 'sso'` (gql/sso/) go to the SSO GraphQL endpoint; everything
+ * else goes to the ODB. Both endpoints come from the hostname-resolved
  * environment (dev/staging/production, or the Vite proxy in local dev — see
  * auth/environments.ts), and every request carries the signed-in user's token
- * as a bearer, read from the shared Jotai store per request so a fresh sign-in
- * takes effect without a reload. With no token the request goes out without an
- * Authorization header and the ODB denies it — the auth gate keeps users from
- * getting that far.
+ * as a bearer, read from the shared Jotai store per request so a fresh
+ * sign-in takes effect without a reload. With no token the request goes out
+ * without an Authorization header and the server denies it — the auth gate
+ * keeps users from getting that far.
  */
 
 const authLink = new SetContextLink((prevContext) => {
@@ -25,11 +28,17 @@ const authLink = new SetContextLink((prevContext) => {
   };
 });
 
+const endpointLink = ApolloLink.split(
+  (operation) => operation.getContext().clientName === 'sso',
+  new HttpLink({ uri: withAbsoluteUri(CURRENT_ENV.ssoGraphqlUri) }),
+  new HttpLink({ uri: withAbsoluteUri(CURRENT_ENV.odbUri) }),
+);
+
 export const client = new ApolloClient({
   clientAwareness: {
     name: 'admin-ui',
     version: import.meta.env.FRONTEND_VERSION,
   },
-  link: authLink.concat(new HttpLink({ uri: withAbsoluteUri(CURRENT_ENV.odbUri) })),
+  link: authLink.concat(endpointLink),
   cache: new InMemoryCache(),
 });

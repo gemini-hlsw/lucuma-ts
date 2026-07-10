@@ -6,22 +6,23 @@ import { DataTable } from 'primereact/datatable';
 import { IconField } from 'primereact/iconfield';
 import { InputIcon } from 'primereact/inputicon';
 import { InputText } from 'primereact/inputtext';
-import { type JSX, useEffect, useMemo, useState } from 'react';
+import { type JSX, useMemo, useState } from 'react';
 
+import { DataSourceBadge } from '@/components/DataSourceBadge';
+import { Tile } from '@/components/Tile';
+import { useToast } from '@/components/toastContext';
+import { friendlyError } from '@/gql/errors';
 import {
-  addRole,
-  deleteRole,
-  fetchAllUsers,
+  mapRosterUsers,
   type Partner,
   PARTNER_NAME,
   PARTNERS,
   type RoleType,
   type RosterUser,
-} from '@/auth/ssoGraphql';
-import { useOdbTokenValue } from '@/components/atoms/auth';
-import { DataSourceBadge } from '@/components/DataSourceBadge';
-import { Tile } from '@/components/Tile';
-import { useToast } from '@/components/toastContext';
+  useAddRole,
+  useDeleteRole,
+  useUsers,
+} from '@/gql/sso/roster';
 
 /** Does the user currently hold this role? NGO roles must match the partner. */
 function hasRole(user: RosterUser, type: RoleType, partner?: Partner): boolean {
@@ -48,33 +49,12 @@ const sameRole = (a: RoleKey | null, b: RoleKey): boolean => a !== null && a.typ
  */
 export default function UsersPage(): JSX.Element {
   const toast = useToast();
-  const token = useOdbTokenValue();
-  const [users, setUsers] = useState<RosterUser[]>([]);
-  // Hand-rolled loading/error state, pending the SSO schema joining Apollo
-  // codegen (sc-9059) — at which point this becomes a useQuery result.
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | undefined>(undefined);
+  const { data, loading, error } = useUsers();
+  const users = useMemo(() => (data ? mapRosterUsers(data) : []), [data]);
+  const [addRole] = useAddRole();
+  const [deleteRole] = useDeleteRole();
   const [globalFilter, setGlobalFilter] = useState('');
   const [roleFilter, setRoleFilter] = useState<RoleKey | null>(null);
-
-  useEffect(() => {
-    if (!token) return;
-
-    let cancelled = false;
-    void fetchAllUsers().then((result) => {
-      if (cancelled) return;
-      if (typeof result === 'string') {
-        setError(result);
-      } else {
-        setUsers(result);
-      }
-      setLoading(false);
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [token]);
 
   // Filtering happens here rather than via DataTable's `filters` so it composes
   // with the role facet and stays compatible with the scroller.
@@ -87,25 +67,19 @@ export default function UsersPage(): JSX.Element {
     });
   }, [users, globalFilter, roleFilter]);
 
-  /** Grant a role via `addRole`, recording the returned RoleId so the same
-   *  checkbox can immediately revoke it again without a refetch. */
+  /** Grant a role via `addRole`. The mutation refetches the roster, so the
+   *  new role (with the RoleId the same checkbox needs to revoke it) is on
+   *  screen before this resolves. */
   async function grantRole(userId: string, type: RoleType, partner?: Partner): Promise<void> {
     const target = users.find((u) => u.id === userId);
     if (!target) return;
     const label = `${type}${partner ? `, ${partner}` : ''}`;
-    const result = await addRole(userId, type, partner);
-    if ('error' in result) {
-      toast.error('Grant failed', result.error);
-      return;
+    try {
+      await addRole({ variables: { userId, roleType: type, partner: partner ?? null } });
+      toast.success('Role granted', `${target.givenName} ${target.familyName} — ${label}`);
+    } catch (err) {
+      toast.error('Grant failed', friendlyError(err));
     }
-    setUsers((prev) =>
-      prev.map((u) =>
-        u.id === userId
-          ? { ...u, roles: [...u.roles, { id: result.roleId, type, ...(partner ? { partner } : {}) }] }
-          : u,
-      ),
-    );
-    toast.success('Role granted', `${target.givenName} ${target.familyName} — ${label}`);
   }
 
   /** Revoke a role via `deleteRole` (sc-8978). SSO also deletes the role's
@@ -113,15 +87,12 @@ export default function UsersPage(): JSX.Element {
   async function revokeRole(userId: string, roleId: string, label: string): Promise<void> {
     const target = users.find((u) => u.id === userId);
     if (!target) return;
-    const failure = await deleteRole(roleId);
-    if (failure) {
-      toast.error('Revoke failed', failure);
-      return;
+    try {
+      await deleteRole({ variables: { roleId } });
+      toast.success('Role revoked', `${target.givenName} ${target.familyName} — ${label}`);
+    } catch (err) {
+      toast.error('Revoke failed', friendlyError(err));
     }
-    setUsers((prev) =>
-      prev.map((u) => (u.id === userId ? { ...u, roles: u.roles.filter((r) => r.id !== roleId) } : u)),
-    );
-    toast.success('Role revoked', `${target.givenName} ${target.familyName} — ${label}`);
   }
 
   function roleColumnBody(type: RoleType, partner?: Partner) {
@@ -167,7 +138,7 @@ export default function UsersPage(): JSX.Element {
 
   const controls = (
     <>
-      <DataSourceBadge loading={loading} error={error} empty={users.length === 0} />
+      <DataSourceBadge loading={loading} error={error && friendlyError(error)} empty={users.length === 0} />
       <span className="users-count" title="Users shown / users loaded from SSO.">
         {visibleUsers.length}/{users.length}
       </span>
@@ -191,7 +162,13 @@ export default function UsersPage(): JSX.Element {
         scrollable
         scrollHeight="calc(100vh - 240px)"
         emptyMessage={
-          loading ? 'Loading users…' : (error ?? (users.length > 0 ? 'No users match the filters.' : 'No users found.'))
+          loading
+            ? 'Loading users…'
+            : error
+              ? friendlyError(error)
+              : users.length > 0
+                ? 'No users match the filters.'
+                : 'No users found.'
         }
       >
         <Column

@@ -1,34 +1,42 @@
-import { describe, expect, it, vi } from 'vitest';
+import type { MockLink } from '@apollo/client/testing';
+import { describe, expect, it } from 'vitest';
 import { userEvent } from 'vitest/browser';
 
-import type * as SsoGraphql from '@/auth/ssoGraphql';
-import { PARTNERS } from '@/auth/ssoGraphql';
+import { PARTNERS, USERS_QUERY } from '@/gql/sso/roster';
 import { fakeJwt, standardUser } from '@/test/factories';
 import { renderWithContext } from '@/test/render';
 
 import UsersPage from './UsersPage';
 
-vi.mock('@/auth/ssoGraphql', async (importOriginal) => ({
-  ...(await importOriginal<typeof SsoGraphql>()),
-  fetchAllUsers: () =>
-    Promise.resolve([
-      {
-        id: 'u-1',
-        givenName: 'Ada',
-        familyName: 'Staffer',
-        email: 'ada@x.org',
-        orcidId: '0000-0001',
-        roles: [{ id: 'r-1', type: 'STAFF' }],
-      },
-      { id: 'u-2', givenName: 'Bob', familyName: 'Plain', email: 'bob@x.org', orcidId: '0000-0002', roles: [] },
-    ]),
-}));
+const rosterMock = (): MockLink.MockedResponse => ({
+  request: { query: USERS_QUERY },
+  result: {
+    data: {
+      users: [
+        {
+          __typename: 'User',
+          id: 'u-1',
+          orcidId: '0000-0001',
+          profile: { __typename: 'UserProfile', givenName: 'Ada', familyName: 'Staffer', email: 'ada@x.org' },
+          roles: [{ __typename: 'Role', id: 'r-1', type: 'STAFF', partner: null }],
+        },
+        {
+          __typename: 'User',
+          id: 'u-2',
+          orcidId: '0000-0002',
+          profile: { __typename: 'UserProfile', givenName: 'Bob', familyName: 'Plain', email: 'bob@x.org' },
+          roles: [],
+        },
+      ],
+    },
+  },
+});
 
 const ADMIN_TOKEN = fakeJwt(standardUser('admin'));
 
 describe('UsersPage', () => {
   it('renders the role-assignment grid with a column per partner + Staff/Adm', async () => {
-    const screen = await renderWithContext(<UsersPage />, { token: ADMIN_TOKEN });
+    const screen = await renderWithContext(<UsersPage />, { token: ADMIN_TOKEN, mocks: [rosterMock()] });
     for (const h of ['Last', 'First', 'Email', 'ORCiD']) {
       await expect.element(screen.getByText(h)).toBeInTheDocument();
     }
@@ -40,12 +48,12 @@ describe('UsersPage', () => {
   });
 
   it('shows a filter input', async () => {
-    const screen = await renderWithContext(<UsersPage />, { token: ADMIN_TOKEN });
+    const screen = await renderWithContext(<UsersPage />, { token: ADMIN_TOKEN, mocks: [rosterMock()] });
     await expect.element(screen.getByPlaceholder(/filter name, email, or orcid/i)).toBeInTheDocument();
   });
 
   it('facets to holders of a role when its column header is clicked, and back', async () => {
-    const screen = await renderWithContext(<UsersPage />, { token: ADMIN_TOKEN });
+    const screen = await renderWithContext(<UsersPage />, { token: ADMIN_TOKEN, mocks: [rosterMock()] });
     await expect.element(screen.getByText('Staffer')).toBeInTheDocument();
     await expect.element(screen.getByText('Plain')).toBeInTheDocument();
 

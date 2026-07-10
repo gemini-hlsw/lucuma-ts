@@ -5,7 +5,7 @@ import { Dropdown } from 'primereact/dropdown';
 import { InputNumber } from 'primereact/inputnumber';
 import { type JSX, useMemo, useState } from 'react';
 
-import { type Partner, PARTNER_NAME, PARTNERS } from '@/auth/ssoGraphql';
+import { type Partner, PARTNER_NAME, PARTNERS } from '@/gql/sso/roster';
 import { type Allocation, BAND_LABEL, BANDS, type ScienceBand } from '@/gql/types';
 
 export interface TimeAwardsGridProps {

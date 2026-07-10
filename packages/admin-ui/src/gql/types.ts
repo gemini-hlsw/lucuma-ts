@@ -4,7 +4,7 @@
  * codegen-typed ODB responses. Wire types come from codegen (src/gql/gen);
  * these stay hand-modeled because they are UI domain shapes, not the schema.
  */
-import type { Partner } from '@/auth/ssoGraphql';
+import type { Partner } from '@/gql/sso/roster';
 
 // --- Calls for Proposals view (ODB CallForProposals) ---------------------
 

@@ -1,16 +1,17 @@
 /**
- * GraphQL Codegen config for the Admin UI's ODB operations.
+ * GraphQL Codegen config for the Admin UI's two endpoints, per-endpoint gen
+ * dirs in the navigate-ui style:
  *
- * The Users view's SSO operations (roster + role mutations) are NOT generated
- * here: the SSO schema isn't published in @gemini-hlsw/lucuma-schemas, and
- * its `users` query is still in development upstream (sc-9059). Generate SSO
- * types once that schema ships.
+ *   - ODB (src/gql, gen in src/gql/gen) — schema from the published
+ *     @gemini-hlsw/lucuma-schemas package.
+ *   - SSO (src/gql/sso, gen in src/gql/sso/gen) — schema checked into the
+ *     repo (src/gql/sso/Sso.graphql; see its header for provenance).
  */
 
 import type { CodegenConfig } from '@graphql-codegen/cli';
 import type { ClientPresetConfig } from '@graphql-codegen/client-preset';
 
-const scalars = {
+const odbScalars = {
   BigDecimal: 'string | number',
   Date: 'string',
   Timestamp: 'string',
@@ -33,13 +34,19 @@ const scalars = {
   TargetId: 'string',
 } satisfies Record<string, string>;
 
+const ssoScalars = {
+  UserId: 'string',
+  OrcidId: 'string',
+  RoleId: 'string',
+  ApiKeyId: 'string',
+} satisfies Record<string, string>;
+
 const sharedConfig = {
   useTypeImports: true,
   enumsAsTypes: true,
   skipTypeNameForRoot: true,
   // Required for fragments to work in tests
   nonOptionalTypename: true,
-  scalars,
 };
 
 const presetConfig = {
@@ -48,12 +55,19 @@ const presetConfig = {
 
 const config: CodegenConfig = {
   overwrite: true,
-  schema: import.meta.resolve('@gemini-hlsw/lucuma-schemas/odb'),
-  documents: ['src/gql/**/*.ts', 'src/**/*.tsx'],
   generates: {
     'src/gql/gen/': {
+      schema: import.meta.resolve('@gemini-hlsw/lucuma-schemas/odb'),
+      documents: ['src/gql/*.ts', 'src/**/*.tsx'],
       preset: 'client',
-      config: sharedConfig,
+      config: { ...sharedConfig, scalars: odbScalars },
+      presetConfig,
+    },
+    'src/gql/sso/gen/': {
+      schema: 'src/gql/sso/Sso.graphql',
+      documents: ['src/gql/sso/*.ts'],
+      preset: 'client',
+      config: { ...sharedConfig, scalars: ssoScalars },
       presetConfig,
     },
   },

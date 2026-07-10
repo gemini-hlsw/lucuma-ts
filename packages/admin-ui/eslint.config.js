@@ -10,6 +10,9 @@ import { reactRefresh } from 'eslint-plugin-react-refresh';
 import shared from '../../eslint.config.shared.js';
 
 export default defineConfig(
+  // The checked-in SSO schema is SDL consumed by codegen/graphql-config, not
+  // an operations document — nothing to lint.
+  { ignores: ['src/gql/sso/Sso.graphql'] },
   ...shared,
   reactPlugin.configs.flat.recommended,
   reactPlugin.configs.flat['jsx-runtime'],
@@ -17,7 +20,7 @@ export default defineConfig(
   reactHooks.configs.flat['recommended-latest'],
   reactRefresh.configs.vite(),
   {
-    files: [`./src/gql/*.{ts,tsx}`],
+    files: [`./src/gql/*.{ts,tsx}`, `./src/gql/sso/*.ts`],
     processor: graphqlPlugin.processor,
   },
   {
@@ -26,8 +29,18 @@ export default defineConfig(
       parser: graphqlPlugin.parser,
       parserOptions: {
         graphQLConfig: {
-          schema: import.meta.resolve('@gemini-hlsw/lucuma-schemas/odb'),
-          documents: [`./src/gql/**/*.{ts,tsx}`],
+          // One project per endpoint; a document belongs to whichever
+          // project's globs match its source file.
+          projects: {
+            odb: {
+              schema: import.meta.resolve('@gemini-hlsw/lucuma-schemas/odb'),
+              documents: [`./src/gql/*.{ts,tsx}`, `./src/features/**/*.tsx`, `./src/components/**/*.tsx`],
+            },
+            sso: {
+              schema: `./src/gql/sso/Sso.graphql`,
+              documents: [`./src/gql/sso/*.ts`],
+            },
+          },
         },
       },
     },

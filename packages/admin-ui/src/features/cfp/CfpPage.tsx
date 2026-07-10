@@ -9,13 +9,13 @@ import { InputNumber } from 'primereact/inputnumber';
 import { InputText } from 'primereact/inputtext';
 import { type JSX, useMemo, useState } from 'react';
 
-import { type Partner, PARTNER_NAME, PARTNERS } from '@/auth/ssoGraphql';
 import { DataSourceBadge } from '@/components/DataSourceBadge';
 import { Tile } from '@/components/Tile';
 import { useToast } from '@/components/toastContext';
 import { cfpPropertiesInput, mapCfps, useCfps, useCreateCfp, useUpdateCfp } from '@/gql/cfp';
 import { friendlyError } from '@/gql/errors';
 import type { CallForProposalsPropertiesInput } from '@/gql/gen/graphql';
+import { type Partner, PARTNER_NAME, PARTNERS } from '@/gql/sso/roster';
 import {
   type CallForProposals,
   CFP_TYPE_LABEL,

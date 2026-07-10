@@ -1,0 +1,98 @@
+# The SSO service's GraphQL schema, checked in so the admin-ui's SSO
+# operations are validated and typed — SSO doesn't publish its schema in
+# @gemini-hlsw/lucuma-schemas and its introspection requires authentication.
+#
+# Source: gemini-hlsw/lucuma-odb, modules/sso-service/src/main/resources/
+# Sso.graphql (as of b45c12a06), with the types it #imports from the ODB
+# schema (UserId, Partner, UserProfile) inlined, and one addition: the
+# `users` roster query, which is in development upstream as sc-9059. Verify
+# that field's shape (and re-sync this file) when sc-9059 deploys; replace
+# the whole file with a published schema once one exists.
+
+type Query {
+  user: User!
+  role: Role!
+
+  "All users with their roles. Admin only. (sc-9059 — in development upstream; not yet deployed.)"
+  users: [User!]!
+}
+
+type Mutation {
+  "Create and return an API key for the specified role, if owned by the current user."
+  createApiKey(role: RoleId!): String!
+
+  "Delete the specified API key, if owned by the current user. Returns the constant value `true`."
+  deleteApiKey(id: ApiKeyId!): Boolean!
+
+  "Add a user role, or look up the role if it already exists. Available only to admin and service users."
+  addRole(userId: UserId!, roleType: RoleType!, partner: Partner): RoleId!
+
+  """
+  Delete the specified role. Available only to admin and service users. Sessions
+  associated with this role will be deleted and will fail to renew on the next attempt. Note
+  that the PI role cannot be deleted.
+  """
+  deleteRole(roleId: RoleId!): Boolean!
+}
+
+type Subscription {
+  "A subscription that yields revoked API key identifiers."
+  apiKeyRevocation: ApiKeyId!
+}
+
+type User {
+  id: UserId!
+  orcidId: OrcidId!
+  profile: UserProfile!
+  roles: [Role!]!
+  apiKeys: [ApiKey!]!
+}
+
+type Role {
+  id: RoleId!
+  type: RoleType!
+  partner: Partner
+  user: User!
+}
+
+type ApiKey {
+  id: ApiKeyId!
+  user: User!
+  role: Role!
+}
+
+type UserProfile {
+  givenName: String
+  familyName: String
+  creditName: String
+  email: String
+}
+
+enum Partner {
+  "Argentina"
+  AR
+  "Brazil"
+  BR
+  "Canada"
+  CA
+  "Chile"
+  CL
+  "Korea"
+  KR
+  "University of Hawaii"
+  UH
+  "United States"
+  US
+}
+
+enum RoleType {
+  PI
+  NGO
+  STAFF
+  ADMIN
+}
+
+scalar UserId
+scalar OrcidId
+scalar RoleId
+scalar ApiKeyId

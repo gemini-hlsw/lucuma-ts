@@ -11,10 +11,8 @@ import { InputIcon } from 'primereact/inputicon';
 import { InputNumber } from 'primereact/inputnumber';
 import { InputText } from 'primereact/inputtext';
 import { InputTextarea } from 'primereact/inputtextarea';
-import { type JSX, useEffect, useMemo, useState } from 'react';
+import { type JSX, useMemo, useState } from 'react';
 
-import { fetchAllUsers, type RosterUser } from '@/auth/ssoGraphql';
-import { useOdbTokenValue } from '@/components/atoms/auth';
 import { DataSourceBadge } from '@/components/DataSourceBadge';
 import { Tile } from '@/components/Tile';
 import { TimeAwardsGrid } from '@/components/TimeAwardsGrid';
@@ -35,6 +33,7 @@ import {
   useUpdateProgramNote,
   useUpdateProposalType,
 } from '@/gql/programs';
+import { mapRosterUsers, useUsers } from '@/gql/sso/roster';
 import {
   type ContactScientist,
   type Program,
@@ -249,21 +248,10 @@ function ProgramEditor({
     setDraft((d) => ({ ...d, [key]: value }));
   }
 
-  // Roster for the contact-scientist type-ahead, loaded once from SSO. A
-  // failure here just leaves suggestions empty — the field still works for
-  // removals.
-  const token = useOdbTokenValue();
-  const [roster, setRoster] = useState<RosterUser[]>([]);
-  useEffect(() => {
-    if (!token) return;
-    let cancelled = false;
-    void fetchAllUsers().then((result) => {
-      if (!cancelled && typeof result !== 'string') setRoster(result);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [token]);
+  // Roster for the contact-scientist type-ahead, from SSO. A failure here
+  // just leaves suggestions empty — the field still works for removals.
+  const { data: rosterData } = useUsers();
+  const roster = useMemo(() => (rosterData ? mapRosterUsers(rosterData) : []), [rosterData]);
 
   const [contactSuggestions, setContactSuggestions] = useState<ContactScientist[]>([]);
   function suggestContacts(query: string): void {
