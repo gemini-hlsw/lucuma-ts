@@ -150,4 +150,9 @@ describe('matchConflicts', () => {
   it('skips sources without coordinates (ToO configurations)', () => {
     expect(matchConflicts([{ ...source, raDeg: null }], [candidate({})])).toEqual([]);
   });
+
+  it('gives each row a unique key when one candidate conflicts with several sources', () => {
+    const rows = matchConflicts([source, { ...source, id: 'x-126' }], [candidate({})]);
+    expect(rows.map((r) => r.key)).toEqual(['x-125:G-2027B-0421-P x-42', 'x-126:G-2027B-0421-P x-42']);
+  });
 });

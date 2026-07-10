@@ -94,7 +94,7 @@ export function DuplicatesTable({
       )}
       <DataTable
         value={rows as DuplicateRow[]}
-        dataKey="observationId"
+        dataKey="key"
         className="pl-striped-table"
         emptyMessage={loading ? 'Searching the archive…' : 'No potential duplicates found in the archive.'}
       >

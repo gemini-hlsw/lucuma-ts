@@ -87,6 +87,9 @@ describe('aggregateDuplicates', () => {
     expect(first?.observationId).toBe('GS-2025B-Q-1-1');
     expect(first?.fileCount).toBe(3);
     expect(first?.passCount).toBe(2);
+    // Keys are source-scoped: the same archive observation matched by another
+    // source must not collide with this one in the table.
+    expect(first?.key).toBe('x-125:GS-2025B-Q-1-1');
     expect(first?.sepArcsec).toBeCloseTo(3.6, 1); // 0.001° of dec
     expect(second?.passCount).toBe(0);
   });

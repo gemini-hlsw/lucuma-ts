@@ -114,7 +114,7 @@ export function ConflictsTable({
       )}
       <DataTable
         value={rows}
-        dataKey="label"
+        dataKey="key"
         className="pl-striped-table"
         emptyMessage={loading ? 'Checking active programs…' : 'No conflicting plans found in other active programs.'}
       >

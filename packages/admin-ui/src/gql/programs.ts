@@ -109,13 +109,17 @@ export const SET_ALLOCATIONS_MUTATION = graphql(`
   }
 `);
 
-/** Time-awards grid rows → `[AllocationInput!]` (hours → TimeSpanInput). */
+/** Time-awards grid rows → `[AllocationInput!]` (hours → TimeSpanInput).
+ *  Zero-hour cells are editing state (they keep a partner's grid row alive),
+ *  not awards — only positive allocations are sent. */
 export function allocationsInput(allocations: readonly Allocation[]): AllocationInput[] {
-  return allocations.map((a) => ({
-    category: a.category,
-    scienceBand: a.scienceBand,
-    duration: { hours: a.hours },
-  }));
+  return allocations
+    .filter((a) => a.hours > 0)
+    .map((a) => ({
+      category: a.category,
+      scienceBand: a.scienceBand,
+      duration: { hours: a.hours },
+    }));
 }
 
 export const UPDATE_PROPOSAL_TYPE_MUTATION = graphql(`

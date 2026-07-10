@@ -76,7 +76,7 @@ export function formatConditions(cond: RawConditions | null | undefined): string
 function observingModeSuffix(mode: string | null): string {
   if (!mode) return '';
   const suffix = mode
-    .replace(/^(GMOS_NORTH|GMOS_SOUTH|FLAMINGOS2|GHOST|GNIRS|IGRINS2)_?/, '')
+    .replace(/^(GMOS_NORTH|GMOS_SOUTH|FLAMINGOS_2|GHOST|GNIRS|IGRINS_2)_?/, '')
     .toLowerCase()
     .replace(/_([a-z])/g, (_, c: string) => c.toUpperCase());
   return suffix ? suffix.charAt(0).toUpperCase() + suffix.slice(1) : '';

@@ -226,6 +226,9 @@ export interface ConflictSource {
 
 /** One row of the "Potential Conflicts" table. */
 export interface ConflictRow extends ConflictCandidate {
+  /** Row identity for the table: one candidate can conflict with several
+   *  selected sources, so the candidate label alone is not unique. */
+  readonly key: string;
   readonly sourceId: string;
   readonly sepArcsec: number;
 }
@@ -246,7 +249,7 @@ export function matchConflicts(
       if (c.programId === s.programId || c.requestId === s.id) continue;
       if (c.raDeg === null || c.decDeg === null || c.modeType === null || !similar.has(c.modeType)) continue;
       const sep = separationArcsec(s.raDeg, s.decDeg, c.raDeg, c.decDeg);
-      if (sep <= radius) rows.push({ ...c, sourceId: s.id, sepArcsec: sep });
+      if (sep <= radius) rows.push({ ...c, key: `${s.id}:${c.label}`, sourceId: s.id, sepArcsec: sep });
     }
   }
   return rows.sort((a, b) => a.sourceId.localeCompare(b.sourceId) || a.sepArcsec - b.sepArcsec);

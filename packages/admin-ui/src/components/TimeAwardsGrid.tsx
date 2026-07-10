@@ -28,8 +28,11 @@ export function TimeAwardsGrid({ allocations, onChange }: TimeAwardsGridProps): 
     return allocations.find((a) => a.category === category && a.scienceBand === band)?.hours ?? 0;
   }
   function setHours(category: Partner, band: ScienceBand, hours: number): void {
+    // Keep zero-hour cells: dropping them would remove the partner's row when
+    // its last non-zero cell is cleared. allocationsInput filters zeros out
+    // of the mutation instead.
     const rest = allocations.filter((a) => !(a.category === category && a.scienceBand === band));
-    onChange(hours > 0 ? [...rest, { category, scienceBand: band, hours }] : rest);
+    onChange([...rest, { category, scienceBand: band, hours }]);
   }
   function addPartner(category: Partner): void {
     // Seed a zero Band-1 cell so the row appears; user fills the rest.

@@ -130,8 +130,14 @@ export default function ChangeRequestsPage(): JSX.Element {
   // is session-only and lost on reload.
   const [reviewerNotes, setReviewerNotes] = useState<ReadonlyMap<string, string>>(new Map());
 
-  function selectProgram(id: string | null): void {
-    setSelectedProgramId(id);
+  // The effective selection can change without a click — e.g. a facet change
+  // hides the selected program and the view falls back to the first one.
+  // Reset the per-program review state whenever it changes, however it
+  // changes, so a drafted decision/response can never carry over to a
+  // different program.
+  const [reviewedProgramId, setReviewedProgramId] = useState<string | null>(null);
+  if ((selectedProgram?.programId ?? null) !== reviewedProgramId) {
+    setReviewedProgramId(selectedProgram?.programId ?? null);
     setSelectedIds(new Set());
     setDecision(null);
     setResponse('');
@@ -222,7 +228,7 @@ export default function ChangeRequestsPage(): JSX.Element {
           dataKey="programId"
           selectionMode="single"
           selection={selectedProgram ?? undefined}
-          onSelectionChange={(e) => selectProgram((e.value as { programId: string } | null)?.programId ?? null)}
+          onSelectionChange={(e) => setSelectedProgramId((e.value as { programId: string } | null)?.programId ?? null)}
           emptyMessage="No programs with change requests."
           className="cr-table"
         >

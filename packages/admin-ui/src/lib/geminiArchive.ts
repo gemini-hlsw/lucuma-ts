@@ -96,6 +96,9 @@ export interface ArchiveFile {
 /** One row of the "Potential Duplicate Observations" table: one archive
  *  observation, aggregated over its files. */
 export interface DuplicateRow {
+  /** Row identity for the table: one archive observation can duplicate
+   *  several selected sources, so the observation id alone is not unique. */
+  readonly key: string;
   /** The requested observation / change request this duplicate matched. */
   readonly sourceId: string;
   readonly observationId: string;
@@ -143,6 +146,7 @@ export function aggregateDuplicates(
   return Array.from(byObservation.entries()).map(([observationId, group]) => {
     const first = group[0]!;
     return {
+      key: `${sourceId}:${observationId}`,
       sourceId,
       observationId,
       passCount: group.filter((f) => f.qa_state === 'Pass').length,

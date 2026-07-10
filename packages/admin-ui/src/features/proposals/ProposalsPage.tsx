@@ -2,7 +2,7 @@ import { Chips } from 'primereact/chips';
 import { Dropdown } from 'primereact/dropdown';
 import { InputNumber } from 'primereact/inputnumber';
 import { InputText } from 'primereact/inputtext';
-import { type JSX, useMemo, useRef, useState } from 'react';
+import { type JSX, useMemo, useState } from 'react';
 
 import { DataSourceBadge } from '@/components/DataSourceBadge';
 import { TimeAwardsGrid } from '@/components/TimeAwardsGrid';
@@ -98,9 +98,11 @@ export default function ProposalsPage(): JSX.Element {
   );
   const semesters = useMemo(() => Array.from(new Set(proposals.map((p) => p.semester))).sort(), [proposals]);
 
-  // The award being drafted per proposal (keyed by program id), read at
-  // resolve time. A ref rather than state: AwardForm owns the re-rendering.
-  const awards = useRef(new Map<string, AwardDraft>());
+  // The award being drafted per proposal (keyed by program id). State, and
+  // AwardForm renders from it, so the draft submitted at resolve time is
+  // always exactly what's on screen — even across Accept/Reject toggles,
+  // which unmount and remount the form.
+  const [awards, setAwards] = useState<ReadonlyMap<string, AwardDraft>>(new Map());
 
   function boilerplate(p: ReviewProposal, decision: Decision): string {
     return decision === 'ACCEPT'
@@ -115,7 +117,8 @@ export default function ProposalsPage(): JSX.Element {
     setResolving(true);
     try {
       if (decision === 'ACCEPT') {
-        const award = awards.current.get(p.id) ?? BLANK_AWARD;
+        const award = awards.get(p.id) ?? BLANK_AWARD;
+        const allocations = allocationsInput(award.allocations);
         const SET: ProgramPropertiesInput = {
           goa: { proprietaryMonths: award.proprietaryMonths },
           ...(award.activeStart ? { activeStart: award.activeStart } : {}),
@@ -124,8 +127,8 @@ export default function ProposalsPage(): JSX.Element {
         // Status first — it validates the proposal is decidable before any
         // program properties are touched.
         await mutate(SET_PROPOSAL_STATUS_MUTATION, { programId: p.id, status: 'ACCEPTED' });
-        if (award.allocations.length > 0) {
-          await mutate(SET_ALLOCATIONS_MUTATION, { programId: p.id, allocations: allocationsInput(award.allocations) });
+        if (allocations.length > 0) {
+          await mutate(SET_ALLOCATIONS_MUTATION, { programId: p.id, allocations });
         }
         await mutate(UPDATE_PROGRAM_MUTATION, { programId: p.id, SET });
         toast.success('Proposal accepted', p.reference);
@@ -199,7 +202,8 @@ export default function ProposalsPage(): JSX.Element {
           <AwardForm
             key={p.id}
             requestedHours={p.observations.reduce((s, o) => s + o.hours, 0)}
-            onChange={(award) => awards.current.set(p.id, award)}
+            award={awards.get(p.id) ?? BLANK_AWARD}
+            onChange={(award) => setAwards((prev) => new Map(prev).set(p.id, award))}
           />
         )
       }
@@ -210,23 +214,20 @@ export default function ProposalsPage(): JSX.Element {
 }
 
 /** The acceptance award editor (sc-9092 mockup): Time Awards grid + active
- *  period, proprietary period, and contact scientists. Owns its draft and
- *  reports every change upward for use at resolve time. */
+ *  period, proprietary period, and contact scientists. Controlled — the page
+ *  owns the draft, so it survives Accept/Reject toggles and is exactly what
+ *  gets submitted at resolve time. */
 function AwardForm({
   requestedHours,
+  award,
   onChange,
 }: {
   readonly requestedHours: number;
+  readonly award: AwardDraft;
   readonly onChange: (award: AwardDraft) => void;
 }): JSX.Element {
-  const [award, setAward] = useState<AwardDraft>(BLANK_AWARD);
-
   function update(patch: Partial<AwardDraft>): void {
-    setAward((a) => {
-      const next = { ...a, ...patch };
-      onChange(next);
-      return next;
-    });
+    onChange({ ...award, ...patch });
   }
 
   const awarded = award.allocations.reduce((s, a) => s + a.hours, 0);

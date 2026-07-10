@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { type AdminProgramsResult, mapPrograms, proposalTypeInput } from './programs';
+import { type AdminProgramsResult, allocationsInput, mapPrograms, proposalTypeInput } from './programs';
 import type { Program } from './types';
 
 type RawProgram = AdminProgramsResult['programs']['matches'][number];
@@ -173,5 +173,18 @@ describe('proposalTypeInput', () => {
     expect(proposalTypeInput({ ...base, programClass: 'CLASSICAL' })).toEqual({
       classical: { minPercentTime: 75 },
     });
+  });
+});
+
+describe('allocationsInput', () => {
+  it('sends only positive awards, keeping zero cells as grid-only editing state', () => {
+    // Regression: a zeroed cell keeps the partner's row visible in the grid;
+    // it must not become a zero-duration allocation in the mutation.
+    expect(
+      allocationsInput([
+        { category: 'US', scienceBand: 'BAND1', hours: 0 },
+        { category: 'US', scienceBand: 'BAND2', hours: 2.5 },
+      ]),
+    ).toEqual([{ category: 'US', scienceBand: 'BAND2', duration: { hours: 2.5 } }]);
   });
 });
