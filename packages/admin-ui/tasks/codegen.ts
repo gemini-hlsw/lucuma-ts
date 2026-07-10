@@ -22,6 +22,11 @@ const scalars = {
   ObservationId: 'string',
   ConfigurationRequestId: 'string',
   UserId: 'string',
+  ProgramUserId: 'string',
+  ProgramNoteId: 'string',
+  IntPercent: 'number',
+  ProgramReferenceLabel: 'string',
+  ProposalReferenceLabel: 'string',
 } satisfies Record<string, string>;
 
 const sharedConfig = {

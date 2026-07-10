@@ -81,3 +81,77 @@ export type Instrument = keyof typeof INSTRUMENT_LABEL;
 export const INSTRUMENTS = (Object.keys(INSTRUMENT_LABEL) as readonly Instrument[])
   .slice()
   .sort((a, b) => INSTRUMENT_LABEL[a].localeCompare(INSTRUMENT_LABEL[b]));
+
+// --- Programs view (ODB Program) ------------------------------------------
+
+export type ProgramClass = 'QUEUE' | 'CLASSICAL';
+export const PROGRAM_CLASSES: readonly ProgramClass[] = ['QUEUE', 'CLASSICAL'];
+export const PROGRAM_CLASS_LABEL: Record<ProgramClass, string> = { QUEUE: 'Queue', CLASSICAL: 'Classical' };
+
+export type ScienceBand = 'BAND1' | 'BAND2' | 'BAND3' | 'BAND4';
+export const BANDS: readonly ScienceBand[] = ['BAND1', 'BAND2', 'BAND3', 'BAND4'];
+export const BAND_LABEL: Record<ScienceBand, string> = {
+  BAND1: 'Band-1',
+  BAND2: 'Band-2',
+  BAND3: 'Band-3',
+  BAND4: 'Band-4',
+};
+
+/** One cell of the time-awards grid: hours allocated to a partner in a band. */
+export interface Allocation {
+  readonly category: Partner;
+  readonly scienceBand: ScienceBand;
+  readonly hours: number;
+}
+
+export type TooStatus = 'NONE' | 'STANDARD' | 'RAPID';
+export const TOO_STATUSES: readonly TooStatus[] = ['NONE', 'STANDARD', 'RAPID'];
+export const TOO_LABEL: Record<TooStatus, string> = { NONE: 'None', STANDARD: 'Standard', RAPID: 'Rapid' };
+
+/** A contact scientist: an SSO/ODB user holding a SUPPORT_* ProgramUser role.
+ *  `programUserId` is set for contacts already on the program (used to remove
+ *  them); `userId` for roster picks not yet linked (used to add them). */
+export interface ContactScientist {
+  readonly name: string;
+  readonly userId?: string;
+  readonly programUserId?: string;
+}
+
+export interface Program {
+  readonly id: string; // internal ProgramId, e.g. "p-172"
+  /** Program reference label ("G-2027B-1234-Q"); falls back to the id. */
+  readonly reference: string;
+  readonly name: string;
+  readonly pi: string;
+  /** Derived from the proposal type's GraphQL __typename (Queue vs Classical) —
+   *  there is no separate "programClass" field in the ODB schema. Other
+   *  proposal types (LargeProgram, FastTurnaround, …) aren't Queue/Classical;
+   *  default them to QUEUE since the Admin form only offers those two. */
+  readonly programClass: ProgramClass;
+  /** Only Queue proposals carry ToOActivation; Classical/others have none. */
+  readonly tooStatus: TooStatus;
+  /** Program users with role SUPPORT_PRIMARY/SUPPORT_SECONDARY — the real
+   *  Gemini "contact scientist" roles. */
+  readonly contactScientists: readonly ContactScientist[];
+  /** Active date range (ISO). Every program has a start/end (the ODB's
+   *  1901/2099 sentinels are shown blank), always editable as dates. */
+  readonly activeStart: string;
+  readonly activeEnd: string;
+  readonly proprietaryMonths: number;
+  /** Queue proposals only — ConsiderForBand3 is CONSIDER/DO_NOT_CONSIDER/UNSET
+   *  in the ODB. True = CONSIDER, false = DO_NOT_CONSIDER or UNSET. */
+  readonly considerForBand3: boolean;
+  /** Queue/Classical minPercentTime — the minimum fraction of the award that
+   *  must be observed for the program to count as successful. */
+  readonly minPercentTime: number;
+  readonly privateHeader: boolean;
+  /** Names of program users (typically COIs) whose `thesis` flag is set — the
+   *  ODB tracks thesis per investigator (ProgramUser.thesis), not per program. */
+  readonly thesisInvestigators: readonly string[];
+  readonly allocations: readonly Allocation[];
+  /** The program's private note (Program.notes, isPrivate = true) — also
+   *  visible to staff in Explore. `privateNoteId` is null when no private
+   *  note exists yet (create vs update on save). */
+  readonly privateNote: string;
+  readonly privateNoteId: string | null;
+}

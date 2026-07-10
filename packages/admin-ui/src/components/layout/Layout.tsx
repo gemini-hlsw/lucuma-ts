@@ -23,6 +23,11 @@ interface NavItem {
 
 const NAV_ITEMS: readonly NavItem[] = [
   {
+    to: '/programs',
+    label: 'Programs',
+    tip: 'Edit administrative parameters of an awarded program (class, ToO, contact scientists, band, active period, time awards). Backed by the ODB updatePrograms + setAllocations mutations. [sc-9090]',
+  },
+  {
     to: '/users',
     label: 'Users',
     tip: 'Assign staff & NGO roles to users. Role changes call the SSO addRole / deleteRole mutations (not the ODB). Requires an admin role to actually apply. [sc-9096]',
