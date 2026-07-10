@@ -195,6 +195,24 @@ function coordinateLimitsInput(l: SiteCoordinateLimits) {
   };
 }
 
+/** Gemini semester containing the given moment: A runs Feb–Jul, B runs
+ *  Aug–Jan (January belongs to the previous year's B). Seeds newly created
+ *  calls. */
+export function currentSemester(now: Date = new Date()): string {
+  const month = now.getUTCMonth() + 1;
+  if (month === 1) return `${String(now.getUTCFullYear() - 1)}B`;
+  return `${String(now.getUTCFullYear())}${month < 8 ? 'A' : 'B'}`;
+}
+
+/** A semester's active date range — the ODB requires activeStart/activeEnd on
+ *  create. A: Feb 1 – Aug 1; B: Aug 1 – Feb 1 of the next year. */
+export function semesterDates(semester: string): { activeStart: string; activeEnd: string } {
+  const year = Number(semester.slice(0, 4));
+  return semester.endsWith('A')
+    ? { activeStart: `${String(year)}-02-01`, activeEnd: `${String(year)}-08-01` }
+    : { activeStart: `${String(year)}-08-01`, activeEnd: `${String(year + 1)}-02-01` };
+}
+
 /** A call is open while today is on or before the latest of its deadlines —
  *  it stays open until every participating partner's window has closed.
  *  No deadlines at all (e.g. a draft) is treated as not yet open. */

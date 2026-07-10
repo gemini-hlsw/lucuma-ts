@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { type AdminProgramsResult, allocationsInput, mapPrograms, proposalTypeInput } from './programs';
+import {
+  type AdminProgramsResult,
+  allocationsInput,
+  mapPrograms,
+  programPropertiesInput,
+  proposalTypeInput,
+} from './programs';
 import type { Program } from './types';
 
 type RawProgram = AdminProgramsResult['programs']['matches'][number];
@@ -186,5 +192,41 @@ describe('allocationsInput', () => {
         { category: 'US', scienceBand: 'BAND2', hours: 2.5 },
       ]),
     ).toEqual([{ category: 'US', scienceBand: 'BAND2', duration: { hours: 2.5 } }]);
+  });
+});
+
+describe('programPropertiesInput', () => {
+  const base: Program = {
+    id: 'p-1',
+    reference: 'R',
+    name: 'N',
+    pi: 'PI',
+    programClass: 'QUEUE',
+    tooStatus: 'NONE',
+    contactScientists: [],
+    activeStart: '2027-08-01',
+    activeEnd: '2028-02-01',
+    proprietaryMonths: 12,
+    considerForBand3: false,
+    minPercentTime: 100,
+    privateHeader: true,
+    thesisInvestigators: [],
+    allocations: [],
+    privateNote: '',
+    privateNoteId: null,
+  };
+
+  it('carries the GOA properties and active period', () => {
+    expect(programPropertiesInput(base)).toEqual({
+      goa: { proprietaryMonths: 12, privateHeader: true },
+      activeStart: '2027-08-01',
+      activeEnd: '2028-02-01',
+    });
+  });
+
+  it('omits blank active dates rather than sending empty strings', () => {
+    expect(programPropertiesInput({ ...base, activeStart: '', activeEnd: '' })).toEqual({
+      goa: { proprietaryMonths: 12, privateHeader: true },
+    });
   });
 });

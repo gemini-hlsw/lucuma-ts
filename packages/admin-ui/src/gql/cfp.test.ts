@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { type AdminCfpsResult, cfpPropertiesInput, mapCfps } from './cfp';
+import { type AdminCfpsResult, cfpPropertiesInput, currentSemester, mapCfps, semesterDates } from './cfp';
 
 type RawCfp = AdminCfpsResult['callsForProposals']['matches'][number];
 type RawLimits = NonNullable<RawCfp['gemini']>['coordinateLimits']['north'];
@@ -159,5 +159,25 @@ describe('cfpPropertiesInput', () => {
     });
     // allowsNonPartnerPi is ODB-derived and must never be sent.
     expect(input.gemini).not.toHaveProperty('allowsNonPartnerPi');
+  });
+});
+
+describe('currentSemester', () => {
+  it('assigns Feb-Jul to A and Aug-Dec to B', () => {
+    expect(currentSemester(new Date('2027-02-01T00:00:00Z'))).toBe('2027A');
+    expect(currentSemester(new Date('2027-07-31T23:59:59Z'))).toBe('2027A');
+    expect(currentSemester(new Date('2027-08-01T00:00:00Z'))).toBe('2027B');
+    expect(currentSemester(new Date('2027-12-31T23:59:59Z'))).toBe('2027B');
+  });
+
+  it("assigns January to the previous year's B semester", () => {
+    expect(currentSemester(new Date('2028-01-15T12:00:00Z'))).toBe('2027B');
+  });
+});
+
+describe('semesterDates', () => {
+  it('spans Feb-Aug for A and Aug-Feb (of the next year) for B', () => {
+    expect(semesterDates('2027A')).toEqual({ activeStart: '2027-02-01', activeEnd: '2027-08-01' });
+    expect(semesterDates('2027B')).toEqual({ activeStart: '2027-08-01', activeEnd: '2028-02-01' });
   });
 });

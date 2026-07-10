@@ -12,7 +12,15 @@ import { type JSX, useMemo, useState } from 'react';
 import { DataSourceBadge } from '@/components/DataSourceBadge';
 import { Tile } from '@/components/Tile';
 import { useToast } from '@/components/toastContext';
-import { cfpPropertiesInput, mapCfps, useCfps, useCreateCfp, useUpdateCfp } from '@/gql/cfp';
+import {
+  cfpPropertiesInput,
+  currentSemester,
+  mapCfps,
+  semesterDates,
+  useCfps,
+  useCreateCfp,
+  useUpdateCfp,
+} from '@/gql/cfp';
 import { friendlyError } from '@/gql/errors';
 import type { CallForProposalsPropertiesInput } from '@/gql/gen/graphql';
 import { type Partner, PARTNER_NAME, PARTNERS } from '@/gql/sso/roster';
@@ -35,24 +43,6 @@ const OPEN_FILTER_OPTIONS = [
   { label: 'Closed', value: 'closed' },
 ] as const;
 type OpenFilter = (typeof OPEN_FILTER_OPTIONS)[number]['value'];
-
-/** Gemini semester containing today: A runs Feb–Jul, B runs Aug–Jan (January
- *  belongs to the previous year's B). Seeds newly created calls. */
-function currentSemester(): string {
-  const now = new Date();
-  const month = now.getUTCMonth() + 1;
-  if (month === 1) return `${String(now.getUTCFullYear() - 1)}B`;
-  return `${String(now.getUTCFullYear())}${month < 8 ? 'A' : 'B'}`;
-}
-
-/** A semester's active date range — the ODB requires activeStart/activeEnd on
- *  create. A: Feb 1 – Aug 1; B: Aug 1 – Feb 1 of the next year. */
-function semesterDates(semester: string): { activeStart: string; activeEnd: string } {
-  const year = Number(semester.slice(0, 4));
-  return semester.endsWith('A')
-    ? { activeStart: `${String(year)}-02-01`, activeEnd: `${String(year)}-08-01` }
-    : { activeStart: `${String(year)}-08-01`, activeEnd: `${String(year + 1)}-02-01` };
-}
 
 /**
  * Calls for Proposals view (sc-9098). Layout follows the mockup: a Calls table
