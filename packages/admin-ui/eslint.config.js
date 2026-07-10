@@ -21,6 +21,28 @@ export default defineConfig(
     processor: graphqlPlugin.processor,
   },
   {
+    files: [`./src/gql/**/*.graphql`],
+    languageOptions: {
+      parser: graphqlPlugin.parser,
+      parserOptions: {
+        graphQLConfig: {
+          schema: import.meta.resolve('@gemini-hlsw/lucuma-schemas/odb'),
+          documents: [`./src/gql/**/*.{ts,tsx}`],
+        },
+      },
+    },
+    plugins: {
+      // @ts-expect-error - incorrect type
+      '@graphql-eslint': graphqlPlugin,
+    },
+    rules: {
+      ...graphqlPlugin.configs['flat/operations-recommended'].rules,
+
+      '@graphql-eslint/naming-convention': ['error', { types: 'PascalCase', FieldDefinition: 'camelCase' }],
+      '@graphql-eslint/require-selections': ['error', { fieldName: ['id', 'pk'] }],
+    },
+  },
+  {
     files: ['tasks/**/*.ts'],
     languageOptions: {
       parserOptions: {

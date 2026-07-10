@@ -27,6 +27,11 @@ const NAV_ITEMS: readonly NavItem[] = [
     label: 'Users',
     tip: 'Assign staff & NGO roles to users. Role changes call the SSO addRole / deleteRole mutations (not the ODB). Requires an admin role to actually apply. [sc-9096]',
   },
+  {
+    to: '/cfp',
+    label: 'Calls for Proposals',
+    tip: 'Create & update Calls for Proposals (type, semester, active window, coordinate limits, instruments, partner deadlines). ODB createCallForProposals / updateCallsForProposals. [sc-9098]',
+  },
 ];
 
 /**

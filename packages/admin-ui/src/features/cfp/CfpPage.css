@@ -1,0 +1,172 @@
+.cfp-calls-table {
+  cursor: pointer;
+}
+
+.cfp-open-yes {
+  color: var(--green-500, #4caf50);
+}
+
+.cfp-open-no {
+  color: var(--red-500, #e2554e);
+}
+
+/* Facet dropdowns (Open / Type) in the tile's control strip. */
+.cfp-facet {
+  min-width: 9.5rem;
+}
+
+.cfp-facet .p-dropdown-label {
+  padding-block: 4px;
+  font-size: 0.85rem;
+}
+
+/* Three-column editor (params | partners | instruments), per the mockup. */
+.cfp-editor {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 0.8fr);
+  gap: 28px;
+  align-items: start;
+}
+
+.cfp-col {
+  min-width: 0;
+}
+
+.cfp-col-title {
+  margin: 0 0 12px;
+  font-size: 1rem;
+}
+
+.cfp-form {
+  display: grid;
+  grid-template-columns: [label] 10rem [field] minmax(0, 1fr);
+  align-items: center;
+  gap: 11px 14px;
+  margin-bottom: 18px;
+}
+
+.cfp-form > label {
+  grid-column: label;
+  font-size: 0.9rem;
+}
+
+.cfp-form > :not(label) {
+  grid-column: field;
+}
+
+.cfp-readonly {
+  font-family: monospace;
+  color: var(--text-color-secondary, #9a9aa2);
+}
+
+.cfp-suffixed {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cfp-suffix {
+  color: var(--text-color-secondary, #9a9aa2);
+  font-size: 0.88rem;
+}
+
+.cfp-coords {
+  border-collapse: collapse;
+  font-size: 0.84rem;
+}
+
+.cfp-coords td {
+  padding: 5px 6px;
+}
+
+.cfp-site {
+  font-weight: 600;
+  white-space: nowrap;
+  padding-right: 10px !important;
+}
+
+.cfp-le {
+  color: var(--text-color-secondary, #9a9aa2);
+  white-space: nowrap;
+}
+
+.cfp-coord-input {
+  width: 5rem;
+  text-align: center;
+}
+
+.cfp-default-deadline {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 14px;
+}
+
+.cfp-dd-label {
+  font-size: 0.82rem;
+  color: var(--text-color-secondary, #9a9aa2);
+}
+
+.cfp-partners {
+  border-collapse: collapse;
+  font-size: 0.88rem;
+  width: 100%;
+}
+
+.cfp-partners th {
+  text-align: left;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.72rem;
+  color: var(--text-color-secondary, #9a9aa2);
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--surface-border, #2a2a2e);
+}
+
+.cfp-partners td {
+  padding: 5px 6px;
+}
+
+.cfp-partner-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.cfp-deadline-input {
+  width: 100%;
+}
+
+.cfp-instruments {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.cfp-instrument {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+}
+
+.cfp-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 24px;
+}
+
+.cfp-foot-note {
+  text-align: right;
+  font-size: 0.78rem;
+  color: var(--text-color-secondary, #9a9aa2);
+  margin: 8px 0 0;
+}
+
+@media (width <= 1150px) {
+  .cfp-editor {
+    grid-template-columns: 1fr;
+  }
+}

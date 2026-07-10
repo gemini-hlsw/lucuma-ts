@@ -16,6 +16,12 @@ const scalars = {
   Timestamp: 'string',
   NonEmptyString: 'string',
   NonNegInt: 'number',
+  Semester: 'string',
+  CallForProposalsId: 'string',
+  ProgramId: 'string',
+  ObservationId: 'string',
+  ConfigurationRequestId: 'string',
+  UserId: 'string',
 } satisfies Record<string, string>;
 
 const sharedConfig = {
