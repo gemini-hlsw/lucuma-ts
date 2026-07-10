@@ -203,3 +203,51 @@ export interface Proposal {
   readonly abstract: string;
   readonly observations: readonly ObservationRow[];
 }
+
+// --- Change Requests view (ODB ConfigurationRequest) ----------------------
+
+export type ConfigurationRequestStatus = 'REQUESTED' | 'APPROVED' | 'DENIED' | 'WITHDRAWN';
+
+/** Site derived from the requested configuration's instrument (Gemini North / South). */
+export type Site = 'NORTH' | 'SOUTH';
+
+export interface ChangeRequest {
+  readonly id: string;
+  readonly programId: string;
+  /** Program reference label ("G-2027B-1234-Q"); falls back to the id. */
+  readonly programReference: string;
+  readonly programTitle: string;
+  readonly pi: string;
+  readonly status: ConfigurationRequestStatus;
+  readonly justification: string;
+  readonly site: Site;
+  /** RA/Dec of the requested configuration's target, e.g. "06:08:31.9" / "-59:32:27". */
+  readonly ra: string;
+  readonly dec: string;
+  /** Degrees for the sc-9243/9244 checks; null for ToO configurations,
+   *  which carry no coordinates. */
+  readonly raDeg: number | null;
+  readonly decDeg: number | null;
+  /** ODB ObservingModeType of the requested configuration. */
+  readonly modeType: string | null;
+  readonly instrument: string; // display label, e.g. "GMOS-S"
+  readonly conditions: string; // e.g. "IQ70/CC70/SB80/WV80"
+  readonly observationIds: readonly string[];
+  readonly observations: readonly ObservationRow[];
+}
+
+/** Synthesized status for a program's group of change requests (sc-9094 mockup):
+ *  Approved = all approved, Denied = all denied, Open = at least one undecided,
+ *  Mixed = a mix of approved and denied with none left open. */
+export type ProgramCrStatus = 'Approved' | 'Denied' | 'Open' | 'Mixed';
+
+export interface ProgramWithChangeRequests {
+  readonly programId: string;
+  /** Program reference label ("G-2027B-1234-Q"); falls back to the id. */
+  readonly programReference: string;
+  readonly programTitle: string;
+  readonly pi: string;
+  readonly site: Site;
+  readonly status: ProgramCrStatus;
+  readonly requests: readonly ChangeRequest[];
+}

@@ -120,13 +120,14 @@ const EMPTY_BY_ID_RESULT: OdbData<ReadonlyMap<string, never>> = {
 /**
  * Run a follow-up query for IDs gathered from a first `useOdbData` result
  * (e.g. ConfigurationRequest.applicableObservations), batched into a single
- * round-trip rather than one request per row. Re-fetches whenever the id set
- * changes. An empty id list is 'ready' with an empty map — there's nothing to
- * fetch and that's not an error.
+ * round-trip rather than one request per row. `query` takes the ids as its
+ * `$ids` variable. Re-fetches whenever the id set changes. An empty id list
+ * is 'ready' with an empty map — there's nothing to fetch and that's not an
+ * error.
  */
 export function useOdbDataByIds<TData, T>(
   ids: readonly string[],
-  buildQuery: (ids: readonly string[]) => TypedDocumentNode<TData, Record<string, never>>,
+  query: TypedDocumentNode<TData, { ids: string[] }>,
   map: (raw: TData) => ReadonlyMap<string, T>,
 ): OdbData<ReadonlyMap<string, T>> {
   const apollo = useApolloClient();
@@ -146,11 +147,9 @@ export function useOdbDataByIds<TData, T>(
   // can't re-trigger the fetch effect.
   const key = [...ids].sort().join(',');
   const idsRef = useRef(ids);
-  const buildQueryRef = useRef(buildQuery);
   const mapRef = useRef(map);
   useEffect(() => {
     idsRef.current = ids;
-    buildQueryRef.current = buildQuery;
     mapRef.current = map;
   });
 
@@ -160,7 +159,7 @@ export function useOdbDataByIds<TData, T>(
 
     let cancelled = false;
     apollo
-      .query({ query: buildQueryRef.current(idsRef.current), fetchPolicy: 'network-only' })
+      .query({ query, fetchPolicy: 'network-only', variables: { ids: [...idsRef.current] } })
       .then((res) => {
         if (cancelled) return;
         if (res.data === undefined) {
@@ -177,7 +176,7 @@ export function useOdbDataByIds<TData, T>(
     return () => {
       cancelled = true;
     };
-  }, [apollo, key, fetchCount]);
+  }, [apollo, query, key, fetchCount]);
 
   if (ids.length === 0 && hasOdbToken()) return EMPTY_BY_ID_RESULT;
   return { ...state, refetch };

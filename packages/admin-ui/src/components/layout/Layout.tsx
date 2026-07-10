@@ -33,6 +33,11 @@ const NAV_ITEMS: readonly NavItem[] = [
     tip: 'Review & respond to special proposals — Director\u2019s Time and Poor Weather. Accept/reject sets ODB ProposalStatus via setProposalStatus. [sc-9092]',
   },
   {
+    to: '/change-requests',
+    label: 'Change Requests',
+    tip: 'Review & respond to PI configuration-change requests (ODB ConfigurationRequest). Approve/deny via updateConfigurationRequests. [sc-9094]',
+  },
+  {
     to: '/users',
     label: 'Users',
     tip: 'Assign staff & NGO roles to users. Role changes call the SSO addRole / deleteRole mutations (not the ODB). Requires an admin role to actually apply. [sc-9096]',
