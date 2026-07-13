@@ -1,10 +1,11 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
   aggregateDuplicates,
   type ArchiveFile,
   archiveQueryUrl,
   archiveSearchSpec,
+  findDuplicates,
   separationArcsec,
 } from './geminiArchive';
 
@@ -98,5 +99,53 @@ describe('aggregateDuplicates', () => {
     const rows = aggregateDuplicates('x-1', 30, -30, [file({ observation_id: null }), file({ ra: null, dec: null })]);
     expect(rows).toHaveLength(1);
     expect(rows[0]?.sepArcsec).toBeNull();
+  });
+});
+
+describe('findDuplicates', () => {
+  const gmosSource = { id: 'x-1', raDeg: 30, decDeg: -30, modeType: 'GMOS_SOUTH_LONG_SLIT' };
+  const file = { observation_id: 'GS-2025B-Q-1-1', instrument: 'GMOS-S', object: 'T', ra: 30, dec: -30 };
+  const okResponse = () => new Response(JSON.stringify([file]), { status: 200 });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('queries the archive once per instrument and aggregates rows', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(okResponse());
+    const rows = await findDuplicates([gmosSource], new AbortController().signal);
+    // GMOS covers both sites in a single query.
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.observationId).toBe('GS-2025B-Q-1-1');
+  });
+
+  it('serves a repeated query from the response cache', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(okResponse());
+    await findDuplicates([gmosSource], new AbortController().signal);
+    const calls = fetchSpy.mock.calls.length;
+    await findDuplicates([gmosSource], new AbortController().signal);
+    expect(fetchSpy).toHaveBeenCalledTimes(calls);
+  });
+
+  it('skips sources without coordinates or a searchable mode', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(okResponse());
+    const rows = await findDuplicates(
+      [
+        { ...gmosSource, raDeg: null },
+        { ...gmosSource, id: 'x-2', modeType: 'VISITOR_NORTH' },
+      ],
+      new AbortController().signal,
+    );
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(rows).toEqual([]);
+  });
+
+  it('rejects on an archive error status', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('nope', { status: 503 }));
+    // A distinct URL (different coordinates) so the cache can't answer.
+    await expect(findDuplicates([{ ...gmosSource, raDeg: 99 }], new AbortController().signal)).rejects.toThrow(
+      /HTTP 503/,
+    );
   });
 });
