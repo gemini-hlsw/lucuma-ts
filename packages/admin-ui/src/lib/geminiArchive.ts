@@ -178,16 +178,29 @@ export interface DuplicateSource {
 }
 
 // jsonsummary responses are immutable for a given URL within a session;
-// cache them so re-selecting a row doesn't refetch.
+// cache them so re-selecting a row doesn't refetch. Bounded LRU: a long
+// review session over many selections must not accumulate responses forever.
+const RESPONSE_CACHE_LIMIT = 50;
 const responseCache = new Map<string, readonly ArchiveFile[]>();
 
 async function fetchArchive(url: string, signal: AbortSignal): Promise<readonly ArchiveFile[]> {
   const cached = responseCache.get(url);
-  if (cached) return cached;
+  if (cached) {
+    // Refresh recency: Map iterates in insertion order, so re-inserting
+    // moves this entry to the back (most recently used).
+    responseCache.delete(url);
+    responseCache.set(url, cached);
+    return cached;
+  }
   const res = await fetch(url, { signal });
   if (!res.ok) throw new Error(`Archive query failed: HTTP ${res.status}`);
   const files = (await res.json()) as ArchiveFile[];
   responseCache.set(url, files);
+  if (responseCache.size > RESPONSE_CACHE_LIMIT) {
+    // Evict the least recently used entry (the front of the Map).
+    const oldest = responseCache.keys().next().value;
+    if (oldest !== undefined) responseCache.delete(oldest);
+  }
   return files;
 }
 
