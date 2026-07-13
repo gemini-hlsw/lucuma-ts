@@ -54,8 +54,13 @@ const environments = {
   localhost: LOCAL_DEV,
 } satisfies Record<string, Environment>;
 
-export const CURRENT_ENV: Environment =
-  environments[window.location.hostname as keyof typeof environments] ?? LOCAL_DEV;
+/** The environment a hostname resolves to; unknown hosts (dev-server
+ *  aliases, previews) fall through to the proxied local-dev entry. */
+export function environmentFor(hostname: string): Environment {
+  return environments[hostname as keyof typeof environments] ?? LOCAL_DEV;
+}
+
+export const CURRENT_ENV: Environment = environmentFor(window.location.hostname);
 
 /** How many seconds before token expiry to proactively refresh. */
 export const EXPIRATION_ANTICIPATION_SECONDS = 30;

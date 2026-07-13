@@ -19,6 +19,9 @@ describe('similarModeTypes', () => {
 
   it('is empty for mode-less sources', () => {
     expect(similarModeTypes(null)).toEqual([]);
+    expect(similarModeTypes('FLAMINGOS_2_IMAGING')).toEqual(['FLAMINGOS_2_IMAGING']);
+    expect(similarModeTypes('GMOS_SOUTH_IMAGING')).toEqual(['GMOS_SOUTH_IMAGING', 'GMOS_NORTH_IMAGING']);
+    expect(similarModeTypes('ALOPEKE_WIDE_FIELD')).toEqual(['ALOPEKE_WIDE_FIELD', 'ZORRO_WIDE_FIELD']);
   });
 });
 
@@ -154,5 +157,22 @@ describe('matchConflicts', () => {
   it('gives each row a unique key when one candidate conflicts with several sources', () => {
     const rows = matchConflicts([source, { ...source, id: 'x-126' }], [candidate({})]);
     expect(rows.map((r) => r.key)).toEqual(['x-125:G-2027B-0421-P x-42', 'x-126:G-2027B-0421-P x-42']);
+  });
+});
+
+describe('matchConflicts ordering', () => {
+  const source = { id: 'x-125', programId: 'p-1', raDeg: 30, decDeg: -30, modeType: 'GMOS_SOUTH_LONG_SLIT' };
+
+  it('sorts rows by source id, then by separation', () => {
+    const near = candidate({ label: 'near', decDeg: -30.005 });
+    const far = candidate({ label: 'far', decDeg: -30.02 });
+    const rows = matchConflicts(
+      [
+        { ...source, id: 'x-2' },
+        { ...source, id: 'x-1' },
+      ],
+      [far, near],
+    );
+    expect(rows.map((r) => `${r.sourceId}:${r.label}`)).toEqual(['x-1:near', 'x-1:far', 'x-2:near', 'x-2:far']);
   });
 });

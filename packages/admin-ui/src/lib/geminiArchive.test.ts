@@ -27,6 +27,8 @@ describe('archiveSearchSpec', () => {
   it('floors the search radius at 60″ for small-aperture configurations', () => {
     expect(archiveSearchSpec('GHOST_IFU')?.radiusArcsec).toBe(60);
     expect(archiveSearchSpec('ALOPEKE_SPECKLE')?.radiusArcsec).toBe(60);
+    expect(archiveSearchSpec('GNIRS_LONG_SLIT')?.radiusArcsec).toBe(60); // 99″ slit / 2 < floor
+    expect(archiveSearchSpec('FLAMINGOS_2_LONG_SLIT')?.radiusArcsec).toBe(183); // 6.1′ circle / 2
   });
 
   it('returns null for unsearchable modes', () => {

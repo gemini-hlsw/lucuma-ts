@@ -82,6 +82,34 @@ describe('mapChangeRequests', () => {
   });
 });
 
+describe('mapChangeRequests PI fallback', () => {
+  it('renders a partial profile with just the available name parts', () => {
+    const [c] = mapChangeRequests(
+      result([
+        request({
+          program: {
+            __typename: 'Program',
+            id: 'p-1',
+            name: 'T',
+            reference: null,
+            pi: {
+              __typename: 'ProgramUser',
+              id: 'm-1',
+              user: {
+                __typename: 'User',
+                id: 'u-1',
+                profile: { __typename: 'UserProfile', givenName: 'Ada', familyName: null },
+              },
+            },
+          },
+        }),
+      ]),
+    );
+    expect(c?.pi).toBe('Ada');
+    expect(c?.programReference).toBe('p-1'); // falls back to the id
+  });
+});
+
 describe('mapObservationsById', () => {
   it('keys observation rows by id, with coordinates, config, and conditions', () => {
     const out = mapObservationsById({

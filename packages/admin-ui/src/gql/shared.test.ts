@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { ObservationItemFragment } from './odb/gen/graphql';
-import { mapObservationRow } from './shared';
+import { formatConditions, mapObservationRow } from './shared';
 
 function observation(overrides: Partial<ObservationItemFragment>): ObservationItemFragment {
   return {
@@ -60,5 +60,33 @@ describe('mapObservationRow', () => {
     );
     expect(row.ra).toBe('—');
     expect(row.raDeg).toBeNull();
+  });
+});
+
+describe('formatConditions', () => {
+  it('renders each condition from its preset map', () => {
+    expect(
+      formatConditions({
+        imageQuality: 'POINT_EIGHT',
+        cloudExtinction: 'POINT_THREE',
+        skyBackground: 'GRAY',
+        waterVapor: 'WET',
+      }),
+    ).toBe('IQ<0.8″ / CC70 / SB80 / WV100');
+    expect(
+      formatConditions({
+        imageQuality: 'TWO_POINT_ZERO',
+        cloudExtinction: 'THREE_POINT_ZERO',
+        skyBackground: 'DARKEST',
+        waterVapor: 'VERY_DRY',
+      }),
+    ).toBe('IQ<2.0″ / CC100 / SB20 / WV20');
+  });
+
+  it('dashes missing presets and missing constraint sets', () => {
+    expect(formatConditions({ imageQuality: null, cloudExtinction: null, skyBackground: null, waterVapor: null })).toBe(
+      'IQ<—″ / CC— / SB— / WV—',
+    );
+    expect(formatConditions(null)).toBe('—');
   });
 });
