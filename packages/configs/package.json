@@ -22,7 +22,7 @@
     "build": "tsc -b",
     "start": "pnpm build && pnpm preview",
     "preview": "node --enable-source-maps ./dist/index.js",
-    "dev": "node --env-file=.env --watch --enable-source-maps ./src/index.ts",
+    "dev": "node --conditions=development --env-file=.env --watch --enable-source-maps ./src/index.ts",
     "codegen": "graphql-codegen --config tasks/codegen.ts",
     "codegen:watch": "pnpm codegen --watch 'src/graphql/**/*.ts' --watch 'src/graphql/*.graphql'",
     "lint:eslint": "eslint .",

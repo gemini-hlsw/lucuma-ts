@@ -11,7 +11,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "dev:mock-server": "node --watch --enable-source-maps ./mock-server/server.ts",
+    "dev:mock-server": "node --conditions=development --watch --enable-source-maps ./mock-server/server.ts",
     "codegen": "graphql-codegen --config tasks/codegen.ts",
     "codegen:mock": "graphql-codegen --config tasks/codegen.mock.ts",
     "ci:set-deploy-flag": "echo \"should_deploy=true\" >> \"$GITHUB_OUTPUT\"",

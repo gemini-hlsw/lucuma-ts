@@ -19,8 +19,11 @@ import {
 import { GraphQLScalarType, Kind } from 'graphql';
 import { PositiveIntResolver } from 'graphql-scalars';
 
-PositiveIntResolver.name = 'PosInt';
-export const PosIntResolver = PositiveIntResolver;
+export const PosIntResolver = new GraphQLScalarType({
+  // eslint-disable-next-line @typescript-eslint/no-misused-spread
+  ...PositiveIntResolver,
+  name: 'PosInt',
+});
 
 export const AttachmentIdResolver = newObdIdGraphQLScalarType('AttachmentId', 'a', parseAttachmentId);
 export const CallForProposalsIdResolver = newObdIdGraphQLScalarType('CallForProposalsId', 'c', parseCallForProposalsId);
@@ -40,76 +43,84 @@ export const VisitIdResolver = newObdIdGraphQLScalarType('VisitId', 'v', parseVi
  * Creates a new GraphQL scalar type for odb IDs.
  */
 function newObdIdGraphQLScalarType(name: string, idTag: string, parser: (value: string) => string | undefined) {
+  const parseOrThrow = (value: unknown) => {
+    const parsed =
+      typeof value === 'string' ? parser(value) : typeof value === 'number' ? parser(`${idTag}-${value}`) : undefined;
+    if (!parsed) {
+      throw new TypeError(`'${String(value)}' is not a valid ${name}`);
+    }
+    return parsed;
+  };
   return new GraphQLScalarType<unknown, string>({
     name,
-    serialize(value) {
-      const parsed =
-        typeof value === 'string' ? parser(value) : typeof value === 'number' ? parser(`${idTag}-${value}`) : undefined;
-      if (!parsed) {
-        throw new Error(`'${String(value)}' is not a valid ${name}`);
-      }
-
-      return parsed;
+    description: `A ${name} is a string that starts with '${idTag}-' followed by a unique identifier.`,
+    coerceOutputValue(value) {
+      return parseOrThrow(value);
     },
-    parseValue(value) {
-      return this.serialize?.(value);
+    coerceInputValue(value) {
+      return parseOrThrow(value);
     },
-    parseLiteral(ast) {
+    coerceInputLiteral(ast) {
       if (ast.kind === Kind.STRING) {
-        return this.serialize?.(ast.value);
-      } else if (ast.kind === Kind.INT) {
-        return this.serialize?.(`${idTag}-${ast.value}`);
+        return parseOrThrow(ast.value);
+      } else if (ast.kind === Kind.FLOAT || ast.kind === Kind.INT) {
+        return parseOrThrow(`${idTag}-${ast.value}`);
       }
 
-      throw new Error(`'${ast.kind}' is not a valid kind for ${name}`);
+      throw new TypeError(`'${ast.kind}' is not a valid kind for ${name}`);
     },
   });
 }
 
+const parseBigDecimalOrThrow = (value: unknown) => {
+  if (typeof value === 'string') {
+    const parsed = parseFloat(value);
+    if (!isNaN(parsed)) return parsed;
+  } else if (typeof value === 'number') {
+    return value;
+  } else if (typeof value === 'bigint') {
+    return Number(value);
+  }
+  throw new TypeError(`'${String(value)}' is not a valid BigDecimal`);
+};
 export const BigDecimalResolver = new GraphQLScalarType<unknown, number>({
   name: 'BigDecimal',
-  serialize(value) {
-    if (typeof value === 'string') {
-      return parseFloat(value);
-    } else if (typeof value === 'number') {
-      return value;
-    }
-    throw new Error(`Value is not a valid BigDecimal: ${String(value)}`);
+  description: 'A BigDecimal is a number that can be represented as a string or a number.',
+  coerceOutputValue(value) {
+    return parseBigDecimalOrThrow(value);
   },
-  parseValue(value) {
-    if (typeof value === 'string') {
-      return parseFloat(value);
-    } else if (typeof value === 'number') {
-      return value;
-    }
-    throw new Error(`Value is not a valid BigDecimal: ${String(value)}`);
+  coerceInputValue(value) {
+    return parseBigDecimalOrThrow(value);
   },
-  parseLiteral(ast) {
+  coerceInputLiteral(ast) {
     if (ast.kind === Kind.STRING || ast.kind === Kind.INT || ast.kind === Kind.FLOAT) {
-      return parseFloat(ast.value);
+      return parseBigDecimalOrThrow(ast.value);
     }
-    throw new Error(`Value is not a valid BigDecimal: ${ast.kind}`);
+    throw new TypeError(`Value is not a valid BigDecimal: ${ast.kind}`);
   },
 });
 
-const graphQlParserResolver = (name: string, parser: (maybe: string) => string | undefined) =>
-  new GraphQLScalarType<string, string>({
+const graphQlParserResolver = (name: string, parser: (maybe: string) => string | undefined) => {
+  const parseOrThrow = (value: unknown) => {
+    if (typeof value === 'string') {
+      const parsed = parser(value);
+      if (parsed !== undefined) return parsed;
+    }
+    throw new TypeError(`'${String(value)}' is not a valid ${name}`);
+  };
+  return new GraphQLScalarType<string, string>({
     name,
-    parseValue(value) {
-      if (typeof value === 'string') {
-        const parsed = parser(value);
-        if (parsed !== undefined) return parsed;
-      }
-      throw new Error(`Value is not a valid ${name}: ${String(value)}`);
+    coerceInputValue(value) {
+      return parseOrThrow(value);
     },
-    parseLiteral(ast) {
+    coerceInputLiteral(ast) {
       if (ast.kind === Kind.STRING) {
-        const parsed = parser(ast.value);
-        if (parsed !== undefined) return parsed;
+        return parseOrThrow(ast.value);
       }
-      throw new Error(`Value is not a valid ${name}: ${ast.kind}`);
+      throw new TypeError(`Value is not a valid ${name}: ${ast.kind}`);
     },
   });
+};
 
 export const DmsStringResolver = graphQlParserResolver('DmsString', parseDmsString);
 export const HmsStringResolver = graphQlParserResolver('HmsString', parseHmsString);
