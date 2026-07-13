@@ -63,7 +63,7 @@ export function initializeServerFixture() {
     await container.snapshot();
   });
 
-  beforeEach(async () => {
+  beforeEach(async (ctx) => {
     if (!isFirstRun) {
       // Restore the database to a clean state before each test (except the first)
       await container.restoreSnapshot();
@@ -96,9 +96,10 @@ export function initializeServerFixture() {
           query: query,
           variables: variables ?? undefined,
         }),
+        signal: ctx.signal,
       });
 
-      assert.ok(res.ok, `Graphql request failed: ${res.status} ${res.statusText} - ${await res.text()}`);
+      if (!res.ok) assert.fail(`Graphql request failed: ${res.status} ${res.statusText} - ${await res.text()}`);
 
       const body = (await res.json()) as ExecutionResult<TData>;
 

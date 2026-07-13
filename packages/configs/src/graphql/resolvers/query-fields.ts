@@ -53,7 +53,11 @@ type SelectFields = boolean | SelectQuery;
 export function resolveSelectFields<T extends keyof ModelSelectMap>(
   info: GraphQLResolveInfo,
 ): T extends keyof ModelSelectMap ? { select: ModelSelectMap[T] } : { select: undefined } {
-  const parsedInfo = parseResolveInfo(info);
+  const variableValues = info.variableValues;
+  const patchedInfo = (
+    'coerced' in variableValues ? info : { ...info, variableValues: { coerced: variableValues, sources: {} } }
+  ) satisfies GraphQLResolveInfo;
+  const parsedInfo = parseResolveInfo(patchedInfo);
 
   const extractAllFields = (tree: ResolveTree) => {
     const result: SelectQuery = { select: {} };
