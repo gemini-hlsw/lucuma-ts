@@ -4,6 +4,7 @@ import type {
   CloudExtinctionPreset,
   ImageQualityPreset,
   ObservationRowFieldsFragment,
+  ObservingModeType,
   SkyBackground,
   WaterVapor,
 } from './odb/gen/graphql';
@@ -77,15 +78,51 @@ export function formatConditions(cond: RawConditions | null | undefined): string
   return `IQ<${lookup(IMAGE_QUALITY_ARCSEC, cond.imageQuality)}″ / CC${lookup(CLOUD_EXTINCTION_PERCENT, cond.cloudExtinction)} / SB${lookup(SKY_BACKGROUND_PERCENT, cond.skyBackground)} / WV${lookup(WATER_VAPOR_PERCENT, cond.waterVapor)}`;
 }
 
-/** ObservingMode.mode enum ("GMOS_SOUTH_LONG_SLIT") → a short suffix for the
- *  Config column ("LongSlit"), with the instrument stated separately. */
+/** ObservingModeType → its display parts: the instrument label and a short
+ *  mode suffix ("LongSlit"). The complete enum (enforced by the Record) so a
+ *  new mode is a compile error here, not a silently wrong Config cell. */
+export const MODE_TYPE_FORMAT: Record<ObservingModeType, { readonly instrument: string; readonly mode: string }> = {
+  ALOPEKE_SPECKLE: { instrument: 'Alopeke', mode: 'Speckle' },
+  ALOPEKE_WIDE_FIELD: { instrument: 'Alopeke', mode: 'WideField' },
+  EXCHANGE_KECK: { instrument: 'Keck', mode: '' },
+  EXCHANGE_SUBARU: { instrument: 'Subaru', mode: '' },
+  FLAMINGOS_2_IMAGING: { instrument: 'Flamingos-2', mode: 'Imaging' },
+  FLAMINGOS_2_LONG_SLIT: { instrument: 'Flamingos-2', mode: 'LongSlit' },
+  GHOST_IFU: { instrument: 'GHOST', mode: 'Ifu' },
+  GMOS_NORTH_IMAGING: { instrument: 'GMOS-N', mode: 'Imaging' },
+  GMOS_NORTH_LONG_SLIT: { instrument: 'GMOS-N', mode: 'LongSlit' },
+  GMOS_SOUTH_IMAGING: { instrument: 'GMOS-S', mode: 'Imaging' },
+  GMOS_SOUTH_LONG_SLIT: { instrument: 'GMOS-S', mode: 'LongSlit' },
+  GNIRS_IFU: { instrument: 'GNIRS', mode: 'Ifu' },
+  GNIRS_IMAGING: { instrument: 'GNIRS', mode: 'Imaging' },
+  GNIRS_LONG_SLIT: { instrument: 'GNIRS', mode: 'LongSlit' },
+  IGRINS_2_LONG_SLIT: { instrument: 'IGRINS-2', mode: 'LongSlit' },
+  MAROON_X: { instrument: 'MAROON-X', mode: '' },
+  VISITOR_NORTH: { instrument: 'Visitor North', mode: '' },
+  VISITOR_SOUTH: { instrument: 'Visitor South', mode: '' },
+  ZORRO_SPECKLE: { instrument: 'Zorro', mode: 'Speckle' },
+  ZORRO_WIDE_FIELD: { instrument: 'Zorro', mode: 'WideField' },
+};
+
+/** Narrow a wire value (the fragment types carry `string` for
+ *  observingMode.mode) into the enum, or null when it isn't one. */
+export function asObservingModeType(mode: string | null): ObservingModeType | null {
+  return mode !== null && Object.hasOwn(MODE_TYPE_FORMAT, mode) ? (mode as ObservingModeType) : null;
+}
+
+/** ObservingModeType → "GMOS-S LongSlit" for the check tables' Config column. */
+export function formatModeType(modeType: string | null): string {
+  const mode = asObservingModeType(modeType);
+  if (!mode) return modeType ?? '—';
+  const format = MODE_TYPE_FORMAT[mode];
+  return format.mode ? `${format.instrument} ${format.mode}` : format.instrument;
+}
+
+/** The Config-column suffix ("LongSlit"), with the instrument stated
+ *  separately (mapObservationRow prefixes its own instrument label). */
 function observingModeSuffix(mode: string | null): string {
-  if (!mode) return '';
-  const suffix = mode
-    .replace(/^(GMOS_NORTH|GMOS_SOUTH|FLAMINGOS_2|GHOST|GNIRS|IGRINS_2)_?/, '')
-    .toLowerCase()
-    .replace(/_([a-z])/g, (_, c: string) => c.toUpperCase());
-  return suffix ? suffix.charAt(0).toUpperCase() + suffix.slice(1) : '';
+  const modeType = asObservingModeType(mode);
+  return modeType ? MODE_TYPE_FORMAT[modeType].mode : '';
 }
 
 /** Selection for one observation row — shared by the Proposals query and the

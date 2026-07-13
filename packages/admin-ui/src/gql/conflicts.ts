@@ -21,6 +21,7 @@ import { searchRadiusArcsec, separationArcsec } from '@/lib/geminiArchive';
 import type { DocumentType } from './odb/gen';
 import { graphql } from './odb/gen';
 import type { ConfigurationRequestStatus, ObservingModeType } from './odb/gen/graphql';
+import { asObservingModeType } from './shared';
 
 /** sc-9243's "similar" observing modes: the same configuration style on the
  *  paired instrument yields equivalent data (GMOS-N ~ GMOS-S, GNIRS ~
@@ -50,33 +51,9 @@ const SIMILAR_MODE_TYPES: Record<ObservingModeType, readonly ObservingModeType[]
   ZORRO_WIDE_FIELD: ['ZORRO_WIDE_FIELD', 'ALOPEKE_WIDE_FIELD'],
 };
 
-/** Widen a wire value (the fragment types carry `string` for observingMode
- *  .mode) into the enum, or null when it isn't one. */
-export function asObservingModeType(modeType: string | null): ObservingModeType | null {
-  return modeType !== null && modeType in SIMILAR_MODE_TYPES ? (modeType as ObservingModeType) : null;
-}
-
 export function similarModeTypes(modeType: string | null): readonly ObservingModeType[] {
   const mode = asObservingModeType(modeType);
   return mode ? SIMILAR_MODE_TYPES[mode] : [];
-}
-
-/** ObservingModeType → the short Config label used in the conflicts table
- *  ("GMOS_SOUTH_LONG_SLIT" → "GMOS-S LongSlit"). */
-export function formatModeType(modeType: string | null): string {
-  if (!modeType) return '—';
-  const [, instrument, suffix] =
-    /^(GMOS_NORTH|GMOS_SOUTH|FLAMINGOS_2|GNIRS|IGRINS_2|ALOPEKE|ZORRO|GHOST|MAROON_X|VISITOR)_?(.*)$/.exec(modeType) ??
-    [];
-  if (!instrument) return modeType;
-  const label = instrument.replace('_NORTH', '-N').replace('_SOUTH', '-S').replace('_2', '-2').replace('_X', '-X');
-  const mode = (suffix ?? '')
-    .toLowerCase()
-    .split('_')
-    .filter(Boolean)
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join('');
-  return mode ? `${label} ${mode}` : label;
 }
 
 /**

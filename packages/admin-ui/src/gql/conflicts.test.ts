@@ -3,11 +3,11 @@ import { describe, expect, it } from 'vitest';
 import {
   type AdminConflictCheckResult,
   type ConflictCandidate,
-  formatModeType,
   mapConflictCandidates,
   matchConflicts,
   similarModeTypes,
 } from './conflicts';
+import { formatModeType } from './shared';
 
 describe('similarModeTypes', () => {
   it('pairs the sc-9243 similar instruments, same configuration style', () => {
@@ -25,7 +25,7 @@ describe('similarModeTypes', () => {
 describe('formatModeType', () => {
   it('renders instrument + configuration style', () => {
     expect(formatModeType('GMOS_SOUTH_LONG_SLIT')).toBe('GMOS-S LongSlit');
-    expect(formatModeType('FLAMINGOS_2_IMAGING')).toBe('FLAMINGOS-2 Imaging');
+    expect(formatModeType('FLAMINGOS_2_IMAGING')).toBe('Flamingos-2 Imaging');
     expect(formatModeType('MAROON_X')).toBe('MAROON-X');
     expect(formatModeType(null)).toBe('—');
   });
