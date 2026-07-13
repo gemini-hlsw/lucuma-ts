@@ -33,7 +33,7 @@
     "@gemini-hlsw/lucuma-schemas": "0.177.2-20260710-ba8d76ec",
     "@prisma/adapter-pg": "7.8.0",
     "@prisma/client": "7.8.0",
-    "graphql": "16.14.2",
+    "graphql": "17.0.2",
     "graphql-parse-resolve-info": "4.14.1",
     "graphql-scalars": "1.25.0",
     "graphql-yoga": "5.21.2",
