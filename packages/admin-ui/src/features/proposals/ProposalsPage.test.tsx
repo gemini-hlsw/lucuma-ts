@@ -1,15 +1,14 @@
-import type { MockLink } from '@apollo/client/testing';
 import { describe, expect, it } from 'vitest';
 
 import { PROPOSALS_QUERY } from '@/gql/proposals';
 import { fakeJwt, standardUser } from '@/test/factories';
-import { renderWithContext } from '@/test/render';
+import { type MockedResponseOf, renderWithContext } from '@/test/render';
 
 import ProposalsPage from './ProposalsPage';
 
 const STAFF_TOKEN = fakeJwt(standardUser('staff'));
 
-const proposalsMock = (): MockLink.MockedResponse => ({
+const proposalsMock = (): MockedResponseOf<typeof PROPOSALS_QUERY> => ({
   request: { query: PROPOSALS_QUERY },
   result: {
     data: {

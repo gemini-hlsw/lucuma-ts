@@ -1,14 +1,13 @@
-import type { MockLink } from '@apollo/client/testing';
 import { describe, expect, it } from 'vitest';
 import { userEvent } from 'vitest/browser';
 
 import { PARTNERS, USERS_QUERY } from '@/gql/sso/roster';
 import { fakeJwt, standardUser } from '@/test/factories';
-import { renderWithContext } from '@/test/render';
+import { type MockedResponseOf, renderWithContext } from '@/test/render';
 
 import UsersPage from './UsersPage';
 
-const rosterMock = (): MockLink.MockedResponse => ({
+const rosterMock = (): MockedResponseOf<typeof USERS_QUERY> => ({
   request: { query: USERS_QUERY },
   result: {
     data: {
