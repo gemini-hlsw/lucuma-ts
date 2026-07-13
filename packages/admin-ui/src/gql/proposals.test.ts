@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import type { ObservationRowFieldsFragment } from './odb/gen/graphql';
+import type { ObservationItemFragment } from './odb/gen/graphql';
 import { type AdminProposalsResult, mapProposals, semesterOfReference } from './proposals';
 
 type RawProgram = AdminProposalsResult['programs']['matches'][number];
 
-function observation(id: string, targetName: string, hours: number | null): ObservationRowFieldsFragment {
+function observation(id: string, targetName: string, hours: number | null): ObservationItemFragment {
   return {
     __typename: 'Observation',
     id,

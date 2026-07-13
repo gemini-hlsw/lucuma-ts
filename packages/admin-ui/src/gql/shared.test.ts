@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import type { ObservationRowFieldsFragment } from './odb/gen/graphql';
+import type { ObservationItemFragment } from './odb/gen/graphql';
 import { mapObservationRow } from './shared';
 
-function observation(overrides: Partial<ObservationRowFieldsFragment>): ObservationRowFieldsFragment {
+function observation(overrides: Partial<ObservationItemFragment>): ObservationItemFragment {
   return {
     __typename: 'Observation',
     id: 'o-1',

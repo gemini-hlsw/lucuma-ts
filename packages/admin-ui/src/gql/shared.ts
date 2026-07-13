@@ -3,7 +3,7 @@ import { graphql } from './odb/gen';
 import type {
   CloudExtinctionPreset,
   ImageQualityPreset,
-  ObservationRowFieldsFragment,
+  ObservationItemFragment,
   ObservingModeType,
   SkyBackground,
   WaterVapor,
@@ -129,7 +129,7 @@ function observingModeSuffix(mode: string | null): string {
  *  Change Requests id-batch query so both views show identical columns
  *  (target, RA/Dec, time, config, conditions). */
 export const OBSERVATION_ROW_FRAGMENT = graphql(`
-  fragment ObservationRowFields on Observation {
+  fragment ObservationItem on Observation {
     id
     observationDuration {
       hours
@@ -163,9 +163,9 @@ export const OBSERVATION_ROW_FRAGMENT = graphql(`
   }
 `);
 
-/** Map one observation (selected via ObservationRowFields) to the shared
+/** Map one observation (selected via ObservationItem) to the shared
  *  table row. Non-sidereal targets have no fixed RA/Dec — shown as "—". */
-export function mapObservationRow(o: ObservationRowFieldsFragment): ObservationRow {
+export function mapObservationRow(o: ObservationItemFragment): ObservationRow {
   const target = o.targetEnvironment?.firstScienceTarget;
   const instrument = o.instrument ? normalizeInstrument(o.instrument) : '—';
   const modeSuffix = observingModeSuffix(o.observingMode?.mode ?? null);

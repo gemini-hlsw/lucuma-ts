@@ -7,74 +7,85 @@ import { useMutation, useQuery } from '@apollo/client/react';
 
 import type { DocumentType } from './odb/gen';
 import { graphql } from './odb/gen';
-import type { AllocationInput, GeminiProposalTypeInput, ProgramPropertiesInput } from './odb/gen/graphql';
+import type {
+  AllocationInput,
+  GeminiProposalTypeInput,
+  ProgramItemFragment,
+  ProgramPropertiesInput,
+} from './odb/gen/graphql';
 import type { Allocation, Program } from './types';
+
+export const PROGRAM_ITEM_FRAGMENT = graphql(`
+  fragment ProgramItem on Program {
+    id
+    name
+    reference {
+      label
+    }
+    proposalStatus
+    pi {
+      id
+      user {
+        id
+        profile {
+          givenName
+          familyName
+        }
+      }
+    }
+    active {
+      start
+      end
+    }
+    allocations {
+      category
+      scienceBand
+      duration {
+        hours
+      }
+    }
+    goa {
+      proprietaryMonths
+      privateHeader
+    }
+    proposal {
+      gemini {
+        __typename
+        ... on Queue {
+          toOActivation
+          considerForBand3
+          minPercentTime
+        }
+        ... on Classical {
+          minPercentTime
+        }
+      }
+    }
+    notes {
+      id
+      text
+      isPrivate
+    }
+    users {
+      id
+      role
+      thesis
+      user {
+        id
+        profile {
+          givenName
+          familyName
+        }
+      }
+    }
+  }
+`);
 
 export const PROGRAMS_QUERY = graphql(`
   query AdminPrograms {
     programs(WHERE: { proposalStatus: { EQ: ACCEPTED } }, LIMIT: 200) {
       matches {
-        id
-        name
-        reference {
-          label
-        }
-        proposalStatus
-        pi {
-          id
-          user {
-            id
-            profile {
-              givenName
-              familyName
-            }
-          }
-        }
-        active {
-          start
-          end
-        }
-        allocations {
-          category
-          scienceBand
-          duration {
-            hours
-          }
-        }
-        goa {
-          proprietaryMonths
-          privateHeader
-        }
-        proposal {
-          gemini {
-            __typename
-            ... on Queue {
-              toOActivation
-              considerForBand3
-              minPercentTime
-            }
-            ... on Classical {
-              minPercentTime
-            }
-          }
-        }
-        notes {
-          id
-          text
-          isPrivate
-        }
-        users {
-          id
-          role
-          thesis
-          user {
-            id
-            profile {
-              givenName
-              familyName
-            }
-          }
-        }
+        ...ProgramItem
       }
     }
   }
@@ -236,11 +247,10 @@ export function useDeleteProgramUser() {
 }
 
 export type AdminProgramsResult = DocumentType<typeof PROGRAMS_QUERY>;
-type RawProgram = AdminProgramsResult['programs']['matches'][number];
 
 /** Map Program rows onto the editable Program view shape. */
 export function mapPrograms(raw: AdminProgramsResult): Program[] {
-  return raw.programs.matches.map((p: RawProgram): Program => {
+  return raw.programs.matches.map((p: ProgramItemFragment): Program => {
     // Hide the ODB's sentinel bounds (1901/2099) — they mean "not set yet".
     const activeStart = p.active?.start === '1901-01-01' ? '' : (p.active?.start ?? '');
     const activeEnd = p.active?.end === '2099-12-31' ? '' : (p.active?.end ?? '');

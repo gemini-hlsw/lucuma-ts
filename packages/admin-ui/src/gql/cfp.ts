@@ -11,63 +11,69 @@ import { useMutation, useQuery } from '@apollo/client/react';
 
 import type { DocumentType } from './odb/gen';
 import { graphql } from './odb/gen';
-import type { CallForProposalsPropertiesInput } from './odb/gen/graphql';
+import type { CallForProposalsItemFragment, CallForProposalsPropertiesInput } from './odb/gen/graphql';
 import type { CallForProposals, SiteCoordinateLimits } from './types';
+
+export const CFP_ITEM_FRAGMENT = graphql(`
+  fragment CallForProposalsItem on CallForProposals {
+    id
+    title
+    semester
+    active {
+      start
+      end
+    }
+    submissionDeadlineDefault
+    partners {
+      geminiPartner
+      submissionDeadline
+      submissionDeadlineOverride
+    }
+    gemini {
+      type
+      allowsNonPartnerPi
+      nonPartnerDeadline
+      proprietaryMonths
+      instruments
+      coordinateLimits {
+        north {
+          raStart {
+            hours
+          }
+          raEnd {
+            hours
+          }
+          decStart {
+            degrees
+          }
+          decEnd {
+            degrees
+          }
+        }
+        south {
+          raStart {
+            hours
+          }
+          raEnd {
+            hours
+          }
+          decStart {
+            degrees
+          }
+          decEnd {
+            degrees
+          }
+        }
+      }
+    }
+  }
+`);
 
 export const CFPS_QUERY = graphql(`
   query AdminCfps {
     callsForProposals(LIMIT: 50) {
       matches {
-        id
-        title
-        semester
-        active {
-          start
-          end
-        }
-        submissionDeadlineDefault
-        partners {
-          geminiPartner
-          submissionDeadline
-          submissionDeadlineOverride
-        }
-        gemini {
-          type
-          allowsNonPartnerPi
-          nonPartnerDeadline
-          proprietaryMonths
-          instruments
-          coordinateLimits {
-            north {
-              raStart {
-                hours
-              }
-              raEnd {
-                hours
-              }
-              decStart {
-                degrees
-              }
-              decEnd {
-                degrees
-              }
-            }
-            south {
-              raStart {
-                hours
-              }
-              raEnd {
-                hours
-              }
-              decStart {
-                degrees
-              }
-              decEnd {
-                degrees
-              }
-            }
-          }
-        }
+        ...CallForProposalsItem
       }
     }
   }
@@ -79,8 +85,7 @@ export function useCfps() {
 }
 
 export type AdminCfpsResult = DocumentType<typeof CFPS_QUERY>;
-type RawCfp = AdminCfpsResult['callsForProposals']['matches'][number];
-type RawLimits = NonNullable<RawCfp['gemini']>['coordinateLimits']['north'];
+type RawLimits = NonNullable<CallForProposalsItemFragment['gemini']>['coordinateLimits']['north'];
 
 /** Map CallForProposals rows onto the view shape. Non-Gemini calls (no
  *  `gemini` property block) are outside this view's scope and are dropped. */

@@ -39,7 +39,7 @@ export const PROPOSALS_QUERY = graphql(`
         }
         observations(LIMIT: 200) {
           matches {
-            ...ObservationRowFields
+            ...ObservationItem
           }
         }
       }

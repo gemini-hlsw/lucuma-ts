@@ -132,7 +132,7 @@ export const OBSERVATIONS_BY_ID_QUERY = graphql(`
   query AdminObservationsById($ids: [ObservationId!]!) {
     observations(WHERE: { id: { IN: $ids } }, LIMIT: 1000) {
       matches {
-        ...ObservationRowFields
+        ...ObservationItem
       }
     }
   }
