@@ -5,8 +5,8 @@
  */
 import { useMutation, useQuery } from '@apollo/client/react';
 
-import type { DocumentType } from './gen';
-import { graphql } from './gen';
+import type { DocumentType } from './odb/gen';
+import { graphql } from './odb/gen';
 import { mapObservationRow } from './shared';
 import type { Proposal, SpecialProposalType } from './types';
 

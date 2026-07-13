@@ -9,9 +9,9 @@
  */
 import { useMutation, useQuery } from '@apollo/client/react';
 
-import type { DocumentType } from './gen';
-import { graphql } from './gen';
-import type { CallForProposalsPropertiesInput } from './gen/graphql';
+import type { DocumentType } from './odb/gen';
+import { graphql } from './odb/gen';
+import type { CallForProposalsPropertiesInput } from './odb/gen/graphql';
 import type { CallForProposals, SiteCoordinateLimits } from './types';
 
 export const CFPS_QUERY = graphql(`

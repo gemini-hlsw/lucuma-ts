@@ -4,8 +4,8 @@
  */
 import { skipToken, useMutation, useQuery } from '@apollo/client/react';
 
-import type { DocumentType } from './gen';
-import { graphql } from './gen';
+import type { DocumentType } from './odb/gen';
+import { graphql } from './odb/gen';
 import { formatConditions, mapObservationRow } from './shared';
 import type {
   ChangeRequest,

@@ -23,7 +23,7 @@ import {
   useUpdateCfp,
 } from '@/gql/cfp';
 import { friendlyError } from '@/gql/errors';
-import type { CallForProposalsPropertiesInput } from '@/gql/gen/graphql';
+import type { CallForProposalsPropertiesInput } from '@/gql/odb/gen/graphql';
 import { type Partner, PARTNER_NAME, PARTNERS } from '@/gql/sso/roster';
 import {
   type CallForProposals,

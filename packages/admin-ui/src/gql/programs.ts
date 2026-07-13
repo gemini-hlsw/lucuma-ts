@@ -5,9 +5,9 @@
  */
 import { useMutation, useQuery } from '@apollo/client/react';
 
-import type { DocumentType } from './gen';
-import { graphql } from './gen';
-import type { AllocationInput, GeminiProposalTypeInput, ProgramPropertiesInput } from './gen/graphql';
+import type { DocumentType } from './odb/gen';
+import { graphql } from './odb/gen';
+import type { AllocationInput, GeminiProposalTypeInput, ProgramPropertiesInput } from './odb/gen/graphql';
 import type { Allocation, Program } from './types';
 
 export const PROGRAMS_QUERY = graphql(`

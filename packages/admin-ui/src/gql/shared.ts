@@ -1,6 +1,6 @@
 /** Selections and mapping helpers shared by more than one view. */
-import { graphql } from './gen';
-import type { ObservationRowFieldsFragment } from './gen/graphql';
+import { graphql } from './odb/gen';
+import type { ObservationRowFieldsFragment } from './odb/gen/graphql';
 import { type Instrument, INSTRUMENT_LABEL, type ObservationRow } from './types';
 
 /** ODB instrument enum (e.g. `GMOS_NORTH`) → the display label used across

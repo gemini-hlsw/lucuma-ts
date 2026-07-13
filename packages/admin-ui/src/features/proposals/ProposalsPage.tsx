@@ -8,7 +8,7 @@ import { DataSourceBadge } from '@/components/DataSourceBadge';
 import { TimeAwardsGrid } from '@/components/TimeAwardsGrid';
 import { useToast } from '@/components/toastContext';
 import { friendlyError } from '@/gql/errors';
-import type { ProgramPropertiesInput } from '@/gql/gen/graphql';
+import type { ProgramPropertiesInput } from '@/gql/odb/gen/graphql';
 import { allocationsInput, useSetAllocations, useUpdateProgram } from '@/gql/programs';
 import { mapProposals, useProposals, useSetProposalStatus } from '@/gql/proposals';
 import {

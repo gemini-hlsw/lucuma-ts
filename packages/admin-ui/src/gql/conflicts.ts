@@ -18,9 +18,9 @@ import { useMemo } from 'react';
 
 import { searchRadiusArcsec, separationArcsec } from '@/lib/geminiArchive';
 
-import type { DocumentType } from './gen';
-import { graphql } from './gen';
-import type { ObservingModeType } from './gen/graphql';
+import type { DocumentType } from './odb/gen';
+import { graphql } from './odb/gen';
+import type { ObservingModeType } from './odb/gen/graphql';
 
 /** sc-9243's "similar" observing modes: the same configuration style on the
  *  paired instrument yields equivalent data (GMOS-N ~ GMOS-S, GNIRS ~

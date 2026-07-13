@@ -1,7 +1,7 @@
 /*
  * View-model types for the Admin views: the shapes the tables and editors
  * render, produced by each view's mapper (cfp.ts, programs.ts, …) from the
- * codegen-typed ODB responses. Wire types come from codegen (src/gql/gen);
+ * codegen-typed ODB responses. Wire types come from codegen (src/gql/odb/gen);
  * these stay hand-modeled because they are UI domain shapes, not the schema.
  */
 import type { Partner } from '@/gql/sso/roster';

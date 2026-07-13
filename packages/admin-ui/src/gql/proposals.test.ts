@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { ObservationRowFieldsFragment } from './gen/graphql';
+import type { ObservationRowFieldsFragment } from './odb/gen/graphql';
 import { type AdminProposalsResult, mapProposals, semesterOfReference } from './proposals';
 
 type RawProgram = AdminProposalsResult['programs']['matches'][number];
