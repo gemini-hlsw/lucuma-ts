@@ -14,8 +14,10 @@ import { useMutation, useQuery } from '@apollo/client/react';
 
 import type { DocumentType } from './gen';
 import { graphql } from './gen';
+import type { Partner, RoleType } from './gen/graphql';
 
-export type Partner = 'AR' | 'BR' | 'CA' | 'CL' | 'KR' | 'UH' | 'US';
+// The schema enums the roster models with, re-exported for the views.
+export type { Partner, RoleType };
 
 export const PARTNERS: readonly Partner[] = ['AR', 'BR', 'CA', 'CL', 'KR', 'UH', 'US'];
 
@@ -29,8 +31,6 @@ export const PARTNER_NAME: Record<Partner, string> = {
   UH: 'University of Hawaii',
   US: 'United States',
 };
-
-export type RoleType = 'PI' | 'NGO' | 'STAFF' | 'ADMIN';
 
 /** A role row from the SSO roster (uppercase enum) — distinct from
  *  auth/user.ts's StandardRole, the signed-in user's own role decoded from

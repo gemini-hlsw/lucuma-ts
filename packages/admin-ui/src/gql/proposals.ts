@@ -7,6 +7,7 @@ import { useMutation, useQuery } from '@apollo/client/react';
 
 import type { DocumentType } from './odb/gen';
 import { graphql } from './odb/gen';
+import type { ScienceSubtype } from './odb/gen/graphql';
 import { mapObservationRow } from './shared';
 import type { Proposal, SpecialProposalType } from './types';
 
@@ -48,7 +49,7 @@ export const PROPOSALS_QUERY = graphql(`
 
 export type AdminProposalsResult = DocumentType<typeof PROPOSALS_QUERY>;
 
-const SPECIAL_SUBTYPES: Partial<Record<string, SpecialProposalType>> = {
+const SPECIAL_SUBTYPES: Partial<Record<ScienceSubtype, SpecialProposalType>> = {
   DIRECTORS_TIME: 'DIRECTORS_TIME',
   POOR_WEATHER: 'POOR_WEATHER',
 };
@@ -59,7 +60,8 @@ const SPECIAL_SUBTYPES: Partial<Record<string, SpecialProposalType>> = {
 export function mapProposals(raw: AdminProposalsResult): Proposal[] {
   const out: Proposal[] = [];
   for (const p of raw.programs.matches) {
-    const type = SPECIAL_SUBTYPES[p.proposal?.gemini?.scienceSubtype ?? ''];
+    const subtype = p.proposal?.gemini?.scienceSubtype;
+    const type = subtype ? SPECIAL_SUBTYPES[subtype] : undefined;
     if (!p.proposal || !type) continue; // special proposals only
     const prof = p.pi?.user?.profile;
     const reference = p.proposal.reference?.label ?? p.id;

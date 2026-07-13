@@ -6,6 +6,7 @@ import { skipToken, useMutation, useQuery } from '@apollo/client/react';
 
 import type { DocumentType } from './odb/gen';
 import { graphql } from './odb/gen';
+import type { Instrument } from './odb/gen/graphql';
 import { formatConditions, mapObservationRow } from './shared';
 import type {
   ChangeRequest,
@@ -75,7 +76,7 @@ export type AdminChangeRequestsResult = DocumentType<typeof CHANGE_REQUESTS_QUER
 /** Gemini instrument enum → display label + site. Instruments not listed here
  *  (e.g. visiting instruments) default to North, since that's unverifiable
  *  from the enum alone — flagged via the label itself. */
-const INSTRUMENT_SITE: Partial<Record<string, { label: string; site: Site }>> = {
+const INSTRUMENT_SITE: Partial<Record<Instrument, { label: string; site: Site }>> = {
   GMOS_NORTH: { label: 'GMOS-N', site: 'NORTH' },
   GMOS_SOUTH: { label: 'GMOS-S', site: 'SOUTH' },
   FLAMINGOS2: { label: 'Flamingos-2', site: 'SOUTH' },
@@ -87,8 +88,11 @@ export function mapChangeRequests(raw: AdminChangeRequestsResult): ChangeRequest
   return raw.configurationRequests.matches.map((c): ChangeRequest => {
     const prof = c.program.pi?.user?.profile;
     const coords = c.configuration.target?.coordinates;
-    const instrument = c.configuration.observingMode?.instrument ?? '';
-    const site = INSTRUMENT_SITE[instrument] ?? { label: instrument || '(unknown)', site: 'NORTH' as Site };
+    const instrument = c.configuration.observingMode?.instrument;
+    const site = (instrument && INSTRUMENT_SITE[instrument]) ?? {
+      label: instrument ?? '(unknown)',
+      site: 'NORTH' as Site,
+    };
     return {
       id: c.id,
       programId: c.program.id,

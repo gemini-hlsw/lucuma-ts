@@ -20,33 +20,45 @@ import { searchRadiusArcsec, separationArcsec } from '@/lib/geminiArchive';
 
 import type { DocumentType } from './odb/gen';
 import { graphql } from './odb/gen';
-import type { ObservingModeType } from './odb/gen/graphql';
+import type { ConfigurationRequestStatus, ObservingModeType } from './odb/gen/graphql';
 
 /** sc-9243's "similar" observing modes: the same configuration style on the
  *  paired instrument yields equivalent data (GMOS-N ~ GMOS-S, GNIRS ~
- *  Flamingos-2, Alopeke ~ Zorro, GHOST ~ MAROON-X). Keyed and valued by ODB
- *  ObservingModeType; each group includes the mode itself. */
-const SIMILAR_MODE_TYPES: Partial<Record<string, readonly ObservingModeType[]>> = {
-  GMOS_NORTH_IMAGING: ['GMOS_NORTH_IMAGING', 'GMOS_SOUTH_IMAGING'],
-  GMOS_SOUTH_IMAGING: ['GMOS_SOUTH_IMAGING', 'GMOS_NORTH_IMAGING'],
-  GMOS_NORTH_LONG_SLIT: ['GMOS_NORTH_LONG_SLIT', 'GMOS_SOUTH_LONG_SLIT'],
-  GMOS_SOUTH_LONG_SLIT: ['GMOS_SOUTH_LONG_SLIT', 'GMOS_NORTH_LONG_SLIT'],
-  GNIRS_LONG_SLIT: ['GNIRS_LONG_SLIT', 'FLAMINGOS_2_LONG_SLIT'],
-  FLAMINGOS_2_LONG_SLIT: ['FLAMINGOS_2_LONG_SLIT', 'GNIRS_LONG_SLIT'],
-  FLAMINGOS_2_IMAGING: ['FLAMINGOS_2_IMAGING'],
+ *  Flamingos-2, Alopeke ~ Zorro, GHOST ~ MAROON-X). The complete enum
+ *  (enforced by the Record) so a new mode is a compile error, not a silent
+ *  gap; a mode with no similar partner maps to just itself. */
+const SIMILAR_MODE_TYPES: Record<ObservingModeType, readonly ObservingModeType[]> = {
   ALOPEKE_SPECKLE: ['ALOPEKE_SPECKLE', 'ZORRO_SPECKLE'],
-  ZORRO_SPECKLE: ['ZORRO_SPECKLE', 'ALOPEKE_SPECKLE'],
   ALOPEKE_WIDE_FIELD: ['ALOPEKE_WIDE_FIELD', 'ZORRO_WIDE_FIELD'],
-  ZORRO_WIDE_FIELD: ['ZORRO_WIDE_FIELD', 'ALOPEKE_WIDE_FIELD'],
+  EXCHANGE_KECK: ['EXCHANGE_KECK'],
+  EXCHANGE_SUBARU: ['EXCHANGE_SUBARU'],
+  FLAMINGOS_2_IMAGING: ['FLAMINGOS_2_IMAGING'],
+  FLAMINGOS_2_LONG_SLIT: ['FLAMINGOS_2_LONG_SLIT', 'GNIRS_LONG_SLIT'],
   GHOST_IFU: ['GHOST_IFU', 'MAROON_X'],
-  MAROON_X: ['MAROON_X', 'GHOST_IFU'],
+  GMOS_NORTH_IMAGING: ['GMOS_NORTH_IMAGING', 'GMOS_SOUTH_IMAGING'],
+  GMOS_NORTH_LONG_SLIT: ['GMOS_NORTH_LONG_SLIT', 'GMOS_SOUTH_LONG_SLIT'],
+  GMOS_SOUTH_IMAGING: ['GMOS_SOUTH_IMAGING', 'GMOS_NORTH_IMAGING'],
+  GMOS_SOUTH_LONG_SLIT: ['GMOS_SOUTH_LONG_SLIT', 'GMOS_NORTH_LONG_SLIT'],
+  GNIRS_IFU: ['GNIRS_IFU'],
+  GNIRS_IMAGING: ['GNIRS_IMAGING'],
+  GNIRS_LONG_SLIT: ['GNIRS_LONG_SLIT', 'FLAMINGOS_2_LONG_SLIT'],
   IGRINS_2_LONG_SLIT: ['IGRINS_2_LONG_SLIT'],
+  MAROON_X: ['MAROON_X', 'GHOST_IFU'],
   VISITOR_NORTH: ['VISITOR_NORTH'],
   VISITOR_SOUTH: ['VISITOR_SOUTH'],
+  ZORRO_SPECKLE: ['ZORRO_SPECKLE', 'ALOPEKE_SPECKLE'],
+  ZORRO_WIDE_FIELD: ['ZORRO_WIDE_FIELD', 'ALOPEKE_WIDE_FIELD'],
 };
 
+/** Widen a wire value (the fragment types carry `string` for observingMode
+ *  .mode) into the enum, or null when it isn't one. */
+export function asObservingModeType(modeType: string | null): ObservingModeType | null {
+  return modeType !== null && modeType in SIMILAR_MODE_TYPES ? (modeType as ObservingModeType) : null;
+}
+
 export function similarModeTypes(modeType: string | null): readonly ObservingModeType[] {
-  return modeType ? (SIMILAR_MODE_TYPES[modeType] ?? [modeType as ObservingModeType]) : [];
+  const mode = asObservingModeType(modeType);
+  return mode ? SIMILAR_MODE_TYPES[mode] : [];
 }
 
 /** ObservingModeType → the short Config label used in the conflicts table
@@ -199,7 +211,12 @@ export interface ConflictCandidate {
   readonly modeType: string | null;
 }
 
-const CR_STATUS_LABEL: Record<string, string> = { REQUESTED: 'Requested', APPROVED: 'Approved', DENIED: 'Denied' };
+// WITHDRAWN requests are dead plans — not conflicts — so they never label.
+const CR_STATUS_LABEL: Partial<Record<ConfigurationRequestStatus, string>> = {
+  REQUESTED: 'Requested',
+  APPROVED: 'Approved',
+  DENIED: 'Denied',
+};
 
 /** Every candidate from both pools. The ToO restriction of pool 2 is applied
  *  here (the ODB can't filter on toOActivation); the coordinate cone is

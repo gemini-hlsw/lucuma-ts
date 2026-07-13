@@ -1,6 +1,12 @@
 /** Selections and mapping helpers shared by more than one view. */
 import { graphql } from './odb/gen';
-import type { ObservationRowFieldsFragment } from './odb/gen/graphql';
+import type {
+  CloudExtinctionPreset,
+  ImageQualityPreset,
+  ObservationRowFieldsFragment,
+  SkyBackground,
+  WaterVapor,
+} from './odb/gen/graphql';
 import { type Instrument, INSTRUMENT_LABEL, type ObservationRow } from './types';
 
 /** ODB instrument enum (e.g. `GMOS_NORTH`) → the display label used across
@@ -13,7 +19,7 @@ export function normalizeInstrument(name: string): string {
 /** ImageQuality.Preset has no fixed percentile in the model (lucuma-core
  *  computes it dynamically from wavelength + airmass) — show its arcsecond
  *  bound instead of fabricating one. Source: lucuma-core ImageQuality.scala. */
-const IMAGE_QUALITY_ARCSEC: Record<string, string> = {
+const IMAGE_QUALITY_ARCSEC: Record<ImageQualityPreset, string> = {
   POINT_ONE: '0.1',
   POINT_TWO: '0.2',
   POINT_THREE: '0.3',
@@ -27,7 +33,7 @@ const IMAGE_QUALITY_ARCSEC: Record<string, string> = {
 };
 
 /** CloudExtinction.Preset's fixed percentile (lucuma-core CloudExtinction.scala). */
-const CLOUD_EXTINCTION_PERCENT: Record<string, string> = {
+const CLOUD_EXTINCTION_PERCENT: Record<CloudExtinctionPreset, string> = {
   ZERO: '50',
   POINT_ONE: '55',
   POINT_THREE: '70',
@@ -38,7 +44,7 @@ const CLOUD_EXTINCTION_PERCENT: Record<string, string> = {
 };
 
 /** SkyBackground's fixed percentile (lucuma-core SkyBackground.scala). */
-const SKY_BACKGROUND_PERCENT: Record<string, string> = {
+const SKY_BACKGROUND_PERCENT: Record<SkyBackground, string> = {
   DARKEST: '20',
   DARK: '50',
   GRAY: '80',
@@ -46,22 +52,22 @@ const SKY_BACKGROUND_PERCENT: Record<string, string> = {
 };
 
 /** WaterVapor's fixed percentile (lucuma-core WaterVapor.scala). */
-const WATER_VAPOR_PERCENT: Record<string, string> = {
+const WATER_VAPOR_PERCENT: Record<WaterVapor, string> = {
   VERY_DRY: '20',
   DRY: '50',
   MEDIAN: '80',
   WET: '100',
 };
 
-function lookup(map: Record<string, string>, preset: string | null | undefined): string {
-  return preset ? (map[preset] ?? preset) : '—';
+function lookup<K extends string>(map: Record<K, string>, preset: K | null | undefined): string {
+  return preset ? map[preset] : '—';
 }
 
 export interface RawConditions {
-  imageQuality: string | null;
-  cloudExtinction: string | null;
-  skyBackground: string | null;
-  waterVapor: string | null;
+  imageQuality: ImageQualityPreset | null;
+  cloudExtinction: CloudExtinctionPreset | null;
+  skyBackground: SkyBackground | null;
+  waterVapor: WaterVapor | null;
 }
 
 /** Observing-conditions presets → the compact "IQ<0.8″ / CC70 / SB80 / WV80"

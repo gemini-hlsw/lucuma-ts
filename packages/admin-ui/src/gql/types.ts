@@ -6,9 +6,30 @@
  */
 import type { Partner } from '@/gql/sso/roster';
 
+import type {
+  ConfigurationRequestStatus,
+  GeminiCallForProposalsType,
+  Instrument,
+  ProposalStatus,
+  ScienceBand,
+  ScienceSubtype,
+  ToOActivation,
+} from './odb/gen/graphql';
+
+// The schema enums the views model with — re-exported so feature code can
+// import them alongside the view-model types they appear in.
+export type { ConfigurationRequestStatus, Instrument, ProposalStatus, ScienceBand, ToOActivation };
+
+/** Which Gemini telescope a request's instrument belongs to. A UI-derived
+ *  notion (from the instrument, in changeRequests.ts), not the schema's
+ *  `Site` enum (GN/GS) — none of our operations select a Site field, so
+ *  codegen doesn't emit that type. */
+export type Site = 'NORTH' | 'SOUTH';
+
 // --- Calls for Proposals view (ODB CallForProposals) ---------------------
 
-/** The schema's GeminiCallForProposalsType enum → display label. */
+/** GeminiCallForProposalsType → display label. `satisfies` makes a new enum
+ *  value a compile error here rather than a blank cell. */
 export const CFP_TYPE_LABEL = {
   REGULAR_SEMESTER: 'Regular Semester',
   FAST_TURNAROUND: 'Fast Turnaround',
@@ -17,9 +38,9 @@ export const CFP_TYPE_LABEL = {
   POOR_WEATHER: 'Poor Weather',
   DEMO_SCIENCE: 'Demo Science',
   SYSTEM_VERIFICATION: 'System Verification',
-} as const;
+} as const satisfies Record<GeminiCallForProposalsType, string>;
 
-export type CfpType = keyof typeof CFP_TYPE_LABEL;
+export type CfpType = GeminiCallForProposalsType;
 
 /** RA/Dec window for one Gemini site. */
 export interface SiteCoordinateLimits {
@@ -52,9 +73,9 @@ export interface CallForProposals {
   readonly partners: readonly CfpPartner[];
 }
 
-/** ODB `Instrument` enum → display label. Keys are the complete enum; models
- *  carry enum values and only the UI renders labels, so membership checks
- *  never depend on display formatting. */
+/** ODB `Instrument` enum → display label. Keys are the complete enum
+ *  (enforced by `satisfies`); models carry enum values and only the UI
+ *  renders labels, so membership checks never depend on display formatting. */
 export const INSTRUMENT_LABEL = {
   ACQ_CAM_NORTH: 'Acq Cam North',
   ACQ_CAM_SOUTH: 'Acq Cam South',
@@ -73,9 +94,7 @@ export const INSTRUMENT_LABEL = {
   VISITOR_NORTH: 'Visitor North',
   VISITOR_SOUTH: 'Visitor South',
   ZORRO: 'Zorro',
-} as const;
-
-export type Instrument = keyof typeof INSTRUMENT_LABEL;
+} as const satisfies Record<Instrument, string>;
 
 /** Instruments offerable on a call, in checklist (label) order. */
 export const INSTRUMENTS = (Object.keys(INSTRUMENT_LABEL) as readonly Instrument[])
@@ -84,11 +103,11 @@ export const INSTRUMENTS = (Object.keys(INSTRUMENT_LABEL) as readonly Instrument
 
 // --- Programs view (ODB Program) ------------------------------------------
 
-export type ProgramClass = 'QUEUE' | 'CLASSICAL';
+/** The two ScienceSubtypes the Admin class dropdown offers. */
+export type ProgramClass = Extract<ScienceSubtype, 'QUEUE' | 'CLASSICAL'>;
 export const PROGRAM_CLASSES: readonly ProgramClass[] = ['QUEUE', 'CLASSICAL'];
 export const PROGRAM_CLASS_LABEL: Record<ProgramClass, string> = { QUEUE: 'Queue', CLASSICAL: 'Classical' };
 
-export type ScienceBand = 'BAND1' | 'BAND2' | 'BAND3' | 'BAND4';
 export const BANDS: readonly ScienceBand[] = ['BAND1', 'BAND2', 'BAND3', 'BAND4'];
 export const BAND_LABEL: Record<ScienceBand, string> = {
   BAND1: 'Band-1',
@@ -104,9 +123,8 @@ export interface Allocation {
   readonly hours: number;
 }
 
-export type TooStatus = 'NONE' | 'STANDARD' | 'RAPID';
-export const TOO_STATUSES: readonly TooStatus[] = ['NONE', 'STANDARD', 'RAPID'];
-export const TOO_LABEL: Record<TooStatus, string> = { NONE: 'None', STANDARD: 'Standard', RAPID: 'Rapid' };
+export const TOO_STATUSES: readonly ToOActivation[] = ['NONE', 'STANDARD', 'RAPID'];
+export const TOO_LABEL: Record<ToOActivation, string> = { NONE: 'None', STANDARD: 'Standard', RAPID: 'Rapid' };
 
 /** A contact scientist: an SSO/ODB user holding a SUPPORT_* ProgramUser role.
  *  `programUserId` is set for contacts already on the program (used to remove
@@ -129,7 +147,7 @@ export interface Program {
    *  default them to QUEUE since the Admin form only offers those two. */
   readonly programClass: ProgramClass;
   /** Only Queue proposals carry ToOActivation; Classical/others have none. */
-  readonly tooStatus: TooStatus;
+  readonly tooStatus: ToOActivation;
   /** Program users with role SUPPORT_PRIMARY/SUPPORT_SECONDARY — the real
    *  Gemini "contact scientist" roles. */
   readonly contactScientists: readonly ContactScientist[];
@@ -158,16 +176,13 @@ export interface Program {
 
 // --- Proposals view (ODB Proposal, special types) --------------------------
 
-/** Gemini science subtypes the Admin "Proposals" view reviews (DD / Poor Weather). */
-export type SpecialProposalType = 'DIRECTORS_TIME' | 'POOR_WEATHER';
+/** The ScienceSubtypes the Admin "Proposals" view reviews (DD / Poor Weather). */
+export type SpecialProposalType = Extract<ScienceSubtype, 'DIRECTORS_TIME' | 'POOR_WEATHER'>;
 
 export const SPECIAL_PROPOSAL_TYPE_LABEL: Record<SpecialProposalType, string> = {
   DIRECTORS_TIME: "Director's Time",
   POOR_WEATHER: 'Poor Weather',
 };
-
-/** ProposalStatus — accept/reject map to ACCEPTED / NOT_ACCEPTED. */
-export type ProposalStatus = 'NOT_SUBMITTED' | 'SUBMITTED' | 'ACCEPTED' | 'NOT_ACCEPTED';
 
 /** One observation row in a proposal/change-request detail table. */
 export interface ObservationRow {
@@ -205,11 +220,6 @@ export interface Proposal {
 }
 
 // --- Change Requests view (ODB ConfigurationRequest) ----------------------
-
-export type ConfigurationRequestStatus = 'REQUESTED' | 'APPROVED' | 'DENIED' | 'WITHDRAWN';
-
-/** Site derived from the requested configuration's instrument (Gemini North / South). */
-export type Site = 'NORTH' | 'SOUTH';
 
 export interface ChangeRequest {
   readonly id: string;

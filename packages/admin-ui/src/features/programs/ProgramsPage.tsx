@@ -43,7 +43,7 @@ import {
   type ProgramClass,
   TOO_LABEL,
   TOO_STATUSES,
-  type TooStatus,
+  type ToOActivation,
 } from '@/gql/types';
 
 /** "Show everything" sentinel for the Class facet (PrimeReact mishandles null
@@ -303,7 +303,7 @@ function ProgramEditor({
               inputId="too"
               value={draft.tooStatus}
               options={TOO_STATUSES.map((t) => ({ label: TOO_LABEL[t], value: t }))}
-              onChange={(e) => set('tooStatus', e.value as TooStatus)}
+              onChange={(e) => set('tooStatus', e.value as ToOActivation)}
               disabled={draft.programClass !== 'QUEUE'}
             />
 

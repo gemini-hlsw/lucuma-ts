@@ -1,13 +1,13 @@
+#import UserId, Partner, UserProfile from "@gemini-hlsw/lucuma-schemas/odb"
 # The SSO service's GraphQL schema, checked in so the admin-ui's SSO
 # operations are validated and typed — SSO doesn't publish its schema in
 # @gemini-hlsw/lucuma-schemas and its introspection requires authentication.
 #
 # Source: gemini-hlsw/lucuma-odb, modules/sso-service/src/main/resources/
-# Sso.graphql (as of b45c12a06), with the types it #imports from the ODB
-# schema (UserId, Partner, UserProfile) inlined, and one addition: the
-# `users` roster query, which is in development upstream as sc-9059. Verify
-# that field's shape (and re-sync this file) when sc-9059 deploys; replace
-# the whole file with a published schema once one exists.
+# Sso.graphql (as of b45c12a06), with one addition: the `users` roster
+# query, which is in development upstream as sc-9059. Verify that field's
+# shape (and re-sync this file) when sc-9059 deploys; replace the whole
+# file with a published schema once one exists.
 
 type Query {
   user: User!
@@ -61,30 +61,6 @@ type ApiKey {
   role: Role!
 }
 
-type UserProfile {
-  givenName: String
-  familyName: String
-  creditName: String
-  email: String
-}
-
-enum Partner {
-  "Argentina"
-  AR
-  "Brazil"
-  BR
-  "Canada"
-  CA
-  "Chile"
-  CL
-  "Korea"
-  KR
-  "University of Hawaii"
-  UH
-  "United States"
-  US
-}
-
 enum RoleType {
   PI
   NGO
@@ -92,7 +68,6 @@ enum RoleType {
   ADMIN
 }
 
-scalar UserId
 scalar OrcidId
 scalar RoleId
 scalar ApiKeyId

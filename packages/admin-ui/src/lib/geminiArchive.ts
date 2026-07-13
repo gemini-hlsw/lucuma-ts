@@ -8,6 +8,7 @@
  * mode + cone around the target. The browser reaches it through the dev
  * server's /archive proxy (the archive sends no CORS headers).
  */
+import type { ObservingModeType } from '@/gql/odb/gen/graphql';
 
 /** The high-level archive "Mode" search facet — exact slits/gratings are
  *  deliberately ignored per sc-9244. */
@@ -37,7 +38,7 @@ function spec(instruments: readonly string[], mode: ArchiveMode, largestFovArcse
  *  (GMOS 5.5′ field, F2 6.1′ circle, GNIRS 99″ slit, Alopeke/Zorro 60″
  *  wide-field, fibre-fed GHOST/MAROON-X well under the 60″ floor).
  *  VISITOR_* modes have no archive instrument name and can't be searched. */
-const SEARCH_SPEC: Record<string, ArchiveSearchSpec> = {
+const SEARCH_SPEC: Partial<Record<ObservingModeType, ArchiveSearchSpec>> = {
   GMOS_NORTH_IMAGING: spec(['GMOS'], 'IMAGING', 330),
   GMOS_SOUTH_IMAGING: spec(['GMOS'], 'IMAGING', 330),
   GMOS_NORTH_LONG_SLIT: spec(['GMOS'], 'LS', 330),
@@ -54,8 +55,11 @@ const SEARCH_SPEC: Record<string, ArchiveSearchSpec> = {
   MAROON_X: spec(['MAROON-X', 'GHOST'], 'IFS', 1),
 };
 
+/** The wire types carry `string` for observing modes; only keys of
+ *  SEARCH_SPEC (a subset of ObservingModeType) are searchable. */
 export function archiveSearchSpec(modeType: string | null): ArchiveSearchSpec | null {
-  return modeType ? (SEARCH_SPEC[modeType] ?? null) : null;
+  if (modeType === null || !Object.hasOwn(SEARCH_SPEC, modeType)) return null;
+  return SEARCH_SPEC[modeType as ObservingModeType] ?? null;
 }
 
 /** The shared DISTANCE rule of sc-9243/sc-9244: half the configuration's
@@ -63,7 +67,7 @@ export function archiveSearchSpec(modeType: string | null): ArchiveSearchSpec | 
  *  conflict check (conflicts.ts), which applies it to modes the archive
  *  can't search (VISITOR_*). */
 export function searchRadiusArcsec(modeType: string | null): number {
-  return (modeType ? SEARCH_SPEC[modeType]?.radiusArcsec : undefined) ?? MIN_RADIUS_ARCSEC;
+  return archiveSearchSpec(modeType)?.radiusArcsec ?? MIN_RADIUS_ARCSEC;
 }
 
 /** One jsonsummary URL (proxied). CANONICAL = latest file versions only;
