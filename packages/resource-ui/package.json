@@ -11,7 +11,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "dev:mock-server": "node --watch --enable-source-maps ./mock-server/server.ts",
+    "dev:mock-server": "node --conditions=development --watch --enable-source-maps ./mock-server/server.ts",
     "codegen": "graphql-codegen --config tasks/codegen.ts",
     "codegen:mock": "graphql-codegen --config tasks/codegen.mock.ts",
     "ci:set-deploy-flag": "echo \"should_deploy=true\" >> \"$GITHUB_OUTPUT\"",
@@ -40,7 +40,7 @@
     "@gemini-hlsw/lucuma-schemas": "0.177.2-20260710-ba8d76ec",
     "@graphql-codegen/client-preset": "6.1.0",
     "@graphql-typed-document-node/core": "3.2.0",
-    "graphql": "16.14.2",
+    "graphql": "17.0.2",
     "graphql-scalars": "1.25.0",
     "graphql-ws": "6.1.0",
     "graphql-yoga": "5.21.2"
