@@ -14,6 +14,7 @@
  * moves into the WHERE clause.
  */
 import { skipToken, useQuery } from '@apollo/client/react';
+import { dateToLocalObservingNight } from '@gemini-hlsw/lucuma-core';
 import { useMemo } from 'react';
 
 import { searchRadiusArcsec, separationArcsec } from '@/lib/geminiArchive';
@@ -164,7 +165,7 @@ export function useConflictCandidates(sources: readonly { readonly modeType: str
     modeTypes.length === 0
       ? skipToken
       : {
-          variables: { modeTypes: [...modeTypes], today: new Date().toISOString().slice(0, 10) },
+          variables: { modeTypes: [...modeTypes], today: dateToLocalObservingNight(new Date()) },
           fetchPolicy: 'network-only',
         },
   );

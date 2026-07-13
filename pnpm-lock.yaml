@@ -144,6 +144,9 @@ importers:
       '@gemini-hlsw/lucuma-common-ui':
         specifier: workspace:*
         version: link:../common-ui
+      '@gemini-hlsw/lucuma-core':
+        specifier: 0.216.4
+        version: 0.216.4
       '@gemini-hlsw/lucuma-ui-css':
         specifier: 0.176.0
         version: 0.176.0
