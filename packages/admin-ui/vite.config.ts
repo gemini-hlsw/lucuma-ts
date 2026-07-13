@@ -74,6 +74,7 @@ export default defineConfig({
       '@gemini-hlsw/lucuma-common-ui/test/disable-animations.css',
     ],
     browser: {
+      headless: true,
       enabled: true,
       provider: playwright({
         actionTimeout: 10_000,
