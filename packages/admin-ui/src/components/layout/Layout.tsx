@@ -11,6 +11,7 @@ import { CURRENT_ENV } from '@/auth/environments';
 import * as sso from '@/auth/ssoClient';
 import { displayName, type StandardRole } from '@/auth/user';
 import { odbTokenAtom, useIsLoggedIn, useUser } from '@/components/atoms/auth';
+import { SignOut } from '@/components/Icons';
 import { useToast } from '@/components/toastContext';
 
 /** The Admin views (Shortcut epic 5747), in rail order. Views register here
@@ -135,7 +136,7 @@ export default function Layout(): JSX.Element {
               title="Sign out — clears your token and ends the SSO session"
               onClick={() => void signOut()}
             >
-              <i className="pi pi-sign-out" />
+              <SignOut />
             </button>
           )}
         </div>

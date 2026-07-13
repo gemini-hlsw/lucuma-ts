@@ -21,10 +21,12 @@
   },
   "dependencies": {
     "@apollo/client": "4.2.5",
+    "@fortawesome/fontawesome-svg-core": "7.3.0",
+    "@fortawesome/pro-regular-svg-icons": "7.3.0",
+    "@fortawesome/react-fontawesome": "3.3.1",
     "@gemini-hlsw/lucuma-common-ui": "workspace:*",
     "@gemini-hlsw/lucuma-ui-css": "0.176.0",
     "jotai": "2.20.1",
-    "primeicons": "7.0.0",
     "primereact": "10.9.7",
     "react": "19.2.7",
     "react-dom": "19.2.7",

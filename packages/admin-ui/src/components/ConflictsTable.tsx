@@ -4,6 +4,7 @@ import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
 import { type JSX, useMemo } from 'react';
 
+import { Spinner, TriangleExclamation } from '@/components/Icons';
 import {
   type ConflictRow,
   type ConflictSource,
@@ -38,11 +39,11 @@ export function ConflictsTable({
         title="Planned observations in other active programs that would yield equivalent data (sc-9243): a similar observing mode within half the requested configuration's field of view. Covers configuration requests and, since ToO configurations carry no coordinates, the observations of active ToO programs."
       >
         {title}
-        {loading && <i className="pi pi-spin pi-spinner check-spinner" />}
+        {loading && <Spinner spin className="check-spinner" />}
       </h3>
       {error && (
         <p className="check-error">
-          <i className="pi pi-exclamation-triangle" /> Conflict check failed: {friendlyError(error)}
+          <TriangleExclamation /> Conflict check failed: {friendlyError(error)}
         </p>
       )}
       <DataTable

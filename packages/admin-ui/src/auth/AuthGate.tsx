@@ -5,6 +5,7 @@ import { Button } from 'primereact/button';
 import type { JSX, ReactNode } from 'react';
 
 import { odbTokenAtom, useCanAccessAdmin, useIsLoggedIn, useUser } from '@/components/atoms/auth';
+import { Lock, SignIn, SignOut } from '@/components/Icons';
 
 import * as sso from './ssoClient';
 import { currentAccess } from './user';
@@ -34,7 +35,7 @@ export function AuthGate({ children }: { children: ReactNode }): JSX.Element {
 
   if (!isLoggedIn) {
     return (
-      <GateScreen icon="pi-sign-in" title="GPP Admin">
+      <GateScreen icon={<SignIn className="gate-icon" />} title="GPP Admin">
         <p>
           The Admin interface is restricted to Gemini <strong>staff</strong> and <strong>admin</strong> users. Sign in
           with your ORCID to continue.
@@ -42,7 +43,7 @@ export function AuthGate({ children }: { children: ReactNode }): JSX.Element {
         <div className="gate-actions">
           <Button
             label="Sign in with ORCID"
-            icon="pi pi-sign-in"
+            icon={<SignIn />}
             onClick={() => (window.location.href = sso.signInUrl())}
           />
         </div>
@@ -52,14 +53,14 @@ export function AuthGate({ children }: { children: ReactNode }): JSX.Element {
 
   if (!canAccessAdmin) {
     return (
-      <GateScreen icon="pi-lock" title="Access denied">
+      <GateScreen icon={<Lock className="gate-icon" />} title="Access denied">
         <p>
           The Admin interface is restricted to <strong>staff</strong> and <strong>admin</strong> users; you are signed
           in as <strong>{currentAccess(user).toUpperCase()}</strong>. An admin can grant a staff role from the Users
           view.
         </p>
         <div className="gate-actions">
-          <Button label="Sign out" icon="pi pi-sign-out" outlined onClick={() => void signOut()} />
+          <Button label="Sign out" icon={<SignOut />} outlined onClick={() => void signOut()} />
         </div>
       </GateScreen>
     );
@@ -68,11 +69,11 @@ export function AuthGate({ children }: { children: ReactNode }): JSX.Element {
   return <>{children}</>;
 }
 
-function GateScreen({ icon, title, children }: { icon: string; title: string; children: ReactNode }): JSX.Element {
+function GateScreen({ icon, title, children }: { icon: ReactNode; title: string; children: ReactNode }): JSX.Element {
   return (
     <div className="gate-screen">
       <div className="gate-card">
-        <i className={`pi ${icon} gate-icon`} />
+        {icon}
         <h1>{title}</h1>
         <div className="gate-body">{children}</div>
       </div>

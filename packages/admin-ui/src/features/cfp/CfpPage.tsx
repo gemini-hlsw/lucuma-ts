@@ -10,6 +10,7 @@ import { InputText } from 'primereact/inputtext';
 import { type JSX, useMemo, useState } from 'react';
 
 import { DataSourceBadge } from '@/components/DataSourceBadge';
+import { CircleCheck, CircleXMark, Copy, Plus, Upload, XMark } from '@/components/Icons';
 import { Tile } from '@/components/Tile';
 import { useToast } from '@/components/toastContext';
 import {
@@ -127,7 +128,7 @@ export default function CfpPage(): JSX.Element {
             <Button
               text
               label="Copy"
-              icon="pi pi-copy"
+              icon={<Copy />}
               disabled={!original || saving}
               tooltip="Duplicate the selected call as a starting point for a new one (everything but the id is copied)."
               tooltipOptions={{ position: 'bottom' }}
@@ -139,7 +140,7 @@ export default function CfpPage(): JSX.Element {
             <Button
               text
               label="New"
-              icon="pi pi-plus"
+              icon={<Plus />}
               disabled={saving}
               tooltip="Create a brand-new Call for Proposals from scratch (ODB createCallForProposals)."
               tooltipOptions={{ position: 'bottom' }}
@@ -180,15 +181,13 @@ export default function CfpPage(): JSX.Element {
             style={{ width: '4rem' }}
             body={(c: CallForProposals) =>
               c.active ? (
-                <i
-                  className="pi pi-check-circle cfp-open-yes"
-                  title="Open — today is on or before the latest partner submission deadline."
-                />
+                <span title="Open — today is on or before the latest partner submission deadline.">
+                  <CircleCheck className="cfp-open-yes" />
+                </span>
               ) : (
-                <i
-                  className="pi pi-times-circle cfp-open-no"
-                  title="Closed — every partner's submission deadline has passed."
-                />
+                <span title="Closed — every partner's submission deadline has passed.">
+                  <CircleXMark className="cfp-open-no" />
+                </span>
               )
             }
           />
@@ -494,7 +493,7 @@ function CfpEditor({
             dirty ? 'Discard unsaved edits to this call and revert to the loaded values.' : 'No changes to discard.'
           }
         >
-          <Button text label="Cancel" icon="pi pi-times" disabled={!dirty} onClick={() => setDraft(original)} />
+          <Button text label="Cancel" icon={<XMark />} disabled={!dirty} onClick={() => setDraft(original)} />
         </span>
         <span
           title={
@@ -505,7 +504,7 @@ function CfpEditor({
         >
           <Button
             label="Save"
-            icon="pi pi-upload"
+            icon={<Upload />}
             disabled={!dirty || saving}
             loading={saving}
             onClick={() => void onSave(draft)}

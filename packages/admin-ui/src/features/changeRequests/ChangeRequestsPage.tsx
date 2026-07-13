@@ -11,6 +11,7 @@ import { type JSX, useMemo, useState } from 'react';
 import { ConflictsTable } from '@/components/ConflictsTable';
 import { DataSourceBadge } from '@/components/DataSourceBadge';
 import { DuplicatesTable } from '@/components/DuplicatesTable';
+import { Check, PaperPlane, XMark } from '@/components/Icons';
 import { Tile } from '@/components/Tile';
 import { useToast } from '@/components/toastContext';
 import {
@@ -359,7 +360,7 @@ export default function ChangeRequestsPage(): JSX.Element {
           <div className="cr-actions">
             <Button
               label="Deny"
-              icon="pi pi-times"
+              icon={<XMark />}
               severity="danger"
               outlined={decision !== 'DENIED'}
               tooltip="Mark every selected change request as denied and seed a decline response."
@@ -368,7 +369,7 @@ export default function ChangeRequestsPage(): JSX.Element {
             />
             <Button
               label="Approve"
-              icon="pi pi-check"
+              icon={<Check />}
               severity="success"
               outlined={decision !== 'APPROVED'}
               tooltip="Mark every selected change request as approved and seed an approval response."
@@ -384,7 +385,7 @@ export default function ChangeRequestsPage(): JSX.Element {
             >
               <Button
                 label="Confirm"
-                icon="pi pi-send"
+                icon={<PaperPlane />}
                 disabled={!decision || saving}
                 loading={saving}
                 onClick={() => void confirm()}

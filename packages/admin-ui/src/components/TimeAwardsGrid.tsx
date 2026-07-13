@@ -5,6 +5,7 @@ import { Dropdown } from 'primereact/dropdown';
 import { InputNumber } from 'primereact/inputnumber';
 import { type JSX, useMemo, useState } from 'react';
 
+import { CirclePlus, CircleXMark, Plus } from '@/components/Icons';
 import { type Partner, PARTNER_NAME, PARTNERS } from '@/gql/sso/roster';
 import { type Allocation, BAND_LABEL, BANDS, type ScienceBand } from '@/gql/types';
 
@@ -68,7 +69,7 @@ export function TimeAwardsGrid({ allocations, onChange }: TimeAwardsGridProps): 
                   title={`Remove ${PARTNER_NAME[partner]} (${partner}) and all its band allocations`}
                   onClick={() => removePartner(partner)}
                 >
-                  <i className="pi pi-times-circle" />
+                  <CircleXMark />
                 </button>
               </td>
               <td className="awards-partner">
@@ -92,7 +93,7 @@ export function TimeAwardsGrid({ allocations, onChange }: TimeAwardsGridProps): 
         })}
         <tr className="awards-add-row">
           <td className="awards-del">
-            <i className="pi pi-plus-circle" />
+            <CirclePlus />
           </td>
           <td colSpan={BANDS.length + 2}>
             <div className="awards-add">
@@ -108,7 +109,7 @@ export function TimeAwardsGrid({ allocations, onChange }: TimeAwardsGridProps): 
               <Button
                 text
                 label="Add"
-                icon="pi pi-plus"
+                icon={<Plus />}
                 disabled={!partnerToAdd}
                 tooltip="Add the selected partner as a new row, ready for you to enter its band hours."
                 tooltipOptions={{ position: 'top' }}

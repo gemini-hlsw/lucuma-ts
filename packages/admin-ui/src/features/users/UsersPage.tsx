@@ -9,6 +9,7 @@ import { InputText } from 'primereact/inputtext';
 import { type JSX, useMemo, useState } from 'react';
 
 import { DataSourceBadge } from '@/components/DataSourceBadge';
+import { Search } from '@/components/Icons';
 import { Tile } from '@/components/Tile';
 import { useToast } from '@/components/toastContext';
 import { friendlyError } from '@/gql/errors';
@@ -143,7 +144,9 @@ export default function UsersPage(): JSX.Element {
         {visibleUsers.length}/{users.length}
       </span>
       <IconField iconPosition="left">
-        <InputIcon className="pi pi-search" />
+        <InputIcon>
+          <Search />
+        </InputIcon>
         <InputText
           value={globalFilter}
           onChange={(e) => setGlobalFilter(e.target.value)}

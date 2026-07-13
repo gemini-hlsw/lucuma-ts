@@ -14,6 +14,7 @@ import { InputTextarea } from 'primereact/inputtextarea';
 import { type JSX, useMemo, useState } from 'react';
 
 import { DataSourceBadge } from '@/components/DataSourceBadge';
+import { Search, Upload, XMark } from '@/components/Icons';
 import { Tile } from '@/components/Tile';
 import { TimeAwardsGrid } from '@/components/TimeAwardsGrid';
 import { useToast } from '@/components/toastContext';
@@ -145,7 +146,9 @@ export default function ProgramsPage(): JSX.Element {
         title="Facet the table to Queue or Classical programs only."
       />
       <IconField iconPosition="left">
-        <InputIcon className="pi pi-search" />
+        <InputIcon>
+          <Search />
+        </InputIcon>
         <InputText
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -441,7 +444,7 @@ function ProgramEditor({
         {/* Wrapped in a title-span so the hint shows even while the button is
             disabled (PrimeReact suppresses tooltips on disabled controls). */}
         <span title={dirty ? 'Discard your unsaved edits and revert to the loaded values.' : 'No changes to discard.'}>
-          <Button text label="Cancel" icon="pi pi-times" disabled={!dirty} onClick={() => setDraft(original)} />
+          <Button text label="Cancel" icon={<XMark />} disabled={!dirty} onClick={() => setDraft(original)} />
         </span>
         <span
           title={
@@ -452,7 +455,7 @@ function ProgramEditor({
         >
           <Button
             label="Save"
-            icon="pi pi-upload"
+            icon={<Upload />}
             disabled={!dirty || saving}
             loading={saving}
             onClick={() => void onSave(draft)}

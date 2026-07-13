@@ -4,6 +4,7 @@ import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
 import { type JSX, useEffect, useRef, useState } from 'react';
 
+import { Spinner, TriangleExclamation } from '@/components/Icons';
 import { type DuplicateRow, type DuplicateSource, findDuplicates } from '@/lib/geminiArchive';
 
 interface DuplicatesState {
@@ -80,11 +81,11 @@ export function DuplicatesTable({
         title="Existing archive data with a similar instrument configuration near the requested coordinates (sc-9244). Searched via archive.gemini.edu with a radius of half the configuration's field of view."
       >
         {title}
-        {loading && <i className="pi pi-spin pi-spinner check-spinner" />}
+        {loading && <Spinner spin className="check-spinner" />}
       </h3>
       {error && (
         <p className="check-error">
-          <i className="pi pi-exclamation-triangle" /> Archive query failed: {error}
+          <TriangleExclamation /> Archive query failed: {error}
         </p>
       )}
       {unsearchable > 0 && !loading && (

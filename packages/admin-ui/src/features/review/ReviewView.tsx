@@ -9,6 +9,7 @@ import { type JSX, type ReactNode, useState } from 'react';
 
 import { ConflictsTable } from '@/components/ConflictsTable';
 import { DuplicatesTable } from '@/components/DuplicatesTable';
+import { Check, CircleCheck, PaperPlane, XMark } from '@/components/Icons';
 import { Tile } from '@/components/Tile';
 import type { ObservationRow } from '@/gql/types';
 
@@ -212,7 +213,7 @@ export function ReviewView<T extends ReviewItem>(props: ReviewViewProps<T>): JSX
               <div className="review-decision">
                 <Button
                   label="Accept"
-                  icon="pi pi-check"
+                  icon={<Check />}
                   severity="success"
                   outlined={decision !== 'ACCEPT'}
                   tooltip={`Mark this ${noun} for acceptance and seed an approval response to the PI below.`}
@@ -221,7 +222,7 @@ export function ReviewView<T extends ReviewItem>(props: ReviewViewProps<T>): JSX
                 />
                 <Button
                   label="Reject"
-                  icon="pi pi-times"
+                  icon={<XMark />}
                   severity="danger"
                   outlined={decision !== 'REJECT'}
                   tooltip={`Mark this ${noun} for rejection and seed a decline response to the PI below.`}
@@ -251,7 +252,7 @@ export function ReviewView<T extends ReviewItem>(props: ReviewViewProps<T>): JSX
                 >
                   <Button
                     label="Resolve"
-                    icon="pi pi-send"
+                    icon={<PaperPlane />}
                     disabled={!decision || resolving}
                     loading={resolving}
                     onClick={() => resolve(selected)}
@@ -263,7 +264,7 @@ export function ReviewView<T extends ReviewItem>(props: ReviewViewProps<T>): JSX
 
           {selected.resolved && (
             <p className="review-resolved-note">
-              <i className="pi pi-check-circle" /> This {noun} has been resolved.
+              <CircleCheck /> This {noun} has been resolved.
             </p>
           )}
         </Tile>
