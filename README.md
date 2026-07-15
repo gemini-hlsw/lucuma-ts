@@ -7,6 +7,7 @@ This repository is a [monorepo](https://monorepo.tools/) for projects written in
 - [navigate-ui](./packages/ui): Web UI used to configure the telescope and its subsystems Navigate UI, written in React.
 - [navigate-configs](./packages/configs): Backend api to manage configurations database using TypeScript, Graphql and Prisma.
 - [resource-ui](./packages/resource): Web UI for Resource, written in React.
+- [admin-ui](./packages/admin-ui): Web UI for the GPP Admin views (Programs, Users, Proposals, Change Requests, Calls for Proposals), written in React.
 
 ### libs
 
