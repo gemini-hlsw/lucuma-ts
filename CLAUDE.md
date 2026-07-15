@@ -13,6 +13,7 @@ Packages (under `packages/*`):
 - **ui** (`@gemini-hlsw/navigate-ui`) — React 19 web UI to configure the telescope. PrimeReact + Tailwind v4, Jotai state, Apollo Client, react-router.
 - **configs** (`@gemini-hlsw/navigate-configs`) — GraphQL backend (graphql-yoga) over a Postgres DB via Prisma. Serves the `/db` endpoint the UI talks to.
 - **resource-ui** (`@gemini-hlsw/resource-ui`) — separate React web UI for Resource, with its own mock GraphQL server for local dev.
+- **admin-ui** (`@gemini-hlsw/admin-ui`) — separate React web UI for the GPP Admin views (Programs, Users, Proposals, Change Requests, Calls for Proposals). Talks to the ODB and SSO GraphQL endpoints; codegen types under `src/gql/{odb,sso}/gen/`.
 - **common-ui** (`@gemini-hlsw/lucuma-common-ui`) — shared code/utilities/test setup imported by `ui` and `resource-ui`.
 - **e2e** (`@gemini-hlsw/navigate-e2e`) — Playwright end-to-end tests that run real `ui` + `configs` + a `navigate-server` docker image.
 
@@ -103,6 +104,7 @@ When writing Vitest tests:
 - TS configs extend `@tsconfig/strictest`; the React compiler (`babel-plugin-react-compiler`) is enabled in the UI build.
 - Import sorting is enforced (`eslint-plugin-simple-import-sort`); lint-staged + Prettier run on commit via Husky.
 - Generated code (`**/gen/`, `src/prisma/gen/`) is not committed and should never be hand-edited — change the source schema/documents and re-run codegen.
+- **Prefer strict types from the schema (or other authoritative sources) over hand-written ones.** Derive from the generated types so a schema change surfaces as a compile error rather than silently drifting: select rows through fragments and use the generated fragment types; key label/lookup maps as `satisfies Record<Enum, …>` (or `Partial<Record<…>>` when the coverage is intentionally partial) over the generated enum; narrow with `Extract<…>` instead of re-declaring a union locally. Reach for a local type only when no operation selects the field (so codegen doesn't emit it) — and say so in a comment.
 
 ## CI & publishing
 
