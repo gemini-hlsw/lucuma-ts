@@ -2,38 +2,10 @@ import { describe, expect, it } from 'vitest';
 
 import { standardUser } from '@/test/factories';
 
-import { accessAtLeast, canAccessAdmin, currentAccess, displayName, type StandardUser, type User } from './user';
+import { canAccessAdmin, displayName, type StandardUser, type User } from './user';
 
 const guest: User = { type: 'guest', id: 'g-1' };
 const service: User = { type: 'service', id: 's-1', name: 'scheduler' };
-
-describe(currentAccess.name, () => {
-  it('reads the active standard role', () => {
-    expect(currentAccess(standardUser('staff'))).toBe('staff');
-  });
-
-  it('maps guest/service/null', () => {
-    expect(currentAccess(guest)).toBe('guest');
-    expect(currentAccess(service)).toBe('service');
-    expect(currentAccess(null)).toBe('guest');
-  });
-});
-
-describe('accessAtLeast (hierarchy guest<pi<ngo<staff<admin<service)', () => {
-  it('staff meets the staff bar; pi does not', () => {
-    expect(accessAtLeast(standardUser('staff'), 'staff')).toBe(true);
-    expect(accessAtLeast(standardUser('pi'), 'staff')).toBe(false);
-  });
-
-  it('admin clears staff and admin bars', () => {
-    expect(accessAtLeast(standardUser('admin'), 'staff')).toBe(true);
-    expect(accessAtLeast(standardUser('admin'), 'admin')).toBe(true);
-  });
-
-  it('service outranks everything', () => {
-    expect(accessAtLeast(service, 'admin')).toBe(true);
-  });
-});
 
 describe(canAccessAdmin.name, () => {
   it('admits staff and admin, rejects pi/ngo/guest', () => {

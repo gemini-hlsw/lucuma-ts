@@ -1,41 +1,19 @@
 /* eslint-disable @typescript-eslint/prefer-nullish-coalescing */
-interface BaseUser {
-  id: string;
-}
+/*
+ * The user model and role hierarchy now live in common-ui so every app shares
+ * one definition. Re-exported here so existing `@/auth/user` imports keep
+ * working; only navigate's own `displayName` stays local.
+ */
+import type { User } from '@gemini-hlsw/lucuma-common-ui';
 
-export interface GuestUser extends BaseUser {
-  type: 'guest';
-}
-
-export interface ServiceUser extends BaseUser {
-  type: 'service';
-  name: string;
-}
-
-export interface StandardRole {
-  type: 'pi' | 'ngo' | 'staff' | 'admin';
-  id: string;
-  partner?: string;
-}
-
-export interface OrcidProfile {
-  orcidId: string;
-  profile: {
-    givenName?: string;
-    familyName?: string;
-    creditName?: string;
-    primaryEmail?: string;
-  };
-}
-
-export interface StandardUser extends BaseUser {
-  type: 'standard';
-  role: StandardRole;
-  otherRoles: StandardRole[];
-  profile: OrcidProfile;
-}
-
-export type User = GuestUser | ServiceUser | StandardUser;
+export type {
+  GuestUser,
+  OrcidProfile,
+  ServiceUser,
+  StandardRole,
+  StandardUser,
+  User,
+} from '@gemini-hlsw/lucuma-common-ui';
 
 export function displayName(user: User) {
   if (user.type === 'guest') {
