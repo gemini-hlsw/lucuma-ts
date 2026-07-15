@@ -1,7 +1,5 @@
-import type { DocumentNode, OperationVariables } from '@apollo/client';
 import type { MockLink } from '@apollo/client/testing';
 import { MockedProvider } from '@apollo/client/testing/react';
-import type { ResultOf, VariablesOf } from '@graphql-typed-document-node/core';
 import { createStore, Provider as JotaiProvider } from 'jotai';
 import { PrimeReactProvider } from 'primereact/api';
 import type { ReactElement } from 'react';
@@ -11,11 +9,9 @@ import { render } from 'vitest-browser-react';
 import { odbTokenAtom } from '@/components/atoms/auth';
 import { ToastProvider } from '@/components/toast';
 
-/** A MockedResponse whose variables and result are typed by the operation
- *  document (packages/ui's helper) — adding a field to a query makes every
- *  stale mock a compile error. */
-export type MockedResponseOf<T extends DocumentNode> =
-  VariablesOf<T> extends OperationVariables ? MockLink.MockedResponse<ResultOf<T>, VariablesOf<T>> : never;
+// The typed-mock helper is shared from common-ui; re-exported so tests can keep
+// importing it alongside renderWithContext from this module.
+export type { MockedResponseOf } from '@gemini-hlsw/lucuma-common-ui/testing';
 
 /**
  * Shared render helper (the common-ui renderWithContext shape, with the
