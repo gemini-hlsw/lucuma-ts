@@ -49,5 +49,3 @@ playwright/.cache/
 # Vitest browser-mode failure artifacts
 __screenshots__/
 .vitest-attachments/
-packages/*/reports/mutation
-.stryker-tmp
