@@ -1,0 +1,69 @@
+/* Editable partner × band Time Awards grid (shared by Programs & Proposals). */
+.awards-grid {
+  border-collapse: collapse;
+  font-size: 0.88rem;
+  width: 100%;
+}
+
+.awards-grid th,
+.awards-grid td {
+  padding: 5px 8px;
+  border-bottom: 1px solid var(--surface-border, #2a2a2e);
+  text-align: center;
+}
+
+.awards-grid th {
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.72rem;
+  color: var(--text-color-secondary, #9a9aa2);
+}
+
+.awards-partner-h,
+.awards-partner {
+  text-align: left;
+  white-space: nowrap;
+}
+
+.awards-del {
+  width: 2rem;
+}
+
+.awards-del button {
+  background: none;
+  border: none;
+  color: var(--text-color-secondary, #9a9aa2);
+  cursor: pointer;
+  padding: 0;
+}
+
+.awards-del button:hover {
+  color: var(--red-500, #e2554e);
+}
+
+.awards-total {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.awards-cell-input {
+  width: 4.5rem;
+  text-align: center;
+}
+
+.awards-add-row td {
+  border-bottom: 1px solid var(--surface-border, #2a2a2e);
+}
+
+.awards-add {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: flex-start;
+}
+
+.awards-grid tfoot td {
+  border-top: 2px solid var(--surface-border, #2a2a2e);
+  border-bottom: none;
+  padding-top: 8px;
+}

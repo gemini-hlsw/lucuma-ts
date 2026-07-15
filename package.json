@@ -15,6 +15,7 @@
     "configs": "pnpm --filter @gemini-hlsw/navigate-configs",
     "e2e": "pnpm --filter @gemini-hlsw/navigate-e2e",
     "resource-ui": "pnpm --filter @gemini-hlsw/resource-ui",
+    "admin-ui": "pnpm --filter @gemini-hlsw/admin-ui",
     "all": "pnpm -r",
     "lint": "pnpm lint:prettier && pnpm lint:style",
     "lint:prettier": "prettier --check .",

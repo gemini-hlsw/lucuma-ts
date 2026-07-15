@@ -1,0 +1,481 @@
+/*
+ * Explore-look theme for the Admin app.
+ *
+ * Replicates the explore GPP app's appearance (near-black "slate" palette,
+ * masthead with env pill, vertical side-tab rail, signature tile panels,
+ * compact tables) using plain CSS — explore itself is Scala.js + SemanticUI and
+ * can't be imported. Colors follow explore's HSL-shade convention
+ * (a base lightness plus calc() variations) so the whole UI derives from one
+ * base color, exactly as explore's THEMING.md describes.
+ */
+
+:root {
+  /* Base background — explore's dark "slate": hsl(0 0% ~7%). */
+  --xp-bg-h: 0;
+  --xp-bg-s: 0%;
+  --xp-bg-l: 7.5%;
+  --color-background: hsl(var(--xp-bg-h) var(--xp-bg-s) var(--xp-bg-l));
+  --color-background-light-3: hsl(var(--xp-bg-h) var(--xp-bg-s) calc(var(--xp-bg-l) + 3%));
+  --color-background-light-5: hsl(var(--xp-bg-h) var(--xp-bg-s) calc(var(--xp-bg-l) + 5%));
+  --color-background-light-8: hsl(var(--xp-bg-h) var(--xp-bg-s) calc(var(--xp-bg-l) + 8%));
+  --color-background-light-12: hsl(var(--xp-bg-h) var(--xp-bg-s) calc(var(--xp-bg-l) + 12%));
+  --color-background-light-20: hsl(var(--xp-bg-h) var(--xp-bg-s) calc(var(--xp-bg-l) + 20%));
+
+  /* Semantic surfaces derived from the base. */
+  --xp-masthead-bg: hsl(var(--xp-bg-h) var(--xp-bg-s) calc(var(--xp-bg-l) - 4%));
+  --tile-background: var(--color-background-light-3);
+  --tile-title-background: var(--color-background-light-8);
+  --xp-border: hsl(var(--xp-bg-h) var(--xp-bg-s) calc(var(--xp-bg-l) + 14%));
+  --xp-border-strong: hsl(var(--xp-bg-h) var(--xp-bg-s) calc(var(--xp-bg-l) + 22%));
+
+  /* Text. */
+  --xp-text: hsl(0deg 0% 88%);
+  --xp-text-muted: hsl(0deg 0% 58%);
+  --xp-text-faint: hsl(0deg 0% 42%);
+
+  /* Accents — explore green primary, slate-blue secondary. */
+  --xp-green: hsl(122deg 39% 49%);
+  --xp-green-hover: hsl(122deg 39% 55%);
+  --xp-blue: hsl(207deg 56% 47%);
+  --xp-blue-hover: hsl(207deg 56% 54%);
+  --xp-red: hsl(3deg 67% 52%);
+  --xp-selection: hsl(122deg 39% 49% / 90%);
+  --xp-title-height: 36px;
+}
+
+/* Map our themed surfaces onto the lucuma-ui-css variables our PrimeReact
+   components already read, so the theme is consistent end to end. */
+body {
+  --surface-ground: var(--color-background);
+  --surface-card: var(--tile-background);
+  --surface-border: var(--xp-border);
+  --surface-hover: var(--color-background-light-8);
+  --text-color: var(--xp-text);
+  --text-color-secondary: var(--xp-text-muted);
+  --primary-color: var(--xp-green);
+  --highlight-bg: hsl(122deg 39% 49% / 16%);
+
+  background: var(--color-background);
+  color: var(--xp-text);
+  font-family: Lato, 'Helvetica Neue', Arial, sans-serif;
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---- Masthead ---- */
+.xp-masthead {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  height: 44px;
+  padding: 0 14px;
+  background: var(--xp-masthead-bg);
+  border-bottom: 1px solid var(--xp-border);
+  flex: none;
+}
+
+.xp-wordmark {
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.42em;
+  color: var(--xp-text);
+  padding-right: 4px;
+}
+
+.xp-masthead-center {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+}
+
+.xp-env-pill {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: #fff;
+  background: var(--xp-green);
+  padding: 4px 14px;
+  border-radius: 6px;
+}
+
+.xp-masthead-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: var(--xp-text);
+  font-size: 0.85rem;
+}
+
+.xp-user {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.xp-role {
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--xp-green);
+  background: hsl(122deg 39% 49% / 16%);
+  border: 1px solid hsl(122deg 39% 49% / 35%);
+  border-radius: 5px;
+  padding: 1px 7px;
+}
+
+/* Role menu variant of the pill — same look, but a Dropdown (multi-role users
+   pick which of their SSO roles to act as). */
+.xp-role-select.p-dropdown {
+  background: hsl(122deg 39% 49% / 16%);
+  border: 1px solid hsl(122deg 39% 49% / 35%);
+  border-radius: 5px;
+}
+
+.xp-role-select .p-dropdown-label {
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--xp-green);
+  padding: 1px 0 1px 7px;
+}
+
+.xp-role-select .p-dropdown-trigger {
+  width: 1.4rem;
+  color: var(--xp-green);
+}
+
+.xp-masthead-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--xp-text-muted);
+  font-size: 0.8rem;
+  background: var(--color-background-light-8);
+  border: 1px solid var(--xp-border);
+  border-radius: 6px;
+  padding: 3px 10px;
+  cursor: pointer;
+}
+
+.xp-masthead-link:hover {
+  color: var(--xp-text);
+}
+
+.xp-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: none;
+  color: var(--xp-text-muted);
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.xp-icon-btn:hover {
+  color: var(--xp-text);
+  background: var(--color-background-light-8);
+}
+
+/* ---- Body: side rail + content ---- */
+.xp-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Vertical side-tab rail with rotated labels, like explore. */
+
+/* Each tab is a separated, rounded, bordered card inset from the rail edge —
+   matching lucuma-ui's .side-button (lucuma-ui-side-tabs.scss): a lighter card
+   background, 0.4em radius, ~0.8em left inset, and on the active tab a 3px green
+   left accent with bold text. */
+.xp-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 64px;
+  flex: none;
+  background: var(--color-background);
+  border-right: 1px solid var(--xp-border);
+  padding: 10px 0 10px 10px;
+}
+
+.xp-rail-tab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  /* Each tab is exactly as tall as its (rotated) label needs, with padding —
+     never squeezed, so labels can't overflow. If the window is too short for
+     all six, the whole page scrolls (the rail isn't its own scroll area). */
+  flex: 0 0 auto;
+  padding: 14px 0;
+  color: var(--xp-text);
+  text-decoration: none;
+  background: var(--color-background-light-8);
+  border: 1px solid var(--xp-border);
+  border-left: 3px solid transparent;
+  border-radius: 0.4em 0 0 0.4em;
+}
+
+.xp-rail-tab span {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  letter-spacing: 0.04em;
+  font-size: 0.82rem;
+  font-weight: 300;
+  white-space: nowrap;
+}
+
+.xp-rail-tab:hover {
+  background: var(--color-background-light-12);
+}
+
+.xp-rail-tab.is-active {
+  background: var(--color-background-light-20);
+  border-left: 3px solid var(--xp-green);
+  border-top-color: transparent;
+  border-bottom-color: transparent;
+}
+
+.xp-rail-tab.is-active span {
+  font-weight: 700;
+  color: #fff;
+}
+
+.xp-main {
+  flex: 1;
+  min-width: 0;
+  overflow-x: hidden;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ---- Tiles (the signature explore element) ---- */
+.xp-tile {
+  display: flex;
+  flex-direction: column;
+  background: var(--tile-background);
+  border: 1px solid var(--xp-border);
+  border-radius: 5px;
+
+  /* No overflow:hidden — it would clip tile bodies whose content (e.g. a
+     DataTable) is taller than the flex item computes. Round the title's top
+     corners explicitly instead. */
+}
+
+.xp-tile-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  height: var(--xp-title-height);
+  padding: 0 12px;
+  background: var(--tile-title-background);
+  border-bottom: 1px solid var(--xp-border);
+  border-top-left-radius: 5px;
+  border-top-right-radius: 5px;
+  flex: none;
+}
+
+.xp-tile-title-text {
+  font-size: 0.86rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--xp-text);
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.xp-tile-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+}
+
+.xp-tile-body {
+  /* Tiles size to their content; the page (.xp-main) is the single scroller,
+     so there are no nested scrollbars. */
+  padding: 16px 18px;
+}
+
+.xp-tile-body.is-flush {
+  padding: 0;
+}
+
+/* Empty / loading / error state inside a tile body. */
+.view-empty {
+  margin: 0;
+  padding: 28px 4px;
+  color: var(--xp-text-muted, #9a9aa2);
+  font-size: 0.92rem;
+  text-align: center;
+}
+
+/* ---- Compact, explore-style tables (over PrimeReact DataTable) ---- */
+.xp-main .p-datatable .p-datatable-thead > tr > th {
+  background: var(--tile-title-background);
+  color: var(--xp-text);
+  font-weight: 700;
+  font-size: 0.78rem;
+  padding: 0.5em 0.6em;
+  border-color: var(--xp-border);
+}
+
+.xp-main .p-datatable .p-datatable-tbody > tr > td {
+  padding: 0.42em 0.6em;
+  border-color: var(--xp-border);
+  font-size: 0.86rem;
+}
+
+.xp-main .p-datatable .p-datatable-tbody > tr {
+  background: var(--tile-background);
+  color: var(--xp-text);
+}
+
+.xp-main .p-datatable .p-datatable-tbody > tr:nth-child(even) {
+  background: var(--color-background-light-5);
+}
+
+.xp-main .p-datatable .p-datatable-tbody > tr.p-highlight,
+.xp-main .p-datatable .p-datatable-tbody > tr[data-p-highlight='true'] {
+  background: hsl(122deg 39% 49% / 16%);
+  box-shadow:
+    inset 0 1px 0 0 var(--xp-selection),
+    inset 0 -1px 0 0 var(--xp-selection);
+}
+
+.xp-main .p-datatable .p-datatable-tbody > tr:hover {
+  background: var(--color-background-light-8);
+}
+
+.xp-main .p-inputtext,
+.xp-main .p-dropdown,
+.xp-main .p-inputnumber-input,
+.xp-main .p-inputtextarea {
+  background: var(--color-background);
+  border-color: var(--xp-border-strong);
+  color: var(--xp-text);
+}
+
+.xp-tile-controls .p-dropdown {
+  height: 30px;
+}
+
+.xp-tile-controls .p-inputtext {
+  font-size: 0.82rem;
+}
+
+.xp-main .p-inputtext:disabled,
+.xp-main .p-inputtext.p-disabled {
+  opacity: 0.45;
+}
+
+.xp-tile-controls .p-dropdown .p-dropdown-label {
+  padding-top: 4px;
+  padding-bottom: 4px;
+  font-size: 0.82rem;
+}
+
+/* Icon-field inputs keep their left room for the search glyph; plain inputs
+   (below) get tighter padding all around. */
+.xp-tile-controls .p-icon-field .p-inputtext {
+  padding-top: 5px;
+  padding-bottom: 5px;
+}
+
+.xp-main .p-inputtext:enabled:focus,
+.xp-main .p-dropdown:not(.p-disabled).p-focus,
+.xp-main .p-inputtextarea:enabled:focus {
+  border-color: var(--xp-green);
+  box-shadow: 0 0 0 1px hsl(122deg 39% 49% / 45%);
+}
+
+.xp-tile-controls .p-inputtext:not(.p-icon-field .p-inputtext) {
+  padding: 5px 9px;
+}
+
+/* ---- Buttons: green primary, slate secondary (explore palette) ---- */
+.xp-main .p-button,
+.xp-masthead .p-button {
+  border-radius: 5px;
+}
+
+/* Tile-header controls: keep PrimeReact widgets compact in the 36px bar. */
+.xp-tile-controls .p-button {
+  padding: 5px 10px;
+  font-size: 0.8rem;
+}
+
+.xp-tile-controls .p-selectbutton .p-button {
+  padding: 4px 12px;
+  font-size: 0.78rem;
+}
+
+.xp-main .p-button:not(.p-button-text, .p-button-outlined, .p-button-secondary, .p-button-danger, .p-button-success) {
+  background: var(--xp-green);
+  border-color: var(--xp-green);
+}
+
+.xp-main
+  .p-button:not(
+    .p-button-text,
+    .p-button-outlined,
+    .p-button-secondary,
+    .p-button-danger,
+    .p-button-success
+  ):enabled:hover {
+  background: var(--xp-green-hover);
+  border-color: var(--xp-green-hover);
+}
+
+/* The Resolved/Unresolved toggle: explore's selected segment uses the green
+   accent rather than PrimeReact's default blue. */
+.review-toggle .p-button.p-highlight {
+  background: var(--xp-green);
+  border-color: var(--xp-green);
+  color: #fff;
+}
+
+/* Checkboxes & radios in the green accent. */
+.xp-main .p-checkbox .p-checkbox-box.p-highlight,
+.xp-main .p-radiobutton .p-radiobutton-box.p-highlight {
+  background: var(--xp-green);
+  border-color: var(--xp-green);
+}
+
+.xp-main .p-radiobutton .p-radiobutton-box.p-highlight .p-radiobutton-icon {
+  background: #fff;
+}
+
+/* Chips (contact scientists) — dark pill with subtle border. */
+.xp-main .p-chips .p-chips-token {
+  background: var(--color-background-light-12);
+  color: var(--xp-text);
+  border-radius: 5px;
+}
+
+/* Section subheads inside tiles (Time Awards, Instruments, etc.). */
+.xp-tile-body h2,
+.xp-tile-body h3 {
+  font-size: 0.92rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--xp-text);
+}
+
+/* Form labels read a touch muted, like explore. */
+.program-form > label,
+.cfp-form > label {
+  color: var(--xp-text-muted);
+}

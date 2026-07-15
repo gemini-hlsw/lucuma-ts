@@ -1,0 +1,10 @@
+/* Shell sizing. The explore look (masthead, rail, tiles, palette) lives in
+   styles/shell.css; this file only holds the full-height frame.
+   `min-height` (not fixed height) so that if the rail's tabs are taller than the
+   viewport (very short window), the whole page scrolls to reveal them — rather
+   than the rail clipping or growing its own scrollbar. */
+.xp-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}

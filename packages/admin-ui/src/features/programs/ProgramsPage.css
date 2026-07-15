@@ -1,0 +1,120 @@
+.programs-blurb {
+  margin: 0;
+  padding: 10px 14px;
+  color: var(--text-color-secondary, #9a9aa2);
+  font-size: 0.86rem;
+  border-bottom: 1px solid var(--surface-border, #2a2a2e);
+}
+
+.programs-table {
+  cursor: pointer;
+}
+
+.program-readonly {
+  font-size: 0.9rem;
+  color: var(--text-color, #e4e4e7);
+}
+
+.program-gap {
+  color: var(--text-color-secondary, #9a9aa2);
+  font-style: italic;
+  font-size: 0.84rem;
+}
+
+.program-title {
+  margin: 0 0 18px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-color, #e4e4e7);
+}
+
+/* Two-column body: form/awards left, private note right (per mockup). */
+.program-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
+  gap: 28px;
+  align-items: start;
+}
+
+.program-form {
+  display: grid;
+  grid-template-columns: [label] 11rem [field] minmax(0, 1fr);
+  align-items: center;
+  gap: 12px 16px;
+}
+
+.program-form > label {
+  grid-column: label;
+  font-size: 0.9rem;
+  align-self: center;
+}
+
+.program-form > :not(label) {
+  grid-column: field;
+}
+
+.thesis-list {
+  font-size: 0.9rem;
+  color: var(--text-color-secondary, #9a9aa2);
+}
+
+.suffixed {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.suffixed .suffix {
+  color: var(--text-color-secondary, #9a9aa2);
+  font-size: 0.88rem;
+}
+
+.active-period {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ap-date-input {
+  width: 9.5rem;
+}
+
+.ap-dash {
+  color: var(--text-color-secondary, #9a9aa2);
+}
+
+/* ---- Time Awards grid (grid itself lives in TimeAwardsGrid.css) ---- */
+.awards-title,
+.note-title {
+  margin: 26px 0 10px;
+  font-size: 1.05rem;
+}
+
+/* ---- Private note ---- */
+.program-right {
+  position: sticky;
+  top: 0;
+}
+
+.private-note {
+  width: 100%;
+  min-height: 320px;
+  resize: vertical;
+}
+
+.program-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 28px;
+}
+
+@media (width <= 1100px) {
+  .program-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .program-right {
+    position: static;
+  }
+}
