@@ -21,9 +21,9 @@
   },
   "dependencies": {
     "@apollo/client": "4.2.5",
-    "@fortawesome/fontawesome-svg-core": "7.3.0",
-    "@fortawesome/pro-regular-svg-icons": "7.3.0",
-    "@fortawesome/react-fontawesome": "3.3.1",
+    "@fortawesome/fontawesome-svg-core": "7.3.1",
+    "@fortawesome/pro-regular-svg-icons": "7.3.1",
+    "@fortawesome/react-fontawesome": "3.4.0",
     "@gemini-hlsw/lucuma-common-ui": "workspace:*",
     "@gemini-hlsw/lucuma-core": "0.216.4",
     "@gemini-hlsw/lucuma-ui-css": "0.176.0",
