@@ -25,7 +25,7 @@
     "@fortawesome/pro-regular-svg-icons": "7.3.1",
     "@fortawesome/react-fontawesome": "3.4.0",
     "@gemini-hlsw/lucuma-common-ui": "workspace:*",
-    "@gemini-hlsw/lucuma-core": "0.216.4",
+    "@gemini-hlsw/lucuma-core": "0.218.0",
     "@gemini-hlsw/lucuma-ui-css": "0.176.0",
     "jotai": "2.20.2",
     "primereact": "10.9.7",
