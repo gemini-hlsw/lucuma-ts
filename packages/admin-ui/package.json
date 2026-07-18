@@ -27,7 +27,7 @@
     "@gemini-hlsw/lucuma-common-ui": "workspace:*",
     "@gemini-hlsw/lucuma-core": "0.216.4",
     "@gemini-hlsw/lucuma-ui-css": "0.176.0",
-    "jotai": "2.20.1",
+    "jotai": "2.20.2",
     "primereact": "10.9.7",
     "react": "19.2.7",
     "react-dom": "19.2.7",
