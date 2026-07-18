@@ -2,9 +2,10 @@ import { describe, expect, it } from 'vitest';
 
 import {
   type AdminChangeRequestsResult,
+  type AdminProgramObservationsResult,
   groupChangeRequestsByProgram,
   mapChangeRequests,
-  mapObservationsById,
+  observationsByIdFrom,
 } from './changeRequests';
 import type { ChangeRequest } from './types';
 
@@ -78,7 +79,7 @@ describe('mapChangeRequests', () => {
     expect(c?.modeType).toBe('GMOS_SOUTH_LONG_SLIT');
     expect(c?.conditions).toBe('IQ<2.0″ / CC100 / SB100 / WV100');
     expect(c?.observationIds).toEqual(['o-9c5', 'o-ca0']);
-    expect(c?.observations).toEqual([]); // joined later by the page via mapObservationsById
+    expect(c?.observations).toEqual([]); // joined later by the page via observationsByIdFrom
   });
 });
 
@@ -110,42 +111,38 @@ describe('mapChangeRequests PI fallback', () => {
   });
 });
 
-describe('mapObservationsById', () => {
+describe('observationsByIdFrom', () => {
   it('keys observation rows by id, with coordinates, config, and conditions', () => {
-    const out = mapObservationsById({
-      observations: {
-        __typename: 'ObservationSelectResult',
-        matches: [
-          {
-            __typename: 'Observation',
-            id: 'o-9c5',
-            observationDuration: null,
-            instrument: 'GMOS_NORTH',
-            observingMode: { __typename: 'ObservingMode', mode: 'GMOS_NORTH_LONG_SLIT' },
-            constraintSet: {
-              __typename: 'ConstraintSet',
-              imageQuality: 'POINT_EIGHT',
-              cloudExtinction: 'POINT_THREE',
-              skyBackground: 'GRAY',
-              waterVapor: 'WET',
-            },
-            targetEnvironment: {
-              __typename: 'TargetEnvironment',
-              firstScienceTarget: {
-                __typename: 'Target',
-                id: 't-1',
-                name: 'Bol 213',
-                sidereal: {
-                  __typename: 'Sidereal',
-                  ra: { __typename: 'RightAscension', hms: '00:41:24', degrees: 10.35 },
-                  dec: { __typename: 'Declination', dms: '+41:14:37', degrees: 41.243611 },
-                },
-              },
+    const matches: AdminProgramObservationsResult['observations']['matches'] = [
+      {
+        __typename: 'Observation',
+        id: 'o-9c5',
+        observationDuration: null,
+        instrument: 'GMOS_NORTH',
+        observingMode: { __typename: 'ObservingMode', mode: 'GMOS_NORTH_LONG_SLIT' },
+        constraintSet: {
+          __typename: 'ConstraintSet',
+          imageQuality: 'POINT_EIGHT',
+          cloudExtinction: 'POINT_THREE',
+          skyBackground: 'GRAY',
+          waterVapor: 'WET',
+        },
+        targetEnvironment: {
+          __typename: 'TargetEnvironment',
+          firstScienceTarget: {
+            __typename: 'Target',
+            id: 't-1',
+            name: 'Bol 213',
+            sidereal: {
+              __typename: 'Sidereal',
+              ra: { __typename: 'RightAscension', hms: '00:41:24', degrees: 10.35 },
+              dec: { __typename: 'Declination', dms: '+41:14:37', degrees: 41.243611 },
             },
           },
-        ],
+        },
       },
-    });
+    ];
+    const out = observationsByIdFrom(matches);
     expect(out.get('o-9c5')).toEqual({
       id: 'o-9c5',
       target: 'Bol 213',
