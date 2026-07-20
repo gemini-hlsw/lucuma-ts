@@ -64,9 +64,16 @@ describe(setActiveRole.name, () => {
     await expect(setActiveRole(SSO, 'r-1')).resolves.toBeUndefined();
   });
 
-  it('throws when SSO rejects the switch', async () => {
+  it('throws with the status and response body when SSO rejects the switch', async () => {
+    mockFetch({ ok: false, status: 403, body: 'User does not own role.' });
+    await expect(setActiveRole(SSO, 'r-1')).rejects.toThrow(
+      'SSO rejected the role switch (403: User does not own role.).',
+    );
+  });
+
+  it('throws with just the status when the response body is empty', async () => {
     mockFetch({ ok: false, status: 403 });
-    await expect(setActiveRole(SSO, 'r-1')).rejects.toThrow(/rejected the role switch/);
+    await expect(setActiveRole(SSO, 'r-1')).rejects.toThrow('SSO rejected the role switch (403).');
   });
 });
 
@@ -87,7 +94,7 @@ describe(logout.name, () => {
   it('resolves on success and throws on failure', async () => {
     mockFetch({ ok: true });
     await expect(logout(SSO)).resolves.toBeUndefined();
-    mockFetch({ ok: false, status: 500 });
-    await expect(logout(SSO)).rejects.toThrow(/logout failed/);
+    mockFetch({ ok: false, status: 500, body: 'session store unavailable' });
+    await expect(logout(SSO)).rejects.toThrow('SSO logout failed (500: session store unavailable).');
   });
 });

@@ -48,6 +48,13 @@ export async function guestLogin(ssoUri: string): Promise<string | null> {
   }
 }
 
+/** The status and body of a failed response, for error messages — SSO puts the
+ *  human-readable reason in the body (e.g. "User does not own role."). */
+async function failureDetail(res: Response): Promise<string> {
+  const body = (await res.text().catch(() => '')).trim();
+  return body ? `${String(res.status)}: ${body}` : String(res.status);
+}
+
 /** The ORCID sign-in URL; navigating here begins the login redirect. `state` is
  *  where SSO returns the browser after the round-trip. */
 export function signInUrl(ssoUri: string, state: string): string {
@@ -63,7 +70,7 @@ export async function setActiveRole(ssoUri: string, roleId: string): Promise<voi
   const url = new URL('/auth/v1/set-role', ssoUri);
   url.searchParams.set('role', roleId);
   const res = await fetch(url, { method: 'GET', credentials: 'include' });
-  if (!res.ok) throw new Error(`SSO rejected the role switch (${String(res.status)}).`);
+  if (!res.ok) throw new Error(`SSO rejected the role switch (${await failureDetail(res)}).`);
 }
 
 /** Switch the active role and return the fresh token in one step, for callers
@@ -79,5 +86,5 @@ export async function setRole(ssoUri: string, roleId: string): Promise<string> {
 /** End the SSO session. Throws when SSO rejects the call or is unreachable. */
 export async function logout(ssoUri: string): Promise<void> {
   const res = await fetch(new URL('/api/v1/logout', ssoUri), { method: 'POST', credentials: 'include' });
-  if (!res.ok) throw new Error(`SSO logout failed (${String(res.status)}).`);
+  if (!res.ok) throw new Error(`SSO logout failed (${await failureDetail(res)}).`);
 }
