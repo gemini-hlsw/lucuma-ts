@@ -192,6 +192,9 @@ importers:
       lint-staged:
         specifier: 17.0.8
         version: 17.0.8
+      playwright:
+        specifier: 'catalog:'
+        version: 1.61.1
       prettier:
         specifier: 3.9.5
         version: 3.9.5
