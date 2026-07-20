@@ -80,7 +80,7 @@ jobs:
         with:
           only-changed: true
           FONTAWESOME_NPM_AUTH_TOKEN: ${{ secrets.FONTAWESOME_NPM_AUTH_TOKEN }}
-      - run: pnpm exec playwright install chromium --only-shell
+      - run: pnpm ui exec playwright install chromium --only-shell
       - run: pnpm --filter "...[${{ env.CHANGED_SINCE }}]..." --if-present codegen
       - run: pnpm --filter "...[${{ env.CHANGED_SINCE }}]..." --if-present generate
       - run: pnpm --filter "...[${{ env.CHANGED_SINCE }}]" --if-present test
@@ -104,7 +104,7 @@ jobs:
       - name: Add hosts to /etc/hosts
         run: |
           sudo echo "127.0.0.1 navigate.lucuma.xyz" | sudo tee -a /etc/hosts
-      - run: pnpm exec playwright install firefox --only-shell
+      - run: pnpm e2e exec playwright install firefox --only-shell
       - run: pnpm --filter "...[${{ env.CHANGED_SINCE }}]..." --if-present build
       - run: pnpm --filter "...[${{ env.CHANGED_SINCE }}]..." --if-present e2e:docker-up
         env:

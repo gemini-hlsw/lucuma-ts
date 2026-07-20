@@ -18,7 +18,7 @@ export default defineConfig(
   reactRefresh.configs.vite(),
   {
     settings: {
-      react: { version: 'detect' },
+      react: { version: '19.2' },
     },
   },
   ...graphqlConfigForSchema(
@@ -60,7 +60,6 @@ function graphqlConfigForSchema(schema, base) {
         },
       },
       plugins: {
-        // @ts-expect-error - incorrect type
         '@graphql-eslint': graphqlPlugin,
       },
       rules: {
