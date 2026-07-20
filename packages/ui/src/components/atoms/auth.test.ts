@@ -1,127 +1,54 @@
+import type { OdbTokenPayload } from '@gemini-hlsw/lucuma-common-ui';
 import { createStore } from 'jotai';
 import type { Store } from 'jotai/vanilla/store';
 
 import type { GuestUser, ServiceUser, StandardUser } from '@/auth/user';
 
-import {
-  canEditAtom,
-  decodedTokenPayloadAtom,
-  isLoggedInAtom,
-  odbTokenAtom,
-  type OdbTokenPayload,
-  tokenExpAtom,
-  userAtom,
-} from './auth';
+import { canEditAtom, odbTokenAtom } from './auth';
 
-describe('auth atoms', () => {
+describe('canEditAtom', () => {
   let store: Store;
   beforeEach(() => {
     store = createStore();
   });
 
-  describe('decodedTokenPayloadAtom', () => {
-    it('should decode the token payload', () => {
-      const { token, payload } = createStandardUserToken(Date.now() / 1000 + 60);
+  it('is true if the user is logged in as staff', () => {
+    const { token } = createStandardUserToken(Date.now() / 1000 + 60, { role: { type: 'staff', id: '123' } });
 
-      store.set(odbTokenAtom, token);
-      expect(store.get(decodedTokenPayloadAtom)).toEqual(payload);
-    });
-
-    it('is null if the token is not set', () => {
-      store.set(odbTokenAtom, null);
-      expect(store.get(decodedTokenPayloadAtom)).toBeNull();
-    });
-
-    it('is null if the token is invalid', () => {
-      store.set(odbTokenAtom, 'invalid token');
-      expect(store.get(decodedTokenPayloadAtom)).toBeNull();
-    });
+    store.set(odbTokenAtom, token);
+    expect(store.get(canEditAtom)).true;
   });
 
-  describe('userAtom', () => {
-    it('gets the user from the payload', () => {
-      const { token, payload } = createStandardUserToken();
+  it('is true if the user is logged in as admin', () => {
+    const { token } = createStandardUserToken(Date.now() / 1000 + 60, { role: { type: 'admin', id: '123' } });
 
-      store.set(odbTokenAtom, token);
-      expect(store.get(userAtom)).toEqual(payload['lucuma-user']);
-    });
+    store.set(odbTokenAtom, token);
+    expect(store.get(canEditAtom)).true;
   });
 
-  describe('tokenExpAtom', () => {
-    it('gets the expiration date from the payload', () => {
-      const expDate = Date.now();
-      const { token } = createStandardUserToken(expDate / 1000);
-
-      store.set(odbTokenAtom, token);
-      expect(store.get(tokenExpAtom)).toEqual(new Date(expDate));
-    });
-
-    it('is null if the token is not set', () => {
-      store.set(odbTokenAtom, null);
-      expect(store.get(tokenExpAtom)).toBeNull();
-    });
+  it('is false if the user is not staff', () => {
+    const { token } = createStandardUserToken(Date.now() / 1000 + 60, { role: { type: 'pi', id: '123' } });
+    store.set(odbTokenAtom, token);
+    expect(store.get(canEditAtom)).false;
   });
 
-  describe('isLoggedInAtom', () => {
-    it('is true if the user is logged in and the token is not expired', () => {
-      const { token } = createStandardUserToken(Date.now() / 1000 + 60);
-
-      store.set(odbTokenAtom, token);
-      expect(store.get(isLoggedInAtom)).true;
-    });
-
-    it('is false if the user is logged in and the token is expired', () => {
-      const { token } = createStandardUserToken(Date.now() / 1000 - 60);
-
-      store.set(odbTokenAtom, token);
-      expect(store.get(isLoggedInAtom)).false;
-    });
-
-    it('is false if the user is not logged in', () => {
-      store.set(odbTokenAtom, null);
-      expect(store.get(isLoggedInAtom)).false;
-    });
+  it('is false if the user is not logged in', () => {
+    store.set(odbTokenAtom, null);
+    expect(store.get(canEditAtom)).false;
   });
 
-  describe('canEditAtom', () => {
-    it('is true if the user is logged in as staff', () => {
-      const { token } = createStandardUserToken(Date.now() / 1000 + 60, { role: { type: 'staff', id: '123' } });
+  it('is false if the user is logged in as guest', () => {
+    const { token } = createGuestUserToken();
 
-      store.set(odbTokenAtom, token);
-      expect(store.get(canEditAtom)).true;
-    });
+    store.set(odbTokenAtom, token);
+    expect(store.get(canEditAtom)).false;
+  });
 
-    it('is true if the user is logged in as admin', () => {
-      const { token } = createStandardUserToken(Date.now() / 1000 + 60, { role: { type: 'admin', id: '123' } });
+  it('is true if the user is logged in as service user', () => {
+    const { token } = createServiceUserToken({});
 
-      store.set(odbTokenAtom, token);
-      expect(store.get(canEditAtom)).true;
-    });
-
-    it('is false if the user is not staff', () => {
-      const { token } = createStandardUserToken(Date.now() / 1000 + 60, { role: { type: 'pi', id: '123' } });
-      store.set(odbTokenAtom, token);
-      expect(store.get(canEditAtom)).false;
-    });
-
-    it('is false if the user is not logged in', () => {
-      store.set(odbTokenAtom, null);
-      expect(store.get(canEditAtom)).false;
-    });
-
-    it('is false if the user is logged in as guest', () => {
-      const { token } = createGuestUserToken();
-
-      store.set(odbTokenAtom, token);
-      expect(store.get(canEditAtom)).false;
-    });
-
-    it('is true if the user is logged in as service user', () => {
-      const { token } = createServiceUserToken({});
-
-      store.set(odbTokenAtom, token);
-      expect(store.get(canEditAtom)).true;
-    });
+    store.set(odbTokenAtom, token);
+    expect(store.get(canEditAtom)).true;
   });
 });
 

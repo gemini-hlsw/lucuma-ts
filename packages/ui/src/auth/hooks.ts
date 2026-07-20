@@ -1,3 +1,4 @@
+import * as sso from '@gemini-hlsw/lucuma-common-ui/sso';
 import { useServerConfigValue } from '@gql/server/ServerConfiguration';
 import { useCallback, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router';
@@ -14,12 +15,9 @@ export function useSignInURL() {
   const location = useLocation();
   const { ssoUri } = useServerConfigValue();
   const signinURL = useMemo(() => {
-    const redirectURL = new URL('/auth/v1/stage1', ssoUri);
     const from = (location.state as LocationInterface)?.from?.pathname ?? '/';
     const state = new URL(from, window.location.origin);
-    redirectURL.searchParams.set('state', state.toString());
-
-    return redirectURL.toString();
+    return sso.signInUrl(ssoUri, state.toString());
   }, [location.state, ssoUri]);
 
   return signinURL;
@@ -34,13 +32,10 @@ export function useSignout() {
 
   const signout = useCallback(async () => {
     setToken(null);
-    const logoutURL = new URL('/api/v1/logout', ssoUri);
-    const res = await fetch(logoutURL, { method: 'POST', credentials: 'include' });
-    if (res.ok) {
-      const data = await res.text();
-      console.log(data);
-    } else {
-      console.error('Error logging out', res.status, res.statusText);
+    try {
+      await sso.logout(ssoUri);
+    } catch (error) {
+      console.error('Error logging out', error);
     }
   }, [setToken, ssoUri]);
 
@@ -55,14 +50,10 @@ export function useRefreshToken() {
   const { ssoUri } = useServerConfigValue();
 
   const refreshToken = useCallback(async () => {
-    const refreshURL = new URL('/api/v1/refresh-token', ssoUri);
-    const res = await fetch(refreshURL, { method: 'POST', credentials: 'include' });
-    if (res.ok) {
-      const data = await res.text();
-      if (data) setToken(data);
-    } else {
-      console.error('Error refreshing token', res.status, res.statusText);
-    }
+    // A failed refresh means there's no valid session — the normal signed-out
+    // state — so leave the token as-is rather than treating it as an error.
+    const token = await sso.refreshToken(ssoUri);
+    if (token) setToken(token);
   }, [setToken, ssoUri]);
   return refreshToken;
 }
@@ -74,17 +65,16 @@ export function useSetRole() {
 
   const setRole = useCallback(
     async (role: StandardRole) => {
-      const setRoleURL = new URL('/auth/v1/set-role', ssoUri);
-      setRoleURL.searchParams.set('role', role.id);
-      const res = await fetch(setRoleURL, { method: 'GET', credentials: 'include' });
-      if (res.ok) {
-        const data = await res.text();
-        if (data) await refreshToken();
-      } else {
+      try {
+        await sso.setActiveRole(ssoUri, role.id);
+        // Pull the new role's JWT through navigate's own refresh, which writes
+        // the token atom the rest of the app reads.
+        await refreshToken();
+      } catch (error) {
         toast?.show({
           severity: 'error',
           summary: 'Error',
-          detail: `Error while switching to role ${role.type}.\n${await res.text()}`,
+          detail: `Error while switching to role ${role.type}.\n${error instanceof Error ? error.message : String(error)}`,
         });
       }
     },
@@ -112,10 +102,9 @@ export function useGuestLogin() {
 
   const navigate = useNavigate();
   const guestLogin = useCallback(async () => {
-    const guestTokenURL = new URL('/api/v1/auth-as-guest', ssoUri);
-    const response = await fetch(guestTokenURL, { method: 'POST', credentials: 'include' });
+    const token = await sso.guestLogin(ssoUri);
 
-    if (!response.ok) {
+    if (!token) {
       toast?.show({
         severity: 'error',
         summary: 'Login Error',
@@ -123,8 +112,7 @@ export function useGuestLogin() {
       });
       return;
     }
-    const token = await response.text();
-    if (token) setToken(token);
+    setToken(token);
 
     const from = locationState?.from?.pathname ?? '/';
     toast?.show({

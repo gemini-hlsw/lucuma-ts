@@ -12,6 +12,7 @@
   "main": "src/index.ts",
   "exports": {
     ".": "./src/index.ts",
+    "./sso": "./src/sso.ts",
     "./testing": "./src/testing/index.ts",
     "./*": "./src/*"
   },
@@ -25,8 +26,15 @@
     "date-fns": "catalog:",
     "tailwind-merge": "catalog:"
   },
+  "peerDependencies": {
+    "jotai": "catalog:"
+  },
   "devDependencies": {
+    "@apollo/client": "catalog:",
     "@eslint/js": "catalog:",
+    "@graphql-typed-document-node/core": "catalog:",
+    "graphql": "catalog:",
+    "jotai": "catalog:",
     "@tsconfig/strictest": "catalog:",
     "@tsconfig/vite-react": "catalog:",
     "@types/react": "catalog:",
