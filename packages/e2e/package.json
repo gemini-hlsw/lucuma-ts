@@ -18,8 +18,17 @@
   },
   "dependencies": {},
   "devDependencies": {
-    "@playwright/test": "1.61.1",
+    "@eslint/js": "catalog:",
     "@gemini-hlsw/navigate-configs": "workspace:*",
-    "@gemini-hlsw/navigate-ui": "workspace:*"
+    "@gemini-hlsw/navigate-ui": "workspace:*",
+    "@playwright/test": "1.61.1",
+    "@tsconfig/strictest": "catalog:",
+    "@tsconfig/vite-react": "catalog:",
+    "eslint": "catalog:",
+    "eslint-import-resolver-typescript": "catalog:",
+    "eslint-plugin-simple-import-sort": "catalog:",
+    "globals": "catalog:",
+    "typescript": "catalog:",
+    "typescript-eslint": "catalog:"
   }
 }

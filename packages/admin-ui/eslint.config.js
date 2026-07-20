@@ -45,7 +45,6 @@ export default defineConfig(
       },
     },
     plugins: {
-      // @ts-expect-error - incorrect type
       '@graphql-eslint': graphqlPlugin,
     },
     rules: {
@@ -71,7 +70,7 @@ export default defineConfig(
   },
   {
     settings: {
-      react: { version: 'detect' },
+      react: { version: '19.2' },
     },
   },
 );

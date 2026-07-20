@@ -22,19 +22,39 @@
     "lint:eslint": "eslint ."
   },
   "dependencies": {
-    "@gemini-hlsw/lucuma-core": "0.217.0",
-    "date-fns": "4.4.0",
-    "tailwind-merge": "3.6.0"
+    "@gemini-hlsw/lucuma-core": "catalog:",
+    "date-fns": "catalog:",
+    "tailwind-merge": "catalog:"
   },
   "peerDependencies": {
-    "jotai": "2.20.1"
+    "jotai": "catalog:"
   },
   "devDependencies": {
-    "@apollo/client": "4.2.6",
-    "@graphql-typed-document-node/core": "3.2.0",
-    "jotai": "2.20.1",
-    "react": "19.2.7",
-    "react-dom": "19.2.7",
-    "react-router": "8.2.0"
+    "@apollo/client": "catalog:",
+    "@eslint/js": "catalog:",
+    "@graphql-typed-document-node/core": "catalog:",
+    "jotai": "catalog:",
+    "@tsconfig/strictest": "catalog:",
+    "@tsconfig/vite-react": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@vitejs/plugin-react": "catalog:",
+    "@vitest/browser-playwright": "catalog:",
+    "eslint": "catalog:",
+    "eslint-import-resolver-typescript": "catalog:",
+    "eslint-plugin-react": "catalog:",
+    "eslint-plugin-react-hooks": "catalog:",
+    "eslint-plugin-react-refresh": "catalog:",
+    "eslint-plugin-simple-import-sort": "catalog:",
+    "globals": "catalog:",
+    "playwright": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "react-router": "catalog:",
+    "typescript": "catalog:",
+    "typescript-eslint": "catalog:",
+    "vite": "catalog:",
+    "vitest": "catalog:",
+    "vitest-browser-react": "catalog:"
   }
 }

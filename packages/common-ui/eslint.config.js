@@ -17,7 +17,7 @@ export default defineConfig(
   reactRefresh.configs.vite(),
   {
     settings: {
-      react: { version: 'detect' },
+      react: { version: '19.2' },
     },
   },
 );

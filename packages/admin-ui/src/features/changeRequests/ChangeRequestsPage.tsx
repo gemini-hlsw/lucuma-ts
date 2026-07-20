@@ -17,9 +17,9 @@ import { useToast } from '@/components/toastContext';
 import {
   groupChangeRequestsByProgram,
   mapChangeRequests,
-  mapObservationsById,
+  observationsByIdFrom,
   useChangeRequests,
-  useObservationsByIds,
+  useProgramObservations,
   useUpdateConfigurationRequests,
 } from '@/gql/changeRequests';
 import { friendlyError } from '@/gql/errors';
@@ -99,17 +99,12 @@ export default function ChangeRequestsPage(): JSX.Element {
   );
 
   // ConfigurationRequest only carries observation IDs (applicableObservations);
-  // resolve them to real rows with one batched query per selected program,
-  // not per request — avoids an N+1 fetch as the reviewer drills in.
-  const observationIds = useMemo(
-    () => Array.from(new Set(programRequests.flatMap((r) => r.observationIds))),
-    [programRequests],
-  );
-  const { data: observationsData } = useObservationsByIds(observationIds);
-  const observationsById = useMemo(
-    () => (observationsData ? mapObservationsById(observationsData) : new Map<string, ObservationRow>()),
-    [observationsData],
-  );
+  // resolve them to real rows by loading the selected program's observations
+  // (paginated — see useProgramObservations) and indexing by id, then looking
+  // each request's ids up below. One program-scoped fetch, not a per-request
+  // N+1 nor a giant id-list query.
+  const { matches: programObservations } = useProgramObservations(selectedProgram?.programId ?? null);
+  const observationsById = useMemo(() => observationsByIdFrom(programObservations), [programObservations]);
   const visibleRequests = useMemo(
     () =>
       programRequests.map((r) => ({

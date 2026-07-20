@@ -3,6 +3,7 @@
  * program → request master-detail — see ChangeRequestsPage.
  */
 import { skipToken, useMutation, useQuery } from '@apollo/client/react';
+import { useEffect } from 'react';
 
 import type { DocumentType } from './odb/gen';
 import { graphql } from './odb/gen';
@@ -112,43 +113,86 @@ export function mapChangeRequests(raw: AdminChangeRequestsResult): ChangeRequest
       instrument: site.label,
       conditions: formatConditions(c.configuration.conditions),
       observationIds: c.applicableObservations,
-      // Filled in by the page after a second batched query (see
-      // OBSERVATIONS_BY_ID_QUERY below) — ConfigurationRequest carries only
-      // observation IDs, not the observation rows themselves.
+      // Filled in by the page from the program's observations (see
+      // useProgramObservations) — ConfigurationRequest carries only observation
+      // IDs, not the observation rows themselves.
       observations: [],
     };
   });
 }
 
-/** Resolve ConfigurationRequest.applicableObservations into observation rows
- *  in one round-trip. */
 /** The change-requests list — cached rows render immediately, refreshed in
  *  background. */
 export function useChangeRequests() {
   return useQuery(CHANGE_REQUESTS_QUERY, { fetchPolicy: 'cache-and-network' });
 }
 
-export const OBSERVATIONS_BY_ID_QUERY = graphql(`
-  query AdminObservationsById($ids: [ObservationId!]!) {
-    observations(WHERE: { id: { IN: $ids } }, LIMIT: 1000) {
+/*
+ * A ConfigurationRequest carries only observation ids (applicableObservations),
+ * so the page resolves them to rows. We fetch the selected program's
+ * observations page-by-page (WHERE program + OFFSET cursor, following the
+ * pagination pattern in explore's ProgramSummaryQueries) rather than sending one
+ * `id: { IN: [...] }` list: a program with thousands of observations would blow
+ * past Postgres's 32,767 bind-parameter limit and the ODB would 500. Paging
+ * keeps every request bounded and never silently truncates.
+ */
+export const PROGRAM_OBSERVATIONS_QUERY = graphql(`
+  query AdminProgramObservations($programId: ProgramId!, $offset: ObservationId) {
+    observations(WHERE: { program: { id: { EQ: $programId } } }, OFFSET: $offset) {
       matches {
         ...ObservationItem
       }
+      hasMore
     }
   }
 `);
 
-export type AdminObservationsByIdResult = DocumentType<typeof OBSERVATIONS_BY_ID_QUERY>;
+export type AdminProgramObservationsResult = DocumentType<typeof PROGRAM_OBSERVATIONS_QUERY>;
+type ObservationMatch = AdminProgramObservationsResult['observations']['matches'][number];
 
-export function mapObservationsById(raw: AdminObservationsByIdResult): ReadonlyMap<string, ObservationRow> {
-  return new Map(raw.observations.matches.map((o) => [o.id, mapObservationRow(o)]));
+export function observationsByIdFrom(matches: readonly ObservationMatch[]): ReadonlyMap<string, ObservationRow> {
+  return new Map(matches.map((o) => [o.id, mapObservationRow(o)]));
 }
 
-/** Resolve gathered observation ids to rows in one batched round-trip (a
- *  ConfigurationRequest carries only applicableObservations ids). Skipped
- *  while there's nothing to resolve. */
-export function useObservationsByIds(ids: readonly string[]) {
-  return useQuery(OBSERVATIONS_BY_ID_QUERY, ids.length === 0 ? skipToken : { variables: { ids: [...ids] } });
+/** Load every observation in `programId`, following the ODB's `hasMore` cursor
+ *  so no page limit can silently drop rows. Returns the accumulated matches once
+ *  the last page has loaded; `loading` stays true until then. Skipped when no
+ *  program is selected. */
+export function useProgramObservations(programId: string | null): {
+  matches: readonly ObservationMatch[];
+  loading: boolean;
+} {
+  const result = useQuery(
+    PROGRAM_OBSERVATIONS_QUERY,
+    programId === null ? skipToken : { variables: { programId, offset: null }, notifyOnNetworkStatusChange: true },
+  );
+
+  const { data, fetchMore } = result;
+
+  // Walk the remaining pages: each fetchMore appends the next page's matches
+  // (merged via updateQuery, since the cache has no field policy for this list),
+  // using the last loaded id as the cursor, until the ODB reports no more.
+  useEffect(() => {
+    if (!data?.observations.hasMore || fetchMore === undefined) return;
+    const matches = data.observations.matches;
+    const cursor = matches[matches.length - 1]?.id;
+    if (cursor === undefined) return;
+    void fetchMore({
+      variables: { offset: cursor },
+      updateQuery: (prev, { fetchMoreResult }) => ({
+        observations: {
+          ...fetchMoreResult.observations,
+          matches: [...prev.observations.matches, ...fetchMoreResult.observations.matches],
+        },
+      }),
+    });
+  }, [data, fetchMore]);
+
+  return {
+    matches: data?.observations.matches ?? [],
+    // Not settled until every page is in, so callers don't render a partial set.
+    loading: result.loading || (data?.observations.hasMore ?? false),
+  };
 }
 
 export const UPDATE_CONFIGURATION_REQUESTS_MUTATION = graphql(`
