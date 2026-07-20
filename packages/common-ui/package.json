@@ -33,6 +33,7 @@
     "@apollo/client": "catalog:",
     "@eslint/js": "catalog:",
     "@graphql-typed-document-node/core": "catalog:",
+    "graphql": "catalog:",
     "jotai": "catalog:",
     "@tsconfig/strictest": "catalog:",
     "@tsconfig/vite-react": "catalog:",
