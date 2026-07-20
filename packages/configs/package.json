@@ -29,19 +29,29 @@
     "production": "pnpm prisma migrate deploy && pnpm prisma db seed && pnpm preview"
   },
   "dependencies": {
-    "@gemini-hlsw/lucuma-core": "0.219.0",
-    "@gemini-hlsw/lucuma-schemas": "0.177.2-20260717-155f8e72",
+    "@gemini-hlsw/lucuma-core": "catalog:",
+    "@gemini-hlsw/lucuma-schemas": "catalog:",
     "@prisma/adapter-pg": "7.8.0",
     "@prisma/client": "7.8.0",
     "graphql": "17.0.2",
     "graphql-parse-resolve-info": "4.14.1",
-    "graphql-scalars": "1.25.0",
-    "graphql-yoga": "5.21.2",
+    "graphql-scalars": "catalog:",
+    "graphql-yoga": "catalog:",
     "prisma": "7.8.0"
   },
   "devDependencies": {
     "@eddeee888/gcg-typescript-resolver-files": "0.17.0",
-    "@testcontainers/postgresql": "12.0.4"
+    "@eslint/js": "catalog:",
+    "@graphql-codegen/cli": "catalog:",
+    "@graphql-eslint/eslint-plugin": "catalog:",
+    "@testcontainers/postgresql": "12.0.4",
+    "@tsconfig/strictest": "catalog:",
+    "eslint": "catalog:",
+    "eslint-import-resolver-typescript": "catalog:",
+    "eslint-plugin-simple-import-sort": "catalog:",
+    "globals": "catalog:",
+    "typescript": "catalog:",
+    "typescript-eslint": "catalog:"
   },
   "files": [
     "dist",

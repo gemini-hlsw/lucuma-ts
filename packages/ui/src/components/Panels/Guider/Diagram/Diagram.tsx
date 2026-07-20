@@ -279,7 +279,7 @@ function Flow() {
     initialNodes.find((n) => n.id === 'tiptilt')!.className = tiptiltState;
 
     // Mount
-    let mountState = 'active';
+    let mountState: string;
     if (state.mountOffload) {
       if (tiptiltState === 'active') {
         mountState = 'active';
