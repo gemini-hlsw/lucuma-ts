@@ -1,4 +1,4 @@
-import { accessAtLeast, currentAccess, type StandardRole, type User } from './auth.ts';
+import { accessAtLeast, currentAccess, displayName, type OrcidProfile, type StandardRole, type User } from './auth.ts';
 
 const guest: User = { type: 'guest', id: 'g-1' };
 const service: User = { type: 'service', id: 's-1', name: 'scheduler' };
@@ -35,5 +35,37 @@ describe('accessAtLeast (hierarchy guest<pi<ngo<staff<admin<service)', () => {
 
   it('service outranks everything', () => {
     expect(accessAtLeast(service, 'admin')).toBe(true);
+  });
+});
+
+describe(displayName.name, () => {
+  const withProfile = (profile: OrcidProfile['profile']): User => ({
+    type: 'standard',
+    id: 'u-1',
+    role: { type: 'pi', id: 'r-1' },
+    otherRoles: [],
+    profile: { orcidId: '0000-0000-0000-0000', profile },
+  });
+
+  it('labels guest and service users', () => {
+    expect(displayName(guest)).toBe('Guest User');
+    expect(displayName(service)).toBe('Service user (scheduler)');
+  });
+
+  it('prefers the creditName', () => {
+    expect(displayName(withProfile({ creditName: 'Credit Name', givenName: 'Given' }))).toBe('Credit Name');
+  });
+
+  it('joins givenName and familyName', () => {
+    expect(displayName(withProfile({ givenName: 'Given', familyName: 'Name' }))).toBe('Given Name');
+  });
+
+  it('uses either name alone when the other is missing', () => {
+    expect(displayName(withProfile({ familyName: 'Family' }))).toBe('Family');
+    expect(displayName(withProfile({ givenName: 'Given' }))).toBe('Given');
+  });
+
+  it('falls back to the ORCID iD when no name is available', () => {
+    expect(displayName(withProfile({}))).toBe('0000-0000-0000-0000');
   });
 });

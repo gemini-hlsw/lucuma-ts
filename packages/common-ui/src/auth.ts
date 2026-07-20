@@ -75,3 +75,24 @@ export function currentAccess(user: User | null): RoleAccess {
 export function accessAtLeast(user: User | null, min: RoleAccess): boolean {
   return ACCESS_ORDER[currentAccess(user)] >= ACCESS_ORDER[min];
 }
+
+/** Human-readable name for the signed-in user: the ORCID credit name, then
+ *  given + family name, then either alone, then the bare ORCID iD. The
+ *  signed-out label ("Login", "Not signed in", …) is app policy, so callers
+ *  handle null themselves. */
+export function displayName(user: User): string {
+  switch (user.type) {
+    case 'guest':
+      return 'Guest User';
+    case 'service':
+      return `Service user (${user.name})`;
+    case 'standard': {
+      const p = user.profile.profile;
+      if (p.creditName) return p.creditName;
+      if (p.givenName && p.familyName) return `${p.givenName} ${p.familyName}`;
+      if (p.familyName) return p.familyName;
+      if (p.givenName) return p.givenName;
+      return user.profile.orcidId;
+    }
+  }
+}
