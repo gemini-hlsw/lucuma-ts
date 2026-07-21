@@ -30,7 +30,8 @@ services:
     networks:
       - navigate-network
     depends_on:
-      - database
+      database:
+        condition: service_healthy
 
   database:
     image: postgres:18
@@ -43,6 +44,12 @@ services:
       - '5432:5432'
     networks:
       - navigate-network
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U jimmy -d configs']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
 networks:
   navigate-network:

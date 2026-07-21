@@ -76,7 +76,7 @@ export function initializeServerFixture() {
       new PrismaClient({ adapter: new PrismaPg({ connectionString: container.getConnectionUri() }) }),
     );
 
-    const yoga = makeYogaServer({ prisma, log: noopLogger, disposeOnProcessTerminate: false });
+    const yoga = makeYogaServer({ prisma, log: noopLogger });
     fixture.yoga = yoga;
 
     const executeGraphql: ServerFixture['executeGraphql'] = async <TData extends Record<string, unknown>>({

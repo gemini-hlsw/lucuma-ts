@@ -1,49 +1,36 @@
-# Base image with Node.js and pnpm and a custom user
-FROM node:26-alpine AS base
-
-# Create app directory
+FROM dhi.io/node:26-alpine-dev AS build
 WORKDIR /usr/src/app
 RUN apk add --no-cache openssl
 
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
-
-RUN npm install -g corepack && corepack enable
-
-# Create software user
-RUN addgroup -S software -g 3624 && adduser -S software -u 3624 -G software
-RUN chown -R software:software /usr/src/app
-USER software
-
-# Add pnpm
-COPY --chown=software:software ./package.json ./package.json
 ENV COREPACK_DEFAULT_TO_LATEST=0
+
+RUN corepack enable
+COPY ./package.json ./package.json
 RUN corepack install && pnpm config set trustLockfile true
 
-FROM base AS build
-COPY --chown=software:software . .
+COPY . .
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
   pnpm --filter "@gemini-hlsw/navigate-configs" ci --prefer-offline
 RUN pnpm configs build
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
   pnpm deploy --filter=navigate-configs --prod pruned
-# Add pnpm to packageManager field
-RUN PNPM_VERSION="$(pnpm -v)" && \
-  cd pruned && \ 
-  npm pkg set packageManager="pnpm@$PNPM_VERSION"
 
-# Final image
-FROM base
+FROM dhi.io/node:26-alpine AS runtime
 ENV NODE_ENV=production
+WORKDIR /usr/src/app
+
+# Copy openssl for Prisma
+COPY --from=build /usr/lib/libssl.so.3 /usr/lib/libcrypto.so.3 /usr/lib/
 
 # Copy built files
-COPY --from=build --chown=software:software /usr/src/app/pruned /usr/src/app
-RUN pnpm exec prisma generate
+COPY --from=build --chown=1000:1000 /usr/src/app/pruned /usr/src/app
 
 ENV PORT=4000
 EXPOSE 4000
 
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 CMD ["./tasks/healthcheck.js"]
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 CMD ["node", "./tasks/healthcheck.js"]
 
 # Start command
-CMD ["pnpm", "production"]
+CMD ["node", "--enable-source-maps", "./tasks/start-production.js"]
