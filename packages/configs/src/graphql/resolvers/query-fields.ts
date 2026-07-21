@@ -64,6 +64,7 @@ export function resolveSelectFields<T extends keyof ModelSelectMap>(
     for (const typename in tree.fieldsByTypeName) {
       const fieldsOfType = tree.fieldsByTypeName[typename];
       for (const key in fieldsOfType) {
+        if (key.startsWith('__')) continue; // Skip the __typename field
         const fieldInfo = fieldsOfType[key];
         if (fieldInfo && Object.keys(fieldInfo?.fieldsByTypeName ?? {}).length) {
           result.select![key] = extractAllFields(fieldInfo);

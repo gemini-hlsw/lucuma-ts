@@ -22,6 +22,7 @@ export function makeYogaServer({
   disposeOnProcessTerminate?: boolean;
 }) {
   return createYoga<GraphQLContext>({
+    id: 'navigate-configs',
     schema,
     graphqlEndpoint: '/*',
     context: { prisma, log },
