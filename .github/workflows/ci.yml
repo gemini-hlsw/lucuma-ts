@@ -83,7 +83,7 @@ jobs:
       - run: pnpm exec playwright install chromium --only-shell
       - run: pnpm --filter "...[${{ env.CHANGED_SINCE }}]..." --if-present codegen
       - run: pnpm --filter "...[${{ env.CHANGED_SINCE }}]..." --if-present generate
-      - run: pnpm --filter "...[${{ env.CHANGED_SINCE }}]" --if-present test
+      - run: pnpm --filter "...[${{ env.CHANGED_SINCE }}]" --if-present --workspace-concurrency 1 test
 
   e2e:
     timeout-minutes: 10
