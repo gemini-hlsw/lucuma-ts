@@ -60,6 +60,9 @@ importers:
       stylelint-config-standard:
         specifier: 40.0.0
         version: 40.0.0(stylelint@17.14.0(supports-color@10.2.2)(typescript@6.0.3))
+      tailwindcss:
+        specifier: 4.3.3
+        version: 4.3.3
       typescript:
         specifier: 6.0.3
         version: 6.0.3
@@ -104,7 +107,7 @@ importers:
         version: 6.1.0(graphql@16.14.2)
       '@graphql-eslint/eslint-plugin':
         specifier: 4.4.0
-        version: 4.4.0(@types/node@26.1.1)(eslint@10.7.0(jiti@2.7.0))(graphql@16.14.2)(supports-color@10.2.2)(typescript@6.0.3)
+        version: 4.4.0(@types/node@26.1.1)(eslint@10.7.0(jiti@2.7.0))(graphql@16.14.2)(typescript@6.0.3)
       '@graphql-typed-document-node/core':
         specifier: 3.2.0
         version: 3.2.0(graphql@16.14.2)
@@ -325,7 +328,7 @@ importers:
         version: 7.2.0(@parcel/watcher@2.5.6)(@types/node@26.1.1)(graphql@17.0.2)(typescript@6.0.3)
       '@graphql-eslint/eslint-plugin':
         specifier: 4.4.0
-        version: 4.4.0(@types/node@26.1.1)(eslint@10.7.0(jiti@2.7.0))(graphql@17.0.2)(typescript@6.0.3)
+        version: 4.4.0(@types/node@26.1.1)(eslint@10.7.0(jiti@2.7.0))(graphql@17.0.2)(supports-color@10.2.2)(typescript@6.0.3)
       '@testcontainers/postgresql':
         specifier: 12.0.4
         version: 12.0.4(supports-color@10.2.2)
@@ -446,7 +449,7 @@ importers:
         version: 6.1.0(graphql@16.14.2)
       '@graphql-eslint/eslint-plugin':
         specifier: 4.4.0
-        version: 4.4.0(@types/node@26.1.1)(eslint@10.7.0(jiti@2.7.0))(graphql@16.14.2)(supports-color@10.2.2)(typescript@6.0.3)
+        version: 4.4.0(@types/node@26.1.1)(eslint@10.7.0(jiti@2.7.0))(graphql@16.14.2)(typescript@6.0.3)
       '@graphql-typed-document-node/core':
         specifier: 3.2.0
         version: 3.2.0(graphql@16.14.2)
@@ -572,7 +575,7 @@ importers:
         version: 6.1.0(graphql@16.14.2)
       '@graphql-eslint/eslint-plugin':
         specifier: 4.4.0
-        version: 4.4.0(@types/node@26.1.1)(eslint@10.7.0(jiti@2.7.0))(graphql@16.14.2)(supports-color@10.2.2)(typescript@6.0.3)
+        version: 4.4.0(@types/node@26.1.1)(eslint@10.7.0(jiti@2.7.0))(graphql@16.14.2)(typescript@6.0.3)
       '@graphql-typed-document-node/core':
         specifier: 3.2.0
         version: 3.2.0(graphql@16.14.2)
@@ -5837,7 +5840,7 @@ snapshots:
       parse-filepath: 1.0.2
       tslib: 2.8.1
 
-  '@graphql-eslint/eslint-plugin@4.4.0(@types/node@26.1.1)(eslint@10.7.0(jiti@2.7.0))(graphql@16.14.2)(supports-color@10.2.2)(typescript@6.0.3)':
+  '@graphql-eslint/eslint-plugin@4.4.0(@types/node@26.1.1)(eslint@10.7.0(jiti@2.7.0))(graphql@16.14.2)(typescript@6.0.3)':
     dependencies:
       '@graphql-tools/code-file-loader': 8.1.34(graphql@16.14.2)
       '@graphql-tools/graphql-tag-pluck': 8.3.33(graphql@16.14.2)
@@ -5859,7 +5862,7 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  '@graphql-eslint/eslint-plugin@4.4.0(@types/node@26.1.1)(eslint@10.7.0(jiti@2.7.0))(graphql@17.0.2)(typescript@6.0.3)':
+  '@graphql-eslint/eslint-plugin@4.4.0(@types/node@26.1.1)(eslint@10.7.0(jiti@2.7.0))(graphql@17.0.2)(supports-color@10.2.2)(typescript@6.0.3)':
     dependencies:
       '@graphql-tools/code-file-loader': 8.1.34(graphql@17.0.2)
       '@graphql-tools/graphql-tag-pluck': 8.3.33(graphql@17.0.2)
