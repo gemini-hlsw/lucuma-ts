@@ -94,8 +94,8 @@ importers:
         specifier: 0.219.1
         version: 0.219.1
       '@gemini-hlsw/lucuma-schemas':
-        specifier: 0.177.2-20260720-6df66f00
-        version: 0.177.2-20260720-6df66f00
+        specifier: 0.177.2-20260721-c8241473
+        version: 0.177.2-20260721-c8241473
       '@gemini-hlsw/lucuma-ui-css':
         specifier: 0.176.0
         version: 0.176.0
@@ -107,7 +107,7 @@ importers:
         version: 6.1.0(graphql@16.14.2)
       '@graphql-eslint/eslint-plugin':
         specifier: 4.4.0
-        version: 4.4.0(@types/node@26.1.1)(eslint@10.7.0(jiti@2.7.0))(graphql@16.14.2)(typescript@6.0.3)
+        version: 4.4.0(@types/node@26.1.1)(eslint@10.7.0(jiti@2.7.0))(graphql@16.14.2)(supports-color@10.2.2)(typescript@6.0.3)
       '@graphql-typed-document-node/core':
         specifier: 3.2.0
         version: 3.2.0(graphql@16.14.2)
@@ -293,8 +293,8 @@ importers:
         specifier: 0.219.1
         version: 0.219.1
       '@gemini-hlsw/lucuma-schemas':
-        specifier: 0.177.2-20260720-6df66f00
-        version: 0.177.2-20260720-6df66f00
+        specifier: 0.177.2-20260721-c8241473
+        version: 0.177.2-20260721-c8241473
       '@prisma/adapter-pg':
         specifier: 7.8.0
         version: 7.8.0
@@ -328,7 +328,7 @@ importers:
         version: 7.2.0(@parcel/watcher@2.5.6)(@types/node@26.1.1)(graphql@17.0.2)(typescript@6.0.3)
       '@graphql-eslint/eslint-plugin':
         specifier: 4.4.0
-        version: 4.4.0(@types/node@26.1.1)(eslint@10.7.0(jiti@2.7.0))(graphql@17.0.2)(supports-color@10.2.2)(typescript@6.0.3)
+        version: 4.4.0(@types/node@26.1.1)(eslint@10.7.0(jiti@2.7.0))(graphql@17.0.2)(typescript@6.0.3)
       '@testcontainers/postgresql':
         specifier: 12.0.4
         version: 12.0.4(supports-color@10.2.2)
@@ -439,8 +439,8 @@ importers:
         specifier: 10.0.1
         version: 10.0.1(eslint@10.7.0(jiti@2.7.0))
       '@gemini-hlsw/lucuma-schemas':
-        specifier: 0.177.2-20260720-6df66f00
-        version: 0.177.2-20260720-6df66f00
+        specifier: 0.177.2-20260721-c8241473
+        version: 0.177.2-20260721-c8241473
       '@graphql-codegen/cli':
         specifier: 7.2.0
         version: 7.2.0(@parcel/watcher@2.5.6)(@types/node@26.1.1)(graphql@16.14.2)(typescript@6.0.3)
@@ -449,7 +449,7 @@ importers:
         version: 6.1.0(graphql@16.14.2)
       '@graphql-eslint/eslint-plugin':
         specifier: 4.4.0
-        version: 4.4.0(@types/node@26.1.1)(eslint@10.7.0(jiti@2.7.0))(graphql@16.14.2)(typescript@6.0.3)
+        version: 4.4.0(@types/node@26.1.1)(eslint@10.7.0(jiti@2.7.0))(graphql@16.14.2)(supports-color@10.2.2)(typescript@6.0.3)
       '@graphql-typed-document-node/core':
         specifier: 3.2.0
         version: 3.2.0(graphql@16.14.2)
@@ -559,8 +559,8 @@ importers:
         specifier: 0.219.1
         version: 0.219.1
       '@gemini-hlsw/lucuma-schemas':
-        specifier: 0.177.2-20260720-6df66f00
-        version: 0.177.2-20260720-6df66f00
+        specifier: 0.177.2-20260721-c8241473
+        version: 0.177.2-20260721-c8241473
       '@gemini-hlsw/lucuma-ui-css':
         specifier: 0.176.0
         version: 0.176.0
@@ -575,7 +575,7 @@ importers:
         version: 6.1.0(graphql@16.14.2)
       '@graphql-eslint/eslint-plugin':
         specifier: 4.4.0
-        version: 4.4.0(@types/node@26.1.1)(eslint@10.7.0(jiti@2.7.0))(graphql@16.14.2)(typescript@6.0.3)
+        version: 4.4.0(@types/node@26.1.1)(eslint@10.7.0(jiti@2.7.0))(graphql@16.14.2)(supports-color@10.2.2)(typescript@6.0.3)
       '@graphql-typed-document-node/core':
         specifier: 3.2.0
         version: 3.2.0(graphql@16.14.2)
@@ -964,8 +964,8 @@ packages:
   '@gemini-hlsw/lucuma-core@0.219.1':
     resolution: {integrity: sha512-oUediAok3KwBWR8VvOWIpvYm/0R5PUWiml12BYGJR+VMBVy4wJDqBi6uD+zqSdXXczBA3EdUs7dAbNgncELkog==}
 
-  '@gemini-hlsw/lucuma-schemas@0.177.2-20260720-6df66f00':
-    resolution: {integrity: sha512-gZcwLgZVU5uy6bA8Mo44DMFOVHvZTZ+I0+YqBkkPVDuxwrklRfTqeDLR7dSBmHIZSG9J0wV/llD6gPL4m7A5Tw==}
+  '@gemini-hlsw/lucuma-schemas@0.177.2-20260721-c8241473':
+    resolution: {integrity: sha512-ZYWJca/L7EZot1TFrLgpc10l66dTtCw9GPg0UFJkFO7Bb8wWeYSCqodQTVWHi49KYaYHAS49cU0Nq0jrE4P/tw==}
 
   '@gemini-hlsw/lucuma-ui-css@0.176.0':
     resolution: {integrity: sha512-S9VAeheNz082WNPARYDdJQWY0KxPMG2zYosgKemFOTWGRGr5bGcX///IU0VzZO1+X8DOtS8J7EXFF/WNoYMl6g==}
@@ -5508,14 +5508,14 @@ snapshots:
 
   '@gemini-hlsw/lucuma-core@0.219.1': {}
 
-  '@gemini-hlsw/lucuma-schemas@0.177.2-20260720-6df66f00': {}
+  '@gemini-hlsw/lucuma-schemas@0.177.2-20260721-c8241473': {}
 
   '@gemini-hlsw/lucuma-ui-css@0.176.0': {}
 
   '@gemini-hlsw/navigate-configs@file:packages/configs(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@6.0.3)':
     dependencies:
       '@gemini-hlsw/lucuma-core': 0.219.1
-      '@gemini-hlsw/lucuma-schemas': 0.177.2-20260720-6df66f00
+      '@gemini-hlsw/lucuma-schemas': 0.177.2-20260721-c8241473
       '@prisma/adapter-pg': 7.8.0
       '@prisma/client': 7.8.0(prisma@7.8.0(typescript@6.0.3))(typescript@6.0.3)
       graphql: 17.0.2
@@ -5840,7 +5840,7 @@ snapshots:
       parse-filepath: 1.0.2
       tslib: 2.8.1
 
-  '@graphql-eslint/eslint-plugin@4.4.0(@types/node@26.1.1)(eslint@10.7.0(jiti@2.7.0))(graphql@16.14.2)(typescript@6.0.3)':
+  '@graphql-eslint/eslint-plugin@4.4.0(@types/node@26.1.1)(eslint@10.7.0(jiti@2.7.0))(graphql@16.14.2)(supports-color@10.2.2)(typescript@6.0.3)':
     dependencies:
       '@graphql-tools/code-file-loader': 8.1.34(graphql@16.14.2)
       '@graphql-tools/graphql-tag-pluck': 8.3.33(graphql@16.14.2)
@@ -5862,7 +5862,7 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  '@graphql-eslint/eslint-plugin@4.4.0(@types/node@26.1.1)(eslint@10.7.0(jiti@2.7.0))(graphql@17.0.2)(supports-color@10.2.2)(typescript@6.0.3)':
+  '@graphql-eslint/eslint-plugin@4.4.0(@types/node@26.1.1)(eslint@10.7.0(jiti@2.7.0))(graphql@17.0.2)(typescript@6.0.3)':
     dependencies:
       '@graphql-tools/code-file-loader': 8.1.34(graphql@17.0.2)
       '@graphql-tools/graphql-tag-pluck': 8.3.33(graphql@17.0.2)
