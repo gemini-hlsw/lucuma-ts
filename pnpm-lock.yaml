@@ -94,8 +94,8 @@ importers:
         specifier: 0.219.1
         version: 0.219.1
       '@gemini-hlsw/lucuma-schemas':
-        specifier: 0.177.2-20260721-c8241473
-        version: 0.177.2-20260721-c8241473
+        specifier: 0.177.2-20260722-b765905f
+        version: 0.177.2-20260722-b765905f
       '@gemini-hlsw/lucuma-ui-css':
         specifier: 0.176.0
         version: 0.176.0
@@ -293,8 +293,8 @@ importers:
         specifier: 0.219.1
         version: 0.219.1
       '@gemini-hlsw/lucuma-schemas':
-        specifier: 0.177.2-20260721-c8241473
-        version: 0.177.2-20260721-c8241473
+        specifier: 0.177.2-20260722-b765905f
+        version: 0.177.2-20260722-b765905f
       '@prisma/adapter-pg':
         specifier: 7.8.0
         version: 7.8.0
@@ -439,8 +439,8 @@ importers:
         specifier: 10.0.1
         version: 10.0.1(eslint@10.7.0(jiti@2.7.0))
       '@gemini-hlsw/lucuma-schemas':
-        specifier: 0.177.2-20260721-c8241473
-        version: 0.177.2-20260721-c8241473
+        specifier: 0.177.2-20260722-b765905f
+        version: 0.177.2-20260722-b765905f
       '@graphql-codegen/cli':
         specifier: 7.2.0
         version: 7.2.0(@parcel/watcher@2.5.6)(@types/node@26.1.1)(graphql@16.14.2)(typescript@6.0.3)
@@ -559,8 +559,8 @@ importers:
         specifier: 0.219.1
         version: 0.219.1
       '@gemini-hlsw/lucuma-schemas':
-        specifier: 0.177.2-20260721-c8241473
-        version: 0.177.2-20260721-c8241473
+        specifier: 0.177.2-20260722-b765905f
+        version: 0.177.2-20260722-b765905f
       '@gemini-hlsw/lucuma-ui-css':
         specifier: 0.176.0
         version: 0.176.0
@@ -964,8 +964,8 @@ packages:
   '@gemini-hlsw/lucuma-core@0.219.1':
     resolution: {integrity: sha512-oUediAok3KwBWR8VvOWIpvYm/0R5PUWiml12BYGJR+VMBVy4wJDqBi6uD+zqSdXXczBA3EdUs7dAbNgncELkog==}
 
-  '@gemini-hlsw/lucuma-schemas@0.177.2-20260721-c8241473':
-    resolution: {integrity: sha512-ZYWJca/L7EZot1TFrLgpc10l66dTtCw9GPg0UFJkFO7Bb8wWeYSCqodQTVWHi49KYaYHAS49cU0Nq0jrE4P/tw==}
+  '@gemini-hlsw/lucuma-schemas@0.177.2-20260722-b765905f':
+    resolution: {integrity: sha512-Qqu5DDh3I1B5etRFnKx80R4cWx9pZLWtXyOxouCsn5ev4VhpxoOwIfsYRMhXNx767OylAVAAzjrnK0hkGXJhtA==}
 
   '@gemini-hlsw/lucuma-ui-css@0.176.0':
     resolution: {integrity: sha512-S9VAeheNz082WNPARYDdJQWY0KxPMG2zYosgKemFOTWGRGr5bGcX///IU0VzZO1+X8DOtS8J7EXFF/WNoYMl6g==}
@@ -5508,14 +5508,14 @@ snapshots:
 
   '@gemini-hlsw/lucuma-core@0.219.1': {}
 
-  '@gemini-hlsw/lucuma-schemas@0.177.2-20260721-c8241473': {}
+  '@gemini-hlsw/lucuma-schemas@0.177.2-20260722-b765905f': {}
 
   '@gemini-hlsw/lucuma-ui-css@0.176.0': {}
 
   '@gemini-hlsw/navigate-configs@file:packages/configs(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@6.0.3)':
     dependencies:
       '@gemini-hlsw/lucuma-core': 0.219.1
-      '@gemini-hlsw/lucuma-schemas': 0.177.2-20260721-c8241473
+      '@gemini-hlsw/lucuma-schemas': 0.177.2-20260722-b765905f
       '@prisma/adapter-pg': 7.8.0
       '@prisma/client': 7.8.0(prisma@7.8.0(typescript@6.0.3))(typescript@6.0.3)
       graphql: 17.0.2
