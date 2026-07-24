@@ -104,6 +104,7 @@ When writing Vitest tests:
 - TS configs extend `@tsconfig/strictest`; the React compiler (`babel-plugin-react-compiler`) is enabled in the UI build.
 - Import sorting is enforced (`eslint-plugin-simple-import-sort`); lint-staged + Prettier run on commit via Husky.
 - Generated code (`**/gen/`, `src/prisma/gen/`) is not committed and should never be hand-edited — change the source schema/documents and re-run codegen.
+- **Prefer Tailwind utility classes over (S)CSS styling when possible.** Reach for a `.css`/`.scss` file only for styles Tailwind can't express (e.g. complex selectors, keyframe animations, third-party component overrides).
 - **Prefer strict types from the schema (or other authoritative sources) over hand-written ones.** Derive from the generated types so a schema change surfaces as a compile error rather than silently drifting: select rows through fragments and use the generated fragment types; key label/lookup maps as `satisfies Record<Enum, …>` (or `Partial<Record<…>>` when the coverage is intentionally partial) over the generated enum; narrow with `Extract<…>` instead of re-declaring a union locally. Reach for a local type only when no operation selects the field (so codegen doesn't emit it) — and say so in a comment.
 
 ## CI & publishing

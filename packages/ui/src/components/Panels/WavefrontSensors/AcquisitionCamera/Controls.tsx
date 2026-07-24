@@ -332,14 +332,6 @@ export function OpenLoopsInput({
   );
 }
 
-export function Autoadjust() {
-  return (
-    <div className="control-row under-construction">
-      <Button label="Autoadjust" />
-    </div>
-  );
-}
-
 export function AlignAngleInput({
   disabled,
   value,

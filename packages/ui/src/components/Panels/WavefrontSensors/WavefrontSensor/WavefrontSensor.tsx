@@ -1,4 +1,3 @@
-import imgUrl from '@assets/underconstruction.png';
 import { cn } from '@gemini-hlsw/lucuma-common-ui';
 import { useConfiguration } from '@gql/configs/Configuration';
 import type { Instrument, WfsType } from '@gql/configs/gen/graphql';
@@ -103,6 +102,8 @@ export default function WavefrontSensor({
 
   const [freq, setFreq, freqOptions] = useFreqOptions(wfs, configuration?.obsInstrument);
 
+  const [ql, setQl] = useState<'On' | 'Off' | 'Auto'>('Off');
+
   let observeButton: React.ReactElement | undefined;
   let skyButton: React.ReactElement | undefined;
   let saveButton: React.ReactElement | undefined;
@@ -132,7 +133,6 @@ export default function WavefrontSensor({
   return (
     <div className={cn('wfs', className)} data-testid={`${wfs.toLowerCase()}-controls`}>
       <span className="wfs-name">{wfs}</span>
-      <img src={imgUrl} alt="wfs" />
       <div className="controls">
         <label htmlFor={`freq-${id}`} style={{ gridArea: 'g11' }}>
           Freq
@@ -147,12 +147,22 @@ export default function WavefrontSensor({
           placeholder="Select frequency"
         />
         {observeButton}
+        {skyButton}
         <div className="save-inputs">
           <label htmlFor={`save-${id}`}>Save CB</label>
           {saveButton}
         </div>
-        {skyButton}
-        <Button className="under-construction" disabled={!canEdit} style={{ gridArea: 'g3' }} label="Autoadjust" />
+        <div className="ql-inputs under-construction">
+          <label htmlFor={`ql-${id}`}>QL</label>
+          <Dropdown
+            className="under-construction"
+            inputId={`ql-${id}`}
+            disabled={!canEdit}
+            value={ql}
+            options={['On', 'Off', 'Auto']}
+            onChange={(e) => setQl(e.value as 'On' | 'Off' | 'Auto')}
+          />
+        </div>
       </div>
     </div>
   );
@@ -314,7 +324,7 @@ function TakeSkyButton({ freq, wfs, canEdit }: { freq: number; wfs: GuideProbe; 
   const onClick = () =>
     takeSky({
       variables: {
-        wfs: wfs.includes('OIWFS') ? instrumentToOiwfs(instrument)! : wfs,
+        wfs: wfs.includes('OIWFS') ? (instrumentToOiwfs(instrument) ?? wfs) : wfs,
         period: { milliseconds: (1 / freq) * 1000 },
       },
     });
@@ -323,7 +333,7 @@ function TakeSkyButton({ freq, wfs, canEdit }: { freq: number; wfs: GuideProbe; 
     <Button
       loading={takeSkyLoading}
       disabled={!canEdit || configLoading}
-      style={{ gridArea: 'g23' }}
+      style={{ gridArea: 'g14' }}
       aria-label="Take Sky"
       tooltip="Take Sky"
       onClick={onClick}

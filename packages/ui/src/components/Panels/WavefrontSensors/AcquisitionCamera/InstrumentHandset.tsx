@@ -10,14 +10,7 @@ import { Button } from 'primereact/button';
 import { ButtonGroup } from 'primereact/buttongroup';
 import { useState } from 'react';
 
-import {
-  AlignAngleInput,
-  AlignmentSelector,
-  Autoadjust,
-  CurrentCoordinates,
-  InputControls,
-  OpenLoopsInput,
-} from './Controls';
+import { AlignAngleInput, AlignmentSelector, CurrentCoordinates, InputControls, OpenLoopsInput } from './Controls';
 import type { Coords, HandsetStrategy } from './strategy';
 import { strategies } from './strategy';
 
@@ -101,8 +94,6 @@ export default function InstrumentHandset({ canEdit }: { canEdit: boolean }) {
           <Button size="small" label="Absorb" disabled={loading || !canEdit} onClick={() => absorbAdjustment()} />
         </ButtonGroup>
       </div>
-
-      <Autoadjust />
     </div>
   );
 }
