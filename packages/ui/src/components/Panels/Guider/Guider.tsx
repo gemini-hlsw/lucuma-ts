@@ -1,12 +1,11 @@
 import './Guider.css';
 
 import { Title } from '@Shared/Title/Title';
+import Logs from '@WavefrontSensors/Logs/Logs';
 
 import { Alarms } from './Alarms/Alarms';
 import Diagram from './Diagram/Diagram';
-import { LightPath } from './LightPath/LightPath';
 import { Loop } from './Loop/Loop';
-import { WavefrontSensors } from './WavefrontSensors/WavefrontSensors';
 
 export function Guider({ prevPanel, nextPanel }: { prevPanel: () => void; nextPanel: () => void }) {
   return (
@@ -15,9 +14,8 @@ export function Guider({ prevPanel, nextPanel }: { prevPanel: () => void; nextPa
       <div className="body">
         <Diagram />
         <Loop />
-        <LightPath />
-        <WavefrontSensors />
         <Alarms />
+        <Logs />
       </div>
     </div>
   );

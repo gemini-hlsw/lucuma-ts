@@ -6,10 +6,10 @@ import { useCanEdit } from '@/components/atoms/auth';
 import { ACHR } from './ACHR';
 import { PWFS1, PWFS2 } from './PWFS';
 
-export function WavefrontSensors() {
+export function WfsMechs() {
   const canEdit = useCanEdit();
   return (
-    <div className="wavefront-sensors">
+    <div className="wfs-mechs">
       <Title title="Wavefront Sensors" />
       <div className="body">
         <TabView>

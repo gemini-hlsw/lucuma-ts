@@ -15,14 +15,7 @@ import { useState } from 'react';
 
 import type { Configuration } from '@/types';
 
-import {
-  AlignAngleInput,
-  AlignmentSelector,
-  Autoadjust,
-  CurrentCoordinates,
-  InputControls,
-  OpenLoopsInput,
-} from './Controls';
+import { AlignAngleInput, AlignmentSelector, CurrentCoordinates, InputControls, OpenLoopsInput } from './Controls';
 import type { Coords, HandsetStrategy } from './strategy';
 import { strategies } from './strategy';
 
@@ -152,8 +145,6 @@ export default function TargetsHandset({ canEdit }: { canEdit: boolean }) {
           />
         </ButtonGroup>
       </div>
-
-      <Autoadjust />
     </div>
   );
 }
