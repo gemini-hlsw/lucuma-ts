@@ -9,7 +9,7 @@ import {
   PWFS2_CONFIG_STATE,
   PWFS2_CONFIG_STATE_SUBSCRIPTION,
 } from '@gql/server/NavigateState';
-import { PWFS1_OBSERVE, TAKE_SKY } from '@gql/server/WavefrontSensors';
+import { OIWFS_QL_MODE, PWFS1_OBSERVE, PWFS1_QL_MODE, PWFS2_QL_MODE, TAKE_SKY } from '@gql/server/WavefrontSensors';
 import type { MockedResponseOf } from '@gql/util';
 import { userEvent } from 'vitest/browser';
 
@@ -17,17 +17,17 @@ import { createConfiguration, createGuideState, createWfsConfigState } from '@/t
 import { operationOutcome, selectDropdownOption } from '@/test/helpers';
 import { renderWithContext } from '@/test/render';
 
-import WavefrontSensor from './WavefrontSensor';
+import { OiwfsWavefrontSensor, Pwfs1WavefrontSensor, Pwfs2WavefrontSensor } from './WavefrontSensor';
 
-describe(WavefrontSensor.name, () => {
+describe('WavefrontSensor', () => {
   it('should render', async () => {
-    const sut = await renderWithContext(<WavefrontSensor canEdit={true} wfs="OIWFS" />, { mocks });
+    const sut = await renderWithContext(<OiwfsWavefrontSensor canEdit={true} />, { mocks });
 
     expect(sut.getByTestId('oiwfs-controls')).toBeVisible();
   });
 
   it('should send observe with correct frequency', async () => {
-    const sut = await renderWithContext(<WavefrontSensor canEdit={true} wfs="PWFS1" />, { mocks });
+    const sut = await renderWithContext(<Pwfs1WavefrontSensor canEdit={true} />, { mocks });
     const freq = 100;
 
     await selectDropdownOption(sut, 'Select frequency', freq.toString());
@@ -39,7 +39,7 @@ describe(WavefrontSensor.name, () => {
   });
 
   it('should send sky with correct frequency', async () => {
-    const sut = await renderWithContext(<WavefrontSensor canEdit={true} wfs="OIWFS" />, { mocks });
+    const sut = await renderWithContext(<OiwfsWavefrontSensor canEdit={true} />, { mocks });
     const freq = 50;
 
     await selectDropdownOption(sut, 'Select frequency', freq.toString());
@@ -52,12 +52,22 @@ describe(WavefrontSensor.name, () => {
   });
 
   it('should send save when checkbox is clicked', async () => {
-    const sut = await renderWithContext(<WavefrontSensor canEdit={true} wfs="PWFS2" />, { mocks });
+    const sut = await renderWithContext(<Pwfs2WavefrontSensor canEdit={true} />, { mocks });
     const saveCheckbox = sut.getByLabelText('Save CB');
     await userEvent.click(saveCheckbox);
 
     expect(pwfs2CircularBufferMock.request.variables).toHaveBeenCalledExactlyOnceWith({
       enabled: true,
+    });
+  });
+
+  it('should send QL mode when checkbox is clicked', async () => {
+    const sut = await renderWithContext(<Pwfs1WavefrontSensor canEdit={true} />, { mocks });
+
+    await selectDropdownOption(sut, 'Mode', 'On');
+
+    expect(pwfs1QlModeMock.request.variables).toHaveBeenCalledExactlyOnceWith({
+      mode: 'ON',
     });
   });
 });
@@ -207,6 +217,42 @@ const pwfs2CircularBufferMock = {
   },
 } satisfies MockedResponseOf<typeof PWFS2_CIRCULAR_BUFFER>;
 
+const pwfs1QlModeMock = {
+  request: {
+    query: PWFS1_QL_MODE,
+    variables: vi.fn().mockReturnValue(true),
+  },
+  result: {
+    data: {
+      pwfs1QlMode: operationOutcome,
+    },
+  },
+} satisfies MockedResponseOf<typeof PWFS1_QL_MODE>;
+
+const pwfs2QlModeMock = {
+  request: {
+    query: PWFS2_QL_MODE,
+    variables: vi.fn().mockReturnValue(true),
+  },
+  result: {
+    data: {
+      pwfs2QlMode: operationOutcome,
+    },
+  },
+} satisfies MockedResponseOf<typeof PWFS2_QL_MODE>;
+
+const oiwfsQlModeMock = {
+  request: {
+    query: OIWFS_QL_MODE,
+    variables: vi.fn().mockReturnValue(true),
+  },
+  result: {
+    data: {
+      oiwfsQlMode: operationOutcome,
+    },
+  },
+} satisfies MockedResponseOf<typeof OIWFS_QL_MODE>;
+
 const mocks = [
   pwfs1ObserveMock,
   takeSkyMock,
@@ -220,4 +266,7 @@ const mocks = [
   getGuideStateMock,
   guideStateSubMock,
   pwfs2CircularBufferMock,
+  pwfs1QlModeMock,
+  pwfs2QlModeMock,
+  oiwfsQlModeMock,
 ];

@@ -9,7 +9,7 @@ import { useCanEdit } from '@/components/atoms/auth';
 import AcquisitionCamera from './AcquisitionCamera/AcquisitionCamera';
 import MainControls from './AcquisitionCamera/MainControls';
 import Logs from './Logs/Logs';
-import WavefrontSensor from './WavefrontSensor/WavefrontSensor';
+import { OiwfsWavefrontSensor, Pwfs1WavefrontSensor, Pwfs2WavefrontSensor } from './WavefrontSensor/WavefrontSensor';
 
 export function WavefrontSensors({ prevPanel, nextPanel }: { prevPanel: () => void; nextPanel: () => void }) {
   const canEdit = useCanEdit();
@@ -21,9 +21,9 @@ export function WavefrontSensors({ prevPanel, nextPanel }: { prevPanel: () => vo
         <div className="top">
           <MainControls canEdit={canEdit} />
           <div className="sensors">
-            <WavefrontSensor canEdit={canEdit} wfs="PWFS1" />
-            <WavefrontSensor canEdit={canEdit} wfs="PWFS2" />
-            <WavefrontSensor canEdit={canEdit} wfs="OIWFS" />
+            <Pwfs1WavefrontSensor canEdit={canEdit} />
+            <Pwfs2WavefrontSensor canEdit={canEdit} />
+            <OiwfsWavefrontSensor canEdit={canEdit} />
             <AcquisitionCamera canEdit={canEdit} ac="AC/HR" />
           </div>
         </div>

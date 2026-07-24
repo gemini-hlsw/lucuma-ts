@@ -2,7 +2,7 @@ import { cn } from '@gemini-hlsw/lucuma-common-ui';
 import { useConfiguration } from '@gql/configs/Configuration';
 import type { Instrument, WfsType } from '@gql/configs/gen/graphql';
 import type { Site } from '@gql/odb/gen/graphql';
-import type { GuideProbe } from '@gql/server/gen/graphql';
+import type { GuideProbe, QlMode } from '@gql/server/gen/graphql';
 import { useGuideState } from '@gql/server/GuideState';
 import {
   useOiwfsConfigState,
@@ -15,12 +15,16 @@ import {
 import { useServerConfigValue } from '@gql/server/ServerConfiguration';
 import {
   type ObserveResult,
+  type QlModeResult,
   type StopObserveResult,
   useOiwfsObserve,
+  useOiwfsQlMode,
   useOiwfsStopObserve,
   usePwfs1Observe,
+  usePwfs1QlMode,
   usePwfs1StopObserve,
   usePwfs2Observe,
+  usePwfs2QlMode,
   usePwfs2StopObserve,
   useTakeSky,
 } from '@gql/server/WavefrontSensors';
@@ -86,14 +90,31 @@ function useFreqOptions(wfs: Exclude<WfsType, 'NONE'>, obsInstrument: Instrument
   return [freq, setFreq, freqOptions] as const;
 }
 
-export default function WavefrontSensor({
+export function OiwfsWavefrontSensor({ canEdit }: { canEdit: boolean }) {
+  const qlMode = useOiwfsQlMode();
+  return <WavefrontSensor qlMode={qlMode} canEdit={canEdit} wfs="OIWFS" />;
+}
+
+export function Pwfs1WavefrontSensor({ canEdit }: { canEdit: boolean }) {
+  const qlMode = usePwfs1QlMode();
+  return <WavefrontSensor qlMode={qlMode} canEdit={canEdit} wfs="PWFS1" />;
+}
+
+export function Pwfs2WavefrontSensor({ canEdit }: { canEdit: boolean }) {
+  const qlMode = usePwfs2QlMode();
+  return <WavefrontSensor qlMode={qlMode} canEdit={canEdit} wfs="PWFS2" />;
+}
+
+function WavefrontSensor({
   canEdit,
   wfs,
   className,
+  qlMode,
 }: {
   canEdit: boolean;
   wfs: Exclude<WfsType, 'NONE'>;
   className?: string;
+  qlMode: QlModeResult;
 }) {
   const id = useId();
 
@@ -102,7 +123,9 @@ export default function WavefrontSensor({
 
   const [freq, setFreq, freqOptions] = useFreqOptions(wfs, configuration?.obsInstrument);
 
-  const [ql, setQl] = useState<'On' | 'Off' | 'Auto'>('Off');
+  // TODO: get state from server query/subscription
+  const [ql, setQl] = useState<QlMode | null>(null);
+  const [setQlMode, { loading: qlLoading }] = qlMode;
 
   let observeButton: React.ReactElement | undefined;
   let skyButton: React.ReactElement | undefined;
@@ -152,15 +175,24 @@ export default function WavefrontSensor({
           <label htmlFor={`save-${id}`}>Save CB</label>
           {saveButton}
         </div>
-        <div className="ql-inputs under-construction">
+        <div className="ql-inputs">
           <label htmlFor={`ql-${id}`}>QL</label>
           <Dropdown
-            className="under-construction"
             inputId={`ql-${id}`}
             disabled={!canEdit}
+            loading={qlLoading}
+            placeholder="Mode"
             value={ql}
-            options={['On', 'Off', 'Auto']}
-            onChange={(e) => setQl(e.value as 'On' | 'Off' | 'Auto')}
+            options={
+              [
+                { value: 'ON', label: 'On' },
+                { value: 'OFF', label: 'Off' },
+                { value: 'AUTO', label: 'Auto' },
+              ] satisfies { value: QlMode; label: Capitalize<Lowercase<QlMode>> }[]
+            }
+            onChange={(e) =>
+              setQlMode({ variables: { mode: e.value as QlMode }, onCompleted: () => setQl(e.value as QlMode) })
+            }
           />
         </div>
       </div>
