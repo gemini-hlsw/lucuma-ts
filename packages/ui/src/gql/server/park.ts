@@ -44,3 +44,39 @@ export const PWFS2_PARK_MUTATION = graphql(`
     }
   }
 `);
+
+export const MOUNT_UNWRAP_MUTATION = graphql(`
+  mutation mountUnwrap {
+    mountUnwrap {
+      result
+      msg
+    }
+  }
+`);
+
+export const ROTATOR_UNWRAP_MUTATION = graphql(`
+  mutation rotatorUnwrap {
+    rotatorUnwrap {
+      result
+      msg
+    }
+  }
+`);
+
+export const PWFS1_UNWRAP_MUTATION = graphql(`
+  mutation pwfs1Unwrap {
+    pwfs1Unwrap {
+      result
+      msg
+    }
+  }
+`);
+
+export const PWFS2_UNWRAP_MUTATION = graphql(`
+  mutation pwfs2Unwrap {
+    pwfs2Unwrap {
+      result
+      msg
+    }
+  }
+`);

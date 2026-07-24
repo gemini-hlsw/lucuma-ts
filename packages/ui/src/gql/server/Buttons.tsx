@@ -27,13 +27,18 @@ import {
 import type { RunSlewMutationVariables } from './gen/graphql';
 import {
   MOUNT_PARK_MUTATION,
+  MOUNT_UNWRAP_MUTATION,
   OIWFS_PARK_MUTATION,
   PWFS1_PARK_MUTATION,
+  PWFS1_UNWRAP_MUTATION,
   PWFS2_PARK_MUTATION,
+  PWFS2_UNWRAP_MUTATION,
   ROTATOR_PARK_MUTATION,
+  ROTATOR_UNWRAP_MUTATION,
 } from './park';
 import { SLEW_MUTATION } from './Slew';
 import { GET_TELESCOPE_STATE } from './TelescopeState';
+import { ECS_CLOSE_EAST_VENT_GATE_MUTATION, ECS_CLOSE_WEST_VENT_GATE_MUTATION } from './VentGates';
 
 // Generic mutation button
 function MutationButton<TResult, TVariables extends OperationVariables>({
@@ -244,6 +249,30 @@ export function Pwfs1Park(props: ButtonProps) {
 
 export function Pwfs2Park(props: ButtonProps) {
   return <MutationButton mutation={PWFS2_PARK_MUTATION} variables={{}} {...props} />;
+}
+
+export function McsUnwrap(props: ButtonProps) {
+  return <MutationButton mutation={MOUNT_UNWRAP_MUTATION} variables={{}} {...props} />;
+}
+
+export function CrcsUnwrap(props: ButtonProps) {
+  return <MutationButton mutation={ROTATOR_UNWRAP_MUTATION} variables={{}} {...props} />;
+}
+
+export function Pwfs1Unwrap(props: ButtonProps) {
+  return <MutationButton mutation={PWFS1_UNWRAP_MUTATION} variables={{}} {...props} />;
+}
+
+export function Pwfs2Unwrap(props: ButtonProps) {
+  return <MutationButton mutation={PWFS2_UNWRAP_MUTATION} variables={{}} {...props} />;
+}
+
+export function EcsCloseEastVentGate(props: ButtonProps) {
+  return <MutationButton mutation={ECS_CLOSE_EAST_VENT_GATE_MUTATION} variables={{}} {...props} />;
+}
+
+export function EcsCloseWestVentGate(props: ButtonProps) {
+  return <MutationButton mutation={ECS_CLOSE_WEST_VENT_GATE_MUTATION} variables={{}} {...props} />;
 }
 
 // SLEW
