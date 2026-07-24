@@ -9,6 +9,8 @@ import { fileURLToPath } from 'node:url';
 const prismaCli = fileURLToPath(import.meta.resolve('prisma/build/index.js'));
 const serverEntry = fileURLToPath(new URL('../dist/index.js', import.meta.url));
 
+const baseDir = fileURLToPath(new URL('../', import.meta.url));
+
 const signals = /** @type {NodeJS.Signals[]} */ (['SIGTERM', 'SIGINT']);
 
 /**
@@ -27,7 +29,7 @@ signals.forEach((sig) => process.on(sig, forwardSignal));
  */
 async function run(args, label) {
   console.log(`[start-production] ${label}...`);
-  const child = spawn(process.execPath, args, { stdio: 'inherit' });
+  const child = spawn(process.execPath, args, { stdio: 'inherit', cwd: baseDir });
   activeChild = child;
   try {
     const [code, signal] = await once(child, 'exit');
