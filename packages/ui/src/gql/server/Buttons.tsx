@@ -17,6 +17,12 @@ import type { SetStale } from '@/Helpers/hooks';
 import type { MechSystemState, SlewFlags, TelescopeState } from '@/types';
 
 import {
+  AG_ALL_PARK_MUTATION,
+  AG_AO_FOLD_PARK_MUTATION,
+  AG_PICKOFF_MIRROR_PARK_MUTATION,
+  AG_SCIENCE_FOLD_PARK_MUTATION,
+} from './AgMechanism';
+import {
   MOUNT_FOLLOW_MUTATION,
   OIWFS_FOLLOW_MUTATION,
   PWFS1_FOLLOW_MUTATION,
@@ -273,6 +279,22 @@ export function EcsCloseEastVentGate(props: ButtonProps) {
 
 export function EcsCloseWestVentGate(props: ButtonProps) {
   return <MutationButton mutation={ECS_CLOSE_WEST_VENT_GATE_MUTATION} variables={{}} {...props} />;
+}
+
+export function AgScienceFoldPark(props: ButtonProps) {
+  return <MutationButton mutation={AG_SCIENCE_FOLD_PARK_MUTATION} variables={{}} {...props} />;
+}
+
+export function AgAoFoldPark(props: ButtonProps) {
+  return <MutationButton mutation={AG_AO_FOLD_PARK_MUTATION} variables={{}} {...props} />;
+}
+
+export function AgPickoffMirrorPark(props: ButtonProps) {
+  return <MutationButton mutation={AG_PICKOFF_MIRROR_PARK_MUTATION} variables={{}} {...props} />;
+}
+
+export function AgAllPark(props: ButtonProps) {
+  return <MutationButton mutation={AG_ALL_PARK_MUTATION} variables={{}} {...props} />;
 }
 
 // SLEW
