@@ -37,13 +37,13 @@
     "husky": "9.1.7",
     "lint-staged": "17.0.8",
     "playwright": "1.61.1",
-    "prettier": "3.9.5",
+    "prettier": "3.9.6",
     "prettier-plugin-tailwindcss": "0.8.1",
-    "stylelint": "17.14.0",
+    "stylelint": "17.14.1",
     "stylelint-config-standard": "40.0.0",
     "tailwindcss": "4.3.3",
     "typescript": "6.0.3",
-    "typescript-eslint": "8.64.0"
+    "typescript-eslint": "8.65.0"
   },
   "lint-staged": {
     "*.{js,mjs,ts,tsx,jsx,css,md,json,yml,yaml}": "prettier --write",
