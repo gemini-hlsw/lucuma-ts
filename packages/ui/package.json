@@ -60,7 +60,7 @@
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "react-router": "8.2.0",
-    "sass": "1.101.6",
+    "sass": "1.101.7",
     "tailwind-merge": "3.6.0",
     "tailwindcss": "4.3.3",
     "typescript": "6.0.3",
