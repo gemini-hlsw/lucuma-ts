@@ -42,7 +42,8 @@
     "stylelint": "17.14.1",
     "stylelint-config-standard": "40.0.0",
     "tailwindcss": "4.3.3",
-    "typescript": "7.0.2",
+    "@typescript/native": "npm:typescript@7.0.2",
+    "typescript": "npm:@typescript/typescript6@6.0.2",
     "typescript-eslint": "8.65.0"
   },
   "lint-staged": {
