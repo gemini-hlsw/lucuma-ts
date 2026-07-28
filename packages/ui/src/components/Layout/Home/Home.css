@@ -1,8 +1,13 @@
 .main-body {
   --panel-count: 3;
+  --log-height: 30vh;
 
   position: relative;
   height: 100%;
+
+  @media only screen and (height <= 900px) {
+    --log-height: 14vh;
+  }
 
   .panel {
     background-color: var(--surface-a);
@@ -63,7 +68,7 @@
   z-index: 5;
   background-color: var(--surface-a);
   border-top: 1px solid var(--surface-border);
-  height: 30vh;
+  height: var(--log-height);
   overflow-y: auto;
 }
 
@@ -71,9 +76,20 @@
   display: none;
 }
 
+.panel.wavefront-sensors,
+.panel.guider {
+  height: calc(100vh - 28px - var(--log-height));
+}
+
+/* Scroll rather than overflow when the content is taller than the shortened panel. */
 .panel.wavefront-sensors > .wavefront-sensors > .body,
 .panel.guider > .guider > .body {
-  padding-bottom: 30vh;
+  overflow-y: auto;
+}
+
+.panel.wavefront-sensors > .wavefront-sensors,
+.panel.guider > .guider {
+  justify-content: flex-start;
 }
 
 @media only screen and (width <= 1250px) {
@@ -162,9 +178,14 @@
     min-height: 30vh;
   }
 
+  .panel.wavefront-sensors,
+  .panel.guider {
+    height: calc(100vh - 26px);
+  }
+
   .panel.wavefront-sensors > .wavefront-sensors > .body,
   .panel.guider > .guider > .body {
-    padding-bottom: 0;
+    overflow-y: visible;
   }
 
   @keyframes move-back {
