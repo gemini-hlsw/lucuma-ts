@@ -232,6 +232,10 @@
               }
             }
           }
+
+          &.ac > .controls {
+            grid-template-areas: 'g11 g12 g13 g14';
+          }
         }
       }
     }

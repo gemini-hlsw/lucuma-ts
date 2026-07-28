@@ -16,21 +16,26 @@ export function WavefrontSensors({ prevPanel, nextPanel }: { prevPanel: () => vo
 
   return (
     <div className="wavefront-sensors">
-      <Title title="WAVEFRONT SENSORS" prevPanel={prevPanel} nextPanel={nextPanel}></Title>
       <div className="body">
         <div className="top">
-          <MainControls canEdit={canEdit} />
-          <div className="sensors">
-            <Pwfs1WavefrontSensor canEdit={canEdit} />
-            <Pwfs2WavefrontSensor canEdit={canEdit} />
-            <OiwfsWavefrontSensor canEdit={canEdit} />
-            <AcquisitionCamera canEdit={canEdit} ac="AC/HR" />
-          </div>
+          <MainControls prevPanel={prevPanel} canEdit={canEdit} />
+          <Sensors nextPanel={nextPanel} canEdit={canEdit} />
         </div>
         <LightPath />
         <WfsMechs />
         <Logs />
       </div>
+    </div>
+  );
+}
+function Sensors({ nextPanel, canEdit }: { nextPanel: () => void; canEdit: boolean }) {
+  return (
+    <div className="sensors">
+      <Title title="Wavefront Sensors" nextPanel={nextPanel}></Title>
+      <Pwfs1WavefrontSensor canEdit={canEdit} />
+      <Pwfs2WavefrontSensor canEdit={canEdit} />
+      <OiwfsWavefrontSensor canEdit={canEdit} />
+      <AcquisitionCamera canEdit={canEdit} />
     </div>
   );
 }

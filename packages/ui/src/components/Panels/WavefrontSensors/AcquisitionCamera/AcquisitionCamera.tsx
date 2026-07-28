@@ -1,12 +1,10 @@
 import { useGuideState } from '@gql/server/GuideState';
 import { useAcObserve, useAcStopObserve } from '@gql/server/WavefrontSensors';
 import { ObserveButton } from '@WavefrontSensors/WavefrontSensor/WavefrontSensor';
-import { Button } from 'primereact/button';
-import { Checkbox } from 'primereact/checkbox';
 import { Dropdown } from 'primereact/dropdown';
 import { useId, useState } from 'react';
 
-export default function AcquisitionCamera({ canEdit, ac }: { canEdit: boolean; ac: string }) {
+export default function AcquisitionCamera({ canEdit }: { canEdit: boolean }) {
   const id = useId();
   const { data: guideStateData, loading, setStale } = useGuideState();
 
@@ -16,8 +14,8 @@ export default function AcquisitionCamera({ canEdit, ac }: { canEdit: boolean; a
   const [exp, setExp] = useState(0.01);
 
   return (
-    <div className="wfs" data-testid="ac-controls">
-      <span className="wfs-name">{ac}</span>
+    <div className="wfs ac" data-testid="ac-controls">
+      <span className="wfs-name">AC/HR</span>
       <div className="controls">
         <label htmlFor={`exp-${id}`} style={{ gridArea: 'g11' }}>
           Exp
@@ -44,19 +42,6 @@ export default function AcquisitionCamera({ canEdit, ac }: { canEdit: boolean; a
           stopObserveResult={stopObserveResult}
           style={{ gridArea: 'g13' }}
         />
-        <Button
-          className="under-construction"
-          disabled={!canEdit}
-          style={{ gridArea: 'g14' }}
-          aria-label="Take Sky"
-          tooltip="Take Sky"
-        >
-          Sky
-        </Button>
-        <div className="save-inputs">
-          <label htmlFor={`save-${id}`}>Save</label>
-          <Checkbox className="under-construction" inputId={`save-${id}`} disabled={!canEdit} checked={true} />
-        </div>
       </div>
     </div>
   );
