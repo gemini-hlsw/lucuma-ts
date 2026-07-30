@@ -1,4 +1,4 @@
-import schemaPkgJson from '@gemini-hlsw/lucuma-schemas/package.json' with { type: 'json' };
+import schemaPkgJson from '@gemini-hlsw/lucuma-apps-schemas/package.json' with { type: 'json' };
 
 import pkgJson from '../../../../package.json' with { type: 'json' };
 import type { QueryResolvers } from './../../gen/types.generated.ts';

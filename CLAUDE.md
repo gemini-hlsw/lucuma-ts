@@ -63,8 +63,8 @@ Run a single test:
 
 The UI talks to **three distinct GraphQL endpoints**, each with its own generated types under `packages/ui/src/gql/{odb,server,configs}/gen/` (configured in `packages/ui/tasks/codegen.ts`):
 
-- **odb** — schema from `@gemini-hlsw/lucuma-schemas/odb` (the ODB / observation database; requires auth token).
-- **server** — schema from `@gemini-hlsw/lucuma-schemas/navigate` (the navigate command server, at `/navigate/graphql` + `/navigate/ws` for subscriptions).
+- **odb** — schema from `@gemini-hlsw/lucuma-odb-schemas/odb` (the ODB / observation database; requires auth token).
+- **server** — schema from `@gemini-hlsw/lucuma-apps-schemas/navigate` (the navigate command server, at `/navigate/graphql` + `/navigate/ws` for subscriptions).
 - **configs** — schema is the local `packages/configs/src/**/*.graphql` files, served at `/db`.
 
 All three are wired into a single Apollo Client in `packages/ui/src/gql/ApolloConfigs.ts`, which routes operations to the right endpoint via Apollo links (HTTP for queries/mutations, `graphql-ws` for subscriptions), injects the ODB auth token, and surfaces errors as PrimeReact toasts. The base server URIs are derived at runtime from `window.location.origin`.

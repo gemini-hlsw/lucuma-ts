@@ -1,5 +1,5 @@
-#import RotatorTrackingMode from '@gemini-hlsw/lucuma-schemas/navigate'
-#import PosInt from "@gemini-hlsw/lucuma-schemas/odb"
+#import RotatorTrackingMode from '@gemini-hlsw/lucuma-apps-schemas/navigate'
+#import PosInt from "@gemini-hlsw/lucuma-odb-schemas/odb"
 
 type Rotator {
   "Record primary key"

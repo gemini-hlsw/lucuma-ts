@@ -23,8 +23,8 @@ export default defineConfig(
   },
   ...graphqlConfigForSchema(
     [
-      import.meta.resolve('@gemini-hlsw/lucuma-schemas/odb'),
-      import.meta.resolve('@gemini-hlsw/lucuma-schemas/navigate'),
+      import.meta.resolve('@gemini-hlsw/lucuma-odb-schemas/odb'),
+      import.meta.resolve('@gemini-hlsw/lucuma-apps-schemas/navigate'),
     ],
     './src/gql/{server,odb}',
   ),

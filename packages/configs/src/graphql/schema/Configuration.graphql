@@ -1,5 +1,5 @@
-#import Instrument, ObservationId, PosInt from '@gemini-hlsw/lucuma-schemas/odb'
-#import CentralBaffle, DeployableBaffle from '@gemini-hlsw/lucuma-schemas/navigate'
+#import Instrument, ObservationId, PosInt from '@gemini-hlsw/lucuma-odb-schemas/odb'
+#import CentralBaffle, DeployableBaffle from '@gemini-hlsw/lucuma-apps-schemas/navigate'
 
 enum GuidingType {
   NORMAL
