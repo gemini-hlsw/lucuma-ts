@@ -96,9 +96,9 @@ importers:
       '@gemini-hlsw/lucuma-core':
         specifier: 0.223.2
         version: 0.223.2
-      '@gemini-hlsw/lucuma-schemas':
-        specifier: 0.177.2-20260728-5e61a5e3
-        version: 0.177.2-20260728-5e61a5e3
+      '@gemini-hlsw/lucuma-odb-schemas':
+        specifier: 0.90.0-47-97f76e6-20260730T105545Z
+        version: 0.90.0-47-97f76e6-20260730T105545Z
       '@gemini-hlsw/lucuma-ui-css':
         specifier: 0.176.0
         version: 0.176.0
@@ -298,12 +298,15 @@ importers:
 
   packages/configs:
     dependencies:
+      '@gemini-hlsw/lucuma-apps-schemas':
+        specifier: 0.177.2--488dbc09
+        version: 0.177.2--488dbc09
       '@gemini-hlsw/lucuma-core':
         specifier: 0.223.2
         version: 0.223.2
-      '@gemini-hlsw/lucuma-schemas':
-        specifier: 0.177.2-20260728-5e61a5e3
-        version: 0.177.2-20260728-5e61a5e3
+      '@gemini-hlsw/lucuma-odb-schemas':
+        specifier: 0.90.0-47-97f76e6-20260730T105545Z
+        version: 0.90.0-47-97f76e6-20260730T105545Z
       '@prisma/adapter-pg':
         specifier: 7.9.0
         version: 7.9.0
@@ -453,9 +456,9 @@ importers:
       '@eslint/js':
         specifier: 10.0.1
         version: 10.0.1(eslint@10.8.0(jiti@2.7.0)(supports-color@10.2.2))
-      '@gemini-hlsw/lucuma-schemas':
-        specifier: 0.177.2-20260728-5e61a5e3
-        version: 0.177.2-20260728-5e61a5e3
+      '@gemini-hlsw/lucuma-odb-schemas':
+        specifier: 0.90.0-47-97f76e6-20260730T105545Z
+        version: 0.90.0-47-97f76e6-20260730T105545Z
       '@graphql-codegen/cli':
         specifier: 7.2.0
         version: 7.2.0(@parcel/watcher@2.6.0)(@types/node@26.1.1)(@typescript/typescript6@6.0.2)(graphql@16.14.2)(supports-color@10.2.2)
@@ -570,15 +573,18 @@ importers:
       '@fortawesome/react-fontawesome':
         specifier: 3.5.0
         version: 3.5.0(@fortawesome/fontawesome-svg-core@7.3.1)(react@19.2.8)
+      '@gemini-hlsw/lucuma-apps-schemas':
+        specifier: 0.177.2--488dbc09
+        version: 0.177.2--488dbc09
       '@gemini-hlsw/lucuma-common-ui':
         specifier: workspace:*
         version: link:../common-ui
       '@gemini-hlsw/lucuma-core':
         specifier: 0.223.2
         version: 0.223.2
-      '@gemini-hlsw/lucuma-schemas':
-        specifier: 0.177.2-20260728-5e61a5e3
-        version: 0.177.2-20260728-5e61a5e3
+      '@gemini-hlsw/lucuma-odb-schemas':
+        specifier: 0.90.0-47-97f76e6-20260730T105545Z
+        version: 0.90.0-47-97f76e6-20260730T105545Z
       '@gemini-hlsw/lucuma-ui-css':
         specifier: 0.176.0
         version: 0.176.0
@@ -985,11 +991,14 @@ packages:
       '@fortawesome/fontawesome-svg-core': ~6 || ~7
       react: ^18.0.0 || ^19.0.0
 
+  '@gemini-hlsw/lucuma-apps-schemas@0.177.2--488dbc09':
+    resolution: {integrity: sha512-WJh4niEOikR4N7at2BjCt6poSuIKZ4J9e3NPwCI/QV/H2atlGdPLbjXf5ylaWaCvxAUrqZJ1x36V+k1FtPQCjg==}
+
   '@gemini-hlsw/lucuma-core@0.223.2':
     resolution: {integrity: sha512-2fkty0AgnFCnaZaPIzFRRJ0wD8Itt0i4QtQt64CETgdm/CWjGQK3EQN63Dsx/REw+AvlWZhSQNYa7FB3jRdR5Q==}
 
-  '@gemini-hlsw/lucuma-schemas@0.177.2-20260728-5e61a5e3':
-    resolution: {integrity: sha512-vzJ6+J5Ije5r5Z502g5HeH0tyvbVJxyJi0XSjj2PbRpm2rJ5lOmsu/1hbj326mkLwsReQLQaRiPr9VX2pDrR6w==}
+  '@gemini-hlsw/lucuma-odb-schemas@0.90.0-47-97f76e6-20260730T105545Z':
+    resolution: {integrity: sha512-TqxglvwC78/Sx5jLt/UebIbaIC8LWOJ5bwdzJDqKy+NIdFCnS9a+m4a53qiE1FNs8uFIeXpLmhCLiIoWNQXsug==}
 
   '@gemini-hlsw/lucuma-ui-css@0.176.0':
     resolution: {integrity: sha512-S9VAeheNz082WNPARYDdJQWY0KxPMG2zYosgKemFOTWGRGr5bGcX///IU0VzZO1+X8DOtS8J7EXFF/WNoYMl6g==}
@@ -5844,16 +5853,19 @@ snapshots:
       '@fortawesome/fontawesome-svg-core': 7.3.1
       react: 19.2.8
 
+  '@gemini-hlsw/lucuma-apps-schemas@0.177.2--488dbc09': {}
+
   '@gemini-hlsw/lucuma-core@0.223.2': {}
 
-  '@gemini-hlsw/lucuma-schemas@0.177.2-20260728-5e61a5e3': {}
+  '@gemini-hlsw/lucuma-odb-schemas@0.90.0-47-97f76e6-20260730T105545Z': {}
 
   '@gemini-hlsw/lucuma-ui-css@0.176.0': {}
 
   '@gemini-hlsw/navigate-configs@file:packages/configs(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(@typescript/typescript6@6.0.2)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(supports-color@10.2.2)':
     dependencies:
+      '@gemini-hlsw/lucuma-apps-schemas': 0.177.2--488dbc09
       '@gemini-hlsw/lucuma-core': 0.223.2
-      '@gemini-hlsw/lucuma-schemas': 0.177.2-20260728-5e61a5e3
+      '@gemini-hlsw/lucuma-odb-schemas': 0.90.0-47-97f76e6-20260730T105545Z
       '@prisma/adapter-pg': 7.9.0
       '@prisma/client': 7.9.0(@typescript/typescript6@6.0.2)(prisma@7.9.0(@typescript/typescript6@6.0.2))
       graphql: 17.0.2

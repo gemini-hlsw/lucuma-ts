@@ -1,6 +1,6 @@
 #import DateTime from "./Scalars.graphql"
-#import PosInt, TargetId, Instrument, ObservationId, EphemerisKeyType, Declination, ProperMotion, RightAscension, Angle, EpochString from "@gemini-hlsw/lucuma-schemas/odb"
-#import RotatorTrackingMode from '@gemini-hlsw/lucuma-schemas/navigate'
+#import PosInt, TargetId, Instrument, ObservationId, EphemerisKeyType, Declination, ProperMotion, RightAscension, Angle, EpochString from "@gemini-hlsw/lucuma-odb-schemas/odb"
+#import RotatorTrackingMode from '@gemini-hlsw/lucuma-apps-schemas/navigate'
 #import Configuration, Fpu from "./Configuration.graphql"
 #import Rotator from "./Rotator.graphql"
 #import GuideLoop from "./GuideLoop.graphql"

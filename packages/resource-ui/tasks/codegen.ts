@@ -27,7 +27,7 @@ const presetConfig = {
 
 const config: CodegenConfig = {
   overwrite: true,
-  schema: import.meta.resolve('@gemini-hlsw/lucuma-schemas/resource'),
+  schema: import.meta.resolve('@gemini-hlsw/lucuma-odb-schemas/resource'),
   ignoreNoDocuments: true,
   documents: ['src/gql/**/*.ts', 'src/**/*.tsx'],
   generates: {
