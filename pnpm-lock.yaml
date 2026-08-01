@@ -94,8 +94,8 @@ importers:
         specifier: workspace:*
         version: link:../common-ui
       '@gemini-hlsw/lucuma-core':
-        specifier: 0.223.2
-        version: 0.223.2
+        specifier: 0.224.3
+        version: 0.224.3
       '@gemini-hlsw/lucuma-odb-schemas':
         specifier: 0.90.0-67-d7f9901
         version: 0.90.0-67-d7f9901
@@ -214,8 +214,8 @@ importers:
   packages/common-ui:
     dependencies:
       '@gemini-hlsw/lucuma-core':
-        specifier: 0.223.2
-        version: 0.223.2
+        specifier: 0.224.3
+        version: 0.224.3
       date-fns:
         specifier: 4.4.0
         version: 4.4.0
@@ -302,8 +302,8 @@ importers:
         specifier: 0.177.2--488dbc09
         version: 0.177.2--488dbc09
       '@gemini-hlsw/lucuma-core':
-        specifier: 0.223.2
-        version: 0.223.2
+        specifier: 0.224.3
+        version: 0.224.3
       '@gemini-hlsw/lucuma-odb-schemas':
         specifier: 0.90.0-67-d7f9901
         version: 0.90.0-67-d7f9901
@@ -580,8 +580,8 @@ importers:
         specifier: workspace:*
         version: link:../common-ui
       '@gemini-hlsw/lucuma-core':
-        specifier: 0.223.2
-        version: 0.223.2
+        specifier: 0.224.3
+        version: 0.224.3
       '@gemini-hlsw/lucuma-odb-schemas':
         specifier: 0.90.0-67-d7f9901
         version: 0.90.0-67-d7f9901
@@ -994,8 +994,8 @@ packages:
   '@gemini-hlsw/lucuma-apps-schemas@0.177.2--488dbc09':
     resolution: {integrity: sha512-WJh4niEOikR4N7at2BjCt6poSuIKZ4J9e3NPwCI/QV/H2atlGdPLbjXf5ylaWaCvxAUrqZJ1x36V+k1FtPQCjg==}
 
-  '@gemini-hlsw/lucuma-core@0.223.2':
-    resolution: {integrity: sha512-2fkty0AgnFCnaZaPIzFRRJ0wD8Itt0i4QtQt64CETgdm/CWjGQK3EQN63Dsx/REw+AvlWZhSQNYa7FB3jRdR5Q==}
+  '@gemini-hlsw/lucuma-core@0.224.3':
+    resolution: {integrity: sha512-C8dZombmzVz/sFknmle3A9wX9ITUOr6jvKeCaN/ThzZQ4Ndzetr+kZenPamg+eq2pq+XAh5+3NqL9nDoJXhe8A==}
 
   '@gemini-hlsw/lucuma-odb-schemas@0.90.0-67-d7f9901':
     resolution: {integrity: sha512-MUSf6q8FFN+2D4nlyc4jT13JRbTr+TZsv2PhYUhk+nYX2VikzjX0bRX8nZ+qZXR4kig8IQUsC6cbdUmcY94yxQ==}
@@ -5855,7 +5855,7 @@ snapshots:
 
   '@gemini-hlsw/lucuma-apps-schemas@0.177.2--488dbc09': {}
 
-  '@gemini-hlsw/lucuma-core@0.223.2': {}
+  '@gemini-hlsw/lucuma-core@0.224.3': {}
 
   '@gemini-hlsw/lucuma-odb-schemas@0.90.0-67-d7f9901': {}
 
@@ -5864,7 +5864,7 @@ snapshots:
   '@gemini-hlsw/navigate-configs@file:packages/configs(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(@typescript/typescript6@6.0.2)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(supports-color@10.2.2)':
     dependencies:
       '@gemini-hlsw/lucuma-apps-schemas': 0.177.2--488dbc09
-      '@gemini-hlsw/lucuma-core': 0.223.2
+      '@gemini-hlsw/lucuma-core': 0.224.3
       '@gemini-hlsw/lucuma-odb-schemas': 0.90.0-67-d7f9901
       '@prisma/adapter-pg': 7.9.1
       '@prisma/client': 7.9.1(@typescript/typescript6@6.0.2)(prisma@7.9.1(@typescript/typescript6@6.0.2))
