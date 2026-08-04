@@ -97,8 +97,8 @@ importers:
         specifier: 0.224.3
         version: 0.224.3
       '@gemini-hlsw/lucuma-odb-schemas':
-        specifier: 0.90.0-67-d7f9901
-        version: 0.90.0-67-d7f9901
+        specifier: 0.90.0-85-4766185
+        version: 0.90.0-85-4766185
       '@gemini-hlsw/lucuma-ui-css':
         specifier: 0.176.0
         version: 0.176.0
@@ -305,8 +305,8 @@ importers:
         specifier: 0.224.3
         version: 0.224.3
       '@gemini-hlsw/lucuma-odb-schemas':
-        specifier: 0.90.0-67-d7f9901
-        version: 0.90.0-67-d7f9901
+        specifier: 0.90.0-85-4766185
+        version: 0.90.0-85-4766185
       '@prisma/adapter-pg':
         specifier: 7.9.1
         version: 7.9.1
@@ -457,8 +457,8 @@ importers:
         specifier: 10.0.1
         version: 10.0.1(eslint@10.8.0(jiti@2.7.0)(supports-color@10.2.2))
       '@gemini-hlsw/lucuma-odb-schemas':
-        specifier: 0.90.0-67-d7f9901
-        version: 0.90.0-67-d7f9901
+        specifier: 0.90.0-85-4766185
+        version: 0.90.0-85-4766185
       '@graphql-codegen/cli':
         specifier: 7.2.0
         version: 7.2.0(@parcel/watcher@2.6.0)(@types/node@26.1.2)(@typescript/typescript6@6.0.2)(graphql@16.14.2)(supports-color@10.2.2)
@@ -583,8 +583,8 @@ importers:
         specifier: 0.224.3
         version: 0.224.3
       '@gemini-hlsw/lucuma-odb-schemas':
-        specifier: 0.90.0-67-d7f9901
-        version: 0.90.0-67-d7f9901
+        specifier: 0.90.0-85-4766185
+        version: 0.90.0-85-4766185
       '@gemini-hlsw/lucuma-ui-css':
         specifier: 0.176.0
         version: 0.176.0
@@ -997,8 +997,8 @@ packages:
   '@gemini-hlsw/lucuma-core@0.224.3':
     resolution: {integrity: sha512-C8dZombmzVz/sFknmle3A9wX9ITUOr6jvKeCaN/ThzZQ4Ndzetr+kZenPamg+eq2pq+XAh5+3NqL9nDoJXhe8A==}
 
-  '@gemini-hlsw/lucuma-odb-schemas@0.90.0-67-d7f9901':
-    resolution: {integrity: sha512-MUSf6q8FFN+2D4nlyc4jT13JRbTr+TZsv2PhYUhk+nYX2VikzjX0bRX8nZ+qZXR4kig8IQUsC6cbdUmcY94yxQ==}
+  '@gemini-hlsw/lucuma-odb-schemas@0.90.0-85-4766185':
+    resolution: {integrity: sha512-kzh/iaJcchzQADgm+k0G0lf5RqIaFKpCGmGPq/NnWmFq/I6n5xllK7yvULTnuCMP7v+RQzB0W2j+SgbEJ3fl9Q==}
 
   '@gemini-hlsw/lucuma-ui-css@0.176.0':
     resolution: {integrity: sha512-S9VAeheNz082WNPARYDdJQWY0KxPMG2zYosgKemFOTWGRGr5bGcX///IU0VzZO1+X8DOtS8J7EXFF/WNoYMl6g==}
@@ -5857,7 +5857,7 @@ snapshots:
 
   '@gemini-hlsw/lucuma-core@0.224.3': {}
 
-  '@gemini-hlsw/lucuma-odb-schemas@0.90.0-67-d7f9901': {}
+  '@gemini-hlsw/lucuma-odb-schemas@0.90.0-85-4766185': {}
 
   '@gemini-hlsw/lucuma-ui-css@0.176.0': {}
 
@@ -5865,7 +5865,7 @@ snapshots:
     dependencies:
       '@gemini-hlsw/lucuma-apps-schemas': 0.177.2--488dbc09
       '@gemini-hlsw/lucuma-core': 0.224.3
-      '@gemini-hlsw/lucuma-odb-schemas': 0.90.0-67-d7f9901
+      '@gemini-hlsw/lucuma-odb-schemas': 0.90.0-85-4766185
       '@prisma/adapter-pg': 7.9.1
       '@prisma/client': 7.9.1(@typescript/typescript6@6.0.2)(prisma@7.9.1(@typescript/typescript6@6.0.2))
       graphql: 17.0.2

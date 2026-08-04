@@ -1,7 +1,7 @@
 import type { OperationVariables } from '@apollo/client';
 import { useQuery } from '@apollo/client/react';
 import type { TypedDocumentNode } from '@graphql-typed-document-node/core';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 import { useStale } from '@/Helpers/hooks';
 
@@ -47,9 +47,11 @@ export function useQueryAndSubscription<
     [subscribeToMore, subscriptionNode],
   );
 
-  useEffect(() => {
-    if (options.useStale) setStale(false);
-  }, [data, setStale, options.useStale]);
+  const [previousData, setPreviousData] = useState(data);
+  if (data !== previousData) {
+    setPreviousData(data);
+    if (stale && options.useStale) setStale(false);
+  }
 
   return {
     ...query,
