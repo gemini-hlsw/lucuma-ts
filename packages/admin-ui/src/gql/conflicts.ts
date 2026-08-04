@@ -50,6 +50,8 @@ const SIMILAR_MODE_TYPES: Record<ObservingModeType, readonly ObservingModeType[]
   VISITOR_SOUTH: ['VISITOR_SOUTH'],
   ZORRO_SPECKLE: ['ZORRO_SPECKLE', 'ALOPEKE_SPECKLE'],
   ZORRO_WIDE_FIELD: ['ZORRO_WIDE_FIELD', 'ALOPEKE_WIDE_FIELD'],
+  GMOS_NORTH_MOS: ['GMOS_NORTH_MOS', 'GMOS_SOUTH_MOS'],
+  GMOS_SOUTH_MOS: ['GMOS_SOUTH_MOS', 'GMOS_NORTH_MOS'],
 };
 
 export function similarModeTypes(modeType: string | null): readonly ObservingModeType[] {
