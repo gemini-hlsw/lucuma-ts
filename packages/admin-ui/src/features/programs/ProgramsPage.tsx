@@ -6,15 +6,14 @@ import { Checkbox } from 'primereact/checkbox';
 import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
 import { Dropdown } from 'primereact/dropdown';
-import { IconField } from 'primereact/iconfield';
-import { InputIcon } from 'primereact/inputicon';
 import { InputNumber } from 'primereact/inputnumber';
 import { InputText } from 'primereact/inputtext';
 import { InputTextarea } from 'primereact/inputtextarea';
 import { type JSX, useMemo, useState } from 'react';
 
 import { DataSourceBadge } from '@/components/DataSourceBadge';
-import { Search, Upload, XMark } from '@/components/Icons';
+import { Upload, XMark } from '@/components/Icons';
+import { SearchInput } from '@/components/SearchInput';
 import { Tile } from '@/components/Tile';
 import { TimeAwardsGrid } from '@/components/TimeAwardsGrid';
 import { useToast } from '@/components/toastContext';
@@ -47,6 +46,7 @@ import {
   TOO_STATUSES,
   type ToOActivation,
 } from '@/gql/types';
+import { matchesQuery } from '@/lib/search';
 
 /** "Show everything" sentinel for the Class facet (PrimeReact mishandles null
  *  option values). */
@@ -120,14 +120,14 @@ export default function ProgramsPage(): JSX.Element {
 
   const [typeFilter, setTypeFilter] = useState<ScienceSubtype | typeof ALL>(ALL);
   const [search, setSearch] = useState('');
-  const filteredPrograms = useMemo(() => {
-    const text = search.trim().toLowerCase();
-    return programs.filter(
-      (p) =>
-        (typeFilter === ALL || p.programType === typeFilter) &&
-        (text === '' || [p.reference, p.name, p.pi].some((f) => f.toLowerCase().includes(text))),
-    );
-  }, [programs, typeFilter, search]);
+  const filteredPrograms = useMemo(
+    () =>
+      programs.filter(
+        (p) =>
+          (typeFilter === ALL || p.programType === typeFilter) && matchesQuery([p.reference, p.name, p.pi], search),
+      ),
+    [programs, typeFilter, search],
+  );
 
   // Only the proposal types actually present, so the facet never offers an
   // empty option. Sorted by display label for a stable, readable menu.
@@ -157,17 +157,12 @@ export default function ProgramsPage(): JSX.Element {
         onChange={(e) => setTypeFilter(e.value as ScienceSubtype | typeof ALL)}
         title="Facet the table by proposal type (Queue, Classical, Large Program, …)."
       />
-      <IconField iconPosition="left">
-        <InputIcon>
-          <Search />
-        </InputIcon>
-        <InputText
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Filter reference, PI, or title"
-          title="Type to filter the table by program reference, PI, or title."
-        />
-      </IconField>
+      <SearchInput
+        value={search}
+        onChange={setSearch}
+        placeholder="Filter reference, PI, or title"
+        title="Type to filter the table by program reference, PI, or title."
+      />
     </>
   );
 
@@ -270,12 +265,11 @@ function ProgramEditor({
 
   const [contactSuggestions, setContactSuggestions] = useState<ContactScientist[]>([]);
   function suggestContacts(query: string): void {
-    const text = query.trim().toLowerCase();
     const chosen = new Set(draft.contactScientists.map((c) => c.userId));
     setContactSuggestions(
       roster
         .filter((u) => !chosen.has(u.id))
-        .filter((u) => [`${u.givenName} ${u.familyName}`, u.email].some((f) => f.toLowerCase().includes(text)))
+        .filter((u) => matchesQuery([`${u.givenName} ${u.familyName}`, u.email], query))
         .slice(0, 8)
         .map((u) => ({ name: `${u.givenName} ${u.familyName}`, userId: u.id })),
     );
