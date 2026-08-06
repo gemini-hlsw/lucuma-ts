@@ -18,7 +18,7 @@ import type {
 
 // The schema enums the views model with — re-exported so feature code can
 // import them alongside the view-model types they appear in.
-export type { ConfigurationRequestStatus, Instrument, ProposalStatus, ScienceBand, ToOActivation };
+export type { ConfigurationRequestStatus, Instrument, ProposalStatus, ScienceBand, ScienceSubtype, ToOActivation };
 
 /** Which Gemini telescope a request's instrument belongs to. A UI-derived
  *  notion (from the instrument, in changeRequests.ts), not the schema's
@@ -108,6 +108,20 @@ export type ProgramClass = Extract<ScienceSubtype, 'QUEUE' | 'CLASSICAL'>;
 export const PROGRAM_CLASSES: readonly ProgramClass[] = ['QUEUE', 'CLASSICAL'];
 export const PROGRAM_CLASS_LABEL: Record<ProgramClass, string> = { QUEUE: 'Queue', CLASSICAL: 'Classical' };
 
+/** Every proposal ScienceSubtype → its display label, for the Programs and
+ *  Proposals tables' "Type" column (sc-9581). The complete enum (satisfies
+ *  Record) so a new subtype is a compile error here, not a blank cell. */
+export const SCIENCE_SUBTYPE_LABEL = {
+  CLASSICAL: 'Classical',
+  DEMO_SCIENCE: 'Demo Science',
+  DIRECTORS_TIME: "Director's Time",
+  FAST_TURNAROUND: 'Fast Turnaround',
+  LARGE_PROGRAM: 'Large Program',
+  POOR_WEATHER: 'Poor Weather',
+  QUEUE: 'Queue',
+  SYSTEM_VERIFICATION: 'System Verification',
+} satisfies Record<ScienceSubtype, string>;
+
 export const BANDS: readonly ScienceBand[] = ['BAND1', 'BAND2', 'BAND3', 'BAND4'];
 export const BAND_LABEL: Record<ScienceBand, string> = {
   BAND1: 'Band-1',
@@ -146,6 +160,11 @@ export interface Program {
    *  proposal types (LargeProgram, FastTurnaround, …) aren't Queue/Classical;
    *  default them to QUEUE since the Admin form only offers those two. */
   readonly programClass: ProgramClass;
+  /** The proposal's full ScienceSubtype (Queue, Classical, Large Program, …)
+   *  for the table's Type column (sc-9581); null when the program has no
+   *  proposal. Distinct from programClass, which the editor collapses to the
+   *  two editable classes. */
+  readonly programType: ScienceSubtype | null;
   /** Only Queue proposals carry ToOActivation; Classical/others have none. */
   readonly tooStatus: ToOActivation;
   /** Program users with role SUPPORT_PRIMARY/SUPPORT_SECONDARY — the real

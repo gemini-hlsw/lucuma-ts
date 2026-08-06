@@ -51,6 +51,7 @@ export const PROGRAM_ITEM_FRAGMENT = graphql(`
     proposal {
       gemini {
         __typename
+        scienceSubtype
         ... on Queue {
           toOActivation
           considerForBand3
@@ -286,6 +287,9 @@ export function mapPrograms(raw: AdminProgramsResult): Program[] {
       // outside Queue/Classical default to QUEUE — the Admin form only edits
       // these two classes, matching the sc-9090 mockup.
       programClass: classical ? 'CLASSICAL' : 'QUEUE',
+      // The full proposal subtype for the table's Type column (sc-9581),
+      // preserved rather than collapsed like programClass.
+      programType: proposalType?.scienceSubtype ?? null,
       tooStatus: queue?.toOActivation ?? 'NONE',
       contactScientists,
       activeStart,
