@@ -102,6 +102,8 @@ export const MODE_TYPE_FORMAT: Record<ObservingModeType, { readonly instrument: 
   VISITOR_SOUTH: { instrument: 'Visitor South', mode: '' },
   ZORRO_SPECKLE: { instrument: 'Zorro', mode: 'Speckle' },
   ZORRO_WIDE_FIELD: { instrument: 'Zorro', mode: 'WideField' },
+  GMOS_NORTH_MOS: { instrument: 'GMOS-N', mode: 'MOS' },
+  GMOS_SOUTH_MOS: { instrument: 'GMOS-S', mode: 'MOS' },
 };
 
 /** Narrow a wire value (the fragment types carry `string` for

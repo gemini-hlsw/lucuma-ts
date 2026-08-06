@@ -1,4 +1,4 @@
-import { Button } from 'primereact/button';
+import { AgAllPark, AgAoFoldPark, AgPickoffMirrorPark, AgScienceFoldPark } from '@gql/server/Buttons';
 
 export function AgMechanism({ canEdit }: { canEdit: boolean }) {
   return (
@@ -6,15 +6,21 @@ export function AgMechanism({ canEdit }: { canEdit: boolean }) {
       <div className="title">
         <span>AG Mechanisms</span>
       </div>
-      <div className="ag-body under-construction">
-        <span className="label">Science Fold</span>
-        <Button disabled={!canEdit} label="Park" />
-        <span className="label">AO Fold</span>
-        <Button disabled={!canEdit} label="Park" />
-        <span className="label">AC Pickoff</span>
-        <Button disabled={!canEdit} label="Park" />
+      <div className="ag-body">
+        <label className="label" htmlFor="park-science-fold">
+          Science Fold
+        </label>
+        <AgScienceFoldPark id="park-science-fold" disabled={!canEdit} label="Park" data-testid="park-science-fold" />
+        <label className="label" htmlFor="park-ao-fold">
+          AO Fold
+        </label>
+        <AgAoFoldPark id="park-ao-fold" disabled={!canEdit} label="Park" data-testid="park-ao-fold" />
+        <label className="label" htmlFor="park-ac-pickoff">
+          AC Pickoff
+        </label>
+        <AgPickoffMirrorPark id="park-ac-pickoff" disabled={!canEdit} label="Park" data-testid="park-ac-pickoff" />
         <span></span>
-        <Button disabled={!canEdit} label="Park All" />
+        <AgAllPark id="park-all-ag" disabled={!canEdit} label="Park All" data-testid="park-all-ag" />
       </div>
     </div>
   );

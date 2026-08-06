@@ -1,4 +1,4 @@
-#import UserId, Partner, UserProfile from "@gemini-hlsw/lucuma-schemas/odb"
+#import UserId, Partner, UserProfile from "@gemini-hlsw/lucuma-odb-schemas/odb"
 # The SSO service's GraphQL schema, checked in so the admin-ui's SSO
 # operations are validated and typed — SSO doesn't publish its schema in
 # @gemini-hlsw/lucuma-schemas and its introspection requires authentication.

@@ -8,6 +8,7 @@ import {
   InMemoryCache,
   ServerError,
 } from '@apollo/client';
+import { BatchHttpLink } from '@apollo/client/link/batch-http';
 import { SetContextLink } from '@apollo/client/link/context';
 import { ErrorLink } from '@apollo/client/link/error';
 import { GraphQLWsLink } from '@apollo/client/link/subscriptions';
@@ -59,7 +60,7 @@ function createClient() {
 
   const navigateCommandServer = new HttpLink({ uri: navigateServerURI });
 
-  const navigateConfigs = new HttpLink({ uri: navigateConfigsURI });
+  const navigateConfigs = new BatchHttpLink({ uri: navigateConfigsURI });
 
   const odbAuthLink = new SetContextLink(({ headers }) => {
     const token = store.get(odbTokenAtom);

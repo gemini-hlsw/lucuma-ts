@@ -18,17 +18,18 @@
   },
   "dependencies": {},
   "devDependencies": {
-    "@eslint/js": "catalog:",
+    "@eslint/js": "10.0.1",
     "@gemini-hlsw/navigate-configs": "workspace:*",
     "@gemini-hlsw/navigate-ui": "workspace:*",
-    "@playwright/test": "1.61.1",
-    "@tsconfig/strictest": "catalog:",
-    "@tsconfig/vite-react": "catalog:",
-    "eslint": "catalog:",
-    "eslint-import-resolver-typescript": "catalog:",
-    "eslint-plugin-simple-import-sort": "catalog:",
-    "globals": "catalog:",
-    "typescript": "catalog:",
-    "typescript-eslint": "catalog:"
+    "@playwright/test": "1.62.1",
+    "@tsconfig/strictest": "2.0.8",
+    "@tsconfig/vite-react": "8.1.1",
+    "eslint": "10.8.0",
+    "eslint-import-resolver-typescript": "4.4.5",
+    "eslint-plugin-simple-import-sort": "14.0.0",
+    "globals": "17.8.0",
+    "@typescript/native": "npm:typescript@7.0.2",
+    "typescript": "npm:@typescript/typescript6@6.0.2",
+    "typescript-eslint": "8.65.0"
   }
 }

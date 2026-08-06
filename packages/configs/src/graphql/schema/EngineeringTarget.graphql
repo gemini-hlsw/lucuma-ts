@@ -1,9 +1,9 @@
 #import DateTime from "./Scalars.graphql"
 #import TargetType from "./Target.graphql"
-#import RotatorTrackingMode from '@gemini-hlsw/lucuma-schemas/navigate'
-#import Instrument, PosInt, Declination, ProperMotion, RightAscension, Angle from "@gemini-hlsw/lucuma-schemas/odb"
+#import RotatorTrackingMode from '@gemini-hlsw/lucuma-apps-schemas/navigate'
+#import Instrument, PosInt, Declination, ProperMotion, RightAscension, Angle from "@gemini-hlsw/lucuma-odb-schemas/odb"
 #import BaffleMode from './Configuration.graphql'
-#import CentralBaffle, DeployableBaffle from '@gemini-hlsw/lucuma-schemas/navigate'
+#import CentralBaffle, DeployableBaffle from '@gemini-hlsw/lucuma-apps-schemas/navigate'
 
 type EngineeringTarget {
   "Primary Key"

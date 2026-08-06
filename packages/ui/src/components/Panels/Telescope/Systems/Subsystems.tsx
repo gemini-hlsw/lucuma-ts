@@ -1,7 +1,19 @@
 import { cn } from '@gemini-hlsw/lucuma-common-ui';
 import type { UpdateMechanismMutationVariables } from '@gql/configs/gen/graphql';
 import { useMechanism, useUpdateMechanism } from '@gql/configs/Mechanism';
-import { CrcsPark, McsPark, OiwfsPark, Pwfs1Park, Pwfs2Park } from '@gql/server/Buttons';
+import {
+  CrcsPark,
+  CrcsUnwrap,
+  EcsCloseEastVentGate,
+  EcsCloseWestVentGate,
+  McsPark,
+  McsUnwrap,
+  OiwfsPark,
+  Pwfs1Park,
+  Pwfs1Unwrap,
+  Pwfs2Park,
+  Pwfs2Unwrap,
+} from '@gql/server/Buttons';
 import { Button } from 'primereact/button';
 import { Dropdown } from 'primereact/dropdown';
 import { InputNumber } from 'primereact/inputnumber';
@@ -15,13 +27,13 @@ export function TopSubsystems({ canEdit }: { canEdit: boolean }) {
   return (
     <div className="top-left">
       <McsPark disabled={!canEdit} style={{ gridArea: 'g11' }} label="Park" data-testid="park-mcs" />
-      <Button className="under-construction" disabled={!canEdit} style={{ gridArea: 'g12' }} label="Unwrap" />
+      <McsUnwrap disabled={!canEdit} style={{ gridArea: 'g12' }} label="Unwrap" data-testid="unwrap-mcs" />
       <CrcsPark disabled={!canEdit} style={{ gridArea: 'g31' }} label="Park" data-testid="park-crcs" />
-      <Button className="under-construction" disabled={!canEdit} style={{ gridArea: 'g32' }} label="Unwrap" />
+      <CrcsUnwrap disabled={!canEdit} style={{ gridArea: 'g32' }} label="Unwrap" data-testid="unwrap-crcs" />
       <Pwfs1Park disabled={!canEdit} style={{ gridArea: 'g41' }} label="Park" data-testid="park-pwfs1" />
-      <Button className="under-construction" disabled={!canEdit} style={{ gridArea: 'g42' }} label="Unwrap" />
+      <Pwfs1Unwrap disabled={!canEdit} style={{ gridArea: 'g42' }} label="Unwrap" data-testid="unwrap-pwfs1" />
       <Pwfs2Park disabled={!canEdit} style={{ gridArea: 'g51' }} label="Park" data-testid="park-pwfs2" />
-      <Button className="under-construction" disabled={!canEdit} style={{ gridArea: 'g52' }} label="Unwrap" />
+      <Pwfs2Unwrap disabled={!canEdit} style={{ gridArea: 'g52' }} label="Unwrap" data-testid="unwrap-pwfs2" />
     </div>
   );
 }
@@ -184,11 +196,11 @@ export function BotSubsystems({ canEdit }: { canEdit: boolean }) {
         }
         className="under-construction"
       />
-      <Button
+      <EcsCloseWestVentGate
         disabled={!canEdit}
         style={{ gridArea: 'g61' }}
         label="Close"
-        className={cn(BTN_CLASSES[state.wVGateClose], 'under-construction')}
+        className={cn(BTN_CLASSES[state.wVGateClose])}
       />
       <InputNumber
         disabled={!canEdit}
@@ -212,11 +224,11 @@ export function BotSubsystems({ canEdit }: { canEdit: boolean }) {
         onClick={() => modifyMechanism({ wVGateValue: WVGate })}
         className="under-construction"
       />
-      <Button
+      <EcsCloseEastVentGate
         disabled={!canEdit}
         style={{ gridArea: 'g71' }}
         label="Close"
-        className={cn(BTN_CLASSES[state.eVGateClose], 'under-construction')}
+        className={cn(BTN_CLASSES[state.eVGateClose])}
       />
       <InputNumber
         disabled={!canEdit}

@@ -1,9 +1,8 @@
-import imgUrl from '@assets/underconstruction.png';
 import { cn } from '@gemini-hlsw/lucuma-common-ui';
 import { useConfiguration } from '@gql/configs/Configuration';
 import type { Instrument, WfsType } from '@gql/configs/gen/graphql';
 import type { Site } from '@gql/odb/gen/graphql';
-import type { GuideProbe } from '@gql/server/gen/graphql';
+import type { GuideProbe, QlMode } from '@gql/server/gen/graphql';
 import { useGuideState } from '@gql/server/GuideState';
 import {
   useOiwfsConfigState,
@@ -16,12 +15,16 @@ import {
 import { useServerConfigValue } from '@gql/server/ServerConfiguration';
 import {
   type ObserveResult,
+  type QlModeResult,
   type StopObserveResult,
   useOiwfsObserve,
+  useOiwfsQlMode,
   useOiwfsStopObserve,
   usePwfs1Observe,
+  usePwfs1QlMode,
   usePwfs1StopObserve,
   usePwfs2Observe,
+  usePwfs2QlMode,
   usePwfs2StopObserve,
   useTakeSky,
 } from '@gql/server/WavefrontSensors';
@@ -87,14 +90,31 @@ function useFreqOptions(wfs: Exclude<WfsType, 'NONE'>, obsInstrument: Instrument
   return [freq, setFreq, freqOptions] as const;
 }
 
-export default function WavefrontSensor({
+export function OiwfsWavefrontSensor({ canEdit }: { canEdit: boolean }) {
+  const qlMode = useOiwfsQlMode();
+  return <WavefrontSensor qlMode={qlMode} canEdit={canEdit} wfs="OIWFS" />;
+}
+
+export function Pwfs1WavefrontSensor({ canEdit }: { canEdit: boolean }) {
+  const qlMode = usePwfs1QlMode();
+  return <WavefrontSensor qlMode={qlMode} canEdit={canEdit} wfs="PWFS1" />;
+}
+
+export function Pwfs2WavefrontSensor({ canEdit }: { canEdit: boolean }) {
+  const qlMode = usePwfs2QlMode();
+  return <WavefrontSensor qlMode={qlMode} canEdit={canEdit} wfs="PWFS2" />;
+}
+
+function WavefrontSensor({
   canEdit,
   wfs,
   className,
+  qlMode,
 }: {
   canEdit: boolean;
   wfs: Exclude<WfsType, 'NONE'>;
   className?: string;
+  qlMode: QlModeResult;
 }) {
   const id = useId();
 
@@ -102,6 +122,10 @@ export default function WavefrontSensor({
   const configuration = configData?.configuration;
 
   const [freq, setFreq, freqOptions] = useFreqOptions(wfs, configuration?.obsInstrument);
+
+  // TODO: get state from server query/subscription
+  const [ql, setQl] = useState<QlMode | null>(null);
+  const [setQlMode, { loading: qlLoading }] = qlMode;
 
   let observeButton: React.ReactElement | undefined;
   let skyButton: React.ReactElement | undefined;
@@ -132,7 +156,6 @@ export default function WavefrontSensor({
   return (
     <div className={cn('wfs', className)} data-testid={`${wfs.toLowerCase()}-controls`}>
       <span className="wfs-name">{wfs}</span>
-      <img src={imgUrl} alt="wfs" />
       <div className="controls">
         <label htmlFor={`freq-${id}`} style={{ gridArea: 'g11' }}>
           Freq
@@ -147,12 +170,31 @@ export default function WavefrontSensor({
           placeholder="Select frequency"
         />
         {observeButton}
+        {skyButton}
         <div className="save-inputs">
           <label htmlFor={`save-${id}`}>Save CB</label>
           {saveButton}
         </div>
-        {skyButton}
-        <Button className="under-construction" disabled={!canEdit} style={{ gridArea: 'g3' }} label="Autoadjust" />
+        <div className="ql-inputs">
+          <label htmlFor={`ql-${id}`}>QL</label>
+          <Dropdown
+            inputId={`ql-${id}`}
+            disabled={!canEdit}
+            loading={qlLoading}
+            placeholder="Mode"
+            value={ql}
+            options={
+              [
+                { value: 'ON', label: 'On' },
+                { value: 'OFF', label: 'Off' },
+                { value: 'AUTO', label: 'Auto' },
+              ] satisfies { value: QlMode; label: Capitalize<Lowercase<QlMode>> }[]
+            }
+            onChange={(e) =>
+              setQlMode({ variables: { mode: e.value as QlMode }, onCompleted: () => setQl(e.value as QlMode) })
+            }
+          />
+        </div>
       </div>
     </div>
   );
@@ -314,7 +356,7 @@ function TakeSkyButton({ freq, wfs, canEdit }: { freq: number; wfs: GuideProbe; 
   const onClick = () =>
     takeSky({
       variables: {
-        wfs: wfs.includes('OIWFS') ? instrumentToOiwfs(instrument)! : wfs,
+        wfs: wfs.includes('OIWFS') ? (instrumentToOiwfs(instrument) ?? wfs) : wfs,
         period: { milliseconds: (1 / freq) * 1000 },
       },
     });
@@ -323,7 +365,7 @@ function TakeSkyButton({ freq, wfs, canEdit }: { freq: number; wfs: GuideProbe; 
     <Button
       loading={takeSkyLoading}
       disabled={!canEdit || configLoading}
-      style={{ gridArea: 'g23' }}
+      style={{ gridArea: 'g14' }}
       aria-label="Take Sky"
       tooltip="Take Sky"
       onClick={onClick}

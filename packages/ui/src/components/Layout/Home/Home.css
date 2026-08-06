@@ -1,11 +1,19 @@
 .main-body {
+  --panel-count: 3;
+  --log-height: 30vh;
+
+  position: relative;
   height: 100%;
+
+  @media only screen and (height <= 900px) {
+    --log-height: 14vh;
+  }
 
   .panel {
     background-color: var(--surface-a);
     color: var(--text-color);
     border: 1px solid var(--surface-border);
-    width: 33.3333%;
+    width: calc(100% / var(--panel-count));
     display: block;
     height: calc(100vh - 28px);
     font-family: var(--font-family);
@@ -50,6 +58,38 @@
       display: none;
     }
   }
+}
+
+.panel.wavefront-sensors > .wavefront-sensors > .body > .logs-table {
+  position: absolute;
+  left: calc(100vw / var(--panel-count));
+  width: calc(100vw / var(--panel-count) * 2);
+  bottom: 0;
+  z-index: 5;
+  background-color: var(--surface-a);
+  border-top: 1px solid var(--surface-border);
+  height: var(--log-height);
+  overflow-y: auto;
+}
+
+.panel.guider > .guider > .body > .logs-table {
+  display: none;
+}
+
+.panel.wavefront-sensors,
+.panel.guider {
+  height: calc(100vh - 28px - var(--log-height));
+}
+
+/* Scroll rather than overflow when the content is taller than the shortened panel. */
+.panel.wavefront-sensors > .wavefront-sensors > .body,
+.panel.guider > .guider > .body {
+  overflow-y: auto;
+}
+
+.panel.wavefront-sensors > .wavefront-sensors,
+.panel.guider > .guider {
+  justify-content: flex-start;
 }
 
 @media only screen and (width <= 1250px) {
@@ -123,6 +163,29 @@
     &.guider {
       transform: translateX(-200vw);
     }
+  }
+
+  .panel.wavefront-sensors > .wavefront-sensors > .body > .logs-table {
+    position: static;
+    left: auto;
+    width: 100%;
+    height: auto;
+    min-height: 30vh;
+  }
+
+  .panel.guider > .guider > .body > .logs-table {
+    display: block;
+    min-height: 30vh;
+  }
+
+  .panel.wavefront-sensors,
+  .panel.guider {
+    height: calc(100vh - 26px);
+  }
+
+  .panel.wavefront-sensors > .wavefront-sensors > .body,
+  .panel.guider > .guider > .body {
+    overflow-y: visible;
   }
 
   @keyframes move-back {

@@ -123,6 +123,53 @@ export function useAcStopObserve(setStale: Dispatch<boolean>) {
   });
 }
 
+export const PWFS1_QL_MODE = graphql(`
+  mutation setPwfs1QlMode($mode: QlMode) {
+    pwfs1QlMode(mode: $mode) {
+      result
+      msg
+    }
+  }
+`);
+
+export function usePwfs1QlMode(setStale?: Dispatch<boolean>) {
+  return useMutation(PWFS1_QL_MODE, {
+    onCompleted: () => setStale?.(true),
+  });
+}
+
+export const PWFS2_QL_MODE = graphql(`
+  mutation setPwfs2QlMode($mode: QlMode) {
+    pwfs2QlMode(mode: $mode) {
+      result
+      msg
+    }
+  }
+`);
+
+export function usePwfs2QlMode(setStale?: Dispatch<boolean>) {
+  return useMutation(PWFS2_QL_MODE, {
+    onCompleted: () => setStale?.(true),
+  });
+}
+
+export const OIWFS_QL_MODE = graphql(`
+  mutation setOiwfsQlMode($mode: QlMode) {
+    oiwfsQlMode(mode: $mode) {
+      result
+      msg
+    }
+  }
+`);
+
+export function useOiwfsQlMode(setStale?: Dispatch<boolean>) {
+  return useMutation(OIWFS_QL_MODE, {
+    onCompleted: () => setStale?.(true),
+  });
+}
+
+export type QlModeResult = ReturnType<typeof useOiwfsQlMode | typeof usePwfs1QlMode | typeof usePwfs2QlMode>;
+
 export type ObserveResult = ReturnType<
   typeof useOiwfsObserve | typeof usePwfs1Observe | typeof usePwfs2Observe | typeof useAcObserve
 >;

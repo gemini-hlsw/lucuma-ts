@@ -55,7 +55,7 @@
     },
     {
       "description": "Schedule schema updates to run daily",
-      "matchPackageNames": ["@gemini-hlsw/lucuma-schemas"],
+      "matchPackageNames": ["@gemini-hlsw/lucuma-odb-schemas", "@gemini-hlsw/lucuma-apps-schemas"],
       "schedule": ["* 0-4 * * *"],
       "minimumReleaseAge": "0 days"
     }

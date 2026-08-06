@@ -5,10 +5,10 @@ import InstrumentHandset from './InstrumentHandset';
 import PointingHandset from './PointingHandset';
 import TargetsHandset from './TargetsHandset';
 
-export default function MainControls({ canEdit }: { canEdit: boolean }) {
+export default function MainControls({ canEdit, prevPanel }: { canEdit: boolean; prevPanel: () => void }) {
   return (
     <div className="main-controls">
-      <Title title="Handset" className="main-controls-title" />
+      <Title prevPanel={prevPanel} title="Handset" className="main-controls-title" />
       <TabView renderActiveOnly={false}>
         <TabPanel header="Targets">
           <TargetsHandset canEdit={canEdit} />

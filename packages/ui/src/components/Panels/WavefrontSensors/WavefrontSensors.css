@@ -1,3 +1,27 @@
+.logs-table {
+  > .title {
+    border-top: 1px solid var(--surface-border);
+  }
+
+  .p-datatable {
+    thead tr th {
+      background-color: var(--surface-1) !important;
+    }
+
+    .warn {
+      background-color: var(--orange-700);
+    }
+
+    .error {
+      background-color: var(--red-700);
+    }
+
+    .log-message {
+      word-break: break-all;
+    }
+  }
+}
+
 .panel > .wavefront-sensors {
   font-size: 0.8rem;
   display: flex;
@@ -36,108 +60,17 @@
     display: flex;
     flex-direction: column;
 
-    > .sensors {
-      > .wfs {
-        width: 33.3333%;
-        float: left;
-        border-top: 1px solid var(--surface-border);
-        position: relative;
-
-        &:not(:last-child) {
-          border-right: 1px solid var(--surface-border);
-        }
-
-        > .wfs-name {
-          position: absolute;
-          top: 2px;
-          left: 2px;
-          background-color: transparent;
-          color: var(--primary-color-text);
-          z-index: 10;
-        }
-
-        > img {
-          width: 100%;
-          scale: 1;
-        }
-
-        > .controls {
-          display: grid;
-          grid-template-areas:
-            'g11 g12 g13'
-            'g21 g22 g23'
-            'g3 g3 g3';
-          grid-template-columns: 35px 1fr 40px;
-          grid-auto-rows: 26px;
-          gap: 0 4px;
-          place-items: center center;
-          padding: 2px 4px;
-
-          .save-inputs {
-            grid-column: span 2 / span 2;
-            display: flex;
-            width: 100%;
-            justify-content: space-between;
-          }
-        }
-
-        > span {
-          text-align: center;
-          align-self: center;
-        }
-      }
-    }
-
-    > .acquisition-camera {
+    > .top {
+      display: flex;
+      flex-direction: row;
       border-top: 1px solid var(--surface-border);
 
-      .left {
-        width: 100%;
+      > .main-controls {
+        flex: 1 1 auto;
+        min-width: 0;
         border-right: 1px solid var(--surface-border);
-        position: relative;
         display: flex;
         flex-direction: column;
-
-        > .image {
-          flex-grow: 1;
-          display: flex;
-          align-items: center;
-          border-bottom: 1px solid var(--surface-border);
-
-          > .ac-name {
-            position: absolute;
-            top: 2px;
-            left: 2px;
-            background-color: transparent;
-            color: var(--primary-color-text);
-            z-index: 10;
-          }
-
-          > img {
-            width: 100%;
-            scale: 1;
-          }
-        }
-
-        > .controls {
-          display: grid;
-          grid-template-columns: 35px 75px 1fr 35px 20px 40px 40px;
-          grid-template-areas: 'g1 g2 g3 g4 g5 g6 g7';
-          place-items: center center;
-          gap: 0 6px;
-          padding: 2px 4px;
-        }
-
-        > span {
-          text-align: center;
-          align-self: center;
-        }
-      }
-
-      .main-controls {
-        display: flex;
-        flex-direction: column;
-        width: 100%;
 
         .handset {
           display: flex;
@@ -249,33 +182,154 @@
           }
         }
       }
+
+      > .sensors {
+        flex: 0 0 200px;
+        display: flex;
+        flex-direction: column;
+
+        > .wfs {
+          border-bottom: 1px solid var(--surface-border);
+          position: relative;
+
+          > .wfs-name {
+            display: block;
+            padding: 2px 4px 0;
+            color: var(--primary-color-text);
+            font-weight: bold;
+          }
+
+          > .controls {
+            display: grid;
+            grid-template-areas:
+              'g11 g12 g13 g14'
+              'g21 g21 g22 g22';
+            grid-template-columns: 32px 1fr 32px 40px;
+            grid-auto-rows: 26px;
+            gap: 2px 4px;
+            place-items: center center;
+            padding: 2px 4px;
+
+            .save-inputs {
+              grid-area: g21;
+              display: flex;
+              width: 100%;
+              align-items: center;
+              justify-content: flex-start;
+              gap: 4px;
+            }
+
+            .ql-inputs {
+              grid-area: g22;
+              display: flex;
+              width: 100%;
+              align-items: center;
+              justify-content: flex-start;
+              gap: 4px;
+
+              .p-dropdown {
+                flex: 1 1 auto;
+              }
+            }
+          }
+
+          &.ac > .controls {
+            grid-template-areas: 'g11 g12 g13 g14';
+          }
+        }
+      }
+    }
+
+    > .light-path {
+      flex-shrink: 1;
+      border-top: 1px solid var(--surface-border);
+
+      > .body {
+        padding: 4px;
+        display: grid;
+        gap: 4px;
+        grid-template-columns: repeat(2, 1fr);
+        grid-template-rows: repeat(3, 22px);
+      }
+    }
+
+    > .wfs-mechs {
+      flex-shrink: 1;
+      border-top: 1px solid var(--surface-border);
+
+      > .body > .p-tabview {
+        ul li {
+          flex-grow: 1;
+
+          a {
+            padding: 4px;
+            font-size: 0.9rem;
+            display: block;
+            width: 100%;
+            text-align: center;
+          }
+        }
+
+        .p-tabview-panels {
+          padding: 4px;
+
+          .pwfs {
+            display: grid;
+            font-size: 0.9rem;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: repeat(2, auto);
+            align-items: center;
+            gap: 8px;
+          }
+
+          .achr {
+            display: grid;
+            font-size: 0.9rem;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: repeat(4, auto);
+            gap: 8px;
+            align-items: center;
+
+            .window-size {
+              display: flex;
+              flex-direction: column;
+              gap: 4px;
+
+              .window-size-inputs {
+                display: flex;
+                flex-direction: row;
+                gap: 8px;
+                align-items: center;
+
+                .p-inputnumber {
+                  max-width: 48px;
+
+                  input {
+                    padding-top: 2px;
+                    padding-bottom: 2px;
+                  }
+                }
+              }
+            }
+          }
+
+          .moving-label {
+            font-size: 0.8rem;
+          }
+        }
+      }
     }
 
     > .logs-table {
       max-height: 100%;
       overflow-y: auto;
-
-      > .title {
-        border-top: 1px solid var(--surface-border);
-      }
-
-      .p-datatable {
-        thead tr th {
-          background-color: var(--surface-1) !important;
-        }
-
-        .warn {
-          background-color: var(--orange-700);
-        }
-
-        .error {
-          background-color: var(--red-700);
-        }
-
-        .log-message {
-          word-break: break-all;
-        }
-      }
     }
+  }
+}
+
+@media only screen and (width <= 1250px) {
+  .panel > .wavefront-sensors > .body > .top > .sensors {
+    flex: 0 0 42%;
+    min-width: 200px;
   }
 }

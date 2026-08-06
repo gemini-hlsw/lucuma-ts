@@ -12,22 +12,15 @@ export interface GraphQLContext extends YogaInitialContext {
 
 const schema = createSchema({ typeDefs, resolvers });
 
-export function makeYogaServer({
-  prisma,
-  log,
-  disposeOnProcessTerminate,
-}: {
-  prisma: PrismaClient;
-  log: YogaLogger;
-  disposeOnProcessTerminate?: boolean;
-}) {
+export function makeYogaServer({ prisma, log }: { prisma: PrismaClient; log: YogaLogger }) {
   return createYoga<GraphQLContext>({
+    id: 'navigate-configs',
     schema,
     graphqlEndpoint: '/*',
     context: { prisma, log },
     logging: log,
     maskedErrors: false,
-    disposeOnProcessTerminate: disposeOnProcessTerminate ?? true,
+    batching: true,
     healthCheckEndpoint: '/health',
     plugins: [
       useReadinessCheck({

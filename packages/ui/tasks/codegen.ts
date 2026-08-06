@@ -74,14 +74,14 @@ export default {
   ignoreNoDocuments: true,
   generates: {
     './src/gql/odb/gen/': {
-      schema: import.meta.resolve('@gemini-hlsw/lucuma-schemas/odb'),
+      schema: import.meta.resolve('@gemini-hlsw/lucuma-odb-schemas/odb'),
       documents: './src/gql/odb/*.{ts,tsx}',
       config: sharedConfig,
       preset: 'client',
       presetConfig,
     },
     './src/gql/server/gen/': {
-      schema: import.meta.resolve('@gemini-hlsw/lucuma-schemas/navigate'),
+      schema: import.meta.resolve('@gemini-hlsw/lucuma-apps-schemas/navigate'),
       documents: './src/gql/server/*.{ts,tsx}',
       config: sharedConfig,
       preset: 'client',

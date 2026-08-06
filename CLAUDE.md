@@ -63,8 +63,8 @@ Run a single test:
 
 The UI talks to **three distinct GraphQL endpoints**, each with its own generated types under `packages/ui/src/gql/{odb,server,configs}/gen/` (configured in `packages/ui/tasks/codegen.ts`):
 
-- **odb** — schema from `@gemini-hlsw/lucuma-schemas/odb` (the ODB / observation database; requires auth token).
-- **server** — schema from `@gemini-hlsw/lucuma-schemas/navigate` (the navigate command server, at `/navigate/graphql` + `/navigate/ws` for subscriptions).
+- **odb** — schema from `@gemini-hlsw/lucuma-odb-schemas/odb` (the ODB / observation database; requires auth token).
+- **server** — schema from `@gemini-hlsw/lucuma-apps-schemas/navigate` (the navigate command server, at `/navigate/graphql` + `/navigate/ws` for subscriptions).
 - **configs** — schema is the local `packages/configs/src/**/*.graphql` files, served at `/db`.
 
 All three are wired into a single Apollo Client in `packages/ui/src/gql/ApolloConfigs.ts`, which routes operations to the right endpoint via Apollo links (HTTP for queries/mutations, `graphql-ws` for subscriptions), injects the ODB auth token, and surfaces errors as PrimeReact toasts. The base server URIs are derived at runtime from `window.location.origin`.
@@ -104,6 +104,7 @@ When writing Vitest tests:
 - TS configs extend `@tsconfig/strictest`; the React compiler (`babel-plugin-react-compiler`) is enabled in the UI build.
 - Import sorting is enforced (`eslint-plugin-simple-import-sort`); lint-staged + Prettier run on commit via Husky.
 - Generated code (`**/gen/`, `src/prisma/gen/`) is not committed and should never be hand-edited — change the source schema/documents and re-run codegen.
+- **Prefer Tailwind utility classes over (S)CSS styling when possible.** Reach for a `.css`/`.scss` file only for styles Tailwind can't express (e.g. complex selectors, keyframe animations, third-party component overrides).
 - **Prefer strict types from the schema (or other authoritative sources) over hand-written ones.** Derive from the generated types so a schema change surfaces as a compile error rather than silently drifting: select rows through fragments and use the generated fragment types; key label/lookup maps as `satisfies Record<Enum, …>` (or `Partial<Record<…>>` when the coverage is intentionally partial) over the generated enum; narrow with `Extract<…>` instead of re-declaring a union locally. Reach for a local type only when no operation selects the field (so codegen doesn't emit it) — and say so in a comment.
 
 ## CI & publishing
