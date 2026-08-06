@@ -36,6 +36,7 @@ const proposalsMock = (): MockedResponseOf<typeof PROPOSALS_QUERY> => ({
               gemini: { __typename: 'DirectorsTime', scienceSubtype: 'DIRECTORS_TIME' },
             },
             observations: { __typename: 'ObservationSelectResult', matches: [] },
+            allGroupElements: [],
           },
         ],
       },

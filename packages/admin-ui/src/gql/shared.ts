@@ -2,6 +2,7 @@
 import { graphql } from './odb/gen';
 import type {
   CloudExtinctionPreset,
+  GroupElementItemFragment,
   ImageQualityPreset,
   ObservationItemFragment,
   ObservingModeType,
@@ -134,8 +135,26 @@ export const OBSERVATION_ROW_FRAGMENT = graphql(`
   fragment ObservationItem on Observation {
     id
     calibrationRole
-    observationDuration {
-      hours
+    # Enclosing group id — when the science observation sits in a system
+    # telluric-standard group, its "Time" is that group's combined estimate
+    # (science + telluric), looked up in telluricGroupHours (sc-9598).
+    groupId
+    # observationDuration is unset until an observation is executed; the "Time"
+    # column shows the estimated program time from the execution digest instead
+    # (matching Explore). The digest is calculated asynchronously, so it may be
+    # absent (PENDING) or fail per observation — mapped to 0 / "—" (sc-9598).
+    execution {
+      digest {
+        value {
+          estimate {
+            total {
+              program {
+                hours
+              }
+            }
+          }
+        }
+      }
     }
     instrument
     observingMode {
@@ -174,12 +193,31 @@ export function isScienceObservation(o: Pick<ObservationItemFragment, 'calibrati
   return o.calibrationRole === null;
 }
 
-/** Map one observation (selected via ObservationItem) to the shared
- *  table row. Non-sidereal targets have no fixed RA/Dec — shown as "—". */
-export function mapObservationRow(o: ObservationItemFragment): ObservationRow {
+/** Estimated program time (hours) from the execution digest, or null when the
+ *  digest isn't available — it's calculated asynchronously and can be PENDING
+ *  or fail for a single observation (e.g. an over-long sequence). */
+export function observationDigestHours(o: ObservationItemFragment): number | null {
+  const hours = o.execution.digest?.value?.estimate.total.program.hours;
+  return hours === undefined ? null : Number(hours);
+}
+
+/** Map one observation (selected via ObservationItem) to the shared table row.
+ *  Non-sidereal targets have no fixed RA/Dec — shown as "—". `telluricHoursByGroup`
+ *  (from telluricGroupHours) maps a group id to its combined science+telluric
+ *  estimate (sc-9598): when the observation belongs to such a group, that total
+ *  is its "Time"; otherwise the observation's own digest estimate is used. */
+export function mapObservationRow(
+  o: ObservationItemFragment,
+  telluricHoursByGroup?: ReadonlyMap<string, number>,
+): ObservationRow {
   const target = o.targetEnvironment?.firstScienceTarget;
   const instrument = o.instrument ? normalizeInstrument(o.instrument) : '—';
   const modeSuffix = observingModeSuffix(o.observingMode?.mode ?? null);
+  // groupId is a GroupId scalar — a string at runtime, typed `unknown` by
+  // codegen. A null/absent group simply misses the telluric-group map.
+  const groupId = o.groupId as string | null;
+  const groupHours = groupId === null ? undefined : telluricHoursByGroup?.get(groupId);
+  const hours = groupHours ?? observationDigestHours(o) ?? 0;
   return {
     id: o.id,
     target: target?.name ?? '(no target)',
@@ -191,6 +229,44 @@ export function mapObservationRow(o: ObservationItemFragment): ObservationRow {
     instrument,
     config: modeSuffix ? `${instrument}, ${modeSuffix}` : instrument,
     conditions: formatConditions(o.constraintSet),
-    hours: Math.round(Number(o.observationDuration?.hours ?? 0) * 10) / 10,
+    hours: Math.round(hours * 10) / 10,
   };
+}
+
+/** Selection for a program's group elements, used to find the system telluric
+ *  groups whose combined time rolls into their science observation's row
+ *  (sc-9598). Only the id and the fields telluricGroupHours reads are taken. */
+export const GROUP_ELEMENT_FRAGMENT = graphql(`
+  fragment GroupElementItem on GroupElement {
+    group {
+      id
+      system
+      calibrationRoles
+      timeEstimateRange {
+        value {
+          maximum {
+            program {
+              hours
+            }
+          }
+        }
+      }
+    }
+  }
+`);
+
+/** Map each system telluric-standard group's id to its combined science+telluric
+ *  program-time estimate (sc-9598). A science observation in one of these groups
+ *  shows this total as its "Time"; observations elsewhere use their own digest.
+ *  Groups without a settled estimate (calculation pending) are omitted, so those
+ *  rows fall back to the observation's own estimate. */
+export function telluricGroupHours(elements: readonly GroupElementItemFragment[]): ReadonlyMap<string, number> {
+  const byGroup = new Map<string, number>();
+  for (const { group } of elements) {
+    if (group === null || !group.system || !group.calibrationRoles.includes('TELLURIC')) continue;
+    const hours = group.timeEstimateRange?.value?.maximum.program.hours;
+    // group.id is a GroupId scalar — a string at runtime, typed `unknown`.
+    if (hours !== undefined) byGroup.set(group.id as string, Number(hours));
+  }
+  return byGroup;
 }

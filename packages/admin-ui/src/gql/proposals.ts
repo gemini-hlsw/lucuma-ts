@@ -8,7 +8,7 @@ import { useMutation, useQuery } from '@apollo/client/react';
 import type { DocumentType } from './odb/gen';
 import { graphql } from './odb/gen';
 import type { ScienceSubtype } from './odb/gen/graphql';
-import { isScienceObservation, mapObservationRow } from './shared';
+import { isScienceObservation, mapObservationRow, telluricGroupHours } from './shared';
 import type { Proposal, SpecialProposalType } from './types';
 
 export const PROPOSALS_QUERY = graphql(`
@@ -42,6 +42,11 @@ export const PROPOSALS_QUERY = graphql(`
             ...ObservationItem
           }
         }
+        # System telluric groups whose combined time rolls into their science
+        # observation's "Time" (sc-9598).
+        allGroupElements {
+          ...GroupElementItem
+        }
       }
     }
   }
@@ -65,6 +70,7 @@ export function mapProposals(raw: AdminProposalsResult): Proposal[] {
     if (!p.proposal || !type) continue; // special proposals only
     const prof = p.pi?.user?.profile;
     const reference = p.proposal.reference?.label ?? p.id;
+    const groupHours = telluricGroupHours(p.allGroupElements);
     out.push({
       id: p.id,
       reference,
@@ -74,7 +80,7 @@ export function mapProposals(raw: AdminProposalsResult): Proposal[] {
       type,
       status: p.proposalStatus,
       abstract: p.description ?? '',
-      observations: p.observations.matches.filter(isScienceObservation).map(mapObservationRow),
+      observations: p.observations.matches.filter(isScienceObservation).map((o) => mapObservationRow(o, groupHours)),
     });
   }
   return out;
