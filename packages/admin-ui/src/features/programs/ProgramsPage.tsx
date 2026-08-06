@@ -41,6 +41,8 @@ import {
   PROGRAM_CLASS_LABEL,
   PROGRAM_CLASSES,
   type ProgramClass,
+  SCIENCE_SUBTYPE_LABEL,
+  type ScienceSubtype,
   TOO_LABEL,
   TOO_STATUSES,
   type ToOActivation,
@@ -116,16 +118,26 @@ export default function ProgramsPage(): JSX.Element {
     }
   }
 
-  const [classFilter, setClassFilter] = useState<ProgramClass | typeof ALL>(ALL);
+  const [typeFilter, setTypeFilter] = useState<ScienceSubtype | typeof ALL>(ALL);
   const [search, setSearch] = useState('');
   const filteredPrograms = useMemo(() => {
     const text = search.trim().toLowerCase();
     return programs.filter(
       (p) =>
-        (classFilter === ALL || p.programClass === classFilter) &&
+        (typeFilter === ALL || p.programType === typeFilter) &&
         (text === '' || [p.reference, p.name, p.pi].some((f) => f.toLowerCase().includes(text))),
     );
-  }, [programs, classFilter, search]);
+  }, [programs, typeFilter, search]);
+
+  // Only the proposal types actually present, so the facet never offers an
+  // empty option. Sorted by display label for a stable, readable menu.
+  const presentTypes = useMemo(
+    () =>
+      Array.from(new Set(programs.map((p) => p.programType).filter((t): t is ScienceSubtype => t !== null))).sort(
+        (a, b) => SCIENCE_SUBTYPE_LABEL[a].localeCompare(SCIENCE_SUBTYPE_LABEL[b]),
+      ),
+    [programs],
+  );
 
   const [programId, setProgramId] = useState<string | null>(null);
   const original = useMemo(
@@ -137,13 +149,13 @@ export default function ProgramsPage(): JSX.Element {
     <>
       <DataSourceBadge loading={loading} error={error && friendlyError(error)} empty={programs.length === 0} />
       <Dropdown
-        value={classFilter}
+        value={typeFilter}
         options={[
-          { label: 'All classes', value: ALL },
-          ...PROGRAM_CLASSES.map((c) => ({ label: PROGRAM_CLASS_LABEL[c], value: c })),
+          { label: 'All types', value: ALL },
+          ...presentTypes.map((t) => ({ label: SCIENCE_SUBTYPE_LABEL[t], value: t })),
         ]}
-        onChange={(e) => setClassFilter(e.value as ProgramClass | typeof ALL)}
-        title="Facet the table to Queue or Classical programs only."
+        onChange={(e) => setTypeFilter(e.value as ScienceSubtype | typeof ALL)}
+        title="Facet the table by proposal type (Queue, Classical, Large Program, …)."
       />
       <IconField iconPosition="left">
         <InputIcon>
@@ -192,12 +204,12 @@ export default function ProgramsPage(): JSX.Element {
             headerTooltip="The program's reference label. Click a row to edit it below."
           />
           <Column
-            field="programClass"
-            header="Class"
+            field="programType"
+            header="Type"
             sortable
-            style={{ width: '8rem' }}
-            body={(p: Program) => PROGRAM_CLASS_LABEL[p.programClass]}
-            headerTooltip="Queue or Classical, from the proposal type."
+            style={{ width: '10rem' }}
+            body={(p: Program) => (p.programType ? SCIENCE_SUBTYPE_LABEL[p.programType] : '—')}
+            headerTooltip="The proposal type: Queue, Classical, Large Program, Fast Turnaround, Director's Time, …"
           />
           <Column field="pi" header="PI" sortable style={{ width: '13rem' }} />
           <Column
