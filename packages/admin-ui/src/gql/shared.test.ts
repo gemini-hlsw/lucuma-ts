@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
 import type { ObservationItemFragment } from './odb/gen/graphql';
-import { formatConditions, mapObservationRow } from './shared';
+import { formatConditions, isScienceObservation, mapObservationRow } from './shared';
 
 function observation(overrides: Partial<ObservationItemFragment>): ObservationItemFragment {
   return {
     __typename: 'Observation',
     id: 'o-1',
+    calibrationRole: null,
     observationDuration: { __typename: 'TimeSpan', hours: 1.25 },
     instrument: 'GMOS_SOUTH',
     observingMode: { __typename: 'ObservingMode', mode: 'GMOS_SOUTH_LONG_SLIT' },
@@ -88,5 +89,13 @@ describe('formatConditions', () => {
       'IQ<—″ / CC— / SB— / WV—',
     );
     expect(formatConditions(null)).toBe('—');
+  });
+});
+
+describe('isScienceObservation', () => {
+  it('accepts science observations (no calibration role) and rejects calibrations', () => {
+    expect(isScienceObservation({ calibrationRole: null })).toBe(true);
+    expect(isScienceObservation({ calibrationRole: 'TWILIGHT' })).toBe(false);
+    expect(isScienceObservation({ calibrationRole: 'SPECTROPHOTOMETRIC' })).toBe(false);
   });
 });
