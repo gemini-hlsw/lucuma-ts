@@ -87,6 +87,14 @@ describe('mapPrograms', () => {
               scienceBand: 'BAND1',
               duration: { __typename: 'TimeSpan', hours: 12.5 },
             },
+            // A non-partner category (sc-9670): Calibration time must map like any
+            // other, proving Allocation.category spans TimeAccountingCategory.
+            {
+              __typename: 'Allocation',
+              category: 'CAL',
+              scienceBand: 'BAND2',
+              duration: { __typename: 'TimeSpan', hours: 4 },
+            },
           ],
           notes: [
             { __typename: 'ProgramNote', id: 'n-1', text: 'internal note', isPrivate: true },
@@ -117,7 +125,10 @@ describe('mapPrograms', () => {
     expect(p?.privateNoteId).toBe('n-1');
     expect(p?.proprietaryMonths).toBe(6);
     expect(p?.privateHeader).toBe(true);
-    expect(p?.allocations).toEqual([{ category: 'US', scienceBand: 'BAND1', hours: 12.5 }]);
+    expect(p?.allocations).toEqual([
+      { category: 'US', scienceBand: 'BAND1', hours: 12.5 },
+      { category: 'CAL', scienceBand: 'BAND2', hours: 4 },
+    ]);
   });
 
   it('treats Classical proposals as CLASSICAL with no ToO/Band-3 (those are Queue-only)', () => {
@@ -208,14 +219,19 @@ describe('proposalTypeInput', () => {
 
 describe('allocationsInput', () => {
   it('sends only positive awards, keeping zero cells as grid-only editing state', () => {
-    // Regression: a zeroed cell keeps the partner's row visible in the grid;
-    // it must not become a zero-duration allocation in the mutation.
+    // Regression: a zeroed cell keeps the category's row visible in the grid;
+    // it must not become a zero-duration allocation in the mutation. A
+    // non-partner category (ENG, sc-9670) serializes like any other.
     expect(
       allocationsInput([
         { category: 'US', scienceBand: 'BAND1', hours: 0 },
         { category: 'US', scienceBand: 'BAND2', hours: 2.5 },
+        { category: 'ENG', scienceBand: 'BAND1', hours: 1.5 },
       ]),
-    ).toEqual([{ category: 'US', scienceBand: 'BAND2', duration: { hours: 2.5 } }]);
+    ).toEqual([
+      { category: 'US', scienceBand: 'BAND2', duration: { hours: 2.5 } },
+      { category: 'ENG', scienceBand: 'BAND1', duration: { hours: 1.5 } },
+    ]);
   });
 });
 
