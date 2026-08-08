@@ -1,57 +1,26 @@
-import { atom, useAtom, useAtomValue, useSetAtom } from 'jotai';
-import { atomWithStorage, createJSONStorage } from 'jotai/utils';
+import { isLoggedInAtom, userAtom } from '@gemini-hlsw/lucuma-common-ui';
+import { atom, useAtomValue } from 'jotai';
 
-import type { User } from '@/auth/user';
+/*
+ * The token and derived auth atoms live in common-ui so all apps share them
+ * (re-exported here to keep the `@/components/atoms/auth` import path stable).
+ * Only navigate's own edit-permission gate stays local.
+ */
 
-const lucumaRefreshTokenKey = 'lucuma-refresh-token';
-
-// Atom backed by sessionStorage, default value is retrieved from sessionStorage
-export const odbTokenAtom = atomWithStorage<string | null>(
-  lucumaRefreshTokenKey,
-  null,
-  createJSONStorage(() => window.sessionStorage),
-  { getOnInit: true },
-);
-
-export const useOdbToken = () => useAtom(odbTokenAtom);
-export const useSetOdbToken = () => useSetAtom(odbTokenAtom);
-export const useOdbTokenValue = () => useAtomValue(odbTokenAtom);
-
-// Below are all atoms derived from the odbTokenAtom
-
-export interface OdbTokenPayload {
-  'lucuma-user': User;
-  exp: number;
-}
-
-export const decodedTokenPayloadAtom = atom((get) => {
-  const token = get(odbTokenAtom);
-  if (!token) return null;
-
-  const payload = token.split('.')?.[1];
-  if (!payload) return null;
-
-  const decodedPayload = new TextDecoder().decode(Uint8Array.from(atob(payload), (m) => m.charCodeAt(0)));
-
-  return JSON.parse(decodedPayload) as OdbTokenPayload;
-});
-
-export const userAtom = atom((get) => get(decodedTokenPayloadAtom)?.['lucuma-user'] ?? null);
-export const useUser = () => useAtomValue(userAtom);
-
-export const tokenExpAtom = atom((get) => {
-  const exp = get(decodedTokenPayloadAtom)?.exp;
-  return exp ? new Date(exp * 1000) : null;
-});
-export const useTokenExp = () => useAtomValue(tokenExpAtom);
-
-export const isLoggedInAtom = atom((get) => {
-  const user = get(userAtom);
-  const exp = get(tokenExpAtom);
-  // There is a user and the token is not expired
-  return user !== null && (exp ? exp > new Date() : false);
-});
-export const useIsLoggedIn = () => useAtomValue(isLoggedInAtom);
+export {
+  decodedTokenPayloadAtom,
+  isLoggedInAtom,
+  odbTokenAtom,
+  type OdbTokenPayload,
+  tokenExpAtom,
+  useIsLoggedIn,
+  useOdbToken,
+  useOdbTokenValue,
+  userAtom,
+  useSetOdbToken,
+  useTokenExp,
+  useUser,
+} from '@gemini-hlsw/lucuma-common-ui';
 
 export const canEditAtom = atom((get) => {
   const isLoggedIn = get(isLoggedInAtom);

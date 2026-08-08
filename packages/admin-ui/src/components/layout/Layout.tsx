@@ -107,7 +107,7 @@ export default function Layout(): JSX.Element {
 
         <div className="xp-masthead-right">
           <span className="xp-user" title="The signed-in user, decoded from the SSO JWT (identity + active role).">
-            {displayName(user)}
+            {user ? displayName(user) : 'Not signed in'}
             {allRoles.length > 1 && user?.type === 'standard' ? (
               <Dropdown
                 className="xp-role-select"
