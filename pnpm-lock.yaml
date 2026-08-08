@@ -299,8 +299,8 @@ importers:
   packages/configs:
     dependencies:
       '@gemini-hlsw/lucuma-apps-schemas':
-        specifier: 0.177.2--488dbc09
-        version: 0.177.2--488dbc09
+        specifier: 0.177.2--b3964b1a
+        version: 0.177.2--b3964b1a
       '@gemini-hlsw/lucuma-core':
         specifier: 0.226.0
         version: 0.226.0
@@ -574,8 +574,8 @@ importers:
         specifier: 3.5.0
         version: 3.5.0(@fortawesome/fontawesome-svg-core@7.3.1)(react@19.2.8)
       '@gemini-hlsw/lucuma-apps-schemas':
-        specifier: 0.177.2--488dbc09
-        version: 0.177.2--488dbc09
+        specifier: 0.177.2--b3964b1a
+        version: 0.177.2--b3964b1a
       '@gemini-hlsw/lucuma-common-ui':
         specifier: workspace:*
         version: link:../common-ui
@@ -991,8 +991,8 @@ packages:
       '@fortawesome/fontawesome-svg-core': ~6 || ~7
       react: ^18.0.0 || ^19.0.0
 
-  '@gemini-hlsw/lucuma-apps-schemas@0.177.2--488dbc09':
-    resolution: {integrity: sha512-WJh4niEOikR4N7at2BjCt6poSuIKZ4J9e3NPwCI/QV/H2atlGdPLbjXf5ylaWaCvxAUrqZJ1x36V+k1FtPQCjg==}
+  '@gemini-hlsw/lucuma-apps-schemas@0.177.2--b3964b1a':
+    resolution: {integrity: sha512-PdIGfIwHONQAggXG8Wio/B/OntwyeII5RNYxrWXTvnGEQhJK1PvsLIkzA+W6kOxyZhk3Z8t+yDZ6S7Lp65uFhA==}
 
   '@gemini-hlsw/lucuma-core@0.226.0':
     resolution: {integrity: sha512-+1ByVscwRuW9JdLh5c78dAXtmtay0e0rW7YzbJoMG2LEqzOwj7iCp1M6HCwZ3quFSX+egUg7z52BF9iAy1Xmfw==}
@@ -5864,7 +5864,7 @@ snapshots:
       '@fortawesome/fontawesome-svg-core': 7.3.1
       react: 19.2.8
 
-  '@gemini-hlsw/lucuma-apps-schemas@0.177.2--488dbc09': {}
+  '@gemini-hlsw/lucuma-apps-schemas@0.177.2--b3964b1a': {}
 
   '@gemini-hlsw/lucuma-core@0.226.0': {}
 
@@ -5874,7 +5874,7 @@ snapshots:
 
   '@gemini-hlsw/navigate-configs@file:packages/configs(@types/react-dom@19.2.4(@types/react@19.2.18))(@types/react@19.2.18)(@typescript/typescript6@6.0.2)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(supports-color@10.2.2)':
     dependencies:
-      '@gemini-hlsw/lucuma-apps-schemas': 0.177.2--488dbc09
+      '@gemini-hlsw/lucuma-apps-schemas': 0.177.2--b3964b1a
       '@gemini-hlsw/lucuma-core': 0.226.0
       '@gemini-hlsw/lucuma-odb-schemas': 0.90.0-85-4766185
       '@prisma/adapter-pg': 7.9.1
