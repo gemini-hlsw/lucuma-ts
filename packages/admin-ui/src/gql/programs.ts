@@ -304,7 +304,7 @@ export function mapPrograms(raw: AdminProgramsResult): Program[] {
       allocations: (p.allocations ?? [])
         .filter((a) => a.scienceBand !== null)
         .map((a) => ({
-          category: a.category as Program['allocations'][number]['category'],
+          category: a.category,
           scienceBand: a.scienceBand,
           hours: Math.round(Number(a.duration?.hours ?? 0) * 10) / 10,
         })),
