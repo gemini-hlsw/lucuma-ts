@@ -58,7 +58,7 @@
     "eslint-plugin-react-hooks": "7.1.1",
     "eslint-plugin-react-refresh": "0.5.3",
     "eslint-plugin-simple-import-sort": "14.0.0",
-    "globals": "17.8.0",
+    "globals": "17.9.0",
     "graphql": "16.14.2",
     "graphql-scalars": "1.25.0",
     "graphql-ws": "6.2.0",
