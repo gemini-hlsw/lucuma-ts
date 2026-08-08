@@ -5,6 +5,7 @@
  */
 import type { IconDefinition } from '@fortawesome/pro-regular-svg-icons';
 import {
+  faBars,
   faCheck,
   faCircle,
   faCircleCheck,
@@ -41,6 +42,7 @@ const iconFactory = (icon: IconDefinition) =>
     { displayName: kebabToPascalCase(icon.iconName) + 'Icon' },
   );
 
+export const Bars = iconFactory(faBars);
 export const Check = iconFactory(faCheck);
 export const Circle = iconFactory(faCircle);
 export const CircleCheck = iconFactory(faCircleCheck);
