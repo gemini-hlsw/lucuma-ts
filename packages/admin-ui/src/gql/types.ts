@@ -58,6 +58,10 @@ export interface CfpPartner {
 
 export interface CallForProposals {
   readonly id: string;
+  /** Whether the call is visible (ODB existence = PRESENT). Unchecking it
+   *  soft-deletes the call (existence = DELETED); it stays discoverable via the
+   *  "Invisible" facet (sc-9612). */
+  readonly visible: boolean;
   readonly title: string;
   readonly type: CfpType;
   readonly semester: string; // e.g. "2027B"
