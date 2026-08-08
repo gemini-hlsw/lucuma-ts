@@ -8,7 +8,7 @@ import { useEffect } from 'react';
 import type { DocumentType } from './odb/gen';
 import { graphql } from './odb/gen';
 import type { Instrument } from './odb/gen/graphql';
-import { formatConditions, mapObservationRow } from './shared';
+import { formatConditions, isScienceObservation, mapObservationRow } from './shared';
 import type {
   ChangeRequest,
   ConfigurationRequestStatus,
@@ -20,7 +20,10 @@ import type {
 
 export const CHANGE_REQUESTS_QUERY = graphql(`
   query AdminChangeRequests {
-    configurationRequests(LIMIT: 200) {
+    # Only requests on accepted programs (sc-9601) — a change request against a
+    # merely-submitted proposal isn't actionable here. Mirrors the Programs
+    # query's proposalStatus filter.
+    configurationRequests(WHERE: { program: { proposalStatus: { EQ: ACCEPTED } } }, LIMIT: 200) {
       matches {
         id
         status
@@ -151,7 +154,10 @@ export type AdminProgramObservationsResult = DocumentType<typeof PROGRAM_OBSERVA
 type ObservationMatch = AdminProgramObservationsResult['observations']['matches'][number];
 
 export function observationsByIdFrom(matches: readonly ObservationMatch[]): ReadonlyMap<string, ObservationRow> {
-  return new Map(matches.map((o) => [o.id, mapObservationRow(o)]));
+  // Science observations only — calibration ("system") observations aren't
+  // part of the requested science and shouldn't appear or be duplicate-checked
+  // (sc-9591).
+  return new Map(matches.filter(isScienceObservation).map((o) => [o.id, mapObservationRow(o)]));
 }
 
 /** Load every observation in `programId`, following the ODB's `hasMore` cursor

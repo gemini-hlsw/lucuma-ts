@@ -9,6 +9,7 @@ function observation(id: string, targetName: string, hours: number | null): Obse
   return {
     __typename: 'Observation',
     id,
+    calibrationRole: null,
     observationDuration: hours === null ? null : { __typename: 'TimeSpan', hours },
     instrument: 'FLAMINGOS2',
     observingMode: null,
