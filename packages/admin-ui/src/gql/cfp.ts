@@ -17,6 +17,7 @@ import type { CallForProposals, SiteCoordinateLimits } from './types';
 export const CFP_ITEM_FRAGMENT = graphql(`
   fragment CallForProposalsItem on CallForProposals {
     id
+    existence
     title
     semester
     active {
@@ -71,7 +72,10 @@ export const CFP_ITEM_FRAGMENT = graphql(`
 
 export const CFPS_QUERY = graphql(`
   query AdminCfps {
-    callsForProposals(LIMIT: 50) {
+    # includeDeleted so DELETED (invisible) calls are fetchable — the
+    # "Invisible" facet (sc-9612) needs them; visibility is filtered client-side
+    # from each call's existence (WhereCallForProposals has no existence field).
+    callsForProposals(LIMIT: 50, includeDeleted: true) {
       matches {
         ...CallForProposalsItem
       }
@@ -98,6 +102,7 @@ export function mapCfps(raw: AdminCfpsResult): CallForProposals[] {
     return [
       {
         id: c.id,
+        visible: c.existence === 'PRESENT',
         title: c.title,
         type: gemini.type,
         semester: c.semester,
@@ -136,7 +141,10 @@ function mapCoordinateLimits(limits: RawLimits): SiteCoordinateLimits {
 
 export const UPDATE_CFP_MUTATION = graphql(`
   mutation AdminUpdateCfp($id: CallForProposalsId!, $SET: CallForProposalsPropertiesInput!) {
-    updateCallsForProposals(input: { WHERE: { id: { EQ: $id } }, SET: $SET }) {
+    # includeDeleted so an already-invisible call can be edited/restored — the
+    # update WHERE, like the query, otherwise skips DELETED rows, so toggling
+    # Visible back on would silently match nothing (sc-9612).
+    updateCallsForProposals(input: { WHERE: { id: { EQ: $id } }, includeDeleted: true, SET: $SET }) {
       callsForProposals {
         id
       }
@@ -168,6 +176,8 @@ export function useCreateCfp() {
  *  deliberately absent. */
 export function cfpPropertiesInput(c: CallForProposals): CallForProposalsPropertiesInput {
   return {
+    // Visibility (sc-9612): PRESENT keeps the call, DELETED soft-deletes it.
+    existence: c.visible ? 'PRESENT' : 'DELETED',
     semester: c.semester,
     ...(c.title.trim() === '' ? {} : { title: c.title.trim() }),
     activeStart: c.activeStart,

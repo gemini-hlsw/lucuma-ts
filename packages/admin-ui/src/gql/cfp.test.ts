@@ -33,6 +33,7 @@ function call(overrides: Partial<RawCfp>): RawCfp {
   return {
     __typename: 'CallForProposals',
     id: 'c-101',
+    existence: 'PRESENT',
     title: '2025A Regular Semester',
     semester: '2025A',
     active: { __typename: 'DateInterval', start: '2025-02-01', end: '2025-07-31' },
@@ -105,6 +106,13 @@ describe('mapCfps', () => {
     expect(mapCfps(result([call({ gemini: null })]))).toEqual([]);
   });
 
+  it('maps existence to visible (PRESENT visible, DELETED not) — sc-9612', () => {
+    const [present] = mapCfps(result([call({ existence: 'PRESENT' })]));
+    const [deleted] = mapCfps(result([call({ existence: 'DELETED' })]));
+    expect(present?.visible).toBe(true);
+    expect(deleted?.visible).toBe(false);
+  });
+
   it('is open while today is before the latest partner deadline, closed once all have passed', () => {
     const [open, closed, untracked] = mapCfps(
       result([
@@ -123,6 +131,7 @@ describe('cfpPropertiesInput', () => {
   it('serializes an edited call, Gemini properties under `gemini`', () => {
     const input = cfpPropertiesInput({
       id: 'c-101',
+      visible: true,
       title: '  2025A Regular Semester  ',
       type: 'REGULAR_SEMESTER',
       semester: '2025A',
@@ -141,6 +150,7 @@ describe('cfpPropertiesInput', () => {
       ],
     });
     expect(input).toEqual({
+      existence: 'PRESENT',
       semester: '2025A',
       title: '2025A Regular Semester',
       activeStart: '2025-02-01',
@@ -159,6 +169,27 @@ describe('cfpPropertiesInput', () => {
     });
     // allowsNonPartnerPi is ODB-derived and must never be sent.
     expect(input.gemini).not.toHaveProperty('allowsNonPartnerPi');
+  });
+
+  it('sends existence DELETED when not visible, PRESENT when visible — sc-9612', () => {
+    const base = {
+      id: 'c-1',
+      title: 'T',
+      type: 'REGULAR_SEMESTER',
+      semester: '2025A',
+      activeStart: '2025-02-01',
+      activeEnd: '2025-07-31',
+      active: true,
+      allowsNonPartnerPi: true,
+      proprietaryMonths: 12,
+      defaultDeadline: '',
+      north: { raStart: 0, raEnd: 0, decStart: 0, decEnd: 0 },
+      south: { raStart: 0, raEnd: 0, decStart: 0, decEnd: 0 },
+      instruments: [],
+      partners: [],
+    } as const;
+    expect(cfpPropertiesInput({ ...base, visible: true }).existence).toBe('PRESENT');
+    expect(cfpPropertiesInput({ ...base, visible: false }).existence).toBe('DELETED');
   });
 });
 

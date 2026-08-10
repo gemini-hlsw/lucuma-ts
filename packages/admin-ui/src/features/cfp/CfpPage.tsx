@@ -37,11 +37,13 @@ import {
 const CFP_TYPES = Object.keys(CFP_TYPE_LABEL) as CfpType[];
 const EMPTY_CFPS: CallForProposals[] = [];
 
-/** Facet options for the Open column: show open calls, closed calls, or all. */
+/** Facet options: All / Open / Closed show visible calls; Invisible shows the
+ *  soft-deleted ones (sc-9612), which the first three hide. */
 const OPEN_FILTER_OPTIONS = [
   { label: 'All', value: 'all' },
   { label: 'Open', value: 'open' },
   { label: 'Closed', value: 'closed' },
+  { label: 'Invisible', value: 'invisible' },
 ] as const;
 type OpenFilter = (typeof OPEN_FILTER_OPTIONS)[number]['value'];
 
@@ -64,11 +66,14 @@ export default function CfpPage(): JSX.Element {
   const [openFilter, setOpenFilter] = useState<OpenFilter>('all');
   const visibleCfps = useMemo(
     () =>
-      cfps.filter(
-        (c) =>
-          (typeFilter === 'all' || c.type === typeFilter) &&
-          (openFilter === 'all' || c.active === (openFilter === 'open')),
-      ),
+      cfps.filter((c) => {
+        if (typeFilter !== 'all' && c.type !== typeFilter) return false;
+        // "Invisible" shows only soft-deleted calls; every other facet shows
+        // visible calls and additionally narrows by open status (sc-9612).
+        if (openFilter === 'invisible') return !c.visible;
+        if (!c.visible) return false;
+        return openFilter === 'all' || c.active === (openFilter === 'open');
+      }),
     [cfps, typeFilter, openFilter],
   );
 
@@ -354,6 +359,18 @@ function CfpEditor({
               />
               <span className="cfp-suffix">months</span>
             </div>
+
+            <label
+              htmlFor="cfp-visible"
+              title="Whether this call is visible. Unchecking soft-deletes it (ODB existence = DELETED); it stays reachable via the Invisible filter."
+            >
+              Visible
+            </label>
+            <Checkbox
+              inputId="cfp-visible"
+              checked={draft.visible}
+              onChange={(e) => set('visible', e.checked ?? false)}
+            />
           </div>
 
           <table
