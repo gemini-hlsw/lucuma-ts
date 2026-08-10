@@ -8,7 +8,7 @@ import { useMutation, useQuery } from '@apollo/client/react';
 import type { DocumentType } from './odb/gen';
 import { graphql } from './odb/gen';
 import type { ScienceSubtype } from './odb/gen/graphql';
-import { mapObservationRow } from './shared';
+import { isScienceObservation, mapObservationRow } from './shared';
 import type { Proposal, SpecialProposalType } from './types';
 
 export const PROPOSALS_QUERY = graphql(`
@@ -74,7 +74,7 @@ export function mapProposals(raw: AdminProposalsResult): Proposal[] {
       type,
       status: p.proposalStatus,
       abstract: p.description ?? '',
-      observations: p.observations.matches.map(mapObservationRow),
+      observations: p.observations.matches.filter(isScienceObservation).map(mapObservationRow),
     });
   }
   return out;

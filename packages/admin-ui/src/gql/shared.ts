@@ -133,6 +133,7 @@ function observingModeSuffix(mode: string | null): string {
 export const OBSERVATION_ROW_FRAGMENT = graphql(`
   fragment ObservationItem on Observation {
     id
+    calibrationRole
     observationDuration {
       hours
     }
@@ -164,6 +165,14 @@ export const OBSERVATION_ROW_FRAGMENT = graphql(`
     }
   }
 `);
+
+/** A science observation, as opposed to an automatically-generated calibration
+ *  ("system") observation (sc-9591). Calibrations carry a calibrationRole;
+ *  science observations leave it null. The admin views show and check only
+ *  science observations, so callers filter with this before mapping rows. */
+export function isScienceObservation(o: Pick<ObservationItemFragment, 'calibrationRole'>): boolean {
+  return o.calibrationRole === null;
+}
 
 /** Map one observation (selected via ObservationItem) to the shared
  *  table row. Non-sidereal targets have no fixed RA/Dec — shown as "—". */
