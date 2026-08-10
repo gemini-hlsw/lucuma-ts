@@ -62,6 +62,7 @@ describe('mapProposals', () => {
     const out = mapProposals({
       programs: {
         __typename: 'ProgramSelectResult',
+        hasMore: false,
         matches: [
           specialProgram({
             observations: {
@@ -130,6 +131,7 @@ describe('mapProposals', () => {
     const [p] = mapProposals({
       programs: {
         __typename: 'ProgramSelectResult',
+        hasMore: false,
         matches: [
           specialProgram({
             observations: { __typename: 'ObservationSelectResult', matches: [science] },
