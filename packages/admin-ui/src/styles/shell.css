@@ -41,6 +41,10 @@
   --xp-red: hsl(3deg 67% 52%);
   --xp-selection: hsl(122deg 39% 49% / 90%);
   --xp-title-height: 36px;
+
+  /* Masthead height, shared so the sticky rail can offset itself by exactly
+     the masthead's height (sc-9584). */
+  --xp-masthead-height: 44px;
 }
 
 /* Map our themed surfaces onto the lucuma-ui-css variables our PrimeReact
@@ -63,15 +67,22 @@ body {
 }
 
 /* ---- Masthead ---- */
+
+/* Sticky so the wordmark, environment pill, and user/role stay visible as the
+   page scrolls (sc-9584). The page is the single scroller (see .xp-main), so
+   sticky — not fixed — keeps the masthead in normal flow above the rail. */
 .xp-masthead {
   display: flex;
   align-items: center;
   gap: 16px;
-  height: 44px;
+  height: var(--xp-masthead-height);
   padding: 0 14px;
   background: var(--xp-masthead-bg);
   border-bottom: 1px solid var(--xp-border);
   flex: none;
+  position: sticky;
+  top: 0;
+  z-index: 20;
 }
 
 .xp-wordmark {
@@ -106,6 +117,26 @@ body {
   gap: 14px;
   color: var(--xp-text);
   font-size: 0.85rem;
+}
+
+/* "About" dialog body (the masthead hamburger → About, sc-9615): the build
+   version with a copy button, mirroring Explore's About. */
+.xp-about {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.xp-about-version {
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 0.85rem;
+  color: var(--xp-text-muted);
+}
+
+/* Green accent under the wordmark in the About dialog header, like Explore. */
+.xp-about-dialog .p-dialog-header {
+  border-bottom: 2px solid var(--xp-green);
 }
 
 .xp-user {
@@ -203,6 +234,17 @@ body {
   background: var(--color-background);
   border-right: 1px solid var(--xp-border);
   padding: 10px 0 10px 10px;
+
+  /* Sticky so the view tabs stay reachable as the content scrolls (sc-9584).
+     Offset by the masthead height and pinned to the top of the viewport;
+     align-self keeps the rail its own height (not stretched to the body) so
+     sticky has room to travel. If the tabs are taller than the visible area
+     (very short window) the rail scrolls internally rather than clipping. */
+  position: sticky;
+  top: var(--xp-masthead-height);
+  align-self: flex-start;
+  max-height: calc(100vh - var(--xp-masthead-height));
+  overflow-y: auto;
 }
 
 .xp-rail-tab {

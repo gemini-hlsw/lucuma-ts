@@ -117,6 +117,7 @@ describe('observationsByIdFrom', () => {
       {
         __typename: 'Observation',
         id: 'o-9c5',
+        calibrationRole: null,
         observationDuration: null,
         instrument: 'GMOS_NORTH',
         observingMode: { __typename: 'ObservingMode', mode: 'GMOS_NORTH_LONG_SLIT' },

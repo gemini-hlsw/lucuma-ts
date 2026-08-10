@@ -95,7 +95,12 @@ export const CONFLICTS_QUERY = graphql(`
       }
     }
     observations(
-      WHERE: { program: { activeEnd: { GT: $today } }, observingModeType: { IN: $modeTypes } }
+      WHERE: {
+        program: { activeEnd: { GT: $today } }
+        observingModeType: { IN: $modeTypes }
+        # Science observations only — calibrations aren't conflicts (sc-9591).
+        calibrationRole: { IS_NULL: true }
+      }
       LIMIT: 1000
     ) {
       matches {
