@@ -58,6 +58,7 @@ describe('mapProposals', () => {
     const out = mapProposals({
       programs: {
         __typename: 'ProgramSelectResult',
+        hasMore: false,
         matches: [
           specialProgram({
             observations: {

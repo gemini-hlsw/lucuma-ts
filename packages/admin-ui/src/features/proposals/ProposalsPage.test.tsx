@@ -9,11 +9,12 @@ import ProposalsPage from './ProposalsPage';
 const STAFF_TOKEN = fakeJwt(standardUser('staff'));
 
 const proposalsMock = (): MockedResponseOf<typeof PROPOSALS_QUERY> => ({
-  request: { query: PROPOSALS_QUERY },
+  request: { query: PROPOSALS_QUERY, variables: { offset: null } },
   result: {
     data: {
       programs: {
         __typename: 'ProgramSelectResult',
+        hasMore: false,
         matches: [
           {
             __typename: 'Program',

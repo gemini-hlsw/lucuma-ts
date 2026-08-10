@@ -4,6 +4,7 @@
  * token can see.
  */
 import { useMutation, useQuery } from '@apollo/client/react';
+import { useEffect } from 'react';
 
 import type { DocumentType } from './odb/gen';
 import { graphql } from './odb/gen';
@@ -12,8 +13,12 @@ import { isScienceObservation, mapObservationRow } from './shared';
 import type { Proposal, SpecialProposalType } from './types';
 
 export const PROPOSALS_QUERY = graphql(`
-  query AdminProposals {
-    programs(LIMIT: 200) {
+  query AdminProposals($offset: ProgramId) {
+    # Paged via the OFFSET cursor (sc-9589): the special-type filter runs
+    # client-side (in mapProposals), so a fixed LIMIT truncated the program
+    # list *before* filtering — dropping Director's Time / Poor Weather
+    # proposals past the first page. useProposals follows hasMore to the end.
+    programs(OFFSET: $offset) {
       matches {
         id
         name
@@ -37,12 +42,15 @@ export const PROPOSALS_QUERY = graphql(`
             scienceSubtype
           }
         }
+        # A special proposal has a handful of observations, never near a page
+        # limit, so this inner list needs no cursor of its own.
         observations(LIMIT: 200) {
           matches {
             ...ObservationItem
           }
         }
       }
+      hasMore
     }
   }
 `);
@@ -84,7 +92,38 @@ export function mapProposals(raw: AdminProposalsResult): Proposal[] {
  *  background. Accepting is multi-step (status + allocations + properties),
  *  so the page refetch()es once at the end rather than per mutation. */
 export function useProposals() {
-  return useQuery(PROPOSALS_QUERY, { fetchPolicy: 'cache-and-network' });
+  const result = useQuery(PROPOSALS_QUERY, {
+    variables: { offset: null },
+    fetchPolicy: 'cache-and-network',
+    notifyOnNetworkStatusChange: true,
+  });
+
+  const { data, fetchMore } = result;
+
+  // Walk the remaining pages: each fetchMore appends the next page's matches
+  // (merged via updateQuery, since the cache has no field policy for this list),
+  // using the last loaded id as the cursor, until the ODB reports no more.
+  useEffect(() => {
+    if (!data?.programs.hasMore || fetchMore === undefined) return;
+    const matches = data.programs.matches;
+    const cursor = matches[matches.length - 1]?.id;
+    if (cursor === undefined) return;
+    void fetchMore({
+      variables: { offset: cursor },
+      updateQuery: (prev, { fetchMoreResult }) => ({
+        programs: {
+          ...fetchMoreResult.programs,
+          matches: [...prev.programs.matches, ...fetchMoreResult.programs.matches],
+        },
+      }),
+    });
+  }, [data, fetchMore]);
+
+  return {
+    ...result,
+    // Not settled until every page is in, so callers don't render a partial set.
+    loading: result.loading || (data?.programs.hasMore ?? false),
+  };
 }
 
 export const SET_PROPOSAL_STATUS_MUTATION = graphql(`
