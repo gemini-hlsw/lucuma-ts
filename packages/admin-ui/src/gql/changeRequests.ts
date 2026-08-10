@@ -20,7 +20,10 @@ import type {
 
 export const CHANGE_REQUESTS_QUERY = graphql(`
   query AdminChangeRequests {
-    configurationRequests(LIMIT: 200) {
+    # Only requests on accepted programs (sc-9601) — a change request against a
+    # merely-submitted proposal isn't actionable here. Mirrors the Programs
+    # query's proposalStatus filter.
+    configurationRequests(WHERE: { program: { proposalStatus: { EQ: ACCEPTED } } }, LIMIT: 200) {
       matches {
         id
         status
