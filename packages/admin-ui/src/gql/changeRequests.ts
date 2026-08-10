@@ -19,11 +19,14 @@ import type {
 } from './types';
 
 export const CHANGE_REQUESTS_QUERY = graphql(`
-  query AdminChangeRequests {
+  query AdminChangeRequests($offset: ConfigurationRequestId) {
     # Only requests on accepted programs (sc-9601) — a change request against a
     # merely-submitted proposal isn't actionable here. Mirrors the Programs
-    # query's proposalStatus filter.
-    configurationRequests(WHERE: { program: { proposalStatus: { EQ: ACCEPTED } } }, LIMIT: 200) {
+    # query's proposalStatus filter. Paged via the OFFSET cursor (sc-9604):
+    # a single fixed LIMIT silently dropped requests past the first page — a
+    # newly-submitted one, landing at the tail, went missing — so
+    # useChangeRequests follows hasMore to the end.
+    configurationRequests(WHERE: { program: { proposalStatus: { EQ: ACCEPTED } } }, OFFSET: $offset) {
       matches {
         id
         status
@@ -71,6 +74,7 @@ export const CHANGE_REQUESTS_QUERY = graphql(`
           }
         }
       }
+      hasMore
     }
   }
 `);
@@ -125,9 +129,42 @@ export function mapChangeRequests(raw: AdminChangeRequestsResult): ChangeRequest
 }
 
 /** The change-requests list — cached rows render immediately, refreshed in
- *  background. */
+ *  background. Follows the ODB's `hasMore` cursor to the last page (sc-9604)
+ *  so no request is ever dropped by a page limit; the returned `data` grows as
+ *  pages arrive and `loading` stays true until the final page is in. */
 export function useChangeRequests() {
-  return useQuery(CHANGE_REQUESTS_QUERY, { fetchPolicy: 'cache-and-network' });
+  const result = useQuery(CHANGE_REQUESTS_QUERY, {
+    variables: { offset: null },
+    fetchPolicy: 'cache-and-network',
+    notifyOnNetworkStatusChange: true,
+  });
+
+  const { data, fetchMore } = result;
+
+  // Walk the remaining pages: each fetchMore appends the next page's matches
+  // (merged via updateQuery, since the cache has no field policy for this list),
+  // using the last loaded id as the cursor, until the ODB reports no more.
+  useEffect(() => {
+    if (!data?.configurationRequests.hasMore || fetchMore === undefined) return;
+    const matches = data.configurationRequests.matches;
+    const cursor = matches[matches.length - 1]?.id;
+    if (cursor === undefined) return;
+    void fetchMore({
+      variables: { offset: cursor },
+      updateQuery: (prev, { fetchMoreResult }) => ({
+        configurationRequests: {
+          ...fetchMoreResult.configurationRequests,
+          matches: [...prev.configurationRequests.matches, ...fetchMoreResult.configurationRequests.matches],
+        },
+      }),
+    });
+  }, [data, fetchMore]);
+
+  return {
+    ...result,
+    // Not settled until every page is in, so callers don't render a partial set.
+    loading: result.loading || (data?.configurationRequests.hasMore ?? false),
+  };
 }
 
 /*
