@@ -6,15 +6,14 @@ import { Checkbox } from 'primereact/checkbox';
 import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
 import { Dropdown } from 'primereact/dropdown';
-import { IconField } from 'primereact/iconfield';
-import { InputIcon } from 'primereact/inputicon';
 import { InputNumber } from 'primereact/inputnumber';
 import { InputText } from 'primereact/inputtext';
 import { InputTextarea } from 'primereact/inputtextarea';
 import { type JSX, useMemo, useState } from 'react';
 
 import { DataSourceBadge } from '@/components/DataSourceBadge';
-import { Search, Upload, XMark } from '@/components/Icons';
+import { Upload, XMark } from '@/components/Icons';
+import { SearchInput } from '@/components/SearchInput';
 import { Tile } from '@/components/Tile';
 import { TimeAwardsGrid } from '@/components/TimeAwardsGrid';
 import { useToast } from '@/components/toastContext';
@@ -41,10 +40,13 @@ import {
   PROGRAM_CLASS_LABEL,
   PROGRAM_CLASSES,
   type ProgramClass,
+  SCIENCE_SUBTYPE_LABEL,
+  type ScienceSubtype,
   TOO_LABEL,
   TOO_STATUSES,
   type ToOActivation,
 } from '@/gql/types';
+import { matchesQuery } from '@/lib/search';
 
 /** "Show everything" sentinel for the Class facet (PrimeReact mishandles null
  *  option values). */
@@ -116,16 +118,26 @@ export default function ProgramsPage(): JSX.Element {
     }
   }
 
-  const [classFilter, setClassFilter] = useState<ProgramClass | typeof ALL>(ALL);
+  const [typeFilter, setTypeFilter] = useState<ScienceSubtype | typeof ALL>(ALL);
   const [search, setSearch] = useState('');
-  const filteredPrograms = useMemo(() => {
-    const text = search.trim().toLowerCase();
-    return programs.filter(
-      (p) =>
-        (classFilter === ALL || p.programClass === classFilter) &&
-        (text === '' || [p.reference, p.name, p.pi].some((f) => f.toLowerCase().includes(text))),
-    );
-  }, [programs, classFilter, search]);
+  const filteredPrograms = useMemo(
+    () =>
+      programs.filter(
+        (p) =>
+          (typeFilter === ALL || p.programType === typeFilter) && matchesQuery([p.reference, p.name, p.pi], search),
+      ),
+    [programs, typeFilter, search],
+  );
+
+  // Only the proposal types actually present, so the facet never offers an
+  // empty option. Sorted by display label for a stable, readable menu.
+  const presentTypes = useMemo(
+    () =>
+      Array.from(new Set(programs.map((p) => p.programType).filter((t): t is ScienceSubtype => t !== null))).sort(
+        (a, b) => SCIENCE_SUBTYPE_LABEL[a].localeCompare(SCIENCE_SUBTYPE_LABEL[b]),
+      ),
+    [programs],
+  );
 
   const [programId, setProgramId] = useState<string | null>(null);
   const original = useMemo(
@@ -137,25 +149,20 @@ export default function ProgramsPage(): JSX.Element {
     <>
       <DataSourceBadge loading={loading} error={error && friendlyError(error)} empty={programs.length === 0} />
       <Dropdown
-        value={classFilter}
+        value={typeFilter}
         options={[
-          { label: 'All classes', value: ALL },
-          ...PROGRAM_CLASSES.map((c) => ({ label: PROGRAM_CLASS_LABEL[c], value: c })),
+          { label: 'All types', value: ALL },
+          ...presentTypes.map((t) => ({ label: SCIENCE_SUBTYPE_LABEL[t], value: t })),
         ]}
-        onChange={(e) => setClassFilter(e.value as ProgramClass | typeof ALL)}
-        title="Facet the table to Queue or Classical programs only."
+        onChange={(e) => setTypeFilter(e.value as ScienceSubtype | typeof ALL)}
+        title="Facet the table by proposal type (Queue, Classical, Large Program, …)."
       />
-      <IconField iconPosition="left">
-        <InputIcon>
-          <Search />
-        </InputIcon>
-        <InputText
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Filter reference, PI, or title"
-          title="Type to filter the table by program reference, PI, or title."
-        />
-      </IconField>
+      <SearchInput
+        value={search}
+        onChange={setSearch}
+        placeholder="Filter reference, PI, or title"
+        title="Type to filter the table by program reference, PI, or title."
+      />
     </>
   );
 
@@ -192,12 +199,12 @@ export default function ProgramsPage(): JSX.Element {
             headerTooltip="The program's reference label. Click a row to edit it below."
           />
           <Column
-            field="programClass"
-            header="Class"
+            field="programType"
+            header="Type"
             sortable
-            style={{ width: '8rem' }}
-            body={(p: Program) => PROGRAM_CLASS_LABEL[p.programClass]}
-            headerTooltip="Queue or Classical, from the proposal type."
+            style={{ width: '10rem' }}
+            body={(p: Program) => (p.programType ? SCIENCE_SUBTYPE_LABEL[p.programType] : '—')}
+            headerTooltip="The proposal type: Queue, Classical, Large Program, Fast Turnaround, Director's Time, …"
           />
           <Column field="pi" header="PI" sortable style={{ width: '13rem' }} />
           <Column
@@ -258,12 +265,11 @@ function ProgramEditor({
 
   const [contactSuggestions, setContactSuggestions] = useState<ContactScientist[]>([]);
   function suggestContacts(query: string): void {
-    const text = query.trim().toLowerCase();
     const chosen = new Set(draft.contactScientists.map((c) => c.userId));
     setContactSuggestions(
       roster
         .filter((u) => !chosen.has(u.id))
-        .filter((u) => [`${u.givenName} ${u.familyName}`, u.email].some((f) => f.toLowerCase().includes(text)))
+        .filter((u) => matchesQuery([`${u.givenName} ${u.familyName}`, u.email], query))
         .slice(0, 8)
         .map((u) => ({ name: `${u.givenName} ${u.familyName}`, userId: u.id })),
     );
