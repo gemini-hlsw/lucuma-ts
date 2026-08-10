@@ -21,6 +21,7 @@ const odbScalars = {
   CallForProposalsId: 'string',
   ProgramId: 'string',
   ObservationId: 'string',
+  GroupId: 'string',
   ConfigurationRequestId: 'string',
   UserId: 'string',
   ProgramUserId: 'string',

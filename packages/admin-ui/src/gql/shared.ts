@@ -213,10 +213,8 @@ export function mapObservationRow(
   const target = o.targetEnvironment?.firstScienceTarget;
   const instrument = o.instrument ? normalizeInstrument(o.instrument) : '—';
   const modeSuffix = observingModeSuffix(o.observingMode?.mode ?? null);
-  // groupId is a GroupId scalar — a string at runtime, typed `unknown` by
-  // codegen. A null/absent group simply misses the telluric-group map.
-  const groupId = o.groupId as string | null;
-  const groupHours = groupId === null ? undefined : telluricHoursByGroup?.get(groupId);
+  // A null/absent group simply misses the telluric-group map.
+  const groupHours = o.groupId === null ? undefined : telluricHoursByGroup?.get(o.groupId);
   const hours = groupHours ?? observationDigestHours(o) ?? 0;
   return {
     id: o.id,
@@ -265,8 +263,7 @@ export function telluricGroupHours(elements: readonly GroupElementItemFragment[]
   for (const { group } of elements) {
     if (group === null || !group.system || !group.calibrationRoles.includes('TELLURIC')) continue;
     const hours = group.timeEstimateRange?.value?.maximum.program.hours;
-    // group.id is a GroupId scalar — a string at runtime, typed `unknown`.
-    if (hours !== undefined) byGroup.set(group.id as string, Number(hours));
+    if (hours !== undefined) byGroup.set(group.id, Number(hours));
   }
   return byGroup;
 }

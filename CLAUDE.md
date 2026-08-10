@@ -71,6 +71,12 @@ All three are wired into a single Apollo Client in `packages/ui/src/gql/ApolloCo
 
 **When you change a `.graphql` schema file or a gql document, you must re-run codegen** (`pnpm ui codegen` / `pnpm configs codegen`) or types will be stale. The `prebuild` script does this automatically on build; CI runs `codegen` and (for configs) `generate` before lint/test/build.
 
+#### Custom scalars
+
+The schemas define custom scalars (`ProgramId`, `GroupId`, `Timestamp`, `BigDecimal`, …). Each one needs an explicit TS mapping in the package's `tasks/codegen.ts` (`scalars`, per endpoint — e.g. `odbScalars`/`ssoScalars` in `packages/admin-ui/tasks/codegen.ts`); an unmapped scalar generates as `any`/`unknown` and every use of it becomes an unsafe cast.
+
+**So: when you first select a field whose type is a custom scalar, add the scalar to `tasks/codegen.ts` and re-run codegen** — don't cast at the use site (`o.groupId as string`) and don't hand-write a local type. Most GPP id scalars map to `'string'`; `BigDecimal` is `'string | number'`.
+
 ### UI state: Jotai
 
 App state lives in Jotai atoms under `packages/ui/src/components/atoms/` (auth token, server config, instrument, target, connection status, theme, etc.). A single shared store is created in `atoms/store.ts` and provided via `<Provider>` in `App.tsx`; non-React code (e.g. the Apollo links) reads/writes atoms directly through `store.get`/`store.set`. The app gates on loading `serverConfiguration` before rendering and retries on error.
