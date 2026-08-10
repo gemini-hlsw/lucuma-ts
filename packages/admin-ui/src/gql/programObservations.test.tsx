@@ -14,6 +14,7 @@ type ObservationMatch = AdminProgramObservationsResult['observations']['matches'
 const obs = (id: string): ObservationMatch => ({
   __typename: 'Observation',
   id,
+  calibrationRole: null,
   observationDuration: null,
   instrument: 'GMOS_NORTH',
   observingMode: { __typename: 'ObservingMode', mode: 'GMOS_NORTH_LONG_SLIT' },

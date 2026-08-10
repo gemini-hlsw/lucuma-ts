@@ -3,13 +3,10 @@ import './UsersPage.css';
 import { Checkbox } from 'primereact/checkbox';
 import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
-import { IconField } from 'primereact/iconfield';
-import { InputIcon } from 'primereact/inputicon';
-import { InputText } from 'primereact/inputtext';
 import { type JSX, useMemo, useState } from 'react';
 
 import { DataSourceBadge } from '@/components/DataSourceBadge';
-import { Search } from '@/components/Icons';
+import { SearchInput } from '@/components/SearchInput';
 import { Tile } from '@/components/Tile';
 import { useToast } from '@/components/toastContext';
 import { friendlyError } from '@/gql/errors';
@@ -24,6 +21,7 @@ import {
   useDeleteRole,
   useUsers,
 } from '@/gql/sso/roster';
+import { matchesQuery } from '@/lib/search';
 
 /** Does the user currently hold this role? NGO roles must match the partner. */
 function hasRole(user: RosterUser, type: RoleType, partner?: Partner): boolean {
@@ -59,14 +57,15 @@ export default function UsersPage(): JSX.Element {
 
   // Filtering happens here rather than via DataTable's `filters` so it composes
   // with the role facet and stays compatible with the scroller.
-  const visibleUsers = useMemo(() => {
-    const text = globalFilter.trim().toLowerCase();
-    return users.filter((u) => {
-      if (roleFilter && !hasRole(u, roleFilter.type, roleFilter.partner)) return false;
-      if (text === '') return true;
-      return [u.givenName, u.familyName, u.email, u.orcidId].some((f) => f.toLowerCase().includes(text));
-    });
-  }, [users, globalFilter, roleFilter]);
+  const visibleUsers = useMemo(
+    () =>
+      users.filter(
+        (u) =>
+          (!roleFilter || hasRole(u, roleFilter.type, roleFilter.partner)) &&
+          matchesQuery([u.givenName, u.familyName, u.email, u.orcidId], globalFilter),
+      ),
+    [users, globalFilter, roleFilter],
+  );
 
   /** Grant a role via `addRole`. The mutation refetches the roster, so the
    *  new role (with the RoleId the same checkbox needs to revoke it) is on
@@ -143,17 +142,12 @@ export default function UsersPage(): JSX.Element {
       <span className="users-count" title="Users shown / users loaded from SSO.">
         {visibleUsers.length}/{users.length}
       </span>
-      <IconField iconPosition="left">
-        <InputIcon>
-          <Search />
-        </InputIcon>
-        <InputText
-          value={globalFilter}
-          onChange={(e) => setGlobalFilter(e.target.value)}
-          placeholder="Filter name, email, or ORCiD"
-          title="Type to filter the table by name, email, or ORCiD (matches any of them)."
-        />
-      </IconField>
+      <SearchInput
+        value={globalFilter}
+        onChange={setGlobalFilter}
+        placeholder="Filter name, email, or ORCiD"
+        title="Type to filter the table by name, email, or ORCiD (matches any of them)."
+      />
     </>
   );
 

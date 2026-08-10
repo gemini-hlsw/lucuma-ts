@@ -61,7 +61,7 @@ function request(overrides: Partial<RawRequest>): RawRequest {
 }
 
 const result = (matches: RawRequest[]): AdminChangeRequestsResult => ({
-  configurationRequests: { __typename: 'ConfigurationRequestSelectResult', matches },
+  configurationRequests: { __typename: 'ConfigurationRequestSelectResult', matches, hasMore: false },
 });
 
 describe('mapChangeRequests', () => {
@@ -117,6 +117,7 @@ describe('observationsByIdFrom', () => {
       {
         __typename: 'Observation',
         id: 'o-9c5',
+        calibrationRole: null,
         observationDuration: null,
         instrument: 'GMOS_NORTH',
         observingMode: { __typename: 'ObservingMode', mode: 'GMOS_NORTH_LONG_SLIT' },

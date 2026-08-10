@@ -5,6 +5,7 @@ import { InputText } from 'primereact/inputtext';
 import { type JSX, useMemo, useState } from 'react';
 
 import { DataSourceBadge } from '@/components/DataSourceBadge';
+import { SearchInput } from '@/components/SearchInput';
 import { TimeAwardsGrid } from '@/components/TimeAwardsGrid';
 import { useToast } from '@/components/toastContext';
 import { friendlyError } from '@/gql/errors';
@@ -18,6 +19,7 @@ import {
   SPECIAL_PROPOSAL_TYPE_LABEL,
   type SpecialProposalType,
 } from '@/gql/types';
+import { matchesQuery } from '@/lib/search';
 
 import { type Decision, type ReviewColumn, type ReviewItem, ReviewView } from '../review/ReviewView';
 
@@ -85,6 +87,7 @@ export default function ProposalsPage(): JSX.Element {
   const [statusFilter, setStatusFilter] = useState<ProposalStatus | typeof ALL>(ALL);
   const [typeFilter, setTypeFilter] = useState<SpecialProposalType | typeof ALL>(ALL);
   const [semesterFilter, setSemesterFilter] = useState<string>(ALL);
+  const [search, setSearch] = useState('');
 
   // A proposal is "resolved" once its status is a decided one.
   const items: ReviewProposal[] = useMemo(
@@ -94,10 +97,11 @@ export default function ProposalsPage(): JSX.Element {
           (p) =>
             (statusFilter === ALL || p.status === statusFilter) &&
             (typeFilter === ALL || p.type === typeFilter) &&
-            (semesterFilter === ALL || p.semester === semesterFilter),
+            (semesterFilter === ALL || p.semester === semesterFilter) &&
+            matchesQuery([p.reference, p.pi, p.title], search),
         )
         .map((p) => ({ ...p, resolved: p.status === 'ACCEPTED' || p.status === 'NOT_ACCEPTED' })),
-    [proposals, statusFilter, typeFilter, semesterFilter],
+    [proposals, statusFilter, typeFilter, semesterFilter, search],
   );
   const semesters = useMemo(() => Array.from(new Set(proposals.map((p) => p.semester))).sort(), [proposals]);
 
@@ -168,6 +172,12 @@ export default function ProposalsPage(): JSX.Element {
         options={[{ label: 'All semesters', value: ALL }, ...semesters.map((s) => ({ label: s, value: s }))]}
         onChange={(e) => setSemesterFilter(e.value as string)}
         title="Facet by the semester in the proposal reference."
+      />
+      <SearchInput
+        value={search}
+        onChange={setSearch}
+        placeholder="Filter reference, PI, or title"
+        title="Type to filter the table by proposal reference, PI, or title."
       />
     </>
   );

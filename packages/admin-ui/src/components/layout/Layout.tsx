@@ -2,17 +2,34 @@ import './Layout.css';
 
 import { cn } from '@gemini-hlsw/lucuma-common-ui';
 import { useSetAtom } from 'jotai';
+import { Dialog } from 'primereact/dialog';
 import { Dropdown } from 'primereact/dropdown';
-import type { JSX } from 'react';
+import { type JSX, useState } from 'react';
 import { NavLink, Outlet } from 'react-router';
 
 import { useTheme } from '@/app/useTheme';
-import { CURRENT_ENV } from '@/auth/environments';
+import { CURRENT_ENV, type Environment } from '@/auth/environments';
 import * as sso from '@/auth/ssoClient';
 import { displayName, type StandardRole } from '@/auth/user';
 import { odbTokenAtom, useIsLoggedIn, useUser } from '@/components/atoms/auth';
-import { SignOut } from '@/components/Icons';
+import { Bars, Copy, SignOut } from '@/components/Icons';
 import { useToast } from '@/components/toastContext';
+
+/** Environment → the version-string suffix, matching Explore's scheme. The
+ *  complete set of environment names (satisfies Record) so a new environment is
+ *  a compile error here, not a missing suffix. */
+const ENV_SUFFIX = {
+  development: 'DEV',
+  staging: 'STAGING',
+  production: 'PROD',
+} as const satisfies Record<Environment['name'], string>;
+
+/** The build version in Explore's `DATE-COMMIT-ENV` form (sc-9615): the
+ *  `YYYYMMDD-commit` baked in at build time (vite.config.ts) plus the runtime
+ *  environment suffix — resolved here rather than at build time because one
+ *  bundle serves every environment by hostname. Shown in the About dialog so a
+ *  bug report can name the exact build. */
+const DISPLAY_VERSION = `${import.meta.env.FRONTEND_VERSION}-${ENV_SUFFIX[CURRENT_ENV.name]}`;
 
 /** The Admin views (Shortcut epic 5747), in rail order. Views register here
  *  and in app/router.tsx. */
@@ -61,6 +78,7 @@ export default function Layout(): JSX.Element {
   useTheme('dark');
 
   const toast = useToast();
+  const [aboutOpen, setAboutOpen] = useState(false);
   const user = useUser();
   const isLoggedIn = useIsLoggedIn();
   const setToken = useSetAtom(odbTokenAtom);
@@ -89,6 +107,15 @@ export default function Layout(): JSX.Element {
     }
   };
 
+  const copyVersion = async (): Promise<void> => {
+    try {
+      await navigator.clipboard.writeText(DISPLAY_VERSION);
+      toast.success('Version copied', DISPLAY_VERSION);
+    } catch {
+      toast.error('Copy failed', 'Select the version text and copy it manually.');
+    }
+  };
+
   return (
     <div className="xp-shell">
       <header className="xp-masthead">
@@ -107,7 +134,7 @@ export default function Layout(): JSX.Element {
 
         <div className="xp-masthead-right">
           <span className="xp-user" title="The signed-in user, decoded from the SSO JWT (identity + active role).">
-            {displayName(user)}
+            {user ? displayName(user) : 'Not signed in'}
             {allRoles.length > 1 && user?.type === 'standard' ? (
               <Dropdown
                 className="xp-role-select"
@@ -139,8 +166,42 @@ export default function Layout(): JSX.Element {
               <SignOut />
             </button>
           )}
+          <button
+            type="button"
+            className="xp-icon-btn"
+            title="About this build"
+            aria-label="About this build"
+            onClick={() => setAboutOpen(true)}
+          >
+            <Bars />
+          </button>
         </div>
       </header>
+
+      {/* About dialog (sc-9615) — mirrors Explore's: the wordmark, then the
+          build version with a copy button, so it can be pasted into a bug
+          report. */}
+      <Dialog
+        visible={aboutOpen}
+        onHide={() => setAboutOpen(false)}
+        dismissableMask
+        resizable={false}
+        className="xp-about-dialog"
+        header={<span className="xp-wordmark">ADMIN</span>}
+      >
+        <div className="xp-about">
+          <span className="xp-about-version">Version: {DISPLAY_VERSION}</span>
+          <button
+            type="button"
+            className="xp-icon-btn"
+            title="Copy the version to the clipboard"
+            aria-label="Copy version"
+            onClick={() => void copyVersion()}
+          >
+            <Copy />
+          </button>
+        </div>
+      </Dialog>
 
       <div className="xp-body">
         <nav className="xp-rail">

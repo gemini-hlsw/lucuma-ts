@@ -19,8 +19,8 @@
   color: var(--text-color-secondary, #9a9aa2);
 }
 
-.awards-partner-h,
-.awards-partner {
+.awards-category-h,
+.awards-category {
   text-align: left;
   white-space: nowrap;
 }

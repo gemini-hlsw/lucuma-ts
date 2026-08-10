@@ -6,8 +6,15 @@ import { InputNumber } from 'primereact/inputnumber';
 import { type JSX, useMemo, useState } from 'react';
 
 import { CirclePlus, CircleXMark, Plus } from '@/components/Icons';
-import { type Partner, PARTNER_NAME, PARTNERS } from '@/gql/sso/roster';
-import { type Allocation, BAND_LABEL, BANDS, type ScienceBand } from '@/gql/types';
+import {
+  type Allocation,
+  BAND_LABEL,
+  BANDS,
+  type ScienceBand,
+  TIME_ACCOUNTING_CATEGORIES,
+  TIME_ACCOUNTING_CATEGORY_LABEL,
+  type TimeAccountingCategory,
+} from '@/gql/types';
 
 export interface TimeAwardsGridProps {
   readonly allocations: readonly Allocation[];
@@ -15,35 +22,40 @@ export interface TimeAwardsGridProps {
 }
 
 /**
- * Editable partner × science-band hours grid ("Time Awards" in the mockups),
- * with add/remove partner rows and live row/column/grand totals. Shared by the
- * Programs editor (sc-9090) and the Proposals accept flow (sc-9092), both of
- * which persist it via the ODB setAllocations mutation.
+ * Editable time-accounting-category × science-band hours grid ("Time Awards"
+ * in the mockups), with add/remove category rows and live row/column/grand
+ * totals. Categories span the partner countries plus exchanges and the
+ * observatory's Calibration/Engineering time (sc-9670). Shared by the Programs
+ * editor (sc-9090) and the Proposals accept flow (sc-9092), both of which
+ * persist it via the ODB setAllocations mutation.
  */
 export function TimeAwardsGrid({ allocations, onChange }: TimeAwardsGridProps): JSX.Element {
-  const partnerRows = useMemo(() => [...new Set(allocations.map((a) => a.category))], [allocations]);
-  const availablePartners = PARTNERS.filter((p) => !partnerRows.includes(p));
-  const [partnerToAdd, setPartnerToAdd] = useState<Partner | null>(null);
+  const categoryRows = useMemo(() => [...new Set(allocations.map((a) => a.category))], [allocations]);
+  const availableCategories = useMemo(
+    () => TIME_ACCOUNTING_CATEGORIES.filter((c) => !categoryRows.includes(c)),
+    [categoryRows],
+  );
+  const [categoryToAdd, setCategoryToAdd] = useState<TimeAccountingCategory | null>(null);
 
-  function hoursFor(category: Partner, band: ScienceBand): number {
+  function hoursFor(category: TimeAccountingCategory, band: ScienceBand): number {
     return allocations.find((a) => a.category === category && a.scienceBand === band)?.hours ?? 0;
   }
-  function setHours(category: Partner, band: ScienceBand, hours: number): void {
-    // Keep zero-hour cells: dropping them would remove the partner's row when
+  function setHours(category: TimeAccountingCategory, band: ScienceBand, hours: number): void {
+    // Keep zero-hour cells: dropping them would remove the category's row when
     // its last non-zero cell is cleared. allocationsInput filters zeros out
     // of the mutation instead.
     const rest = allocations.filter((a) => !(a.category === category && a.scienceBand === band));
     onChange([...rest, { category, scienceBand: band, hours }]);
   }
-  function addPartner(category: Partner): void {
+  function addCategory(category: TimeAccountingCategory): void {
     // Seed a zero Band-1 cell so the row appears; user fills the rest.
     onChange([...allocations, { category, scienceBand: 'BAND1', hours: 0 }]);
   }
-  function removePartner(category: Partner): void {
+  function removeCategory(category: TimeAccountingCategory): void {
     onChange(allocations.filter((a) => a.category !== category));
   }
 
-  const bandTotal = (band: ScienceBand): number => partnerRows.reduce((sum, p) => sum + hoursFor(p, band), 0);
+  const bandTotal = (band: ScienceBand): number => categoryRows.reduce((sum, c) => sum + hoursFor(c, band), 0);
   const grandTotal = BANDS.reduce((sum, b) => sum + bandTotal(b), 0);
 
   return (
@@ -51,7 +63,7 @@ export function TimeAwardsGrid({ allocations, onChange }: TimeAwardsGridProps): 
       <thead>
         <tr>
           <th />
-          <th className="awards-partner-h">Partner</th>
+          <th className="awards-category-h">Time Award</th>
           {BANDS.map((b) => (
             <th key={b}>{BAND_LABEL[b]}</th>
           ))}
@@ -59,30 +71,30 @@ export function TimeAwardsGrid({ allocations, onChange }: TimeAwardsGridProps): 
         </tr>
       </thead>
       <tbody>
-        {partnerRows.map((partner) => {
-          const rowTotal = BANDS.reduce((sum, b) => sum + hoursFor(partner, b), 0);
+        {categoryRows.map((category) => {
+          const rowTotal = BANDS.reduce((sum, b) => sum + hoursFor(category, b), 0);
           return (
-            <tr key={partner}>
+            <tr key={category}>
               <td className="awards-del">
                 <button
                   type="button"
-                  title={`Remove ${PARTNER_NAME[partner]} (${partner}) and all its band allocations`}
-                  onClick={() => removePartner(partner)}
+                  title={`Remove ${TIME_ACCOUNTING_CATEGORY_LABEL[category]} (${category}) and all its band allocations`}
+                  onClick={() => removeCategory(category)}
                 >
                   <CircleXMark />
                 </button>
               </td>
-              <td className="awards-partner">
-                <strong>{partner}</strong> {PARTNER_NAME[partner]}
+              <td className="awards-category">
+                <strong>{category}</strong> {TIME_ACCOUNTING_CATEGORY_LABEL[category]}
               </td>
               {BANDS.map((b) => (
                 <td key={b}>
                   <InputNumber
-                    value={hoursFor(partner, b)}
+                    value={hoursFor(category, b)}
                     min={0}
                     minFractionDigits={1}
                     maxFractionDigits={1}
-                    onValueChange={(e) => setHours(partner, b, e.value ?? 0)}
+                    onValueChange={(e) => setHours(category, b, e.value ?? 0)}
                     inputClassName="awards-cell-input"
                   />
                 </td>
@@ -98,25 +110,28 @@ export function TimeAwardsGrid({ allocations, onChange }: TimeAwardsGridProps): 
           <td colSpan={BANDS.length + 2}>
             <div className="awards-add">
               <Dropdown
-                value={partnerToAdd}
-                options={availablePartners.map((p) => ({ label: `${p} — ${PARTNER_NAME[p]}`, value: p }))}
-                onChange={(e) => setPartnerToAdd(e.value as Partner)}
-                placeholder="Add partner"
-                disabled={availablePartners.length === 0}
-                tooltip="Add a time-accounting partner row to the grid (only partners not already listed appear here)."
+                value={categoryToAdd}
+                options={availableCategories.map((c) => ({
+                  label: `${c} — ${TIME_ACCOUNTING_CATEGORY_LABEL[c]}`,
+                  value: c,
+                }))}
+                onChange={(e) => setCategoryToAdd(e.value as TimeAccountingCategory)}
+                placeholder="Add category"
+                disabled={availableCategories.length === 0}
+                tooltip="Add a time-accounting category row to the grid (only categories not already listed appear here)."
                 tooltipOptions={{ position: 'top' }}
               />
               <Button
                 text
                 label="Add"
                 icon={<Plus />}
-                disabled={!partnerToAdd}
-                tooltip="Add the selected partner as a new row, ready for you to enter its band hours."
+                disabled={!categoryToAdd}
+                tooltip="Add the selected category as a new row, ready for you to enter its band hours."
                 tooltipOptions={{ position: 'top' }}
                 onClick={() => {
-                  if (partnerToAdd) {
-                    addPartner(partnerToAdd);
-                    setPartnerToAdd(null);
+                  if (categoryToAdd) {
+                    addCategory(categoryToAdd);
+                    setCategoryToAdd(null);
                   }
                 }}
               />
@@ -127,7 +142,7 @@ export function TimeAwardsGrid({ allocations, onChange }: TimeAwardsGridProps): 
       <tfoot>
         <tr>
           <td />
-          <td className="awards-partner">
+          <td className="awards-category">
             <strong>Total</strong>
           </td>
           {BANDS.map((b) => (
