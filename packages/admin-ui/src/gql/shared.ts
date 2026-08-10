@@ -1,4 +1,6 @@
 /** Selections and mapping helpers shared by more than one view. */
+import { parseNumber } from '@gemini-hlsw/lucuma-common-ui';
+
 import { graphql } from './odb/gen';
 import type {
   CloudExtinctionPreset,
@@ -198,7 +200,7 @@ export function isScienceObservation(o: Pick<ObservationItemFragment, 'calibrati
  *  or fail for a single observation (e.g. an over-long sequence). */
 export function observationDigestHours(o: ObservationItemFragment): number | null {
   const hours = o.execution.digest?.value?.estimate.total.program.hours;
-  return hours === undefined ? null : Number(hours);
+  return parseNumber(hours) ?? null;
 }
 
 /** Map one observation (selected via ObservationItem) to the shared table row.
@@ -221,8 +223,8 @@ export function mapObservationRow(
     target: target?.name ?? '(no target)',
     ra: target?.sidereal?.ra.hms ?? '—',
     dec: target?.sidereal?.dec.dms ?? '—',
-    raDeg: target?.sidereal ? Number(target.sidereal.ra.degrees) : null,
-    decDeg: target?.sidereal ? Number(target.sidereal.dec.degrees) : null,
+    raDeg: parseNumber(target?.sidereal?.ra.degrees) ?? null,
+    decDeg: parseNumber(target?.sidereal?.dec.degrees) ?? null,
     modeType: o.observingMode?.mode ?? null,
     instrument,
     config: modeSuffix ? `${instrument}, ${modeSuffix}` : instrument,
@@ -263,7 +265,7 @@ export function telluricGroupHours(elements: readonly GroupElementItemFragment[]
   for (const { group } of elements) {
     if (group === null || !group.system || !group.calibrationRoles.includes('TELLURIC')) continue;
     const hours = group.timeEstimateRange?.value?.maximum.program.hours;
-    if (hours !== undefined) byGroup.set(group.id, Number(hours));
+    if (hours !== undefined) byGroup.set(group.id, parseNumber(hours));
   }
   return byGroup;
 }

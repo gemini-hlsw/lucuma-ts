@@ -1,3 +1,4 @@
+import { parseNumber, when } from '@gemini-hlsw/lucuma-common-ui';
 import type { TargetInput } from '@gql/configs/gen/graphql';
 import type { GetGuideEnvironmentQuery } from '@gql/odb/gen/graphql';
 
@@ -12,21 +13,15 @@ export function extractGuideTargets(data: GetGuideEnvironmentQuery | undefined) 
       const auxTarget: Omit<TargetInput, 'type'> = {
         id: `t-${i + 1}`,
         name: t.name,
-        sidereal: {
-          epoch: t.sidereal?.epoch,
-          coord1:
-            typeof t.sidereal?.ra.degrees === 'string'
-              ? parseFloat(t.sidereal.ra.degrees)
-              : (t.sidereal?.ra.degrees ?? 0),
-          coord2:
-            typeof t.sidereal?.dec.degrees === 'string'
-              ? parseFloat(t.sidereal.dec.degrees)
-              : (t.sidereal?.dec.degrees ?? 0),
-          pmRa: t.sidereal?.properMotion?.ra.microarcsecondsPerYear,
-          pmDec: t.sidereal?.properMotion?.dec.microarcsecondsPerYear,
-          radialVelocity: t.sidereal?.radialVelocity?.centimetersPerSecond,
-          parallax: t.sidereal?.parallax?.microarcseconds,
-        },
+        sidereal: when(t.sidereal, (s) => ({
+          epoch: s.epoch,
+          coord1: parseNumber(s.ra.degrees),
+          coord2: parseNumber(s.dec.degrees),
+          pmRa: s.properMotion?.ra.microarcsecondsPerYear,
+          pmDec: s.properMotion?.dec.microarcsecondsPerYear,
+          radialVelocity: s.radialVelocity?.centimetersPerSecond,
+          parallax: s.parallax?.microarcseconds,
+        })),
         magnitude: magnitude,
         band: band,
       };

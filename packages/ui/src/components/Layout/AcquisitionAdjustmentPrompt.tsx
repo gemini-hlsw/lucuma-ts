@@ -1,6 +1,6 @@
 import './AcquisitionAdjustmentToast.css';
 
-import { formatToSignedArcseconds, isNotNullish, when } from '@gemini-hlsw/lucuma-common-ui';
+import { formatToSignedArcseconds, isNotNullish, parseNumber, when } from '@gemini-hlsw/lucuma-common-ui';
 import { useConfiguredInstrument, useUpdateInstrument } from '@gql/configs/Instrument';
 import { useRotator, useUpdateRotator } from '@gql/configs/Rotator';
 import type { useAcquisitionAdjustmentState } from '@gql/server/AcquisitionAdjustment';
@@ -72,10 +72,10 @@ export function AcquisitionAdjustmentPrompt({ state }: { state: AcquisitionAdjus
             Promise.all([
               adjustCommand('USER_CONFIRMS'),
               when(isNotNullish(rotatorPk) && state.ipa, (ipa) =>
-                updateRotator({ variables: { pk: rotatorPk!, angle: parseFloat(ipa.degrees as string) } }),
+                updateRotator({ variables: { pk: rotatorPk!, angle: parseNumber(ipa.degrees) } }),
               ),
               when(isNotNullish(instrument?.pk) && state.iaa, (iaa) =>
-                updateInstrument({ variables: { pk: instrument!.pk, iaa: parseFloat(iaa.degrees as string) } }),
+                updateInstrument({ variables: { pk: instrument!.pk, iaa: parseNumber(iaa.degrees) } }),
               ),
             ])
           }

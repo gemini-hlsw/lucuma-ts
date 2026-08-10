@@ -109,8 +109,8 @@ function createBaseTarget(target: OdbTarget, type: TargetType, wavelength: numbe
     id: target.id,
     name: target.name,
     sidereal: when(target.sidereal, (s) => ({
-      coord1: typeof s.ra.degrees === 'string' ? parseFloat(s.ra.degrees) : s.ra.degrees,
-      coord2: typeof s.dec.degrees === 'string' ? parseFloat(s.dec.degrees) : s.dec.degrees,
+      coord1: parseNumber(s.ra.degrees),
+      coord2: parseNumber(s.dec.degrees),
       pmRa: s.properMotion?.ra.microarcsecondsPerYear,
       pmDec: s.properMotion?.dec.microarcsecondsPerYear,
       radialVelocity: s.radialVelocity?.centimetersPerSecond,

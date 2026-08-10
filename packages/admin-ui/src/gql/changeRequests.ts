@@ -3,6 +3,7 @@
  * program → request master-detail — see ChangeRequestsPage.
  */
 import { skipToken, useMutation, useQuery } from '@apollo/client/react';
+import { parseNumber } from '@gemini-hlsw/lucuma-common-ui';
 import { useEffect } from 'react';
 
 import type { DocumentType } from './odb/gen';
@@ -114,8 +115,8 @@ export function mapChangeRequests(raw: AdminChangeRequestsResult): ChangeRequest
       site: site.site,
       ra: coords?.ra.hms ?? '—',
       dec: coords?.dec.dms ?? '—',
-      raDeg: coords ? Number(coords.ra.degrees) : null,
-      decDeg: coords ? Number(coords.dec.degrees) : null,
+      raDeg: parseNumber(coords?.ra.degrees) ?? null,
+      decDeg: parseNumber(coords?.dec.degrees) ?? null,
       modeType: c.configuration.observingMode?.mode ?? null,
       instrument: site.label,
       conditions: formatConditions(c.configuration.conditions),
