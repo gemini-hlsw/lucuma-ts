@@ -4,6 +4,7 @@
  * where each field lives in the schema.
  */
 import { useMutation, useQuery } from '@apollo/client/react';
+import { parseNumber } from '@gemini-hlsw/lucuma-common-ui';
 
 import type { DocumentType } from './odb/gen';
 import { graphql } from './odb/gen';
@@ -306,7 +307,7 @@ export function mapPrograms(raw: AdminProgramsResult): Program[] {
         .map((a) => ({
           category: a.category,
           scienceBand: a.scienceBand,
-          hours: Math.round(Number(a.duration?.hours ?? 0) * 10) / 10,
+          hours: Math.round(parseNumber(a.duration?.hours ?? 0) * 10) / 10,
         })),
     };
   });

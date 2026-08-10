@@ -71,6 +71,12 @@ All three are wired into a single Apollo Client in `packages/ui/src/gql/ApolloCo
 
 **When you change a `.graphql` schema file or a gql document, you must re-run codegen** (`pnpm ui codegen` / `pnpm configs codegen`) or types will be stale. The `prebuild` script does this automatically on build; CI runs `codegen` and (for configs) `generate` before lint/test/build.
 
+#### Custom scalars
+
+The schemas define custom scalars (`ProgramId`, `GroupId`, `Timestamp`, `BigDecimal`, …). Each one needs an explicit TS mapping in the package's `tasks/codegen.ts` (`scalars`, per endpoint — e.g. `odbScalars`/`ssoScalars` in `packages/admin-ui/tasks/codegen.ts`); an unmapped scalar generates as `any`/`unknown` and every use of it becomes an unsafe cast.
+
+**So: when you first select a field whose type is a custom scalar, add the scalar to `tasks/codegen.ts` and re-run codegen** — don't cast at the use site (`o.groupId as string`) and don't hand-write a local type. Most GPP id scalars map to `'string'`; `BigDecimal` is `'string | number'`.
+
 ### UI state: Jotai
 
 App state lives in Jotai atoms under `packages/ui/src/components/atoms/` (auth token, server config, instrument, target, connection status, theme, etc.). A single shared store is created in `atoms/store.ts` and provided via `<Provider>` in `App.tsx`; non-React code (e.g. the Apollo links) reads/writes atoms directly through `store.get`/`store.set`. The app gates on loading `serverConfiguration` before rendering and retries on error.
@@ -105,6 +111,7 @@ When writing Vitest tests:
 - Import sorting is enforced (`eslint-plugin-simple-import-sort`); lint-staged + Prettier run on commit via Husky.
 - Generated code (`**/gen/`, `src/prisma/gen/`) is not committed and should never be hand-edited — change the source schema/documents and re-run codegen.
 - **Prefer Tailwind utility classes over (S)CSS styling when possible.** Reach for a `.css`/`.scss` file only for styles Tailwind can't express (e.g. complex selectors, keyframe animations, third-party component overrides).
+- **Prefer the shared helpers in `packages/common-ui/src/functions.ts` over hand-rolled equivalents** (imported as `@gemini-hlsw/lucuma-common-ui` from `ui`, `admin-ui` and `resource-ui`): `isNullish`/`isNotNullish` instead of `x === null || x === undefined` (and as the `.filter()` predicate, since they're type guards), `when(x, …)` for an inline conditional without an else — especially conditional JSX — plus `cn` for Tailwind class merging, `round`, `formatDateTime`, `groupBy`, `parseNumber`. Only write the check by hand when the helper doesn't fit or reads worse; note that `when` also treats `false` as the false case, so it works for booleans too.
 - **Prefer strict types from the schema (or other authoritative sources) over hand-written ones.** Derive from the generated types so a schema change surfaces as a compile error rather than silently drifting: select rows through fragments and use the generated fragment types; key label/lookup maps as `satisfies Record<Enum, …>` (or `Partial<Record<…>>` when the coverage is intentionally partial) over the generated enum; narrow with `Extract<…>` instead of re-declaring a union locally. Reach for a local type only when no operation selects the field (so codegen doesn't emit it) — and say so in a comment.
 
 ## CI & publishing

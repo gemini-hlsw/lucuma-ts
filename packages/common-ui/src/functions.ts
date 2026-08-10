@@ -35,8 +35,8 @@ export function formatToSignedArcseconds(arcseconds: number | string | undefined
   if (isNullish(arcseconds)) {
     return defaultValue;
   } else {
-    const num = typeof arcseconds === 'number' ? arcseconds : parseFloat(arcseconds);
-    if (Number.isNaN(num)) {
+    const num = parseNumber(arcseconds);
+    if (isNullish(num)) {
       return defaultValue;
     }
     return round(signedArcSeconds(num), 2, { useGrouping: false });
@@ -94,10 +94,11 @@ export function cn(...classLists: ClassNameValue[]) {
   return twMerge(classLists);
 }
 
-export function parseNumber<T extends number | string>(
-  value: T | undefined,
-): T extends undefined ? number | undefined : number {
-  return typeof value === 'string' ? parseFloat(value) : (value as T extends undefined ? number | undefined : number);
+export function parseNumber<T extends number | bigint | string | undefined>(
+  value: T,
+): undefined extends T ? number | undefined : number {
+  const result = typeof value === 'string' ? parseFloat(value) : typeof value === 'bigint' ? Number(value) : value;
+  return (Number.isNaN(result) ? undefined : result) as undefined extends T ? number | undefined : number;
 }
 
 /**

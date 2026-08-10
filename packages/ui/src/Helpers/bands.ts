@@ -1,3 +1,4 @@
+import { parseNumber } from '@gemini-hlsw/lucuma-common-ui';
 import type { Band } from '@gql/odb/gen/graphql';
 
 import type { OdbBandBrightness, OdbSourceProfile } from '@/types';
@@ -36,7 +37,7 @@ export function extractMagnitude(sourceProfile: OdbSourceProfile | undefined) {
 
   if (!brightness) return { name: undefined, value: undefined };
   const name = BANDS.find((b) => b.odbName === brightness.band)?.name;
-  const value = typeof brightness.value === 'string' ? parseFloat(brightness.value) : brightness.value;
+  const value = parseNumber(brightness.value);
   return { name, value };
 }
 

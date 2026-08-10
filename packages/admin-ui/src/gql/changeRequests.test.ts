@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
+import { executionDigest } from '@/test/factories';
+
 import {
   type AdminChangeRequestsResult,
   type AdminProgramObservationsResult,
@@ -118,7 +120,8 @@ describe('observationsByIdFrom', () => {
         __typename: 'Observation',
         id: 'o-9c5',
         calibrationRole: null,
-        observationDuration: null,
+        groupId: null,
+        execution: executionDigest(null),
         instrument: 'GMOS_NORTH',
         observingMode: { __typename: 'ObservingMode', mode: 'GMOS_NORTH_LONG_SLIT' },
         constraintSet: {

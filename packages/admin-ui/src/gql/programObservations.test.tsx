@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { fakeJwt, standardUser } from '@/test/factories';
+import { executionDigest, fakeJwt, standardUser } from '@/test/factories';
 import { type MockedResponseOf, renderWithContext } from '@/test/render';
 
 import type { AdminProgramObservationsResult } from './changeRequests';
@@ -15,7 +15,8 @@ const obs = (id: string): ObservationMatch => ({
   __typename: 'Observation',
   id,
   calibrationRole: null,
-  observationDuration: null,
+  groupId: null,
+  execution: executionDigest(null),
   instrument: 'GMOS_NORTH',
   observingMode: { __typename: 'ObservingMode', mode: 'GMOS_NORTH_LONG_SLIT' },
   constraintSet: {

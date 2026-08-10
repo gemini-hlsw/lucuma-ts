@@ -1,6 +1,7 @@
 /**
  * Time and interval utilities for the tonight timeline.
  */
+import { parseNumber } from '@gemini-hlsw/lucuma-common-ui';
 import { formatDuration, intervalToDuration } from 'date-fns';
 
 import type { Site } from '@/types';
@@ -42,5 +43,5 @@ export const getNowTimestamp = (): string => DEMO_NOW;
  * Formats the duration of an interval for display in timeline labels.
  */
 export const getDurationLabel = (seconds: string | number): string => {
-  return formatDuration(intervalToDuration({ start: 0, end: Number(seconds) * 1000 }));
+  return formatDuration(intervalToDuration({ start: 0, end: parseNumber(seconds) * 1000 }));
 };

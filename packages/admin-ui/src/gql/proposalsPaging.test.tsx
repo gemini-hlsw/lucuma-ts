@@ -24,6 +24,7 @@ const dd = (id: string): RawProgram => ({
     gemini: { __typename: 'DirectorsTime', scienceSubtype: 'DIRECTORS_TIME' },
   },
   observations: { __typename: 'ObservationSelectResult', matches: [] },
+  allGroupElements: [],
 });
 
 const page = (

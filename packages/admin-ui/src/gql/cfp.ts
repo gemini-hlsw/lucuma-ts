@@ -8,6 +8,7 @@
  * under `gemini` in CallForProposalsPropertiesInput.
  */
 import { useMutation, useQuery } from '@apollo/client/react';
+import { parseNumber } from '@gemini-hlsw/lucuma-common-ui';
 
 import type { DocumentType } from './odb/gen';
 import { graphql } from './odb/gen';
@@ -132,10 +133,10 @@ export function mapCfps(raw: AdminCfpsResult): CallForProposals[] {
 
 function mapCoordinateLimits(limits: RawLimits): SiteCoordinateLimits {
   return {
-    raStart: Number(limits.raStart.hours),
-    raEnd: Number(limits.raEnd.hours),
-    decStart: Number(limits.decStart.degrees),
-    decEnd: Number(limits.decEnd.degrees),
+    raStart: parseNumber(limits.raStart.hours),
+    raEnd: parseNumber(limits.raEnd.hours),
+    decStart: parseNumber(limits.decStart.degrees),
+    decEnd: parseNumber(limits.decEnd.degrees),
   };
 }
 
@@ -222,7 +223,7 @@ export function currentSemester(now: Date = new Date()): string {
 /** A semester's active date range — the ODB requires activeStart/activeEnd on
  *  create. A: Feb 1 – Aug 1; B: Aug 1 – Feb 1 of the next year. */
 export function semesterDates(semester: string): { activeStart: string; activeEnd: string } {
-  const year = Number(semester.slice(0, 4));
+  const year = parseNumber(semester.slice(0, 4));
   return semester.endsWith('A')
     ? { activeStart: `${String(year)}-02-01`, activeEnd: `${String(year)}-08-01` }
     : { activeStart: `${String(year)}-08-01`, activeEnd: `${String(year + 1)}-02-01` };

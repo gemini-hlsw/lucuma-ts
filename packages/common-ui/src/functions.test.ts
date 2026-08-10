@@ -4,6 +4,7 @@ import {
   formatToSignedArcseconds,
   isNotNullish,
   isNullish,
+  parseNumber,
   round,
   when,
 } from './functions.ts';
@@ -151,5 +152,30 @@ describe(formatDateTime.name, () => {
 
   it('should handle string input', () => {
     expect(formatDateTime('2024-01-01 12:34:56')).toBe('2024-01-01 12:34:56');
+  });
+});
+
+describe(parseNumber.name, () => {
+  it('should parse strings', () => {
+    expect(parseNumber('1.5')).toBe(1.5);
+    expect(parseNumber('-3')).toBe(-3);
+  });
+
+  it('should pass numbers through', () => {
+    expect(parseNumber(1.5)).toBe(1.5);
+    expect(parseNumber(0)).toBe(0);
+  });
+
+  it('should convert bigints', () => {
+    expect(parseNumber(42n)).toBe(42);
+    expect(parseNumber(-7n)).toBe(-7);
+  });
+
+  it('should return undefined for undefined input', () => {
+    expect(parseNumber(undefined)).toBeUndefined();
+  });
+
+  it('should return NaN for non-numeric strings', () => {
+    expect(parseNumber('not a number')).toBeUndefined();
   });
 });

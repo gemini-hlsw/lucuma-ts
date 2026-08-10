@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import type { ObservationItemFragment } from './odb/gen/graphql';
+import { executionDigest } from '@/test/factories';
+
+import type { GroupElementItemFragment, ObservationItemFragment } from './odb/gen/graphql';
 import { type AdminProposalsResult, mapProposals, semesterOfReference } from './proposals';
 
 type RawProgram = AdminProposalsResult['programs']['matches'][number];
@@ -10,7 +12,8 @@ function observation(id: string, targetName: string, hours: number | null): Obse
     __typename: 'Observation',
     id,
     calibrationRole: null,
-    observationDuration: hours === null ? null : { __typename: 'TimeSpan', hours },
+    groupId: null,
+    execution: executionDigest(hours),
     instrument: 'FLAMINGOS2',
     observingMode: null,
     constraintSet: {
@@ -49,6 +52,7 @@ function specialProgram(overrides: Partial<RawProgram>): RawProgram {
       gemini: { __typename: 'DirectorsTime', scienceSubtype: 'DIRECTORS_TIME' },
     },
     observations: { __typename: 'ObservationSelectResult', matches: [] },
+    allGroupElements: [],
     ...overrides,
   };
 }
@@ -102,6 +106,41 @@ describe('mapProposals', () => {
       hours: 0.4,
     });
     expect(p?.observations[1]).toMatchObject({ id: 'o-459a', target: 'HIP 3320', hours: 0 });
+  });
+
+  it("uses a science observation's telluric-group total for its Time (sc-9598)", () => {
+    const telluricGroup: GroupElementItemFragment = {
+      __typename: 'GroupElement',
+      group: {
+        __typename: 'Group',
+        id: 'g-tel',
+        system: true,
+        calibrationRoles: ['TELLURIC'],
+        timeEstimateRange: {
+          __typename: 'CalculatedCategorizedTimeRange',
+          value: {
+            __typename: 'CategorizedTimeRange',
+            maximum: { __typename: 'CategorizedTime', program: { __typename: 'TimeSpan', hours: 0.53 } },
+          },
+        },
+      },
+    };
+    // The science observation's own digest is 0.27h, but it sits in a telluric
+    // group whose combined estimate is 0.53h — that total is its Time.
+    const science = { ...observation('o-sci', 'NGC 4038', 0.27), groupId: 'g-tel' };
+    const [p] = mapProposals({
+      programs: {
+        __typename: 'ProgramSelectResult',
+        hasMore: false,
+        matches: [
+          specialProgram({
+            observations: { __typename: 'ObservationSelectResult', matches: [science] },
+            allGroupElements: [telluricGroup],
+          }),
+        ],
+      },
+    });
+    expect(p?.observations[0]).toMatchObject({ id: 'o-sci', hours: 0.5 });
   });
 });
 

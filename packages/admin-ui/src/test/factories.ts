@@ -1,4 +1,29 @@
 import type { StandardUser, User } from '@/auth/user';
+import type { ObservationItemFragment } from '@/gql/odb/gen/graphql';
+
+/** The `execution.digest` selection of an observation fixture: a settled digest
+ *  reporting `hours` of program time, or null (calculation pending / failed). */
+export function executionDigest(hours: number | null): ObservationItemFragment['execution'] {
+  return {
+    __typename: 'Execution',
+    digest:
+      hours === null
+        ? null
+        : {
+            __typename: 'CalculatedExecutionDigest',
+            value: {
+              __typename: 'ExecutionDigest',
+              estimate: {
+                __typename: 'ObservationTimeEstimate',
+                total: {
+                  __typename: 'CategorizedTime',
+                  program: { __typename: 'TimeSpan', hours },
+                },
+              },
+            },
+          },
+  };
+}
 
 /** A standard user with the given active role, for auth-dependent tests. */
 export function standardUser(roleType: 'pi' | 'ngo' | 'staff' | 'admin'): StandardUser {

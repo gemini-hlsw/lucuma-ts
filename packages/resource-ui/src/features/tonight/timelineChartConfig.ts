@@ -1,6 +1,7 @@
 /**
  * Highcharts configuration generator for the telescope night timeline chart.
  */
+import { parseNumber } from '@gemini-hlsw/lucuma-common-ui';
 import type { PlotOptions, Tooltip, XAxis, YAxis } from '@highcharts/react';
 import type { XRangeSeries } from '@highcharts/react/series/XRange';
 import type { Options, Point, XrangePointOptionsObject } from 'highcharts';
@@ -136,7 +137,7 @@ const createTimeAxisProps = (
       fontSize: theme.axis.labelFontSize,
     },
     formatter() {
-      return formatTime(new Date(Number(this.value)), site, timeDisplay);
+      return formatTime(new Date(parseNumber(this.value)), site, timeDisplay);
     },
   },
 });

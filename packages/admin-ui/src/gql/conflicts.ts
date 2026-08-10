@@ -14,6 +14,7 @@
  * moves into the WHERE clause.
  */
 import { skipToken, useQuery } from '@apollo/client/react';
+import { parseNumber } from '@gemini-hlsw/lucuma-common-ui';
 import { dateToLocalObservingNight } from '@gemini-hlsw/lucuma-core';
 import { useMemo } from 'react';
 
@@ -215,8 +216,8 @@ export function mapConflictCandidates(raw: AdminConflictCheckResult): ConflictCa
       requestId: c.id,
       status: CR_STATUS_LABEL[c.status] ?? c.status,
       target: '—', // configurations carry coordinates, not target names
-      raDeg: coords ? Number(coords.ra.degrees) : null,
-      decDeg: coords ? Number(coords.dec.degrees) : null,
+      raDeg: parseNumber(coords?.ra.degrees) ?? null,
+      decDeg: parseNumber(coords?.dec.degrees) ?? null,
       modeType: c.configuration.observingMode?.mode ?? null,
     };
   });
@@ -235,8 +236,8 @@ export function mapConflictCandidates(raw: AdminConflictCheckResult): ConflictCa
         requestId: null,
         status: state.charAt(0) + state.slice(1).toLowerCase(),
         target: target?.name ?? '—',
-        raDeg: target?.sidereal ? Number(target.sidereal.ra.degrees) : null,
-        decDeg: target?.sidereal ? Number(target.sidereal.dec.degrees) : null,
+        raDeg: parseNumber(target?.sidereal?.ra.degrees) ?? null,
+        decDeg: parseNumber(target?.sidereal?.dec.degrees) ?? null,
         modeType: o.observingMode?.mode ?? null,
       };
     });
