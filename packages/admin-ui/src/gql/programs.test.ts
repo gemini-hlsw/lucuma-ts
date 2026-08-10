@@ -55,6 +55,7 @@ function program(overrides: Partial<RawProgram>): RawProgram {
       __typename: 'Proposal',
       gemini: {
         __typename: 'Queue',
+        scienceSubtype: 'QUEUE',
         toOActivation: 'STANDARD',
         considerForBand3: 'CONSIDER',
         minPercentTime: 80,
@@ -86,6 +87,14 @@ describe('mapPrograms', () => {
               scienceBand: 'BAND1',
               duration: { __typename: 'TimeSpan', hours: 12.5 },
             },
+            // A non-partner category (sc-9670): Calibration time must map like any
+            // other, proving Allocation.category spans TimeAccountingCategory.
+            {
+              __typename: 'Allocation',
+              category: 'CAL',
+              scienceBand: 'BAND2',
+              duration: { __typename: 'TimeSpan', hours: 4 },
+            },
           ],
           notes: [
             { __typename: 'ProgramNote', id: 'n-1', text: 'internal note', isPrivate: true },
@@ -104,6 +113,7 @@ describe('mapPrograms', () => {
     expect(p?.reference).toBe('G-2027B-1322-Q');
     expect(p?.pi).toBe('Grace Hopper');
     expect(p?.programClass).toBe('QUEUE');
+    expect(p?.programType).toBe('QUEUE');
     expect(p?.tooStatus).toBe('STANDARD');
     expect(p?.considerForBand3).toBe(true);
     expect(p?.minPercentTime).toBe(80);
@@ -115,23 +125,47 @@ describe('mapPrograms', () => {
     expect(p?.privateNoteId).toBe('n-1');
     expect(p?.proprietaryMonths).toBe(6);
     expect(p?.privateHeader).toBe(true);
-    expect(p?.allocations).toEqual([{ category: 'US', scienceBand: 'BAND1', hours: 12.5 }]);
+    expect(p?.allocations).toEqual([
+      { category: 'US', scienceBand: 'BAND1', hours: 12.5 },
+      { category: 'CAL', scienceBand: 'BAND2', hours: 4 },
+    ]);
   });
 
   it('treats Classical proposals as CLASSICAL with no ToO/Band-3 (those are Queue-only)', () => {
     const [p] = mapPrograms(
       result([
         program({
-          proposal: { __typename: 'Proposal', gemini: { __typename: 'Classical', minPercentTime: 90 } },
+          proposal: {
+            __typename: 'Proposal',
+            gemini: { __typename: 'Classical', scienceSubtype: 'CLASSICAL', minPercentTime: 90 },
+          },
           pi: null,
         }),
       ]),
     );
     expect(p?.programClass).toBe('CLASSICAL');
+    expect(p?.programType).toBe('CLASSICAL');
     expect(p?.tooStatus).toBe('NONE');
     expect(p?.considerForBand3).toBe(false);
     expect(p?.minPercentTime).toBe(90);
     expect(p?.pi).toBe('(unknown PI)');
+  });
+
+  it('keeps the real proposal type for non-Queue/Classical subtypes, collapsing only programClass', () => {
+    const [p] = mapPrograms(
+      result([
+        program({
+          proposal: {
+            __typename: 'Proposal',
+            gemini: { __typename: 'LargeProgram', scienceSubtype: 'LARGE_PROGRAM' },
+          },
+        }),
+      ]),
+    );
+    // programType carries the true subtype (sc-9581); programClass still
+    // collapses to QUEUE, since the editor only offers Queue/Classical.
+    expect(p?.programType).toBe('LARGE_PROGRAM');
+    expect(p?.programClass).toBe('QUEUE');
   });
 
   it('shows the 1901–2099 sentinel bounds as blank dates, keeps a real range', () => {
@@ -155,6 +189,7 @@ describe('proposalTypeInput', () => {
     name: 'N',
     pi: 'PI',
     programClass: 'QUEUE',
+    programType: 'QUEUE',
     tooStatus: 'RAPID',
     contactScientists: [],
     activeStart: '',
@@ -184,14 +219,19 @@ describe('proposalTypeInput', () => {
 
 describe('allocationsInput', () => {
   it('sends only positive awards, keeping zero cells as grid-only editing state', () => {
-    // Regression: a zeroed cell keeps the partner's row visible in the grid;
-    // it must not become a zero-duration allocation in the mutation.
+    // Regression: a zeroed cell keeps the category's row visible in the grid;
+    // it must not become a zero-duration allocation in the mutation. A
+    // non-partner category (ENG, sc-9670) serializes like any other.
     expect(
       allocationsInput([
         { category: 'US', scienceBand: 'BAND1', hours: 0 },
         { category: 'US', scienceBand: 'BAND2', hours: 2.5 },
+        { category: 'ENG', scienceBand: 'BAND1', hours: 1.5 },
       ]),
-    ).toEqual([{ category: 'US', scienceBand: 'BAND2', duration: { hours: 2.5 } }]);
+    ).toEqual([
+      { category: 'US', scienceBand: 'BAND2', duration: { hours: 2.5 } },
+      { category: 'ENG', scienceBand: 'BAND1', duration: { hours: 1.5 } },
+    ]);
   });
 });
 
@@ -202,6 +242,7 @@ describe('programPropertiesInput', () => {
     name: 'N',
     pi: 'PI',
     programClass: 'QUEUE',
+    programType: 'QUEUE',
     tooStatus: 'NONE',
     contactScientists: [],
     activeStart: '2027-08-01',

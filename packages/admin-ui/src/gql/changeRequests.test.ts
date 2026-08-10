@@ -63,7 +63,7 @@ function request(overrides: Partial<RawRequest>): RawRequest {
 }
 
 const result = (matches: RawRequest[]): AdminChangeRequestsResult => ({
-  configurationRequests: { __typename: 'ConfigurationRequestSelectResult', matches },
+  configurationRequests: { __typename: 'ConfigurationRequestSelectResult', matches, hasMore: false },
 });
 
 describe('mapChangeRequests', () => {

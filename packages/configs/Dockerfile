@@ -10,10 +10,16 @@ ENV PATH="$PNPM_HOME:$PATH"
 ENV COREPACK_DEFAULT_TO_LATEST=0
 
 RUN npm i -g corepack && corepack enable
-COPY ./package.json ./package.json
+
+# Create software user
+RUN addgroup -S software -g 3624 && adduser -S software -u 3624 -G software
+RUN chown -R software:software /usr/src/app
+USER software
+
+COPY --chown=software:software ./package.json ./package.json
 RUN corepack install && pnpm config set trustLockfile true
 
-COPY . .
+COPY --chown=software:software . .
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
   pnpm --filter "@gemini-hlsw/navigate-configs" ci --prefer-offline
 RUN pnpm configs build
@@ -21,10 +27,16 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
   pnpm deploy --filter=navigate-configs --prod pruned
 
 FROM base AS runtime
+
+# Create software user
+RUN addgroup -S software -g 3624 && adduser -S software -u 3624 -G software
+RUN chown -R software:software /usr/src/app
+USER software
+
 ENV NODE_ENV=production
 
 # Copy built files
-COPY --from=build --chown=1000:1000 /usr/src/app/pruned /usr/src/app
+COPY --from=build --chown=software:software /usr/src/app/pruned /usr/src/app
 
 ENV PORT=4000
 EXPOSE 4000

@@ -13,12 +13,21 @@ import type {
   ProposalStatus,
   ScienceBand,
   ScienceSubtype,
+  TimeAccountingCategory,
   ToOActivation,
 } from './odb/gen/graphql';
 
 // The schema enums the views model with — re-exported so feature code can
 // import them alongside the view-model types they appear in.
-export type { ConfigurationRequestStatus, Instrument, ProposalStatus, ScienceBand, ToOActivation };
+export type {
+  ConfigurationRequestStatus,
+  Instrument,
+  ProposalStatus,
+  ScienceBand,
+  ScienceSubtype,
+  TimeAccountingCategory,
+  ToOActivation,
+};
 
 /** Which Gemini telescope a request's instrument belongs to. A UI-derived
  *  notion (from the instrument, in changeRequests.ts), not the schema's
@@ -58,6 +67,10 @@ export interface CfpPartner {
 
 export interface CallForProposals {
   readonly id: string;
+  /** Whether the call is visible (ODB existence = PRESENT). Unchecking it
+   *  soft-deletes the call (existence = DELETED); it stays discoverable via the
+   *  "Invisible" facet (sc-9612). */
+  readonly visible: boolean;
   readonly title: string;
   readonly type: CfpType;
   readonly semester: string; // e.g. "2027B"
@@ -108,6 +121,20 @@ export type ProgramClass = Extract<ScienceSubtype, 'QUEUE' | 'CLASSICAL'>;
 export const PROGRAM_CLASSES: readonly ProgramClass[] = ['QUEUE', 'CLASSICAL'];
 export const PROGRAM_CLASS_LABEL: Record<ProgramClass, string> = { QUEUE: 'Queue', CLASSICAL: 'Classical' };
 
+/** Every proposal ScienceSubtype → its display label, for the Programs and
+ *  Proposals tables' "Type" column (sc-9581). The complete enum (satisfies
+ *  Record) so a new subtype is a compile error here, not a blank cell. */
+export const SCIENCE_SUBTYPE_LABEL = {
+  CLASSICAL: 'Classical',
+  DEMO_SCIENCE: 'Demo Science',
+  DIRECTORS_TIME: "Director's Time",
+  FAST_TURNAROUND: 'Fast Turnaround',
+  LARGE_PROGRAM: 'Large Program',
+  POOR_WEATHER: 'Poor Weather',
+  QUEUE: 'Queue',
+  SYSTEM_VERIFICATION: 'System Verification',
+} satisfies Record<ScienceSubtype, string>;
+
 export const BANDS: readonly ScienceBand[] = ['BAND1', 'BAND2', 'BAND3', 'BAND4'];
 export const BAND_LABEL: Record<ScienceBand, string> = {
   BAND1: 'Band-1',
@@ -116,9 +143,45 @@ export const BAND_LABEL: Record<ScienceBand, string> = {
   BAND4: 'Band-4',
 };
 
-/** One cell of the time-awards grid: hours allocated to a partner in a band. */
+/** TimeAccountingCategory → display name, in schema order, matching the ODB
+ *  enum descriptions (and Explore's time-award table). A superset of the SSO
+ *  `Partner` enum: alongside the partner countries it covers exchanges
+ *  (Keck/Subaru/CFHT), special programs (Director's Time, Large Program, …) and
+ *  the observatory's own Calibration/Engineering time (sc-9670). `satisfies`
+ *  makes a new schema value a compile error here rather than a blank cell. */
+export const TIME_ACCOUNTING_CATEGORY_LABEL = {
+  AR: 'Argentina',
+  BR: 'Brazil',
+  CA: 'Canada',
+  CAL: 'Calibration',
+  CFHT: 'CFHT Exchange',
+  CL: 'Chile',
+  DD: "Director's Time",
+  DS: 'Demo Science',
+  ENG: 'Engineering',
+  GT: 'Guaranteed Time',
+  JP: 'Subaru',
+  KECK: 'Keck Exchange',
+  KR: 'Republic of Korea',
+  LP: 'Large Program',
+  LTP: 'Limited-term Participant',
+  SV: 'System Verification',
+  UH: 'University of Hawaii',
+  US: 'United States',
+} as const satisfies Record<TimeAccountingCategory, string>;
+
+/** Every time-accounting category, in schema order — the row options for the
+ *  time-awards grid. Derived from the label map's keys so it stays exhaustive
+ *  automatically: a new schema value forces a label above (via `satisfies`),
+ *  and appears here for free with no second list to keep in sync. */
+export const TIME_ACCOUNTING_CATEGORIES = Object.keys(
+  TIME_ACCOUNTING_CATEGORY_LABEL,
+) as readonly TimeAccountingCategory[];
+
+/** One cell of the time-awards grid: hours allocated to a time-accounting
+ *  category in a science band. */
 export interface Allocation {
-  readonly category: Partner;
+  readonly category: TimeAccountingCategory;
   readonly scienceBand: ScienceBand;
   readonly hours: number;
 }
@@ -146,6 +209,11 @@ export interface Program {
    *  proposal types (LargeProgram, FastTurnaround, …) aren't Queue/Classical;
    *  default them to QUEUE since the Admin form only offers those two. */
   readonly programClass: ProgramClass;
+  /** The proposal's full ScienceSubtype (Queue, Classical, Large Program, …)
+   *  for the table's Type column (sc-9581); null when the program has no
+   *  proposal. Distinct from programClass, which the editor collapses to the
+   *  two editable classes. */
+  readonly programType: ScienceSubtype | null;
   /** Only Queue proposals carry ToOActivation; Classical/others have none. */
   readonly tooStatus: ToOActivation;
   /** Program users with role SUPPORT_PRIMARY/SUPPORT_SECONDARY — the real

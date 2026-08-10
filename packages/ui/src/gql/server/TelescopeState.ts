@@ -13,8 +13,6 @@ export const ENCLOSURE_STATE_FRAGMENT = graphql(`
   fragment EnclosureStateItem on EnclosureState {
     domeEnabled
     shuttersEnabled
-    eastVentGateOpen
-    westVentGateOpen
   }
 `);
 
