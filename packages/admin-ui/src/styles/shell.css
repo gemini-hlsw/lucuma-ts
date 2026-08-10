@@ -119,6 +119,26 @@ body {
   font-size: 0.85rem;
 }
 
+/* "About" dialog body (the masthead hamburger → About, sc-9615): the build
+   version with a copy button, mirroring Explore's About. */
+.xp-about {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.xp-about-version {
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 0.85rem;
+  color: var(--xp-text-muted);
+}
+
+/* Green accent under the wordmark in the About dialog header, like Explore. */
+.xp-about-dialog .p-dialog-header {
+  border-bottom: 2px solid var(--xp-green);
+}
+
 .xp-user {
   display: inline-flex;
   align-items: center;

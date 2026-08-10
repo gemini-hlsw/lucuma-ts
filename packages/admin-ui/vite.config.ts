@@ -5,9 +5,6 @@ import { playwright } from '@vitest/browser-playwright';
 import { execSync } from 'child_process';
 import { defineConfig } from 'vitest/config';
 
-import pkgJson from './package.json' with { type: 'json' };
-
-const version = (process.env.GITHUB_REF_NAME || `v${pkgJson.version}`).trim();
 const commitHash = (process.env.GITHUB_SHA || execSync('git rev-parse --short HEAD').toString()).trim().slice(0, 7);
 
 const buildTime = new Date();
@@ -18,7 +15,10 @@ function formatDate(date: Date) {
   const days = date.getDate();
   return `${years}${months.toString().padStart(2, '0')}${days.toString().padStart(2, '0')}`;
 }
-const frontendVersion = `${version}+${formatDate(buildTime)}.${commitHash}`;
+// `DATE-COMMIT`, matching Explore's version scheme (explore utils.version). The
+// environment suffix (-DEV/-STAGING/-PROD) is appended at render time from the
+// runtime CURRENT_ENV, since one bundle serves every environment by hostname.
+const frontendVersion = `${formatDate(buildTime)}-${commitHash}`;
 
 // https://vite.dev/config/
 export default defineConfig({
