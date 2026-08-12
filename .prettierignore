@@ -5,6 +5,13 @@ coverage/
 reports/
 .metals
 .bloop
+packages/*/src/gql/gen
 packages/*/src/gql/*/gen
 packages/*/src/graphql/gen
 packages/*/gen/
+
+# Superseded resource-ui code, kept for reference only (see packages/resource-ui/PLAN.md).
+
+# Published Gemini schedule sheets, vendored verbatim as importer fixtures.
+# They are Excel exports and must stay byte-exact - the tests parse these bytes.
+packages/resource-ui/mock-server/import/fixtures
