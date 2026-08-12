@@ -104,6 +104,7 @@ const componentOf = (component: CatalogComponent): unknown => ({
   name: component.name,
   barcode: component.barcode,
   aliases: component.aliases,
+  existence: component.existence,
 });
 
 const componentBlock = (store: MockStore, block: SynthesizedComponentBlock, interval: MockInterval): unknown => {
@@ -279,10 +280,12 @@ export const buildResolvers = (store: MockStore) => ({
         instruments?: readonly string[] | null;
         componentTypes?: readonly string[] | null;
         search?: string | null;
+        includeDeleted: boolean;
       },
     ): unknown =>
       store
         .componentsFor(args.site)
+        .filter((component) => args.includeDeleted || component.existence !== 'DELETED')
         .filter(componentFilter(args.instruments, args.componentTypes))
         .filter(
           (component) => args.search === null || args.search === undefined || matchesSearch(component, args.search),

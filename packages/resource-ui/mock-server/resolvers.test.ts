@@ -377,6 +377,24 @@ describe('components', () => {
   });
 });
 
+describe('components - existence', () => {
+  const EXISTENCE = `
+    query ($site: Site!, $includeDeleted: Boolean!) {
+      components(site: $site, search: "GS2024A", includeDeleted: $includeDeleted) {
+        code
+        existence
+      }
+    }`;
+
+  it('keeps a retired piece out of the catalog unless asked for', async () => {
+    const hidden = await run(EXISTENCE, { site: 'GS', includeDeleted: false });
+    expect(hidden.components).toEqual([]);
+
+    const shown = await run(EXISTENCE, { site: 'GS', includeDeleted: true });
+    expect(shown.components).toEqual([{ code: '11009901', existence: 'DELETED' }]);
+  });
+});
+
 describe('instrumentComponentAvailability', () => {
   const AVAILABILITY = `
     query ($site: Site!, $interval: TimestampIntervalInput!, $clip: Boolean!) {

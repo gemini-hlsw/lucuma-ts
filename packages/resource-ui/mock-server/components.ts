@@ -78,6 +78,8 @@ export interface CatalogComponent {
   readonly barcode: string | null;
   readonly aliases: readonly string[];
   readonly pattern: ComponentPattern;
+  /** Soft delete: a DELETED piece keeps its history but stops being offered. */
+  readonly existence: 'PRESENT' | 'DELETED';
 }
 
 interface Entry {
@@ -88,6 +90,7 @@ interface Entry {
   readonly barcode?: string;
   readonly aliases?: readonly string[];
   readonly pattern?: ComponentPattern;
+  readonly existence?: 'PRESENT' | 'DELETED';
 }
 
 const catalog = (site: ImportSite, entries: readonly Entry[]): readonly CatalogComponent[] =>
@@ -101,6 +104,7 @@ const catalog = (site: ImportSite, entries: readonly Entry[]): readonly CatalogC
     barcode: entry.barcode ?? null,
     aliases: entry.aliases ?? [],
     pattern: entry.pattern ?? 'RIDES_WITH_INSTRUMENT',
+    existence: entry.existence ?? 'PRESENT',
   }));
 
 /**
@@ -114,6 +118,17 @@ const GS_CATALOG = catalog('GS', [
   { instrument: 'GMOS', componentType: 'DISPERSER', code: 'B1200_G5321', name: 'B1200' },
   { instrument: 'GMOS', componentType: 'DISPERSER', code: 'R831_G5322', name: 'R831', pattern: 'SPARE_IN_LAB' },
   { instrument: 'GMOS', componentType: 'DISPERSER', code: 'R600_G5324', name: 'R600', pattern: 'SPARE_IN_LAB' },
+  // A retired mask, soft-deleted: the catalog remembers it, the finder does
+  // not offer it, and the synthetic layer gives it no current records.
+  {
+    instrument: 'GMOS',
+    componentType: 'FPU',
+    code: '11009901',
+    name: 'Mask GS2024A-001',
+    barcode: '11009901',
+    pattern: 'SPARE_IN_LAB',
+    existence: 'DELETED',
+  },
   {
     instrument: 'GMOS',
     componentType: 'DISPERSER',
@@ -474,6 +489,11 @@ export const synthesizeComponentBlocks = (
   const blocks: SynthesizedComponentBlock[] = [];
 
   for (const component of COMPONENT_CATALOG) {
+    // The real ICTD keeps a retired piece's history; the synthetic layer has
+    // nothing historical to say about one, so it synthesizes nothing.
+    if (component.existence === 'DELETED') {
+      continue;
+    }
     const pieces: Piece[] = [];
     for (const schedule of schedules) {
       if (schedule.site !== component.site) {

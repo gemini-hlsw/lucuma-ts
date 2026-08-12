@@ -424,6 +424,16 @@ enum InstrumentComponentType {
 }
 
 """
+Soft-delete state for a scientist-managed record. A DELETED piece stops being
+offered but its historical availability blocks stay valid - retiring a
+component must never invalidate the records that name it.
+"""
+enum Existence {
+  PRESENT
+  DELETED
+}
+
+"""
 Where a piece is when it is not installed in its instrument.
 
 Deliberately not `InstrumentLocation`: a component saying PORT 3 while its
@@ -457,6 +467,7 @@ type InstrumentComponent {
   "Mask barcode when applicable, e.g. \"11002801\"."
   barcode: NonEmptyString
   aliases: [NonEmptyString!]!
+  existence: Existence!
 }
 
 "A span of a component's life: where it was and whether it was usable."
@@ -532,6 +543,8 @@ type Query {
     instruments: [Instrument!]
     componentTypes: [InstrumentComponentType!]
     search: NonEmptyString
+    "Soft-deleted pieces are excluded unless asked for, the ODB convention."
+    includeDeleted: Boolean! = false
   ): [InstrumentComponent!]!
 
   """

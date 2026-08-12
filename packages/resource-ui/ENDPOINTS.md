@@ -24,17 +24,17 @@ work. No subscriptions, no mutations: v1 is read-only, and consumers re-query.
 Nine, all read-only. Signatures as in the SDL; "clip" is the shared interval contract
 described below.
 
-| Query                                                                                | What it answers                                                                                                                                 | Consumers                                                                   |
-| ------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| `publishedSemesters`                                                                 | every site + semester Resource holds: title, version, `demo` flag, first/last night, `rowLabels`, holidays, moon events                         | the masthead picker; every view's bounds                                    |
-| `telescopeNight(site, observingNight)`                                               | one night as a projection: `dataAvailable`, the night's interval, and every record clipped to it (instruments, closures, ToO, mode, components) | night view                                                                  |
-| `telescopeNights(site, nights)`                                                      | a range of nights, same shape per night; bounded at 400                                                                                         | **the scheduler's only query**; week view (per-night `dataAvailable`)       |
-| `instrumentAvailability(site, interval, clip)`                                       | instrument mountings intersecting an interval, with `usage` and location                                                                        | semester, week and night charts; the component browser's "where is it" join |
-| `telescopeAvailability(site, interval, clip)`                                        | whole-telescope Open/Closed records and port-scoped closures                                                                                    | the Telescope state row and closure bands, every schedule view              |
-| `tooSupport(site, interval, clip)`                                                   | ToO support level records                                                                                                                       | the ToO state row, every schedule view                                      |
-| `telescopeMode(site, interval, clip)`                                                | telescope mode records (Queue, Classical, Priority visitor, …) with `programReferences` and the block-scheduling `partner`                      | the Mode state row, every schedule view                                     |
-| `components(site, instruments, componentTypes, search)`                              | the component catalog - identity only: `code`, `name`, `barcode`, `aliases`                                                                     | component browser (the ICTD half)                                           |
-| `instrumentComponentAvailability(site, interval, clip, instruments, componentTypes)` | where each piece is over a window, with `usage`, `location` and the reason on the record                                                        | component browser and piece history; the week's "changes this week" list    |
+| Query                                                                                | What it answers                                                                                                                                        | Consumers                                                                   |
+| ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------- |
+| `publishedSemesters`                                                                 | every site + semester Resource holds: title, version, `demo` flag, first/last night, `rowLabels`, holidays, moon events                                | the masthead picker; every view's bounds                                    |
+| `telescopeNight(site, observingNight)`                                               | one night as a projection: `dataAvailable`, the night's interval, and every record clipped to it (instruments, closures, ToO, mode, components)        | night view                                                                  |
+| `telescopeNights(site, nights)`                                                      | a range of nights, same shape per night; bounded at 400                                                                                                | **the scheduler's only query**; week view (per-night `dataAvailable`)       |
+| `instrumentAvailability(site, interval, clip)`                                       | instrument mountings intersecting an interval, with `usage` and location                                                                               | semester, week and night charts; the component browser's "where is it" join |
+| `telescopeAvailability(site, interval, clip)`                                        | whole-telescope Open/Closed records and port-scoped closures                                                                                           | the Telescope state row and closure bands, every schedule view              |
+| `tooSupport(site, interval, clip)`                                                   | ToO support level records                                                                                                                              | the ToO state row, every schedule view                                      |
+| `telescopeMode(site, interval, clip)`                                                | telescope mode records (Queue, Classical, Priority visitor, …) with `programReferences` and the block-scheduling `partner`                             | the Mode state row, every schedule view                                     |
+| `components(site, instruments, componentTypes, search, includeDeleted)`              | the component catalog - identity only: `code`, `name`, `barcode`, `aliases`, soft-delete `existence` (deleted pieces excluded unless `includeDeleted`) | component browser (the ICTD half)                                           |
+| `instrumentComponentAvailability(site, interval, clip, instruments, componentTypes)` | where each piece is over a window, with `usage`, `location` and the reason on the record                                                               | component browser and piece history; the week's "changes this week" list    |
 
 ## The operations the UI actually runs
 
@@ -424,6 +424,7 @@ query {
     name
     barcode
     aliases
+    existence
   }
 }
 ```
@@ -439,7 +440,8 @@ query {
         "code": "R400_G5325",
         "name": "R400",
         "barcode": null,
-        "aliases": ["R400"]
+        "aliases": ["R400"],
+        "existence": "PRESENT"
       }
     ]
   }
