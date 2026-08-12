@@ -91,6 +91,32 @@ describe('SemesterPage - the chart', () => {
     await expect.element(screen.getByRole('region', { name: 'August 2026' })).toBeVisible();
   });
 
+  it('survives the masthead clock toggle without redrawing a single bar', async () => {
+    // The xrange sibling of the grid's regression below: the chart speaks
+    // dates, never clock times, so the toggle's re-render must leave every
+    // bar - geometry and paint alike - exactly where it was.
+    const screen = await renderApp({
+      element: <Layout />,
+      route: '/semester?site=GN&semester=2026B',
+      path: '/',
+      childRoutes: [{ path: 'semester', element: <SemesterPage /> }],
+    });
+    await expect.element(screen.getByRole('region', { name: 'August 2026' })).toBeVisible();
+    const shapes = () =>
+      [...document.querySelectorAll('[data-testid^="semester-month-"] .highcharts-point')]
+        .map((point) => `${point.getAttribute('d') ?? ''}#${point.getAttribute('fill') ?? ''}`)
+        .join('|');
+    await expect.poll(() => shapes().length).toBeGreaterThan(0);
+    const before = shapes();
+
+    await screen.getByRole('button', { name: 'Coordinated Universal Time' }).click();
+
+    await expect
+      .element(screen.getByRole('button', { name: 'Coordinated Universal Time' }))
+      .toHaveAttribute('aria-pressed', 'true');
+    await expect.poll(shapes).toBe(before);
+  });
+
   it('opens the night view when a bar is clicked', async () => {
     const screen = await renderApp({
       element: <SemesterPage />,
