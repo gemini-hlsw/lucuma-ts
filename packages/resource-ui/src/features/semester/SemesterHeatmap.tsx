@@ -16,7 +16,7 @@ import 'highcharts/es-modules/masters/modules/pattern-fill.src.js';
 
 import { Chart } from '@highcharts/react';
 import type { ChartClickEventObject, Options, Point, PointerEventObject } from 'highcharts';
-import type { JSX } from 'react';
+import { type JSX, useMemo } from 'react';
 
 import { useOpenNight } from '@/app/useOpenNight';
 import { addDays } from '@/domain/semester';
@@ -75,76 +75,91 @@ const cellTooltip = (custom: HeatmapPointCustom): string => {
 };
 
 function MonthGrid({ month, site }: { month: TimelineMonth; site: Site }): JSX.Element {
-  const rows: readonly SemesterCellRow[] = buildSemesterCells({ rows: month.rows, nights: month.nights });
-
-  // Every cell is a night, so every cell opens its night view - the same jump
-  // the calendar squares make. A column is one night on every row, so the row
-  // clicked does not matter, only the column.
   const openNight = useOpenNight();
-  const openColumn = (column: number): void => {
-    const evening = rows[0]?.cells[column]?.eveningDate;
-    if (evening !== undefined) {
-      openNight(addDays(evening, 1));
-    }
-  };
 
-  const base = buildSemesterHeatmapOptions({
-    rows,
-    nights: month.nights,
-    bands: month.bands,
-    site,
-    seriesName: month.label,
-  });
-  const options: Options = {
-    ...base,
-    chart: {
-      ...base.chart,
-      events: {
-        // Spread first: the builder wires `render` (band-label fitting), and
-        // replacing the object would silently drop it.
-        ...base.chart?.events,
-        // A click the cells never see - the closure band hangs its label over
-        // them and takes the pointer - still lands on a column. The callback
-        // is declared over the plain pointer event, but a chart click always
-        // carries the axis coordinates.
-        click(event: PointerEventObject) {
-          const value = (event as ChartClickEventObject).xAxis[0]?.value;
-          if (value !== undefined) {
-            openColumn(Math.round(value));
-          }
+  // Explicit memoization, deliberately: the options embed Highcharts callbacks
+  // that receive `this`, which bails the React Compiler out of memoizing them,
+  // and a fresh options object per render means a Highcharts `update()` per
+  // render - which the heatmap answers by garbling its cells (Highcharts 12).
+  // Stability here is semantic, not a performance nicety: the chart must only
+  // ever see new options when what it draws changes.
+  const options: Options = useMemo(() => {
+    const rows: readonly SemesterCellRow[] = buildSemesterCells({ rows: month.rows, nights: month.nights });
+
+    // Every cell is a night, so every cell opens its night view - the same
+    // jump the calendar squares make. A column is one night on every row, so
+    // the row clicked does not matter, only the column.
+    const openColumn = (column: number): void => {
+      const evening = rows[0]?.cells[column]?.eveningDate;
+      if (evening !== undefined) {
+        openNight(addDays(evening, 1));
+      }
+    };
+
+    const base = buildSemesterHeatmapOptions({
+      rows,
+      nights: month.nights,
+      bands: month.bands,
+      site,
+      seriesName: month.label,
+    });
+    return {
+      ...base,
+      chart: {
+        ...base.chart,
+        events: {
+          // Spread first: the builder wires `render` (band-label fitting), and
+          // replacing the object would silently drop it.
+          ...base.chart?.events,
+          // A click the cells never see - the closure band hangs its label over
+          // them and takes the pointer - still lands on a column. The callback
+          // is declared over the plain pointer event, but a chart click always
+          // carries the axis coordinates.
+          click(event: PointerEventObject) {
+            const value = (event as ChartClickEventObject).xAxis[0]?.value;
+            if (value !== undefined) {
+              openColumn(Math.round(value));
+            }
+          },
         },
       },
-    },
-    plotOptions: {
-      ...base.plotOptions,
-      heatmap: {
-        ...base.plotOptions?.heatmap,
-        cursor: 'pointer' as const,
-        point: {
-          events: {
-            // A heatmap point's x is its column index.
-            click(this: Point) {
-              openColumn(this.x);
+      plotOptions: {
+        ...base.plotOptions,
+        heatmap: {
+          ...base.plotOptions?.heatmap,
+          cursor: 'pointer' as const,
+          point: {
+            events: {
+              // A heatmap point's x is its column index.
+              click(this: Point) {
+                openColumn(this.x);
+              },
             },
           },
         },
       },
-    },
-    tooltip: {
-      ...base.tooltip,
-      formatter() {
-        const custom = (this as unknown as { point?: { custom?: HeatmapPointCustom } }).point?.custom;
-        return custom === undefined ? '' : cellTooltip(custom);
+      tooltip: {
+        ...base.tooltip,
+        formatter() {
+          const custom = (this as unknown as { point?: { custom?: HeatmapPointCustom } }).point?.custom;
+          return custom === undefined ? '' : cellTooltip(custom);
+        },
       },
-    },
-  };
+    };
+  }, [month, site, openNight]);
+
+  // The chart remounts when its window moves, and only then - the same rule
+  // TimelineChart applies, and doubly load-bearing here: Highcharts 12
+  // answers an in-place heatmap update by garbling the cell geometry, so a
+  // site or semester switch must be a fresh chart, never an update.
+  const windowKey = `${String(month.interval.start)}:${String(month.interval.end)}`;
 
   return (
     // min-w-0 overrides a grid item's default min-width:auto, so the column is
     // free to narrow before the chart follows rather than the two racing.
     <section className="min-w-0" aria-label={month.label} data-testid={`semester-heatmap-${month.label}`}>
       <h3 className="mb-1 text-xs font-semibold tracking-wide text-foreground-secondary uppercase">{month.label}</h3>
-      <Chart options={options} />
+      <Chart key={windowKey} options={options} />
     </section>
   );
 }

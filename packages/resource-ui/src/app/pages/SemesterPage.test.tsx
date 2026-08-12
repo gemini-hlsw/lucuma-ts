@@ -128,6 +128,36 @@ describe('SemesterPage - the grid', () => {
     await expect.element(screen.getByTestId('semester-timeline')).not.toBeInTheDocument();
   });
 
+  it('survives the masthead clock toggle without redrawing a single cell', async () => {
+    // The clock lives in the URL, so toggling it re-renders the page - but the
+    // grids' options must stay referentially stable, because Highcharts 12
+    // answers an in-place heatmap update by garbling the cell geometry
+    // (found on the grid view, 2026-08-11). Same shapes before and after is
+    // the whole assertion.
+    const screen = await renderApp({
+      element: <Layout />,
+      route: '/semester?site=GN&semester=2026B&view=grid',
+      path: '/',
+      childRoutes: [{ path: 'semester', element: <SemesterPage /> }],
+    });
+    await expect.element(screen.getByRole('region', { name: 'August 2026' })).toBeVisible();
+    // Geometry and paint both: the observed corruption turned the hollow
+    // not-available cells black (per-point fills lost) while their paths held.
+    const shapes = () =>
+      [...document.querySelectorAll('[data-testid^="semester-heatmap-"] .highcharts-point')]
+        .map((point) => `${point.getAttribute('d') ?? ''}#${point.getAttribute('fill') ?? ''}`)
+        .join('|');
+    await expect.poll(() => shapes().length).toBeGreaterThan(0);
+    const before = shapes();
+
+    await screen.getByRole('button', { name: 'Coordinated Universal Time' }).click();
+
+    await expect
+      .element(screen.getByRole('button', { name: 'Coordinated Universal Time' }))
+      .toHaveAttribute('aria-pressed', 'true');
+    await expect.poll(shapes).toBe(before);
+  });
+
   it('opens the night view when a cell is clicked', async () => {
     const screen = await renderApp({
       element: <SemesterPage />,
