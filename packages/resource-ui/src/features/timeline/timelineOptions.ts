@@ -474,6 +474,19 @@ export interface GroupedRowLayout {
  * above its bars, and the heading row doubles as the band's breathing room. A
  * window with no state rows gets no headings: one group needs no name.
  */
+/**
+ * Where the heading-row mask sits in the band stack, and what must clear it.
+ *
+ * Below it: the sun and weekend washes, the axis grid, the night boundaries -
+ * everything whose job is to shade the *data*. Above it: any band or line that
+ * must still be seen or that hangs a label in the top row.
+ */
+export const HEADING_MASK_Z = 6;
+/** A band whose label lives in the heading row, so it draws over the mask. */
+export const LABELLED_BAND_Z = 8;
+/** A marker line that must stay visible the whole chart height. */
+export const MARKER_LINE_Z = 9;
+
 export const groupedRowLayout = (labels: readonly string[], headerRows: number): GroupedRowLayout => {
   if (headerRows === 0) {
     return { categories: [...labels], headingPositions: new Set(), offsetFor: (rowIndex) => rowIndex };
@@ -552,6 +565,22 @@ export const buildTimelineChart = ({
     yAxis: {
       categories: [...categories],
       reversed: true,
+      /*
+       * The group-heading rows are gutter labels, not data - so the washes must
+       * stop at them. An xAxis plot band spans the whole plot height, which
+       * painted the daylight, twilight and weekend shading straight through the
+       * "Telescope" and "Instruments" heading rows and made each read as a
+       * filled row (Dan, 2026-08-12). One opaque strip per heading row, above
+       * the washes (zIndex 5) and below the bands that hang a label in the top
+       * row - the closure's reason and the week's "not recorded".
+       */
+      plotBands: [...headingPositions].map((position) => ({
+        from: position - 0.5,
+        to: position + 0.5,
+        color: 'var(--color-canvas)',
+        zIndex: HEADING_MASK_Z,
+        className: 'timeline-heading-mask',
+      })),
       // Pinned to the row count: Highcharts otherwise derives the extremes from
       // the data and drops a row with nothing on it, stretching the rest.
       min: 0,

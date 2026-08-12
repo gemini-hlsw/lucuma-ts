@@ -16,7 +16,12 @@ import type { Options, XAxisPlotBandsOptions, XAxisPlotLinesOptions } from 'high
 import { midpoint } from '@/domain/interval';
 import type { TimelineMonth } from '@/domain/semesterTimeline';
 import type { Site } from '@/domain/types';
-import { buildTimelineChart, eveningDescriber } from '@/features/timeline/timelineOptions';
+import {
+  buildTimelineChart,
+  eveningDescriber,
+  LABELLED_BAND_Z,
+  MARKER_LINE_Z,
+} from '@/features/timeline/timelineOptions';
 
 const ROW_HEIGHT = 26;
 const BOTTOM_MARGIN = 26;
@@ -63,7 +68,7 @@ export const buildMonthBands = (month: TimelineMonth): XAxisPlotBandsOptions[] =
     color: 'var(--schedule-band)',
     borderColor: 'var(--schedule-band-edge)',
     borderWidth: 1,
-    zIndex: 4,
+    zIndex: LABELLED_BAND_Z,
     className: 'schedule-closure-band',
     label: {
       text: band.label,
@@ -134,7 +139,15 @@ export const buildSemesterMonthOptions = ({ month, site, now }: SemesterMonthMod
       plotLines: [
         ...buildMonthLines(month),
         ...(showsNow
-          ? [{ value: now, color: 'var(--schedule-today)', width: 2, zIndex: 6, className: 'schedule-today' }]
+          ? [
+              {
+                value: now,
+                color: 'var(--schedule-today)',
+                width: 2,
+                zIndex: MARKER_LINE_Z,
+                className: 'schedule-today',
+              },
+            ]
           : []),
       ],
     },

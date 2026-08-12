@@ -17,7 +17,12 @@ import { nightSunTimes } from '@/domain/sun';
 import type { TimelineNight } from '@/domain/timeline';
 import type { Site } from '@/domain/types';
 import type { WeekTimeline } from '@/domain/weekTimeline';
-import { buildTimelineChart, eveningDescriber } from '@/features/timeline/timelineOptions';
+import {
+  buildTimelineChart,
+  eveningDescriber,
+  LABELLED_BAND_Z,
+  MARKER_LINE_Z,
+} from '@/features/timeline/timelineOptions';
 
 const ROW_HEIGHT = 30;
 const BOTTOM_MARGIN = 32;
@@ -69,7 +74,7 @@ export const buildWeekBands = (week: WeekTimeline, site: Site): XAxisPlotBandsOp
       to: night.interval.end,
       color: 'var(--schedule-no-data)',
       className: 'week-no-data',
-      zIndex: 6,
+      zIndex: LABELLED_BAND_Z,
       label: {
         text: 'not recorded',
         style: { color: 'var(--timeline-muted-text)', fontSize: '0.62rem' },
@@ -85,7 +90,7 @@ export const buildWeekBands = (week: WeekTimeline, site: Site): XAxisPlotBandsOp
     color: 'var(--schedule-band)',
     borderColor: 'var(--schedule-band-edge)',
     borderWidth: 1,
-    zIndex: 7,
+    zIndex: LABELLED_BAND_Z,
     className: 'schedule-closure-band',
     label: {
       text: band.label,
@@ -150,7 +155,15 @@ export const buildWeekChartOptions = ({ week, site, now }: WeekChartModel): Opti
       plotLines: [
         ...buildWeekLines(week),
         ...(showsNow
-          ? [{ value: now, color: 'var(--schedule-today)', width: 2, zIndex: 8, className: 'schedule-today' }]
+          ? [
+              {
+                value: now,
+                color: 'var(--schedule-today)',
+                width: 2,
+                zIndex: MARKER_LINE_Z,
+                className: 'schedule-today',
+              },
+            ]
           : []),
       ],
     },

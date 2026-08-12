@@ -15,7 +15,12 @@ import { displayTimeZone, type TimeDisplay, zoneFormatters } from '@/domain/site
 import type { NightSunTimes } from '@/domain/sun';
 import type { TimelineBlock } from '@/domain/timeline';
 import type { Site } from '@/domain/types';
-import { type BlockDescriber, buildTimelineChart } from '@/features/timeline/timelineOptions';
+import {
+  type BlockDescriber,
+  buildTimelineChart,
+  LABELLED_BAND_Z,
+  MARKER_LINE_Z,
+} from '@/features/timeline/timelineOptions';
 
 export const ROW_HEIGHT = 34;
 const BOTTOM_MARGIN = 34;
@@ -94,7 +99,7 @@ const sunLine = (value: number, text: string): XAxisPlotLinesOptions => ({
   color: 'var(--timeline-axis)',
   width: 1,
   dashStyle: 'Dash',
-  zIndex: 6,
+  zIndex: MARKER_LINE_Z,
   className: 'night-sun-line',
   label: {
     text,
@@ -181,7 +186,7 @@ export const buildNightChartOptions = ({ night, site, now, timeDisplay }: NightC
           color: 'var(--schedule-band)',
           borderColor: 'var(--schedule-band-edge)',
           borderWidth: 1,
-          zIndex: 4,
+          zIndex: LABELLED_BAND_Z,
           className: 'schedule-closure-band',
           label: {
             text: band.label,
@@ -202,7 +207,7 @@ export const buildNightChartOptions = ({ night, site, now, timeDisplay }: NightC
                 value: now,
                 color: 'var(--schedule-today)',
                 width: 2,
-                zIndex: 6,
+                zIndex: MARKER_LINE_Z,
                 className: 'schedule-today',
                 label: {
                   text: 'now',

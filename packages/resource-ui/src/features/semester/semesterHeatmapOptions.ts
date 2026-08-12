@@ -37,7 +37,9 @@ import {
   engineeringPattern,
   fitBandLabels,
   groupedRowLayout,
+  HEADING_MASK_Z,
   headingLabelHtml,
+  LABELLED_BAND_Z,
   INSTRUMENT_INK_DARK,
   instrumentColor,
   instrumentInk,
@@ -248,7 +250,7 @@ export const buildClosureBands = (
         color: 'var(--schedule-band)',
         borderColor: 'var(--schedule-band-edge)',
         borderWidth: 1,
-        zIndex: 5,
+        zIndex: LABELLED_BAND_Z,
         className: 'schedule-closure-band',
         label: {
           text: band.label,
@@ -358,6 +360,15 @@ export const buildSemesterHeatmapOptions = ({
       gridLineWidth: 0,
       lineWidth: 0,
       tickLength: 0,
+      // The heading rows are gutter labels, so the weekend shading stops at
+      // them - the same mask the xrange charts use (timelineOptions).
+      plotBands: [...headingPositions].map((position) => ({
+        from: position - 0.5,
+        to: position + 0.5,
+        color: 'var(--color-canvas)',
+        zIndex: HEADING_MASK_Z,
+        className: 'timeline-heading-mask',
+      })),
       labels: {
         style: { color: 'var(--timeline-text)', fontSize: '0.72rem', fontWeight: '600' },
         // Group headings read as headings; every data row keeps the
