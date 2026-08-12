@@ -10,7 +10,9 @@ open.
 - A visible **"List" as a fourth view toggle** - the block table already exists
   as the accessible reading; exposing it is nearly free but adds a mode.
 - **Retry affordance** on the load-error banner (message-only today).
-- **Components table sort state in the URL** - the last non-linkable state.
+- **A components table for the night view** - it had one and it was removed
+  (2026-08-12) as not helping a reader of the night. If it returns it should
+  answer a question the browser cannot.
 - **"Jump to current month"** in the calendar when the viewed semester contains
   today.
 

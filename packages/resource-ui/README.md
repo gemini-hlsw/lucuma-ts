@@ -2,18 +2,18 @@
 
 Web UI for the GPP Resource service (telescope calendar and operational-resource manager):
 an accurate, readable, interactive reproduction of the telescope schedules -
-tonight, a week, and a semester of observing nights - plus the component browser, the
-ICTD half ("where is the R400 grating, tonight"). **v1 is read-only**: Resource
+tonight, a week, and a semester of observing nights - plus the two inventory browsers,
+the ICTD half: `/instruments` ("where is GNIRS, tonight - and if it is on no port, say
+so") and `/components` ("where is the R400 grating"). **v1 is read-only**: Resource
 reproduces schedules that already exist; nothing edits them. [CLAUDE.md](CLAUDE.md) is
 the working guide and design record.
 
 React 19 + Apollo Client + Highcharts (XRange) + PrimeReact + Tailwind CSS 4. The app
 carries its own mock GraphQL API (see [`mock-server/README.md`](mock-server/README.md))
 serving nine semesters imported from the operations workbook export; the real Scala
-backend does not exist yet. The v1 domain and API are specified in
-`lucuma-odb/resource/docs/`, with the v1 scope trims recorded in CLAUDE.md;
-[ENDPOINTS.md](ENDPOINTS.md) is the review list of the queries the backend must serve,
-for the UI and for the scheduler.
+backend does not exist yet. [ENDPOINTS.md](ENDPOINTS.md) is the self-contained contract
+for the backend team - every query the UI and the scheduler need, with the record types,
+the invariants and executable examples. CLAUDE.md records the v1 scope trims.
 
 ## Development
 
