@@ -8,7 +8,16 @@ UI is already built against. The wider architecture (types, semantics, error beh
 is `lucuma-odb/resource/docs/v1-graphql-api.md`; the scheduler contract is
 `lucuma-odb/resource/docs/v1-scheduler-integration.md`. Where this file and those
 disagree, this file reflects the schema as served on 2026-08-12 (they were written
-2026-08-10, before the ToO/Mode queries landed).
+2026-08-10, before the ToO, mode and subsystem queries landed).
+
+**Two layers behind one API.** Everything the schedules record comes from the
+operations workbook and is what the Scala service must reproduce. Two things are
+**synthetic stand-ins** until real data exists, each quarantined to one mock file
+and flagged here where it appears: the **component catalog's blocks**
+(`mock-server/components.ts`) and the **stored instruments** - instruments GPP
+knows that the schedule never mounts (`mock-server/storedInstruments.ts`). Their
+_shapes_ are the contract; their _values_ are invented, and neither is ever
+allowed to decide `dataAvailable`.
 
 ## The endpoint
 
@@ -24,18 +33,18 @@ work. No subscriptions, no mutations: v1 is read-only, and consumers re-query.
 Ten, all read-only. Signatures as in the SDL; "clip" is the shared interval contract
 described below.
 
-| Query                                                                                | What it answers                                                                                                                                             | Consumers                                                                   |
-| ------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| `publishedSemesters`                                                                 | every site + semester Resource holds: title, version, `demo` flag, first/last night, `rowLabels`, holidays, moon events                                     | the masthead picker; every view's bounds                                    |
-| `telescopeNight(site, observingNight)`                                               | one night as a projection: `dataAvailable`, the night's interval, and every record clipped to it (instruments, closures, ToO, mode, subsystems, components) | night view                                                                  |
-| `telescopeNights(site, nights)`                                                      | a range of nights, same shape per night; bounded at 400                                                                                                     | **the scheduler's only query**; week view (per-night `dataAvailable`)       |
-| `instrumentAvailability(site, interval, clip)`                                       | instrument mountings intersecting an interval, with `usage` and location                                                                                    | semester, week and night charts; the component browser's "where is it" join |
-| `telescopeAvailability(site, interval, clip)`                                        | whole-telescope Open/Closed records and port-scoped closures                                                                                                | the Telescope state row and closure bands, every schedule view              |
-| `tooSupport(site, interval, clip)`                                                   | ToO support level records                                                                                                                                   | the ToO state row, every schedule view                                      |
-| `telescopeSubsystemAvailability(site, interval, clip, subsystems)`                   | subsystem records - the workbook's nightly PWFS1, PWFS2 and LGS; the rest of the enum awaits entered data                                                   | the night view's Subsystems rows; the scheduler's LGS-availability row      |
-| `telescopeMode(site, interval, clip)`                                                | telescope mode records (Queue, Classical, Priority visitor, …) with `programReferences` and the block-scheduling `partner`                                  | the Mode state row, every schedule view                                     |
-| `components(site, instruments, componentTypes, search, includeDeleted)`              | the component catalog - identity only: `code`, `name`, `barcode`, `aliases`, soft-delete `existence` (deleted pieces excluded unless `includeDeleted`)      | component browser (the ICTD half)                                           |
-| `instrumentComponentAvailability(site, interval, clip, instruments, componentTypes)` | where each piece is over a window, with `usage`, `location` and the reason on the record                                                                    | component browser and piece history; the week's "changes this week" list    |
+| Query                                                                                | What it answers                                                                                                                                             | Consumers                                                                                           |
+| ------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `publishedSemesters`                                                                 | every site + semester Resource holds: title, version, `demo` flag, first/last night, `rowLabels`, holidays, moon events                                     | the masthead picker; every view's bounds                                                            |
+| `telescopeNight(site, observingNight)`                                               | one night as a projection: `dataAvailable`, the night's interval, and every record clipped to it (instruments, closures, ToO, mode, subsystems, components) | night view                                                                                          |
+| `telescopeNights(site, nights)`                                                      | a range of nights, same shape per night; bounded at 400                                                                                                     | **the scheduler's only query**; week view (per-night `dataAvailable`)                               |
+| `instrumentAvailability(site, interval, clip)`                                       | every instrument record intersecting an interval - mountings on a port, and instruments off the telescope with the place they sit                           | semester, week and night charts; the instrument browser; the component browser's "where is it" join |
+| `telescopeAvailability(site, interval, clip)`                                        | whole-telescope Open/Closed records and port-scoped closures                                                                                                | the Telescope state row and closure bands, every schedule view                                      |
+| `tooSupport(site, interval, clip)`                                                   | ToO support level records                                                                                                                                   | the ToO state row, every schedule view                                                              |
+| `telescopeSubsystemAvailability(site, interval, clip, subsystems)`                   | subsystem records - the workbook's nightly PWFS1, PWFS2 and LGS; the rest of the enum awaits entered data                                                   | the night view's Subsystems rows; the scheduler's LGS-availability row                              |
+| `telescopeMode(site, interval, clip)`                                                | telescope mode records (Queue, Classical, Priority visitor, …) with `programReferences` and the block-scheduling `partner`                                  | the Mode state row, every schedule view                                                             |
+| `components(site, instruments, componentTypes, search, includeDeleted)`              | the component catalog - identity only: `code`, `name`, `barcode`, `aliases`, soft-delete `existence` (deleted pieces excluded unless `includeDeleted`)      | component browser (the ICTD half)                                                                   |
+| `instrumentComponentAvailability(site, interval, clip, instruments, componentTypes)` | where each piece is over a window, with `usage`, `location` and the reason on the record                                                                    | component browser and piece history; the week's "changes this week" list                            |
 
 ## The operations the UI actually runs
 
@@ -45,10 +54,54 @@ One request per page load; every view gets its whole window in one response. Fro
 | Operation               | Queries combined                                                                                                                   | Notes                                                                                                                                                  |
 | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `GetPublishedSemesters` | `publishedSemesters`                                                                                                               | run once by the shell; every other operation's bounds come from it                                                                                     |
-| `GetSemesterSchedule`   | `instrumentAvailability` + `telescopeAvailability` + `tooSupport` + `telescopeMode`, all `clip: false`                             | a full semester in one response                                                                                                                        |
+| `GetSemesterSchedule`   | `instrumentAvailability` + `telescopeAvailability` + `tooSupport` + `telescopeMode`, all `clip: false`                             | a full semester in one response; the instrument browser runs the same operation over the site's whole recorded span                                    |
 | `GetNightSchedule`      | `telescopeNight` + the five range queries over the night, `clip: false`                                                            | the projection carries `dataAvailable` and the night's components; the range queries come unclipped so the view can say a run continues beyond tonight |
 | `GetWeekSchedule`       | `telescopeNights` (per-night `dataAvailable` only) + the four range queries + `instrumentComponentAvailability`, all `clip: false` | a run spanning the week draws as one bar, not seven abutting ones                                                                                      |
 | `GetComponentBrowser`   | `components` + `instrumentComponentAvailability` + `instrumentAvailability`, `clip: false`                                         | the catalog, every piece's records, and the mountings INSTALLED resolves against                                                                       |
+
+## The record types
+
+Every interval record implements `ScheduleBlock` - `id`, `site`, `interval`, `note` -
+and adds a subject and a state. Six kinds, plus two identity types and the night
+projection.
+
+| Type                                   | Subject                                   | State it carries                                                                    |
+| -------------------------------------- | ----------------------------------------- | ----------------------------------------------------------------------------------- |
+| `InstrumentAvailabilityBlock`          | `instrument`, `publishedName`, `rowLabel` | `usage`, `location { type, port }`                                                  |
+| `TelescopeAvailabilityBlock`           | the site, or one `port`                   | `availability` (OPEN/CLOSED), `reason`                                              |
+| `TelescopeModeBlock`                   | the site                                  | `mode`, `programReferences[]`, `partner`                                            |
+| `TooSupportBlock`                      | the site                                  | `tooSupport`                                                                        |
+| `TelescopeSubsystemAvailabilityBlock`  | `subsystem`                               | `usage`, `powerSource`                                                              |
+| `InstrumentComponentAvailabilityBlock` | `component` (nested identity)             | `usage`, `location`                                                                 |
+| `InstrumentComponent`                  | identity only                             | `code`, `name`, `barcode`, `aliases`, `existence`                                   |
+| `PublishedSemester`                    | site + semester                           | `title`, `version`, `demo`, first/last night, `rowLabels`, `holidays`, `moonEvents` |
+| `TelescopeNight`                       | one night                                 | `dataAvailable`, `interval`, and all six block lists clipped to it                  |
+
+### The enumerations
+
+| Enum                      | Values                                                                                                   | Note                                                                                                                                                         |
+| ------------------------- | -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `ResourceUsage`           | `SCIENCE`, `ENGINEERING`, `UNAVAILABLE`                                                                  | one operational-state value for instruments, components and subsystems alike - never split into separate availability and usage fields                       |
+| `TelescopeAvailability`   | `OPEN`, `CLOSED`                                                                                         | only the telescope is open or closed                                                                                                                         |
+| `TelescopeModeType`       | `QUEUE`, `CLASSICAL`, `PRIORITY_VISITOR`, `ENGINEERING`, `COMMISSIONING`, `SHUTDOWN`, `BLOCK_SCHEDULING` | the workbook emits no `SHUTDOWN` - a shutdown night's mode stays unrecorded there - but entered data may                                                     |
+| `Partner`                 | `AR`, `BR`, `CA`, `CL`, `KR`, `UH`, `US`                                                                 | lucuma-core's seven; non-null exactly on a `BLOCK_SCHEDULING` span                                                                                           |
+| `TooSupport`              | `NONE`, `STANDARD`, `INTERRUPT`, `RAPID`                                                                 | `NONE` is "no ToOs of any kind", a recorded fact - not an absence                                                                                            |
+| `TelescopeSubsystem`      | `PWFS1`, `PWFS2`, `ALTAIR`, `CANOPUS`, `LGS`, `GPOL`, `DOME_SHUTTER`, `DOME_VENT_GATES`                  | the workbook fills the first two and `LGS`; the rest await entered data                                                                                      |
+| `PowerSource`             | `COMMERCIAL`, `GENERATOR`                                                                                | reserved - the workbook records none                                                                                                                         |
+| `InstrumentLocationType`  | `PORT`, `FLOOR`, `LAB`, `BASE`, `UNKNOWN`                                                                | `port` is non-null iff `PORT`; the other four are where an instrument sits when it is off the telescope                                                      |
+| `ComponentLocation`       | `INSTALLED`, `FLOOR`, `LAB`, `BASE`, `UNKNOWN`                                                           | `INSTALLED` means "wherever its instrument is", resolved by joining the instrument's own records, so a piece can never claim a port its instrument is not on |
+| `InstrumentComponentType` | `FILTER`, `DISPERSER`, `FPU`, `WFS`, `OTHER`                                                             | an OIWFS is a component of type `WFS`                                                                                                                        |
+| `Existence`               | `PRESENT`, `DELETED`                                                                                     | soft delete: a retired piece stops being offered but its history stays valid                                                                                 |
+| `Instrument`              | the schedules' vocabulary, **not** lucuma-core's                                                         | see below                                                                                                                                                    |
+
+**`Instrument` deliberately diverges from lucuma-core.** It is site-agnostic where the
+schedules are (one `GMOS` covering GMOS-N and GMOS-S, one `ACQ_CAM` covering both
+telescopes' acquisition cameras), and it carries values lucuma-core has no place for -
+the AO subsystems `ALTAIR` and `CANOPUS`, the facility calibration unit `GCAL`,
+`ENGINEERING` as an operational state, `CAL_ZORRO` for the sheets' joint "Cal/ZORRO"
+spelling, and `UNKNOWN` for a run the importer could not identify. Every lucuma-core
+instrument has a value here; mapping the two enums onto each other is deferred and
+still open with operations.
 
 ## Contracts the resolvers must keep
 
@@ -381,13 +434,76 @@ query {
 }
 ```
 
-An off-port run answers the same shape with no port: the late-September 2026
-'Alopeke visitor run at GN is usable with no port recorded, so it serves
-`"location": { "type": "UNKNOWN", "port": null }`. The schedule views draw only
-the ports, so these reach a reader through the instrument browser instead.
-`FLOOR`, `LAB` and `BASE` await entered data - the workbook never states where
-an unmounted instrument physically is, which is why the browser says "not on a
-port" rather than naming a place.
+Two kinds of record answer this query, told apart by `location.type`, and the
+next example shows the second.
+
+### Instruments off the telescope
+
+The same query, filtered here to the records whose `location.type` is not `PORT`.
+Two things produce them. An **off-port run** is the workbook's own: an instrument
+recorded usable with no port, which says nothing about where it physically sits,
+so it answers `UNKNOWN` (the GN `'Alopeke` visitor runs). A **stored instrument**
+is an instrument GPP knows that the schedule never mounts, and it does carry a
+place - `LAB`, `FLOOR` or `BASE` - which changes over time as the instrument
+moves.
+
+The schedule views draw ports only, so neither kind appears on a chart; both
+reach a reader through the instrument browser.
+
+```graphql
+query {
+  instrumentAvailability(site: GS, interval: { start: "2025-11-19T17:00:00Z", end: "2025-11-20T17:00:00Z" }) {
+    instrument
+    publishedName
+    usage
+    location {
+      type
+      port
+    }
+    interval {
+      start
+      end
+    }
+  }
+}
+```
+
+```jsonc
+{
+  "data": {
+    "instrumentAvailability": [
+      // … the five port mountings, as above
+      {
+        "instrument": "ACQ_CAM",
+        "publishedName": "AcqCam",
+        "usage": "UNAVAILABLE",
+        "location": { "type": "LAB", "port": null },
+        "interval": { "start": "2025-10-13T18:00:00Z", "end": "2026-08-01T18:00:00Z" },
+      },
+      {
+        "instrument": "GPI",
+        "publishedName": "GPI",
+        "usage": "UNAVAILABLE",
+        "location": { "type": "BASE", "port": null },
+        "interval": { "start": "2024-08-01T18:00:00Z", "end": "2025-12-25T18:00:00Z" },
+      },
+      {
+        "instrument": "SCORPIO",
+        "publishedName": "SCORPIO",
+        "usage": "UNAVAILABLE",
+        "location": { "type": "LAB", "port": null },
+        "interval": { "start": "2025-09-07T06:00:00Z", "end": "2026-08-01T18:00:00Z" },
+      },
+    ],
+  },
+}
+```
+
+An instrument's location record is the same shape whether it is on a port or in
+the lab, which is what lets one query answer "where is everything". Note that
+**site is not on the instrument** - it is on the record, because site assignment
+is time-bounded operational data (`v1-domain-model.md` §5.1). In practice an
+instrument does not move between telescopes, and the mock never moves one.
 
 ### A closure with its reason
 
@@ -575,7 +691,14 @@ From `v1-scheduler-integration.md`, unchanged by anything above:
   subscriptions - the scheduler re-queries after events from its other sources.
 - **LGS availability is served**: the LGS subsystem's blocks, nightly from the
   workbook (GN records the laser available, GS records none), beside PWFS1 and
-  PWFS2. The rest of the subsystem enum awaits entered data.
+  PWFS2. The rest of the subsystem enum awaits entered data. One caveat worth a
+  conversation: that column is _constant per site_ across this export, so it may
+  be recording the site's laser capability rather than a nightly state.
+- **Instruments off the telescope answer too.** `instrumentAvailability` returns
+  every instrument record, not only the mounted ones, so a consumer asking
+  "where is everything" gets one answer. A scheduler filtering for what it can
+  observe with should read `location.type == PORT` (and `usage`), exactly as the
+  schedule views do.
 - **Still reserved, not yet in the schema**: the planned-versus-current
   availability split (`CurrentTelescopeAvailability`). Its field shape is
   reserved in the odb docs; this contract is unchanged when it lands. Mode, ToO
@@ -587,8 +710,8 @@ The real service imports shared scalars and types from `OdbSchema.graphql` - `Ti
 `TimestampInterval`, `Site`, `Date`, `Semester`, `NonEmptyString`, `PosInt` - which the
 preview SDL reproduces field for field, so no frontend operation changes when the
 schemas swap (`tasks/codegen.ts` moves to `@gemini-hlsw/lucuma-schemas/resource`).
-`Instrument` is deliberately **not** imported: the schedules' vocabulary exceeds
-lucuma-core's (site-agnostic `GMOS`, the AO subsystems, `CAL_ZORRO`, `ENGINEERING`,
-`UNKNOWN`), and mapping onto the ODB enum is still open with operations. Resource-owned
+`Instrument` is deliberately **not** imported - see "The record types" above for what
+it carries beyond lucuma-core's and why mapping the two is still open with operations.
+`Partner` mirrors lucuma-core's seven tags. Resource-owned
 inputs are `TimestampIntervalInput` and `DateIntervalInput`, both half-open with the
 start inclusive.
