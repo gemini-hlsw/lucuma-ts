@@ -246,7 +246,22 @@ to one semester would answer "where is Zorro" with silence. An instrument with
 no record on the chosen night reads "Not recorded" - never carried forward from
 the last night that had one. The **Location filter** groups by the same phrasing
 the Where cell prints (`locationLabel`, so the two cannot drift), offering only
-the locations the rows actually hold, counted, ports first. It exists because the schedule views draw ports only, so an
+the locations the rows actually hold, counted, from the telescope outwards.
+
+**Instruments GPP knows but the schedule never mounts** are served from
+`mock-server/storedInstruments.ts` (2026-08-12), a second **quarantine
+boundary** alongside `components.ts` and under the same three rules -
+deterministic, anchored to the site's own recorded span, never deciding
+`dataAvailable`. `lucuma-core` enumerates fourteen instruments and the workbook
+schedules a subset, so the acquisition cameras, GPI, NIRI and SCORPIO would
+otherwise be invisible. **Site is fixed per instrument** (an instrument does not
+move between telescopes; AcqCam appears at both under one tag exactly as GMOS
+does) and **location is what moves** - summit lab to dome floor and back. These
+records carry **no port**, which is structurally what keeps them out of every
+schedule view, and the calendar's news and the week's changes read **ports
+only** for the same reason: a shelf change is inventory, not a night's headline.
+Their hues sit outside the two measured site sets deliberately, since they never
+draw a bar; if one is ever scheduled, re-run that site's separation check. It exists because the schedule views draw ports only, so an
 instrument recorded usable between mounts has no row there. It is deliberately
 the component browser's twin in shape (one DataTable, the night from the URL,
 client-side search) so the two read as one tool. `domain/instrumentFinder.ts`mirrors`componentFinder` - same night-not-instant reading, same
