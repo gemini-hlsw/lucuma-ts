@@ -1,3 +1,19 @@
+@reference '../../../styles/global.css';
+
+.dark {
+  --tcc-targets: var(--cyan-400);
+  --tcc-pointing: var(--pink-400);
+  --tcc-instrument: var(--yellow-400);
+  --tcc-active-text: var(--gray-900);
+}
+
+.light {
+  --tcc-targets: var(--cyan-800);
+  --tcc-pointing: var(--pink-600);
+  --tcc-instrument: var(--yellow-800);
+  --tcc-active-text: var(--surface-0);
+}
+
 .logs-table {
   > .title {
     border-top: 1px solid var(--surface-border);
@@ -179,6 +195,38 @@
             width: auto;
             padding-left: 8px;
             padding-right: 8px;
+          }
+        }
+
+        > .p-tabview {
+          .tcc-targets {
+            --tcc-color: var(--tcc-targets);
+          }
+
+          .tcc-pointing {
+            --tcc-color: var(--tcc-pointing);
+          }
+
+          .tcc-instrument {
+            --tcc-color: var(--tcc-instrument);
+          }
+
+          .p-tabview-nav li .p-tabview-nav-link {
+            @apply transition-colors;
+
+            border-bottom-color: var(--tcc-color, transparent);
+            border-bottom-width: 3px;
+            margin-bottom: -3px;
+          }
+
+          .p-tabview-nav li.p-highlight .p-tabview-nav-link {
+            background: var(--tcc-color);
+            color: var(--tcc-active-text);
+          }
+
+          .p-tabview-nav li:not(.p-highlight, .p-disabled):hover .p-tabview-nav-link {
+            color: var(--tcc-color);
+            background: color-mix(in srgb, var(--tcc-color) 15%, transparent);
           }
         }
       }

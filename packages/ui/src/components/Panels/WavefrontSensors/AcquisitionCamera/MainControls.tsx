@@ -10,13 +10,13 @@ export default function MainControls({ canEdit, prevPanel }: { canEdit: boolean;
     <div className="main-controls">
       <Title prevPanel={prevPanel} title="Handset" className="main-controls-title" />
       <TabView renderActiveOnly={false}>
-        <TabPanel header="Targets">
+        <TabPanel header="Targets" headerClassName="tcc-targets">
           <TargetsHandset canEdit={canEdit} />
         </TabPanel>
-        <TabPanel header="Pointing">
+        <TabPanel header="Pointing" headerClassName="tcc-pointing">
           <PointingHandset canEdit={canEdit} />
         </TabPanel>
-        <TabPanel header="Instrument">
+        <TabPanel header="Instrument" headerClassName="tcc-instrument">
           <InstrumentHandset canEdit={canEdit} />
         </TabPanel>
       </TabView>

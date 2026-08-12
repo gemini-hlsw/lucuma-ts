@@ -6,7 +6,7 @@ export default {
     'at-rule-no-unknown': [
       true,
       {
-        ignoreAtRules: ['theme'],
+        ignoreAtRules: ['theme', 'reference', 'apply'],
       },
     ],
   },
