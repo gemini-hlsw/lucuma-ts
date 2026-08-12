@@ -1,30 +1,29 @@
 import { createBrowserRouter, Navigate, type RouteObject } from 'react-router';
 
 import Layout from '../components/layout/Layout';
-import TelescopeSchedulePage from '../features/telescope-schedule/TelescopeSchedulePage';
-import TonightPage from '../features/tonight/TonightPage';
+import ComponentsPage from './pages/ComponentsPage';
+import NightPage from './pages/NightPage';
+import SemesterPage from './pages/SemesterPage';
+import WeekPage from './pages/WeekPage';
 
 /**
- * Defines the application's routing structure.
+ * The application's routing structure.
+ *
+ * Tonight is the front door: landing on the app answers "what is on the
+ * telescope right now" (no `night` in the URL means the night in progress).
+ * The semester remains the readable reproduction of what Gemini publishes,
+ * one click away in the sidebar.
  */
 const routes: RouteObject[] = [
   {
     path: '/',
     element: <Layout />,
     children: [
-      {
-        // For now, redirect the root path to the telescope schedule page.
-        index: true,
-        element: <Navigate to="/telescope-schedule" replace />,
-      },
-      {
-        path: 'telescope-schedule',
-        element: <TelescopeSchedulePage />,
-      },
-      {
-        path: 'tonight',
-        element: <TonightPage />,
-      },
+      { index: true, element: <Navigate to="/night" replace /> },
+      { path: 'semester', element: <SemesterPage /> },
+      { path: 'week', element: <WeekPage /> },
+      { path: 'night', element: <NightPage /> },
+      { path: 'components', element: <ComponentsPage /> },
     ],
   },
 ];

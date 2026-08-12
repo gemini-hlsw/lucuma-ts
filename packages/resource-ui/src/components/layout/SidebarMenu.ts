@@ -1,85 +1,53 @@
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core';
-import { faCalendarDays, faMoonStars, faWrench } from '@fortawesome/pro-regular-svg-icons';
+import { faBoxesStacked, faCalendarDays, faCalendarWeek, faMoon } from '@fortawesome/pro-regular-svg-icons';
 
 /**
  * A single sidebar menu item.
  */
 export interface SidebarMenuItem {
-  /**
-   * Human-readable label shown in the sidebar.
-   */
+  /** Human-readable label shown in the sidebar. */
   label: string;
-
-  /**
-   * Route path for the navigation item.
-   */
+  /** Route path for the navigation item. */
   to: string;
-
-  /**
-   * Optional Font Awesome icon displayed to the left of the label.
-   */
+  /** Optional Font Awesome icon displayed to the left of the label. */
   icon?: IconDefinition;
-
-  /**
-   * Whether the navigation item is disabled.
-   */
+  /** Whether the navigation item is disabled. */
   disabled?: boolean;
 }
 
 /**
- * A sidebar menu section.
+ * A sidebar menu section: a heading and its links, nothing else - captions
+ * under the headings were removed at Dan's direction (2026-08-11).
  */
 export interface SidebarMenuSection {
-  /**
-   * Section label shown above the items.
-   */
+  /** Section label shown above the items. */
   label: string;
-
-  /**
-   * Items rendered under the section.
-   */
+  /** Items rendered under the section. */
   items: SidebarMenuItem[];
 }
 
 /**
  * Sidebar menu configuration for the Resource UI.
  *
- * This is the single source of truth for sidebar structure.
+ * Semester first - the readable reproduction of the published sheet - then the
+ * same data at narrower windows. Phase 3 (PLAN.md) adds each as it is built, one
+ * commit at a time.
+ *
+ * Nothing here is gated, and nothing should become gated: gating navigation on
+ * whether a schedule exists left the reader stranded on one view with no way to
+ * reach the others. Each view states plainly when nothing is recorded.
  */
 export const SIDEBAR_MENU_SECTIONS: SidebarMenuSection[] = [
   {
-    label: 'Overview',
+    label: 'Schedule',
     items: [
-      {
-        label: 'Tonight',
-        to: '/tonight',
-        icon: faMoonStars,
-        disabled: false,
-      },
+      { label: 'Semester', to: '/semester', icon: faCalendarDays },
+      { label: 'Week', to: '/week', icon: faCalendarWeek },
+      { label: 'Night', to: '/night', icon: faMoon },
     ],
   },
   {
-    label: 'Telescope',
-    items: [
-      {
-        label: 'Schedule',
-        to: '/telescope-schedule',
-        icon: faCalendarDays,
-      },
-      {
-        label: 'Test',
-        to: '/test',
-        icon: faWrench,
-        disabled: true,
-      },
-    ],
-  },
-  {
-    label: 'Instruments',
-    items: [],
-  },
-  {
-    label: 'Staff & Roles',
-    items: [],
+    label: 'Inventory',
+    items: [{ label: 'Components', to: '/components', icon: faBoxesStacked }],
   },
 ];

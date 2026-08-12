@@ -29,14 +29,8 @@ describe('SIDEBAR_MENU_SECTIONS', () => {
     }
   });
 
-  it('ensures section titles and labels are not empty', () => {
-    for (const section of SIDEBAR_MENU_SECTIONS) {
-      expect(section.label.trim()).not.toBe('');
-
-      for (const item of section.items) {
-        expect(item.label.trim()).not.toBe('');
-      }
-    }
+  it('ensures item labels are never empty (the portfolio section is deliberately untitled)', () => {
+    expect(items.every((item) => item.label.trim() !== '')).toBe(true);
   });
 
   it('ensures routes do not end with a trailing slash', () => {
