@@ -337,9 +337,15 @@ const buildSemester = (
   }
 
   // The wavefront sensors, nightly, in the same usability vocabulary as the
-  // instruments - and the LGS column, whose Yes/No is the laser being
-  // available for science or not. Printed every night, so both are recorded
-  // facts, never gaps.
+  // instruments - and the LGS column, whose Yes/No becomes the laser being
+  // available or not. Printed every night, so both are recorded facts, never
+  // gaps.
+  //
+  // The LGS column is **constant per site** in this export (GN "Yes" on every
+  // night, GS "No" on every night), so it may record the site's laser
+  // capability rather than a nightly state. Recorded as spans either way -
+  // that is what the column says - and flagged as an open question rather
+  // than reinterpreted here (CLAUDE.md).
   const subsystems: ImportedSubsystem[] = [];
   const subsystemRecord = (subsystem: SubsystemName, run: { key: string; first: string; last: string }) => {
     const usage =

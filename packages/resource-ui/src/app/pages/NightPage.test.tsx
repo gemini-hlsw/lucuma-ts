@@ -202,6 +202,17 @@ describe('NightPage', () => {
     await expect.element(screen.getByText('Not available').first()).toBeVisible();
   });
 
+  it('reads the laser per site: available at Gemini North, not at Gemini South', async () => {
+    // The workbook's LGS column, in the subsystem's own words. GN prints
+    // "Yes" and GS "No" on every night of this export, so the two sites must
+    // not read alike.
+    const north = await openNight('/night?site=GN&night=2026-08-27');
+    const chart = north.getByTestId('night-timeline');
+    await expect.element(chart).toBeVisible();
+    await expect.element(chart.getByText('Available').first()).toBeVisible();
+    await expect.element(chart.getByText('Not available')).not.toBeInTheDocument();
+  });
+
   it('keeps an off-port run off the chart - the schedule is the ports picture', async () => {
     // GN, inside the late-September 2026 `Alopeke visitor run: the API serves
     // it (resolvers.test.ts pins that), but the chart draws the five ports

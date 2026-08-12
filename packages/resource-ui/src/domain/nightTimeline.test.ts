@@ -228,6 +228,9 @@ describe('the telescope-state rows', () => {
     // Requirement order, after Telescope - and leading, so the header band
     // counts them (`stateRowCount` reads only leading rows).
     expect(night.rows.map((row) => row.label)).toEqual(['Telescope', 'PWFS1', 'LGS', ...ROWS]);
+    // A subsystem's own vocabulary: available for science, not "doing" it -
+    // which is also the laser column's Yes/No, said in words.
+    expect(night.rows.find((row) => row.label === 'PWFS1')?.blocks[0]?.label).toBe('Available');
     const lgs = night.rows.find((row) => row.label === 'LGS')?.blocks[0];
     expect(lgs?.label).toBe('Not available');
     expect(lgs?.state).toBe('SUBSYSTEM');

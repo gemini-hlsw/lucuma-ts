@@ -225,6 +225,12 @@ assumption for, rather than silently inventing an answer:
   belong elsewhere is deferred.
 - **Unidentified runs.** An unrecognised workbook name is served as `UNKNOWN`
   with its text in `note` - a lookup question, not a parse failure.
+- **What the LGS column means.** It is _constant per site_ in this export - GN
+  prints "Yes" on all 915 nights, GS "No" on all 730 - so it may record the
+  site's laser capability rather than a nightly state. Recorded as spans
+  either way (that is what the column says), read as the laser being available
+  or not, and not reinterpreted. If operations confirm it is capability, the
+  LGS row belongs beside the site rather than on the night.
 
 The superseded schedule-authoring model does not appear in this branch's history -
 it was removed and the history squashed before public testing (2026-08-10);

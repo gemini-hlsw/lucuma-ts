@@ -276,6 +276,20 @@ export const TELESCOPE_ROW_LABEL = 'Telescope';
 export const MODE_ROW_LABEL = 'Mode';
 export const TOO_ROW_LABEL = 'ToO';
 
+/**
+ * How a subsystem's state is phrased.
+ *
+ * Not the instruments' words: a subsystem is not "doing science", it is
+ * available for it - and for the laser the workbook's own column is Yes/No,
+ * which "Available" / "Not available" reproduces exactly where "Science" would
+ * read as a claim about the observing programme.
+ */
+export const SUBSYSTEM_USAGE_LABEL = {
+  SCIENCE: 'Available',
+  ENGINEERING: 'Engineering use',
+  UNAVAILABLE: 'Not available',
+} satisfies Record<ResourceUsage, string>;
+
 /** A subsystem row's gutter label. */
 export const SUBSYSTEM_ROW_LABEL = {
   PWFS1: 'PWFS1',
@@ -442,7 +456,7 @@ export const collectStateRows = (
                 id: block.id,
                 rowLabel: SUBSYSTEM_ROW_LABEL[subsystem],
                 state: 'SUBSYSTEM' as const,
-                label: USAGE_LABEL[block.usage],
+                label: SUBSYSTEM_USAGE_LABEL[block.usage],
                 instrument: null,
                 usage: block.usage,
                 variant: null,
