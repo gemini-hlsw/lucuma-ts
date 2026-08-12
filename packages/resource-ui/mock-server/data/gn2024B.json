@@ -350,7 +350,8 @@
       "start": "2024-08-02T00:00:00.000Z",
       "end": "2024-08-13T00:00:00.000Z",
       "mode": "QUEUE",
-      "programReference": null,
+      "programReferences": [],
+      "partner": null,
       "note": null
     },
     {
@@ -358,7 +359,8 @@
       "start": "2024-08-13T00:00:00.000Z",
       "end": "2024-08-17T00:00:00.000Z",
       "mode": "PRIORITY_VISITOR",
-      "programReference": null,
+      "programReferences": [],
+      "partner": null,
       "note": "`Alopeke"
     },
     {
@@ -366,7 +368,8 @@
       "start": "2024-08-17T00:00:00.000Z",
       "end": "2024-09-25T00:00:00.000Z",
       "mode": "QUEUE",
-      "programReference": null,
+      "programReferences": [],
+      "partner": null,
       "note": null
     },
     {
@@ -374,7 +377,8 @@
       "start": "2024-09-25T00:00:00.000Z",
       "end": "2024-09-29T00:00:00.000Z",
       "mode": "PRIORITY_VISITOR",
-      "programReference": null,
+      "programReferences": [],
+      "partner": null,
       "note": "`Alopeke"
     },
     {
@@ -382,7 +386,8 @@
       "start": "2024-09-29T00:00:00.000Z",
       "end": "2024-10-18T00:00:00.000Z",
       "mode": "QUEUE",
-      "programReference": null,
+      "programReferences": [],
+      "partner": null,
       "note": null
     },
     {
@@ -390,7 +395,8 @@
       "start": "2024-11-14T00:00:00.000Z",
       "end": "2024-11-19T00:00:00.000Z",
       "mode": "QUEUE",
-      "programReference": null,
+      "programReferences": [],
+      "partner": null,
       "note": null
     },
     {
@@ -398,7 +404,8 @@
       "start": "2024-11-19T00:00:00.000Z",
       "end": "2024-11-22T00:00:00.000Z",
       "mode": "PRIORITY_VISITOR",
-      "programReference": null,
+      "programReferences": [],
+      "partner": null,
       "note": "`Alopeke"
     },
     {
@@ -406,7 +413,8 @@
       "start": "2024-11-22T00:00:00.000Z",
       "end": "2025-02-02T00:00:00.000Z",
       "mode": "QUEUE",
-      "programReference": null,
+      "programReferences": [],
+      "partner": null,
       "note": null
     }
   ],

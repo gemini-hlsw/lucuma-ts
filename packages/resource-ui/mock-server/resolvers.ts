@@ -161,7 +161,8 @@ const modeBlock = (record: StoredTelescopeMode, interval: MockInterval): unknown
   interval,
   note: record.note,
   mode: record.mode,
-  programReference: record.programReference,
+  programReferences: record.programReferences,
+  partner: record.partner,
 });
 
 /** Clips every record touching `bounds` to it, dropping those that miss. */

@@ -85,7 +85,8 @@ export const toModeBlocks = (blocks: readonly ModeBlockFieldsFragment[]): readon
   blocks.map((block) => ({
     id: block.id,
     mode: block.mode,
-    programReference: block.programReference ?? null,
+    programReferences: block.programReferences,
+    partner: block.partner ?? null,
     interval: toInterval(block.interval),
     note: block.note ?? null,
   }));

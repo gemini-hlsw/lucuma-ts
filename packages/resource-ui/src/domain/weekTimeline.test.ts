@@ -119,7 +119,7 @@ describe('the telescope-state rows', () => {
       mountings: [],
       closures: [{ id: 'a1', availability: 'OPEN', port: null, interval: span, reason: null }],
       tooBlocks: [{ id: 't1', tooSupport: 'NONE', interval: span, note: null }],
-      modeBlocks: [{ id: 'm1', mode: 'QUEUE', programReference: null, interval: span, note: null }],
+      modeBlocks: [{ id: 'm1', mode: 'QUEUE', programReferences: [], partner: null, interval: span, note: null }],
       nightsWithData: undefined,
     });
 

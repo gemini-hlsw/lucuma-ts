@@ -205,7 +205,7 @@ describe('the telescope-state header band', () => {
     rowLabels: ROWS,
     mountings: [mounting({ id: 'g1', rowLabel: 'Port 2', interval })],
     closures: [],
-    modeBlocks: [{ id: 'm1', mode: 'PRIORITY_VISITOR', programReference: null, interval, note: null }],
+    modeBlocks: [{ id: 'm1', mode: 'PRIORITY_VISITOR', programReferences: [], partner: null, interval, note: null }],
     tooBlocks: [{ id: 't1', tooSupport: 'STANDARD', interval, note: null }],
   });
   const options = buildNightChartOptions({

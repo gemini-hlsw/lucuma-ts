@@ -40,6 +40,7 @@ import type {
   Interval,
   ModeBlock,
   Mounting,
+  Partner,
   ResourceUsage,
   TelescopeAvailability,
   TelescopeModeType,
@@ -228,7 +229,30 @@ export const TELESCOPE_MODE_LABEL = {
   PRIORITY_VISITOR: 'Priority visitor',
   ENGINEERING: 'Engineering',
   COMMISSIONING: 'Commissioning',
+  SHUTDOWN: 'Shutdown',
+  BLOCK_SCHEDULING: 'Block scheduling',
 } satisfies Record<TelescopeModeType, string>;
+
+/** A partner tag phrased for a block-scheduling span's detail. */
+const PARTNER_LABEL = {
+  AR: 'Argentina',
+  BR: 'Brazil',
+  CA: 'Canada',
+  CL: 'Chile',
+  KR: 'Republic of Korea',
+  UH: 'University of Hawaii',
+  US: 'United States',
+} satisfies Record<Partner, string>;
+
+/** The mode block's tooltip detail: programs, the block partner, the note. */
+const modeDetail = (block: ModeBlock): string | null => {
+  const parts = [
+    ...(block.programReferences.length === 0 ? [] : [block.programReferences.join(', ')]),
+    ...(block.partner === null ? [] : [PARTNER_LABEL[block.partner]]),
+    ...(block.note === null ? [] : [block.note]),
+  ];
+  return parts.length === 0 ? null : parts.join(' - ');
+};
 
 /** How a mounted span's usage is phrased, wherever usage is stated. */
 export const USAGE_LABEL = {
@@ -264,6 +288,8 @@ export const NOTABLE_MODE = {
   PRIORITY_VISITOR: true,
   ENGINEERING: true,
   COMMISSIONING: true,
+  SHUTDOWN: true,
+  BLOCK_SCHEDULING: true,
 } satisfies Record<TelescopeModeType, boolean>;
 
 export const NOTABLE_TOO = {
@@ -347,12 +373,9 @@ export const collectStateRows = (
               variant: block.mode,
               fullInterval: block.interval,
               nights: nightsIn(block.interval),
-              // The program is the interesting fact about a classical span; the
-              // note rides along when both are recorded.
-              detail:
-                block.programReference !== null && block.note !== null
-                  ? `${block.programReference} - ${block.note}`
-                  : (block.programReference ?? block.note),
+              // The programs (or the block partner) are the interesting fact
+              // about a non-queue span; the note rides along when recorded.
+              detail: modeDetail(block),
             })),
           },
         ]),

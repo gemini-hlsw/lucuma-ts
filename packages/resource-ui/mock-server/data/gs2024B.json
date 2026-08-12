@@ -242,7 +242,8 @@
       "start": "2024-08-16T18:00:00.000Z",
       "end": "2024-09-16T17:00:00.000Z",
       "mode": "QUEUE",
-      "programReference": null,
+      "programReferences": [],
+      "partner": null,
       "note": null
     },
     {
@@ -250,7 +251,8 @@
       "start": "2024-09-16T17:00:00.000Z",
       "end": "2024-09-21T17:00:00.000Z",
       "mode": "PRIORITY_VISITOR",
-      "programReference": null,
+      "programReferences": [],
+      "partner": null,
       "note": "Zorro"
     },
     {
@@ -258,7 +260,8 @@
       "start": "2024-09-21T17:00:00.000Z",
       "end": "2024-11-09T17:00:00.000Z",
       "mode": "QUEUE",
-      "programReference": null,
+      "programReferences": [],
+      "partner": null,
       "note": null
     },
     {
@@ -266,7 +269,8 @@
       "start": "2024-11-09T17:00:00.000Z",
       "end": "2024-11-14T17:00:00.000Z",
       "mode": "PRIORITY_VISITOR",
-      "programReference": null,
+      "programReferences": [],
+      "partner": null,
       "note": "Zorro"
     },
     {
@@ -274,7 +278,8 @@
       "start": "2024-11-14T17:00:00.000Z",
       "end": "2025-01-07T17:00:00.000Z",
       "mode": "QUEUE",
-      "programReference": null,
+      "programReferences": [],
+      "partner": null,
       "note": null
     },
     {
@@ -282,7 +287,8 @@
       "start": "2025-01-07T17:00:00.000Z",
       "end": "2025-01-12T17:00:00.000Z",
       "mode": "PRIORITY_VISITOR",
-      "programReference": null,
+      "programReferences": [],
+      "partner": null,
       "note": "Zorro"
     },
     {
@@ -290,7 +296,8 @@
       "start": "2025-01-12T17:00:00.000Z",
       "end": "2025-02-01T17:00:00.000Z",
       "mode": "QUEUE",
-      "programReference": null,
+      "programReferences": [],
+      "partner": null,
       "note": null
     }
   ],

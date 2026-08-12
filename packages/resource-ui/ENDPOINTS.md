@@ -32,7 +32,7 @@ described below.
 | `instrumentAvailability(site, interval, clip)`                                       | instrument mountings intersecting an interval, with `usage` and location                                                                        | semester, week and night charts; the component browser's "where is it" join |
 | `telescopeAvailability(site, interval, clip)`                                        | whole-telescope Open/Closed records and port-scoped closures                                                                                    | the Telescope state row and closure bands, every schedule view              |
 | `tooSupport(site, interval, clip)`                                                   | ToO support level records                                                                                                                       | the ToO state row, every schedule view                                      |
-| `telescopeMode(site, interval, clip)`                                                | telescope mode records (Queue, Classical, Priority visitor, …) with `programReference`                                                          | the Mode state row, every schedule view                                     |
+| `telescopeMode(site, interval, clip)`                                                | telescope mode records (Queue, Classical, Priority visitor, …) with `programReferences` and the block-scheduling `partner`                      | the Mode state row, every schedule view                                     |
 | `components(site, instruments, componentTypes, search)`                              | the component catalog - identity only: `code`, `name`, `barcode`, `aliases`                                                                     | component browser (the ICTD half)                                           |
 | `instrumentComponentAvailability(site, interval, clip, instruments, componentTypes)` | where each piece is over a window, with `usage`, `place` and the reason on the record                                                           | component browser and piece history; the week's "changes this week" list    |
 
@@ -164,7 +164,8 @@ query {
     }
     telescopeMode {
       mode
-      programReference
+      programReferences
+      partner
       note
       interval {
         start
@@ -225,7 +226,8 @@ query {
       "telescopeMode": [
         {
           "mode": "QUEUE",
-          "programReference": null,
+          "programReferences": [],
+          "partner": null,
           "note": null,
           "interval": { "start": "2025-11-19T17:00:00Z", "end": "2025-11-20T17:00:00Z" },
         },

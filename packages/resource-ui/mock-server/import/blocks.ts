@@ -102,7 +102,11 @@ export interface ImportedClosure {
 
 export type TooSupportLevel = 'STANDARD' | 'INTERRUPT' | 'RAPID' | 'NONE';
 
-export type TelescopeModeType = 'QUEUE' | 'CLASSICAL' | 'PRIORITY_VISITOR' | 'ENGINEERING' | 'COMMISSIONING';
+export type TelescopeModeType =
+  'QUEUE' | 'CLASSICAL' | 'PRIORITY_VISITOR' | 'ENGINEERING' | 'COMMISSIONING' | 'SHUTDOWN' | 'BLOCK_SCHEDULING';
+
+/** A Gemini partner tag, as lucuma-core enumerates them. */
+export type PartnerTag = 'AR' | 'BR' | 'CA' | 'CL' | 'KR' | 'UH' | 'US';
 
 /**
  * The ToO support level over a span, from the workbook's `ToOs` column.
@@ -123,7 +127,9 @@ export interface ImportedTelescopeMode {
   readonly end: string;
   readonly mode: TelescopeModeType;
   /** The program a CLASSICAL or PRIORITY_VISITOR span is for, when named. */
-  readonly programReference: string | null;
+  readonly programReferences: readonly string[];
+  /** The partner a BLOCK_SCHEDULING span belongs to. The workbook records none. */
+  readonly partner: PartnerTag | null;
   readonly note: string | null;
 }
 

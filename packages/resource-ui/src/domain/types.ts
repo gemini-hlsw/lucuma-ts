@@ -8,6 +8,7 @@ import type {
   ComponentPlace,
   Instrument,
   InstrumentComponentType,
+  Partner,
   ResourceUsage,
   Site,
   TelescopeAvailability,
@@ -18,7 +19,16 @@ import type {
 // ComponentPlace: INSTALLED means "wherever the instrument is" and resolves
 // through the instrument's own records (domain/componentFinder.ts), so a piece
 // can never claim a port its instrument is not on.
-export type { ComponentPlace, Instrument, ResourceUsage, Site, TelescopeAvailability, TelescopeModeType, TooSupport };
+export type {
+  ComponentPlace,
+  Instrument,
+  Partner,
+  ResourceUsage,
+  Site,
+  TelescopeAvailability,
+  TelescopeModeType,
+  TooSupport,
+};
 
 /** A half-open interval, start inclusive and end exclusive, as epoch milliseconds. */
 export interface Interval {
@@ -65,8 +75,10 @@ export interface TooBlock {
 export interface ModeBlock {
   readonly id: string;
   readonly mode: TelescopeModeType;
-  /** The program a CLASSICAL or PRIORITY_VISITOR span is for, when one is named. */
-  readonly programReference: string | null;
+  /** The programs a CLASSICAL or PRIORITY_VISITOR span is for, when any are named. */
+  readonly programReferences: readonly string[];
+  /** The partner a BLOCK_SCHEDULING span belongs to. Non-null exactly then. */
+  readonly partner: Partner | null;
   readonly interval: Interval;
   readonly note: string | null;
 }

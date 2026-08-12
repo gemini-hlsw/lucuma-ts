@@ -181,7 +181,8 @@
       "start": "2026-02-02T00:00:00.000Z",
       "end": "2026-07-25T00:00:00.000Z",
       "mode": "QUEUE",
-      "programReference": null,
+      "programReferences": [],
+      "partner": null,
       "note": null
     },
     {
@@ -189,7 +190,8 @@
       "start": "2026-07-25T00:00:00.000Z",
       "end": "2026-08-01T00:00:00.000Z",
       "mode": "PRIORITY_VISITOR",
-      "programReference": null,
+      "programReferences": [],
+      "partner": null,
       "note": "`Alopeke"
     },
     {
@@ -197,7 +199,8 @@
       "start": "2026-08-01T00:00:00.000Z",
       "end": "2026-08-02T00:00:00.000Z",
       "mode": "QUEUE",
-      "programReference": null,
+      "programReferences": [],
+      "partner": null,
       "note": null
     }
   ],

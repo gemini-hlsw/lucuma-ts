@@ -258,7 +258,8 @@ const buildSemester = (
         start: span.start,
         end: span.end,
         mode: resolved.mode,
-        programReference: null,
+        programReferences: [],
+        partner: null,
         note: resolved.note,
       },
     ];

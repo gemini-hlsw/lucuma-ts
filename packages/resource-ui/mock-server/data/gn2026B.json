@@ -302,7 +302,8 @@
       "start": "2026-08-02T00:00:00.000Z",
       "end": "2026-08-25T00:00:00.000Z",
       "mode": "QUEUE",
-      "programReference": null,
+      "programReferences": [],
+      "partner": null,
       "note": null
     },
     {
@@ -310,7 +311,8 @@
       "start": "2026-08-25T00:00:00.000Z",
       "end": "2026-09-01T00:00:00.000Z",
       "mode": "PRIORITY_VISITOR",
-      "programReference": null,
+      "programReferences": [],
+      "partner": null,
       "note": "MAROON-X"
     },
     {
@@ -318,7 +320,8 @@
       "start": "2026-09-01T00:00:00.000Z",
       "end": "2026-09-24T00:00:00.000Z",
       "mode": "QUEUE",
-      "programReference": null,
+      "programReferences": [],
+      "partner": null,
       "note": null
     },
     {
@@ -326,7 +329,8 @@
       "start": "2026-09-24T00:00:00.000Z",
       "end": "2026-10-01T00:00:00.000Z",
       "mode": "PRIORITY_VISITOR",
-      "programReference": null,
+      "programReferences": [],
+      "partner": null,
       "note": "`Alopeke"
     },
     {
@@ -334,7 +338,8 @@
       "start": "2026-10-01T00:00:00.000Z",
       "end": "2026-11-24T00:00:00.000Z",
       "mode": "QUEUE",
-      "programReference": null,
+      "programReferences": [],
+      "partner": null,
       "note": null
     },
     {
@@ -342,7 +347,8 @@
       "start": "2026-11-24T00:00:00.000Z",
       "end": "2026-12-01T00:00:00.000Z",
       "mode": "PRIORITY_VISITOR",
-      "programReference": null,
+      "programReferences": [],
+      "partner": null,
       "note": "MAROON-X"
     },
     {
@@ -350,7 +356,8 @@
       "start": "2026-12-01T00:00:00.000Z",
       "end": "2026-12-22T00:00:00.000Z",
       "mode": "QUEUE",
-      "programReference": null,
+      "programReferences": [],
+      "partner": null,
       "note": null
     },
     {
@@ -358,7 +365,8 @@
       "start": "2026-12-22T00:00:00.000Z",
       "end": "2026-12-29T00:00:00.000Z",
       "mode": "PRIORITY_VISITOR",
-      "programReference": null,
+      "programReferences": [],
+      "partner": null,
       "note": "MAROON-X"
     },
     {
@@ -366,7 +374,8 @@
       "start": "2026-12-29T00:00:00.000Z",
       "end": "2027-01-20T00:00:00.000Z",
       "mode": "QUEUE",
-      "programReference": null,
+      "programReferences": [],
+      "partner": null,
       "note": null
     },
     {
@@ -374,7 +383,8 @@
       "start": "2027-01-20T00:00:00.000Z",
       "end": "2027-01-26T00:00:00.000Z",
       "mode": "PRIORITY_VISITOR",
-      "programReference": null,
+      "programReferences": [],
+      "partner": null,
       "note": "`Alopeke"
     },
     {
@@ -382,7 +392,8 @@
       "start": "2027-01-26T00:00:00.000Z",
       "end": "2027-02-02T00:00:00.000Z",
       "mode": "QUEUE",
-      "programReference": null,
+      "programReferences": [],
+      "partner": null,
       "note": null
     }
   ],

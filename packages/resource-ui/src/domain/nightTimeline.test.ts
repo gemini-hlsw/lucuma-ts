@@ -148,7 +148,8 @@ describe('the telescope-state rows', () => {
     ...over,
   });
   const mode = (over: Partial<ModeBlock> & Pick<ModeBlock, 'id' | 'mode' | 'interval'>): ModeBlock => ({
-    programReference: null,
+    programReferences: [],
+    partner: null,
     note: null,
     ...over,
   });
@@ -193,12 +194,24 @@ describe('the telescope-state rows', () => {
     expect(night.transitions).toEqual([change]);
   });
 
-  it('hands the tooltip the program a classical span is for', () => {
+  it('hands the tooltip the programs a classical span is for', () => {
     const night = build({
-      modeBlocks: [mode({ id: 'm', mode: 'CLASSICAL', programReference: 'G-2099B-0042-C', interval })],
+      modeBlocks: [
+        mode({ id: 'm', mode: 'CLASSICAL', programReferences: ['G-2099B-0042-C', 'G-2099B-0043-C'], interval }),
+      ],
     });
 
-    expect(rowIn(night, MODE_ROW_LABEL)?.blocks[0]?.detail).toBe('G-2099B-0042-C');
+    expect(rowIn(night, MODE_ROW_LABEL)?.blocks[0]?.detail).toBe('G-2099B-0042-C, G-2099B-0043-C');
+  });
+
+  it('hands the tooltip the partner a block-scheduling span belongs to', () => {
+    const night = build({
+      modeBlocks: [mode({ id: 'm', mode: 'BLOCK_SCHEDULING', partner: 'UH', interval })],
+    });
+
+    const block = rowIn(night, MODE_ROW_LABEL)?.blocks[0];
+    expect(block?.label).toBe('Block scheduling');
+    expect(block?.detail).toBe('University of Hawaii');
   });
 
   it('keeps state blocks out of the instrument legend and the unscheduled key', () => {

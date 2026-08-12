@@ -145,7 +145,8 @@ describe('the telescope-state rows', () => {
   const modeBlock = {
     id: 'mode1',
     mode: 'CLASSICAL' as const,
-    programReference: 'G-2026B-0001-C',
+    programReferences: ['G-2026B-0001-C'],
+    partner: null,
     interval: nights('2026-08-08', '2026-08-14'),
     note: null,
   };

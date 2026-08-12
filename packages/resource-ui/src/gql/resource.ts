@@ -55,7 +55,8 @@ export const MODE_BLOCK_FIELDS = graphql(`
   fragment ModeBlockFields on TelescopeModeBlock {
     id
     mode
-    programReference
+    programReferences
+    partner
     note
     interval {
       start
