@@ -1,64 +1,27 @@
 /**
- * Creates a local mock GraphQL server for developing the Resource UI.
+ * Local mock GraphQL server for developing the Resource UI.
+ *
+ * Serves the v1 schema preview backed by the in-memory store. Mutations persist for
+ * the life of the process (no database). Run with `pnpm dev:mock-server`.
  */
-
 import { readFileSync } from 'node:fs';
 import { createServer } from 'node:http';
+import { fileURLToPath } from 'node:url';
 
 import { createSchema, createYoga } from 'graphql-yoga';
 
-import { mockTelescopeNightTimelines } from './data/mockTelescopeNightTimelines.ts';
+import { buildResolvers } from './resolvers.ts';
+import { MockStore } from './store.ts';
 
 const PORT = 4000;
 const GRAPHQL_ENDPOINT = '/graphql';
-const SCHEMA_PATH = 'mock-server/schema.graphql';
 
-interface TelescopeNightTimelineArgs {
-  site: string;
-  observingDate: string;
-}
+const typeDefs = readFileSync(fileURLToPath(new URL('./schema.graphql', import.meta.url)), 'utf8');
 
-/**
- * Returns mock telescope night timeline data.
- *
- * @param _parent - Unused GraphQL parent resolver value.
- * @param args - Query arguments from the GraphQL request.
- * @returns Matching mock telescope night timeline, or null if none exists.
- */
-function getMockTelescopeNightTimeline(_parent: unknown, args: TelescopeNightTimelineArgs) {
-  console.info(`Looking up telescopeNightTimeline for site=${args.site}, observingDate=${args.observingDate}`);
+const store = new MockStore();
+const schema = createSchema({ typeDefs, resolvers: buildResolvers(store) });
 
-  const timeline = mockTelescopeNightTimelines.find(
-    (entry) => entry.site === args.site && entry.observingDate === args.observingDate,
-  );
-
-  if (!timeline) {
-    console.warn(`No mock telescope night timeline found for site=${args.site}, observingDate=${args.observingDate}`);
-
-    return null;
-  }
-
-  return timeline;
-}
-
-console.info(`Loading mock GraphQL schema from ${SCHEMA_PATH}`);
-
-const typeDefs = readFileSync(SCHEMA_PATH, 'utf8');
-
-const schema = createSchema({
-  typeDefs,
-  resolvers: {
-    Query: {
-      // Define queries here, matching the schema's Query type.
-      telescopeNightTimeline: getMockTelescopeNightTimeline,
-    },
-  },
-});
-
-const yoga = createYoga({
-  schema,
-  graphqlEndpoint: GRAPHQL_ENDPOINT,
-});
+const yoga = createYoga({ schema, graphqlEndpoint: GRAPHQL_ENDPOINT });
 
 // eslint-disable-next-line @typescript-eslint/no-misused-promises
 const server = createServer(yoga);

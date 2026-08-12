@@ -1,16 +1,108 @@
+# Resource v1 - preview schema
+#
+# The queryable record of what the observatory can do, at each site, over any
+# interval of time. Not a scheduler, and not a tool for building a schedule.
+#
+# FOR REVIEW (Bryan, Andrew). This is the API design, deliberately circulated as
+# SDL before any resolver exists - it is cheaper to change here than in code.
+# Questions still open are tracked in NEED-CLARIFICATION.md, not here.
+#
+# Two consumers: the scheduler (telescopeNights, pull-only) and the Resource
+# frontend (the same query, regrouped per view).
+#
+# Design rules this schema is held to:
+#   - Intervals, never dates. Every fact carries [start, end), start inclusive and
+#     end exclusive, so a fact that covers part of a night needs no special case.
+#   - A gap means "not recorded", never "unavailable". Absence is never a state.
+#   - Two records for the same subject never overlap.
+#   - No type here without a requirement behind it: a row in the published sheet,
+#     a line in the scheduler contract, or a request from operations.
+
+# ---------------------------------------------------------------------------
+# Types shared with the ODB
+#
+# The real backend imports these from OdbSchema.graphql (v1-graphql-api.md §2)
+# rather than declaring them. They are reproduced here field for field so the
+# mock sends the payload the Scala service will send, and so no operation has
+# to change when this file is swapped for the published schema.
+# ---------------------------------------------------------------------------
+
+"Date in ISO-8601 representation in format YYYY-MM-DD, e.g. \"2026-08-07\"."
 scalar Date
+
+"Timestamp of time in ISO-8601 representation, e.g. \"2026-08-07T18:00:00Z\"."
 scalar Timestamp
 
+"A lucuma semester. A runs February-July, B runs August into the next January."
+scalar Semester
+
+"A formatted program reference, e.g. \"G-2026B-0012-C\"."
+scalar ProgramReferenceLabel
+
+"A string that is never empty. A value that would be blank is absent instead."
+scalar NonEmptyString
+
+"An integer greater than zero."
+scalar PosInt
+
+"A 64-bit signed integer."
+scalar Long
+
+"An arbitrary-precision decimal."
+scalar BigDecimal
+
+"Equivalent time amount in several unit options (e.g., 120 seconds or 2 minutes)."
+type TimeSpan {
+  "TimeSpan in µs"
+  microseconds: Long!
+  "TimeSpan in ms"
+  milliseconds: BigDecimal!
+  "TimeSpan in seconds"
+  seconds: BigDecimal!
+  "TimeSpan in minutes"
+  minutes: BigDecimal!
+  "TimeSpan in hours"
+  hours: BigDecimal!
+  "TimeSpan as an ISO-8601 string"
+  iso: String!
+}
+
+"A Gemini observatory site."
 enum Site {
+  "Gemini North, Maunakea."
   GN
+  "Gemini South, Cerro Pachon."
   GS
 }
 
+"""
+The single operational-state value for anything the observatory can use.
+
+One enum rather than a separate availability flag and usage field: an instrument
+can be mounted on the telescope and still not usable for science, and separate
+fields would permit meaningless combinations like "unavailable but usable".
+"""
+enum ResourceUsage {
+  "Available for science observations."
+  SCIENCE
+  "Available, but committed to engineering or commissioning."
+  ENGINEERING
+  "Not available."
+  UNAVAILABLE
+}
+
+"Whether the telescope itself is open. Only the telescope is OPEN/CLOSED."
 enum TelescopeAvailability {
   OPEN
   CLOSED
 }
 
+"""
+The level of Target of Opportunity interruption the telescope supports.
+
+`NONE` means no ToOs of any kind - a recorded fact, not an absence. A span with
+no record at all means "not recorded", as everywhere in this API.
+"""
 enum TooSupport {
   STANDARD
   INTERRUPT
@@ -18,6 +110,12 @@ enum TooSupport {
   NONE
 }
 
+"""
+How the telescope is being operated over a span.
+
+`TelescopeMode`, not "observing mode": GPP already uses `ObservingModeType` for
+instrument configurations.
+"""
 enum TelescopeModeType {
   QUEUE
   CLASSICAL
@@ -26,45 +124,405 @@ enum TelescopeModeType {
   COMMISSIONING
 }
 
+"Where an instrument physically is."
+enum InstrumentLocationType {
+  "Mounted on a telescope port; `port` says which."
+  PORT
+  FLOOR
+  LAB
+  BASE
+  UNKNOWN
+}
+
+"""
+Time interval marked by a start `Timestamp` (inclusive) and an end `Timestamp`
+(exclusive).
+
+Half-open is what makes adjacent records abut exactly - one record's `end` is the
+next one's `start`, with no gap and no overlap at the boundary.
+"""
 type TimestampInterval {
+  "Start time of the interval (inclusive)."
+  start: Timestamp!
+
+  "End time of the interval (exclusive)."
+  end: Timestamp!
+
+  "Duration of the interval."
+  duration: TimeSpan!
+}
+
+input TimestampIntervalInput {
   start: Timestamp!
   end: Timestamp!
 }
 
-type TelescopeMode {
-  type: TelescopeModeType!
-  programReference: String
+"A range of observing nights, `start` inclusive and `end` exclusive."
+input DateIntervalInput {
+  start: Date!
+  end: Date!
 }
 
-type TelescopeAvailabilityStatus {
+type InstrumentLocation {
+  type: InstrumentLocationType!
+  "Non-null iff `type` is PORT."
+  port: PosInt
+}
+
+"Fields every interval record carries."
+interface ScheduleBlock {
+  id: ID!
+  site: Site!
   interval: TimestampInterval!
+  "Free text as published, e.g. \"Engineering Shutdown\". Never parsed for meaning."
+  note: NonEmptyString
+}
+
+"""
+Everything the published schedules name as occupying a port or being usable.
+
+Resource models all of these as instruments, which is what the schedules do. Some
+are not instruments in the lucuma-core sense - ALTAIR and CANOPUS are AO
+subsystems, ENGINEERING is an operational state, CAL_ZORRO names two things - and
+mapping them onto lucuma-core is deferred (NEED-CLARIFICATION.md questions 4, 5).
+"""
+enum Instrument {
+  ALOPEKE
+  "AO facility at Gemini North."
+  ALTAIR
+  """
+  The ZORRO speckle imager. The tag keeps the published sheets' joint
+  "Cal/ZORRO" spelling; the operations workbook records the calibration unit
+  separately as GCAL, which ZORRO displaces on Port 2 for visitor runs.
+  """
+  CAL_ZORRO
+  "GeMS AO facility at Gemini South."
+  CANOPUS
+  "Published beside the instruments in the North colour key."
+  ENGINEERING
+  F2
+  "The facility calibration unit, on Port 2 at both sites most nights."
+  GCAL
+  GHOST
+  GMOS
+  GNIRS
+  GSAOI
+  IGRINS2
+  IQUEYE
+  MAROON_X
+  """
+  A painted run whose colour the published sheet's key does not identify
+  (PLAN.md §7) - all at Gemini North, e.g. the light orange the page's prose
+  calls "Maroon-X in Multi-Instrument Queue". Served so every cell the sheet
+  paints is drawn; `note` keeps any text the sheet printed on the run.
+  Identifying these is an open question with operations, not a parse failure.
+  """
+  UNKNOWN
+}
+
+"An instrument's operational state over an interval, and where it was."
+type InstrumentAvailabilityBlock implements ScheduleBlock {
+  id: ID!
+  site: Site!
+  interval: TimestampInterval!
+  note: NonEmptyString
+  instrument: Instrument!
+  "The name exactly as the schedule prints it, e.g. \"cal/ZORRO\", \"Maroon-X Run\"."
+  publishedName: String!
+  """
+  The row the published schedule files this under - "Port 3" at Gemini South,
+  "GMOS" or "Visiting" at Gemini North.
+
+  Present because the two sites organise the same facts differently, and a view
+  reproducing either layout needs to know which row a record belongs to. It
+  pairs with `PublishedSemester.rowLabels`.
+  """
+  rowLabel: String!
+  location: InstrumentLocation!
+  usage: ResourceUsage!
+}
+
+"""
+Planned telescope availability over an interval, with a free-text reason.
+
+At Gemini South a closure is not published directly. An uncoloured run on a
+port's row means that port was shut down, and the reason is spelled across the
+rows - "Telescope" on Port 2, "Shutdown" on Port 3 - so `reason` is those words
+joined, unparsed. A span where every port is shut is a telescope closure.
+
+Because the importer turns those empty runs into explicit records, a gap in this
+API still means "not recorded" and never "closed".
+
+Gemini North marks a shutdown with a colour instead, so nothing is derived there
+(NEED-CLARIFICATION.md question 2).
+"""
+type TelescopeAvailabilityBlock implements ScheduleBlock {
+  id: ID!
+  site: Site!
+  interval: TimestampInterval!
+  note: NonEmptyString
   availability: TelescopeAvailability!
-  reason: String
-  plannedAvailability: TelescopeAvailability
-  site: Site!
+  """
+  The port this applies to, or null when it applies to the whole telescope.
+
+  A port shuts down on its own - Gemini South's Port 4 carried nothing for all of
+  2026B - so a closure is scoped. When every port is shut at once, a second
+  record with `port: null` states that the telescope itself was closed.
+  """
+  port: PosInt
+  "Why, as printed, e.g. \"Telescope Shutdown A&G Maintenance\". Never parsed."
+  reason: NonEmptyString
 }
 
-type TelescopeTooStatus {
+"""
+The ToO support level over an interval.
+
+Its own record kind, deliberately: ToO support is independent of what is mounted
+and of whether the telescope is open, so it never rides on another block. The
+published sheets do not carry it; the source is operations entry.
+"""
+type TooSupportBlock implements ScheduleBlock {
+  id: ID!
+  site: Site!
   interval: TimestampInterval!
+  note: NonEmptyString
   tooSupport: TooSupport!
-  site: Site!
 }
 
-type TelescopeModeStatus {
+"""
+The telescope's operating mode over an interval.
+
+Independent of the mounted instruments for the same reason ToO support is: a
+classical run or an engineering night is a fact about the telescope, not about
+a port. The published sheets do not carry it; the source is operations entry.
+"""
+type TelescopeModeBlock implements ScheduleBlock {
+  id: ID!
+  site: Site!
   interval: TimestampInterval!
-  site: Site!
-  mode: TelescopeMode!
+  note: NonEmptyString
+  mode: TelescopeModeType!
+  "The program a CLASSICAL or PRIORITY_VISITOR span is for, when one is named."
+  programReference: ProgramReferenceLabel
 }
 
-type TelescopeNightTimeline {
+"""
+One observing night, with every record that touches it clipped to it.
+
+An observing night is the lucuma-core `LocalObservingNight` interval: 14:00 local
+on the previous day to 14:00 local on the labelling day. A schedule column headed
+"7" is the night that begins the evening of the 7th, so it is the night labelled
+by the 8th.
+
+Partial nights are first class. A mid-night change arrives as two blocks with a
+boundary between them, never flattened to one value for the night.
+"""
+type TelescopeNight {
   site: Site!
-  observingDate: Date!
-  displayInterval: TimestampInterval!
-  availability: [TelescopeAvailabilityStatus!]!
-  tooStatus: [TelescopeTooStatus!]!
-  modes: [TelescopeModeStatus!]!
+  "The date the night ends, which is the date it is labelled by."
+  observingNight: Date!
+  interval: TimestampInterval!
+  """
+  False when nothing has been recorded for this night.
+
+  This is what keeps "no schedule entered yet" distinguishable from "nothing is
+  available". A consumer must never read empty lists as a closed telescope.
+  """
+  dataAvailable: Boolean!
+  instrumentAvailability: [InstrumentAvailabilityBlock!]!
+  telescopeAvailability: [TelescopeAvailabilityBlock!]!
+  tooSupport: [TooSupportBlock!]!
+  telescopeMode: [TelescopeModeBlock!]!
+  "Component identity for observation matching - the scheduler contract keeps it in the night."
+  components: [InstrumentComponentAvailabilityBlock!]!
+}
+
+"A semester whose schedule Resource holds, for a site + semester picker."
+type PublishedSemester {
+  site: Site!
+  semester: Semester!
+  "The sheet's own heading, e.g. \"Gemini South Semester 2026B\"."
+  title: String!
+  "The sheet's own version stamp, e.g. \"Jun 15, 2026\". Null when it carries none."
+  version: NonEmptyString
+  """
+  True for a synthetic schedule that was never published - today only GS 2099B,
+  the hand-written stress semester. A consumer must be able to keep invented
+  records apart from the published ones, and a picker must say which is which.
+  """
+  demo: Boolean!
+  firstNight: Date!
+  lastNight: Date!
+  """
+  The subjects this semester's schedule is organised by: telescope ports at GS
+  ("Port 1" … "Port 5"), instruments at GN. Both describe the same facts. Port
+  labels are normalized - the sheet prints "Port 1-up", but the suffix names
+  the port's fixed orientation, not schedule data.
+  """
+  rowLabels: [String!]!
+
+  """
+  Public holidays over the semester, as the sheet marks them.
+
+  Nothing else in the system knows that 18 September is Fiestas Patrias, which
+  is why this is imported rather than derived - unlike weekends, which the
+  calendar gives for free and are therefore not stored.
+
+  Empty at Gemini North, which publishes no day-header colouring at all. That is
+  a site convention, not missing data.
+  """
+  holidays: [Date!]!
+
+  """
+  The new and full moon dates the sheet prints down its left column.
+
+  Published values rather than computed ones, so they are what science
+  operations actually read. They do contain occasional typos; the importer warns
+  when it finds one instead of correcting it.
+  """
+  moonEvents: [MoonEvent!]!
+}
+
+"A new or full moon, as printed on the published sheet."
+type MoonEvent {
+  date: Date!
+  phase: MoonPhase!
+}
+
+enum MoonPhase {
+  NEW
+  FULL
+}
+
+enum InstrumentComponentType {
+  FILTER
+  DISPERSER
+  FPU
+  WFS
+  OTHER
+}
+
+"""
+Where a piece is when it is not installed in its instrument.
+
+Deliberately not `InstrumentLocation`: a component saying PORT 3 while its
+instrument says LAB would be a contradiction the schema permitted. INSTALLED
+means "wherever its instrument is", resolved by joining the instrument's own
+records, so the two cannot disagree by construction.
+"""
+enum ComponentPlace {
+  INSTALLED
+  SUMMIT_LAB
+  BASE
+  UNKNOWN
+}
+
+"""
+An instrument piece, per v1-domain-model.md §5.2: `code` is the lucuma-core enum
+tag where one exists; a MOS mask has no enum value, so its barcode doubles as
+its code; aliases are legacy names resolved within the owning instrument.
+
+Identity carries no site - where a piece is, and when, is time-bounded data on
+its availability blocks.
+"""
+type InstrumentComponent {
+  id: ID!
+  instrument: Instrument!
+  componentType: InstrumentComponentType!
+  "Canonical code, unique per (instrument, componentType)."
+  code: NonEmptyString!
+  name: NonEmptyString!
+  "Mask barcode when applicable, e.g. \"11002801\"."
+  barcode: NonEmptyString
+  aliases: [NonEmptyString!]!
+}
+
+"A span of a component's life: where it was and whether it was usable."
+type InstrumentComponentAvailabilityBlock implements ScheduleBlock {
+  id: ID!
+  site: Site!
+  interval: TimestampInterval!
+  note: NonEmptyString
+  component: InstrumentComponent!
+  usage: ResourceUsage!
+  place: ComponentPlace!
 }
 
 type Query {
-  telescopeNightTimeline(site: Site!, observingDate: Date!): TelescopeNightTimeline
+  "Every site + semester Resource holds, for the picker."
+  publishedSemesters: [PublishedSemester!]!
+
+  "One observing night. Never null - an un-entered night has `dataAvailable: false`."
+  telescopeNight(site: Site!, observingNight: Date!): TelescopeNight!
+
+  """
+  A range of observing nights - one night for real-time use, up to a semester for
+  planning. This is the scheduler's only query.
+
+  Bounded to 400 nights: above a semester, below an accidental decade.
+  """
+  telescopeNights(site: Site!, nights: DateIntervalInput!): [TelescopeNight!]!
+
+  """
+  Instrument records intersecting an interval, for the semester and week views.
+
+  `clip: false` returns each record's stored interval, so a view can draw a
+  mounting that runs past the edge of what it asked for. `clip: true` trims them
+  to the requested interval. The night projection always clips - that is its
+  contract.
+
+  Unpaged: the views display a whole semester at once, so a semester comes back
+  in one response.
+  """
+  instrumentAvailability(
+    site: Site!
+    interval: TimestampIntervalInput!
+    clip: Boolean! = false
+  ): [InstrumentAvailabilityBlock!]!
+
+  """
+  Telescope and port closures intersecting an interval - the other half of what a
+  semester view draws. Same clipping contract as `instrumentAvailability`.
+  """
+  telescopeAvailability(
+    site: Site!
+    interval: TimestampIntervalInput!
+    clip: Boolean! = false
+  ): [TelescopeAvailabilityBlock!]!
+
+  "ToO support records intersecting an interval. Same clipping contract."
+  tooSupport(site: Site!, interval: TimestampIntervalInput!, clip: Boolean! = false): [TooSupportBlock!]!
+
+  "Telescope mode records intersecting an interval. Same clipping contract."
+  telescopeMode(site: Site!, interval: TimestampIntervalInput!, clip: Boolean! = false): [TelescopeModeBlock!]!
+
+  """
+  The component catalog a site's records cover - the identity half of the
+  component browser. Unpaged for the same reason every other list is: the
+  browser displays all of it, and a site's working set is under a hundred pieces.
+
+  `search` matches name, code, barcode and alias, case-insensitively. The exact
+  code/barcode resolution the ODB check needs is the backend's concern and is
+  not reproduced here.
+  """
+  components(
+    site: Site!
+    instruments: [Instrument!]
+    componentTypes: [InstrumentComponentType!]
+    search: NonEmptyString
+  ): [InstrumentComponent!]!
+
+  """
+  Component records intersecting an interval - the state half of the browser,
+  under the same clipping contract as `instrumentAvailability` (I6), with the
+  same reading of absence: a span with no record is "not recorded", never
+  "unavailable" (I4).
+  """
+  instrumentComponentAvailability(
+    site: Site!
+    interval: TimestampIntervalInput!
+    clip: Boolean! = false
+    instruments: [Instrument!]
+    componentTypes: [InstrumentComponentType!]
+  ): [InstrumentComponentAvailabilityBlock!]!
 }
