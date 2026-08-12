@@ -2,6 +2,7 @@ import { createBrowserRouter, Navigate, type RouteObject } from 'react-router';
 
 import Layout from '../components/layout/Layout';
 import ComponentsPage from './pages/ComponentsPage';
+import InstrumentsPage from './pages/InstrumentsPage';
 import NightPage from './pages/NightPage';
 import SemesterPage from './pages/SemesterPage';
 import WeekPage from './pages/WeekPage';
@@ -23,6 +24,7 @@ const routes: RouteObject[] = [
       { path: 'semester', element: <SemesterPage /> },
       { path: 'week', element: <WeekPage /> },
       { path: 'night', element: <NightPage /> },
+      { path: 'instruments', element: <InstrumentsPage /> },
       { path: 'components', element: <ComponentsPage /> },
     ],
   },

@@ -1,5 +1,11 @@
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core';
-import { faBoxesStacked, faCalendarDays, faCalendarWeek, faMoon } from '@fortawesome/pro-regular-svg-icons';
+import {
+  faBoxesStacked,
+  faCalendarDays,
+  faCalendarWeek,
+  faMoon,
+  faTelescope,
+} from '@fortawesome/pro-regular-svg-icons';
 
 /**
  * A single sidebar menu item.
@@ -47,6 +53,9 @@ export const SIDEBAR_MENU_SECTIONS: SidebarMenuSection[] = [
   },
   {
     label: 'Inventory',
-    items: [{ label: 'Components', to: '/components', icon: faBoxesStacked }],
+    items: [
+      { label: 'Instruments', to: '/instruments', icon: faTelescope },
+      { label: 'Components', to: '/components', icon: faBoxesStacked },
+    ],
   },
 ];

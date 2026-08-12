@@ -62,6 +62,7 @@ export const toMountings = (blocks: readonly InstrumentBlockFieldsFragment[]): r
     rowLabel: block.rowLabel,
     usage: block.usage,
     port: block.location.port ?? null,
+    locationType: block.location.type,
     interval: toInterval(block.interval),
     note: block.note ?? null,
   }));

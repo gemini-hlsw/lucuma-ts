@@ -38,6 +38,7 @@ const mounting = (over: Partial<Mounting> & Pick<Mounting, 'id' | 'interval'>): 
   usage: 'SCIENCE',
   rowLabel: 'Port 1',
   port: 1,
+  locationType: 'PORT',
   note: null,
   ...over,
 });

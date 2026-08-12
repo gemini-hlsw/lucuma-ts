@@ -33,6 +33,7 @@ const GHOST: Mounting = {
   publishedName: 'GHOST',
   usage: 'SCIENCE',
   port: 1,
+  locationType: 'PORT',
   note: null,
   interval: span('2026-08-08', '2027-02-01'),
 };

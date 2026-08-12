@@ -1,0 +1,126 @@
+/**
+ * The instrument finder: what one row of the instrument browser says about one
+ * instrument, on one night.
+ *
+ * The schedule views answer "what is on each port"; this answers the other
+ * direction - "where is GNIRS" - which the ports' picture cannot, because an
+ * instrument between mounts has no port and therefore no row there
+ * (workbook.ts, Dan 2026-08-12).
+ *
+ * It is the mirror of `componentFinder`, one level up: same night-not-instant
+ * reading, same "the night's last record decides", same honest absence. A
+ * component's whereabouts resolve through its instrument's mounting; an
+ * instrument's resolve through its own availability records.
+ */
+import type { Instrument, InstrumentLocationType, Interval, Mounting, ResourceUsage } from './types';
+
+export type InstrumentWhere =
+  /** Mounted on a port over the night. */
+  | { readonly kind: 'PORT'; readonly port: number; readonly rowLabel: string }
+  /**
+   * Recorded usable, but on no port - a visitor between mounts. The workbook
+   * does not say where it physically sits, so the location is whatever the
+   * record carries, usually UNKNOWN.
+   */
+  | { readonly kind: 'OFF_PORT'; readonly location: InstrumentLocationType }
+  /** No record covers the night. Never rendered as "unavailable" (I4). */
+  | { readonly kind: 'NOT_RECORDED' };
+
+export interface InstrumentRow {
+  readonly instrument: Instrument;
+  /** The name the schedule prints, e.g. "GMOS-S" - what the row label shows. */
+  readonly publishedName: string;
+  readonly where: InstrumentWhere;
+  /** Null exactly when nothing is recorded for the night. */
+  readonly usage: ResourceUsage | null;
+  readonly note: string | null;
+  /** The run covering the night, at its own full extent - null when none does. */
+  readonly run: Interval | null;
+  /** True when the instrument's record changes during this night. */
+  readonly changesTonight: boolean;
+  /** The instants the record changes during the night, in order. */
+  readonly transitions: readonly number[];
+}
+
+const overlaps = (a: Interval, b: Interval): boolean => a.start < b.end && b.start < a.end;
+
+/** Where consecutive runs meet, or the edges of the gap between them. */
+const transitionsOf = (runs: readonly Mounting[]): readonly number[] =>
+  runs.slice(1).flatMap((run, index) => {
+    const previous = runs[index];
+    return previous !== undefined && previous.interval.end < run.interval.start
+      ? [previous.interval.end, run.interval.start]
+      : [run.interval.start];
+  });
+
+const whereOf = (mounting: Mounting): InstrumentWhere =>
+  mounting.port === null
+    ? { kind: 'OFF_PORT', location: mounting.locationType }
+    : { kind: 'PORT', port: mounting.port, rowLabel: mounting.rowLabel };
+
+export interface BuildInstrumentRowsOptions {
+  /** Every mounting over the window - the browser's whole subject. */
+  readonly mountings: readonly Mounting[];
+  /** The observing night being asked about. */
+  readonly night: Interval;
+}
+
+/**
+ * One row per instrument the window's records name, alphabetically.
+ *
+ * Driven by the records rather than by the enum: a site's browser should list
+ * what that site's schedule actually holds, not fourteen rows of which five
+ * are permanently blank.
+ */
+export const buildInstrumentRows = ({ mountings, night }: BuildInstrumentRowsOptions): readonly InstrumentRow[] => {
+  const instruments = [...new Set(mountings.map((mounting) => mounting.instrument))].sort((a, b) => a.localeCompare(b));
+
+  return instruments.map((instrument) => {
+    const runs = mountings.filter((mounting) => mounting.instrument === instrument);
+    const tonight = runs
+      .filter((mounting) => overlaps(mounting.interval, night))
+      .sort((a, b) => a.interval.start - b.interval.start);
+    // The night's last record decides: an instrument that comes off a port
+    // mid-night reports where it ended up, as the component finder does.
+    const deciding = tonight.at(-1);
+    const named = runs.find((mounting) => mounting.publishedName !== '')?.publishedName ?? instrument;
+
+    if (deciding === undefined) {
+      return {
+        instrument,
+        publishedName: named,
+        where: { kind: 'NOT_RECORDED' },
+        usage: null,
+        note: null,
+        run: null,
+        changesTonight: false,
+        transitions: [],
+      };
+    }
+    const transitions = transitionsOf(tonight);
+    return {
+      instrument,
+      publishedName: deciding.publishedName,
+      where: whereOf(deciding),
+      usage: deciding.usage,
+      note: deciding.note,
+      run: deciding.interval,
+      changesTonight: transitions.length > 0,
+      transitions,
+    };
+  });
+};
+
+/** An instrument's runs over the window, oldest first - the row expansion. */
+export const runsOf = (instrument: Instrument, mountings: readonly Mounting[]): readonly Mounting[] =>
+  mountings
+    .filter((mounting) => mounting.instrument === instrument)
+    .sort((a, b) => a.interval.start - b.interval.start);
+
+/** Case-insensitive match on the enum tag or the name the schedule prints. */
+export const matchesInstrument = (row: InstrumentRow, search: string): boolean => {
+  const needle = search.trim().toLowerCase();
+  return (
+    needle === '' || [row.instrument, row.publishedName].some((identity) => identity.toLowerCase().includes(needle))
+  );
+};

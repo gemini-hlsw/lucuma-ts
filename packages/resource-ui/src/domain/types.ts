@@ -8,6 +8,7 @@ import type {
   ComponentLocation,
   Instrument,
   InstrumentComponentType,
+  InstrumentLocationType,
   Partner,
   PowerSource,
   ResourceUsage,
@@ -24,6 +25,7 @@ import type {
 export type {
   ComponentLocation,
   Instrument,
+  InstrumentLocationType,
   Partner,
   PowerSource,
   ResourceUsage,
@@ -50,8 +52,14 @@ export interface Mounting {
   readonly rowLabel: string;
   /** What the mounted instrument can be used for over this span. */
   readonly usage: ResourceUsage;
-  /** Port number, or null where the schedule does not organise by port. */
+  /** Port number, or null when the run is not on a port. */
   readonly port: number | null;
+  /**
+   * Where the instrument is over this span. PORT for a mounting; UNKNOWN for
+   * an off-port run, which the workbook records as usable without saying
+   * where the instrument physically sits.
+   */
+  readonly locationType: InstrumentLocationType;
   readonly interval: Interval;
   readonly note: string | null;
 }

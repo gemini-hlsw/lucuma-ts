@@ -34,6 +34,7 @@ const MOUNTINGS: readonly Mounting[] = [
     publishedName: 'GHOST',
     usage: 'SCIENCE',
     port: 1,
+    locationType: 'PORT',
     note: null,
     interval: { start: night('2026-08-08').start, end: night('2026-09-01').end },
   },

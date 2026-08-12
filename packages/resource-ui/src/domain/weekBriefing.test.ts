@@ -72,6 +72,7 @@ describe('the changes list', () => {
     publishedName: 'GMOS',
     usage: 'SCIENCE',
     port: 3,
+    locationType: 'PORT',
     note: null,
     ...over,
   });

@@ -25,6 +25,7 @@ const mounting = (over: Partial<Mounting> & Pick<Mounting, 'id' | 'rowLabel' | '
   publishedName: 'GMOS',
   usage: 'SCIENCE',
   port: null,
+  locationType: 'UNKNOWN',
   note: null,
   ...over,
 });
