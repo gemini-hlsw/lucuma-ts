@@ -386,7 +386,8 @@ An off-port run answers the same shape with no port: the late-September 2026
 `"location": { "type": "UNKNOWN", "port": null }`. The schedule views draw only
 the ports, so these reach a reader through the instrument browser instead.
 `FLOOR`, `LAB` and `BASE` await entered data - the workbook never states where
-an unmounted instrument physically is.
+an unmounted instrument physically is, which is why the browser says "not on a
+port" rather than naming a place.
 
 ### A closure with its reason
 
