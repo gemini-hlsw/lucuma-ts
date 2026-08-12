@@ -106,8 +106,8 @@ importers:
         specifier: 7.2.0
         version: 7.2.0(@parcel/watcher@2.6.0)(@types/node@26.1.2)(@typescript/typescript6@6.0.2)(graphql@16.14.2)(supports-color@10.2.2)
       '@graphql-codegen/client-preset':
-        specifier: 6.1.1
-        version: 6.1.1(graphql@16.14.2)
+        specifier: 6.1.2
+        version: 6.1.2(graphql@16.14.2)
       '@graphql-eslint/eslint-plugin':
         specifier: 4.4.1
         version: 4.4.1(@types/node@26.1.2)(@typescript/typescript6@6.0.2)(eslint@10.8.1(jiti@2.7.0)(supports-color@10.2.2))(graphql@16.14.2)(supports-color@10.2.2)
@@ -342,8 +342,8 @@ importers:
         version: 7.9.1(@types/react-dom@19.2.4(@types/react@19.2.18))(@types/react@19.2.18)(@typescript/typescript6@6.0.2)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
     devDependencies:
       '@eddeee888/gcg-typescript-resolver-files':
-        specifier: 0.17.0
-        version: 0.17.0(graphql@17.0.2)
+        specifier: 0.18.0
+        version: 0.18.0(graphql@17.0.2)
       '@eslint/js':
         specifier: 10.0.1
         version: 10.0.1(eslint@10.8.1(jiti@2.7.0)(supports-color@10.2.2))
@@ -475,8 +475,8 @@ importers:
         specifier: 7.2.0
         version: 7.2.0(@parcel/watcher@2.6.0)(@types/node@26.1.2)(@typescript/typescript6@6.0.2)(graphql@16.14.2)(supports-color@10.2.2)
       '@graphql-codegen/client-preset':
-        specifier: 6.1.1
-        version: 6.1.1(graphql@16.14.2)
+        specifier: 6.1.2
+        version: 6.1.2(graphql@16.14.2)
       '@graphql-eslint/eslint-plugin':
         specifier: 4.4.1
         version: 4.4.1(@types/node@26.1.2)(@typescript/typescript6@6.0.2)(eslint@10.8.1(jiti@2.7.0)(supports-color@10.2.2))(graphql@16.14.2)(supports-color@10.2.2)
@@ -607,8 +607,8 @@ importers:
         specifier: 7.2.0
         version: 7.2.0(@parcel/watcher@2.6.0)(@types/node@26.1.2)(@typescript/typescript6@6.0.2)(graphql@16.14.2)(supports-color@10.2.2)
       '@graphql-codegen/client-preset':
-        specifier: 6.1.1
-        version: 6.1.1(graphql@16.14.2)
+        specifier: 6.1.2
+        version: 6.1.2(graphql@16.14.2)
       '@graphql-eslint/eslint-plugin':
         specifier: 4.4.1
         version: 4.4.1(@types/node@26.1.2)(@typescript/typescript6@6.0.2)(eslint@10.8.1(jiti@2.7.0)(supports-color@10.2.2))(graphql@16.14.2)(supports-color@10.2.2)
@@ -890,11 +890,11 @@ packages:
     peerDependencies:
       postcss-selector-parser: ^7.1.1
 
-  '@eddeee888/gcg-server-config@0.5.0':
-    resolution: {integrity: sha512-o5fZ6eppaPbIFFSGALp8zpQ6yvexjsGhLeXQfKAFk5y8EWP+lNSW6WxcuGykN96DS+2zfEA9km5kbHcVydeAKA==}
+  '@eddeee888/gcg-server-config@0.6.0':
+    resolution: {integrity: sha512-1VbpixLCLkuS56zj3ZL2GtOJvNIzOZgxVxLiIChhSmCJN+28tekIxPTKsX0lTaH4AlpvOF+eNLJa5dJJQmqyoA==}
 
-  '@eddeee888/gcg-typescript-resolver-files@0.17.0':
-    resolution: {integrity: sha512-To0jHYlvuU84rb6ruVtRMJydQZpP9jH7YziWAbQnUMns2QJpYCb40cc3xJQO666rAOpNxHrZabEwL+4c+LcBLg==}
+  '@eddeee888/gcg-typescript-resolver-files@0.18.0':
+    resolution: {integrity: sha512-9BYQNUiRYPi2szLNF6Kl1mpfWbxgBVf2m2SZ+RaG5VURT98j+lw9EgBl8MapLB86+IaaHj7dSbkdVkjqu6kXbQ==}
     peerDependencies:
       graphql: ^15.0.0 || ^16.0.0 || ^17.0.0
 
@@ -1026,8 +1026,8 @@ packages:
       '@parcel/watcher':
         optional: true
 
-  '@graphql-codegen/client-preset@6.1.1':
-    resolution: {integrity: sha512-OpVkYpz6f7jAiVaOZZ3Mt5XTCRCdXgNSiMIfZfUCv8fUknqnd2IsD3VFCyjrkNi71J1PAwmwdJbkxDhdL23fjQ==}
+  '@graphql-codegen/client-preset@6.1.2':
+    resolution: {integrity: sha512-1ZxyQXoTyK2Q0i46PBAa7meQ+Ds/tJxBHhTkqDbPhNdNeeabcvznPksIek2pHx4wSwc8jvIT87CktrWj5n5Cqg==}
     engines: {node: '>=16'}
     peerDependencies:
       graphql: ^0.8.0 || ^0.9.0 || ^0.10.0 || ^0.11.0 || ^0.12.0 || ^0.13.0 || ^14.0.0 || ^15.0.0 || ^16.0.0 || ^17.0.0
@@ -5717,7 +5717,7 @@ snapshots:
     dependencies:
       postcss-selector-parser: 7.1.5
 
-  '@eddeee888/gcg-server-config@0.5.0(graphql@17.0.2)':
+  '@eddeee888/gcg-server-config@0.6.0(graphql@17.0.2)':
     dependencies:
       '@graphql-codegen/typescript': 6.1.0(graphql@17.0.2)
       '@graphql-codegen/typescript-resolvers': 6.1.0(graphql@17.0.2)
@@ -5726,9 +5726,9 @@ snapshots:
       - graphql
       - graphql-sock
 
-  '@eddeee888/gcg-typescript-resolver-files@0.17.0(graphql@17.0.2)':
+  '@eddeee888/gcg-typescript-resolver-files@0.18.0(graphql@17.0.2)':
     dependencies:
-      '@eddeee888/gcg-server-config': 0.5.0(graphql@17.0.2)
+      '@eddeee888/gcg-server-config': 0.6.0(graphql@17.0.2)
       '@graphql-codegen/add': 7.1.0(graphql@17.0.2)
       '@graphql-codegen/plugin-helpers': 7.1.0(graphql@17.0.2)
       '@graphql-codegen/schema-ast': 6.1.0(graphql@17.0.2)
@@ -5885,7 +5885,7 @@ snapshots:
       '@babel/generator': 7.29.8
       '@babel/template': 7.29.7
       '@babel/types': 7.29.8
-      '@graphql-codegen/client-preset': 6.1.1(graphql@16.14.2)
+      '@graphql-codegen/client-preset': 6.1.2(graphql@16.14.2)
       '@graphql-codegen/core': 6.2.0(graphql@16.14.2)
       '@graphql-codegen/plugin-helpers': 7.1.0(graphql@16.14.2)
       '@graphql-tools/apollo-engine-loader': 8.0.34(graphql@16.14.2)
@@ -5936,7 +5936,7 @@ snapshots:
       '@babel/generator': 7.29.8
       '@babel/template': 7.29.7
       '@babel/types': 7.29.8
-      '@graphql-codegen/client-preset': 6.1.1(graphql@17.0.2)
+      '@graphql-codegen/client-preset': 6.1.2(graphql@17.0.2)
       '@graphql-codegen/core': 6.2.0(graphql@17.0.2)
       '@graphql-codegen/plugin-helpers': 7.1.0(graphql@17.0.2)
       '@graphql-tools/apollo-engine-loader': 8.0.34(graphql@17.0.2)
@@ -5982,7 +5982,7 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  '@graphql-codegen/client-preset@6.1.1(graphql@16.14.2)':
+  '@graphql-codegen/client-preset@6.1.2(graphql@16.14.2)':
     dependencies:
       '@babel/helper-plugin-utils': 7.29.7
       '@babel/template': 7.29.7
@@ -5999,7 +5999,7 @@ snapshots:
       graphql: 16.14.2
       tslib: 2.8.1
 
-  '@graphql-codegen/client-preset@6.1.1(graphql@17.0.2)':
+  '@graphql-codegen/client-preset@6.1.2(graphql@17.0.2)':
     dependencies:
       '@babel/helper-plugin-utils': 7.29.7
       '@babel/template': 7.29.7

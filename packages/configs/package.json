@@ -41,7 +41,7 @@
     "prisma": "7.9.1"
   },
   "devDependencies": {
-    "@eddeee888/gcg-typescript-resolver-files": "0.17.0",
+    "@eddeee888/gcg-typescript-resolver-files": "0.18.0",
     "@eslint/js": "10.0.1",
     "@graphql-codegen/cli": "7.2.0",
     "@graphql-eslint/eslint-plugin": "4.4.1",
