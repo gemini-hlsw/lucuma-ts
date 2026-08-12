@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { page } from 'vitest/browser';
 
+import Layout from '@/components/layout/Layout';
 import { observingNightInterval, observingNightOf } from '@/domain/siteTime';
 import { NIGHT_SCHEDULE_QUERY } from '@/gql/resource';
 import { createMockApollo } from '@/test/mockClient';
@@ -148,6 +149,35 @@ describe('NightPage', () => {
     const screen = await openNight('/night?site=GN&night=2026-11-14');
 
     await expect.element(screen.getByText('Gemini North Semester 2026B', { exact: false })).toBeVisible();
+  });
+
+  it('moves the chart clock to UT with the masthead toggle', async () => {
+    // The dual of the semester grid's stability regression: there nothing may
+    // move when the clock does; here everything must. The toggle keeps the
+    // axis window, so no remount - the axis labels prove the in-place
+    // Highcharts update actually took the new zone rather than silently
+    // keeping the old one.
+    const screen = await renderApp({
+      element: <Layout />,
+      route: '/night?site=GS&night=2025-11-14',
+      path: '/',
+      childRoutes: [{ path: 'night', element: <NightPage /> }],
+    });
+    const labels = () =>
+      [...document.querySelectorAll('[data-testid="night-timeline"] .highcharts-xaxis-labels text')]
+        .map((tick) => tick.textContent ?? '')
+        .join('|');
+    await expect.poll(() => labels().length).toBeGreaterThan(0);
+    const siteLabels = labels();
+
+    await screen.getByRole('button', { name: 'Coordinated Universal Time' }).click();
+
+    // The header is the already-pinned reading; the chart must follow it.
+    // Non-empty first: a blanked chart (the Highcharts empty-series failure)
+    // must not slip through as merely "different".
+    await expect.element(screen.getByText('17:00 to 17:00 UTC', { exact: false })).toBeVisible();
+    await expect.poll(() => labels().length).toBeGreaterThan(0);
+    await expect.poll(labels).not.toBe(siteLabels);
   });
 
   it('keeps a bar hoverable beneath the sun wash, so the tooltip still comes', async () => {
