@@ -74,7 +74,7 @@ export const NIGHT_COMPONENT_FIELDS = graphql(`
   fragment NightComponentFields on InstrumentComponentAvailabilityBlock {
     id
     usage
-    place
+    location
     note
     interval {
       start
@@ -226,7 +226,7 @@ export const COMPONENT_BROWSER_QUERY = graphql(`
     instrumentComponentAvailability(site: $site, interval: $interval, clip: false) {
       id
       usage
-      place
+      location
       note
       interval {
         start

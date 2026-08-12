@@ -431,9 +431,10 @@ instrument says LAB would be a contradiction the schema permitted. INSTALLED
 means "wherever its instrument is", resolved by joining the instrument's own
 records, so the two cannot disagree by construction.
 """
-enum ComponentPlace {
+enum ComponentLocation {
   INSTALLED
-  SUMMIT_LAB
+  FLOOR
+  LAB
   BASE
   UNKNOWN
 }
@@ -466,7 +467,7 @@ type InstrumentComponentAvailabilityBlock implements ScheduleBlock {
   note: NonEmptyString
   component: InstrumentComponent!
   usage: ResourceUsage!
-  place: ComponentPlace!
+  location: ComponentLocation!
 }
 
 type Query {

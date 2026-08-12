@@ -18,7 +18,7 @@ import { displayTimeZone, type TimeDisplay, zoneFormatters } from '@/domain/site
 import type { Site } from '@/domain/types';
 import type { WeekChange, WeekNightFacts } from '@/domain/weekBriefing';
 import { MoonDisc } from '@/features/calendar/MoonDisc';
-import { PLACE_LABEL } from '@/features/components/componentLabels';
+import { LOCATION_LABEL } from '@/features/components/componentLabels';
 import { INSTRUMENT_LABEL } from '@/features/timeline/timelineOptions';
 
 const EVENING_FORMAT = new Intl.DateTimeFormat('en-GB', {
@@ -99,7 +99,7 @@ const whatLabel = (change: WeekChange): string => {
       return `${change.label} ends`;
     default:
       return `${change.component.name} ${
-        change.place === 'INSTALLED' ? 'installed' : `to ${PLACE_LABEL[change.place]}`
+        change.location === 'INSTALLED' ? 'installed' : `to ${LOCATION_LABEL[change.location]}`
       }`;
   }
 };

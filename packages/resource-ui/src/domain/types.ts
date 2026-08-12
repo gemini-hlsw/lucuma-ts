@@ -5,7 +5,7 @@
  * change surfaces as a compile error instead of drifting silently.
  */
 import type {
-  ComponentPlace,
+  ComponentLocation,
   Instrument,
   InstrumentComponentType,
   Partner,
@@ -16,11 +16,11 @@ import type {
   TooSupport,
 } from '@gql/gen/graphql';
 
-// ComponentPlace: INSTALLED means "wherever the instrument is" and resolves
+// ComponentLocation: INSTALLED means "wherever the instrument is" and resolves
 // through the instrument's own records (domain/componentFinder.ts), so a piece
 // can never claim a port its instrument is not on.
 export type {
-  ComponentPlace,
+  ComponentLocation,
   Instrument,
   Partner,
   ResourceUsage,
@@ -132,7 +132,7 @@ export interface ComponentBlock {
   readonly id: string;
   readonly componentId: string;
   readonly usage: ComponentUsage;
-  readonly place: ComponentPlace;
+  readonly location: ComponentLocation;
   readonly interval: Interval;
   readonly note: string | null;
 }

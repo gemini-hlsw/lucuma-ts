@@ -13,8 +13,9 @@ export const TYPE_LABEL: Record<ComponentType, string> = {
   OTHER: 'Other',
 };
 
-export const PLACE_LABEL = {
-  SUMMIT_LAB: 'Summit lab',
+export const LOCATION_LABEL = {
+  FLOOR: 'Dome floor',
+  LAB: 'Summit lab',
   BASE: 'Base facility',
   UNKNOWN: 'Unknown',
 } as const;
@@ -27,7 +28,7 @@ export const whereLabel = (where: ComponentWhere): string => {
         ? `On telescope · ${where.instrumentName}`
         : `Port ${where.port} · ${where.instrumentName}`;
     case 'STORED':
-      return PLACE_LABEL[where.place];
+      return LOCATION_LABEL[where.location];
     default:
       return 'Not recorded';
   }

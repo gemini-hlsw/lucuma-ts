@@ -18,7 +18,7 @@ import type { TimelineNight } from './timeline';
 import type {
   Closure,
   ComponentBlock,
-  ComponentPlace,
+  ComponentLocation,
   ComponentRecord,
   ComponentUsage,
   Interval,
@@ -125,7 +125,7 @@ export type WeekChange =
       readonly instant: number;
       readonly component: ComponentRecord;
       /** The state the piece enters at this instant. */
-      readonly place: ComponentPlace;
+      readonly location: ComponentLocation;
       readonly usage: ComponentUsage;
       readonly note: string | null;
     };
@@ -200,7 +200,7 @@ export const buildWeekChanges = ({
         kind: 'COMPONENT',
         instant: block.interval.start,
         component,
-        place: block.place,
+        location: block.location,
         usage: block.usage,
         note: block.note,
       });

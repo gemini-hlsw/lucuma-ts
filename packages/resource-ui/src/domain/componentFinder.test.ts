@@ -21,7 +21,7 @@ const block = (over: Partial<ComponentBlock> = {}): ComponentBlock => ({
   id: 'b1',
   componentId: 'k-gs-R400_G5325',
   usage: 'SCIENCE',
-  place: 'INSTALLED',
+  location: 'INSTALLED',
   interval: { start: night.start - 30 * 86_400_000, end: night.end + 30 * 86_400_000 },
   note: null,
   ...over,
@@ -50,9 +50,9 @@ describe('where a piece is', () => {
   });
 
   it('names the storage place when the piece is not installed', () => {
-    const [row] = rowsOf([block({ place: 'SUMMIT_LAB', usage: 'UNAVAILABLE' })]);
+    const [row] = rowsOf([block({ location: 'LAB', usage: 'UNAVAILABLE' })]);
 
-    expect(row?.where).toEqual({ kind: 'STORED', place: 'SUMMIT_LAB' });
+    expect(row?.where).toEqual({ kind: 'STORED', location: 'LAB' });
   });
 
   it('says not recorded when no record covers the night - never unavailable', () => {
@@ -69,14 +69,14 @@ describe('where a piece is', () => {
       block({ id: 'a', interval: { start: night.start - 86_400_000, end: midnight } }),
       block({
         id: 'b',
-        place: 'SUMMIT_LAB',
+        location: 'LAB',
         usage: 'UNAVAILABLE',
         note: 'Failed; removed for repair',
         interval: { start: midnight, end: night.end + 86_400_000 },
       }),
     ]);
 
-    expect(row?.where).toEqual({ kind: 'STORED', place: 'SUMMIT_LAB' });
+    expect(row?.where).toEqual({ kind: 'STORED', location: 'LAB' });
     expect(row?.changesTonight).toBe(true);
     expect(row?.note).toBe('Failed; removed for repair');
   });
@@ -88,7 +88,7 @@ describe('when a piece changes tonight', () => {
   it('names the instant two abutting records meet, once', () => {
     const [row] = rowsOf([
       block({ id: 'a', interval: { start: night.start - 86_400_000, end: midnight } }),
-      block({ id: 'b', place: 'SUMMIT_LAB', interval: { start: midnight, end: night.end + 86_400_000 } }),
+      block({ id: 'b', location: 'LAB', interval: { start: midnight, end: night.end + 86_400_000 } }),
     ]);
 
     expect(row?.transitions).toEqual([midnight]);
@@ -99,7 +99,7 @@ describe('when a piece changes tonight', () => {
     const on = midnight + 3_600_000;
     const [row] = rowsOf([
       block({ id: 'a', interval: { start: night.start - 86_400_000, end: off } }),
-      block({ id: 'b', place: 'SUMMIT_LAB', interval: { start: on, end: night.end + 86_400_000 } }),
+      block({ id: 'b', location: 'LAB', interval: { start: on, end: night.end + 86_400_000 } }),
     ]);
 
     expect(row?.transitions).toEqual([off, on]);
@@ -117,7 +117,7 @@ describe('when a piece changes tonight', () => {
 describe('which rows the night view lists', () => {
   it('lists an installed piece and skips a stored spare', () => {
     const [installed] = rowsOf([block()]);
-    const [spare] = rowsOf([block({ place: 'SUMMIT_LAB', usage: 'UNAVAILABLE' })]);
+    const [spare] = rowsOf([block({ location: 'LAB', usage: 'UNAVAILABLE' })]);
 
     expect(installed !== undefined && ridesTonight(installed)).toBe(true);
     expect(spare !== undefined && ridesTonight(spare)).toBe(false);
@@ -127,7 +127,7 @@ describe('which rows the night view lists', () => {
     const midnight = (night.start + night.end) / 2;
     const [row] = rowsOf([
       block({ id: 'a', interval: { start: night.start - 86_400_000, end: midnight } }),
-      block({ id: 'b', place: 'SUMMIT_LAB', interval: { start: midnight, end: night.end + 86_400_000 } }),
+      block({ id: 'b', location: 'LAB', interval: { start: midnight, end: night.end + 86_400_000 } }),
     ]);
 
     expect(row !== undefined && ridesTonight(row)).toBe(true);

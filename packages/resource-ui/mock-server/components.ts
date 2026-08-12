@@ -42,7 +42,7 @@ import type { ImportedBlock, ImportedSchedule, ImportSite } from './import/block
 import type { Instrument } from './import/instruments.ts';
 
 export type ComponentType = 'FILTER' | 'DISPERSER' | 'FPU' | 'WFS' | 'OTHER';
-export type ComponentPlace = 'INSTALLED' | 'SUMMIT_LAB' | 'BASE' | 'UNKNOWN';
+export type ComponentLocation = 'INSTALLED' | 'FLOOR' | 'LAB' | 'BASE' | 'UNKNOWN';
 export type ComponentUsage = 'SCIENCE' | 'ENGINEERING' | 'UNAVAILABLE';
 
 /**
@@ -345,7 +345,7 @@ export interface SynthesizedComponentBlock {
   readonly site: ImportSite;
   readonly componentId: string;
   readonly usage: ComponentUsage;
-  readonly place: ComponentPlace;
+  readonly location: ComponentLocation;
   /** Half-open [start, end), ISO instants, like every other block. */
   readonly start: string;
   readonly end: string;
@@ -385,15 +385,20 @@ const scheduleSpan = (schedule: ImportedSchedule): Span | null => {
 
 interface Piece {
   readonly usage: ComponentUsage;
-  readonly place: ComponentPlace;
+  readonly location: ComponentLocation;
   readonly span: Span;
   readonly note: string | null;
 }
 
-const stored = (span: Span, place: ComponentPlace): Piece => ({ usage: 'UNAVAILABLE', place, span, note: null });
+const stored = (span: Span, location: ComponentLocation): Piece => ({
+  usage: 'UNAVAILABLE',
+  location,
+  span,
+  note: null,
+});
 const installed = (span: Span, note: string | null = null): Piece => ({
   usage: 'SCIENCE',
-  place: 'INSTALLED',
+  location: 'INSTALLED',
   span,
   note,
 });
@@ -402,36 +407,34 @@ const installed = (span: Span, note: string | null = null): Piece => ({
 const piecesFor = (component: CatalogComponent, semester: Span, mountings: readonly Span[]): readonly Piece[] => {
   switch (component.pattern) {
     case 'SPARE_IN_LAB':
-      return [stored(semester, 'SUMMIT_LAB')];
+      return [stored(semester, 'LAB')];
     case 'STORED_AT_BASE':
       return [stored(semester, 'BASE')];
     case 'MASK_CAMPAIGN': {
       const mounting = mountings[0];
       if (mounting === undefined) {
-        return [stored(semester, 'SUMMIT_LAB')];
+        return [stored(semester, 'LAB')];
       }
       const from = within(mounting, 0.4);
       const to = within(mounting, 0.7);
       return [
-        stored({ start: semester.start, end: from }, 'SUMMIT_LAB'),
+        stored({ start: semester.start, end: from }, 'LAB'),
         installed({ start: from, end: to }, 'Installed for the campaign'),
-        stored({ start: to, end: semester.end }, 'SUMMIT_LAB'),
+        stored({ start: to, end: semester.end }, 'LAB'),
       ];
     }
     case 'FAILS_MID_SEMESTER': {
       const mounting = mountings[0];
       if (mounting === undefined) {
-        return [stored(semester, 'SUMMIT_LAB')];
+        return [stored(semester, 'LAB')];
       }
       const failsAt = within(mounting, 0.6);
       return [
-        ...(semester.start < mounting.start
-          ? [stored({ start: semester.start, end: mounting.start }, 'SUMMIT_LAB')]
-          : []),
+        ...(semester.start < mounting.start ? [stored({ start: semester.start, end: mounting.start }, 'LAB')] : []),
         installed({ start: mounting.start, end: failsAt }),
         {
           usage: 'UNAVAILABLE' as const,
-          place: 'SUMMIT_LAB' as const,
+          location: 'LAB' as const,
           span: { start: failsAt, end: semester.end },
           note: 'Failed; removed for repair',
         },
@@ -445,13 +448,13 @@ const piecesFor = (component: CatalogComponent, semester: Span, mountings: reado
       let cursor = semester.start;
       for (const mounting of mountings) {
         if (cursor < mounting.start) {
-          pieces.push(stored({ start: cursor, end: mounting.start }, 'SUMMIT_LAB'));
+          pieces.push(stored({ start: cursor, end: mounting.start }, 'LAB'));
         }
         pieces.push(installed(mounting));
         cursor = Math.max(cursor, mounting.end);
       }
       if (cursor < semester.end) {
-        pieces.push(stored({ start: cursor, end: semester.end }, 'SUMMIT_LAB'));
+        pieces.push(stored({ start: cursor, end: semester.end }, 'LAB'));
       }
       return pieces;
     }
@@ -489,7 +492,7 @@ export const synthesizeComponentBlocks = (
       const previous = merged.at(-1);
       if (
         previous?.span.end === piece.span.start &&
-        previous.place === piece.place &&
+        previous.location === piece.location &&
         previous.usage === piece.usage &&
         previous.note === piece.note
       ) {
@@ -505,7 +508,7 @@ export const synthesizeComponentBlocks = (
         site: component.site,
         componentId: component.id,
         usage: piece.usage,
-        place: piece.place,
+        location: piece.location,
         start: iso(piece.span.start),
         end: iso(piece.span.end),
         note: piece.note,

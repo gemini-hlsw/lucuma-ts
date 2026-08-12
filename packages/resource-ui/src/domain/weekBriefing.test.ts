@@ -147,7 +147,7 @@ describe('the changes list', () => {
         id: 'up',
         componentId: r400.id,
         usage: 'SCIENCE',
-        place: 'INSTALLED',
+        location: 'INSTALLED',
         interval: { start: interval.start - 30 * DAY, end: failsAt },
         note: null,
       },
@@ -155,7 +155,7 @@ describe('the changes list', () => {
         id: 'down',
         componentId: r400.id,
         usage: 'UNAVAILABLE',
-        place: 'SUMMIT_LAB',
+        location: 'LAB',
         interval: { start: failsAt, end: interval.end + 30 * DAY },
         note: 'Failed; removed for repair',
       },
@@ -175,7 +175,7 @@ describe('the changes list', () => {
     expect(changes[0]).toMatchObject({
       kind: 'COMPONENT',
       instant: failsAt,
-      place: 'SUMMIT_LAB',
+      location: 'LAB',
       usage: 'UNAVAILABLE',
       note: 'Failed; removed for repair',
     });

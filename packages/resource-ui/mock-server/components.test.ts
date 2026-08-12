@@ -68,7 +68,7 @@ describe('the synthetic blocks', () => {
       }
     }
 
-    const installed = blocksOf('k-gs-g_G0325').filter((block) => block.place === 'INSTALLED');
+    const installed = blocksOf('k-gs-g_G0325').filter((block) => block.location === 'INSTALLED');
     expect(installed.length).toBeGreaterThan(0);
     for (const block of installed) {
       const from = Date.parse(block.start);
@@ -83,23 +83,23 @@ describe('the synthetic blocks', () => {
     // semesters, not four abutting blocks.
     const spare = blocksOf('k-gs-R831_G5322');
     expect(spare).toHaveLength(1);
-    expect(spare[0]).toMatchObject({ place: 'SUMMIT_LAB', usage: 'UNAVAILABLE' });
+    expect(spare[0]).toMatchObject({ location: 'LAB', usage: 'UNAVAILABLE' });
   });
 
   it('takes a failing piece off mid-mounting, with the reason on the record', () => {
     const r400 = blocksOf('k-gs-R400_G5325');
     const failed = r400.find((block) => block.note === 'Failed; removed for repair');
 
-    expect(failed).toMatchObject({ place: 'SUMMIT_LAB', usage: 'UNAVAILABLE' });
+    expect(failed).toMatchObject({ location: 'LAB', usage: 'UNAVAILABLE' });
     // The failure lands inside a mounting, so the boundary is a mid-run instant
     // - which is what gives the partial-night capability synthetic data.
-    const installedBefore = r400.find((block) => block.place === 'INSTALLED' && block.end === failed?.start);
+    const installedBefore = r400.find((block) => block.location === 'INSTALLED' && block.end === failed?.start);
     expect(installedBefore).toBeDefined();
   });
 
   it('installs a campaign mask for a bounded span inside the mounting', () => {
     const mask = blocksOf('k-gs-11002801');
-    const installed = mask.filter((block) => block.place === 'INSTALLED');
+    const installed = mask.filter((block) => block.location === 'INSTALLED');
 
     expect(installed.length).toBeGreaterThan(0);
     for (const block of installed) {

@@ -119,7 +119,7 @@ const componentBlock = (store: MockStore, block: SynthesizedComponentBlock, inte
     note: block.note,
     component: componentOf(component),
     usage: block.usage,
-    place: block.place,
+    location: block.location,
   };
 };
 

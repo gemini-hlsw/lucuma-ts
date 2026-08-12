@@ -34,7 +34,7 @@ described below.
 | `tooSupport(site, interval, clip)`                                                   | ToO support level records                                                                                                                       | the ToO state row, every schedule view                                      |
 | `telescopeMode(site, interval, clip)`                                                | telescope mode records (Queue, Classical, Priority visitor, …) with `programReferences` and the block-scheduling `partner`                      | the Mode state row, every schedule view                                     |
 | `components(site, instruments, componentTypes, search)`                              | the component catalog - identity only: `code`, `name`, `barcode`, `aliases`                                                                     | component browser (the ICTD half)                                           |
-| `instrumentComponentAvailability(site, interval, clip, instruments, componentTypes)` | where each piece is over a window, with `usage`, `place` and the reason on the record                                                           | component browser and piece history; the week's "changes this week" list    |
+| `instrumentComponentAvailability(site, interval, clip, instruments, componentTypes)` | where each piece is over a window, with `usage`, `location` and the reason on the record                                                        | component browser and piece history; the week's "changes this week" list    |
 
 ## The operations the UI actually runs
 
@@ -182,7 +182,7 @@ query {
     }
     components {
       usage
-      place
+      location
       note
       interval {
         start
@@ -242,14 +242,14 @@ query {
       "components": [
         {
           "usage": "SCIENCE",
-          "place": "INSTALLED",
+          "location": "INSTALLED",
           "note": null,
           "interval": { "start": "2025-11-19T17:00:00Z", "end": "2025-11-20T03:00:00Z" },
           "component": { "code": "R400_G5325", "name": "R400", "barcode": null },
         },
         {
           "usage": "UNAVAILABLE",
-          "place": "SUMMIT_LAB",
+          "location": "LAB",
           "note": "Failed; removed for repair",
           "interval": { "start": "2025-11-20T03:00:00Z", "end": "2025-11-20T17:00:00Z" },
           "component": { "code": "R400_G5325", "name": "R400", "barcode": null },
@@ -459,7 +459,7 @@ query {
     componentTypes: [DISPERSER]
   ) {
     usage
-    place
+    location
     note
     interval {
       start
@@ -478,14 +478,14 @@ query {
     "instrumentComponentAvailability": [
       {
         "usage": "SCIENCE",
-        "place": "INSTALLED",
+        "location": "INSTALLED",
         "note": null,
         "interval": { "start": "2025-08-01T18:00:00Z", "end": "2025-11-20T03:00:00Z" },
         "component": { "code": "R400_G5325" },
       },
       {
         "usage": "UNAVAILABLE",
-        "place": "SUMMIT_LAB",
+        "location": "LAB",
         "note": "Failed; removed for repair",
         "interval": { "start": "2025-11-20T03:00:00Z", "end": "2026-02-01T17:00:00Z" },
         "component": { "code": "R400_G5325" },

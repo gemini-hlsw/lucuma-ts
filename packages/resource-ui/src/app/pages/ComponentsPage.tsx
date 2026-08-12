@@ -34,7 +34,7 @@ import { buildFinderRows, type FinderRow, historyOf, matchesComponent } from '@/
 import { firstEveningDate, lastEveningDate, observingNightInterval } from '@/domain/siteTime';
 import type { ComponentBlock, ComponentType, Instrument, Site } from '@/domain/types';
 import { StatusCell, WhereCell } from '@/features/components/componentCells';
-import { PLACE_LABEL, TYPE_LABEL } from '@/features/components/componentLabels';
+import { LOCATION_LABEL, TYPE_LABEL } from '@/features/components/componentLabels';
 import { INSTRUMENT_LABEL, instrumentColor } from '@/features/timeline/timelineOptions';
 import { useComponentBrowser } from '@/gql/hooks';
 
@@ -60,7 +60,7 @@ function History({ blocks, site }: { blocks: readonly ComponentBlock[]; site: Si
             {printEvening(firstEveningDate(site, block.interval))} –{' '}
             {printEvening(lastEveningDate(site, block.interval))}
           </span>
-          <span>{block.place === 'INSTALLED' ? 'Installed' : PLACE_LABEL[block.place]}</span>
+          <span>{block.location === 'INSTALLED' ? 'Installed' : LOCATION_LABEL[block.location]}</span>
           <span className="text-foreground-muted">{block.usage}</span>
           {when(block.note, (note) => (
             <span className="text-foreground-muted italic">{note}</span>

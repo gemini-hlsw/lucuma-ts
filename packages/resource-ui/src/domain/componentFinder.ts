@@ -18,7 +18,7 @@
  * records change partway through is reported as changing, with the state the
  * night *ends* in, since "where is it" usually means "where did it end up".
  */
-import type { ComponentBlock, ComponentPlace, ComponentRecord, ComponentUsage, Interval, Mounting } from './types';
+import type { ComponentBlock, ComponentLocation, ComponentRecord, ComponentUsage, Interval, Mounting } from './types';
 
 export type ComponentWhere =
   | {
@@ -28,7 +28,7 @@ export type ComponentWhere =
       /** The instrument's published name, e.g. "GMOS" - what the label prints. */
       readonly instrumentName: string;
     }
-  | { readonly kind: 'STORED'; readonly place: Exclude<ComponentPlace, 'INSTALLED'> }
+  | { readonly kind: 'STORED'; readonly location: Exclude<ComponentLocation, 'INSTALLED'> }
   /** No record covers the night. Never rendered as "unavailable" (I4). */
   | { readonly kind: 'NOT_RECORDED' };
 
@@ -75,8 +75,8 @@ const whereOf = (
   mountings: readonly Mounting[],
   night: Interval,
 ): ComponentWhere => {
-  if (block.place !== 'INSTALLED') {
-    return { kind: 'STORED', place: block.place };
+  if (block.location !== 'INSTALLED') {
+    return { kind: 'STORED', location: block.location };
   }
   const mounting = mountings.find(
     (candidate) => candidate.instrument === component.instrument && overlaps(candidate.interval, night),

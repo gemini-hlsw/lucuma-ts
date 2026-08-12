@@ -328,7 +328,7 @@ describe('instrumentAvailability', () => {
 /**
  * The component surface - the mock's improved take on the doc's endpoints:
  * top-level (components are live, never schedule-owned), unpaged, one search
- * argument, and a `place` on the block so "where is it" is answerable.
+ * argument, and a `location` on the block so "where is it" is answerable.
  */
 describe('components', () => {
   const COMPONENTS = `
@@ -383,7 +383,7 @@ describe('instrumentComponentAvailability', () => {
       instrumentComponentAvailability(site: $site, interval: $interval, clip: $clip) {
         component { code }
         usage
-        place
+        location
         interval { start end }
         note
       }
@@ -394,7 +394,7 @@ describe('instrumentComponentAvailability', () => {
   interface Block {
     component: { code: string };
     usage: string;
-    place: string;
+    location: string;
     interval: { start: string; end: string };
     note: string | null;
   }
@@ -403,9 +403,9 @@ describe('instrumentComponentAvailability', () => {
     const data = await run(AVAILABILITY, { site: 'GS', interval: OCTOBER, clip: false });
     const blocks = data.instrumentComponentAvailability as Block[];
 
-    const places = new Set(blocks.map((block) => block.place));
+    const places = new Set(blocks.map((block) => block.location));
     expect(places.has('INSTALLED')).toBe(true);
-    expect(places.has('SUMMIT_LAB')).toBe(true);
+    expect(places.has('LAB')).toBe(true);
     expect(places.has('BASE')).toBe(true);
   });
 
@@ -535,7 +535,7 @@ describe('telescopeNight.components - the scheduler contract', () => {
         dataAvailable
         components {
           component { code }
-          place
+          location
           interval { start end }
         }
       }
@@ -544,7 +544,7 @@ describe('telescopeNight.components - the scheduler contract', () => {
   it('clips component records to the night, like every other night fact', async () => {
     const data = await run(NIGHT, { site: 'GS', night: '2025-10-15' });
     const night = data.telescopeNight as {
-      components: { place: string; interval: { start: string; end: string } }[];
+      components: { location: string; interval: { start: string; end: string } }[];
     };
 
     expect(night.components.length).toBeGreaterThan(0);

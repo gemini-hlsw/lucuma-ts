@@ -138,7 +138,7 @@ export const toNightComponents = (blocks: readonly NightComponentFieldsFragment[
       id: block.id,
       componentId: block.component.id,
       usage: block.usage,
-      place: block.place,
+      location: block.location,
       interval: toInterval(block.interval),
       note: block.note ?? null,
     })),
@@ -150,7 +150,7 @@ export const toComponentBlocks = (data: GetComponentBrowserQuery): readonly Comp
     id: block.id,
     componentId: block.component.id,
     usage: block.usage,
-    place: block.place,
+    location: block.location,
     interval: toInterval(block.interval),
     note: block.note ?? null,
   }));
