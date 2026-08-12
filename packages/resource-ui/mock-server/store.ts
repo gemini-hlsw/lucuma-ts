@@ -22,6 +22,7 @@ import type {
   ImportSite,
 } from './import/blocks.ts';
 import { buildSeedState, type MockState } from './seed.ts';
+import { type SynthesizedInstrumentBlock, synthesizeStoredInstruments } from './storedInstruments.ts';
 
 /** A block with the stable id the API exposes it under. */
 export interface StoredBlock extends ImportedBlock {
@@ -70,6 +71,8 @@ export class MockStore {
   readonly tooSupport: readonly StoredTooSupport[];
   readonly modes: readonly StoredTelescopeMode[];
   readonly subsystems: readonly StoredSubsystem[];
+  /** The synthetic stored-instrument layer - see storedInstruments.ts. */
+  readonly storedInstruments: readonly SynthesizedInstrumentBlock[];
   /** The synthetic ICTD layer - see components.ts for its three rules. */
   readonly components: readonly CatalogComponent[];
   readonly componentBlocks: readonly SynthesizedComponentBlock[];
@@ -111,6 +114,7 @@ export class MockStore {
         semester: schedule.semester,
       })),
     );
+    this.storedInstruments = synthesizeStoredInstruments(this.state.schedules);
     this.components = COMPONENT_CATALOG;
     this.componentBlocks = synthesizeComponentBlocks(this.state.schedules);
   }
@@ -156,5 +160,13 @@ export class MockStore {
 
   subsystemsFor(site: ImportSite): readonly StoredSubsystem[] {
     return this.subsystems.filter((record) => record.site === site);
+  }
+
+  /**
+   * The site's stored instruments - never on a port, so they never reach a
+   * schedule view, and never counted towards `dataAvailable`.
+   */
+  storedInstrumentsFor(site: ImportSite): readonly SynthesizedInstrumentBlock[] {
+    return this.storedInstruments.filter((block) => block.site === site);
   }
 }

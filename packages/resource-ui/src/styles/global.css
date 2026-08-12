@@ -144,6 +144,19 @@
   --instrument-iqueye: #00d492; /* emerald-400 */
   --instrument-maroon-x: #4f39f6; /* indigo-600 */
 
+  /*
+   * Instruments lucuma-core enumerates that the workbook never schedules
+   * (2026-08-12). They exist in the instrument browser, where their swatch sits
+   * beside their name in a table, and they never draw a bar - so they are
+   * deliberately **outside** the two measured site sets and take no part in the
+   * separation checks above. If operations ever schedule one on a port, re-run
+   * that site's check before trusting its hue.
+   */
+  --instrument-acq-cam: #94a3b8; /* slate-400 */
+  --instrument-gpi: #f472b6; /* pink-400 */
+  --instrument-niri: #a78bfa; /* violet-400 */
+  --instrument-scorpio: #fb923c; /* orange-400 */
+
   /* A run the importer cannot identify. A
      reserved neutral like the closure red, deliberately outside the two
      validated hue sets: it must read as "identity unresolved", not as an

@@ -88,7 +88,10 @@ export const buildCalendarNews = ({
     boundaries.set(key, existing);
     return existing;
   };
-  for (const mounting of mountings) {
+  // Ports only: the calendar's news is the schedule's news, and an instrument
+  // in the summit lab moving to the dome floor is inventory, not a night's
+  // headline (Dan, 2026-08-12).
+  for (const mounting of mountings.filter((candidate) => candidate.port !== null)) {
     if (inside(mounting.interval.start)) {
       boundaryAt(mounting.rowLabel, mounting.interval.start).beginning = mounting;
     }

@@ -114,10 +114,30 @@ describe('telescopeNight', () => {
       }
     }`;
 
+  it('rides the stored instruments alongside the mounted ones, placed not ported', async () => {
+    // The synthetic stored layer (storedInstruments.ts): instruments GPP knows
+    // about that the workbook never schedules. They answer in the same shape
+    // with a place instead of a port, which is what keeps them off the charts.
+    const data = await run(NIGHT, { site: 'GS', night: '2025-11-20' });
+    const night = data.telescopeNight as {
+      instrumentAvailability: { instrument: string; location: { type: string; port: number | null } }[];
+    };
+    const stored = night.instrumentAvailability.filter((block) => block.location.type !== 'PORT');
+
+    expect(stored.length).toBeGreaterThan(0);
+    for (const block of stored) {
+      expect(block.location.port).toBeNull();
+      expect(['FLOOR', 'LAB', 'BASE', 'UNKNOWN']).toContain(block.location.type);
+    }
+  });
+
   it('returns the instruments mounted on a night, with their ports', async () => {
     const data = await run(NIGHT, { site: 'GS', night: '2025-09-10' });
     const night = data.telescopeNight as Record<string, unknown>;
-    const mounted = night.instrumentAvailability as { instrument: string; location: { port: number } }[];
+    const all = night.instrumentAvailability as { instrument: string; location: { type: string; port: number } }[];
+    // Ports only: the stored instruments ride the same list (test above) and
+    // are not what "mounted on a night" means.
+    const mounted = all.filter((entry) => entry.location.type === 'PORT');
 
     expect(night.dataAvailable).toBe(true);
     expect(mounted.map((entry) => `${entry.instrument}@${String(entry.location.port)}`).sort()).toEqual([
@@ -343,8 +363,10 @@ describe('instrumentAvailability', () => {
       clip: false,
     });
 
-    // GS 2025B is five uninterrupted mountings, one per port.
-    expect(data.instrumentAvailability).toHaveLength(5);
+    // GS 2025B is five uninterrupted mountings, one per port - plus the
+    // stored instruments, which are not the semester's schedule.
+    const records = data.instrumentAvailability as { location: { type: string } }[];
+    expect(records.filter((record) => record.location.type === 'PORT')).toHaveLength(5);
   });
 });
 

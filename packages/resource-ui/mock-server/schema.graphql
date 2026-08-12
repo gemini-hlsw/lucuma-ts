@@ -231,6 +231,8 @@ subsystems, ENGINEERING is an operational state, CAL_ZORRO names two things - an
 mapping them onto lucuma-core is deferred, still open with operations.
 """
 enum Instrument {
+  "The facility acquisition camera. Each telescope has one; they share a tag."
+  ACQ_CAM
   ALOPEKE
   "AO facility at Gemini North."
   ALTAIR
@@ -250,10 +252,15 @@ enum Instrument {
   GHOST
   GMOS
   GNIRS
+  "The Gemini Planet Imager."
+  GPI
   GSAOI
   IGRINS2
   IQUEYE
   MAROON_X
+  "Near-InfraRed Imager and spectrograph, Gemini North."
+  NIRI
+  SCORPIO
   """
   A run the importer could not identify - an unrecognised workbook name.
   Served so every recorded run is drawn rather than silently missing; `note`

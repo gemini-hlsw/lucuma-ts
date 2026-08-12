@@ -22,6 +22,7 @@ import type {
   StoredTelescopeMode,
   StoredTooSupport,
 } from './store.ts';
+import type { SynthesizedInstrumentBlock } from './storedInstruments.ts';
 import { clipInterval, intervalsOverlap, type MockInterval, observingNightInterval } from './time.ts';
 
 /** Above a semester, below an accidental decade (v1-scheduler-integration.md §4). */
@@ -101,6 +102,24 @@ const instrumentBlock = (block: StoredBlock, interval: MockInterval): unknown =>
   // SCIENCE otherwise - the sources never record a mounted instrument as
   // anything else without saying so.
   usage: block.usage ?? 'SCIENCE',
+});
+
+/**
+ * A stored instrument, in the same shape a mounting answers in.
+ *
+ * `location` carries the place rather than a port, which is what tells a
+ * consumer this is an instrument in storage rather than one on the telescope.
+ */
+const storedInstrumentBlock = (block: SynthesizedInstrumentBlock, interval: MockInterval): unknown => ({
+  id: block.id,
+  site: block.site,
+  interval,
+  note: block.note,
+  instrument: block.instrument,
+  publishedName: block.publishedName,
+  rowLabel: block.rowLabel,
+  location: { type: block.place, port: null },
+  usage: block.usage,
 });
 
 const componentOf = (component: CatalogComponent): unknown => ({
@@ -197,6 +216,7 @@ const clipAll = <T extends { start: string; end: string }>(
 const nightProjection = (store: MockStore, site: ImportSite, observingNight: string): unknown => {
   const interval = observingNightInterval(site, observingNight);
   const mountings = clipAll(store.mountingsFor(site), interval);
+  const stored = clipAll(store.storedInstrumentsFor(site), interval);
   const closures = clipAll(store.closuresFor(site), interval);
   const tooSupport = clipAll(store.tooSupportFor(site), interval);
   const modes = clipAll(store.modesFor(site), interval);
@@ -213,7 +233,12 @@ const nightProjection = (store: MockStore, site: ImportSite, observingNight: str
     // counting it would let fake data turn an unrecorded night into a recorded one.
     dataAvailable:
       mountings.length > 0 || closures.length > 0 || tooSupport.length > 0 || modes.length > 0 || subsystems.length > 0,
-    instrumentAvailability: mountings.map(({ record, interval: clipped }) => instrumentBlock(record, clipped)),
+    // The schedule's mountings, then the stored instruments - which never
+    // count towards `dataAvailable` above, being synthetic.
+    instrumentAvailability: [
+      ...mountings.map(({ record, interval: clipped }) => instrumentBlock(record, clipped)),
+      ...stored.map(({ record, interval: clipped }) => storedInstrumentBlock(record, clipped)),
+    ],
     telescopeAvailability: closures.map(({ record, interval: clipped }) => closureBlock(record, clipped)),
     tooSupport: tooSupport.map(({ record, interval: clipped }) => tooBlock(record, clipped)),
     telescopeMode: modes.map(({ record, interval: clipped }) => modeBlock(record, clipped)),
@@ -283,15 +308,22 @@ export const buildResolvers = (store: MockStore) => ({
       _: unknown,
       args: { site: ImportSite; interval: MockInterval; clip: boolean },
     ): unknown => {
-      const touching = store
-        .mountingsFor(args.site)
-        .filter((block) => intervalsOverlap(block.start, block.end, args.interval.start, args.interval.end));
+      const overlapping = <T extends { start: string; end: string }>(records: readonly T[]): readonly T[] =>
+        records.filter((record) => intervalsOverlap(record.start, record.end, args.interval.start, args.interval.end));
+      const touching = overlapping(store.mountingsFor(args.site));
+      const stored = overlapping(store.storedInstrumentsFor(args.site));
 
       // clip: false returns stored intervals, so a view can draw a mounting that
       // runs past the edge of what it asked for.
       return args.clip
-        ? clipAll(touching, args.interval).map(({ record, interval }) => instrumentBlock(record, interval))
-        : touching.map((block) => instrumentBlock(block, intervalOf(block)));
+        ? [
+            ...clipAll(touching, args.interval).map(({ record, interval }) => instrumentBlock(record, interval)),
+            ...clipAll(stored, args.interval).map(({ record, interval }) => storedInstrumentBlock(record, interval)),
+          ]
+        : [
+            ...touching.map((block) => instrumentBlock(block, intervalOf(block))),
+            ...stored.map((block) => storedInstrumentBlock(block, intervalOf(block))),
+          ];
     },
 
     components: (

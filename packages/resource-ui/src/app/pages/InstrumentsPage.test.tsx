@@ -88,12 +88,14 @@ describe('InstrumentsPage', () => {
     await expect.element(screen.getByText('GNIRS')).not.toBeInTheDocument();
   });
 
-  it('orders the location choices as ports, then off-port, then unrecorded', async () => {
+  it('orders the location choices from the telescope outwards', async () => {
     const screen = await open('/instruments?site=GN&semester=2026B&night=2026-09-26');
     await expect.element(screen.getByText('GNIRS')).toBeVisible();
 
     await openDropdown(screen, 'Location');
 
+    // Ports, then the places an instrument is stored, then the two plain
+    // facts - AcqCam and NIRI are both shelved at GN on this night.
     const options = [...document.querySelectorAll('[role="option"]')].map((option) => option.textContent ?? '');
     expect(options).toEqual([
       'Port 1 (1)',
@@ -101,9 +103,30 @@ describe('InstrumentsPage', () => {
       'Port 3 (1)',
       'Port 4 (1)',
       'Port 5 (1)',
+      'Summit lab (2)',
       'Not on a port (1)',
       'Not recorded (1)',
     ]);
+  });
+
+  it('holds the instruments GPP knows that the schedule never mounts', async () => {
+    // lucuma-core enumerates instruments the workbook never schedules; without
+    // them the browser would answer "where is NIRI" with silence. They carry a
+    // storage place, never a port, which is what keeps them off the charts.
+    const screen = await open('/instruments?site=GN&semester=2026B&night=2026-09-26');
+
+    await expect.element(screen.getByText('NIRI')).toBeVisible();
+    await expect.element(screen.getByText('AcqCam')).toBeVisible();
+    await expect.element(screen.getByText('Summit lab').first()).toBeVisible();
+  });
+
+  it('filters to a storage place, which is what a stored instrument has instead of a port', async () => {
+    const screen = await open('/instruments?site=GS&semester=2025B&night=2025-11-20');
+
+    await selectDropdownOption(screen, 'Location', 'Base facility');
+
+    await expect.element(screen.getByText('GPI')).toBeVisible();
+    await expect.element(screen.getByText('GHOST')).not.toBeInTheDocument();
   });
 
   it('is a sendable link: the location filter comes from the URL', async () => {

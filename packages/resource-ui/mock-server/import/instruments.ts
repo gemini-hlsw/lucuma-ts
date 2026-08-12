@@ -15,6 +15,7 @@
 
 /** The enum values, in the SDL's order. */
 export const INSTRUMENTS = [
+  'ACQ_CAM',
   'ALOPEKE',
   'ALTAIR',
   'CAL_ZORRO',
@@ -25,10 +26,13 @@ export const INSTRUMENTS = [
   'GHOST',
   'GMOS',
   'GNIRS',
+  'GPI',
   'GSAOI',
   'IGRINS2',
   'IQUEYE',
   'MAROON_X',
+  'NIRI',
+  'SCORPIO',
 ] as const;
 
 export type Instrument = (typeof INSTRUMENTS)[number];

@@ -28,6 +28,7 @@ import {
   locationLabel,
   locationOptions,
   matchesInstrument,
+  mountingLocationLabel,
   runsOf,
 } from '@/domain/instrumentFinder';
 import { firstEveningDate, lastEveningDate, observingNightInterval } from '@/domain/siteTime';
@@ -54,7 +55,7 @@ function Runs({ runs, site }: { runs: readonly Mounting[]; site: Site }): JSX.El
           <span className="text-foreground-secondary tabular-nums">
             {printEvening(firstEveningDate(site, run.interval))} – {printEvening(lastEveningDate(site, run.interval))}
           </span>
-          <span>{run.port === null ? 'Not on a port' : run.rowLabel}</span>
+          <span>{mountingLocationLabel(run)}</span>
           <span className="text-foreground-muted">{USAGE_LABEL[run.usage]}</span>
           {when(run.note, (note) => (
             <span className="text-foreground-muted italic">{note}</span>

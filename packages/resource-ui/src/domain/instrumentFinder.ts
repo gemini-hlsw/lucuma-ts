@@ -126,12 +126,34 @@ export const buildInstrumentRows = ({ mountings, night }: BuildInstrumentRowsOpt
 export const OFF_PORT_LABEL = 'Not on a port';
 export const NOT_RECORDED_LABEL = 'Not recorded';
 
+/**
+ * Where an instrument sits when it is not on a port, in operations' words.
+ *
+ * UNKNOWN is the workbook's own off-port run - recorded usable with no port and
+ * nothing said about the place - so it reads as the plain fact rather than
+ * naming somewhere the record never named.
+ */
+export const PLACE_LABEL = {
+  FLOOR: 'Dome floor',
+  LAB: 'Summit lab',
+  BASE: 'Base facility',
+  UNKNOWN: OFF_PORT_LABEL,
+} satisfies Record<Exclude<InstrumentLocationType, 'PORT'>, string>;
+
+/** Where one record puts an instrument: its port, or the place it is stored. */
+export const mountingLocationLabel = (mounting: Mounting): string =>
+  mounting.port === null
+    ? mounting.locationType === 'PORT'
+      ? OFF_PORT_LABEL
+      : PLACE_LABEL[mounting.locationType]
+    : mounting.rowLabel;
+
 export const locationLabel = (row: InstrumentRow): string => {
   switch (row.where.kind) {
     case 'PORT':
       return row.where.rowLabel;
     case 'OFF_PORT':
-      return OFF_PORT_LABEL;
+      return row.where.location === 'PORT' ? OFF_PORT_LABEL : PLACE_LABEL[row.where.location];
     default:
       return NOT_RECORDED_LABEL;
   }
@@ -148,7 +170,11 @@ export const locationOptions = (rows: readonly InstrumentRow[]): readonly { labe
     const label = locationLabel(row);
     counts.set(label, (counts.get(label) ?? 0) + 1);
   }
-  const rank = (label: string): number => (label === NOT_RECORDED_LABEL ? 2 : label === OFF_PORT_LABEL ? 1 : 0);
+  // Ports first, then the places an instrument is stored, then the two plain
+  // facts - so the list reads from "on the telescope" outwards.
+  const places: readonly string[] = [PLACE_LABEL.FLOOR, PLACE_LABEL.LAB, PLACE_LABEL.BASE];
+  const rank = (label: string): number =>
+    label === NOT_RECORDED_LABEL ? 3 : label === OFF_PORT_LABEL ? 2 : places.includes(label) ? 1 : 0;
   return [...counts.entries()]
     .map(([label, count]) => ({ label, count }))
     .sort((a, b) => rank(a.label) - rank(b.label) || a.label.localeCompare(b.label));

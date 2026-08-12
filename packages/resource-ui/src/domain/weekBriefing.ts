@@ -155,7 +155,9 @@ export const buildWeekChanges = ({
   const inside = (instant: number): boolean => instant > interval.start && instant < interval.end;
   const changes: WeekChange[] = [];
 
-  for (const mounting of mountings) {
+  // Ports only, as the calendar's news is: a stored instrument changing shelf
+  // is not a change to the week's observing.
+  for (const mounting of mountings.filter((candidate) => candidate.port !== null)) {
     if (inside(mounting.interval.start)) {
       changes.push({
         kind: 'RUN_BEGINS',

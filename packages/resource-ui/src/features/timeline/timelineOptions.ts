@@ -54,6 +54,7 @@ import type { Closure, Instrument, ModeBlock, Site, TelescopeModeType, TooBlock,
  * measurement behind these values is in global.css.
  */
 const INSTRUMENT_COLOR = {
+  ACQ_CAM: 'var(--instrument-acq-cam)',
   ALOPEKE: 'var(--instrument-alopeke)',
   ALTAIR: 'var(--instrument-altair)',
   CAL_ZORRO: 'var(--instrument-cal-zorro)',
@@ -64,10 +65,13 @@ const INSTRUMENT_COLOR = {
   GHOST: 'var(--instrument-ghost)',
   GMOS: 'var(--instrument-gmos)',
   GNIRS: 'var(--instrument-gnirs)',
+  GPI: 'var(--instrument-gpi)',
   GSAOI: 'var(--instrument-gsaoi)',
   IGRINS2: 'var(--instrument-igrins2)',
   IQUEYE: 'var(--instrument-iqueye)',
   MAROON_X: 'var(--instrument-maroon-x)',
+  NIRI: 'var(--instrument-niri)',
+  SCORPIO: 'var(--instrument-scorpio)',
   UNKNOWN: 'var(--instrument-unknown)',
 } satisfies Record<Instrument, string>;
 
@@ -88,6 +92,7 @@ export const INSTRUMENT_INK_DARK = 'var(--instrument-ink-dark)';
  * are the deepest fills - Altair, Canopus and Maroon-X.
  */
 const INSTRUMENT_INK = {
+  ACQ_CAM: INSTRUMENT_INK_DARK,
   ALOPEKE: INSTRUMENT_INK_DARK,
   ALTAIR: INSTRUMENT_INK_LIGHT,
   CAL_ZORRO: INSTRUMENT_INK_DARK,
@@ -98,15 +103,21 @@ const INSTRUMENT_INK = {
   GHOST: INSTRUMENT_INK_DARK,
   GMOS: INSTRUMENT_INK_DARK,
   GNIRS: INSTRUMENT_INK_DARK,
+  // Measured 2026-08-12: dark ink clears 4.5:1 on all four of the browser-only
+  // hues (7.3-8.8:1), where white would sit at 2.3-2.7:1.
+  GPI: INSTRUMENT_INK_DARK,
   GSAOI: INSTRUMENT_INK_DARK,
   IGRINS2: INSTRUMENT_INK_DARK,
   IQUEYE: INSTRUMENT_INK_DARK,
   MAROON_X: INSTRUMENT_INK_LIGHT,
+  NIRI: INSTRUMENT_INK_DARK,
+  SCORPIO: INSTRUMENT_INK_DARK,
   UNKNOWN: INSTRUMENT_INK_DARK,
 } satisfies Record<Instrument, string>;
 
 /** Published spellings, so a legend reads as the sheet does, not as the enum. */
 export const INSTRUMENT_LABEL = {
+  ACQ_CAM: 'AcqCam',
   ALOPEKE: "'Alopeke",
   ALTAIR: 'Altair',
   CAL_ZORRO: 'Zorro',
@@ -117,10 +128,13 @@ export const INSTRUMENT_LABEL = {
   GHOST: 'GHOST',
   GMOS: 'GMOS',
   GNIRS: 'GNIRS',
+  GPI: 'GPI',
   GSAOI: 'GSAOI',
   IGRINS2: 'IGRINS2',
   IQUEYE: 'IQUEYE',
   MAROON_X: 'Maroon-X',
+  NIRI: 'NIRI',
+  SCORPIO: 'SCORPIO',
   UNKNOWN: 'Unknown',
 } satisfies Record<Instrument, string>;
 
