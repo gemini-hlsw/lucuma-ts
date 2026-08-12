@@ -7,31 +7,20 @@
  * eyeballed in a screen reader.
  */
 import type { SemesterTimeline } from '@/domain/semesterTimeline';
-import { firstEveningDate, lastEveningDate } from '@/domain/siteTime';
+import { eveningLabel, firstEveningDate, lastEveningDate } from '@/domain/siteTime';
 import { nightsIn } from '@/domain/timeline';
 import type { Interval, Site } from '@/domain/types';
 import { UNSCHEDULED_LABEL } from '@/features/timeline/timelineOptions';
 
 /**
- * An evening date printed as "7 Aug 2026".
- *
- * Evening dates throughout, because that is what the published sheet heads its
- * columns with, so a reader checking this against the sheet compares like with
- * like. Formatted from the date itself at midday UTC, which keeps the printed
- * day from sliding under any zone.
+ * A block's extent as two cells, in the evening dates the published sheet heads
+ * its columns with, so a reader checking this against the sheet compares like
+ * with like. Two columns rather than one range string: the table sorts and
+ * scans by them.
  */
-const EVENING_FORMAT = new Intl.DateTimeFormat('en-GB', {
-  timeZone: 'UTC',
-  day: 'numeric',
-  month: 'short',
-  year: 'numeric',
-});
-
-const printEvening = (eveningDate: string): string => EVENING_FORMAT.format(new Date(`${eveningDate}T12:00:00Z`));
-
 const extent = (interval: Interval, site: Site): { from: string; to: string } => ({
-  from: printEvening(firstEveningDate(site, interval)),
-  to: printEvening(lastEveningDate(site, interval)),
+  from: eveningLabel(firstEveningDate(site, interval)),
+  to: eveningLabel(lastEveningDate(site, interval)),
 });
 
 const nightCount = (nights: number): string => `${nights} ${nights === 1 ? 'night' : 'nights'}`;

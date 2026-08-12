@@ -29,25 +29,21 @@ import { useSelection } from '@/app/useSelection';
 import { useSemester } from '@/app/useSemester';
 import { useSiteSpan } from '@/app/useSiteSpan';
 import { useUrlParam } from '@/app/useUrlParam';
+import { FilterField } from '@/components/ui/FilterField';
+import { countedOption } from '@/components/ui/filterOptions';
 import { NoteCell } from '@/components/ui/NoteCell';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { ErrorAlert, Loading } from '@/components/ui/PageStatus';
 import { RecordHistoryTable } from '@/components/ui/RecordHistoryTable';
-import { SyntheticDataTag } from '@/components/ui/SyntheticDataTag';
+import { WhereCell } from '@/components/ui/WhereCell';
 import { buildFinderRows, type FinderRow, historyOf, matchesComponent, whereOf } from '@/domain/componentFinder';
-import { firstEveningDate, lastEveningDate, nightCount, observingNightInterval } from '@/domain/siteTime';
+import { eveningLabel, eveningRange, firstEveningDate, nightCount, observingNightInterval } from '@/domain/siteTime';
 import type { ComponentBlock, ComponentType, Instrument, Mounting, Site } from '@/domain/types';
-import { StatusCell, WhereCell } from '@/features/components/componentCells';
-import { componentStatus, TYPE_LABEL, whereLabel } from '@/features/components/componentLabels';
-import { INSTRUMENT_LABEL, instrumentColor } from '@/features/timeline/timelineOptions';
+import { ComponentIdentityCell, StatusCell } from '@/features/components/componentCells';
+import { componentStatus, componentWhere, TYPE_LABEL, whereLabel } from '@/features/components/componentLabels';
+import { InstrumentSwatch } from '@/features/timeline/InstrumentSwatch';
+import { INSTRUMENT_LABEL } from '@/features/timeline/timelineOptions';
 import { useComponentBrowser } from '@/gql/hooks';
-
-const EVENING_FORMAT = new Intl.DateTimeFormat('en-GB', {
-  timeZone: 'UTC',
-  day: 'numeric',
-  month: 'short',
-  year: 'numeric',
-});
-
-const printEvening = (eveningDate: string): string => EVENING_FORMAT.format(new Date(`${eveningDate}T12:00:00Z`));
 
 /**
  * The expansion: the piece's records over the site's whole span, oldest first,
@@ -76,7 +72,7 @@ function History({
 }): JSX.Element {
   const rows = blocks.map((block) => ({
     id: block.id,
-    dates: `${printEvening(firstEveningDate(site, block.interval))} – ${printEvening(lastEveningDate(site, block.interval))}`,
+    dates: eveningRange(site, block.interval),
     nights: nightCount(site, block.interval),
     where: whereLabel(whereOf(instrument, block, mountings, block.interval)),
     status: componentStatus(block.usage, block.location !== 'INSTALLED', block.note) ?? {
@@ -113,16 +109,15 @@ export default function ComponentsPage(): JSX.Element {
   // Which rows are open stays local: it is reading posture, not a finding.
   const [expanded, setExpanded] = useState<FinderRow[]>([]);
 
+  const activeSite = selected?.site ?? site;
+
   // The site's whole recorded span, not the selected semester - see
   // `app/useSiteSpan.ts`. A piece's story does not restart in February.
   const bounds = useSiteSpan();
 
-  const { components, componentBlocks, mountings, loading, error } = useComponentBrowser(
-    selected?.site ?? site,
-    bounds,
-  );
+  const { components, componentBlocks, mountings, loading, error } = useComponentBrowser(activeSite, bounds);
 
-  const night = observingNightInterval(selected?.site ?? site, observingNight);
+  const night = observingNightInterval(activeSite, observingNight);
 
   const rows = buildFinderRows({ components, blocks: componentBlocks, mountings, night });
 
@@ -141,7 +136,7 @@ export default function ComponentsPage(): JSX.Element {
     instrumentCounts.set(component.instrument, (instrumentCounts.get(component.instrument) ?? 0) + 1);
   }
   const instrumentOptions = [...instrumentCounts.entries()]
-    .map(([value, count]) => ({ label: `${INSTRUMENT_LABEL[value]} (${count})`, value }))
+    .map(([value, count]) => countedOption(value, INSTRUMENT_LABEL[value], count))
     .sort((a, b) => a.label.localeCompare(b.label));
 
   const typeCounts = new Map<ComponentType, number>();
@@ -150,7 +145,7 @@ export default function ComponentsPage(): JSX.Element {
   }
   const typeOptions = (Object.keys(TYPE_LABEL) as ComponentType[])
     .filter((value) => typeCounts.has(value))
-    .map((value) => ({ label: `${TYPE_LABEL[value]} (${typeCounts.get(value) ?? 0})`, value }));
+    .map((value) => countedOption(value, TYPE_LABEL[value], typeCounts.get(value) ?? 0));
 
   // What each group's subheader says: how many pieces, and how many of them
   // are on the telescope tonight - the browser's one-line answer per
@@ -170,18 +165,12 @@ export default function ComponentsPage(): JSX.Element {
     const total = summary?.total ?? 0;
     const installed = summary?.installed ?? 0;
     return (
-      <span className="flex items-center gap-2 py-0.5">
-        <span
-          aria-hidden
-          className="inline-block h-3 w-3 rounded-[2px]"
-          style={{ backgroundColor: instrumentColor(row.component.instrument) }}
-        />
-        <span className="font-semibold text-foreground">{INSTRUMENT_LABEL[row.component.instrument]}</span>
+      <InstrumentSwatch instrument={row.component.instrument} className="py-0.5">
         <span className="text-xs text-foreground-muted">
           {total} {total === 1 ? 'piece' : 'pieces'}
           {installed > 0 && ` · ${installed} on telescope`}
         </span>
-      </span>
+      </InstrumentSwatch>
     );
   };
 
@@ -189,28 +178,15 @@ export default function ComponentsPage(): JSX.Element {
 
   return (
     <div className="min-w-0">
-      <header className="mb-4 flex flex-wrap items-end gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-lg font-semibold text-foreground">Components</h1>
-            {selected?.demo === true && <SyntheticDataTag />}
-          </div>
-          <p className="mt-1 text-xs text-foreground-muted">
-            Where every instrument piece is on the night of{' '}
-            {printEvening(firstEveningDate(selected?.site ?? site, night))}. Open a row for its history.
-          </p>
-        </div>
-      </header>
+      <PageHeader title="Components" demo={selected?.demo === true}>
+        Where every instrument piece is on the night of {eveningLabel(firstEveningDate(activeSite, night))}. Open a row
+        for its history.
+      </PageHeader>
 
-      {failure !== undefined && (
-        <p role="alert" className="mb-4 rounded border border-red-700/60 bg-red-900/30 p-3 text-sm text-red-100">
-          Could not load the components: {failure.message}
-        </p>
-      )}
+      {failure !== undefined && <ErrorAlert what="the components" error={failure} />}
 
       <div className="mb-3 flex flex-wrap items-end gap-3">
-        <label className="flex flex-col gap-1 text-xs text-foreground-secondary">
-          Search
+        <FilterField label="Search">
           <InputText
             value={search}
             onChange={(event) => {
@@ -220,9 +196,8 @@ export default function ComponentsPage(): JSX.Element {
             aria-label="Search components"
             className="w-72"
           />
-        </label>
-        <label className="flex flex-col gap-1 text-xs text-foreground-secondary">
-          Instrument
+        </FilterField>
+        <FilterField label="Instrument">
           <Dropdown
             value={instrument}
             options={instrumentOptions}
@@ -234,9 +209,8 @@ export default function ComponentsPage(): JSX.Element {
             aria-label="Instrument"
             className="w-44"
           />
-        </label>
-        <label className="flex flex-col gap-1 text-xs text-foreground-secondary">
-          Type
+        </FilterField>
+        <FilterField label="Type">
           <Dropdown
             value={componentType}
             options={typeOptions}
@@ -248,10 +222,10 @@ export default function ComponentsPage(): JSX.Element {
             aria-label="Component type"
             className="w-40"
           />
-        </label>
+        </FilterField>
       </div>
 
-      {(loadingSets || loading) && <p className="text-sm text-foreground-muted">Loading the catalog…</p>}
+      {(loadingSets || loading) && <Loading what="the catalog" />}
 
       {!loading && !loadingSets && (
         // Grouped by instrument rather than one flat list with a repeating
@@ -275,7 +249,7 @@ export default function ComponentsPage(): JSX.Element {
               blocks={historyOf(row.component.id, componentBlocks)}
               mountings={mountings}
               instrument={row.component.instrument}
-              site={selected?.site ?? site}
+              site={activeSite}
             />
           )}
           size="small"
@@ -284,20 +258,9 @@ export default function ComponentsPage(): JSX.Element {
           emptyMessage="No components match."
         >
           <Column expander style={{ width: '2.5rem' }} />
-          <Column
-            header="Component"
-            body={(row: FinderRow) => (
-              <span className="flex flex-col">
-                <span className="font-medium text-foreground">{row.component.name}</span>
-                <span className="text-[0.65rem] text-foreground-muted">
-                  {row.component.code}
-                  {row.component.barcode !== null && ` · barcode ${row.component.barcode}`}
-                </span>
-              </span>
-            )}
-          />
+          <Column header="Component" body={(row: FinderRow) => <ComponentIdentityCell row={row} />} />
           <Column header="Type" body={(row: FinderRow) => TYPE_LABEL[row.component.componentType]} />
-          <Column header="Where" body={(row: FinderRow) => <WhereCell row={row} />} />
+          <Column header="Where" body={(row: FinderRow) => <WhereCell where={componentWhere(row)} />} />
           <Column header="Status" body={(row: FinderRow) => <StatusCell row={row} />} />
           <Column header="Note" body={(row: FinderRow) => <NoteCell note={row.note} />} />
         </DataTable>

@@ -4,8 +4,9 @@ import { useNow } from '@/app/useNow';
 import { useSelection } from '@/app/useSelection';
 import { useSemester } from '@/app/useSemester';
 import { useUrlParam } from '@/app/useUrlParam';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { ErrorAlert, Loading } from '@/components/ui/PageStatus';
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
-import { SyntheticDataTag } from '@/components/ui/SyntheticDataTag';
 import { buildSemesterTimeline } from '@/domain/semesterTimeline';
 import { SemesterBlockTable } from '@/features/semester/SemesterBlockTable';
 import { SemesterCalendar, SemesterCalendarLegend } from '@/features/semester/SemesterCalendar';
@@ -118,21 +119,10 @@ export default function SemesterPage(): JSX.Element {
 
   return (
     <div className="min-w-0">
-      <header className="mb-4 flex flex-wrap items-end gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-lg font-semibold text-foreground">{selected?.title ?? 'Semester schedule'}</h1>
-            {selected?.demo === true && <SyntheticDataTag />}
-          </div>
-          <p className="mt-1 text-xs text-foreground-muted">
-            {selected === null
-              ? 'Choose a site and semester.'
-              : `Nights ${selected.firstNight} to ${selected.lastNight}. Columns are headed by the date each night begins, as published.`}
-            {typeof selected?.version === 'string' && ` Published version: ${selected.version}.`}
-          </p>
-        </div>
-
-        <div className="ml-auto flex items-end gap-3">
+      <PageHeader
+        title={selected?.title ?? 'Semester schedule'}
+        demo={selected?.demo === true}
+        actions={
           <SegmentedControl
             value={view}
             options={VIEW_OPTIONS}
@@ -141,16 +131,17 @@ export default function SemesterPage(): JSX.Element {
             size="sm"
             testId="semester-view"
           />
-        </div>
-      </header>
+        }
+      >
+        {selected === null
+          ? 'Choose a site and semester.'
+          : `Nights ${selected.firstNight} to ${selected.lastNight}. Columns are headed by the date each night begins, as published.`}
+        {typeof selected?.version === 'string' && ` Published version: ${selected.version}.`}
+      </PageHeader>
 
-      {failure !== undefined && (
-        <p role="alert" className="mb-4 rounded border border-red-700/60 bg-red-900/30 p-3 text-sm text-red-100">
-          Could not load the schedule: {failure.message}
-        </p>
-      )}
+      {failure !== undefined && <ErrorAlert what="the schedule" error={failure} />}
 
-      {(loadingSets || loading) && <p className="text-sm text-foreground-muted">Loading the schedule…</p>}
+      {(loadingSets || loading) && <Loading what="the schedule" />}
 
       {timeline !== null && selected !== null && !loading && (
         <>

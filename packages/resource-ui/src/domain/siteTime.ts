@@ -162,3 +162,50 @@ export const nightCount = (site: Site, interval: Interval): number => {
   const last = Date.parse(`${lastEveningDate(site, interval)}T00:00:00Z`);
   return Math.round((last - first) / DAY_MS) + 1;
 };
+
+/**
+ * How an evening date is printed. Three shapes, and the choice is about what the
+ * page around it already says, never about what the date means.
+ */
+export type EveningStyle =
+  /** "7 Aug" - a chart tooltip, where the year is the window's own. */
+  | 'dayMonth'
+  /** "7 Aug 2026" - a table spanning a site's whole record, where it is not. */
+  | 'dayMonthYear'
+  /** "Sat 21 Nov" - a week card, which is read by weekday. */
+  | 'weekdayDayMonth';
+
+const EVENING_OPTIONS = {
+  dayMonth: { day: 'numeric', month: 'short' },
+  dayMonthYear: { day: 'numeric', month: 'short', year: 'numeric' },
+  weekdayDayMonth: { weekday: 'short', day: 'numeric', month: 'short' },
+} satisfies Record<EveningStyle, Intl.DateTimeFormatOptions>;
+
+const eveningFormatters = new Map<EveningStyle, Intl.DateTimeFormat>();
+
+/**
+ * An evening date as the published sheet heads its columns - the one formatter,
+ * so no two views can print the same night differently.
+ *
+ * Formatted at midday UTC, in UTC: an evening date is a plain calendar date
+ * rather than an instant, so it must not slide a day under anybody's zone -
+ * neither the reader's nor the site's. That is also why this takes no `Site`:
+ * the site has already been read, by `firstEveningDate`/`lastEveningDate`.
+ */
+export const eveningLabel = (eveningDate: string, style: EveningStyle = 'dayMonthYear'): string => {
+  let formatter = eveningFormatters.get(style);
+  if (formatter === undefined) {
+    formatter = new Intl.DateTimeFormat('en-GB', { timeZone: 'UTC', ...EVENING_OPTIONS[style] });
+    eveningFormatters.set(style, formatter);
+  }
+  return formatter.format(new Date(`${eveningDate}T12:00:00Z`));
+};
+
+/**
+ * The evening dates an interval spans, as one string: "7 Aug 2026 – 13 Oct 2026".
+ *
+ * An en dash with spaces, which is what a date range is, and the same one in
+ * every table that prints a record's extent.
+ */
+export const eveningRange = (site: Site, interval: Interval, style: EveningStyle = 'dayMonthYear'): string =>
+  `${eveningLabel(firstEveningDate(site, interval), style)} – ${eveningLabel(lastEveningDate(site, interval), style)}`;

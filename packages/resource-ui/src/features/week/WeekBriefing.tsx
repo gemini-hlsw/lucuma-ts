@@ -14,22 +14,13 @@ import { Tag } from 'primereact/tag';
 import type { JSX } from 'react';
 
 import { useOpenNight } from '@/app/useOpenNight';
-import { displayTimeZone, type TimeDisplay, zoneFormatters } from '@/domain/siteTime';
+import { EmptyPanel } from '@/components/ui/PageStatus';
+import { displayTimeZone, eveningLabel, type TimeDisplay, zoneFormatters } from '@/domain/siteTime';
 import type { Site } from '@/domain/types';
 import type { WeekChange, WeekNightFacts } from '@/domain/weekBriefing';
 import { MoonDisc } from '@/features/calendar/MoonDisc';
 import { LOCATION_LABEL } from '@/features/components/componentLabels';
 import { INSTRUMENT_LABEL } from '@/features/timeline/timelineOptions';
-
-const EVENING_FORMAT = new Intl.DateTimeFormat('en-GB', {
-  timeZone: 'UTC',
-  weekday: 'short',
-  day: 'numeric',
-  month: 'short',
-});
-
-/** "Sat 21 Nov" - the evening a night begins, matching the chart's axis. */
-const eveningLabel = (isoDate: string): string => EVENING_FORMAT.format(new Date(`${isoDate}T12:00:00Z`));
 
 const whenFormat = zoneFormatters('en-GB', {
   weekday: 'short',
@@ -62,8 +53,10 @@ export function WeekNightStrip({ facts }: { facts: readonly WeekNightFacts[] }):
             }}
           >
             <div className="flex items-center justify-between gap-2">
+              {/* "Sat 21 Nov" - a card is found by its weekday, and the seven
+                  of them are all one month or two, so the year says nothing. */}
               <span className={cn('font-semibold', fact.isHoliday ? 'text-amber-400' : 'text-foreground')}>
-                {eveningLabel(fact.eveningDate)}
+                {eveningLabel(fact.eveningDate, 'weekdayDayMonth')}
               </span>
               <MoonDisc phase={fact.moon} size={14} />
             </div>
@@ -133,9 +126,7 @@ export function WeekChangesTable({
       <h2 className="mb-2 text-sm font-semibold text-foreground">Changes this week</h2>
 
       {changes.length === 0 ? (
-        <p className="rounded border border-subtle bg-surface p-3 text-sm text-foreground-secondary">
-          Nothing changes this week - every run carries straight through.
-        </p>
+        <EmptyPanel>Nothing changes this week - every run carries straight through.</EmptyPanel>
       ) : (
         <DataTable value={[...changes]} size="small" stripedRows data-testid="week-changes">
           <Column

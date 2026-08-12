@@ -3,7 +3,9 @@
  * react-refresh rule wants component files exporting only components.
  */
 import type { RecordStatus } from '@/components/ui/StatusTag';
-import type { ComponentWhere } from '@/domain/componentFinder';
+import type { WhereReading } from '@/components/ui/WhereCell';
+import type { ComponentWhere, FinderRow } from '@/domain/componentFinder';
+import { portRowLabel } from '@/domain/ports';
 import type { ComponentType, ResourceUsage } from '@/domain/types';
 
 export const TYPE_LABEL: Record<ComponentType, string> = {
@@ -21,19 +23,33 @@ export const LOCATION_LABEL = {
   UNKNOWN: 'Unknown',
 } as const;
 
-/** "Port 3 · GMOS" at Gemini South; GN's rows are not ports, so the name alone. */
+/** "Port 3 · GMOS", or the instrument alone when its own record names no port. */
 export const whereLabel = (where: ComponentWhere): string => {
   switch (where.kind) {
     case 'INSTALLED':
       return where.port === null
         ? `On telescope · ${where.instrumentName}`
-        : `Port ${where.port} · ${where.instrumentName}`;
+        : `${portRowLabel(where.port)} · ${where.instrumentName}`;
     case 'STORED':
       return LOCATION_LABEL[where.location];
     default:
       return 'Not recorded';
   }
 };
+
+/**
+ * One row's Where cell, for the shared `WhereCell`.
+ *
+ * `changesTag` is the caller's because the words differ with the window: a
+ * browser row says only that the piece changes tonight, while the night view
+ * can name the clock time it changes at.
+ */
+export const componentWhere = (row: FinderRow, changesTag = 'changes tonight'): WhereReading => ({
+  presence:
+    row.where.kind === 'INSTALLED' ? 'ON_TELESCOPE' : row.where.kind === 'STORED' ? 'OFF_TELESCOPE' : 'NOT_RECORDED',
+  label: whereLabel(row.where),
+  changes: row.changesTonight ? changesTag : null,
+});
 
 /**
  * The status vocabulary, derived from the record rather than echoing the enum.

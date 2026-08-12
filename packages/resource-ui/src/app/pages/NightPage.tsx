@@ -4,9 +4,10 @@ import type { JSX } from 'react';
 
 import { useNow } from '@/app/useNow';
 import { useSelection } from '@/app/useSelection';
-import { ChevronLeft, ChevronRight } from '@/components/ui/Icons';
+import { NightStepper } from '@/components/ui/NightStepper';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { EmptyPanel, ErrorAlert, Loading } from '@/components/ui/PageStatus';
 import { SemesterTitleLink } from '@/components/ui/SemesterTitleLink';
-import { SyntheticDataTag } from '@/components/ui/SyntheticDataTag';
 import { coverageRanges, nearestCoveredNight } from '@/domain/coverage';
 import { moonPhaseAt, moonPhaseLabel } from '@/domain/moon';
 import { buildNightTimeline } from '@/domain/nightTimeline';
@@ -88,88 +89,46 @@ export default function NightPage(): JSX.Element {
 
   return (
     <div className="min-w-0">
-      <header className="mb-4 flex flex-wrap items-end gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-lg font-semibold text-foreground">Night of {observingNight}</h1>
-            {when(held?.demo, () => (
-              <SyntheticDataTag />
-            ))}
-          </div>
-          <p className="mt-1 text-xs text-foreground-muted">
-            {clockLabel(interval.start, site, timeDisplay)} to {clockLabel(interval.end, site, timeDisplay)}{' '}
-            {timeDisplay === 'utc' ? 'UTC' : 'site time'}, labelled by the date it ends. {moon}.
-            {when(held, (held) => (
-              <>
-                {' '}
-                <SemesterTitleLink semester={held} />.
-              </>
-            ))}
-          </p>
-        </div>
-
-        <div className="ml-auto flex items-end gap-3">
-          {/* FontAwesome, not PrimeReact's `icon="pi pi-…"`: this app never
-              loads PrimeIcons, so those buttons rendered as empty boxes. */}
-          <div className="xp-toolbar">
-            {/* From a deep link, back to the night in progress without typing
-                a date. Disabled when this already is tonight. */}
-            <Button
-              size="small"
-              severity="secondary"
-              disabled={observingNight === tonight}
-              onClick={clearObservingNight}
-              className="mr-1"
-            >
-              Tonight
-            </Button>
-            <Button
-              text
-              size="small"
-              aria-label="Previous night"
-              onClick={() => {
-                setObservingNight(addDays(observingNight, -1));
-              }}
-            >
-              <ChevronLeft />
-            </Button>
-            <input
-              type="date"
-              value={observingNight}
-              aria-label="Observing night"
-              className="rounded border border-subtle bg-surface px-2 py-1 text-xs text-foreground"
-              onChange={(event) => {
-                if (event.target.value !== '') {
-                  setObservingNight(event.target.value);
-                }
-              }}
-            />
-            <Button
-              text
-              size="small"
-              aria-label="Next night"
-              onClick={() => {
-                setObservingNight(addDays(observingNight, 1));
-              }}
-            >
-              <ChevronRight />
-            </Button>
-          </div>
-        </div>
-      </header>
+      <PageHeader
+        title={`Night of ${observingNight}`}
+        demo={held?.demo === true}
+        actions={
+          // The night's own date vocabulary: the label the URL carries, stepped
+          // one night at a time.
+          <NightStepper
+            value={observingNight}
+            onChange={setObservingNight}
+            onStep={(days) => {
+              setObservingNight(addDays(observingNight, days));
+            }}
+            step={1}
+            dateLabel="Observing night"
+            stepLabel="night"
+            onTonight={clearObservingNight}
+            isTonight={observingNight === tonight}
+          />
+        }
+      >
+        {clockLabel(interval.start, site, timeDisplay)} to {clockLabel(interval.end, site, timeDisplay)}{' '}
+        {timeDisplay === 'utc' ? 'UTC' : 'site time'}, labelled by the date it ends. {moon}.
+        {when(held, (held) => (
+          <>
+            {' '}
+            <SemesterTitleLink semester={held} />.
+          </>
+        ))}
+      </PageHeader>
 
       {when(failure, (failure) => (
-        <p role="alert" className="mb-4 rounded border border-red-700/60 bg-red-900/30 p-3 text-sm text-red-100">
-          Could not load the night: {failure.message}
-        </p>
+        <ErrorAlert what="the night" error={failure} />
       ))}
 
-      {busy && <p className="text-sm text-foreground-muted">Loading the night…</p>}
+      {busy && <Loading what="the night" />}
 
       {!busy && held === undefined && (
         // Not a dead end: say what is covered and offer the nearest covered
         // night, instead of leaving the reader to type dates until one lands.
-        <div className="rounded border border-subtle bg-surface p-3 text-sm text-foreground-secondary">
+        <EmptyPanel>
           <p>
             No published schedule covers this night at {site}.
             {ranges.length > 0 &&
@@ -189,15 +148,13 @@ export default function NightPage(): JSX.Element {
               Open the nearest covered night, {nearest}
             </Button>
           ))}
-        </div>
+        </EmptyPanel>
       )}
 
       {!busy && held !== undefined && dataAvailable === false && (
         // I4: absence is "not recorded", never "unavailable". Saying so plainly
         // is the whole reason this view asks telescopeNight for the flag.
-        <p className="rounded border border-subtle bg-surface p-3 text-sm text-foreground-secondary">
-          Nothing is recorded for this night. That is not the same as nothing being available.
-        </p>
+        <EmptyPanel>Nothing is recorded for this night. That is not the same as nothing being available.</EmptyPanel>
       )}
 
       {!busy && held !== undefined && dataAvailable !== false && (

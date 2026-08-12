@@ -25,7 +25,7 @@ import type {
 } from 'highcharts';
 import type { CSSProperties } from 'react';
 
-import { displayTimeZone, firstEveningDate, lastEveningDate, type TimeDisplay } from '@/domain/siteTime';
+import { displayTimeZone, eveningLabel, firstEveningDate, lastEveningDate, type TimeDisplay } from '@/domain/siteTime';
 import {
   type BlockState,
   isNotableState,
@@ -431,11 +431,6 @@ export interface BlockDescriber {
   readonly length: (block: TimelineBlock) => string;
 }
 
-const EVENING_FORMAT = new Intl.DateTimeFormat('en-GB', { timeZone: 'UTC', day: 'numeric', month: 'short' });
-
-/** An evening date printed as "7 Aug", the way the sheet heads its columns. */
-const printEvening = (eveningDate: string): string => EVENING_FORMAT.format(new Date(`${eveningDate}T12:00:00Z`));
-
 /**
  * Published dates and whole nights - the units the sheet is read in. The
  * semester and week both phrase a span this way; only the night view needs its
@@ -450,8 +445,9 @@ const printEvening = (eveningDate: string): string => EVENING_FORMAT.format(new 
  */
 export const eveningDescriber = (site: Site): BlockDescriber => ({
   range: (block: TimelineBlock) => {
-    const from = printEvening(firstEveningDate(site, block.fullInterval));
-    const to = printEvening(lastEveningDate(site, block.fullInterval));
+    // "7 Aug", no year: a chart window never spans one, and the axis says it.
+    const from = eveningLabel(firstEveningDate(site, block.fullInterval), 'dayMonth');
+    const to = eveningLabel(lastEveningDate(site, block.fullInterval), 'dayMonth');
     return from === to ? from : `${from} to ${to}`;
   },
   length: (block: TimelineBlock) => `${block.nights} ${block.nights === 1 ? 'night' : 'nights'}`,

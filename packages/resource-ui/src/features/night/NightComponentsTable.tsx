@@ -11,19 +11,20 @@
  * night view first meets a boundary inside the night, and the
  * change is named with its clock time rather than flattened to one state.
  */
-import { when } from '@gemini-hlsw/lucuma-common-ui';
 import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
 import type { JSX } from 'react';
 import { Link, useLocation } from 'react-router';
 
 import { NoteCell } from '@/components/ui/NoteCell';
+import { EmptyPanel } from '@/components/ui/PageStatus';
+import { WhereCell } from '@/components/ui/WhereCell';
 import type { NightComponents } from '@/domain/adapters';
 import { buildFinderRows, type FinderRow, ridesTonight } from '@/domain/componentFinder';
 import type { TimeDisplay } from '@/domain/siteTime';
 import type { Interval, Mounting, Site } from '@/domain/types';
-import { StatusCell, WhereCell } from '@/features/components/componentCells';
-import { TYPE_LABEL } from '@/features/components/componentLabels';
+import { ComponentIdentityCell, StatusCell } from '@/features/components/componentCells';
+import { componentWhere, TYPE_LABEL } from '@/features/components/componentLabels';
 import { INSTRUMENT_LABEL } from '@/features/timeline/timelineOptions';
 
 import { clockLabel } from './nightChartOptions';
@@ -61,9 +62,7 @@ export function NightComponentsTable({
       <h2 className="mb-2 text-sm font-semibold text-foreground">Components tonight</h2>
 
       {riding.length === 0 ? (
-        <p className="rounded border border-subtle bg-surface p-3 text-sm text-foreground-secondary">
-          No components are on the telescope tonight.
-        </p>
+        <EmptyPanel>No components are on the telescope tonight.</EmptyPanel>
       ) : (
         <DataTable
           value={[...riding]}
@@ -72,26 +71,17 @@ export function NightComponentsTable({
           stripedRows
           data-testid="night-component-table"
         >
-          <Column
-            header="Component"
-            body={(row: FinderRow) => (
-              <span className="flex flex-col">
-                <span className="font-medium text-foreground">{row.component.name}</span>
-                <span className="text-[0.65rem] text-foreground-muted">
-                  {row.component.code}
-                  {when(row.component.barcode, (barcode) => ` · barcode ${barcode}`)}
-                </span>
-              </span>
-            )}
-          />
+          <Column header="Component" body={(row: FinderRow) => <ComponentIdentityCell row={row} />} />
           <Column header="Instrument" body={(row: FinderRow) => INSTRUMENT_LABEL[row.component.instrument]} />
           <Column header="Type" body={(row: FinderRow) => TYPE_LABEL[row.component.componentType]} />
           <Column
             header="Where"
             body={(row: FinderRow) => (
               <WhereCell
-                row={row}
-                changesTag={`changes at ${row.transitions.map((instant) => clockLabel(instant, site, timeDisplay)).join(', ')}`}
+                where={componentWhere(
+                  row,
+                  `changes at ${row.transitions.map((instant) => clockLabel(instant, site, timeDisplay)).join(', ')}`,
+                )}
               />
             )}
           />

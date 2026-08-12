@@ -1,13 +1,13 @@
 import { when } from '@gemini-hlsw/lucuma-common-ui';
-import { Button } from 'primereact/button';
 import type { JSX } from 'react';
 
 import { useNow } from '@/app/useNow';
 import { useOpenNight } from '@/app/useOpenNight';
 import { useSelection } from '@/app/useSelection';
-import { ChevronLeft, ChevronRight } from '@/components/ui/Icons';
+import { NightStepper } from '@/components/ui/NightStepper';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { EmptyPanel, ErrorAlert, Loading } from '@/components/ui/PageStatus';
 import { SemesterTitleLink } from '@/components/ui/SemesterTitleLink';
-import { SyntheticDataTag } from '@/components/ui/SyntheticDataTag';
 import { addDays } from '@/domain/semester';
 import { nightAt } from '@/domain/timeline';
 import type { PublishedSemester, Site } from '@/domain/types';
@@ -111,7 +111,7 @@ export default function WeekPage(): JSX.Element {
 
   const failure = setsError ?? error;
   const busy = loadingSets || loading;
-  const step = (days: number) => () => {
+  const step = (days: number): void => {
     setObservingNight(addDays(observingNight, days));
   };
 
@@ -125,84 +125,51 @@ export default function WeekPage(): JSX.Element {
 
   return (
     <div className="min-w-0">
-      <header className="mb-4 flex flex-wrap items-end gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-lg font-semibold text-foreground">
-              Nights beginning {firstEvening} to {lastEvening}
-            </h1>
-            {when(held?.demo, () => (
-              <SyntheticDataTag />
-            ))}
-          </div>
-          <p className="mt-1 text-xs text-foreground-muted">
-            Seven observing nights, each 14:00 to 14:00 site time. Columns are headed by the date each night begins, as
-            published. Daylight and twilight are shaded.
-            {when(held, (held) => (
-              <>
-                {' '}
-                <SemesterTitleLink semester={held} />.
-              </>
-            ))}
-            {when(
-              summary,
-              (summary) =>
-                ` ${summary.totalDarkHours.toFixed(0)} h of astronomical dark; moon ${Math.round(
-                  summary.moonStart.fraction * 100,
-                )}% to ${Math.round(summary.moonEnd.fraction * 100)}%.`,
-            )}
-          </p>
-        </div>
-
-        <div className="ml-auto flex items-end gap-3">
-          <div className="xp-toolbar">
-            {/* From a deep link, back to the week that starts tonight without
-                typing a date. Disabled when tonight already leads the week. */}
-            <Button
-              size="small"
-              severity="secondary"
-              disabled={observingNight === tonight}
-              onClick={clearObservingNight}
-              className="mr-1"
-            >
-              Tonight
-            </Button>
-            <Button text size="small" aria-label="Previous week" onClick={step(-WEEK_NIGHTS)}>
-              <ChevronLeft />
-            </Button>
-            <input
-              type="date"
-              // The evening the week's first night begins - the page's one date
-              // vocabulary - converted back to the night label the URL carries.
-              value={firstEvening}
-              aria-label="First evening"
-              className="rounded border border-subtle bg-surface px-2 py-1 text-xs text-foreground"
-              onChange={(event) => {
-                if (event.target.value !== '') {
-                  setObservingNight(addDays(event.target.value, 1));
-                }
-              }}
-            />
-            <Button text size="small" aria-label="Next week" onClick={step(WEEK_NIGHTS)}>
-              <ChevronRight />
-            </Button>
-          </div>
-        </div>
-      </header>
+      <PageHeader
+        title={`Nights beginning ${firstEvening} to ${lastEvening}`}
+        demo={held?.demo === true}
+        actions={
+          // The week speaks evening dates - the date each night begins, as the
+          // columns are headed - so the input shows the first evening and the
+          // page converts it back to the night label the URL carries.
+          <NightStepper
+            value={firstEvening}
+            onChange={(evening) => {
+              setObservingNight(addDays(evening, 1));
+            }}
+            onStep={step}
+            step={WEEK_NIGHTS}
+            dateLabel="First evening"
+            stepLabel="week"
+            onTonight={clearObservingNight}
+            isTonight={observingNight === tonight}
+          />
+        }
+      >
+        Seven observing nights, each 14:00 to 14:00 site time. Columns are headed by the date each night begins, as
+        published. Daylight and twilight are shaded.
+        {when(held, (held) => (
+          <>
+            {' '}
+            <SemesterTitleLink semester={held} />.
+          </>
+        ))}
+        {when(
+          summary,
+          (summary) =>
+            ` ${summary.totalDarkHours.toFixed(0)} h of astronomical dark; moon ${Math.round(
+              summary.moonStart.fraction * 100,
+            )}% to ${Math.round(summary.moonEnd.fraction * 100)}%.`,
+        )}
+      </PageHeader>
 
       {when(failure, (failure) => (
-        <p role="alert" className="mb-4 rounded border border-red-700/60 bg-red-900/30 p-3 text-sm text-red-100">
-          Could not load the week: {failure.message}
-        </p>
+        <ErrorAlert what="the week" error={failure} />
       ))}
 
-      {busy && <p className="text-sm text-foreground-muted">Loading the week…</p>}
+      {busy && <Loading what="the week" />}
 
-      {!busy && held === undefined && (
-        <p className="rounded border border-subtle bg-surface p-3 text-sm text-foreground-secondary">
-          No published schedule covers these nights at {site}.
-        </p>
-      )}
+      {!busy && held === undefined && <EmptyPanel>No published schedule covers these nights at {site}.</EmptyPanel>}
 
       {!busy && held !== undefined && (
         <>

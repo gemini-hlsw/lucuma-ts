@@ -8,23 +8,27 @@
  *
  * Same shape as the component browser on purpose - one plain DataTable, the
  * night from the URL, client-side search over a catalog already in hand - so the
- * two read as one tool rather than two.
+ * two read as one tool rather than two. What they share is shared in code, not
+ * copied: the header, the filter fields, the Where cell, the row expansion.
  */
 import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
 import { Dropdown } from 'primereact/dropdown';
 import { InputText } from 'primereact/inputtext';
-import { Tag } from 'primereact/tag';
 import { type JSX, useState } from 'react';
 
 import { useSelection } from '@/app/useSelection';
 import { useSemester } from '@/app/useSemester';
 import { useSiteSpan } from '@/app/useSiteSpan';
 import { useUrlParam } from '@/app/useUrlParam';
+import { FilterField } from '@/components/ui/FilterField';
+import { countedOption } from '@/components/ui/filterOptions';
 import { NoteCell } from '@/components/ui/NoteCell';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { ErrorAlert, Loading } from '@/components/ui/PageStatus';
 import { RecordHistoryTable } from '@/components/ui/RecordHistoryTable';
 import { type RecordStatus, StatusTag } from '@/components/ui/StatusTag';
-import { SyntheticDataTag } from '@/components/ui/SyntheticDataTag';
+import { WhereCell, type WhereReading } from '@/components/ui/WhereCell';
 import {
   buildInstrumentRows,
   type InstrumentRow,
@@ -34,20 +38,12 @@ import {
   mountingLocationLabel,
   runsOf,
 } from '@/domain/instrumentFinder';
-import { firstEveningDate, lastEveningDate, nightCount, observingNightInterval } from '@/domain/siteTime';
+import { eveningLabel, eveningRange, firstEveningDate, nightCount, observingNightInterval } from '@/domain/siteTime';
 import { USAGE_LABEL } from '@/domain/timeline';
 import type { Mounting, ResourceUsage, Site } from '@/domain/types';
-import { INSTRUMENT_LABEL, instrumentColor } from '@/features/timeline/timelineOptions';
+import { InstrumentSwatch } from '@/features/timeline/InstrumentSwatch';
+import { INSTRUMENT_LABEL } from '@/features/timeline/timelineOptions';
 import { useSemesterSchedule } from '@/gql/hooks';
-
-const EVENING_FORMAT = new Intl.DateTimeFormat('en-GB', {
-  timeZone: 'UTC',
-  day: 'numeric',
-  month: 'short',
-  year: 'numeric',
-});
-
-const printEvening = (eveningDate: string): string => EVENING_FORMAT.format(new Date(`${eveningDate}T12:00:00Z`));
 
 /**
  * How a run's usability reads, in the row and in the expansion alike - one
@@ -60,6 +56,20 @@ const usageStatus = (usage: ResourceUsage): RecordStatus => ({
 });
 
 /**
+ * One row's Where cell, for the shared `WhereCell` - the component browser's
+ * `componentWhere` on this side of the pair.
+ *
+ * An off-port run reads as off the telescope rather than as an absence: the
+ * workbook recorded the instrument as usable, it just did not say where it sits.
+ */
+const instrumentWhere = (row: InstrumentRow): WhereReading => ({
+  presence:
+    row.where.kind === 'PORT' ? 'ON_TELESCOPE' : row.where.kind === 'OFF_PORT' ? 'OFF_TELESCOPE' : 'NOT_RECORDED',
+  label: locationLabel(row),
+  changes: row.changesTonight ? 'changes tonight' : null,
+});
+
+/**
  * The expansion: every run over the site's record, in evening dates, with how
  * many nights each lasted - a run list is read for its lengths, and the count
  * is already in the interval the query returns.
@@ -67,7 +77,7 @@ const usageStatus = (usage: ResourceUsage): RecordStatus => ({
 function Runs({ runs, site }: { runs: readonly Mounting[]; site: Site }): JSX.Element {
   const rows = runs.map((run) => ({
     id: run.id,
-    dates: `${printEvening(firstEveningDate(site, run.interval))} – ${printEvening(lastEveningDate(site, run.interval))}`,
+    dates: eveningRange(site, run.interval),
     nights: nightCount(site, run.interval),
     where: mountingLocationLabel(run),
     status: usageStatus(run.usage),
@@ -117,29 +127,16 @@ export default function InstrumentsPage(): JSX.Element {
 
   return (
     <div className="min-w-0">
-      <header className="mb-4 flex flex-wrap items-end gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-lg font-semibold text-foreground">Instruments</h1>
-            {selected?.demo === true && <SyntheticDataTag />}
-          </div>
-          <p className="mt-1 text-xs text-foreground-muted">
-            Every instrument {activeSite} has ever recorded, and where it is on the night of{' '}
-            {printEvening(firstEveningDate(activeSite, night))}. {onTelescope} of {rows.length} on the telescope. Open a
-            row for its runs.
-          </p>
-        </div>
-      </header>
+      <PageHeader title="Instruments" demo={selected?.demo === true}>
+        Every instrument {activeSite} has ever recorded, and where it is on the night of{' '}
+        {eveningLabel(firstEveningDate(activeSite, night))}. {onTelescope} of {rows.length} on the telescope. Open a row
+        for its runs.
+      </PageHeader>
 
-      {failure !== undefined && (
-        <p role="alert" className="mb-4 rounded border border-red-700/60 bg-red-900/30 p-3 text-sm text-red-100">
-          Could not load the instruments: {failure.message}
-        </p>
-      )}
+      {failure !== undefined && <ErrorAlert what="the instruments" error={failure} />}
 
       <div className="mb-3 flex flex-wrap items-end gap-3">
-        <label className="flex flex-col gap-1 text-xs text-foreground-secondary">
-          Search
+        <FilterField label="Search">
           <InputText
             value={search}
             onChange={(event) => {
@@ -149,15 +146,11 @@ export default function InstrumentsPage(): JSX.Element {
             aria-label="Search instruments"
             className="w-72"
           />
-        </label>
-        <label className="flex flex-col gap-1 text-xs text-foreground-secondary">
-          Location
+        </FilterField>
+        <FilterField label="Location">
           <Dropdown
             value={locations.some((entry) => entry.label === location) ? location : null}
-            options={locations.map((entry) => ({
-              label: `${entry.label} (${String(entry.count)})`,
-              value: entry.label,
-            }))}
+            options={locations.map((entry) => countedOption(entry.label, entry.label, entry.count))}
             onChange={(event) => {
               setLocation((event.value as string | undefined) ?? '');
             }}
@@ -166,10 +159,10 @@ export default function InstrumentsPage(): JSX.Element {
             aria-label="Location"
             className="w-56"
           />
-        </label>
+        </FilterField>
       </div>
 
-      {(loading || loadingSets) && <p className="text-sm text-foreground-muted">Loading the instruments…</p>}
+      {(loading || loadingSets) && <Loading what="the instruments" />}
 
       {!loading && !loadingSets && (
         <DataTable
@@ -180,7 +173,7 @@ export default function InstrumentsPage(): JSX.Element {
             setExpanded(event.data as InstrumentRow[]);
           }}
           rowExpansionTemplate={(row: InstrumentRow) => (
-            <Runs runs={runsOf(row.instrument, mountings)} site={selected?.site ?? site} />
+            <Runs runs={runsOf(row.instrument, mountings)} site={activeSite} />
           )}
           size="small"
           stripedRows
@@ -191,40 +184,10 @@ export default function InstrumentsPage(): JSX.Element {
           <Column
             header="Instrument"
             body={(row: InstrumentRow) => (
-              <span className="flex items-center gap-2">
-                <span
-                  aria-hidden
-                  className="inline-block h-3 w-3 rounded-[2px]"
-                  style={{ backgroundColor: instrumentColor(row.instrument) }}
-                />
-                <span className="font-semibold text-foreground">{INSTRUMENT_LABEL[row.instrument]}</span>
-                {row.publishedName !== INSTRUMENT_LABEL[row.instrument] && (
-                  <span className="text-xs text-foreground-muted">{row.publishedName}</span>
-                )}
-              </span>
+              <InstrumentSwatch instrument={row.instrument} publishedName={row.publishedName} />
             )}
           />
-          <Column
-            header="Where"
-            body={(row: InstrumentRow) => (
-              <span className="flex items-center gap-2">
-                <span
-                  aria-hidden
-                  className={
-                    row.where.kind === 'PORT'
-                      ? 'inline-block h-2 w-2 rounded-full bg-gpp'
-                      : row.where.kind === 'OFF_PORT'
-                        ? 'inline-block h-2 w-2 rounded-full border border-subtle bg-transparent'
-                        : 'inline-block h-2 w-2 rounded-full bg-transparent'
-                  }
-                />
-                <span className={row.where.kind === 'NOT_RECORDED' ? 'text-foreground-muted italic' : ''}>
-                  {locationLabel(row)}
-                </span>
-                {row.changesTonight && <Tag value="changes tonight" severity="warning" className="!text-[0.6rem]" />}
-              </span>
-            )}
-          />
+          <Column header="Where" body={(row: InstrumentRow) => <WhereCell where={instrumentWhere(row)} />} />
           <Column
             header="Status"
             body={(row: InstrumentRow) => (row.usage === null ? null : <StatusTag status={usageStatus(row.usage)} />)}
@@ -236,8 +199,7 @@ export default function InstrumentsPage(): JSX.Element {
             body={(row: InstrumentRow) =>
               row.run === null ? null : (
                 <span className="text-xs whitespace-nowrap text-foreground-secondary tabular-nums">
-                  {printEvening(firstEveningDate(selected?.site ?? site, row.run))} –{' '}
-                  {printEvening(lastEveningDate(selected?.site ?? site, row.run))}
+                  {eveningRange(activeSite, row.run)}
                 </span>
               )
             }

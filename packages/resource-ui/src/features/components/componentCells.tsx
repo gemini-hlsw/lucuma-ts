@@ -1,44 +1,39 @@
 /**
  * The cells every component table shares.
  *
- * The browser and the night view answer the same question - where is this
- * piece, and is it usable - so they render it identically. A second copy of
- * `whereLabel` is how the grid and the chart came to disagree about closures;
- * this module exists so that cannot happen to components.
+ * The browser and the night view answer the same question - which piece is
+ * this, where is it, and is it usable - so they render it identically. A second
+ * copy of `whereLabel` is how the grid and the chart came to disagree about
+ * closures; this module exists so that cannot happen to components.
+ *
+ * The Where cell itself is one level up (`components/ui/WhereCell`), shared with
+ * the instrument browser: both finders answer "where is it" in the same three
+ * shapes, and only the words differ. What stays here is what is specific to a
+ * piece - its identity and its status.
  */
-import { cn } from '@gemini-hlsw/lucuma-common-ui';
-import { Tag } from 'primereact/tag';
+import { when } from '@gemini-hlsw/lucuma-common-ui';
 import type { JSX } from 'react';
 
 import { StatusTag } from '@/components/ui/StatusTag';
 import type { FinderRow } from '@/domain/componentFinder';
 
-import { componentStatus, whereLabel } from './componentLabels';
+import { componentStatus } from './componentLabels';
 
-export function WhereCell({
-  row,
-  changesTag = 'changes tonight',
-}: {
-  row: FinderRow;
-  changesTag?: string;
-}): JSX.Element {
+/**
+ * Which piece this is: the name a reader knows it by, over the codes they will
+ * be handed by ICTD or read off a barcode label.
+ *
+ * Both the browser and the night table print it, and identically - a piece
+ * identified two ways on one page is a piece a reader has to check twice.
+ */
+export function ComponentIdentityCell({ row }: { row: FinderRow }): JSX.Element {
   return (
-    <span className="flex items-center gap-2">
-      <span
-        aria-hidden
-        className={cn(
-          'inline-block h-2 w-2 rounded-full',
-          row.where.kind === 'INSTALLED'
-            ? 'bg-gpp'
-            : row.where.kind === 'STORED'
-              ? 'border border-subtle bg-transparent'
-              : 'bg-transparent',
-        )}
-      />
-      <span className={row.where.kind === 'NOT_RECORDED' ? 'text-foreground-muted italic' : ''}>
-        {whereLabel(row.where)}
+    <span className="flex flex-col">
+      <span className="font-medium text-foreground">{row.component.name}</span>
+      <span className="text-[0.65rem] text-foreground-muted">
+        {row.component.code}
+        {when(row.component.barcode, (barcode) => ` · barcode ${barcode}`)}
       </span>
-      {row.changesTonight && <Tag value={changesTag} severity="warning" className="!text-[0.6rem]" />}
     </span>
   );
 }
