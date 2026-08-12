@@ -342,9 +342,10 @@ type PublishedSemester {
   "The sheet's own version stamp, e.g. \"Jun 15, 2026\". Null when it carries none."
   version: NonEmptyString
   """
-  True for a synthetic schedule that was never published - today only GS 2099B,
-  the hand-written stress semester. A consumer must be able to keep invented
-  records apart from the published ones, and a picker must say which is which.
+  True for a synthetic schedule that was never published. The workbook import
+  serves none today; the flag stays because a consumer must be able to keep
+  invented records apart from the published ones, and a picker must say which
+  is which.
   """
   demo: Boolean!
   firstNight: Date!

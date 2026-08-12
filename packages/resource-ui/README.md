@@ -11,7 +11,9 @@ React 19 + Apollo Client + Highcharts (XRange) + PrimeReact + Tailwind CSS 4. Th
 carries its own mock GraphQL API (see [`mock-server/README.md`](mock-server/README.md))
 serving nine semesters imported from the operations workbook export; the real Scala
 backend does not exist yet. The v1 domain and API are specified in
-`lucuma-odb/resource/docs/`, with the v1 scope trims recorded in CLAUDE.md.
+`lucuma-odb/resource/docs/`, with the v1 scope trims recorded in CLAUDE.md;
+[ENDPOINTS.md](ENDPOINTS.md) is the review list of the queries the backend must serve,
+for the UI and for the scheduler.
 
 ## Development
 
