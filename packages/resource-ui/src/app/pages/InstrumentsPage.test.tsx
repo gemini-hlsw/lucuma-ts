@@ -22,6 +22,21 @@ describe('InstrumentsPage', () => {
     await expect.element(screen.getByText('Port 3')).toBeVisible();
   });
 
+  it('gives the record its own Note column rather than tucking it under the status', async () => {
+    // GS's stored GPI carries "Stored at the base facility" - a note the row
+    // used to print under its badge, at a different x on every row.
+    const screen = await open('/instruments?site=GS&semester=2025B&night=2025-12-15&q=GPI');
+
+    const table = screen.getByTestId('instrument-table');
+    await expect.element(table.getByRole('columnheader', { name: 'Note' })).toBeVisible();
+    await expect.element(table.getByText('Stored at the base facility')).toBeVisible();
+
+    const status = table.getByText('Not available').element().closest('td');
+    const note = table.getByText('Stored at the base facility').element().closest('td');
+    expect(note).not.toBe(status);
+    expect(status?.textContent).toBe('Not available');
+  });
+
   it('shows an off-port run as on no port, never inventing a place for it', async () => {
     // The whole reason this page exists: the schedule views draw ports only,
     // so a visitor between mounts is invisible there.
@@ -49,6 +64,27 @@ describe('InstrumentsPage', () => {
     // The workbook records GNIRS Not Available 6-17 August 2026; the run split
     // is exactly what the browser is for.
     await expect.element(runs.getByText('Not available')).toBeVisible();
+  });
+
+  it('heads the runs with the same columns whether or not the records fill them', async () => {
+    const screen = await open('/instruments?site=GN&semester=2026B&night=2026-09-26&q=gnirs');
+    await screen.getByRole('button', { name: /expand GNIRS/i }).click();
+
+    // GNIRS's runs carry no notes, and the Note column is there anyway: two
+    // expansions on one page must not disagree about what a column means.
+    const runs = screen.getByTestId('instrument-runs');
+    for (const column of ['Dates', 'Nights', 'Where', 'Status', 'Note']) {
+      await expect.element(runs.getByRole('columnheader', { name: column })).toBeVisible();
+    }
+  });
+
+  it('counts the nights each run lasted, which is what a run list is read for', async () => {
+    const screen = await open('/instruments?site=GN&semester=2026B&night=2026-09-26&q=gnirs');
+    await screen.getByRole('button', { name: /expand GNIRS/i }).click();
+
+    // The Not Available window is 6-17 August 2026: twelve nights.
+    const runs = screen.getByTestId('instrument-runs');
+    await expect.element(runs.getByRole('row', { name: /Not available/ })).toHaveTextContent('12');
   });
 
   it('search narrows across the tag and the published name', async () => {

@@ -18,7 +18,15 @@
  * records change partway through is reported as changing, with the state the
  * night *ends* in, since "where is it" usually means "where did it end up".
  */
-import type { ComponentBlock, ComponentLocation, ComponentRecord, ComponentUsage, Interval, Mounting } from './types';
+import type {
+  ComponentBlock,
+  ComponentLocation,
+  ComponentRecord,
+  ComponentUsage,
+  Instrument,
+  Interval,
+  Mounting,
+} from './types';
 
 export type ComponentWhere =
   | {
@@ -69,22 +77,32 @@ const transitionsOf = (blocks: readonly ComponentBlock[]): readonly number[] =>
       : [block.interval.start];
   });
 
-const whereOf = (
-  component: ComponentRecord,
+/**
+ * Where a block puts its piece, over a span.
+ *
+ * The span is the night for a browser row and the block's own extent for a
+ * history line - the same derivation either way, which is what keeps "Installed"
+ * from meaning one place in the row and another in the record under it. A block
+ * long enough to outlast its instrument's mounting reports the first mounting it
+ * overlaps; the schedule is the finer record, so the history line names where the
+ * run began.
+ */
+export const whereOf = (
+  instrument: Instrument,
   block: ComponentBlock,
   mountings: readonly Mounting[],
-  night: Interval,
+  span: Interval,
 ): ComponentWhere => {
   if (block.location !== 'INSTALLED') {
     return { kind: 'STORED', location: block.location };
   }
   const mounting = mountings.find(
-    (candidate) => candidate.instrument === component.instrument && overlaps(candidate.interval, night),
+    (candidate) => candidate.instrument === instrument && overlaps(candidate.interval, span),
   );
   return {
     kind: 'INSTALLED',
     port: mounting?.port ?? null,
-    instrumentName: mounting?.publishedName ?? component.instrument,
+    instrumentName: mounting?.publishedName ?? instrument,
   };
 };
 
@@ -122,7 +140,7 @@ export const buildFinderRows = ({
     const transitions = transitionsOf(tonight);
     return {
       component,
-      where: whereOf(component, block, mountings, night),
+      where: whereOf(component.instrument, block, mountings, night),
       usage: block.usage,
       note: block.note,
       changesTonight: transitions.length > 0,

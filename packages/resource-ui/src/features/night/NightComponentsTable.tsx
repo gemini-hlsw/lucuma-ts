@@ -17,6 +17,7 @@ import { DataTable } from 'primereact/datatable';
 import type { JSX } from 'react';
 import { Link, useLocation } from 'react-router';
 
+import { NoteCell } from '@/components/ui/NoteCell';
 import type { NightComponents } from '@/domain/adapters';
 import { buildFinderRows, type FinderRow, ridesTonight } from '@/domain/componentFinder';
 import type { TimeDisplay } from '@/domain/siteTime';
@@ -94,8 +95,9 @@ export function NightComponentsTable({
               />
             )}
           />
-          {/* The record's note rides inside the status cell, as everywhere. */}
           <Column header="Status" body={(row: FinderRow) => <StatusCell row={row} />} />
+          {/* The record's own words get a column, as on the browsers. */}
+          <Column header="Note" body={(row: FinderRow) => <NoteCell note={row.note} />} />
         </DataTable>
       )}
 

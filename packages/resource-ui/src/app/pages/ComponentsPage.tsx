@@ -19,7 +19,6 @@
  * filtering here saves a round trip per keystroke. The API's own `search`
  * argument exists for consumers that do not hold the catalog.
  */
-import { when } from '@gemini-hlsw/lucuma-common-ui';
 import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
 import { Dropdown } from 'primereact/dropdown';
@@ -28,13 +27,16 @@ import { type JSX, useState } from 'react';
 
 import { useSelection } from '@/app/useSelection';
 import { useSemester } from '@/app/useSemester';
+import { useSiteSpan } from '@/app/useSiteSpan';
 import { useUrlParam } from '@/app/useUrlParam';
+import { NoteCell } from '@/components/ui/NoteCell';
+import { RecordHistoryTable } from '@/components/ui/RecordHistoryTable';
 import { SyntheticDataTag } from '@/components/ui/SyntheticDataTag';
-import { buildFinderRows, type FinderRow, historyOf, matchesComponent } from '@/domain/componentFinder';
-import { firstEveningDate, lastEveningDate, observingNightInterval } from '@/domain/siteTime';
-import type { ComponentBlock, ComponentType, Instrument, Site } from '@/domain/types';
+import { buildFinderRows, type FinderRow, historyOf, matchesComponent, whereOf } from '@/domain/componentFinder';
+import { firstEveningDate, lastEveningDate, nightCount, observingNightInterval } from '@/domain/siteTime';
+import type { ComponentBlock, ComponentType, Instrument, Mounting, Site } from '@/domain/types';
 import { StatusCell, WhereCell } from '@/features/components/componentCells';
-import { LOCATION_LABEL, TYPE_LABEL } from '@/features/components/componentLabels';
+import { componentStatus, TYPE_LABEL, whereLabel } from '@/features/components/componentLabels';
 import { INSTRUMENT_LABEL, instrumentColor } from '@/features/timeline/timelineOptions';
 import { useComponentBrowser } from '@/gql/hooks';
 
@@ -48,26 +50,50 @@ const EVENING_FORMAT = new Intl.DateTimeFormat('en-GB', {
 const printEvening = (eveningDate: string): string => EVENING_FORMAT.format(new Date(`${eveningDate}T12:00:00Z`));
 
 /**
- * The expansion: the piece's records over the semester, oldest first, phrased
- * in the evening dates the published sheet is read in.
+ * The expansion: the piece's records over the site's whole span, oldest first,
+ * phrased in the evening dates the published sheet is read in.
+ *
+ * Two things the record alone cannot say, both already in hand from the one
+ * browser query, so neither costs a round trip:
+ *
+ * - **Where "Installed" was.** A block says INSTALLED, never a port, so the
+ *   history used to print the bare word while the row above it said "Port 3 ·
+ *   GMOS-S". `whereOf` resolves it against the same mountings the row uses,
+ *   over the block's own span rather than the night.
+ * - **How long the span is.** "19 Nov – 31 Jan" is a date range; "74" is the
+ *   answer to how long the piece was out of service.
  */
-function History({ blocks, site }: { blocks: readonly ComponentBlock[]; site: Site }): JSX.Element {
+function History({
+  blocks,
+  mountings,
+  instrument,
+  site,
+}: {
+  blocks: readonly ComponentBlock[];
+  mountings: readonly Mounting[];
+  instrument: Instrument;
+  site: Site;
+}): JSX.Element {
+  const rows = blocks.map((block) => ({
+    id: block.id,
+    dates: `${printEvening(firstEveningDate(site, block.interval))} – ${printEvening(lastEveningDate(site, block.interval))}`,
+    nights: nightCount(site, block.interval),
+    where: whereLabel(whereOf(instrument, block, mountings, block.interval)),
+    status: componentStatus(block.usage, block.location !== 'INSTALLED', block.note) ?? {
+      label: 'Not recorded',
+      tone: 'muted' as const,
+    },
+    note: block.note,
+  }));
+
   return (
-    <ul className="ml-10 flex flex-col gap-1 py-1 text-xs" data-testid="component-history">
-      {blocks.map((block) => (
-        <li key={block.id} className="flex flex-wrap items-baseline gap-x-3">
-          <span className="text-foreground-secondary tabular-nums">
-            {printEvening(firstEveningDate(site, block.interval))} –{' '}
-            {printEvening(lastEveningDate(site, block.interval))}
-          </span>
-          <span>{block.location === 'INSTALLED' ? 'Installed' : LOCATION_LABEL[block.location]}</span>
-          <span className="text-foreground-muted">{block.usage}</span>
-          {when(block.note, (note) => (
-            <span className="text-foreground-muted italic">{note}</span>
-          ))}
-        </li>
-      ))}
-    </ul>
+    <RecordHistoryTable
+      rows={rows}
+      whereHeader="Location"
+      ariaLabel="Component history"
+      testId="component-history"
+      emptyMessage="No records for this piece."
+    />
   );
 }
 
@@ -87,10 +113,9 @@ export default function ComponentsPage(): JSX.Element {
   // Which rows are open stays local: it is reading posture, not a finding.
   const [expanded, setExpanded] = useState<FinderRow[]>([]);
 
-  const bounds =
-    selected === null
-      ? null
-      : { start: `${selected.firstNight}T00:00:00.000Z`, end: `${selected.lastNight}T23:59:59.999Z` };
+  // The site's whole recorded span, not the selected semester - see
+  // `app/useSiteSpan.ts`. A piece's story does not restart in February.
+  const bounds = useSiteSpan();
 
   const { components, componentBlocks, mountings, loading, error } = useComponentBrowser(
     selected?.site ?? site,
@@ -246,7 +271,12 @@ export default function ComponentsPage(): JSX.Element {
             setExpanded(event.data as FinderRow[]);
           }}
           rowExpansionTemplate={(row: FinderRow) => (
-            <History blocks={historyOf(row.component.id, componentBlocks)} site={selected?.site ?? site} />
+            <History
+              blocks={historyOf(row.component.id, componentBlocks)}
+              mountings={mountings}
+              instrument={row.component.instrument}
+              site={selected?.site ?? site}
+            />
           )}
           size="small"
           stripedRows
@@ -269,6 +299,7 @@ export default function ComponentsPage(): JSX.Element {
           <Column header="Type" body={(row: FinderRow) => TYPE_LABEL[row.component.componentType]} />
           <Column header="Where" body={(row: FinderRow) => <WhereCell row={row} />} />
           <Column header="Status" body={(row: FinderRow) => <StatusCell row={row} />} />
+          <Column header="Note" body={(row: FinderRow) => <NoteCell note={row.note} />} />
         </DataTable>
       )}
     </div>

@@ -222,6 +222,21 @@ body {
   border-color: var(--xp-green);
 }
 
+/* ---- DataTable row expansion ----
+ *
+ * An expansion is the row that opened it, continued - not a panel laid over the
+ * table. The theme fills every expansion with the plain row surface, so under a
+ * striped row it came out a visibly lighter band and read as a second card
+ * (Dan, 2026-08-12). The expansion always follows its own row in the DOM, so the
+ * stripe is simply carried across.
+ *
+ * The literal mirrors the lucuma-ui theme's own stripe, which is compiled SCSS
+ * and exposes no variable to read it from - if that tone ever changes, this
+ * moves with it. */
+.p-datatable-tbody > tr.p-row-odd + tr.p-datatable-row-expansion {
+  background: rgb(255 255 255 / 1%);
+}
+
 /* ---- SelectButton: dense segmented control ----
  *
  * Powers the segmented choices (GN/GS, Night/Week/Semester, Site/UTC, ...) via

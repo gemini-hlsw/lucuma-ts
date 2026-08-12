@@ -146,3 +146,19 @@ export const firstEveningDate = (site: Site, interval: Interval): string =>
  */
 export const lastEveningDate = (site: Site, interval: Interval): string =>
   addDaysIso(observingNightOf(site, interval.end - 1), -1);
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * How many observing nights an interval covers, both ends included.
+ *
+ * Counted over the evening dates rather than the elapsed hours, because a night
+ * is 23 or 25 hours across a DST change at Gemini South - dividing the interval
+ * by a day would drop or invent a night twice a year. Evening dates are plain
+ * calendar dates, so differencing them at UTC midnight is exact.
+ */
+export const nightCount = (site: Site, interval: Interval): number => {
+  const first = Date.parse(`${firstEveningDate(site, interval)}T00:00:00Z`);
+  const last = Date.parse(`${lastEveningDate(site, interval)}T00:00:00Z`);
+  return Math.round((last - first) / DAY_MS) + 1;
+};

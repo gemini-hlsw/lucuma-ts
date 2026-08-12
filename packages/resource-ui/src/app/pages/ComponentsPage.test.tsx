@@ -69,10 +69,26 @@ describe('ComponentsPage - the finder', () => {
     await screen.getByLabelText('Search components').fill('R400');
 
     await expect.element(screen.getByText('Summit lab')).toBeVisible();
-    // Red is reserved for a piece actually out of service, and the record's
-    // note rides with the tag - a status that cannot say why is not a status.
+    // Red is reserved for a piece actually out of service, and the record's own
+    // words say why - a status that cannot say why is not a status.
     await expect.element(screen.getByText('Unavailable')).toBeVisible();
     await expect.element(screen.getByText('Failed; removed for repair')).toBeVisible();
+  });
+
+  it('gives the record its own Note column rather than tucking it under the status', async () => {
+    const screen = await open('/components?site=GS&semester=2025B&night=2025-12-15');
+    await screen.getByLabelText('Search components').fill('R400');
+
+    const table = screen.getByTestId('component-table');
+    await expect.element(table.getByRole('columnheader', { name: 'Note' })).toBeVisible();
+    await expect.element(table.getByText('Failed; removed for repair')).toBeVisible();
+
+    // Under the badge the note began at a different x on every row and no
+    // heading said what it was. Its own cell is what makes it scannable.
+    const status = table.getByText('Unavailable').element().closest('td');
+    const note = table.getByText('Failed; removed for repair').element().closest('td');
+    expect(note).not.toBe(status);
+    expect(status?.textContent).toBe('Unavailable');
   });
 
   it('says a stored piece with nothing wrong is a spare, not broken', async () => {
@@ -102,7 +118,67 @@ describe('ComponentsPage - the finder', () => {
 
     const history = screen.getByTestId('component-history');
     await expect.element(history).toBeVisible();
-    await expect.element(history.getByText('Failed; removed for repair')).toBeVisible();
+    await expect.element(history.getByText('Failed; removed for repair').first()).toBeVisible();
+  });
+
+  it('carries the whole site record, not the semester the masthead happens to show', async () => {
+    const screen = await open('/components?site=GS&semester=2025B&night=2025-12-15');
+    await screen.getByLabelText('Search components').fill('R400');
+    await screen.getByRole('button', { name: /expand k-gs-R400_G5325/i }).click();
+
+    // The R400 fails periodically across the site's whole record. Scoped to
+    // 2025B the history showed one window and said nothing about the cut;
+    // a piece's story does not restart in February.
+    const history = screen.getByTestId('component-history');
+    await expect.element(history.getByText(/23 Aug 2024/).first()).toBeVisible();
+    await expect.element(history.getByText(/31 Jul 2026/).first()).toBeVisible();
+  });
+
+  it('heads the history with its columns, so a reader need not infer them from position', async () => {
+    const screen = await open('/components?site=GS&semester=2025B&night=2025-12-15');
+    await screen.getByLabelText('Search components').fill('R400');
+    await screen.getByRole('button', { name: /expand k-gs-R400_G5325/i }).click();
+
+    const history = screen.getByTestId('component-history');
+    for (const column of ['Dates', 'Nights', 'Location', 'Status', 'Note']) {
+      await expect.element(history.getByRole('columnheader', { name: column })).toBeVisible();
+    }
+  });
+
+  it('says where "Installed" was, resolving the span against the same mountings the row uses', async () => {
+    const screen = await open('/components?site=GS&semester=2025B&night=2025-12-15');
+    await screen.getByLabelText('Search components').fill('R400');
+    await screen.getByRole('button', { name: /expand k-gs-R400_G5325/i }).click();
+
+    // The block only says INSTALLED; the port and the instrument's published
+    // name come from the mountings already in hand, so the history and the row
+    // name the same place.
+    const history = screen.getByTestId('component-history');
+    await expect.element(history.getByText('Port 3 · GMOS-S').first()).toBeVisible();
+    await expect.element(history.getByText('Installed')).not.toBeInTheDocument();
+  });
+
+  it('counts the nights a record covers, which is what "how long was it out" asks', async () => {
+    const screen = await open('/components?site=GS&semester=2025B&night=2025-12-15');
+    await screen.getByLabelText('Search components').fill('R400');
+    await screen.getByRole('button', { name: /expand k-gs-R400_G5325/i }).click();
+
+    // The 2025B failure runs 19 Nov 2025 - 31 Jan 2026, both evenings counted.
+    const history = screen.getByTestId('component-history');
+    await expect.element(history.getByRole('row', { name: /19 Nov 2025 – 31 Jan 2026/ })).toHaveTextContent('74');
+  });
+
+  it('speaks the row status vocabulary in the history, never the bare enum', async () => {
+    const screen = await open('/components?site=GS&semester=2025B&night=2025-12-15');
+    await screen.getByLabelText('Search components').fill('R400');
+    await screen.getByRole('button', { name: /expand k-gs-R400_G5325/i }).click();
+
+    // The piece is in the lab under a failure note, so its record is
+    // "Unavailable" - the same word the row above it wears, not UNAVAILABLE.
+    const history = screen.getByTestId('component-history');
+    await expect.element(history.getByText('Unavailable').first()).toBeVisible();
+    await expect.element(history.getByText('Science').first()).toBeVisible();
+    await expect.element(history.getByText(/^(SCIENCE|UNAVAILABLE|ENGINEERING)$/)).not.toBeInTheDocument();
   });
 
   it('filters by instrument', async () => {

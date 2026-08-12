@@ -276,6 +276,18 @@ describe('the components riding tonight', () => {
     await expect.element(table.getByText('Summit lab')).toBeVisible();
     await expect.element(table.getByText('Failed; removed for repair')).toBeVisible();
   });
+
+  it('gives the record its own Note column here too, as on the browsers', async () => {
+    const screen = await openNight('/night?site=GS&night=2025-11-20');
+
+    const table = screen.getByTestId('night-component-table');
+    await expect.element(table.getByRole('columnheader', { name: 'Note' })).toBeVisible();
+
+    const status = table.getByText('Unavailable').element().closest('td');
+    const note = table.getByText('Failed; removed for repair').element().closest('td');
+    expect(note).not.toBe(status);
+    expect(status?.textContent).toBe('Unavailable');
+  });
 });
 
 describe('the night window the client computes', () => {

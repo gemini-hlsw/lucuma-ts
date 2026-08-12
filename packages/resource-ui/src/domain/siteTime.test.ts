@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { firstEveningDate, lastEveningDate, observingNightInterval, observingNightOf } from './siteTime';
+import { firstEveningDate, lastEveningDate, nightCount, observingNightInterval, observingNightOf } from './siteTime';
 
 const ms = (iso: string): number => Date.parse(iso);
 
@@ -97,5 +97,35 @@ describe('naming the evenings an interval covers', () => {
     const span = spanning('GN', '2026-08-08', '2026-08-14');
     expect(firstEveningDate('GN', span)).toBe('2026-08-07');
     expect(lastEveningDate('GN', span)).toBe('2026-08-13');
+  });
+});
+
+/**
+ * The finders print this beside every span, so a run list can be read for its
+ * lengths. Counted over evening dates for the same reason the evenings are
+ * resolved rather than arithmetic'd: a night is not a fixed number of hours.
+ */
+describe('counting the nights an interval covers', () => {
+  const spanning = (site: 'GN' | 'GS', first: string, last: string) => ({
+    start: observingNightInterval(site, first).start,
+    end: observingNightInterval(site, last).end,
+  });
+
+  it('counts one night as one, not zero', () => {
+    expect(nightCount('GS', spanning('GS', '2026-08-08', '2026-08-08'))).toBe(1);
+  });
+
+  it('counts both ends in', () => {
+    expect(nightCount('GS', spanning('GS', '2026-08-08', '2026-08-14'))).toBe(7);
+  });
+
+  it('is exact across a Gemini South DST change, where dividing by 24 hours is not', () => {
+    // Four nights, one of them 23 hours: the elapsed span is 95 hours, which
+    // floors to 3 and rounds to 4 only by luck. Evening dates just count.
+    expect(nightCount('GS', spanning('GS', '2026-09-05', '2026-09-08'))).toBe(4);
+  });
+
+  it('holds at Gemini North', () => {
+    expect(nightCount('GN', spanning('GN', '2026-08-08', '2026-08-14'))).toBe(7);
   });
 });

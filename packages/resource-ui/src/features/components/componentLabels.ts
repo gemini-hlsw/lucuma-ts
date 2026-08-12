@@ -2,8 +2,9 @@
  * The words every component table shares. Split from the cells because the
  * react-refresh rule wants component files exporting only components.
  */
+import type { RecordStatus } from '@/components/ui/StatusTag';
 import type { ComponentWhere } from '@/domain/componentFinder';
-import type { ComponentType } from '@/domain/types';
+import type { ComponentType, ResourceUsage } from '@/domain/types';
 
 export const TYPE_LABEL: Record<ComponentType, string> = {
   FILTER: 'Filter',
@@ -31,5 +32,38 @@ export const whereLabel = (where: ComponentWhere): string => {
       return LOCATION_LABEL[where.location];
     default:
       return 'Not recorded';
+  }
+};
+
+/**
+ * The status vocabulary, derived from the record rather than echoing the enum.
+ *
+ * `ResourceUsage` says what a record means for the schedule, but a browser
+ * reader asks a different question - is this piece working? A stored piece is
+ * `UNAVAILABLE` for science by definition, and printing that in red made every
+ * lab spare look broken. So: a stored piece with nothing wrong is a "Spare";
+ * red is kept for a piece that is actually out of service, and the record's
+ * note - "Failed; removed for repair" - rides beside the tag, because a status
+ * that cannot say why is not a status.
+ *
+ * One function for the browser row, the night table and the row's own history,
+ * so the three cannot answer the same record differently.
+ */
+export const componentStatus = (
+  usage: ResourceUsage | null,
+  stored: boolean,
+  note: string | null,
+): RecordStatus | null => {
+  switch (usage) {
+    case null:
+      return null;
+    case 'SCIENCE':
+      return { label: 'Science', severity: 'success', tone: 'normal' };
+    case 'ENGINEERING':
+      return { label: 'Engineering', severity: 'info', tone: 'normal' };
+    default:
+      return stored && note === null
+        ? { label: 'Spare', tone: 'muted' }
+        : { label: 'Unavailable', severity: 'danger', tone: 'alert' };
   }
 };

@@ -6,13 +6,14 @@
  * `whereLabel` is how the grid and the chart came to disagree about closures;
  * this module exists so that cannot happen to components.
  */
-import { cn, when } from '@gemini-hlsw/lucuma-common-ui';
-import { Tag, type TagProps } from 'primereact/tag';
+import { cn } from '@gemini-hlsw/lucuma-common-ui';
+import { Tag } from 'primereact/tag';
 import type { JSX } from 'react';
 
+import { StatusTag } from '@/components/ui/StatusTag';
 import type { FinderRow } from '@/domain/componentFinder';
 
-import { whereLabel } from './componentLabels';
+import { componentStatus, whereLabel } from './componentLabels';
 
 export function WhereCell({
   row,
@@ -43,56 +44,18 @@ export function WhereCell({
 }
 
 /**
- * The status vocabulary, derived from the record rather than echoing the enum.
+ * The status a row wears - the badge alone.
  *
- * `ResourceUsage` says what a record means for the schedule, but a browser
- * reader asks a different question - is this piece working? A stored piece is
- * `UNAVAILABLE` for science by definition, and printing that in red made every
- * lab spare look broken. So: a stored piece with nothing wrong is a "Spare";
- * red is kept for a piece that is actually out of service, and the record's
- * note - "Failed; removed for repair" - rides under the tag, because a status
- * that cannot say why is not a status.
+ * The record's note used to ride under the badge, which made the status cell
+ * two things at once and left the note unscannable: it started at a different x
+ * on every row, and no column heading told the reader what it was (Dan,
+ * 2026-08-12). It is a column now (`NoteCell`), on the browsers and the night
+ * table alike.
+ *
+ * The vocabulary itself lives in `componentLabels.componentStatus`, shared with
+ * the row's history so the two cannot answer the same record differently.
  */
-interface Status {
-  readonly label: string;
-  readonly severity?: TagProps['severity'];
-  /** A spare is unremarkable, so its tag is muted chrome, not a signal colour. */
-  readonly muted?: boolean;
-}
-
-const statusOf = (row: FinderRow): Status | null => {
-  switch (row.usage) {
-    case null:
-      return null;
-    case 'SCIENCE':
-      return { label: 'Science', severity: 'success' };
-    case 'ENGINEERING':
-      return { label: 'Engineering', severity: 'info' };
-    default:
-      return row.where.kind === 'STORED' && row.note === null
-        ? { label: 'Spare', muted: true }
-        : { label: 'Unavailable', severity: 'danger' };
-  }
-};
-
 export function StatusCell({ row }: { row: FinderRow }): JSX.Element | null {
-  const status = statusOf(row);
-  if (status === null) {
-    return null;
-  }
-  return (
-    <span className="flex flex-col items-start gap-0.5">
-      <Tag
-        value={status.label}
-        severity={status.severity}
-        className={cn(
-          '!text-[0.6rem]',
-          when(status.muted, () => '!bg-surface-raised !text-foreground-secondary'),
-        )}
-      />
-      {when(row.note, (note) => (
-        <span className="text-[0.65rem] text-foreground-muted italic">{note}</span>
-      ))}
-    </span>
-  );
+  const status = componentStatus(row.usage, row.where.kind === 'STORED', row.note);
+  return status === null ? null : <StatusTag status={status} />;
 }

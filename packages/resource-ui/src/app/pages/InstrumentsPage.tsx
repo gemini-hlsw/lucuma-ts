@@ -10,7 +10,6 @@
  * night from the URL, client-side search over a catalog already in hand - so the
  * two read as one tool rather than two.
  */
-import { when } from '@gemini-hlsw/lucuma-common-ui';
 import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
 import { Dropdown } from 'primereact/dropdown';
@@ -20,7 +19,11 @@ import { type JSX, useState } from 'react';
 
 import { useSelection } from '@/app/useSelection';
 import { useSemester } from '@/app/useSemester';
+import { useSiteSpan } from '@/app/useSiteSpan';
 import { useUrlParam } from '@/app/useUrlParam';
+import { NoteCell } from '@/components/ui/NoteCell';
+import { RecordHistoryTable } from '@/components/ui/RecordHistoryTable';
+import { type RecordStatus, StatusTag } from '@/components/ui/StatusTag';
 import { SyntheticDataTag } from '@/components/ui/SyntheticDataTag';
 import {
   buildInstrumentRows,
@@ -31,11 +34,11 @@ import {
   mountingLocationLabel,
   runsOf,
 } from '@/domain/instrumentFinder';
-import { firstEveningDate, lastEveningDate, observingNightInterval } from '@/domain/siteTime';
+import { firstEveningDate, lastEveningDate, nightCount, observingNightInterval } from '@/domain/siteTime';
 import { USAGE_LABEL } from '@/domain/timeline';
-import type { Mounting, Site } from '@/domain/types';
+import type { Mounting, ResourceUsage, Site } from '@/domain/types';
 import { INSTRUMENT_LABEL, instrumentColor } from '@/features/timeline/timelineOptions';
-import { usePublishedSemesters, useSemesterSchedule } from '@/gql/hooks';
+import { useSemesterSchedule } from '@/gql/hooks';
 
 const EVENING_FORMAT = new Intl.DateTimeFormat('en-GB', {
   timeZone: 'UTC',
@@ -46,59 +49,56 @@ const EVENING_FORMAT = new Intl.DateTimeFormat('en-GB', {
 
 const printEvening = (eveningDate: string): string => EVENING_FORMAT.format(new Date(`${eveningDate}T12:00:00Z`));
 
-/** The expansion: every run over the semester, in evening dates. */
+/**
+ * How a run's usability reads, in the row and in the expansion alike - one
+ * function so a run cannot wear one status in the table and another under it.
+ */
+const usageStatus = (usage: ResourceUsage): RecordStatus => ({
+  label: USAGE_LABEL[usage],
+  severity: usage === 'SCIENCE' ? 'success' : usage === 'ENGINEERING' ? 'info' : 'danger',
+  tone: usage === 'UNAVAILABLE' ? 'alert' : 'normal',
+});
+
+/**
+ * The expansion: every run over the site's record, in evening dates, with how
+ * many nights each lasted - a run list is read for its lengths, and the count
+ * is already in the interval the query returns.
+ */
 function Runs({ runs, site }: { runs: readonly Mounting[]; site: Site }): JSX.Element {
+  const rows = runs.map((run) => ({
+    id: run.id,
+    dates: `${printEvening(firstEveningDate(site, run.interval))} – ${printEvening(lastEveningDate(site, run.interval))}`,
+    nights: nightCount(site, run.interval),
+    where: mountingLocationLabel(run),
+    status: usageStatus(run.usage),
+    note: run.note,
+  }));
+
   return (
-    <ul className="ml-10 flex flex-col gap-1 py-1 text-xs" data-testid="instrument-runs">
-      {runs.map((run) => (
-        <li key={run.id} className="flex flex-wrap items-baseline gap-x-3">
-          <span className="text-foreground-secondary tabular-nums">
-            {printEvening(firstEveningDate(site, run.interval))} – {printEvening(lastEveningDate(site, run.interval))}
-          </span>
-          <span>{mountingLocationLabel(run)}</span>
-          <span className="text-foreground-muted">{USAGE_LABEL[run.usage]}</span>
-          {when(run.note, (note) => (
-            <span className="text-foreground-muted italic">{note}</span>
-          ))}
-        </li>
-      ))}
-    </ul>
+    <RecordHistoryTable
+      rows={rows}
+      whereHeader="Where"
+      ariaLabel="Instrument runs"
+      testId="instrument-runs"
+      emptyMessage="No runs recorded for this instrument."
+    />
   );
 }
 
 export default function InstrumentsPage(): JSX.Element {
   const { site, observingNight } = useSelection();
   const { semester: selected, loading: loadingSets, error: setsError } = useSemester();
-  const { semesters } = usePublishedSemesters();
   const [search, setSearch] = useUrlParam('q', '', { replace: true });
   const [location, setLocation] = useUrlParam('location', '', { replace: true });
   const [expanded, setExpanded] = useState<InstrumentRow[]>([]);
 
   const activeSite = selected?.site ?? site;
 
-  /*
-   * The site's whole recorded span, not the selected semester.
-   *
-   * "Every instrument at this site" is not "every instrument this semester
-   * happens to mount": Zorro sits out GS 2025B and `Alopeke sits out two GN
-   * semesters, and a browser that hid them would answer "where is Zorro" with
-   * silence. Site assignment is time-bounded operational data carried by the
-   * availability blocks (v1-domain-model.md §5.1), so the site's instruments
-   * are exactly the ones its records have ever named.
-   */
-  const siteNights = semesters.filter((entry) => entry.site === activeSite);
-  const bounds =
-    siteNights.length === 0
-      ? null
-      : {
-          start: `${siteNights.map((entry) => entry.firstNight).sort()[0] ?? ''}T00:00:00.000Z`,
-          end: `${
-            siteNights
-              .map((entry) => entry.lastNight)
-              .sort()
-              .at(-1) ?? ''
-          }T23:59:59.999Z`,
-        };
+  // The site's whole recorded span, not the selected semester - see
+  // `app/useSiteSpan.ts`. Site assignment is time-bounded operational data
+  // carried by the availability blocks (v1-domain-model.md §5.1), so the site's
+  // instruments are exactly the ones its records have ever named.
+  const bounds = useSiteSpan();
 
   const { mountings, loading, error } = useSemesterSchedule(activeSite, bounds);
 
@@ -227,34 +227,22 @@ export default function InstrumentsPage(): JSX.Element {
           />
           <Column
             header="Status"
-            body={(row: InstrumentRow) =>
-              row.usage === null ? null : (
-                <span className="flex flex-col items-start gap-0.5">
-                  <Tag
-                    value={USAGE_LABEL[row.usage]}
-                    severity={
-                      row.usage === 'SCIENCE' ? 'success' : row.usage === 'ENGINEERING' ? 'info' : ('danger' as const)
-                    }
-                    className="!text-[0.6rem]"
-                  />
-                  {when(row.note, (note) => (
-                    <span className="text-[0.65rem] text-foreground-muted italic">{note}</span>
-                  ))}
-                </span>
-              )
-            }
+            body={(row: InstrumentRow) => (row.usage === null ? null : <StatusTag status={usageStatus(row.usage)} />)}
           />
+          {/* "Dates", echoing the expansion's own first column: this row is
+              one line of that list - the run covering the night reported. */}
           <Column
-            header="This run"
+            header="Dates"
             body={(row: InstrumentRow) =>
               row.run === null ? null : (
-                <span className="text-xs text-foreground-secondary tabular-nums">
+                <span className="text-xs whitespace-nowrap text-foreground-secondary tabular-nums">
                   {printEvening(firstEveningDate(selected?.site ?? site, row.run))} –{' '}
                   {printEvening(lastEveningDate(selected?.site ?? site, row.run))}
                 </span>
               )
             }
           />
+          <Column header="Note" body={(row: InstrumentRow) => <NoteCell note={row.note} />} />
         </DataTable>
       )}
     </div>
