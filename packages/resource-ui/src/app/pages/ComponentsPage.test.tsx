@@ -116,6 +116,17 @@ describe('ComponentsPage - the finder', () => {
     await expect.element(screen.getByText('B1200').first()).toBeVisible();
   });
 
+  it('filters by component type', async () => {
+    const screen = await open('/components?site=GS&semester=2025B&night=2025-10-15');
+    await expect.element(screen.getByText('Mask GS2026B-011')).toBeVisible();
+
+    await selectDropdownOption(screen, 'Component type', 'Disperser');
+
+    // Masks are FPUs and clear out; the gratings stay.
+    await expect.element(screen.getByText('Mask GS2026B-011')).not.toBeInTheDocument();
+    await expect.element(screen.getByText('B1200').first()).toBeVisible();
+  });
+
   it('organizes the instrument filter: sorted options carrying their counts', async () => {
     const screen = await open('/components?site=GS&semester=2025B&night=2025-10-15');
     await expect.element(screen.getByText('B1200').first()).toBeVisible();
