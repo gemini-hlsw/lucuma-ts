@@ -79,6 +79,421 @@ the mock.
   `GraphQLError` naming the bound - above a semester, below an accidental decade.
   Everything else is standard GraphQL validation behaviour.
 
+## Example operations and responses
+
+Real requests against real data: every response below was captured from the mock
+(the workbook import of 2026-08-11), and
+[`src/test/endpointsExamples.test.ts`](src/test/endpointsExamples.test.ts) executes
+every query in this file against the served schema, so a documented example cannot
+silently go stale. Responses are trimmed where a `// …` comment says so; the values
+move when a new workbook is imported. For live exploration the same data is one
+command away: `pnpm resource-ui dev:mock-server`, then GraphiQL at
+`http://localhost:4000/graphql`.
+
+### The picker
+
+```graphql
+query {
+  publishedSemesters {
+    site
+    semester
+    title
+    version
+    demo
+    firstNight
+    lastNight
+    rowLabels
+  }
+}
+```
+
+```jsonc
+{
+  "data": {
+    "publishedSemesters": [
+      {
+        "site": "GS",
+        "semester": "2024B",
+        "title": "Gemini South Semester 2024B",
+        "version": "telescope_schedules.xlsx",
+        "demo": false,
+        "firstNight": "2024-08-02",
+        "lastNight": "2025-02-01",
+        "rowLabels": ["Port 1", "Port 2", "Port 3", "Port 4", "Port 5"],
+      },
+      // … eight more site + semester entries
+    ],
+  },
+}
+```
+
+### One night, with a mid-night boundary
+
+The projection the night view and the scheduler read: everything clipped to the
+night's 14:00-to-14:00 site-local interval (17:00Z at GS in November). The R400
+grating fails at 03:00Z inside this night - the boundary arrives as two blocks,
+never flattened to one per-night value.
+
+```graphql
+query {
+  telescopeNight(site: GS, observingNight: "2025-11-20") {
+    observingNight
+    dataAvailable
+    interval {
+      start
+      end
+    }
+    instrumentAvailability {
+      instrument
+      publishedName
+      rowLabel
+      usage
+      interval {
+        start
+        end
+      }
+    }
+    telescopeAvailability {
+      availability
+      port
+      reason
+      interval {
+        start
+        end
+      }
+    }
+    telescopeMode {
+      mode
+      programReference
+      note
+      interval {
+        start
+        end
+      }
+    }
+    tooSupport {
+      tooSupport
+      note
+      interval {
+        start
+        end
+      }
+    }
+    components {
+      usage
+      place
+      note
+      interval {
+        start
+        end
+      }
+      component {
+        code
+        name
+        barcode
+      }
+    }
+  }
+}
+```
+
+```jsonc
+{
+  "data": {
+    "telescopeNight": {
+      "observingNight": "2025-11-20",
+      "dataAvailable": true,
+      "interval": { "start": "2025-11-19T17:00:00Z", "end": "2025-11-20T17:00:00Z" },
+      "instrumentAvailability": [
+        {
+          "instrument": "GHOST",
+          "publishedName": "GHOST",
+          "rowLabel": "Port 1",
+          "usage": "SCIENCE",
+          "interval": { "start": "2025-11-19T17:00:00Z", "end": "2025-11-20T17:00:00Z" },
+        },
+        // … Ports 2-5: GCAL, GMOS-S, Canopus, Flamingos2, all SCIENCE all night
+      ],
+      "telescopeAvailability": [
+        {
+          "availability": "OPEN",
+          "port": null,
+          "reason": null,
+          "interval": { "start": "2025-11-19T17:00:00Z", "end": "2025-11-20T17:00:00Z" },
+        },
+      ],
+      "telescopeMode": [
+        {
+          "mode": "QUEUE",
+          "programReference": null,
+          "note": null,
+          "interval": { "start": "2025-11-19T17:00:00Z", "end": "2025-11-20T17:00:00Z" },
+        },
+      ],
+      "tooSupport": [
+        {
+          "tooSupport": "STANDARD",
+          "note": "Assumed: the workbook does not record ToO support",
+          "interval": { "start": "2025-11-19T17:00:00Z", "end": "2025-11-20T17:00:00Z" },
+        },
+      ],
+      "components": [
+        {
+          "usage": "SCIENCE",
+          "place": "INSTALLED",
+          "note": null,
+          "interval": { "start": "2025-11-19T17:00:00Z", "end": "2025-11-20T03:00:00Z" },
+          "component": { "code": "R400_G5325", "name": "R400", "barcode": null },
+        },
+        {
+          "usage": "UNAVAILABLE",
+          "place": "SUMMIT_LAB",
+          "note": "Failed; removed for repair",
+          "interval": { "start": "2025-11-20T03:00:00Z", "end": "2025-11-20T17:00:00Z" },
+          "component": { "code": "R400_G5325", "name": "R400", "barcode": null },
+        },
+        // … ~70 more component blocks, whole-night
+      ],
+    },
+  },
+}
+```
+
+### The scheduler's range
+
+The same shape per night over any range - `nights` is half-open, `start`
+inclusive.
+
+```graphql
+query {
+  telescopeNights(site: GS, nights: { start: "2025-11-19", end: "2025-11-22" }) {
+    observingNight
+    dataAvailable
+    instrumentAvailability {
+      instrument
+      usage
+      interval {
+        start
+        end
+      }
+    }
+  }
+}
+```
+
+```jsonc
+{
+  "data": {
+    "telescopeNights": [
+      {
+        "observingNight": "2025-11-19",
+        "dataAvailable": true,
+        "instrumentAvailability": [
+          {
+            "instrument": "GHOST",
+            "usage": "SCIENCE",
+            "interval": { "start": "2025-11-18T17:00:00Z", "end": "2025-11-19T17:00:00Z" },
+          },
+          // … the other four ports, clipped to this night
+        ],
+      },
+      // … 2025-11-20 and 2025-11-21, same shape
+    ],
+  },
+}
+```
+
+### Honest gaps past the calendar
+
+GS's last entered night is 2026-08-01. The nights beyond it answer
+`dataAvailable: false` - never an empty list that reads as "nothing available",
+and never an extrapolation.
+
+```graphql
+query {
+  telescopeNights(site: GS, nights: { start: "2026-07-31", end: "2026-08-04" }) {
+    observingNight
+    dataAvailable
+  }
+}
+```
+
+```json
+{
+  "data": {
+    "telescopeNights": [
+      { "observingNight": "2026-07-31", "dataAvailable": true },
+      { "observingNight": "2026-08-01", "dataAvailable": true },
+      { "observingNight": "2026-08-02", "dataAvailable": false },
+      { "observingNight": "2026-08-03", "dataAvailable": false }
+    ]
+  }
+}
+```
+
+### Interval records, unclipped by default
+
+One night asked for; the stored intervals answer - GHOST's mounting runs the
+whole semester, so a view can say the run continues past its window. The same
+query with `clip: true` trims every interval to exactly the asked
+`2025-11-19T17:00:00Z … 2025-11-20T17:00:00Z`. Ids are positional per schedule
+in the mock; Gid prefixes are the backend's call.
+
+```graphql
+query {
+  instrumentAvailability(site: GS, interval: { start: "2025-11-19T17:00:00Z", end: "2025-11-20T17:00:00Z" }) {
+    id
+    instrument
+    publishedName
+    rowLabel
+    usage
+    interval {
+      start
+      end
+    }
+  }
+}
+```
+
+```jsonc
+{
+  "data": {
+    "instrumentAvailability": [
+      {
+        "id": "GS-2025B-b-0",
+        "instrument": "GHOST",
+        "publishedName": "GHOST",
+        "rowLabel": "Port 1",
+        "usage": "SCIENCE",
+        "interval": { "start": "2025-08-01T18:00:00Z", "end": "2026-02-01T17:00:00Z" },
+      },
+      // … the other four ports, also semester-long
+    ],
+  },
+}
+```
+
+### A closure with its reason
+
+Four days asked for; the whole stored fifteen-night shutdown answers.
+`port: null` means the telescope itself, not one port.
+
+```graphql
+query {
+  telescopeAvailability(site: GS, interval: { start: "2024-08-02T00:00:00Z", end: "2024-08-06T00:00:00Z" }) {
+    availability
+    port
+    reason
+    interval {
+      start
+      end
+    }
+  }
+}
+```
+
+```json
+{
+  "data": {
+    "telescopeAvailability": [
+      {
+        "availability": "CLOSED",
+        "port": null,
+        "reason": "Shutdown",
+        "interval": { "start": "2024-08-01T18:00:00Z", "end": "2024-08-16T18:00:00Z" }
+      }
+    ]
+  }
+}
+```
+
+### Component identity, by search
+
+`search` matches name, code, barcode and alias, case-insensitively. `code` is
+the lucuma-core enum tag where one exists.
+
+```graphql
+query {
+  components(site: GS, search: "R400") {
+    id
+    instrument
+    componentType
+    code
+    name
+    barcode
+    aliases
+  }
+}
+```
+
+```json
+{
+  "data": {
+    "components": [
+      {
+        "id": "k-gs-R400_G5325",
+        "instrument": "GMOS",
+        "componentType": "DISPERSER",
+        "code": "R400_G5325",
+        "name": "R400",
+        "barcode": null,
+        "aliases": ["R400"]
+      }
+    ]
+  }
+}
+```
+
+### A piece's history
+
+The state half of the browser: R400's mid-run boundary carries the reason on
+the record itself.
+
+```graphql
+query {
+  instrumentComponentAvailability(
+    site: GS
+    interval: { start: "2025-11-01T00:00:00Z", end: "2025-12-31T00:00:00Z" }
+    componentTypes: [DISPERSER]
+  ) {
+    usage
+    place
+    note
+    interval {
+      start
+      end
+    }
+    component {
+      code
+    }
+  }
+}
+```
+
+```jsonc
+{
+  "data": {
+    "instrumentComponentAvailability": [
+      {
+        "usage": "SCIENCE",
+        "place": "INSTALLED",
+        "note": null,
+        "interval": { "start": "2025-08-01T18:00:00Z", "end": "2025-11-20T03:00:00Z" },
+        "component": { "code": "R400_G5325" },
+      },
+      {
+        "usage": "UNAVAILABLE",
+        "place": "SUMMIT_LAB",
+        "note": "Failed; removed for repair",
+        "interval": { "start": "2025-11-20T03:00:00Z", "end": "2026-02-01T17:00:00Z" },
+        "component": { "code": "R400_G5325" },
+      },
+      // … nine more disperser blocks in the window
+    ],
+  },
+}
+```
+
 ## What the scheduler needs
 
 From `v1-scheduler-integration.md`, unchanged by anything above:
