@@ -148,14 +148,6 @@ export const buildFinderRows = ({
     };
   });
 
-/**
- * Whether the night view lists this piece: on the telescope at some point
- * during the night, or changing state during it. Stored spares stay in the
- * browser - a night listing every lab spare would bury the pieces the night
- * is actually about.
- */
-export const ridesTonight = (row: FinderRow): boolean => row.where.kind === 'INSTALLED' || row.changesTonight;
-
 /** A piece's records over the window, newest last - what the row expansion lists. */
 export const historyOf = (componentId: string, blocks: readonly ComponentBlock[]): readonly ComponentBlock[] =>
   blocks.filter((block) => block.componentId === componentId).sort((a, b) => a.interval.start - b.interval.start);

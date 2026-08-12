@@ -105,8 +105,6 @@ export interface NightScheduleResult extends ScheduleResult {
   readonly dataAvailable: boolean | undefined;
   /** The night's interval as the API resolved it, for checking against ours. */
   readonly apiInterval: ApiInterval | undefined;
-  /** The component records the night projection carries, clipped to the night. */
-  readonly nightComponents: NightComponents;
   /** Subsystem records over the night - PWFS1, PWFS2, LGS from the workbook. */
   readonly subsystemBlocks: readonly SubsystemBlock[];
 }
@@ -124,7 +122,6 @@ export const useNightSchedule = (site: Site, observingNight: string, bounds: Api
   const tooBlocks = toTooBlocks(data?.tooSupport ?? []);
   const modeBlocks = toModeBlocks(data?.telescopeMode ?? []);
   const subsystemBlocks = toSubsystemBlocks(data?.telescopeSubsystemAvailability ?? []);
-  const nightComponents = data === undefined ? NO_COMPONENTS : toNightComponents(data.telescopeNight.components);
   return {
     mountings,
     closures,
@@ -135,7 +132,6 @@ export const useNightSchedule = (site: Site, observingNight: string, bounds: Api
     tooBlocks,
     modeBlocks,
     subsystemBlocks,
-    nightComponents,
   };
 };
 

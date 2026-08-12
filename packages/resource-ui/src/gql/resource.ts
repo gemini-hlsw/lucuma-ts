@@ -151,12 +151,15 @@ export const SEMESTER_SCHEDULE_QUERY = graphql(`
  * One night, and the runs that reach it.
  *
  * `telescopeNight` is the projection the scheduler consumes, and it is asked for
- * here to carry the two facts a range query cannot: `dataAvailable`, which
- * separates "nothing is recorded for this night" from "nothing is available",
- * and `components` - the pieces recorded tonight, clipped to the night, which is
- * exactly the shape a mid-night change is visible in. The instrument, closure,
- * ToO and mode blocks come unclipped, so the view can say a run continues
- * beyond tonight rather than implying it ends at 14:00.
+ * here to carry the fact a range query cannot: `dataAvailable`, which separates
+ * "nothing is recorded for this night" from "nothing is available". The
+ * instrument, closure, ToO and mode blocks come unclipped, so the view can say a
+ * run continues beyond tonight rather than implying it ends at 14:00.
+ *
+ * The projection's `components` are deliberately **not** selected: the night
+ * view does not draw them (Dan, 2026-08-12), and an operation should not fetch
+ * what nothing reads. The field stays in the schema - it is the scheduler's, and
+ * the component browser is where a reader meets a piece.
  */
 export const NIGHT_SCHEDULE_QUERY = graphql(`
   query GetNightSchedule($site: Site!, $night: Date!, $interval: TimestampIntervalInput!) {
@@ -166,9 +169,6 @@ export const NIGHT_SCHEDULE_QUERY = graphql(`
       interval {
         start
         end
-      }
-      components {
-        ...NightComponentFields
       }
     }
     instrumentAvailability(site: $site, interval: $interval, clip: false) {

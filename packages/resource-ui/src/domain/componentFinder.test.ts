@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildFinderRows, historyOf, matchesComponent, ridesTonight } from './componentFinder';
+import { buildFinderRows, historyOf, matchesComponent } from './componentFinder';
 import { observingNightInterval } from './siteTime';
 import type { ComponentBlock, ComponentRecord, Mounting } from './types';
 
@@ -111,32 +111,6 @@ describe('when a piece changes tonight', () => {
 
     expect(row?.transitions).toEqual([]);
     expect(row?.changesTonight).toBe(false);
-  });
-});
-
-describe('which rows the night view lists', () => {
-  it('lists an installed piece and skips a stored spare', () => {
-    const [installed] = rowsOf([block()]);
-    const [spare] = rowsOf([block({ location: 'LAB', usage: 'UNAVAILABLE' })]);
-
-    expect(installed !== undefined && ridesTonight(installed)).toBe(true);
-    expect(spare !== undefined && ridesTonight(spare)).toBe(false);
-  });
-
-  it('lists a piece that came off mid-night, even though it ends the night stored', () => {
-    const midnight = (night.start + night.end) / 2;
-    const [row] = rowsOf([
-      block({ id: 'a', interval: { start: night.start - 86_400_000, end: midnight } }),
-      block({ id: 'b', location: 'LAB', interval: { start: midnight, end: night.end + 86_400_000 } }),
-    ]);
-
-    expect(row !== undefined && ridesTonight(row)).toBe(true);
-  });
-
-  it('skips a piece with nothing recorded tonight', () => {
-    const [row] = rowsOf([]);
-
-    expect(row !== undefined && ridesTonight(row)).toBe(false);
   });
 });
 

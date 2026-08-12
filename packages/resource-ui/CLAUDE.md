@@ -109,10 +109,19 @@ chart builder), with one "Shut down" legend key for bands and port closures alik
 **The night view is where partial nights are visible.** The workbook is
 whole-night granular, so no served night splits a row and the chart's tests are
 synthetic on purpose - they pin the partial-night capability the non-negotiables
-protect, not the current data. One served source still exercises it: the
-**components table below the chart**, whose synthetic R400 failure lands mid-night inside the
-GS night of 2025-11-20. The table builds its rows through the same `componentFinder`
-the browser uses - do not give it its own path from blocks to rows.
+protect, not the current data.
+
+**The night view is the chart alone** (Dan, 2026-08-12). It carried a components
+table under the chart - every piece riding tonight, with the mid-night boundary
+of the synthetic R400 failure named at its clock time. It was removed because it
+did not help a reader of the night: the pieces are the component browser's
+subject, and the one thing the table demonstrated - a boundary inside a night -
+the chart's own synthetic tests already pin. The view is deliberately bare for
+now and expected to gain things back. `GetNightSchedule` therefore stops
+selecting the projection's `components`; the field stays in the schema, since it
+is the scheduler's. If a night-scoped table returns, build its rows through
+`componentFinder` as that one did - do not give a view its own path from blocks
+to rows.
 
 **The night view alone adds the subsystem rows** (2026-08-12): PWFS1, PWFS2 and
 LGS beneath the state rows, monochrome in the same usage words a mounted span
@@ -271,8 +280,8 @@ count, how many are on the telescope tonight), with filter dropdowns whose optio
 carry their counts. Status speaks operations, not the enum: Science / Engineering /
 a muted "Spare" for a stored piece with nothing wrong / red "Unavailable", with the
 record's own words beside it in the Note column - derived once in
-`componentLabels.componentStatus` and worn by the browser row, the night table and
-the row's own history alike, so the three cannot answer one record differently.
+`componentLabels.componentStatus` and worn by the browser row and the row's own
+history alike, so the two cannot answer one record differently.
 The catalog carries **real identities**
 (lucuma-core enum tags and G-numbers; honest hand-written codes where no enum
 exists) but its blocks are **synthetic** - `mock-server/components.ts` is the
@@ -315,8 +324,8 @@ hangs inside instead of reading as one of its rows. Four rules, all from Dan:
   status (`severity` for the row's badge, `tone` for the words) so one
   derivation drives both and they cannot drift.
 - **A note is a column, never a second line under the status** (Dan,
-  2026-08-12) - on the browsers, their expansions and the night's component
-  table alike (`components/ui/NoteCell.tsx`). Under the badge it began at a
+  2026-08-12) - on the browsers and their expansions alike
+  (`components/ui/NoteCell.tsx`). Under the badge it began at a
   different x on every row and no heading said what it was. It is the last
   column everywhere, so it takes the table's slack, and it **wraps** rather
   than truncating or scrolling: a clipped note reads as the whole note, and a

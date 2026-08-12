@@ -15,7 +15,6 @@ import { addDays } from '@/domain/semester';
 import { observingNightInterval } from '@/domain/siteTime';
 import type { PublishedSemester, Site } from '@/domain/types';
 import { buildNightChartOptions, clockLabel } from '@/features/night/nightChartOptions';
-import { NightComponentsTable } from '@/features/night/NightComponentsTable';
 import { TimelineChart, TimelineLegendBar } from '@/features/timeline/TimelineChart';
 import {
   calendarLegendExtras,
@@ -55,17 +54,8 @@ export default function NightPage(): JSX.Element {
   const interval = observingNightInterval(site, observingNight);
   const held = semesterHolding(semesters, site, observingNight);
 
-  const {
-    mountings,
-    closures,
-    tooBlocks,
-    modeBlocks,
-    subsystemBlocks,
-    loading,
-    error,
-    dataAvailable,
-    nightComponents,
-  } = useNightSchedule(site, observingNight, toApiInterval(interval));
+  const { mountings, closures, tooBlocks, modeBlocks, subsystemBlocks, loading, error, dataAvailable } =
+    useNightSchedule(site, observingNight, toApiInterval(interval));
 
   const night = buildNightTimeline({
     site,
@@ -180,13 +170,6 @@ export default function NightPage(): JSX.Element {
             continuesLabel="continues beyond tonight"
             label={`Night of ${observingNight}`}
             testId="night-timeline"
-          />
-          <NightComponentsTable
-            nightComponents={nightComponents}
-            mountings={mountings}
-            night={interval}
-            site={site}
-            timeDisplay={timeDisplay}
           />
         </>
       )}

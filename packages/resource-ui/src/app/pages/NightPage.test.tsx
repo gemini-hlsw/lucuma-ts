@@ -137,12 +137,10 @@ describe('NightPage', () => {
   it('keeps a revisited night intact - one window must not poison another', async () => {
     // Every availability query clips its blocks to the night asked for, under
     // stable block ids. Normalized by id, night B's response overwrote night
-    // A's intervals, so revisiting A from the cache drew an empty chart and
-    // "no components tonight" (found via Tonight after stepping, 2026-08-10).
-    // Pinned here through prev/next, which is the same cache-hit path.
+    // A's intervals, so revisiting A from the cache drew an empty chart
+    // (found via Tonight after stepping, 2026-08-10). Pinned here through
+    // prev/next, which is the same cache-hit path.
     const screen = await openNight('/night?site=GS&night=2025-11-14');
-    const table = screen.getByTestId('night-component-table');
-    await expect.element(table.getByText('B1200', { exact: true })).toBeVisible();
     const points = () => document.querySelectorAll('[data-testid="night-timeline"] .highcharts-point').length;
     await expect.poll(points).toBeGreaterThan(0);
 
@@ -151,7 +149,6 @@ describe('NightPage', () => {
     await screen.getByRole('button', { name: 'Previous night' }).click();
     await expect.element(screen.getByText('Night of 2025-11-14')).toBeVisible();
 
-    await expect.element(table.getByText('B1200', { exact: true })).toBeVisible();
     await expect.poll(points).toBeGreaterThan(0);
   });
 
@@ -246,47 +243,6 @@ describe('NightPage', () => {
 
     // GHOST runs the whole semester, so this night's tooltip reads "all night".
     await expect.element(page.getByText('all night')).toBeVisible();
-  });
-});
-
-describe('the components riding tonight', () => {
-  it('lists the installed pieces and counts the stored ones instead of listing them', async () => {
-    const screen = await openNight('/night?site=GS&night=2025-11-14');
-
-    const table = screen.getByTestId('night-component-table');
-    await expect.element(table).toBeVisible();
-    // B1200 rides with GMOS, which the published sheet mounts all semester.
-    await expect.element(table.getByText('B1200', { exact: true })).toBeVisible();
-    // R831 is a spare that never leaves the summit lab: counted, not listed.
-    await expect.element(table.getByText('R831')).not.toBeInTheDocument();
-    await expect.element(screen.getByText('in storage tonight', { exact: false })).toBeVisible();
-  });
-
-  it('names the instant a piece changes mid-night, in the site clock', async () => {
-    // The synthetic R400 fails 60% through GMOS's GS 2025B mounting -
-    // 2025-11-20T03:00Z, midnight site time inside the night labelled
-    // 2025-11-20. This is the first place the night view meets a boundary
-    // inside a night with data the dev server actually serves.
-    const screen = await openNight('/night?site=GS&night=2025-11-20');
-
-    const table = screen.getByTestId('night-component-table');
-    await expect.element(table.getByText('R400', { exact: true })).toBeVisible();
-    await expect.element(table.getByText('changes at 00:00')).toBeVisible();
-    // The row reports the state the night ends in: off the telescope, unusable.
-    await expect.element(table.getByText('Summit lab')).toBeVisible();
-    await expect.element(table.getByText('Failed; removed for repair')).toBeVisible();
-  });
-
-  it('gives the record its own Note column here too, as on the browsers', async () => {
-    const screen = await openNight('/night?site=GS&night=2025-11-20');
-
-    const table = screen.getByTestId('night-component-table');
-    await expect.element(table.getByRole('columnheader', { name: 'Note' })).toBeVisible();
-
-    const status = table.getByText('Unavailable').element().closest('td');
-    const note = table.getByText('Failed; removed for repair').element().closest('td');
-    expect(note).not.toBe(status);
-    expect(status?.textContent).toBe('Unavailable');
   });
 });
 
