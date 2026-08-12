@@ -124,6 +124,16 @@ describe('NightPage', () => {
     await expect.element(screen.getByText('Night of 2025-11-14')).toBeVisible();
   });
 
+  it('picks a night from the date input, without stepping to it', async () => {
+    const screen = await openNight('/night?site=GS&night=2025-11-14');
+    await expect.element(screen.getByText('Night of 2025-11-14')).toBeVisible();
+
+    await screen.getByLabelText('Observing night').fill('2025-12-15');
+
+    await expect.element(screen.getByText('Night of 2025-12-15')).toBeVisible();
+    await expect.element(screen.getByTestId('night-timeline')).toBeVisible();
+  });
+
   it('keeps a revisited night intact - one window must not poison another', async () => {
     // Every availability query clips its blocks to the night asked for, under
     // stable block ids. Normalized by id, night B's response overwrote night
