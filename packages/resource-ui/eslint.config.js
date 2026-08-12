@@ -17,31 +17,6 @@ export default defineConfig(
   reactHooks.configs.flat['recommended-latest'],
   reactRefresh.configs.vite(),
   {
-    files: [`./src/gql/*.{ts,tsx}`],
-    processor: graphqlPlugin.processor,
-  },
-  {
-    files: [`./src/gql/**/*.graphql`],
-    languageOptions: {
-      parser: graphqlPlugin.parser,
-      parserOptions: {
-        graphQLConfig: {
-          schema: import.meta.resolve('@gemini-hlsw/lucuma-odb-schemas/resource'),
-          documents: [`./src/gql/**/*.{ts,tsx}`],
-        },
-      },
-    },
-    plugins: {
-      '@graphql-eslint': graphqlPlugin,
-    },
-    rules: {
-      ...graphqlPlugin.configs['flat/operations-recommended'].rules,
-
-      '@graphql-eslint/naming-convention': ['error', { types: 'PascalCase', FieldDefinition: 'camelCase' }],
-      '@graphql-eslint/require-selections': ['error', { fieldName: ['id', 'pk'] }],
-    },
-  },
-  {
     files: ['mock-server/**/*.ts', 'tasks/**/*.ts'],
     languageOptions: {
       parserOptions: {
@@ -55,4 +30,43 @@ export default defineConfig(
       react: { version: '19.2' },
     },
   },
+  ...graphqlConfigForSchema('./mock-server/schema.graphql', './src/gql'),
 );
+
+/**
+ * Create a GraphQL ESLint config for a specific schema - navigate-ui's helper,
+ * pointed at the local v1 schema the mock serves and codegen reads.
+ *
+ * @param {string | string[]} schema schema location
+ * @param {string} base base directory for the TS files containing the GraphQL operations
+ * @returns {Parameters<typeof defineConfig>} ESLint config for GraphQL files
+ */
+function graphqlConfigForSchema(schema, base) {
+  return [
+    {
+      files: [`${base}/*.{ts,tsx}`],
+      processor: graphqlPlugin.processor,
+    },
+    {
+      files: [`${base}/**/*.graphql`],
+      languageOptions: {
+        parser: graphqlPlugin.parser,
+        parserOptions: {
+          graphQLConfig: {
+            schema,
+            documents: [`${base}/**/*.{ts,tsx}`],
+          },
+        },
+      },
+      plugins: {
+        '@graphql-eslint': graphqlPlugin,
+      },
+      rules: {
+        ...graphqlPlugin.configs['flat/operations-recommended'].rules,
+
+        '@graphql-eslint/naming-convention': ['error', { types: 'PascalCase', FieldDefinition: 'camelCase' }],
+        '@graphql-eslint/require-selections': ['error', { fieldName: ['id'] }],
+      },
+    },
+  ];
+}

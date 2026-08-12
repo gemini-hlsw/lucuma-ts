@@ -46,22 +46,63 @@ export default defineConfig({
     babel({ presets: [reactCompilerPreset()], exclude: /[/\\](node_modules|common-ui)[/\\]/ }),
     tailwindcss(),
   ],
+  optimizeDeps: {
+    // Pre-bundle these so the browser test runner does not reload mid-run.
+    //
+    // Every Highcharts master must be listed. A module composes itself onto the
+    // core's prototypes at import time, so one left out is pre-bundled into its
+    // own chunk with its own copy of the core and composes onto that instead -
+    // which surfaces as `Cannot read properties of undefined (reading
+    // 'prototype')` from ColorAxis.compose, not as a missing module.
+    include: [
+      '@apollo/client',
+      '@apollo/client/link/schema',
+      '@apollo/client/react',
+      '@highcharts/react',
+      'highcharts/es-modules/masters/highcharts.src.js',
+      'highcharts/es-modules/masters/modules/heatmap.src.js',
+      'highcharts/es-modules/masters/modules/xrange.src.js',
+      'react-big-calendar',
+      'date-fns',
+      'date-fns/locale',
+      'primereact/accordion',
+      'primereact/button',
+      'primereact/column',
+      'primereact/datatable',
+      'primereact/dropdown',
+      'primereact/inputtext',
+      'primereact/selectbutton',
+      'primereact/tag',
+      'graphql',
+      'graphql-yoga',
+    ],
+  },
   server: {
     allowedHosts: ['localhost', '.lucuma.xyz', '.gemini.edu'],
     proxy: {
+      // "Live server" means the actual Resource service, in development too -
+      // the proxy only exists to sidestep CORS, never to stand something else
+      // in for the real endpoint. The local mock server (pnpm dev:mock-server)
+      // hosts the demo data over HTTP for GraphiQL and external consumers at
+      // :4000 directly; it is not part of this path.
       '/resource/graphql': {
         target: 'https://lucuma-resource-dev.lucuma.xyz',
         changeOrigin: true,
-        secure: true,
       },
     },
   },
   test: {
     clearMocks: true,
     globals: true,
+    exclude: ['**/node_modules/**', '**/dist/**'],
     setupFiles: [
       '@gemini-hlsw/lucuma-common-ui/test/setup.ts',
       '@gemini-hlsw/lucuma-common-ui/test/disable-animations.css',
+      // The app's own stylesheet, exactly as main.tsx loads it. Styling is
+      // behaviour here: the sun wash is only pointer-transparent because
+      // global.css says so, and a hover test can only prove that with the
+      // stylesheet applied.
+      './src/styles/global.css',
     ],
     browser: {
       enabled: true,
