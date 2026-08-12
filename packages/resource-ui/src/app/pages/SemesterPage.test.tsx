@@ -184,6 +184,23 @@ describe('SemesterPage - the grid', () => {
     await expect.poll(shapes).toBe(before);
   });
 
+  it('surfaces the night under the cursor when a cell is hovered', async () => {
+    // The grid's tooltip is its own wiring (cellTooltip, a night not a span),
+    // separate from the charts' shared one - so it gets its own hover.
+    const screen = await openSemester('/semester?site=GS&semester=2025B');
+    await showGrid(screen);
+    const august = '[data-testid="semester-heatmap-August 2025"]';
+    await expect.poll(() => document.querySelector(`${august} .highcharts-point`)).not.toBeNull();
+
+    const cell = document.querySelector(`${august} .highcharts-point`);
+    const { page } = await import('vitest/browser');
+    await page.elementLocator(cell!).hover();
+
+    // The first cell is the evening of 1 August, phrased "beginning" - "Night
+    // of" is the end-labelled name the click-through opens (2025-08-02).
+    await expect.element(page.getByText('Night beginning 2025-08-01')).toBeVisible();
+  });
+
   it('opens the night view when a cell is clicked', async () => {
     const screen = await renderApp({
       element: <SemesterPage />,
