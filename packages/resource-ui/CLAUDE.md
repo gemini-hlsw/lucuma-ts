@@ -240,9 +240,7 @@ reintroducing anything from it requires a fresh decision recorded here.
 instrument the site's records name, saying which port it is on tonight - or
 plainly that it is on none - with the run's extent, and a row expansion listing
 its runs, which is where the workbook's Not Available windows become legible.
-It queries the **site's whole recorded span, not the selected semester**: Zorro
-sits out GS 2025B and `Alopeke sits out two GN semesters, and a browser scoped
-to one semester would answer "where is Zorro" with silence. An instrument with
+An instrument with
 no record on the chosen night reads "Not recorded" - never carried forward from
 the last night that had one. The **Location filter** groups by the same phrasing
 the Where cell prints (`locationLabel`, so the two cannot drift), offering only
@@ -271,15 +269,111 @@ last-record-decides, same honest absence.
 component catalog, grouped by instrument under subheaders (colour swatch, piece
 count, how many are on the telescope tonight), with filter dropdowns whose options
 carry their counts. Status speaks operations, not the enum: Science / Engineering /
-a muted "Spare" for a stored piece with nothing wrong / red "Unavailable" with the
-record's note - shared with the night table through
-`features/components/componentCells.tsx`. The catalog carries **real identities**
+a muted "Spare" for a stored piece with nothing wrong / red "Unavailable", with the
+record's own words beside it in the Note column - derived once in
+`componentLabels.componentStatus` and worn by the browser row, the night table and
+the row's own history alike, so the three cannot answer one record differently.
+The catalog carries **real identities**
 (lucuma-core enum tags and G-numbers; honest hand-written codes where no enum
 exists) but its blocks are **synthetic** - `mock-server/components.ts` is the
 quarantine boundary; swap that one file when real data arrives, and never let the
 synthetic layer decide `dataAvailable`. A piece's place is `INSTALLED` or a storage
 location, never a port - INSTALLED resolves through the instrument's own mounting
 records (`domain/componentFinder.ts`).
+
+**Both finders are site-scoped, never semester-scoped** (Dan, 2026-08-12), via
+`app/useSiteSpan.ts`: they query the site's whole recorded span. "Where is
+Zorro" is not a semester question - Zorro sits out GS 2025B and `Alopeke sits
+out two GN semesters, so a semester-scoped browser answers with silence - and a
+piece's history does not restart in February either: the R400's failures ran
+nine records across the site's record, of which a 2025B scope showed one, with
+nothing on screen saying it had been cut. The instrument browser always worked
+this way; the component browser was brought into line. The masthead's semester
+control still moves the **night** these pages report for, which is why it stays
+on them; it just no longer decides what they can see. The instruments table's
+run column is headed **"Dates"**, echoing the expansion's own first column -
+the row is one line of that list ("This run" read as a different kind of thing).
+
+**Both finders open a row into the same table** (2026-08-12):
+`components/ui/RecordHistoryTable.tsx` - Dates, Nights, where, Status, Note, one
+line per record. It replaced a ragged list where a reader had to infer from
+position that "Summit lab" was a place and "Science" a status. It is a plain
+`<table>`, not a nested DataTable: this is presentation, not a control, and
+PrimeReact's header fill, stripes and hover would compete with the table it
+hangs inside instead of reading as one of its rows. Four rules, all from Dan:
+
+- **It reads as the row it hangs under, continued.** Full width and responsive,
+  with the note taking the slack so the fixed columns stay put; indented
+  `pl-12` - the expander column's 2.5rem plus a cell's 0.5rem - so its first
+  cell starts exactly under the name; and wearing that row's own background,
+  which needed a `shell.css` rule because the theme fills every expansion with
+  the plain row surface and it came out a lighter band under a striped row.
+- **Status is words, not badges.** A badge earns its ink in a finder row, where
+  there is one of it; ten stacked under one row is a column of shouting pills.
+  Colour marks only the state worth noticing - red for out of service, the red
+  the schedule reserves. `components/ui/StatusTag.tsx` holds both facets of a
+  status (`severity` for the row's badge, `tone` for the words) so one
+  derivation drives both and they cannot drift.
+- **A note is a column, never a second line under the status** (Dan,
+  2026-08-12) - on the browsers, their expansions and the night's component
+  table alike (`components/ui/NoteCell.tsx`). Under the badge it began at a
+  different x on every row and no heading said what it was. It is the last
+  column everywhere, so it takes the table's slack, and it **wraps** rather
+  than truncating or scrolling: a clipped note reads as the whole note, and a
+  cell that scrolls sideways hides its tail the same way while being harder to
+  work. A row two lines tall costs nothing.
+- **The columns never move**, even when nothing fills them: a Note column that
+  came and went made two expansions on one page disagree about what the third
+  column meant. An empty cell is the honest answer.
+- **It says what the record cannot say alone**, from what the one query already
+  returns - never a second round trip. A component block says INSTALLED and
+  never a port, so the history resolves it through the same mountings the row
+  uses (`componentFinder.whereOf`, over the block's own span); and every span
+  carries its length in nights (`siteTime.nightCount`, counted over evening
+  dates because a night is not a fixed number of hours).
+
+Each page maps its own records onto `HistoryRow` and keeps its own vocabulary -
+the shape is shared, the words belong to the subject.
+
+**Shared pixels, page-owned words** (2026-08-12). That is the rule the whole of
+`components/ui/` follows, and it is worth stating because the alternative had
+already happened twice: `componentCells.tsx` exists because a second copy of
+`whereLabel` let the grid and the chart disagree about closures, and the
+instrument browser then grew its own hand-rolled copy of the component Where
+cell one directory over - the same three dots and the same warning tag, free to
+drift apart. So a thing drawn in two places is drawn from one module, taking a
+presentation shape rather than either page's domain row:
+
+- **`WhereCell`** takes a `WhereReading` - a coarse presence (on the telescope /
+  off it / not recorded), the place in words, and what the change tag says.
+  `componentLabels.componentWhere` and `InstrumentsPage.instrumentWhere` are the
+  two mappings onto it, one line each.
+- **`PageHeader`** is every destination's title, synthetic flag, subtitle and
+  right-hand controls slot. **`PageStatus`** holds the three states a page shows
+  instead of content: `ErrorAlert` (the reserved red, `role="alert"`, the
+  error's own message verbatim), `Loading`, and `EmptyPanel` - never red and
+  never a warning, because a gap means "not recorded" (I4). Three components
+  rather than one that decides between them: the night view alone has three
+  distinct empty states and one carries a button.
+- **`NightStepper`** is the Tonight / arrows / date toolbar the night and week
+  views share. It owns the chrome, the aria labels and the cleared-input guard;
+  the page owns the date vocabulary, since only it knows whether the input shows
+  a night's label or the evening a week begins.
+- **`FilterField`** is a real `<label>` wrapping its control, and
+  `filterOptions.countedOption` is the "(12)" suffix every filter dropdown
+  carries. **`InstrumentSwatch`** (in `features/timeline/`, beside the palette
+  it reads) is the colour square plus name, so colour-follows-the-instrument
+  holds outside the charts too.
+- **`siteTime.eveningLabel`/`eveningRange`** are the one evening formatter.
+  There were five, and five formatters is five chances for one view to print
+  "19 Nov 2026" where its neighbour prints "19 Nov". The style is a parameter
+  (`dayMonth`, `dayMonthYear`, `weekdayDayMonth`) because that choice is about
+  what the page around it already says, never about what the date means.
+
+What is deliberately **not** shared is the two browser pages themselves. They
+read as twins, but the shapes diverge - grouped-by-instrument subheaders against
+a flat list, two filters against one, different expansions - and a `FinderPage`
+taking a dozen props would hide nothing.
 
 ## Commands
 
@@ -347,10 +441,11 @@ is fetched from the web.
   prohibition; that was the bug.)
 - **Off-port usability is imported** (2026-08-12): an instrument the workbook
   marks usable with no port recorded - the `Alopeke and Zorro visitor runs
-between mounts - becomes a mounting with no port, location UNKNOWN, because
-the workbook never says where an unmounted instrument physically is. It is
-**not** a `rowLabels` entry: the schedule views are the ports' picture, and
-  the instrument browser is where an off-port run is legible (Dan, 2026-08-12).
+  between mounts - becomes a mounting with no port, location UNKNOWN, because
+  the workbook never says where an unmounted instrument physically is. The null
+  port is what keeps it off every chart: the schedule views are the ports'
+  picture, and the instrument browser is where an off-port run is legible (Dan,
+  2026-08-12).
 - **PWFS1, PWFS2 and the LGS column become subsystem records** (2026-08-12).
   The LGS Yes/No is the laser available for science or not - both recorded
   facts, and GS records "No" every night rather than a gap.
@@ -426,6 +521,16 @@ These are the standing invariants, from what went wrong last time.
   workbook's empty port cells must not render as closed.
 - **`ResourceUsage` is one enum** - `SCIENCE`/`ENGINEERING`/`UNAVAILABLE`. Do not split it
   into separate availability and usage fields.
+- **A record's port is its row; there is no row label** (Dan, 2026-08-12). The schedule
+  views draw the telescope's ports, so `location.port` alone says which row a record
+  belongs to and `domain/ports.ts` renders the label. The API carried a `rowLabel` on
+  every block and a `rowLabels` list on every semester until both were removed as
+  restatements of the port - the timeline was regex-parsing "Port 3" back into a
+  number. Do not reintroduce a display string the model can derive. The row set is
+  `TELESCOPE_PORTS` (five, a fact about the instrument support structure) unioned with
+  any port the records name, so a quiet port keeps its blank row - blank says "nothing
+  recorded" (I4), while a missing row would say the port does not exist - and a record
+  on an unexpected port still draws instead of vanishing.
 - **No new schema type without a requirement behind it**: a column in the workbook, a
   line in the scheduler contract, or a request from Bryan or Andrew.
 - **One capability per commit**, with its tests.
