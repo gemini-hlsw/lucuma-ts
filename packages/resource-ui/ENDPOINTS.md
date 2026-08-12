@@ -1,14 +1,13 @@
 # Resource v1 - required GraphQL API
 
 For backend review: the queries the Resource UI needs the Scala service to serve, plus
-the query the scheduler team consumes. The authoritative SDL is
-[`mock-server/schema.graphql`](mock-server/schema.graphql) - it is both what the mock
-serves and what the frontend's codegen reads, so the wire shapes below are the ones the
-UI is already built against. The wider architecture (types, semantics, error behaviour)
-is `lucuma-odb/resource/docs/v1-graphql-api.md`; the scheduler contract is
-`lucuma-odb/resource/docs/v1-scheduler-integration.md`. Where this file and those
-disagree, this file reflects the schema as served on 2026-08-12 (they were written
-2026-08-10, before the ToO, mode and subsystem queries landed).
+the query the scheduler team consumes. This file is self-contained - it is the whole
+contract, not a summary of one held elsewhere.
+
+The authoritative SDL is [`mock-server/schema.graphql`](mock-server/schema.graphql) - it
+is both what the mock serves and what the frontend's codegen reads, so the wire shapes
+below are the ones the UI is already built against. Every query and every response value
+quoted here was executed against that schema on 2026-08-12.
 
 **Two layers behind one API.** Everything the schedules record comes from the
 operations workbook and is what the Scala service must reproduce. Two things are
@@ -21,12 +20,13 @@ allowed to decide `dataAvailable`.
 
 ## The endpoint
 
-One path everywhere a client sees: **`/resource/graphql`**. The deployed frontend
-derives it from its hostname (`https://lucuma-resource-dev.lucuma.xyz/resource/graphql`,
-`…-staging…`), and the dev proxy already carries the same path, so the real service must
-serve it too. No authentication in v1 - the mock allows everything and the frontend
-sends no credentials; aligning the PoC's per-field auth with that intent is backend
-work. No subscriptions, no mutations: v1 is read-only, and consumers re-query.
+One path everywhere a client sees: **`/resource/graphql`**. The deployed frontend maps
+its own hostname to a service host and appends that path
+(`https://lucuma-resource-dev.lucuma.xyz/resource/graphql`, `…-staging…`), and the dev
+proxy carries the same path, so the real service must serve it too. No authentication in
+v1 - the mock allows everything and the frontend sends no credentials; aligning the
+PoC's per-field auth with that intent is backend work. No subscriptions, no mutations:
+v1 is read-only, and consumers re-query.
 
 ## The queries
 
@@ -51,13 +51,13 @@ described below.
 One request per page load; every view gets its whole window in one response. From
 [`src/gql/resource.ts`](src/gql/resource.ts):
 
-| Operation               | Queries combined                                                                                                                   | Notes                                                                                                                                                  |
-| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `GetPublishedSemesters` | `publishedSemesters`                                                                                                               | run once by the shell; every other operation's bounds come from it                                                                                     |
-| `GetSemesterSchedule`   | `instrumentAvailability` + `telescopeAvailability` + `tooSupport` + `telescopeMode`, all `clip: false`                             | a full semester in one response; the instrument browser runs the same operation over the site's whole recorded span                                    |
-| `GetNightSchedule`      | `telescopeNight` + the five range queries over the night, `clip: false`                                                            | the projection carries `dataAvailable` and the night's components; the range queries come unclipped so the view can say a run continues beyond tonight |
-| `GetWeekSchedule`       | `telescopeNights` (per-night `dataAvailable` only) + the four range queries + `instrumentComponentAvailability`, all `clip: false` | a run spanning the week draws as one bar, not seven abutting ones                                                                                      |
-| `GetComponentBrowser`   | `components` + `instrumentComponentAvailability` + `instrumentAvailability`, `clip: false`                                         | the catalog, every piece's records, and the mountings INSTALLED resolves against                                                                       |
+| Operation               | Queries combined                                                                                                                   | Notes                                                                                                                                                   |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GetPublishedSemesters` | `publishedSemesters`                                                                                                               | run once by the shell; every other operation's bounds come from it                                                                                      |
+| `GetSemesterSchedule`   | `instrumentAvailability` + `telescopeAvailability` + `tooSupport` + `telescopeMode`, all `clip: false`                             | a full semester in one response; the instrument browser runs the same operation over the site's whole recorded span                                     |
+| `GetNightSchedule`      | `telescopeNight` + the five range queries over the night, `clip: false`                                                            | the projection is asked only for `dataAvailable`; the range queries come unclipped so the view can say a run continues beyond tonight                   |
+| `GetWeekSchedule`       | `telescopeNights` (per-night `dataAvailable` only) + the four range queries + `instrumentComponentAvailability`, all `clip: false` | a run spanning the week draws as one bar, not seven abutting ones                                                                                       |
+| `GetComponentBrowser`   | `components` + `instrumentComponentAvailability` + `instrumentAvailability`, `clip: false`                                         | the catalog, every piece's records, and the mountings INSTALLED resolves against; run over the site's whole recorded span, as the instrument browser is |
 
 ## The record types
 
@@ -83,8 +83,8 @@ projection.
 | ------------------------- | -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `ResourceUsage`           | `SCIENCE`, `ENGINEERING`, `UNAVAILABLE`                                                                  | one operational-state value for instruments, components and subsystems alike - never split into separate availability and usage fields                       |
 | `TelescopeAvailability`   | `OPEN`, `CLOSED`                                                                                         | only the telescope is open or closed                                                                                                                         |
-| `TelescopeModeType`       | `QUEUE`, `CLASSICAL`, `PRIORITY_VISITOR`, `ENGINEERING`, `COMMISSIONING`, `SHUTDOWN`, `BLOCK_SCHEDULING` | the workbook emits no `SHUTDOWN` - a shutdown night's mode stays unrecorded there - but entered data may                                                     |
-| `Partner`                 | `AR`, `BR`, `CA`, `CL`, `KR`, `UH`, `US`                                                                 | lucuma-core's seven; non-null exactly on a `BLOCK_SCHEDULING` span                                                                                           |
+| `TelescopeModeType`       | `QUEUE`, `CLASSICAL`, `PRIORITY_VISITOR`, `ENGINEERING`, `COMMISSIONING`, `SHUTDOWN`, `BLOCK_SCHEDULING` | this export emits only `QUEUE` and `PRIORITY_VISITOR`; in particular no `SHUTDOWN` - a shutdown night's mode stays unrecorded there - but entered data may   |
+| `Partner`                 | `AR`, `BR`, `CA`, `CL`, `KR`, `UH`, `US`                                                                 | lucuma-core's seven; non-null exactly on a `BLOCK_SCHEDULING` span, so null throughout this export                                                           |
 | `TooSupport`              | `NONE`, `STANDARD`, `INTERRUPT`, `RAPID`                                                                 | `NONE` is "no ToOs of any kind", a recorded fact - not an absence                                                                                            |
 | `TelescopeSubsystem`      | `PWFS1`, `PWFS2`, `ALTAIR`, `CANOPUS`, `LGS`, `GPOL`, `DOME_SHUTTER`, `DOME_VENT_GATES`                  | the workbook fills the first two and `LGS`; the rest await entered data                                                                                      |
 | `PowerSource`             | `COMMERCIAL`, `GENERATOR`                                                                                | reserved - the workbook records none                                                                                                                         |
@@ -133,8 +133,15 @@ the mock.
   the entity. (Normalizing clipped blocks by id let one night's response overwrite
   another's in the frontend cache; the API's contract is that ids identify, intervals
   answer the question asked.)
-- **Unpaged, deliberately.** A semester is one response (a few thousand blocks, roughly
-  1-2 MB before gzip); a site's component working set is under a hundred pieces.
+- **Unpaged, deliberately** - and the interval queries are far smaller than the shape
+  suggests, because a record is a span, not a row per night. Measured against this
+  export: a whole GS 2025B schedule (`instrumentAvailability` + `telescopeAvailability` +
+  `tooSupport` + `telescopeMode`) is **22 blocks, ~4.5 kB**; a site's whole component
+  history is **188 blocks, ~36 kB**; a site's catalog is **60-75 pieces**. The one large
+  response is the scheduler's simulation-mode range, where the projection repeats every
+  block on every night it touches: a 184-night semester of `telescopeNights` with the
+  full projection selected is **~16,400 blocks, ~3.9 MB** before gzip. That is the case
+  worth designing the SQL around; nothing the UI asks for comes close.
 - **One designed error:** `telescopeNights` rejects more than 400 nights with a plain
   `GraphQLError` naming the bound - above a semester, below an accidental decade.
   Everything else is standard GraphQL validation behaviour.
@@ -142,7 +149,7 @@ the mock.
 ## Example operations and responses
 
 Real requests against real data: every response below was captured from the mock
-(the workbook import of 2026-08-11), and
+as served on 2026-08-12, and
 [`src/test/endpointsExamples.test.ts`](src/test/endpointsExamples.test.ts) executes
 every query in this file against the served schema, so a documented example cannot
 silently go stale. Responses are trimmed where a `// …` comment says so; the values
@@ -274,7 +281,10 @@ query {
           "usage": "SCIENCE",
           "interval": { "start": "2025-11-19T17:00:00Z", "end": "2025-11-20T17:00:00Z" },
         },
-        // … Ports 2-5: GCAL, GMOS-S, Canopus, Flamingos2, all SCIENCE all night
+        // … Ports 2-5: GCAL, GMOS-S, Canopus, Flamingos2, all SCIENCE all night,
+        // then the three records with no port - AcqCam, GPI and SCORPIO, each
+        // UNAVAILABLE in a storage location. A night answers every instrument
+        // record, not only the mounted ones; see "Instruments off the telescope".
       ],
       "telescopeAvailability": [
         {
@@ -315,7 +325,7 @@ query {
           "interval": { "start": "2025-11-20T03:00:00Z", "end": "2025-11-20T17:00:00Z" },
           "component": { "code": "R400_G5325", "name": "R400", "barcode": null },
         },
-        // … ~70 more component blocks, whole-night
+        // … 74 more component blocks, whole-night
       ],
     },
   },
@@ -507,8 +517,8 @@ query {
 An instrument's location record is the same shape whether it is on a port or in
 the lab, which is what lets one query answer "where is everything". Note that
 **site is not on the instrument** - it is on the record, because site assignment
-is time-bounded operational data (`v1-domain-model.md` §5.1). In practice an
-instrument does not move between telescopes, and the mock never moves one.
+is time-bounded operational data. In practice an instrument does not move between
+telescopes, and the mock never moves one.
 
 ### A closure with its reason
 
@@ -673,8 +683,6 @@ query {
 
 ## What the scheduler needs
 
-From `v1-scheduler-integration.md`, unchanged by anything above:
-
 - **One query, `telescopeNights`** - one night in real-time mode, up to a semester in
   simulation mode, the same shape over any range. It reads the live records directly:
   no draft state, no schedule id, no publish cycle between a staff correction and its
@@ -693,7 +701,10 @@ From `v1-scheduler-integration.md`, unchanged by anything above:
 - **Performance shape**: bounded SQL per request regardless of range (the projection
   wants a view, not per-night assembly - Grackle N+1 on nested joins is the named
   risk); real-time mode is one small indexed range scan, sub-100 ms target; no
-  subscriptions - the scheduler re-queries after events from its other sources.
+  subscriptions - the scheduler re-queries after events from its other sources. The
+  size to design against is simulation mode, measured under "Unpaged, deliberately"
+  above: the underlying rows are few, but the projection repeats each on every night
+  it touches.
 - **LGS availability is served**: the LGS subsystem's blocks, nightly from the
   workbook (GN records the laser available, GS records none), beside PWFS1 and
   PWFS2. The rest of the subsystem enum awaits entered data. One caveat worth a
@@ -705,18 +716,28 @@ From `v1-scheduler-integration.md`, unchanged by anything above:
   observe with should read `location.type == PORT` (and `usage`), exactly as the
   schedule views do.
 - **Still reserved, not yet in the schema**: the planned-versus-current
-  availability split (`CurrentTelescopeAvailability`). Its field shape is
-  reserved in the odb docs; this contract is unchanged when it lands. Mode, ToO
-  and subsystem blocks, listed as reserved there on 2026-08-10, are served now.
+  availability split (`CurrentTelescopeAvailability`). Nothing in this contract
+  changes when it lands - it adds a query rather than altering one.
 
 ## Shared types
 
-The real service imports shared scalars and types from `OdbSchema.graphql` - `Timestamp`,
-`TimestampInterval`, `Site`, `Date`, `Semester`, `NonEmptyString`, `PosInt` - which the
-preview SDL reproduces field for field, so no frontend operation changes when the
-schemas swap (`tasks/codegen.ts` moves to `@gemini-hlsw/lucuma-schemas/resource`).
-`Instrument` is deliberately **not** imported - see "The record types" above for what
-it carries beyond lucuma-core's and why mapping the two is still open with operations.
-`Partner` mirrors lucuma-core's seven tags. Resource-owned
-inputs are `TimestampIntervalInput` and `DateIntervalInput`, both half-open with the
-start inclusive.
+The real service is expected to import these from the shared ODB schema rather than
+redeclare them; the preview SDL reproduces each one field for field, so no frontend
+operation changes when the schemas swap (`tasks/codegen.ts` moves to
+`@gemini-hlsw/lucuma-schemas/resource`).
+
+For orientation on what "swap" means: the published
+`@gemini-hlsw/lucuma-odb-schemas/resource` is still the proof-of-concept schema - 60
+lines, one query (`telescopeNightTimeline`). This document describes what replaces it,
+and the preview SDL here is what codegen reads until it does.
+
+- **Scalars**: `Date`, `Timestamp`, `Semester`, `NonEmptyString`, `PosInt`,
+  `ProgramReferenceLabel`, and `Long` / `BigDecimal` (used only by `TimeSpan`'s fields).
+- **Types**: `TimestampInterval` (`start` inclusive, `end` exclusive, plus a derived
+  `duration: TimeSpan!`), `TimeSpan`, and the `Site` enum.
+- **Resource-owned inputs**: `TimestampIntervalInput` and `DateIntervalInput`, both
+  half-open with the start inclusive.
+
+`Instrument` is deliberately **not** shared - see "The record types" above for what it
+carries beyond lucuma-core's and why mapping the two is still open with operations.
+`Partner` mirrors lucuma-core's seven tags.
