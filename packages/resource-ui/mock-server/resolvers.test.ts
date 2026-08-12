@@ -400,6 +400,52 @@ describe('components', () => {
   });
 });
 
+describe('telescopeSubsystemAvailability', () => {
+  const SUBSYSTEMS = `
+    query ($site: Site!, $interval: TimestampIntervalInput!, $subsystems: [TelescopeSubsystem!]) {
+      telescopeSubsystemAvailability(site: $site, interval: $interval, subsystems: $subsystems) {
+        subsystem
+        usage
+        powerSource
+        interval { start end }
+      }
+    }`;
+  const NOVEMBER = { start: '2025-11-01T00:00:00Z', end: '2025-11-08T00:00:00Z' };
+
+  it('serves the workbook subsystems: the sensors, and the laser per site', async () => {
+    const gs = await run(SUBSYSTEMS, { site: 'GS', interval: NOVEMBER });
+    const records = gs.telescopeSubsystemAvailability as { subsystem: string; usage: string }[];
+
+    expect(new Set(records.map((record) => record.subsystem))).toEqual(new Set(['PWFS1', 'PWFS2', 'LGS']));
+    // Gemini South has no laser: "No" every night is a recorded fact, not a gap.
+    expect(records.find((record) => record.subsystem === 'LGS')?.usage).toBe('UNAVAILABLE');
+
+    const gn = await run(SUBSYSTEMS, { site: 'GN', interval: NOVEMBER });
+    const north = gn.telescopeSubsystemAvailability as { subsystem: string; usage: string }[];
+    expect(north.find((record) => record.subsystem === 'LGS')?.usage).toBe('SCIENCE');
+  });
+
+  it('filters by subsystem, for a consumer that only wants the laser', async () => {
+    const data = await run(SUBSYSTEMS, { site: 'GN', interval: NOVEMBER, subsystems: ['LGS'] });
+    const records = data.telescopeSubsystemAvailability as { subsystem: string }[];
+
+    expect(records.length).toBeGreaterThan(0);
+    expect(new Set(records.map((record) => record.subsystem))).toEqual(new Set(['LGS']));
+  });
+
+  it('rides the night projection, clipped like every other night fact', async () => {
+    const data = await run(
+      `query { telescopeNight(site: GS, observingNight: "2025-11-20") {
+        subsystems { subsystem usage interval { start end } }
+      } }`,
+    );
+    const night = data.telescopeNight as { subsystems: { interval: { start: string; end: string } }[] };
+
+    expect(night.subsystems.length).toBeGreaterThan(0);
+    expect(night.subsystems[0]?.interval).toEqual({ start: '2025-11-19T17:00:00Z', end: '2025-11-20T17:00:00Z' });
+  });
+});
+
 describe('components - existence', () => {
   const EXISTENCE = `
     query ($site: Site!, $includeDeleted: Boolean!) {

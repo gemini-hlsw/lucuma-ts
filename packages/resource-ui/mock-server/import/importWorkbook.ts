@@ -72,7 +72,9 @@ const readSheet = (sheet: Worksheet, site: ImportSite, notes: string[]): SiteRow
   const statusColumns = [...headers.keys()].filter(
     (header) => !FIXED_COLUMNS.includes(header) && !PORT_COLUMNS.includes(header),
   );
-  const ignored = statusColumns.filter((header) => instrumentOf(header) === null);
+  // The wavefront-sensor subsystems the parser reads from `statuses`.
+  const subsystemColumns = ['PWFS1', 'PWFS2'];
+  const ignored = statusColumns.filter((header) => instrumentOf(header) === null && !subsystemColumns.includes(header));
   if (ignored.length > 0) {
     notes.push(`${site}: columns with no schema home, not imported: ${ignored.join(', ')}.`);
   }
@@ -102,9 +104,6 @@ const readSheet = (sheet: Worksheet, site: ImportSite, notes: string[]): SiteRow
       ),
     });
   });
-
-  const lgs = new Set(rows.map((row) => row.lgs));
-  notes.push(`${site}: LGS column (${[...lgs].join('/')}) has no schema home, not imported.`);
 
   return { site, rows };
 };

@@ -123,6 +123,19 @@ export interface ImportedTooSupport {
   readonly note: string | null;
 }
 
+/** The subsystems the workbook records nightly. */
+export type SubsystemName = 'PWFS1' | 'PWFS2' | 'LGS';
+
+/** A subsystem's operational state over a span, from its workbook column. */
+export interface ImportedSubsystem {
+  readonly site: ImportSite;
+  readonly subsystem: SubsystemName;
+  readonly usage: 'SCIENCE' | 'ENGINEERING' | 'UNAVAILABLE';
+  readonly start: string;
+  readonly end: string;
+  readonly note: string | null;
+}
+
 /** The telescope's operating mode over a span, from `Mode/Program`. */
 export interface ImportedTelescopeMode {
   readonly site: ImportSite;
@@ -169,6 +182,8 @@ export interface ImportedSchedule {
   /** ToO support and telescope mode records, from the workbook's columns. */
   readonly tooSupport?: readonly ImportedTooSupport[];
   readonly modes?: readonly ImportedTelescopeMode[];
+  /** Subsystem records: the PWFS1, PWFS2 and LGS columns, nightly. */
+  readonly subsystems?: readonly ImportedSubsystem[];
   /**
    * What a source says about the *nights* rather than the ports: public
    * holidays and printed moon dates. The workbook carries neither, so these

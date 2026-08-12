@@ -17,8 +17,11 @@
  *
  * ## What is deliberately not imported
  *
- * - **Wavefront-sensor columns** (PWFS1, PWFS2, the OIWFS columns) and the
- *   constant **LGS** column: no schema home. Warned once each.
+ * - The **OIWFS columns**: an OIWFS is an instrument component, not a
+ *   telescope subsystem, and the component layer is synthetic until real ICTD
+ *   data arrives - partially real component records would cross that
+ *   quarantine. Warned once each. (PWFS1, PWFS2 and LGS are imported, as
+ *   subsystem records.)
  * - A **trailing one-night semester** (GN's export runs a single evening into
  *   2027A): trimmed as an export artifact, with a warning.
  */
@@ -27,9 +30,11 @@ import type {
   ImportedBlock,
   ImportedClosure,
   ImportedSchedule,
+  ImportedSubsystem,
   ImportedTelescopeMode,
   ImportedTooSupport,
   ImportSite,
+  SubsystemName,
   TelescopeModeType,
   TooSupportLevel,
 } from './blocks.ts';
@@ -326,6 +331,38 @@ const buildSemester = (
     }
   }
 
+  // The wavefront sensors, nightly, in the same usability vocabulary as the
+  // instruments - and the LGS column, whose Yes/No is the laser being
+  // available for science or not. Printed every night, so both are recorded
+  // facts, never gaps.
+  const subsystems: ImportedSubsystem[] = [];
+  const subsystemRecord = (subsystem: SubsystemName, run: { key: string; first: string; last: string }) => {
+    const usage =
+      subsystem === 'LGS' ? (run.key === 'Yes' ? 'SCIENCE' : 'UNAVAILABLE') : USAGE[run.key as keyof typeof USAGE];
+    if (usage === undefined) {
+      warnings.push(`${site} ${semester}: unrecognised ${subsystem} value "${run.key}" - not imported.`);
+      return;
+    }
+    const span = spanFields(site, run.first, run.last);
+    subsystems.push({ site, subsystem, usage, start: span.start, end: span.end, note: null });
+  };
+  for (const subsystem of ['PWFS1', 'PWFS2'] as const) {
+    for (const run of runsBy(
+      rows,
+      (row) => row.statuses[subsystem] ?? null,
+      (a, b) => a === b,
+    )) {
+      subsystemRecord(subsystem, run);
+    }
+  }
+  for (const run of runsBy(
+    rows,
+    (row) => (row.lgs === '' ? null : row.lgs),
+    (a, b) => a === b,
+  )) {
+    subsystemRecord('LGS', run);
+  }
+
   // The off-port rows join the port rows, in the order they first appear, so
   // every view that builds its rows from `rowLabels` draws them.
   const offPortLabels = [...new Set(blocks.map((block) => block.rowLabel))].filter(
@@ -344,6 +381,7 @@ const buildSemester = (
     closures,
     tooSupport,
     modes,
+    subsystems,
     holidays: [],
     moonEvents: [],
     warnings,

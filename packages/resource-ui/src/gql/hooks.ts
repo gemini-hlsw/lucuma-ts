@@ -15,6 +15,7 @@ import {
   toMountings,
   toNightComponents,
   toPublishedSemesters,
+  toSubsystemBlocks,
   toTooBlocks,
 } from '@/domain/adapters';
 import type {
@@ -26,6 +27,7 @@ import type {
   Mounting,
   PublishedSemester,
   Site,
+  SubsystemBlock,
   TooBlock,
 } from '@/domain/types';
 
@@ -105,6 +107,8 @@ export interface NightScheduleResult extends ScheduleResult {
   readonly apiInterval: ApiInterval | undefined;
   /** The component records the night projection carries, clipped to the night. */
   readonly nightComponents: NightComponents;
+  /** Subsystem records over the night - PWFS1, PWFS2, LGS from the workbook. */
+  readonly subsystemBlocks: readonly SubsystemBlock[];
 }
 
 const NO_COMPONENTS: NightComponents = { components: [], blocks: [] };
@@ -119,6 +123,7 @@ export const useNightSchedule = (site: Site, observingNight: string, bounds: Api
   const closures = toClosures(data?.telescopeAvailability ?? []);
   const tooBlocks = toTooBlocks(data?.tooSupport ?? []);
   const modeBlocks = toModeBlocks(data?.telescopeMode ?? []);
+  const subsystemBlocks = toSubsystemBlocks(data?.telescopeSubsystemAvailability ?? []);
   const nightComponents = data === undefined ? NO_COMPONENTS : toNightComponents(data.telescopeNight.components);
   return {
     mountings,
@@ -129,6 +134,7 @@ export const useNightSchedule = (site: Site, observingNight: string, bounds: Api
     apiInterval: data?.telescopeNight.interval,
     tooBlocks,
     modeBlocks,
+    subsystemBlocks,
     nightComponents,
   };
 };

@@ -146,6 +146,28 @@ enum Partner {
   US
 }
 
+"""
+A telescope subsystem the schedule can state operational facts about - the
+requirement's example set. ALTAIR and CANOPUS also appear in `Instrument`,
+where the schedules mount them; which home they keep is open with operations.
+"""
+enum TelescopeSubsystem {
+  PWFS1
+  PWFS2
+  ALTAIR
+  CANOPUS
+  LGS
+  GPOL
+  DOME_SHUTTER
+  DOME_VENT_GATES
+}
+
+"What powers a subsystem over a span, where operations record it."
+enum PowerSource {
+  COMMERCIAL
+  GENERATOR
+}
+
 "Where an instrument physically is."
 enum InstrumentLocationType {
   "Mounted on a telescope port; `port` says which."
@@ -353,6 +375,7 @@ type TelescopeNight {
   telescopeAvailability: [TelescopeAvailabilityBlock!]!
   tooSupport: [TooSupportBlock!]!
   telescopeMode: [TelescopeModeBlock!]!
+  subsystems: [TelescopeSubsystemAvailabilityBlock!]!
   "Component identity for observation matching - the scheduler contract keeps it in the night."
   components: [InstrumentComponentAvailabilityBlock!]!
 }
@@ -481,6 +504,24 @@ type InstrumentComponentAvailabilityBlock implements ScheduleBlock {
   location: ComponentLocation!
 }
 
+"""
+A telescope subsystem's operational state over an interval.
+
+The workbook records PWFS1, PWFS2 and the LGS nightly; the other subsystems
+await entered data. LGS availability is this block on the LGS subsystem - a
+laser run can cover part of a night like any other interval fact.
+"""
+type TelescopeSubsystemAvailabilityBlock implements ScheduleBlock {
+  id: ID!
+  site: Site!
+  interval: TimestampInterval!
+  note: NonEmptyString
+  subsystem: TelescopeSubsystem!
+  usage: ResourceUsage!
+  "Recorded when operations state it; the workbook carries none."
+  powerSource: PowerSource
+}
+
 type Query {
   "Every site + semester Resource holds, for the picker."
   publishedSemesters: [PublishedSemester!]!
@@ -528,6 +569,14 @@ type Query {
 
   "Telescope mode records intersecting an interval. Same clipping contract."
   telescopeMode(site: Site!, interval: TimestampIntervalInput!, clip: Boolean! = false): [TelescopeModeBlock!]!
+
+  "Subsystem records intersecting an interval. Same clipping contract."
+  telescopeSubsystemAvailability(
+    site: Site!
+    interval: TimestampIntervalInput!
+    clip: Boolean! = false
+    subsystems: [TelescopeSubsystem!]
+  ): [TelescopeSubsystemAvailabilityBlock!]!
 
   """
   The component catalog a site's records cover - the identity half of the

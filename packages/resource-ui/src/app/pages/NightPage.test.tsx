@@ -190,6 +190,18 @@ describe('NightPage', () => {
     await expect.poll(labels).not.toBe(siteLabels);
   });
 
+  it('heads the chart with the subsystem rows - the sensors and the laser', async () => {
+    const screen = await openNight('/night?site=GS&night=2025-11-14');
+
+    await expect.element(screen.getByText('PWFS1').first()).toBeVisible();
+    await expect.element(screen.getByText('PWFS2').first()).toBeVisible();
+    // GS has no laser: the LGS row states Not available - a recorded fact -
+    // and the Subsystems legend section keys the usage words.
+    await expect.element(screen.getByText('LGS').first()).toBeVisible();
+    const legend = screen.getByLabelText('Legend');
+    await expect.element(legend.getByRole('group', { name: 'Subsystems' })).toBeInTheDocument();
+  });
+
   it('draws an off-port usability run on its own row, named by the instrument', async () => {
     // GN, inside the late-September 2026 `Alopeke visitor run: usable, no
     // port recorded. The five ports stay themselves; the visitor gets a row.

@@ -9,10 +9,12 @@ import type {
   Instrument,
   InstrumentComponentType,
   Partner,
+  PowerSource,
   ResourceUsage,
   Site,
   TelescopeAvailability,
   TelescopeModeType,
+  TelescopeSubsystem,
   TooSupport,
 } from '@gql/gen/graphql';
 
@@ -23,10 +25,12 @@ export type {
   ComponentLocation,
   Instrument,
   Partner,
+  PowerSource,
   ResourceUsage,
   Site,
   TelescopeAvailability,
   TelescopeModeType,
+  TelescopeSubsystem,
   TooSupport,
 };
 
@@ -79,6 +83,17 @@ export interface ModeBlock {
   readonly programReferences: readonly string[];
   /** The partner a BLOCK_SCHEDULING span belongs to. Non-null exactly then. */
   readonly partner: Partner | null;
+  readonly interval: Interval;
+  readonly note: string | null;
+}
+
+/** A telescope subsystem's operational state over a span. */
+export interface SubsystemBlock {
+  readonly id: string;
+  readonly subsystem: TelescopeSubsystem;
+  readonly usage: ResourceUsage;
+  /** Recorded when operations state it; the workbook carries none. */
+  readonly powerSource: PowerSource | null;
   readonly interval: Interval;
   readonly note: string | null;
 }

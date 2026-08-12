@@ -16,6 +16,7 @@ import type {
   ImportedBlock,
   ImportedClosure,
   ImportedSchedule,
+  ImportedSubsystem,
   ImportedTelescopeMode,
   ImportedTooSupport,
   ImportSite,
@@ -46,6 +47,12 @@ export interface StoredTelescopeMode extends ImportedTelescopeMode {
   readonly semester: string;
 }
 
+/** A subsystem record with the stable id the API exposes it under. */
+export interface StoredSubsystem extends ImportedSubsystem {
+  readonly id: string;
+  readonly semester: string;
+}
+
 /**
  * Ids are positional within a schedule.
  *
@@ -62,6 +69,7 @@ export class MockStore {
   readonly closures: readonly StoredClosure[];
   readonly tooSupport: readonly StoredTooSupport[];
   readonly modes: readonly StoredTelescopeMode[];
+  readonly subsystems: readonly StoredSubsystem[];
   /** The synthetic ICTD layer - see components.ts for its three rules. */
   readonly components: readonly CatalogComponent[];
   readonly componentBlocks: readonly SynthesizedComponentBlock[];
@@ -93,6 +101,13 @@ export class MockStore {
       (schedule.modes ?? []).map((record, index) => ({
         ...record,
         id: idOf(schedule, 'm', index),
+        semester: schedule.semester,
+      })),
+    );
+    this.subsystems = this.state.schedules.flatMap((schedule) =>
+      (schedule.subsystems ?? []).map((record, index) => ({
+        ...record,
+        id: idOf(schedule, 's', index),
         semester: schedule.semester,
       })),
     );
@@ -137,5 +152,9 @@ export class MockStore {
 
   modesFor(site: ImportSite): readonly StoredTelescopeMode[] {
     return this.modes.filter((record) => record.site === site);
+  }
+
+  subsystemsFor(site: ImportSite): readonly StoredSubsystem[] {
+    return this.subsystems.filter((record) => record.site === site);
   }
 }

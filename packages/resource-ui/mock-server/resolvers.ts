@@ -14,7 +14,14 @@ import { GraphQLError, GraphQLScalarType } from 'graphql';
 
 import type { CatalogComponent, SynthesizedComponentBlock } from './components.ts';
 import type { ImportSite } from './import/blocks.ts';
-import type { MockStore, StoredBlock, StoredClosure, StoredTelescopeMode, StoredTooSupport } from './store.ts';
+import type {
+  MockStore,
+  StoredBlock,
+  StoredClosure,
+  StoredSubsystem,
+  StoredTelescopeMode,
+  StoredTooSupport,
+} from './store.ts';
 import { clipInterval, intervalsOverlap, type MockInterval, observingNightInterval } from './time.ts';
 
 /** Above a semester, below an accidental decade (v1-scheduler-integration.md §4). */
@@ -166,6 +173,17 @@ const modeBlock = (record: StoredTelescopeMode, interval: MockInterval): unknown
   partner: record.partner,
 });
 
+const subsystemBlock = (record: StoredSubsystem, interval: MockInterval): unknown => ({
+  id: record.id,
+  site: record.site,
+  interval,
+  note: record.note,
+  subsystem: record.subsystem,
+  usage: record.usage,
+  // The workbook records no power source; entered data may.
+  powerSource: null,
+});
+
 /** Clips every record touching `bounds` to it, dropping those that miss. */
 const clipAll = <T extends { start: string; end: string }>(
   records: readonly T[],
@@ -182,6 +200,7 @@ const nightProjection = (store: MockStore, site: ImportSite, observingNight: str
   const closures = clipAll(store.closuresFor(site), interval);
   const tooSupport = clipAll(store.tooSupportFor(site), interval);
   const modes = clipAll(store.modesFor(site), interval);
+  const subsystems = clipAll(store.subsystemsFor(site), interval);
   const components = clipAll(store.componentBlocksFor(site), interval);
 
   return {
@@ -192,11 +211,13 @@ const nightProjection = (store: MockStore, site: ImportSite, observingNight: str
     // unavailable". A consumer must be able to tell those apart. The synthetic
     // component layer never decides this: it is derived from the schedules, so
     // counting it would let fake data turn an unrecorded night into a recorded one.
-    dataAvailable: mountings.length > 0 || closures.length > 0 || tooSupport.length > 0 || modes.length > 0,
+    dataAvailable:
+      mountings.length > 0 || closures.length > 0 || tooSupport.length > 0 || modes.length > 0 || subsystems.length > 0,
     instrumentAvailability: mountings.map(({ record, interval: clipped }) => instrumentBlock(record, clipped)),
     telescopeAvailability: closures.map(({ record, interval: clipped }) => closureBlock(record, clipped)),
     tooSupport: tooSupport.map(({ record, interval: clipped }) => tooBlock(record, clipped)),
     telescopeMode: modes.map(({ record, interval: clipped }) => modeBlock(record, clipped)),
+    subsystems: subsystems.map(({ record, interval: clipped }) => subsystemBlock(record, clipped)),
     components: components.map(({ record, interval: clipped }) => componentBlock(store, record, clipped)),
   };
 };
@@ -344,6 +365,23 @@ export const buildResolvers = (store: MockStore) => ({
       return args.clip
         ? clipAll(touching, args.interval).map(({ record, interval }) => modeBlock(record, interval))
         : touching.map((record) => modeBlock(record, intervalOf(record)));
+    },
+
+    telescopeSubsystemAvailability: (
+      _: unknown,
+      args: { site: ImportSite; interval: MockInterval; clip: boolean; subsystems?: readonly string[] | null },
+    ): unknown => {
+      const touching = store
+        .subsystemsFor(args.site)
+        .filter(
+          (record) =>
+            args.subsystems === null || args.subsystems === undefined || args.subsystems.includes(record.subsystem),
+        )
+        .filter((record) => intervalsOverlap(record.start, record.end, args.interval.start, args.interval.end));
+
+      return args.clip
+        ? clipAll(touching, args.interval).map(({ record, interval }) => subsystemBlock(record, interval))
+        : touching.map((record) => subsystemBlock(record, intervalOf(record)));
     },
   },
 });

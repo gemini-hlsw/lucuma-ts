@@ -41,7 +41,16 @@ import {
 
 // Re-exported beside the fills that draw it, so chart code has one import.
 export { USAGE_LABEL } from '@/domain/timeline';
-import type { Closure, Instrument, ModeBlock, Site, TelescopeModeType, TooBlock, TooSupport } from '@/domain/types';
+import type {
+  Closure,
+  Instrument,
+  ModeBlock,
+  Site,
+  SubsystemBlock,
+  TelescopeModeType,
+  TooBlock,
+  TooSupport,
+} from '@/domain/types';
 
 /**
  * One colour per instrument. Keyed by the enum, not by position, so colour
@@ -208,6 +217,18 @@ export const tooLegendExtras = (tooBlocks: readonly TooBlock[]): LegendExtra[] =
   }));
 
 /**
+ * The subsystem rows' keys - one Subsystems legend section for all of them,
+ * since every subsystem row speaks the same usage vocabulary: quiet for
+ * Science, the bright neutral for anything worth noticing.
+ */
+export const subsystemLegendExtras = (subsystemBlocks: readonly SubsystemBlock[]): LegendExtra[] =>
+  [...new Set(subsystemBlocks.map((block) => block.usage))].map((usage) => ({
+    key: `subsystem-${usage}`,
+    label: USAGE_LABEL[usage],
+    swatch: { backgroundColor: stateFill(usage !== 'SCIENCE') },
+  }));
+
+/**
  * The engineering-use treatment: the instrument's own hue, hatched with its
  * measured ink - identity stays on the hue, the stripes say "reserved". The
  * pattern-fill module renders it (loaded by the chart components); the ink
@@ -235,7 +256,7 @@ const blockColor = (block: TimelineBlock): string | PatternObject => {
     // closure red - the one meaning red ever has on these charts.
     return block.variant === 'CLOSED' ? 'var(--schedule-closed)' : stateFill(false);
   }
-  if (block.state === 'TOO' || block.state === 'MODE') {
+  if (block.state === 'TOO' || block.state === 'MODE' || block.state === 'SUBSYSTEM') {
     return stateFill(isNotableState(block));
   }
   if (block.instrument === null) {
@@ -260,7 +281,7 @@ const blockInk = (block: TimelineBlock): string => {
   if (block.state === 'TELESCOPE') {
     return block.variant === 'CLOSED' ? 'var(--timeline-text)' : stateFillInk(false);
   }
-  if (block.state === 'TOO' || block.state === 'MODE') {
+  if (block.state === 'TOO' || block.state === 'MODE' || block.state === 'SUBSYSTEM') {
     return stateFillInk(isNotableState(block));
   }
   if (block.instrument === null || block.usage === 'UNAVAILABLE') {

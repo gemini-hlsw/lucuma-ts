@@ -40,6 +40,27 @@ describe('semesterOfEvening', () => {
   });
 });
 
+describe('the subsystem import', () => {
+  it('records the wavefront sensors nightly, splitting where the value changes', () => {
+    const schedules = build(
+      nights('2025-08-01', 3, (evening) => ({
+        statuses: { ...row('x').statuses, PWFS1: evening === '2025-08-02' ? 'Not Available' : 'Science' },
+      })),
+    );
+    const pwfs1 = schedules[0]?.subsystems?.filter((record) => record.subsystem === 'PWFS1') ?? [];
+
+    expect(pwfs1.map((record) => record.usage)).toEqual(['SCIENCE', 'UNAVAILABLE', 'SCIENCE']);
+  });
+
+  it('reads the LGS column as the laser being available or not - both recorded facts', () => {
+    const yes = build(nights('2025-08-01', 2, () => ({ lgs: 'Yes' })));
+    const no = build(nights('2025-08-01', 2, () => ({ lgs: 'No' })));
+
+    expect(yes[0]?.subsystems?.find((record) => record.subsystem === 'LGS')?.usage).toBe('SCIENCE');
+    expect(no[0]?.subsystems?.find((record) => record.subsystem === 'LGS')?.usage).toBe('UNAVAILABLE');
+  });
+});
+
 describe('the off-port usability import', () => {
   it('serves a usable instrument no port carries as a mounting with no port, on its own row', () => {
     // Zorro usable but the port column prints nothing for it - the visitor

@@ -12,7 +12,7 @@ import { describe, expect, it } from 'vitest';
 import { buildNightTimeline } from './nightTimeline';
 import { observingNightInterval } from './siteTime';
 import { MODE_ROW_LABEL, TOO_ROW_LABEL } from './timeline';
-import type { Closure, ModeBlock, Mounting, TooBlock } from './types';
+import type { Closure, ModeBlock, Mounting, SubsystemBlock, TooBlock } from './types';
 
 const NIGHT = '2026-11-14';
 const interval = observingNightInterval('GS', NIGHT);
@@ -35,6 +35,7 @@ const build = (
     closures?: readonly Closure[];
     tooBlocks?: readonly TooBlock[];
     modeBlocks?: readonly ModeBlock[];
+    subsystemBlocks?: readonly SubsystemBlock[];
   } = {},
 ) =>
   buildNightTimeline({
@@ -45,6 +46,7 @@ const build = (
     closures: over.closures ?? [],
     tooBlocks: over.tooBlocks ?? [],
     modeBlocks: over.modeBlocks ?? [],
+    subsystemBlocks: over.subsystemBlocks ?? [],
   });
 
 const rowIn = (timeline: ReturnType<typeof build>, row: string) => timeline.rows.find((entry) => entry.key === row);
@@ -212,6 +214,23 @@ describe('the telescope-state rows', () => {
     const block = rowIn(night, MODE_ROW_LABEL)?.blocks[0];
     expect(block?.label).toBe('Block scheduling');
     expect(block?.detail).toBe('University of Hawaii');
+  });
+
+  it('rows each subsystem after the state rows, phrased in usage words', () => {
+    const night = build({
+      closures: [{ id: 'a', availability: 'OPEN', port: null, interval, reason: null }],
+      subsystemBlocks: [
+        { id: 's1', subsystem: 'PWFS1', usage: 'SCIENCE', powerSource: null, interval, note: null },
+        { id: 's2', subsystem: 'LGS', usage: 'UNAVAILABLE', powerSource: null, interval, note: null },
+      ],
+    });
+
+    // Requirement order, after Telescope - and leading, so the header band
+    // counts them (`stateRowCount` reads only leading rows).
+    expect(night.rows.map((row) => row.label)).toEqual(['Telescope', 'PWFS1', 'LGS', ...ROWS]);
+    const lgs = night.rows.find((row) => row.label === 'LGS')?.blocks[0];
+    expect(lgs?.label).toBe('Not available');
+    expect(lgs?.state).toBe('SUBSYSTEM');
   });
 
   it('keeps state blocks out of the instrument legend and the unscheduled key', () => {

@@ -42,8 +42,10 @@ import type {
   Mounting,
   Partner,
   ResourceUsage,
+  SubsystemBlock,
   TelescopeAvailability,
   TelescopeModeType,
+  TelescopeSubsystem,
   TooBlock,
   TooSupport,
 } from './types';
@@ -76,7 +78,9 @@ export type BlockState =
   /** The ToO support level over this span, on the ToO row. */
   | 'TOO'
   /** The telescope's operating mode over this span, on the Mode row. */
-  | 'MODE';
+  | 'MODE'
+  /** A subsystem's operational state over this span, on the subsystem's row. */
+  | 'SUBSYSTEM';
 
 export interface TimelineBlock {
   readonly id: string;
@@ -272,6 +276,21 @@ export const TELESCOPE_ROW_LABEL = 'Telescope';
 export const MODE_ROW_LABEL = 'Mode';
 export const TOO_ROW_LABEL = 'ToO';
 
+/** A subsystem row's gutter label. */
+export const SUBSYSTEM_ROW_LABEL = {
+  PWFS1: 'PWFS1',
+  PWFS2: 'PWFS2',
+  ALTAIR: 'Altair',
+  CANOPUS: 'Canopus',
+  LGS: 'LGS',
+  GPOL: 'GPOL',
+  DOME_SHUTTER: 'Dome shutter',
+  DOME_VENT_GATES: 'Dome vents',
+} satisfies Record<TelescopeSubsystem, string>;
+
+/** The subsystem rows' order: the requirement's enum order, sensors first. */
+const SUBSYSTEM_ORDER = Object.keys(SUBSYSTEM_ROW_LABEL) as readonly TelescopeSubsystem[];
+
 /**
  * Which recorded states are worth noticing - the one semantic decision behind
  * the state rows' two monochrome fills (the fills themselves live in
@@ -308,7 +327,11 @@ const isModeType = (variant: string): variant is TelescopeModeType => variant in
  * the ordinary state and Closed takes the reserved closure red, not the bright
  * neutral.
  */
-export const isNotableState = (block: Pick<TimelineBlock, 'state' | 'variant'>): boolean => {
+export const isNotableState = (block: Pick<TimelineBlock, 'state' | 'variant' | 'usage'>): boolean => {
+  // A subsystem's ordinary state is Science; anything else should catch the eye.
+  if (block.state === 'SUBSYSTEM') {
+    return block.usage !== 'SCIENCE';
+  }
   if (block.variant === null) {
     return false;
   }
@@ -336,6 +359,7 @@ export const collectStateRows = (
   closures: readonly Closure[],
   tooBlocks: readonly TooBlock[],
   modeBlocks: readonly ModeBlock[],
+  subsystemBlocks: readonly SubsystemBlock[] = [],
 ): readonly { readonly label: string; readonly blocks: readonly UnplacedBlock[] }[] => {
   const telescope = closures.filter((closure) => closure.port === null);
   return [
@@ -398,20 +422,65 @@ export const collectStateRows = (
             })),
           },
         ]),
+    // One row per subsystem with records, in the requirement's order. The bar
+    // prints the usage in the same words a mounted span uses; hue stays the
+    // instruments' alone, so these draw in the state neutrals.
+    ...SUBSYSTEM_ORDER.flatMap((subsystem) => {
+      const records = subsystemBlocks.filter((block) => block.subsystem === subsystem);
+      return records.length === 0
+        ? []
+        : [
+            {
+              label: SUBSYSTEM_ROW_LABEL[subsystem],
+              blocks: records.map((block) => ({
+                id: block.id,
+                rowLabel: SUBSYSTEM_ROW_LABEL[subsystem],
+                state: 'SUBSYSTEM' as const,
+                label: USAGE_LABEL[block.usage],
+                instrument: null,
+                usage: block.usage,
+                variant: null,
+                fullInterval: block.interval,
+                nights: nightsIn(block.interval),
+                detail: subsystemDetail(block),
+              })),
+            },
+          ];
+    }),
   ];
+};
+
+/** The subsystem block's tooltip detail: the power source, then the note. */
+const subsystemDetail = (block: SubsystemBlock): string | null => {
+  const parts = [
+    ...(block.powerSource === null ? [] : [block.powerSource === 'GENERATOR' ? 'Generator power' : 'Commercial power']),
+    ...(block.note === null ? [] : [block.note]),
+  ];
+  return parts.length === 0 ? null : parts.join(' - ');
 };
 
 /**
  * Whether a row is one of the telescope-state rows. By label: the labels are
  * this module's own constants, so a subject row cannot collide with them
- * without colliding on screen too.
+ * without colliding on screen too. (An off-port instrument row could share a
+ * subsystem's name - "Canopus" - which is why the count below reads only the
+ * *leading* rows: state rows always precede the subjects.)
  */
-const isStateRowLabel = (label: string): boolean =>
-  label === TELESCOPE_ROW_LABEL || label === MODE_ROW_LABEL || label === TOO_ROW_LABEL;
+const STATE_ROW_LABELS = new Set<string>([
+  TELESCOPE_ROW_LABEL,
+  MODE_ROW_LABEL,
+  TOO_ROW_LABEL,
+  ...Object.values(SUBSYSTEM_ROW_LABEL),
+]);
 
 /** How many leading rows are telescope-state rows - a chart's header band. */
-export const stateRowCount = (rows: readonly { readonly label: string }[]): number =>
-  rows.filter((row) => isStateRowLabel(row.label)).length;
+export const stateRowCount = (rows: readonly { readonly label: string }[]): number => {
+  let count = 0;
+  while (count < rows.length && STATE_ROW_LABELS.has(rows[count]?.label ?? '')) {
+    count += 1;
+  }
+  return count;
+};
 
 export interface TimelineSource {
   readonly rowLabels: readonly string[];

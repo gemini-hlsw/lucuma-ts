@@ -429,6 +429,32 @@
       "note": null
     }
   ],
+  "subsystems": [
+    {
+      "site": "GN",
+      "subsystem": "PWFS1",
+      "usage": "SCIENCE",
+      "start": "2026-08-02T00:00:00.000Z",
+      "end": "2027-02-02T00:00:00.000Z",
+      "note": null
+    },
+    {
+      "site": "GN",
+      "subsystem": "PWFS2",
+      "usage": "SCIENCE",
+      "start": "2026-08-02T00:00:00.000Z",
+      "end": "2027-02-02T00:00:00.000Z",
+      "note": null
+    },
+    {
+      "site": "GN",
+      "subsystem": "LGS",
+      "usage": "SCIENCE",
+      "start": "2026-08-02T00:00:00.000Z",
+      "end": "2027-02-02T00:00:00.000Z",
+      "note": null
+    }
+  ],
   "holidays": [],
   "moonEvents": [],
   "warnings": [

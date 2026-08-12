@@ -15,6 +15,7 @@ import type {
   InstrumentBlockFieldsFragment,
   ModeBlockFieldsFragment,
   NightComponentFieldsFragment,
+  SubsystemBlockFieldsFragment,
   TooBlockFieldsFragment,
 } from '@gql/gen/graphql';
 
@@ -25,6 +26,7 @@ import type {
   ModeBlock,
   Mounting,
   PublishedSemester,
+  SubsystemBlock,
   TooBlock,
 } from './types';
 
@@ -87,6 +89,16 @@ export const toModeBlocks = (blocks: readonly ModeBlockFieldsFragment[]): readon
     mode: block.mode,
     programReferences: block.programReferences,
     partner: block.partner ?? null,
+    interval: toInterval(block.interval),
+    note: block.note ?? null,
+  }));
+
+export const toSubsystemBlocks = (blocks: readonly SubsystemBlockFieldsFragment[]): readonly SubsystemBlock[] =>
+  blocks.map((block) => ({
+    id: block.id,
+    subsystem: block.subsystem,
+    usage: block.usage,
+    powerSource: block.powerSource ?? null,
     interval: toInterval(block.interval),
     note: block.note ?? null,
   }));

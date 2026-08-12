@@ -114,6 +114,12 @@ protect, not the current data. One served source still exercises it: the
 GS night of 2025-11-20. The table builds its rows through the same `componentFinder`
 the browser uses - do not give it its own path from blocks to rows.
 
+**The night view alone adds the subsystem rows** (2026-08-12): PWFS1, PWFS2 and
+LGS beneath the state rows, monochrome in the same usage words a mounted span
+uses, with their own Subsystems legend section. The wide views stay without
+them - three semester-constant rows per month would bury the runs, the same
+reason the calendar draws no routine bars.
+
 **Every schedule view heads itself with the Telescope, Mode and ToO rows**
 when records reach its window (Dan, 2026-08-11) - the workbook's Telescope and
 Mode/Program columns, and the assumed-Standard ToO default, drawn as
@@ -302,11 +308,19 @@ is fetched from the web.
   (Dan, 2026-08-11) - a written level is a fact and supersedes it. (An earlier
   import silently defaulted the blank to "None", which read as a recorded
   prohibition; that was the bug.)
-- **Deliberately not imported**, each with a warning: off-port usability (GN's
-  later `Alopeke visitor runs carry no port), the WFS columns (PWFS1/2, OIWFS)
-  and the constant LGS column (no schema home), and GN's single trailing 2027A
-  evening (an export artifact). An unrecognised port name becomes an UNKNOWN
-  block, never a silent drop.
+- **Off-port usability is imported** (2026-08-12): an instrument the workbook
+  marks usable with no port recorded - the `Alopeke and Zorro visitor runs
+  between mounts - becomes a mounting with no port on the instrument's own row,
+  location UNKNOWN, because the workbook never says where an unmounted
+  instrument physically is.
+- **PWFS1, PWFS2 and the LGS column become subsystem records** (2026-08-12).
+  The LGS Yes/No is the laser available for science or not - both recorded
+  facts, and GS records "No" every night rather than a gap.
+- **Deliberately not imported**, each with a warning: the OIWFS columns (an
+  OIWFS is an instrument _component_, and the component layer stays synthetic
+  until real ICTD data arrives - importing these would cross that quarantine),
+  and GN's single trailing 2027A evening (an export artifact). An unrecognised
+  port name becomes an UNKNOWN block, never a silent drop.
 - The workbook carries no colours, holidays or moon dates: legends key the enum
   palette, the calendar computes its moon, and no holiday chrome appears.
 

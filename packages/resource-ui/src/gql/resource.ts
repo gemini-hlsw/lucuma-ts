@@ -70,6 +70,20 @@ export const MODE_BLOCK_FIELDS = graphql(`
  * with the piece's full identity nested so the night view needs no second
  * round trip to the catalog.
  */
+export const SUBSYSTEM_BLOCK_FIELDS = graphql(`
+  fragment SubsystemBlockFields on TelescopeSubsystemAvailabilityBlock {
+    id
+    subsystem
+    usage
+    powerSource
+    note
+    interval {
+      start
+      end
+    }
+  }
+`);
+
 export const NIGHT_COMPONENT_FIELDS = graphql(`
   fragment NightComponentFields on InstrumentComponentAvailabilityBlock {
     id
@@ -170,6 +184,9 @@ export const NIGHT_SCHEDULE_QUERY = graphql(`
     }
     telescopeMode(site: $site, interval: $interval, clip: false) {
       ...ModeBlockFields
+    }
+    telescopeSubsystemAvailability(site: $site, interval: $interval, clip: false) {
+      ...SubsystemBlockFields
     }
   }
 `);

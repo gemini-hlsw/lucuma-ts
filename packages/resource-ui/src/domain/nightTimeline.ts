@@ -24,7 +24,7 @@ import {
   type TimelineLegend,
   type TimelineRow,
 } from './timeline';
-import type { Closure, Interval, ModeBlock, Mounting, Site, TooBlock } from './types';
+import type { Closure, Interval, ModeBlock, Mounting, Site, SubsystemBlock, TooBlock } from './types';
 
 export interface NightTimeline extends TimelineLegend {
   readonly observingNight: string;
@@ -54,6 +54,8 @@ export interface BuildNightTimelineOptions {
   readonly tooBlocks?: readonly TooBlock[];
   /** Telescope mode records reaching the night. The row appears only when some do. */
   readonly modeBlocks?: readonly ModeBlock[];
+  /** Subsystem records reaching the night. A row appears per subsystem with any. */
+  readonly subsystemBlocks?: readonly SubsystemBlock[];
 }
 
 /** Instants strictly inside the night where a block starts or ends. */
@@ -80,10 +82,14 @@ export const buildNightTimeline = ({
   closures,
   tooBlocks = [],
   modeBlocks = [],
+  subsystemBlocks = [],
 }: BuildNightTimelineOptions): NightTimeline => {
   const interval = observingNightInterval(site, observingNight);
   const rows = placeBlocks(
-    [...collectStateRows(closures, tooBlocks, modeBlocks), ...collectBlocks({ rowLabels, mountings, closures })],
+    [
+      ...collectStateRows(closures, tooBlocks, modeBlocks, subsystemBlocks),
+      ...collectBlocks({ rowLabels, mountings, closures }),
+    ],
     interval,
   );
   const bands = placeBands(closures, interval);

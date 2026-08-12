@@ -418,6 +418,64 @@
       "note": null
     }
   ],
+  "subsystems": [
+    {
+      "site": "GN",
+      "subsystem": "PWFS1",
+      "usage": "SCIENCE",
+      "start": "2024-08-02T00:00:00.000Z",
+      "end": "2024-10-18T00:00:00.000Z",
+      "note": null
+    },
+    {
+      "site": "GN",
+      "subsystem": "PWFS1",
+      "usage": "UNAVAILABLE",
+      "start": "2024-10-18T00:00:00.000Z",
+      "end": "2024-11-14T00:00:00.000Z",
+      "note": null
+    },
+    {
+      "site": "GN",
+      "subsystem": "PWFS1",
+      "usage": "SCIENCE",
+      "start": "2024-11-14T00:00:00.000Z",
+      "end": "2025-02-02T00:00:00.000Z",
+      "note": null
+    },
+    {
+      "site": "GN",
+      "subsystem": "PWFS2",
+      "usage": "SCIENCE",
+      "start": "2024-08-02T00:00:00.000Z",
+      "end": "2024-10-18T00:00:00.000Z",
+      "note": null
+    },
+    {
+      "site": "GN",
+      "subsystem": "PWFS2",
+      "usage": "UNAVAILABLE",
+      "start": "2024-10-18T00:00:00.000Z",
+      "end": "2024-11-14T00:00:00.000Z",
+      "note": null
+    },
+    {
+      "site": "GN",
+      "subsystem": "PWFS2",
+      "usage": "SCIENCE",
+      "start": "2024-11-14T00:00:00.000Z",
+      "end": "2025-02-02T00:00:00.000Z",
+      "note": null
+    },
+    {
+      "site": "GN",
+      "subsystem": "LGS",
+      "usage": "SCIENCE",
+      "start": "2024-08-02T00:00:00.000Z",
+      "end": "2025-02-02T00:00:00.000Z",
+      "note": null
+    }
+  ],
   "holidays": [],
   "moonEvents": [],
   "warnings": []
