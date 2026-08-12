@@ -40,6 +40,37 @@ describe('semesterOfEvening', () => {
   });
 });
 
+describe('the off-port usability import', () => {
+  it('serves a usable instrument no port carries as a mounting with no port, on its own row', () => {
+    // Zorro usable but the port column prints nothing for it - the visitor
+    // between mounts. The workbook does not say where it physically is.
+    const schedules = build(nights('2025-08-01', 2, () => ({ statuses: { Zorro: 'Science' } })));
+    const zorro = schedules[0]?.blocks.find((block) => block.publishedName === 'Zorro');
+
+    expect(zorro).toMatchObject({ kind: 'MOUNTED', instrument: 'CAL_ZORRO', rowLabel: 'Zorro', port: null });
+    expect(zorro?.usage).toBeUndefined();
+    expect(schedules[0]?.rowLabels).toEqual(['Port 1', 'Port 2', 'Port 3', 'Port 4', 'Port 5', 'Zorro']);
+  });
+
+  it('leaves a Not Available column as the gap it is - absence is not a record', () => {
+    // Every unmounted instrument is marked Not Available by default; importing
+    // those would invent an UNAVAILABLE row for every instrument all semester.
+    const schedules = build(nights('2025-08-01', 2, () => ({ statuses: { Zorro: 'Not Available' } })));
+
+    expect(schedules[0]?.blocks.find((block) => block.publishedName === 'Zorro')).toBeUndefined();
+    expect(schedules[0]?.rowLabels).toEqual(['Port 1', 'Port 2', 'Port 3', 'Port 4', 'Port 5']);
+  });
+
+  it('does not double a mounted instrument whose usability column also says Science', () => {
+    // GHOST rides Port 1 in the fixture; its Science status is the port
+    // block's usage, never a second off-port row.
+    const schedules = build(nights('2025-08-01', 2));
+
+    expect(schedules[0]?.blocks.filter((block) => block.instrument === 'GHOST')).toHaveLength(1);
+    expect(schedules[0]?.rowLabels).toHaveLength(5);
+  });
+});
+
 describe('buildWorkbookSchedules', () => {
   it('splits the rows into per-semester schedules with the workbook as version', () => {
     const schedules = build([...nights('2025-07-30', 2), ...nights('2025-08-01', 2)]);
@@ -65,9 +96,16 @@ describe('buildWorkbookSchedules', () => {
   });
 
   it('starts a new block after a gap, never one block silently spanning it', () => {
+    // GHOST leaves both the port and the usability column on the middle night
+    // - truly absent, or it would honestly become an off-port run instead.
     const schedules = build(
       nights('2025-08-01', 3, (evening) =>
-        evening === '2025-08-02' ? { ports: [null, 'GCAL', 'GMOS-S', 'Canopus', 'Flamingos2'] } : {},
+        evening === '2025-08-02'
+          ? {
+              ports: [null, 'GCAL', 'GMOS-S', 'Canopus', 'Flamingos2'],
+              statuses: { 'GMOS-S': 'Science', Canopus: 'Science', Flamingos2: 'Science' },
+            }
+          : {},
       ),
     );
     const ghosts = schedules[0]?.blocks.filter((block) => block.publishedName === 'GHOST') ?? [];
@@ -151,17 +189,6 @@ describe('buildWorkbookSchedules', () => {
       note: 'Assumed: the workbook does not record ToO support',
     });
     expect(written[0]?.tooSupport?.[0]).toMatchObject({ tooSupport: 'NONE', note: null });
-  });
-
-  it('warns about usable-but-unmounted instruments instead of dropping them silently', () => {
-    const schedules = build(
-      nights('2025-08-01', 1, () => ({
-        ports: ['GHOST', 'GCAL', 'GMOS-S', 'Canopus', 'Flamingos2'],
-        statuses: { ...row('x').statuses, Zorro: 'Science' },
-      })),
-    );
-
-    expect(schedules[0]?.warnings.some((warning) => warning.includes('Zorro is "Science" with no port'))).toBe(true);
   });
 
   it('trims a trailing one-night semester as an export artifact, with a warning', () => {

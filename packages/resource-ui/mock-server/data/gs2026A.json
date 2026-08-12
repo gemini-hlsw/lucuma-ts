@@ -5,7 +5,7 @@
   "version": "telescope_schedules.xlsx",
   "nightLabelling": "EVENING",
   "legend": [],
-  "rowLabels": ["Port 1", "Port 2", "Port 3", "Port 4", "Port 5"],
+  "rowLabels": ["Port 1", "Port 2", "Port 3", "Port 4", "Port 5", "Zorro"],
   "blocks": [
     {
       "kind": "MOUNTED",
@@ -119,6 +119,38 @@
       "end": "2026-08-01T18:00:00.000Z",
       "note": null,
       "background": ""
+    },
+    {
+      "kind": "MOUNTED",
+      "site": "GS",
+      "rowLabel": "Zorro",
+      "port": null,
+      "instrument": "CAL_ZORRO",
+      "publishedName": "Zorro",
+      "firstSheetDate": "2026-04-27",
+      "lastSheetDate": "2026-05-01",
+      "firstObservingNight": "2026-04-28",
+      "lastObservingNight": "2026-05-02",
+      "start": "2026-04-27T18:00:00.000Z",
+      "end": "2026-05-02T18:00:00.000Z",
+      "note": null,
+      "background": ""
+    },
+    {
+      "kind": "MOUNTED",
+      "site": "GS",
+      "rowLabel": "Zorro",
+      "port": null,
+      "instrument": "CAL_ZORRO",
+      "publishedName": "Zorro",
+      "firstSheetDate": "2026-06-26",
+      "lastSheetDate": "2026-06-30",
+      "firstObservingNight": "2026-06-27",
+      "lastObservingNight": "2026-07-01",
+      "start": "2026-06-26T18:00:00.000Z",
+      "end": "2026-07-01T18:00:00.000Z",
+      "note": null,
+      "background": ""
     }
   ],
   "closures": [
@@ -157,8 +189,5 @@
   ],
   "holidays": [],
   "moonEvents": [],
-  "warnings": [
-    "GS 2026A: Zorro is \"Science\" with no port 2026-04-27..2026-05-01 - off-port usability is not imported.",
-    "GS 2026A: Zorro is \"Science\" with no port 2026-06-26..2026-06-30 - off-port usability is not imported."
-  ]
+  "warnings": []
 }

@@ -5,7 +5,7 @@
   "version": "telescope_schedules.xlsx",
   "nightLabelling": "EVENING",
   "legend": [],
-  "rowLabels": ["Port 1", "Port 2", "Port 3", "Port 4", "Port 5"],
+  "rowLabels": ["Port 1", "Port 2", "Port 3", "Port 4", "Port 5", "Canopus"],
   "blocks": [
     {
       "kind": "MOUNTED",
@@ -199,6 +199,22 @@
       "end": "2025-02-01T17:00:00.000Z",
       "note": null,
       "background": ""
+    },
+    {
+      "kind": "MOUNTED",
+      "site": "GS",
+      "rowLabel": "Canopus",
+      "port": null,
+      "instrument": "CANOPUS",
+      "publishedName": "Canopus",
+      "firstSheetDate": "2024-09-30",
+      "lastSheetDate": "2024-09-30",
+      "firstObservingNight": "2024-10-01",
+      "lastObservingNight": "2024-10-01",
+      "start": "2024-09-30T17:00:00.000Z",
+      "end": "2024-10-01T17:00:00.000Z",
+      "note": null,
+      "background": ""
     }
   ],
   "closures": [
@@ -303,7 +319,5 @@
   ],
   "holidays": [],
   "moonEvents": [],
-  "warnings": [
-    "GS 2024B: Canopus is \"Science\" with no port 2024-09-30..2024-09-30 - off-port usability is not imported."
-  ]
+  "warnings": []
 }

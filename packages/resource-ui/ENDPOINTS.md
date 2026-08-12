@@ -349,6 +349,10 @@ query {
     publishedName
     rowLabel
     usage
+    location {
+      type
+      port
+    }
     interval {
       start
       end
@@ -367,6 +371,7 @@ query {
         "publishedName": "GHOST",
         "rowLabel": "Port 1",
         "usage": "SCIENCE",
+        "location": { "type": "PORT", "port": 1 },
         "interval": { "start": "2025-08-01T18:00:00Z", "end": "2026-02-01T17:00:00Z" },
       },
       // … the other four ports, also semester-long
@@ -374,6 +379,12 @@ query {
   },
 }
 ```
+
+An off-port run answers the same shape with no port: the late-September 2026
+'Alopeke visitor run at GN is usable with no port recorded, so it serves
+`"location": { "type": "UNKNOWN", "port": null }` on its own row, labelled by
+the instrument's name. `FLOOR`, `LAB` and `BASE` await entered data - the
+workbook never states where an unmounted instrument physically is.
 
 ### A closure with its reason
 

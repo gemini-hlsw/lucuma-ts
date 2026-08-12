@@ -17,10 +17,6 @@
  *
  * ## What is deliberately not imported
  *
- * - **Off-port usability.** Only what a port column mounts is served; an
- *   instrument marked "Science" with no port recorded (GN's later `Alopeke
- *   visitor runs) is surfaced as a warning, not a block - the schema has no
- *   row for an unmounted-but-usable instrument yet.
  * - **Wavefront-sensor columns** (PWFS1, PWFS2, the OIWFS columns) and the
  *   constant **LGS** column: no schema home. Warned once each.
  * - A **trailing one-night semester** (GN's export runs a single evening into
@@ -296,10 +292,13 @@ const buildSemester = (
     ];
   });
 
-  // Usable-but-unmounted instruments: real records the schema has no row for
-  // yet. Surfaced per run so the gap is a decision, not an accident.
+  // Usable-but-unmounted instruments: the workbook records usability for an
+  // instrument no port carries - a visitor between mounts. Served as a
+  // mounting with no port; where it physically is, the workbook does not say,
+  // so its location resolves to UNKNOWN rather than a guessed port.
   for (const column of Object.keys(rows[0]?.statuses ?? {})) {
-    if (instrumentOf(column) === null) {
+    const instrument = instrumentOf(column);
+    if (instrument === null) {
       continue; // Non-instrument columns are warned once, by the reader.
     }
     const offPort = runsBy(
@@ -312,11 +311,26 @@ const buildSemester = (
       (a, b) => a === b,
     );
     for (const run of offPort) {
-      warnings.push(
-        `${site} ${semester}: ${column} is "${run.key}" with no port ${run.first}..${run.last} - off-port usability is not imported.`,
-      );
+      blocks.push({
+        kind: 'MOUNTED',
+        site,
+        rowLabel: column,
+        port: null,
+        instrument,
+        publishedName: column,
+        ...spanFields(site, run.first, run.last),
+        note: null,
+        background: '',
+        ...(run.key === 'Engineering' ? { usage: 'ENGINEERING' as const } : {}),
+      });
     }
   }
+
+  // The off-port rows join the port rows, in the order they first appear, so
+  // every view that builds its rows from `rowLabels` draws them.
+  const offPortLabels = [...new Set(blocks.map((block) => block.rowLabel))].filter(
+    (label) => !(ROW_LABELS as readonly string[]).includes(label),
+  );
 
   return {
     site,
@@ -325,7 +339,7 @@ const buildSemester = (
     version: WORKBOOK_VERSION,
     nightLabelling: 'EVENING',
     legend: [],
-    rowLabels: [...ROW_LABELS],
+    rowLabels: [...ROW_LABELS, ...offPortLabels],
     blocks,
     closures,
     tooSupport,

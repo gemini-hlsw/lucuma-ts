@@ -190,6 +190,15 @@ describe('NightPage', () => {
     await expect.poll(labels).not.toBe(siteLabels);
   });
 
+  it('draws an off-port usability run on its own row, named by the instrument', async () => {
+    // GN, inside the late-September 2026 `Alopeke visitor run: usable, no
+    // port recorded. The five ports stay themselves; the visitor gets a row.
+    const screen = await openNight('/night?site=GN&night=2026-09-26');
+
+    await expect.element(screen.getByTestId('night-timeline')).toBeVisible();
+    await expect.element(screen.getByText('`Alopeke').first()).toBeVisible();
+  });
+
   it('keeps a bar hoverable beneath the sun wash, so the tooltip still comes', async () => {
     const screen = await openNight('/night?site=GS&night=2025-11-14');
     await expect.element(screen.getByTestId('night-timeline')).toBeVisible();

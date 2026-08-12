@@ -233,9 +233,32 @@ describe('instrumentAvailability', () => {
     query ($site: Site!, $start: Timestamp!, $end: Timestamp!, $clip: Boolean!) {
       instrumentAvailability(site: $site, interval: { start: $start, end: $end }, clip: $clip) {
         instrument
+        rowLabel
+        location { type port }
         interval { start end }
       }
     }`;
+
+  it('states where each run is: the port for a mounting, UNKNOWN for an off-port run', async () => {
+    // The `Alopeke visitor run of late September 2026 is usable with no port
+    // recorded - the workbook does not say where it physically is.
+    const data = await run(RANGE, {
+      site: 'GN',
+      start: '2026-09-24T00:00:00.000Z',
+      end: '2026-09-30T00:00:00.000Z',
+      clip: false,
+    });
+    const records = data.instrumentAvailability as {
+      instrument: string;
+      rowLabel: string;
+      location: { type: string; port: number | null };
+    }[];
+
+    const alopeke = records.find((record) => record.instrument === 'ALOPEKE');
+    expect(alopeke).toMatchObject({ rowLabel: '`Alopeke', location: { type: 'UNKNOWN', port: null } });
+    const mounted = records.find((record) => record.rowLabel === 'Port 1');
+    expect(mounted?.location).toEqual({ type: 'PORT', port: 1 });
+  });
 
   it('returns stored intervals by default, so a view can draw past its own edge', async () => {
     const data = await run(RANGE, {

@@ -48,9 +48,12 @@ export type ImportedBlockKind =
 export interface ImportedBlock {
   readonly kind: ImportedBlockKind;
   readonly site: ImportSite;
-  /** The row's label, "Port 3" - the workbook organises both sites by port. */
+  /**
+   * The row's label: "Port 3" for a port mounting, or the instrument's own
+   * workbook name for an off-port usability run.
+   */
   readonly rowLabel: string;
-  /** Port number when the row is a port, else null. */
+  /** Port number when the row is a port; null for an off-port run. */
   readonly port: number | null;
   /** Resolved instrument. Non-null exactly when `kind` is MOUNTED. */
   readonly instrument: Instrument | null;
