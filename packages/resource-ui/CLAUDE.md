@@ -310,9 +310,10 @@ is fetched from the web.
   prohibition; that was the bug.)
 - **Off-port usability is imported** (2026-08-12): an instrument the workbook
   marks usable with no port recorded - the `Alopeke and Zorro visitor runs
-  between mounts - becomes a mounting with no port on the instrument's own row,
-  location UNKNOWN, because the workbook never says where an unmounted
-  instrument physically is.
+between mounts - becomes a mounting with no port, location UNKNOWN, because
+the workbook never says where an unmounted instrument physically is. It is
+**not** a `rowLabels` entry: the schedule views are the ports' picture, and
+  the instrument browser is where an off-port run is legible (Dan, 2026-08-12).
 - **PWFS1, PWFS2 and the LGS column become subsystem records** (2026-08-12).
   The LGS Yes/No is the laser available for science or not - both recorded
   facts, and GS records "No" every night rather than a gap.

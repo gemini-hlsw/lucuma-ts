@@ -202,13 +202,15 @@ describe('NightPage', () => {
     await expect.element(screen.getByText('Not available').first()).toBeVisible();
   });
 
-  it('draws an off-port usability run on its own row, named by the instrument', async () => {
-    // GN, inside the late-September 2026 `Alopeke visitor run: usable, no
-    // port recorded. The five ports stay themselves; the visitor gets a row.
+  it('keeps an off-port run off the chart - the schedule is the ports picture', async () => {
+    // GN, inside the late-September 2026 `Alopeke visitor run: the API serves
+    // it (resolvers.test.ts pins that), but the chart draws the five ports
+    // and nothing else. The instrument browser is where it shows.
     const screen = await openNight('/night?site=GN&night=2026-09-26');
 
-    await expect.element(screen.getByTestId('night-timeline')).toBeVisible();
-    await expect.element(screen.getByText('`Alopeke').first()).toBeVisible();
+    const chart = screen.getByTestId('night-timeline');
+    await expect.element(chart).toBeVisible();
+    await expect.element(chart.getByText('`Alopeke')).not.toBeInTheDocument();
   });
 
   it('keeps a bar hoverable beneath the sun wash, so the tooltip still comes', async () => {

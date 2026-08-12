@@ -62,7 +62,7 @@ describe('the subsystem import', () => {
 });
 
 describe('the off-port usability import', () => {
-  it('serves a usable instrument no port carries as a mounting with no port, on its own row', () => {
+  it('serves a usable instrument no port carries as a mounting with no port', () => {
     // Zorro usable but the port column prints nothing for it - the visitor
     // between mounts. The workbook does not say where it physically is.
     const schedules = build(nights('2025-08-01', 2, () => ({ statuses: { Zorro: 'Science' } })));
@@ -70,7 +70,14 @@ describe('the off-port usability import', () => {
 
     expect(zorro).toMatchObject({ kind: 'MOUNTED', instrument: 'CAL_ZORRO', rowLabel: 'Zorro', port: null });
     expect(zorro?.usage).toBeUndefined();
-    expect(schedules[0]?.rowLabels).toEqual(['Port 1', 'Port 2', 'Port 3', 'Port 4', 'Port 5', 'Zorro']);
+  });
+
+  it('keeps an off-port run out of rowLabels - the schedule views are the ports picture', () => {
+    // Served, but never a chart row: a row empty in most months buys nothing
+    // on the schedule, and the instrument browser is where it is legible.
+    const schedules = build(nights('2025-08-01', 2, () => ({ statuses: { Zorro: 'Science' } })));
+
+    expect(schedules[0]?.rowLabels).toEqual(['Port 1', 'Port 2', 'Port 3', 'Port 4', 'Port 5']);
   });
 
   it('leaves a Not Available column as the gap it is - absence is not a record', () => {

@@ -301,6 +301,11 @@ const buildSemester = (
   // instrument no port carries - a visitor between mounts. Served as a
   // mounting with no port; where it physically is, the workbook does not say,
   // so its location resolves to UNKNOWN rather than a guessed port.
+  //
+  // Deliberately **not** in `rowLabels` (Dan, 2026-08-12): the schedule views
+  // are the ports' picture, and a row that is empty in four months of six
+  // buys nothing there. The instrument browser is where an off-port run is
+  // legible, which is why these records are still served.
   for (const column of Object.keys(rows[0]?.statuses ?? {})) {
     const instrument = instrumentOf(column);
     if (instrument === null) {
@@ -363,12 +368,6 @@ const buildSemester = (
     subsystemRecord('LGS', run);
   }
 
-  // The off-port rows join the port rows, in the order they first appear, so
-  // every view that builds its rows from `rowLabels` draws them.
-  const offPortLabels = [...new Set(blocks.map((block) => block.rowLabel))].filter(
-    (label) => !(ROW_LABELS as readonly string[]).includes(label),
-  );
-
   return {
     site,
     semester,
@@ -376,7 +375,7 @@ const buildSemester = (
     version: WORKBOOK_VERSION,
     nightLabelling: 'EVENING',
     legend: [],
-    rowLabels: [...ROW_LABELS, ...offPortLabels],
+    rowLabels: [...ROW_LABELS],
     blocks,
     closures,
     tooSupport,

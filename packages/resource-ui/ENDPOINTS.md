@@ -383,9 +383,10 @@ query {
 
 An off-port run answers the same shape with no port: the late-September 2026
 'Alopeke visitor run at GN is usable with no port recorded, so it serves
-`"location": { "type": "UNKNOWN", "port": null }` on its own row, labelled by
-the instrument's name. `FLOOR`, `LAB` and `BASE` await entered data - the
-workbook never states where an unmounted instrument physically is.
+`"location": { "type": "UNKNOWN", "port": null }`. The schedule views draw only
+the ports, so these reach a reader through the instrument browser instead.
+`FLOOR`, `LAB` and `BASE` await entered data - the workbook never states where
+an unmounted instrument physically is.
 
 ### A closure with its reason
 

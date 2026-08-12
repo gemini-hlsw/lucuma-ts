@@ -5,7 +5,7 @@
   "version": "telescope_schedules.xlsx",
   "nightLabelling": "EVENING",
   "legend": [],
-  "rowLabels": ["Port 1", "Port 2", "Port 3", "Port 4", "Port 5", "Canopus"],
+  "rowLabels": ["Port 1", "Port 2", "Port 3", "Port 4", "Port 5"],
   "blocks": [
     {
       "kind": "MOUNTED",
