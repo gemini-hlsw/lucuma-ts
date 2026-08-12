@@ -197,6 +197,7 @@ export function SemesterHeatmapLegend({
   telescope = [],
   mode = [],
   too = [],
+  calendar = [],
 }: {
   timeline: Timeline;
   /** The page's state section keys; the cell-state keys join the Instruments
@@ -204,12 +205,22 @@ export function SemesterHeatmapLegend({
   telescope?: readonly LegendExtra[];
   mode?: readonly LegendExtra[];
   too?: readonly LegendExtra[];
+  calendar?: readonly LegendExtra[];
 }): JSX.Element {
   const cellExtras = cellLegendExtras(
     timeline.months.flatMap((month) => buildSemesterCells({ rows: month.rows, nights: month.nights })),
   );
 
-  return <TimelineLegendBar legend={timeline} telescope={telescope} mode={mode} too={too} extras={cellExtras} />;
+  return (
+    <TimelineLegendBar
+      legend={timeline}
+      telescope={telescope}
+      mode={mode}
+      too={too}
+      calendar={calendar}
+      extras={cellExtras}
+    />
+  );
 }
 
 export function SemesterHeatmap({ timeline, site }: { timeline: Timeline; site: Site }): JSX.Element {

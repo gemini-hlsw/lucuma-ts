@@ -169,6 +169,8 @@ export function TimelineLegendBar({
   telescope = [],
   mode = [],
   too = [],
+  sky = [],
+  calendar = [],
   extras = [],
 }: {
   legend: TimelineLegend;
@@ -179,6 +181,10 @@ export function TimelineLegendBar({
   mode?: readonly LegendExtra[];
   /** The ToO section's keys (`tooLegendExtras`). */
   too?: readonly LegendExtra[];
+  /** The Sky section's keys - the daylight and twilight washes. */
+  sky?: readonly LegendExtra[];
+  /** The Calendar section's keys - weekends, now, un-entered nights. */
+  calendar?: readonly LegendExtra[];
   /** Extra keys for the Instruments section - the grid's cell states. */
   extras?: readonly LegendExtra[];
 }): JSX.Element {
@@ -230,6 +236,8 @@ export function TimelineLegendBar({
           ...extras,
         ]}
       />
+      <LegendSection label="Sky" entries={sky} />
+      <LegendSection label="Calendar" entries={calendar} />
     </div>
   );
 }

@@ -14,7 +14,13 @@ import type { PublishedSemester, Site } from '@/domain/types';
 import { buildWeekChanges, buildWeekNightFacts, summarizeWeek } from '@/domain/weekBriefing';
 import { buildWeekTimeline, WEEK_NIGHTS, weekNightLabels } from '@/domain/weekTimeline';
 import { TimelineChart, TimelineLegendBar } from '@/features/timeline/TimelineChart';
-import { modeLegendExtras, telescopeLegendExtras, tooLegendExtras } from '@/features/timeline/timelineOptions';
+import {
+  calendarLegendExtras,
+  modeLegendExtras,
+  skyLegendExtras,
+  telescopeLegendExtras,
+  tooLegendExtras,
+} from '@/features/timeline/timelineOptions';
 import { WeekChangesTable, WeekNightStrip } from '@/features/week/WeekBriefing';
 import { buildWeekChartOptions } from '@/features/week/weekChartOptions';
 import { toApiInterval, usePublishedSemesters, useWeekSchedule } from '@/gql/hooks';
@@ -208,6 +214,12 @@ export default function WeekPage(): JSX.Element {
             telescope={telescopeLegendExtras(closures)}
             mode={modeLegendExtras(modeBlocks)}
             too={tooLegendExtras(tooBlocks)}
+            sky={skyLegendExtras()}
+            calendar={calendarLegendExtras({
+              weekend: week.nights.some((night) => night.isWeekend),
+              now: now !== null && now >= week.interval.start && now < week.interval.end && 'Now',
+              noData: week.nights.some((night) => !night.dataAvailable),
+            })}
           />
           <TimelineChart
             options={options}

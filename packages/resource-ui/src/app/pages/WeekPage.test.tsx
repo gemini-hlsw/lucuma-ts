@@ -133,6 +133,14 @@ describe('WeekPage', () => {
     await expect.element(screen.getByTestId('week-changes')).not.toBeInTheDocument();
   });
 
+  it('keys the chrome as well as the data: the sky it paints and the weekends it shades', async () => {
+    const screen = await openWeek('/week?site=GS&night=2025-11-14');
+    const legend = screen.getByLabelText('Legend');
+
+    await expect.element(legend.getByRole('group', { name: 'Sky' }).getByText('Daylight')).toBeVisible();
+    await expect.element(legend.getByRole('group', { name: 'Calendar' }).getByText('Weekend')).toBeVisible();
+  });
+
   it('keys the colours to the instruments the week actually holds', async () => {
     const screen = await openWeek('/week?site=GS&night=2025-11-14');
     const legend = screen.getByLabelText('Legend');

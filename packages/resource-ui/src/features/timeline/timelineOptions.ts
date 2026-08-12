@@ -207,6 +207,48 @@ export const tooLegendExtras = (tooBlocks: readonly TooBlock[]): LegendExtra[] =
     swatch: { backgroundColor: tooColor(too) },
   }));
 
+/**
+ * The sky keys - the washes a reader sees before any bar.
+ *
+ * Daylight and twilight are the largest painted areas on a night or week
+ * chart and had no key at all; naming them is what stops a reader reading
+ * them as schedule facts.
+ */
+export const skyLegendExtras = (): LegendExtra[] => [
+  { key: 'daylight', label: 'Daylight', swatch: { backgroundColor: 'var(--night-daylight-wash)' } },
+  { key: 'twilight', label: 'Twilight', swatch: { backgroundColor: 'var(--night-twilight-wash)' } },
+];
+
+/** What the calendar chrome marks: weekends, the moment now, un-entered nights. */
+export const calendarLegendExtras = (options: {
+  readonly weekend?: boolean;
+  readonly now?: string | false;
+  readonly noData?: boolean;
+}): LegendExtra[] => [
+  ...(options.weekend === true
+    ? [{ key: 'weekend', label: 'Weekend', swatch: { backgroundColor: 'var(--schedule-weekend)' } }]
+    : []),
+  ...(typeof options.now === 'string'
+    ? [
+        {
+          key: 'now',
+          label: options.now,
+          // A line, not a fill - the swatch says so rather than reading as a block.
+          swatch: { backgroundColor: 'transparent', borderLeft: '2px solid var(--schedule-today)' },
+        },
+      ]
+    : []),
+  ...(options.noData === true
+    ? [
+        {
+          key: 'no-data',
+          label: 'Nothing recorded',
+          swatch: { backgroundColor: 'var(--schedule-no-data)' },
+        },
+      ]
+    : []),
+];
+
 /*
  * No subsystem legend section, deliberately: every subsystem span draws in the
  * one quiet neutral (`isNotableState`) and prints its state in words, so a

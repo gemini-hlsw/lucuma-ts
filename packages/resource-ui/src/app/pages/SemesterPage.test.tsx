@@ -77,6 +77,14 @@ describe('SemesterPage - the chart', () => {
     );
   });
 
+  it('keys the weekend shading it draws under every month', async () => {
+    const screen = await openSemester('/semester?site=GS&semester=2025B');
+
+    await expect
+      .element(screen.getByLabelText('Legend').getByRole('group', { name: 'Calendar' }).getByText('Weekend'))
+      .toBeVisible();
+  });
+
   it('draws the workbook shutdown as a band with its key', async () => {
     // GS opens 2024B shut: evenings 1-15 August are Closed/Shutdown rows.
     const screen = await openSemester('/semester?site=GS&semester=2024B');

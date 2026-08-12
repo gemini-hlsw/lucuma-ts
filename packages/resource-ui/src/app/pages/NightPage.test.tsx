@@ -224,6 +224,14 @@ describe('NightPage', () => {
     await expect.element(chart.getByText('`Alopeke')).not.toBeInTheDocument();
   });
 
+  it('keys the sky it paints - the washes are the largest thing on the chart', async () => {
+    const screen = await openNight('/night?site=GS&night=2025-11-14');
+    const sky = screen.getByLabelText('Legend').getByRole('group', { name: 'Sky' });
+
+    await expect.element(sky.getByText('Daylight')).toBeVisible();
+    await expect.element(sky.getByText('Twilight')).toBeVisible();
+  });
+
   it('keeps a bar hoverable beneath the sun wash, so the tooltip still comes', async () => {
     const screen = await openNight('/night?site=GS&night=2025-11-14');
     await expect.element(screen.getByTestId('night-timeline')).toBeVisible();

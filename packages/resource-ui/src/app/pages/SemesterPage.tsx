@@ -11,7 +11,12 @@ import { SemesterBlockTable } from '@/features/semester/SemesterBlockTable';
 import { SemesterCalendar, SemesterCalendarLegend } from '@/features/semester/SemesterCalendar';
 import { SemesterHeatmap, SemesterHeatmapLegend } from '@/features/semester/SemesterHeatmap';
 import { SemesterTimeline, SemesterTimelineLegend } from '@/features/semester/SemesterTimeline';
-import { modeLegendExtras, telescopeLegendExtras, tooLegendExtras } from '@/features/timeline/timelineOptions';
+import {
+  calendarLegendExtras,
+  modeLegendExtras,
+  telescopeLegendExtras,
+  tooLegendExtras,
+} from '@/features/timeline/timelineOptions';
 import { useSemesterSchedule } from '@/gql/hooks';
 
 /**
@@ -99,6 +104,16 @@ export default function SemesterPage(): JSX.Element {
   const telescopeExtras = telescopeLegendExtras(closures);
   const modeExtras = modeLegendExtras(modeBlocks);
   const tooExtras = tooLegendExtras(tooBlocks);
+  // The chart and grid both shade weekends and mark today; the calendar draws
+  // its own chrome and keys only hues, so it takes none of this.
+  const semesterNights = timeline?.months.flatMap((month) => month.nights) ?? [];
+  const calendarExtras = calendarLegendExtras({
+    weekend: true,
+    now:
+      now !== null &&
+      semesterNights.some((night) => now >= night.interval.start && now < night.interval.end) &&
+      'Today',
+  });
 
   const failure = setsError ?? error;
 
@@ -158,7 +173,13 @@ export default function SemesterPage(): JSX.Element {
 
           {view === 'chart' && (
             <>
-              <SemesterTimelineLegend legend={timeline} telescope={telescopeExtras} mode={modeExtras} too={tooExtras} />
+              <SemesterTimelineLegend
+                legend={timeline}
+                telescope={telescopeExtras}
+                mode={modeExtras}
+                too={tooExtras}
+                calendar={calendarExtras}
+              />
               <SemesterTimeline timeline={timeline} site={selected.site} now={now} />
             </>
           )}
@@ -170,6 +191,7 @@ export default function SemesterPage(): JSX.Element {
                 telescope={telescopeExtras}
                 mode={modeExtras}
                 too={tooExtras}
+                calendar={calendarExtras}
               />
               <SemesterHeatmap timeline={timeline} site={selected.site} />
             </>
