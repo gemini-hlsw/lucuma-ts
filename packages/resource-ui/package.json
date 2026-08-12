@@ -39,6 +39,7 @@
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
+    "@gemini-hlsw/lucuma-odb-schemas": "0.90.0-85-4766185",
     "@graphql-codegen/cli": "7.2.0",
     "@graphql-codegen/client-preset": "6.1.2",
     "@graphql-eslint/eslint-plugin": "4.4.1",
@@ -63,6 +64,8 @@
     "exceljs": "^4.4.0",
     "globals": "17.9.0",
     "graphql": "16.14.2",
+    "graphql-scalars": "1.25.0",
+    "graphql-ws": "6.2.1",
     "graphql-yoga": "5.21.2",
     "playwright": "1.62.1",
     "sass": "1.102.0",
