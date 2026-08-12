@@ -1,0 +1,127 @@
+{
+  "site": "GS",
+  "semester": "2025B",
+  "title": "Gemini South Semester 2025B",
+  "version": "telescope_schedules.xlsx",
+  "nightLabelling": "EVENING",
+  "legend": [],
+  "rowLabels": ["Port 1", "Port 2", "Port 3", "Port 4", "Port 5"],
+  "blocks": [
+    {
+      "kind": "MOUNTED",
+      "site": "GS",
+      "rowLabel": "Port 1",
+      "port": 1,
+      "instrument": "GHOST",
+      "publishedName": "GHOST",
+      "firstSheetDate": "2025-08-01",
+      "lastSheetDate": "2026-01-31",
+      "firstObservingNight": "2025-08-02",
+      "lastObservingNight": "2026-02-01",
+      "start": "2025-08-01T18:00:00.000Z",
+      "end": "2026-02-01T17:00:00.000Z",
+      "note": null,
+      "background": ""
+    },
+    {
+      "kind": "MOUNTED",
+      "site": "GS",
+      "rowLabel": "Port 2",
+      "port": 2,
+      "instrument": "GCAL",
+      "publishedName": "GCAL",
+      "firstSheetDate": "2025-08-01",
+      "lastSheetDate": "2026-01-31",
+      "firstObservingNight": "2025-08-02",
+      "lastObservingNight": "2026-02-01",
+      "start": "2025-08-01T18:00:00.000Z",
+      "end": "2026-02-01T17:00:00.000Z",
+      "note": null,
+      "background": ""
+    },
+    {
+      "kind": "MOUNTED",
+      "site": "GS",
+      "rowLabel": "Port 3",
+      "port": 3,
+      "instrument": "GMOS",
+      "publishedName": "GMOS-S",
+      "firstSheetDate": "2025-08-01",
+      "lastSheetDate": "2026-01-31",
+      "firstObservingNight": "2025-08-02",
+      "lastObservingNight": "2026-02-01",
+      "start": "2025-08-01T18:00:00.000Z",
+      "end": "2026-02-01T17:00:00.000Z",
+      "note": null,
+      "background": ""
+    },
+    {
+      "kind": "MOUNTED",
+      "site": "GS",
+      "rowLabel": "Port 4",
+      "port": 4,
+      "instrument": "CANOPUS",
+      "publishedName": "Canopus",
+      "firstSheetDate": "2025-08-01",
+      "lastSheetDate": "2026-01-31",
+      "firstObservingNight": "2025-08-02",
+      "lastObservingNight": "2026-02-01",
+      "start": "2025-08-01T18:00:00.000Z",
+      "end": "2026-02-01T17:00:00.000Z",
+      "note": null,
+      "background": ""
+    },
+    {
+      "kind": "MOUNTED",
+      "site": "GS",
+      "rowLabel": "Port 5",
+      "port": 5,
+      "instrument": "F2",
+      "publishedName": "Flamingos2",
+      "firstSheetDate": "2025-08-01",
+      "lastSheetDate": "2026-01-31",
+      "firstObservingNight": "2025-08-02",
+      "lastObservingNight": "2026-02-01",
+      "start": "2025-08-01T18:00:00.000Z",
+      "end": "2026-02-01T17:00:00.000Z",
+      "note": null,
+      "background": ""
+    }
+  ],
+  "closures": [
+    {
+      "site": "GS",
+      "port": null,
+      "availability": "OPEN",
+      "firstSheetDate": "2025-08-01",
+      "lastSheetDate": "2026-01-31",
+      "firstObservingNight": "2025-08-02",
+      "lastObservingNight": "2026-02-01",
+      "start": "2025-08-01T18:00:00.000Z",
+      "end": "2026-02-01T17:00:00.000Z",
+      "reason": null
+    }
+  ],
+  "tooSupport": [
+    {
+      "site": "GS",
+      "start": "2025-08-01T18:00:00.000Z",
+      "end": "2026-02-01T17:00:00.000Z",
+      "tooSupport": "STANDARD",
+      "note": "Assumed: the workbook does not record ToO support"
+    }
+  ],
+  "modes": [
+    {
+      "site": "GS",
+      "start": "2025-08-01T18:00:00.000Z",
+      "end": "2026-02-01T17:00:00.000Z",
+      "mode": "QUEUE",
+      "programReference": null,
+      "note": null
+    }
+  ],
+  "holidays": [],
+  "moonEvents": [],
+  "warnings": []
+}
