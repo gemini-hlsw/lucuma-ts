@@ -1,0 +1,243 @@
+import { describe, expect, it } from 'vitest';
+import { page } from 'vitest/browser';
+
+import { observingNightInterval, observingNightOf } from '@/domain/siteTime';
+import { NIGHT_SCHEDULE_QUERY } from '@/gql/resource';
+import { createMockApollo } from '@/test/mockClient';
+import { renderApp } from '@/test/renderApp';
+
+import NightPage from './NightPage';
+import SemesterPage from './SemesterPage';
+
+const openNight = async (route: string) =>
+  renderApp({ element: <NightPage />, route, extraRoutes: [{ path: '/semester', element: <SemesterPage /> }] });
+
+describe('NightPage - the telescope-state rows the workbook records', () => {
+  it('draws the workbook shutdown as a band and a closed Telescope row, with no mode row', async () => {
+    // GS's August 2024 shutdown: the closure band carries the reason, the
+    // Telescope row states the recorded "Closed", and the Mode row is absent -
+    // the telescope is not being operated in any mode during a shutdown. The
+    // assumed Standard ToO support is a semester-wide default and spans it.
+    const screen = await openNight('/night?site=GS&night=2024-08-05');
+
+    await expect.element(screen.getByText('Shutdown').first()).toBeVisible();
+    await expect.element(screen.getByText('Telescope').first()).toBeVisible();
+    await expect.element(screen.getByText('Standard ToOs').first()).toBeVisible();
+    await expect.element(screen.getByText('Queue')).not.toBeInTheDocument();
+  });
+
+  it('heads a visitor night with the Telescope and Mode rows, their values keyed in sections', async () => {
+    // GN, inside the August 2026 MAROON-X visitor run. The legend's Telescope
+    // section keys the recorded values in the words the blocks print, and the
+    // ToO section carries the assumed Standard default.
+    const screen = await openNight('/night?site=GN&night=2026-08-27');
+
+    await expect.element(screen.getByText('Priority visitor').first()).toBeVisible();
+    // One legend section per state row, so a grey repeated across rows is
+    // keyed under the row it belongs to.
+    await expect.element(screen.getByRole('group', { name: 'Telescope' }).getByText('Open')).toBeVisible();
+    await expect.element(screen.getByRole('group', { name: 'Mode' }).getByText('Priority visitor')).toBeVisible();
+    await expect.element(screen.getByRole('group', { name: 'ToO' }).getByText('Standard ToOs')).toBeVisible();
+  });
+
+  it('reads an unknown clock parameter as the site clock, never as UT or blank', async () => {
+    // A mistyped `clock` value degrades to the reading the site works in
+    // (useSelection): only the explicit 'utc' switches the display.
+    const screen = await openNight('/night?site=GS&night=2025-11-14&clock=zulu');
+
+    await expect.element(screen.getByText('14:00 to 14:00 site time', { exact: false })).toBeVisible();
+  });
+});
+
+describe('NightPage', () => {
+  it('draws the night, one row per published port', async () => {
+    const screen = await openNight('/night?site=GS&night=2025-11-14');
+
+    await expect.element(screen.getByText('Night of 2025-11-14')).toBeVisible();
+    await expect.element(screen.getByTestId('night-timeline')).toBeVisible();
+    await expect.element(screen.getByText('GHOST').first()).toBeVisible();
+  });
+
+  it('states the night in the site clock, with its moon', async () => {
+    const screen = await openNight('/night?site=GS&night=2025-11-14');
+
+    // 14:00 to 14:00 at Cerro Pachon, whatever zone the reader is in.
+    await expect.element(screen.getByText('14:00 to 14:00 site time', { exact: false })).toBeVisible();
+    await expect.element(screen.getByText('illuminated', { exact: false })).toBeVisible();
+  });
+
+  it('says no schedule reaches a night outside every published semester', async () => {
+    const screen = await openNight('/night?site=GS&night=2030-01-01');
+
+    await expect.element(screen.getByText('No published schedule covers this night', { exact: false })).toBeVisible();
+    await expect.element(screen.getByTestId('night-timeline')).not.toBeInTheDocument();
+  });
+
+  it('says what is covered instead of dead-ending, and offers the nearest covered night', async () => {
+    const screen = await openNight('/night?site=GS&night=2030-01-01');
+
+    // The workbook's four GS semesters abut into one unbroken range.
+    await expect
+      .element(screen.getByText('Published nights at GS run 2024-08-02 to 2026-08-01', { exact: false }))
+      .toBeVisible();
+
+    await screen.getByRole('button', { name: 'Open the nearest covered night, 2026-08-01' }).click();
+    await expect.element(screen.getByText('Night of 2026-08-01')).toBeVisible();
+    await expect.element(screen.getByTestId('night-timeline')).toBeVisible();
+  });
+
+  // The other absence - a night inside a semester that the workbook never
+  // filled in - is not reachable from its data: every night carries at least
+  // the ToOs column. `dataAvailable: false` is pinned at the API instead, in
+  // mock-server/resolvers.test.ts.
+
+  it('links the semester it belongs to - the reverse of the calendar click-through', async () => {
+    const screen = await openNight('/night?site=GS&night=2025-11-14');
+
+    await screen.getByRole('link', { name: 'Gemini South Semester 2025B', exact: false }).click();
+
+    await expect.element(screen.getByTestId('semester-timeline')).toBeVisible();
+  });
+
+  it('jumps back to the night in progress from a deep link', async () => {
+    const screen = await openNight('/night?site=GS&night=2025-11-14');
+    await expect.element(screen.getByText('Night of 2025-11-14')).toBeVisible();
+
+    await screen.getByRole('button', { name: 'Tonight' }).click();
+
+    // Derived with the page's own function, not a fixture date: Tonight is the
+    // one control that must follow the wall clock.
+    const tonight = observingNightOf('GS', Date.now());
+    await expect.element(screen.getByText(`Night of ${tonight}`)).toBeVisible();
+    await expect.element(screen.getByRole('button', { name: 'Tonight' })).toBeDisabled();
+  });
+
+  it('steps to the next night and back', async () => {
+    const screen = await openNight('/night?site=GS&night=2025-11-14');
+    await expect.element(screen.getByText('Night of 2025-11-14')).toBeVisible();
+
+    await screen.getByRole('button', { name: 'Next night' }).click();
+    await expect.element(screen.getByText('Night of 2025-11-15')).toBeVisible();
+
+    await screen.getByRole('button', { name: 'Previous night' }).click();
+    await expect.element(screen.getByText('Night of 2025-11-14')).toBeVisible();
+  });
+
+  it('keeps a revisited night intact - one window must not poison another', async () => {
+    // Every availability query clips its blocks to the night asked for, under
+    // stable block ids. Normalized by id, night B's response overwrote night
+    // A's intervals, so revisiting A from the cache drew an empty chart and
+    // "no components tonight" (found via Tonight after stepping, 2026-08-10).
+    // Pinned here through prev/next, which is the same cache-hit path.
+    const screen = await openNight('/night?site=GS&night=2025-11-14');
+    const table = screen.getByTestId('night-component-table');
+    await expect.element(table.getByText('B1200', { exact: true })).toBeVisible();
+    const points = () => document.querySelectorAll('[data-testid="night-timeline"] .highcharts-point').length;
+    await expect.poll(points).toBeGreaterThan(0);
+
+    await screen.getByRole('button', { name: 'Next night' }).click();
+    await expect.element(screen.getByText('Night of 2025-11-15')).toBeVisible();
+    await screen.getByRole('button', { name: 'Previous night' }).click();
+    await expect.element(screen.getByText('Night of 2025-11-14')).toBeVisible();
+
+    await expect.element(table.getByText('B1200', { exact: true })).toBeVisible();
+    await expect.poll(points).toBeGreaterThan(0);
+  });
+
+  it('switches site and redraws against that site’s schedule', async () => {
+    const screen = await openNight('/night?site=GN&night=2026-11-14');
+
+    await expect.element(screen.getByText('Gemini North Semester 2026B', { exact: false })).toBeVisible();
+  });
+
+  it('keeps a bar hoverable beneath the sun wash, so the tooltip still comes', async () => {
+    const screen = await openNight('/night?site=GS&night=2025-11-14');
+    await expect.element(screen.getByTestId('night-timeline')).toBeVisible();
+    await expect.poll(() => document.querySelector('[data-testid="night-timeline"] .highcharts-point')).not.toBeNull();
+
+    // Near the bar's left edge the cursor is deep in the daylight wash, which
+    // is deliberately drawn over the bars (PLAN.md §10). Hover resolves to the
+    // element under the cursor, so an overlay that catches the pointer swallows
+    // the tooltip - the wash must be pointer-transparent (global.css).
+    const bar = document.querySelector('[data-testid="night-timeline"] .highcharts-point');
+    await page.elementLocator(bar!).hover({ position: { x: 6, y: 8 } });
+
+    // GHOST runs the whole semester, so this night's tooltip reads "all night".
+    await expect.element(page.getByText('all night')).toBeVisible();
+  });
+});
+
+describe('the components riding tonight', () => {
+  it('lists the installed pieces and counts the stored ones instead of listing them', async () => {
+    const screen = await openNight('/night?site=GS&night=2025-11-14');
+
+    const table = screen.getByTestId('night-component-table');
+    await expect.element(table).toBeVisible();
+    // B1200 rides with GMOS, which the published sheet mounts all semester.
+    await expect.element(table.getByText('B1200', { exact: true })).toBeVisible();
+    // R831 is a spare that never leaves the summit lab: counted, not listed.
+    await expect.element(table.getByText('R831')).not.toBeInTheDocument();
+    await expect.element(screen.getByText('in storage tonight', { exact: false })).toBeVisible();
+  });
+
+  it('names the instant a piece changes mid-night, in the site clock', async () => {
+    // The synthetic R400 fails 60% through GMOS's GS 2025B mounting -
+    // 2025-11-20T03:00Z, midnight site time inside the night labelled
+    // 2025-11-20. This is the first place the night view meets a boundary
+    // inside a night with data the dev server actually serves (PLAN.md §3.1).
+    const screen = await openNight('/night?site=GS&night=2025-11-20');
+
+    const table = screen.getByTestId('night-component-table');
+    await expect.element(table.getByText('R400', { exact: true })).toBeVisible();
+    await expect.element(table.getByText('changes at 00:00')).toBeVisible();
+    // The row reports the state the night ends in: off the telescope, unusable.
+    await expect.element(table.getByText('Summit lab')).toBeVisible();
+    await expect.element(table.getByText('Failed; removed for repair')).toBeVisible();
+  });
+});
+
+describe('the night window the client computes', () => {
+  it('is the one the API resolves, so the blocks asked for are the night drawn', async () => {
+    // siteTime.ts deliberately mirrors mock-server/time.ts, and the page uses
+    // its own result to ask for blocks while showing the API's dataAvailable
+    // for the same night. If the two ever drift, the view would draw one night's
+    // records against another night's axis.
+    const { client } = createMockApollo();
+    const ours = observingNightInterval('GS', '2026-11-14');
+
+    const result = await client.query({
+      query: NIGHT_SCHEDULE_QUERY,
+      variables: {
+        site: 'GS',
+        night: '2026-11-14',
+        interval: { start: new Date(ours.start).toISOString(), end: new Date(ours.end).toISOString() },
+      },
+    });
+
+    const theirs = result.data?.telescopeNight.interval;
+    expect(theirs).toBeDefined();
+    expect(Date.parse(theirs?.start ?? '')).toBe(ours.start);
+    expect(Date.parse(theirs?.end ?? '')).toBe(ours.end);
+  });
+
+  it('agrees across a DST change at Gemini South, where a night is 23 hours', async () => {
+    const { client } = createMockApollo();
+    // Chile springs forward inside the night labelled 2026-09-06.
+    const ours = observingNightInterval('GS', '2026-09-06');
+    expect(ours.end - ours.start).toBe(23 * 3_600_000);
+
+    const result = await client.query({
+      query: NIGHT_SCHEDULE_QUERY,
+      variables: {
+        site: 'GS',
+        night: '2026-09-06',
+        interval: { start: new Date(ours.start).toISOString(), end: new Date(ours.end).toISOString() },
+      },
+    });
+
+    const theirs = result.data?.telescopeNight.interval;
+    expect(theirs).toBeDefined();
+    expect(Date.parse(theirs?.start ?? '')).toBe(ours.start);
+    expect(Date.parse(theirs?.end ?? '')).toBe(ours.end);
+  });
+});
