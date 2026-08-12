@@ -96,7 +96,10 @@ const touchesNight = (span: Interval, night: Interval): boolean => clip(span, ni
 type Bare = Omit<SemesterCell, 'startsRun' | 'runLength' | 'labelSpan' | 'description'>;
 
 const describe = (cell: Bare, rowLabel: string): string => {
-  const night = `night of ${cell.eveningDate}`;
+  // "beginning", the calendar's phrasing: a column is the evening a night
+  // starts, and "night of" is reserved for the end-labelled observing night
+  // the cell's click-through opens.
+  const night = `night beginning ${cell.eveningDate}`;
   switch (cell.kind) {
     case 'MOUNTED':
     case 'STATE':

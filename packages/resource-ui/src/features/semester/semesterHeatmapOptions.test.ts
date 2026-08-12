@@ -22,7 +22,7 @@ const cell = (over: Partial<SemesterCell> = {}): SemesterCell => ({
   instrument: 'GMOS',
   usage: 'SCIENCE',
   label: 'GMOS',
-  description: 'Port 3: GMOS, night of 2026-08-07',
+  description: 'Port 3: GMOS, night beginning 2026-08-07',
   isWeekend: false,
   notable: false,
   startsRun: true,

@@ -281,6 +281,8 @@ describe('runs and labels', () => {
 
   it('gives every cell a sentence a screen reader can read', () => {
     const cells = row(build(), 'Port 4').cells;
-    expect(cells[0]?.description).toBe('Port 4: no instrument scheduled - A&G, night of 2026-08-07');
+    // "beginning": the sentence names the evening the column heads, and "night
+    // of" stays the end-labelled name the click-through opens.
+    expect(cells[0]?.description).toBe('Port 4: no instrument scheduled - A&G, night beginning 2026-08-07');
   });
 });

@@ -57,7 +57,7 @@ const cellTooltip = (custom: HeatmapPointCustom): string => {
   const rows = [
     `<div style="font-weight:600">${escapeHtml(heading)}</div>`,
     `<div style="color:var(--timeline-muted-text)">${escapeHtml(custom.rowLabel)}</div>`,
-    `<div style="margin-top:4px">Night of ${escapeHtml(custom.eveningDate)}</div>`,
+    `<div style="margin-top:4px">Night beginning ${escapeHtml(custom.eveningDate)}</div>`,
   ];
   if (custom.usageLabel !== null) {
     rows.push(`<div style="margin-top:4px">${escapeHtml(custom.usageLabel)}</div>`);
