@@ -37,7 +37,7 @@ const semesterHolding = (
  *
  * This is the view the rest of the model exists for. A run that changes partway
  * through the night is drawn where it changes rather than rounded to a whole
- * night (PLAN.md §3.1), the sun shades the hours nobody can observe in, and an
+ * night (the partial-night non-negotiable), the sun shades the hours nobody can observe in, and an
  * un-entered night says so instead of looking like an idle telescope.
  */
 export default function NightPage(): JSX.Element {

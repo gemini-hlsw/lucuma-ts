@@ -133,7 +133,7 @@ describe('what the superseded grid got wrong', () => {
   it('draws A&G as an absence, not as a shutdown', () => {
     // A&G outlasts any band and is genuinely about Port 4, so it survives - but
     // as UNSCHEDULED. Painting it CLOSED asserts a six-month failure the sheet
-    // gives no evidence for (NEED-CLARIFICATION question 1).
+    // gives no evidence for (the A&G question, still open with operations).
     const cells = row(build(), 'Port 4').cells;
     expect(cells.map((cell) => cell.kind)).toEqual(Array<string>(7).fill('UNSCHEDULED'));
     expect(cells[0]).toMatchObject({ label: 'A&G', instrument: null });

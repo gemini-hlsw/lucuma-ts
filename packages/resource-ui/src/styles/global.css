@@ -144,7 +144,7 @@
   --instrument-iqueye: #00d492; /* emerald-400 */
   --instrument-maroon-x: #4f39f6; /* indigo-600 */
 
-  /* A run whose colour the sheet's key never identifies (PLAN.md §7). A
+  /* A run the importer cannot identify. A
      reserved neutral like the closure red, deliberately outside the two
      validated hue sets: it must read as "identity unresolved", not as an
      instrument, so it is not part of the separation measurement. */

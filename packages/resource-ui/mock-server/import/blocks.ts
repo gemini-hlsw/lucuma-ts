@@ -6,9 +6,9 @@
  * (`fixtures/telescope_schedules.xlsx`, parsed by `workbook.ts`). The published
  * web overview sheets this package used to import are gone: the workbook is the
  * operations team's own record and supersedes them where they disagreed
- * (VALIDATION.md found several such runs).
+ * (the 2026-08-09 validation pass found several such runs).
  *
- * Two rules carried from PLAN.md:
+ * Two standing rules:
  *
  * - **Intervals, never dates.** Every block resolves to a `[start, end)` instant
  *   pair through the observing-night convention, so a partial night is later

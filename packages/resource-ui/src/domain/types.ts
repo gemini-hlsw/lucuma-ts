@@ -98,7 +98,7 @@ export interface MoonEvent {
   readonly phase: 'NEW' | 'FULL';
 }
 
-/** One operational-state value, as everywhere in Resource (PLAN.md §3.2). */
+/** One operational-state value, as everywhere in Resource. */
 export type ComponentUsage = ResourceUsage;
 
 export type ComponentType = InstrumentComponentType;

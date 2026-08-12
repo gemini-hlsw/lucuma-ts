@@ -128,7 +128,7 @@ describe('closures at Gemini South', () => {
 describe('unknown bands', () => {
   it('lets an identified run win the span it shares with an unknown band', () => {
     // Gemini North's sheet has two physical "Visiting" rows sharing one label,
-    // so an unidentified band (PLAN.md §7) can genuinely coincide with a named
+    // so an unidentified (UNKNOWN) band can genuinely coincide with a named
     // run - 'Alopeke inside the light-orange MIQ band in GN 2026B. One chart
     // row cannot draw both, so the named run keeps its whole span and the
     // unknown keeps only what is its own.

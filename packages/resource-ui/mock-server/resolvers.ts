@@ -8,7 +8,7 @@
  * Everything is derived from the imported schedules; nothing is stored per
  * night. A night is a projection - clip every record to the night's interval and
  * report what is left - which is what keeps partial nights working without a
- * special case (PLAN.md §3.1).
+ * special case (the partial-night non-negotiable).
  */
 import { GraphQLError, GraphQLScalarType } from 'graphql';
 
@@ -84,8 +84,8 @@ const instrumentBlock = (block: StoredBlock, interval: MockInterval): unknown =>
   site: block.site,
   interval,
   note: block.note,
-  // An UNKNOWN block is a run whose colour the sheet's key never identifies
-  // (PLAN.md §7). Its printed text, when it has any, is in `note`.
+  // An UNKNOWN block is a run the importer could not identify - an
+  // unrecognised workbook name. Its printed text, when it has any, is in `note`.
   instrument: block.instrument ?? 'UNKNOWN',
   publishedName: block.publishedName ?? block.note ?? 'Unknown',
   rowLabel: block.rowLabel,

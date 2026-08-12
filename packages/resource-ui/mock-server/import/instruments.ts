@@ -5,7 +5,8 @@
  * Some of these are not instruments in the lucuma-core sense - Altair and
  * Canopus are AO subsystems, GCAL is the facility calibration unit - but
  * Resource models everything the schedule mounts as an instrument for now
- * (Dan, 2026-08-07). See NEED-CLARIFICATION.md questions 4 and 5.
+ * (Dan, 2026-08-07); mapping onto lucuma-core - and whether the AO subsystems
+ * belong elsewhere - is still open with operations.
  *
  * A name the workbook introduces later resolves to null and surfaces as an
  * UNKNOWN block plus a warning, so a new instrument shows up as a row to add

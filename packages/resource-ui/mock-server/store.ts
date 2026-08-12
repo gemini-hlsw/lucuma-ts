@@ -2,7 +2,7 @@
  * In-memory store behind the mock schema.
  *
  * Read-only so far: Resource reproduces schedules that already exist, so there
- * is nothing to mutate until editing lands (PLAN.md Phase 4). The store still
+ * is nothing to mutate until editing lands (descoped from v1). The store still
  * takes a seed function and is built fresh per consumer, so the dev server and
  * each browser test hold independent state once writes do arrive.
  */
@@ -117,9 +117,9 @@ export class MockStore {
   }
 
   /**
-   * MOUNTED blocks name an instrument; UNKNOWN blocks are the sheet's unkeyed
-   * colours (PLAN.md §7), served as `Instrument.UNKNOWN` so every cell the
-   * sheet paints is drawn rather than silently missing. ANNOTATION blocks are
+   * MOUNTED blocks name an instrument; UNKNOWN blocks are runs the importer
+   * could not identify, served as `Instrument.UNKNOWN` so every recorded run
+   * is drawn rather than silently missing. ANNOTATION blocks are
    * text over unpainted cells - they mark nothing as available, so they stay
    * unserved until operations say what they mean.
    */

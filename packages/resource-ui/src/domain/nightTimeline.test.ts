@@ -2,8 +2,8 @@
  * The night timeline model.
  *
  * The published sheets are whole-night granular, so every night the mock serves
- * is uniform. The partial-night cases here are synthetic on purpose: PLAN.md
- * §3.1 says the model must never assume night alignment, and this is the only
+ * is uniform. The partial-night cases here are synthetic on purpose: the
+ * partial-night non-negotiable (CLAUDE.md) says the model must never assume night alignment, and this is the only
  * view that can show whether that is still true. If these break, the capability
  * has been lost regardless of what the published data happens to contain.
  */
@@ -86,7 +86,7 @@ describe('the night window', () => {
 });
 
 describe('partial nights', () => {
-  // The load-bearing constraint (PLAN.md §3.1): nothing in the model ever
+  // The load-bearing constraint (the partial-night non-negotiable): nothing in the model ever
   // assumed a block covers a whole night, so a mid-night change needs no
   // special case - it is simply two blocks with a boundary between them.
   const CHANGEOVER = interval.start + 9 * HOUR;

@@ -355,7 +355,7 @@ describe('SemesterPage - the calendar', () => {
     await expect.element(screen.getByRole('button', { name: 'Open night beginning 2024-08-02' })).toBeVisible();
 
     // A closed square is mostly wash; hovering anywhere on it must still
-    // surface the reason (PLAN.md §10). The bars and the date header carry
+    // surface the reason. The bars and the date header carry
     // their own titles; this pins the background's.
     const closed = [...document.querySelectorAll('.rbc-day-bg.night-closed')];
     expect(closed.length).toBeGreaterThan(0);

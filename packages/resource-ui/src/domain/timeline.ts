@@ -14,7 +14,8 @@
  * drawn as nine hundred cells, and everything awkward about that view came from
  * the round trip - labels sized to a reconstructed span, columns pinned to a
  * fixed width, and partial nights impossible to draw at all, which is the one
- * thing PLAN.md §3.1 says must never become impossible.
+ * thing the partial-night non-negotiable (CLAUDE.md) says must never become
+ * impossible.
  *
  * Here a block stays a block: clipped to the window, drawn once, at whatever
  * boundaries it actually has. A block that changes mid-night is two blocks with
@@ -65,7 +66,7 @@ export type BlockState =
   /**
    * The sheet marks the span but names no instrument. "A&G" on Gemini South's
    * Port 4 is the standing example, and what it means for availability is still
-   * open (NEED-CLARIFICATION.md question 1), so it is drawn as an absence rather
+   * open with operations, so it is drawn as an absence rather
    * than assumed to be a six-month failure.
    */
   | 'UNSCHEDULED'
@@ -414,7 +415,7 @@ export const collectBlocks = ({
   return rowLabels.map((rowLabel) => {
     const onRow = mountings.filter((mounting) => mounting.rowLabel === rowLabel);
     // Gemini North's sheet has two physical "Visiting" rows sharing one label,
-    // so an unidentified band (PLAN.md §7) can genuinely coincide with a named
+    // so an unidentified (UNKNOWN) band can genuinely coincide with a named
     // run. This chart has one row per label, so the identified run wins the
     // shared span and the unknown keeps what is genuinely its own - the same
     // rule the wide closure spans apply to port closures below.

@@ -12,9 +12,9 @@
  *   spelled "Telescope Shutdown A&G Maintenance" came out one word per row and
  *   Port 2 read as though it were named "Telescope";
  * - it mapped every port closure to CLOSED, so A&G on Port 4 was painted as a
- *   six-month failure - the reading PLAN.md §7b and NEED-CLARIFICATION question
- *   1 say we do not have evidence for;
- * - it coloured by availability, which is the call §7 reversed.
+ *   six-month failure - a reading the record gives no evidence for (the A&G
+ *   question, still open with operations);
+ * - it coloured by availability, which the identity-colour decision reversed.
  *
  * Nothing here reads a record. It reads `TimelineRow` and `TimelineBand`, after
  * `collectBlocks` has already resolved them, so none of the above can come back.
@@ -37,7 +37,7 @@ export type CellKind =
   /**
    * The sheet marks the night but names no instrument - "A&G" on Gemini South's
    * Port 4. Drawn hollow, not as a closure: what it means for availability is
-   * still open (NEED-CLARIFICATION question 1).
+   * still open with operations.
    */
   | 'UNSCHEDULED'
   /** A recorded telescope state, on the Mode or ToO row. Drawn monochrome. */
@@ -140,8 +140,8 @@ const cellFor = (row: TimelineRow, night: TimelineNight): Bare => {
   }
   if (touching.length > 1 || !coversWholeNight(only.interval, night.interval)) {
     // Two blocks in one night, or one that covers only part of it. Either way the
-    // night is not uniform, which is the case PLAN.md §3.1 says a whole-night
-    // cell must mark rather than flatten. The night view draws where it changes.
+    // night is not uniform, which a whole-night cell must mark rather than
+    // flatten (the partial-night non-negotiable). The night view draws where it changes.
     return { ...base, kind: 'MIXED', instrument: null, label: '' };
   }
   if (only.state === 'TELESCOPE') {

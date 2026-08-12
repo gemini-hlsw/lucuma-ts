@@ -1,13 +1,12 @@
 # Resource mock GraphQL server
 
 A stand-in for the Scala Resource backend, used to develop the UI before it exists. It serves the
-v1 API preview from the eight **real published schedules**, so what the UI draws is what Gemini
-publishes rather than invented demo data - plus GS 2099B, the one hand-written synthetic semester,
-flagged `demo: true` end to end so it can never pass for a published one.
+v1 API preview from the **operations workbook export** (`fixtures/telescope_schedules.xlsx`) -
+nine semesters across both sites, the operations team's own record rather than invented demo data.
 
-`schema.graphql` is the API design deliverable circulated to operations for review
-([PLAN.md](../PLAN.md) §5, Phase 2). `lucuma-odb/resource/docs/v1-graphql-api.md` is the wider
-architecture; PLAN.md §3.3 records what this schema deliberately leaves out.
+`schema.graphql` is the API design deliverable circulated to operations for review.
+`lucuma-odb/resource/docs/v1-graphql-api.md` is the wider architecture;
+[../CLAUDE.md](../CLAUDE.md) records what this schema deliberately leaves out.
 
 ## Running
 
@@ -24,7 +23,7 @@ after any SDL change. Check with `lsof -nP -iTCP:4000 -sTCP:LISTEN`.
 ## The API
 
 Seven queries, all read-only. Resource reproduces schedules that already exist, so there is
-nothing to mutate - editing was descoped from v1 outright (PLAN.md Phase 4).
+nothing to mutate - editing was descoped from v1 outright.
 
 | Query                                                   | For                                               |
 | ------------------------------------------------------- | ------------------------------------------------- |
@@ -53,10 +52,9 @@ field, so the payload here is the payload the Scala service will send.
 
 - `schema.graphql` - the SDL. Codegen source (`tasks/codegen.ts`) **and** the served schema, so the
   UI's generated types cannot drift from what the mock answers with.
-- `seed.ts` - imports the eight generated `data/*.json` files plus `demo.ts`, the one
-  hand-written schedule (GS 2099B, `demo: true`, dated where no published semester can collide).
-  Everything else is imported, which is why the mock cannot drift from the published sheets or
-  decay with the wall clock.
+- `seed.ts` - imports the nine generated `data/*.json` files. Everything is imported from the
+  workbook - there is no hand-written schedule - which is why the mock cannot drift from the
+  operations record or decay with the wall clock.
 - `components.ts` - the synthetic component layer: a catalog of real identities (lucuma-core enum
   tags) whose blocks are derived deterministically from the imported mountings. **The quarantine
   boundary** - swap this one file when the real catalog arrives.
@@ -65,7 +63,7 @@ field, so the payload here is the payload the Scala service will send.
 - `schema.ts` / `server.ts` / `time.ts` - the harness. `buildMockSchema(sdl)` returns an executable
   schema over a fresh store; `server.ts` is the yoga dev server; `time.ts` does observing-night
   interval math (14:00 to 14:00 site-local, via `Intl`, correct across DST at Gemini South).
-- `import/` - the published Excel-exported HTML to `data/*.json`. See [../CLAUDE.md](../CLAUDE.md).
+- `import/` - the operations workbook export to `data/*.json`. See [../CLAUDE.md](../CLAUDE.md).
 
 ## One schema, three consumers
 
@@ -88,9 +86,8 @@ Two things that property does not give you for free:
 
 - No database, no persistence across restarts, and a fresh store per test.
 - The `Instrument` enum is the schedules' vocabulary, not lucuma-core's - `ALTAIR` and `CANOPUS` are
-  AO subsystems and `CAL_ZORRO` names two things. Mapping it onto lucuma-core is deferred
-  ([../NEED-CLARIFICATION.md](../NEED-CLARIFICATION.md) questions 4 and 5).
-- Block ids are plain strings, positional within a schedule. Gid prefixes are the backend's call
-  (PLAN.md §3.3).
+  AO subsystems and `CAL_ZORRO` names two things. Mapping it onto lucuma-core is deferred, still
+  open with operations.
+- Block ids are plain strings, positional within a schedule. Gid prefixes are the backend's call.
 - Temporary. Point `tasks/codegen.ts` at `@gemini-hlsw/lucuma-schemas/resource` when the real
   backend ships.

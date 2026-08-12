@@ -4,7 +4,7 @@
  * The night is the smallest window and the only one where the model's central
  * claim is visible. A block that changes partway through the night is drawn
  * where it changes, because nothing here ever rounded it to a whole night in the
- * first place (PLAN.md §3.1). The semester and week can only say "mixed"; this
+ * first place (the partial-night non-negotiable). The semester and week can only say "mixed"; this
  * view says when.
  *
  * It is also where "not recorded" is stated out loud. Every other view infers an

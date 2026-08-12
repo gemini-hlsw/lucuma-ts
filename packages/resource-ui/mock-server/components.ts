@@ -2,7 +2,7 @@
  * The synthetic instrument-component layer - the mock's stand-in for the ICTD
  * catalog, until Bryan supplies real data.
  *
- * **This module is the quarantine boundary** (PLAN.md Phase 2 rule 6). Nothing
+ * **This module is the quarantine boundary**. Nothing
  * else in the mock knows the data is synthetic; swap this one file when the real
  * catalog arrives. The other two rules it lives under:
  *

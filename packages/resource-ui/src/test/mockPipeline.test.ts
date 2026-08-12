@@ -3,10 +3,9 @@
  * `src/gql/resource.ts` executes against the same executable schema and
  * resolvers the dev server on :4000 serves, through Apollo SchemaLink.
  *
- * This is the load-bearing property of the mock harness (PLAN.md §5, Phase 0) -
- * a browser test and a manual click-through exercise identical code. Keep this
- * test green as Phase 2 grows the schema; if it breaks, the two consumers have
- * diverged.
+ * This is the load-bearing property of the mock harness - a browser test and a
+ * manual click-through exercise identical code. Keep this test green as the
+ * schema grows; if it breaks, the two consumers have diverged.
  */
 import { parse, validate } from 'graphql';
 import { describe, expect, it } from 'vitest';

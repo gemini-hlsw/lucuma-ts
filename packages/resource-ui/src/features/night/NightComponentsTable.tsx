@@ -8,7 +8,7 @@
  *
  * A mid-night change is this table's reason to exist. The published schedules
  * are whole-night granular, so the synthetic component layer is where the
- * night view first meets a boundary inside the night (PLAN.md §3.1), and the
+ * night view first meets a boundary inside the night, and the
  * change is named with its clock time rather than flattened to one state.
  */
 import { when } from '@gemini-hlsw/lucuma-common-ui';

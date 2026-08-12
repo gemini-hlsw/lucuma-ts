@@ -24,7 +24,7 @@
  *   same projection the previous calendar used.
  *
  * A gap stays a gap: a night with no bars is "not recorded", never drawn as
- * closed (PLAN.md I4).
+ * closed (invariant I4).
  *
  * The shown month is URL state (`?month=2026-11`) and the toolbar title is a
  * picker over the semester's months, so any page of the calendar is one jump -
@@ -288,7 +288,7 @@ function MonthCalendar({
     // The square's background carries the night's sentence too: the date
     // header and the bars have their own titles, but a closed square is
     // mostly wash, and hovering there must still surface the closure reason
-    // (PLAN.md §10). dayPropGetter cannot do this - react-big-calendar
+    // dayPropGetter cannot do this - react-big-calendar
     // applies only its className and style - so the wrapper clones the cell.
     dateCellWrapper: (wrapper: DateCellWrapperProps) => {
       const night = byEvening.get(isoOf(wrapper.value));

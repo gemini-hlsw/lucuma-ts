@@ -3,9 +3,10 @@
 Guidance for working in `@gemini-hlsw/resource-ui`, the web UI for the GPP **Resource**
 service.
 
-> **Read [PLAN.md](PLAN.md) first.** It is the authoritative plan and design record for
-> this package: what Resource is, what we are reproducing, the data model, and the phase
-> the work is in. This file covers only how to work in the code.
+This file is the working guide **and** the design record for the package: what
+Resource is, the decisions that shaped it, and how to work in the code. The earlier
+planning documents (PLAN.md, NEED-CLARIFICATION.md, VALIDATION.md) were retired on
+2026-08-11 as outdated; what still holds from them lives here and in the git history.
 
 ## State of the package
 
@@ -40,7 +41,7 @@ never move with it. **Every night-shaped thing opens its night view** - calendar
 squares, week cards, chart bars and grid cells - through one `app/useOpenNight.ts`
 hook, so every way in lands on the same URL.
 
-`/semester` itself carries a **Chart | Grid | Calendar** toggle (PLAN.md §7c): an
+`/semester` itself carries a **Chart | Grid | Calendar** toggle: an
 xrange per month for how long a run lasts, a Highcharts `heatmap` per month for what
 the sheet says on a given night, and a react-big-calendar month grid for what a given
 night holds - the only one of the three that shows the week, or the moon.
@@ -55,8 +56,8 @@ raw records because its subject is the records' own boundaries, not placed spans
 is a domain module with its own tests, not a view-side copy of the model.
 
 **The calendar is react-big-calendar: night chrome plus critical-event chips,
-and every square clicks through to its night view** (PLAN.md §7e, rebuilt
-2026-08-09; chips-not-bars at Dan's direction 2026-08-11, after a news-span-bars
+and every square clicks through to its night view** (rebuilt 2026-08-09;
+chips-not-bars at Dan's direction 2026-08-11, after a news-span-bars
 iteration he rejected). **No run bars, ever**: the calendar draws single-evening
 chips for the critical events - an instrument changing on a port ("IGRINS-2 →
 MAROON-X", one chip per boundary, a usability change phrased by the new usage),
@@ -100,16 +101,16 @@ Two gotchas that cost real debugging, both fixed structurally - do not undo them
   (data arriving, the "now" marker) update in place.
 
 **Port closures draw per view.** Every no-instrument block derives from a closure
-record, but what a port closure means for availability is still open
-(NEED-CLARIFICATION question 1) - so the wide views keep the hollow absence, and the
+record, but what a port closure means for availability is still open with
+operations - so the wide views keep the hollow absence, and the
 night view alone opts into the closure red (`unscheduledAs: 'closure'` on the shared
 chart builder), with one "Shut down" legend key for bands and port closures alike.
 
 **The night view is where partial nights are visible.** The workbook is
 whole-night granular, so no served night splits a row and the chart's tests are
-synthetic on purpose - they pin the capability PLAN.md §3.1 protects, not the current
-data. One served source still exercises it: the **components table below the
-chart** (PLAN.md §8.4), whose synthetic R400 failure lands mid-night inside the
+synthetic on purpose - they pin the partial-night capability the non-negotiables
+protect, not the current data. One served source still exercises it: the
+**components table below the chart**, whose synthetic R400 failure lands mid-night inside the
 GS night of 2025-11-20. The table builds its rows through the same `componentFinder`
 the browser uses - do not give it its own path from blocks to rows.
 
@@ -199,28 +200,31 @@ what makes the palette safe for a reader who cannot separate two of the hues.
 **Absence is drawn hollow, not as a fourteenth colour** - a fill would crowd the palette
 and claim to be an instrument.
 
-**Unknown is a reserved neutral, like the closure red.** The sheet's unkeyed colours
-(PLAN.md §7) are served as `Instrument.UNKNOWN` and draw zinc grey, labelled "Unknown",
+**Unknown is a reserved neutral, like the closure red.** A run the importer cannot
+identify is served as `Instrument.UNKNOWN` and draws zinc grey, labelled "Unknown",
 deliberately outside the two validated hue sets so an unidentified band never reads as
 an instrument. Where one coincides with a named run - GN's two "Visiting" rows share a
 label - the named run wins the shared span (`domain/timeline.ts`), the same rule wide
 closures apply to port closures.
 
-Read [NEED-CLARIFICATION.md](NEED-CLARIFICATION.md) before assuming anything about what
-the schedules mean. It records what is still guessed at and what was confirmed.
+**Still open with operations** - the standing questions the code wears an
+assumption for, rather than silently inventing an answer:
 
-[VALIDATION.md](VALIDATION.md) is the superseded sheet parser held against this same
-workbook (2026-08-09). It survives as the record of _why_ the workbook won: the
-published sheets and the workbook contradicted each other outright on several runs,
-and the workbook is the operations team's own record. The sheet parser it audited
-is gone.
+- **What "A&G" on GS Port 4 means.** It arrives as free text on a port-scoped
+  closure and is stored unparsed; the views draw it as a hollow absence, never a
+  failure, because the record gives no evidence for one.
+- **Mapping the schedule vocabulary onto lucuma-core.** Every name the workbook
+  mounts is modelled as a Resource `Instrument` for now (Dan, 2026-08-07),
+  including the AO subsystems (Altair, Canopus) and Engineering; whether some
+  belong elsewhere is deferred.
+- **Unidentified runs.** An unrecognised workbook name is served as `UNKNOWN`
+  with its text in `note` - a lookup question, not a parse failure.
 
 The superseded schedule-authoring model does not appear in this branch's history -
-it was removed and the history squashed before public testing (2026-08-10). PLAN.md
-records the pivot and what was kept; reintroducing anything from that model
-requires a decision recorded there.
+it was removed and the history squashed before public testing (2026-08-10);
+reintroducing anything from it requires a fresh decision recorded here.
 
-**`/components` is the ICTD half** (PLAN.md §8): a finder DataTable over the
+**`/components` is the ICTD half**: a finder DataTable over the
 component catalog, grouped by instrument under subheaders (colour swatch, piece
 count, how many are on the telescope tonight), with filter dropdowns whose options
 carry their counts. Status speaks operations, not the enum: Science / Engineering /
@@ -264,8 +268,9 @@ times now. Check with `lsof -nP -iTCP:4000 -sTCP:LISTEN` and restart via the pnp
 `mock-server/import/` turns the operations workbook export into the JSON the mock
 seeds from. **It is the only schedule source.** The published web overview sheets
 this package used to fetch and parse are gone - the workbook is the operations
-team's own record and supersedes them where they disagreed (VALIDATION.md found
-several such runs, and the workbook flatly omits some published visits).
+team's own record and supersedes them where they disagreed (the 2026-08-09
+validation pass found several such runs, and the workbook flatly omits some
+published visits).
 
 ```bash
 pnpm --filter @gemini-hlsw/resource-ui import:schedule
@@ -360,12 +365,13 @@ unit-tested; keep components focused on rendering and interaction.
 
 ## Non-negotiables
 
-These come from PLAN.md and from what went wrong last time.
+These are the standing invariants, from what went wrong last time.
 
 - **Never put a `date` on a block.** Intervals only. The moment a `LocalDate` becomes a
-  field, partial nights turn into a retrofit (PLAN.md §3.1).
-- **A gap means "not recorded", never "unavailable".** The workbook's empty port
-  cells must not render as closed.
+  field, partial nights turn into a retrofit. (Referred to across the code as **the
+  partial-night non-negotiable**.)
+- **A gap means "not recorded", never "unavailable"** (invariant **I4**). The
+  workbook's empty port cells must not render as closed.
 - **`ResourceUsage` is one enum** - `SCIENCE`/`ENGINEERING`/`UNAVAILABLE`. Do not split it
   into separate availability and usage fields.
 - **No new schema type without a requirement behind it**: a column in the workbook, a
@@ -378,6 +384,14 @@ Browser-mode Vitest (Playwright chromium). Pure functions get plain unit tests; 
 browser tests that mount against the mock via `src/test/renderApp.tsx` and drive real
 interactions with accessible queries (`getByRole`, `getByLabelText`).
 
+- **Every control whose press, toggle or hover changes what is displayed gets a
+  browser test driving the real interaction** (Dan, 2026-08-11). Test both
+  directions where they exist: what must change with the control (the night
+  chart's axis under the Site | UTC clock) _and_ what must not (the semester
+  grid's and chart's geometry and fills across the same toggle). Guard
+  "must change" assertions non-empty first, so a blanked chart cannot pass as
+  merely "different". The grid-corruption bug shipped precisely because the
+  toggle-to-display path had no test.
 - **Anchor on fixture dates, never the wall clock.** The superseded seed was pinned to
   real August 2026 and was set to decay into an all-past demo. Where a test must involve
   "now", derive it with the same function the page uses.
@@ -407,7 +421,8 @@ selectors, keyframes, third-party overrides).
 
 ## Architecture docs
 
-`lucuma-odb/resource/docs/` is authoritative for the v1 backend domain and API, **with the
-trims recorded in PLAN.md §3.3** - the schedule lifecycle, change log, restrictions and
-several other concepts are out of scope and are being moved to `resource/docs/superseded/`.
-When the two disagree, PLAN.md wins for this package.
+`lucuma-odb/resource/docs/` is authoritative for the v1 backend domain and API, with
+the v1 scope trims applied for this package: the schedule lifecycle, change log and
+restrictions are out of scope here - every view reads the one published record, and
+editing was descoped from v1 outright. When the two disagree, this file and the code
+win for this package.

@@ -5,7 +5,7 @@
 #
 # FOR REVIEW (Bryan, Andrew). This is the API design, deliberately circulated as
 # SDL before any resolver exists - it is cheaper to change here than in code.
-# Questions still open are tracked in NEED-CLARIFICATION.md, not here.
+# Questions still open with operations are recorded in CLAUDE.md, not here.
 #
 # Two consumers: the scheduler (telescopeNights, pull-only) and the Resource
 # frontend (the same query, regrouped per view).
@@ -184,7 +184,7 @@ Everything the published schedules name as occupying a port or being usable.
 Resource models all of these as instruments, which is what the schedules do. Some
 are not instruments in the lucuma-core sense - ALTAIR and CANOPUS are AO
 subsystems, ENGINEERING is an operational state, CAL_ZORRO names two things - and
-mapping them onto lucuma-core is deferred (NEED-CLARIFICATION.md questions 4, 5).
+mapping them onto lucuma-core is deferred, still open with operations.
 """
 enum Instrument {
   ALOPEKE
@@ -211,11 +211,10 @@ enum Instrument {
   IQUEYE
   MAROON_X
   """
-  A painted run whose colour the published sheet's key does not identify
-  (PLAN.md §7) - all at Gemini North, e.g. the light orange the page's prose
-  calls "Maroon-X in Multi-Instrument Queue". Served so every cell the sheet
-  paints is drawn; `note` keeps any text the sheet printed on the run.
-  Identifying these is an open question with operations, not a parse failure.
+  A run the importer could not identify - an unrecognised workbook name.
+  Served so every recorded run is drawn rather than silently missing; `note`
+  keeps any text the source carried. Identifying these is an open question
+  with operations, not a parse failure.
   """
   UNKNOWN
 }
@@ -245,16 +244,11 @@ type InstrumentAvailabilityBlock implements ScheduleBlock {
 """
 Planned telescope availability over an interval, with a free-text reason.
 
-At Gemini South a closure is not published directly. An uncoloured run on a
-port's row means that port was shut down, and the reason is spelled across the
-rows - "Telescope" on Port 2, "Shutdown" on Port 3 - so `reason` is those words
-joined, unparsed. A span where every port is shut is a telescope closure.
-
-Because the importer turns those empty runs into explicit records, a gap in this
-API still means "not recorded" and never "closed".
-
-Gemini North marks a shutdown with a colour instead, so nothing is derived there
-(NEED-CLARIFICATION.md question 2).
+The workbook's Telescope column states Open and Closed alike, at both sites,
+so an open night is a recorded fact and a gap in this API still means "not
+recorded", never "closed". A closure carries its reason when the schedule
+names one ("Shutdown"); a night closed under an operating mode - weather,
+under "Queue" - carries none.
 """
 type TelescopeAvailabilityBlock implements ScheduleBlock {
   id: ID!
@@ -279,7 +273,9 @@ The ToO support level over an interval.
 
 Its own record kind, deliberately: ToO support is independent of what is mounted
 and of whether the telescope is open, so it never rides on another block. The
-published sheets do not carry it; the source is operations entry.
+workbook's ToOs column is blank on every night of the current export, so the
+demo serves the observatory default - Standard support, wearing the assumption
+as the record's note; a written level is a fact and supersedes it.
 """
 type TooSupportBlock implements ScheduleBlock {
   id: ID!

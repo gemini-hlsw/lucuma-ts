@@ -30,8 +30,7 @@ export interface SidebarMenuSection {
  * Sidebar menu configuration for the Resource UI.
  *
  * Semester first - the readable reproduction of the published sheet - then the
- * same data at narrower windows. Phase 3 (PLAN.md) adds each as it is built, one
- * commit at a time.
+ * same data at narrower windows.
  *
  * Nothing here is gated, and nothing should become gated: gating navigation on
  * whether a schedule exists left the reader stranded on one view with no way to

@@ -2,7 +2,7 @@
  * Reads and writes the shared view selection (site, semester, night) from the
  * URL query string, so views are linkable and navigation preserves context.
  * Every view reads the published record - there is no other document to select
- * (PLAN.md §3.3 dropped the schedule lifecycle).
+ * (the schedule lifecycle was dropped from v1).
  */
 import { useSearchParams } from 'react-router';
 

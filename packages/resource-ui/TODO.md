@@ -2,8 +2,8 @@
 
 What remains after the 2026-08-10 walkthrough punch list was worked off. The ten
 items it opened with - five v1 blockers, five worth-doing - all landed the same
-day and are recorded in PLAN.md §10 and the git history; this file keeps only
-what is still open.
+day and are recorded in the git history; this file keeps only what is still
+open.
 
 ## Later / optional
 

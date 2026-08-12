@@ -196,7 +196,7 @@ describe('NightPage', () => {
     await expect.poll(() => document.querySelector('[data-testid="night-timeline"] .highcharts-point')).not.toBeNull();
 
     // Near the bar's left edge the cursor is deep in the daylight wash, which
-    // is deliberately drawn over the bars (PLAN.md §10). Hover resolves to the
+    // is deliberately drawn over the bars. Hover resolves to the
     // element under the cursor, so an overlay that catches the pointer swallows
     // the tooltip - the wash must be pointer-transparent (global.css).
     const bar = document.querySelector('[data-testid="night-timeline"] .highcharts-point');
@@ -224,7 +224,7 @@ describe('the components riding tonight', () => {
     // The synthetic R400 fails 60% through GMOS's GS 2025B mounting -
     // 2025-11-20T03:00Z, midnight site time inside the night labelled
     // 2025-11-20. This is the first place the night view meets a boundary
-    // inside a night with data the dev server actually serves (PLAN.md §3.1).
+    // inside a night with data the dev server actually serves.
     const screen = await openNight('/night?site=GS&night=2025-11-20');
 
     const table = screen.getByTestId('night-component-table');

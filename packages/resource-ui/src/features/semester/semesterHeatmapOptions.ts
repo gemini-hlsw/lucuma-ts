@@ -18,7 +18,7 @@
  *
  * A whole-night cell cannot show a night that changes partway through, so it
  * marks it `MIXED` and the night view is where the change is legible. That is
- * PLAN.md §3.1's own corollary - "show the single value when uniform, otherwise
+ * the partial-night non-negotiable's own corollary - "show the single value when uniform, otherwise
  * mark it mixed" - and it is why this is a toggle rather than a replacement.
  */
 import type {
