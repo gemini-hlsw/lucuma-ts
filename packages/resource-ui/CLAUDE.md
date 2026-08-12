@@ -239,12 +239,17 @@ reintroducing anything from it requires a fresh decision recorded here.
 **`/instruments` is the finder's other half** (2026-08-12): one row per
 instrument the site's records name, saying which port it is on tonight - or
 plainly that it is on none - with the run's extent, and a row expansion listing
-every run of the semester, which is where the workbook's Not Available windows
-become legible. It exists because the schedule views draw ports only, so an
+its runs, which is where the workbook's Not Available windows become legible.
+It queries the **site's whole recorded span, not the selected semester**: Zorro
+sits out GS 2025B and `Alopeke sits out two GN semesters, and a browser scoped
+to one semester would answer "where is Zorro" with silence. An instrument with
+no record on the chosen night reads "Not recorded" - never carried forward from
+the last night that had one. The **Location filter** groups by the same phrasing
+the Where cell prints (`locationLabel`, so the two cannot drift), offering only
+the locations the rows actually hold, counted, ports first. It exists because the schedule views draw ports only, so an
 instrument recorded usable between mounts has no row there. It is deliberately
 the component browser's twin in shape (one DataTable, the night from the URL,
-client-side search) so the two read as one tool. `domain/instrumentFinder.ts`
-mirrors `componentFinder` - same night-not-instant reading, same
+client-side search) so the two read as one tool. `domain/instrumentFinder.ts`mirrors`componentFinder` - same night-not-instant reading, same
 last-record-decides, same honest absence.
 
 **`/components` is the ICTD half**: a finder DataTable over the

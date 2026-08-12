@@ -7,6 +7,7 @@
  */
 import { describe, expect, it } from 'vitest';
 
+import { openDropdown, selectDropdownOption } from '@/test/helpers';
 import { renderApp } from '@/test/renderApp';
 
 import InstrumentsPage from './InstrumentsPage';
@@ -62,6 +63,51 @@ describe('InstrumentsPage', () => {
 
   it('is a sendable link: the search comes from the URL', async () => {
     const screen = await open('/instruments?site=GN&semester=2026B&night=2026-09-26&q=gnirs');
+
+    await expect.element(screen.getByText('GNIRS')).toBeVisible();
+    await expect.element(screen.getByText('Maroon-X').first()).not.toBeInTheDocument();
+  });
+
+  it('holds every instrument the site has recorded, not just this semester', async () => {
+    // Zorro sits out GS 2025B entirely but is a Gemini South instrument - a
+    // browser scoped to the semester would answer "where is Zorro" with
+    // silence.
+    const screen = await open('/instruments?site=GS&semester=2025B&night=2025-11-20');
+
+    await expect.element(screen.getByText('Zorro').first()).toBeVisible();
+    await expect.element(screen.getByText('Not recorded')).toBeVisible();
+  });
+
+  it('filters by location, counting what each choice buys', async () => {
+    const screen = await open('/instruments?site=GN&semester=2026B&night=2026-09-26');
+    await expect.element(screen.getByText('GNIRS')).toBeVisible();
+
+    await selectDropdownOption(screen, 'Location', 'Not on a port');
+
+    await expect.element(screen.getByText("'Alopeke").first()).toBeVisible();
+    await expect.element(screen.getByText('GNIRS')).not.toBeInTheDocument();
+  });
+
+  it('orders the location choices as ports, then off-port, then unrecorded', async () => {
+    const screen = await open('/instruments?site=GN&semester=2026B&night=2026-09-26');
+    await expect.element(screen.getByText('GNIRS')).toBeVisible();
+
+    await openDropdown(screen, 'Location');
+
+    const options = [...document.querySelectorAll('[role="option"]')].map((option) => option.textContent ?? '');
+    expect(options).toEqual([
+      'Port 1 (1)',
+      'Port 2 (1)',
+      'Port 3 (1)',
+      'Port 4 (1)',
+      'Port 5 (1)',
+      'Not on a port (1)',
+      'Not recorded (1)',
+    ]);
+  });
+
+  it('is a sendable link: the location filter comes from the URL', async () => {
+    const screen = await open('/instruments?site=GN&semester=2026B&night=2026-09-26&location=Port+3');
 
     await expect.element(screen.getByText('GNIRS')).toBeVisible();
     await expect.element(screen.getByText('Maroon-X').first()).not.toBeInTheDocument();

@@ -66,11 +66,14 @@ export interface BuildInstrumentRowsOptions {
 }
 
 /**
- * One row per instrument the window's records name, alphabetically.
+ * One row per instrument the window's records name.
  *
  * Driven by the records rather than by the enum: a site's browser should list
  * what that site's schedule actually holds, not fourteen rows of which five
  * are permanently blank.
+ *
+ * Ordered by enum tag only to be deterministic - a view that prints a
+ * different name (CAL_ZORRO reads "Zorro") sorts by what it shows.
  */
 export const buildInstrumentRows = ({ mountings, night }: BuildInstrumentRowsOptions): readonly InstrumentRow[] => {
   const instruments = [...new Set(mountings.map((mounting) => mounting.instrument))].sort((a, b) => a.localeCompare(b));
@@ -109,6 +112,46 @@ export const buildInstrumentRows = ({ mountings, night }: BuildInstrumentRowsOpt
       transitions,
     };
   });
+};
+
+/**
+ * How a row's location reads - the one phrasing the Where cell prints and the
+ * location filter groups by, so the two can never drift.
+ *
+ * A port reads as the schedule's own row label. Everything else is the plain
+ * fact: the workbook records usable-with-no-port without saying where the
+ * instrument sits, and an absence stays an absence (I4) - never carried
+ * forward from the last night that had a record.
+ */
+export const OFF_PORT_LABEL = 'Not on a port';
+export const NOT_RECORDED_LABEL = 'Not recorded';
+
+export const locationLabel = (row: InstrumentRow): string => {
+  switch (row.where.kind) {
+    case 'PORT':
+      return row.where.rowLabel;
+    case 'OFF_PORT':
+      return OFF_PORT_LABEL;
+    default:
+      return NOT_RECORDED_LABEL;
+  }
+};
+
+/**
+ * The locations the rows actually hold, each with its count - ports in their
+ * own order, then the two plain facts. Only what is there is offered, so a
+ * filter never leads to an empty table.
+ */
+export const locationOptions = (rows: readonly InstrumentRow[]): readonly { label: string; count: number }[] => {
+  const counts = new Map<string, number>();
+  for (const row of rows) {
+    const label = locationLabel(row);
+    counts.set(label, (counts.get(label) ?? 0) + 1);
+  }
+  const rank = (label: string): number => (label === NOT_RECORDED_LABEL ? 2 : label === OFF_PORT_LABEL ? 1 : 0);
+  return [...counts.entries()]
+    .map(([label, count]) => ({ label, count }))
+    .sort((a, b) => rank(a.label) - rank(b.label) || a.label.localeCompare(b.label));
 };
 
 /** An instrument's runs over the window, oldest first - the row expansion. */

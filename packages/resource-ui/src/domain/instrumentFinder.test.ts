@@ -6,7 +6,7 @@
  */
 import { describe, expect, it } from 'vitest';
 
-import { buildInstrumentRows, matchesInstrument, runsOf } from './instrumentFinder';
+import { buildInstrumentRows, locationOptions, matchesInstrument, runsOf } from './instrumentFinder';
 import { observingNightInterval } from './siteTime';
 import type { Mounting } from './types';
 
@@ -89,6 +89,35 @@ describe('buildInstrumentRows', () => {
     });
 
     expect(rows.map((row) => row.instrument)).toEqual(['F2', 'GHOST']);
+  });
+});
+
+describe('locationOptions', () => {
+  it('offers the ports in order, then the two plain facts, each with its count', () => {
+    const rows = buildInstrumentRows({
+      mountings: [
+        mounting({ instrument: 'GHOST', rowLabel: 'Port 1', port: 1 }),
+        mounting({ instrument: 'GCAL', rowLabel: 'Port 2', port: 2 }),
+        mounting({ instrument: 'F2', rowLabel: 'Port 1', port: 1 }),
+        mounting({ instrument: 'CAL_ZORRO', rowLabel: 'Zorro', port: null, locationType: 'UNKNOWN' }),
+        // Recorded elsewhere in the window, nothing tonight.
+        mounting({ instrument: 'CANOPUS', interval: nights('2026-09-01', '2026-09-05') }),
+      ],
+      night,
+    });
+
+    expect(locationOptions(rows)).toEqual([
+      { label: 'Port 1', count: 2 },
+      { label: 'Port 2', count: 1 },
+      { label: 'Not on a port', count: 1 },
+      { label: 'Not recorded', count: 1 },
+    ]);
+  });
+
+  it('offers only the locations the rows hold, so a filter never empties the table', () => {
+    const rows = buildInstrumentRows({ mountings: [mounting()], night });
+
+    expect(locationOptions(rows).map((entry) => entry.label)).toEqual(['Port 3']);
   });
 });
 

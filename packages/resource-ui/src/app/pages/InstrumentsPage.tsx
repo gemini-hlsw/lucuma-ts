@@ -13,6 +13,7 @@
 import { when } from '@gemini-hlsw/lucuma-common-ui';
 import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
+import { Dropdown } from 'primereact/dropdown';
 import { InputText } from 'primereact/inputtext';
 import { Tag } from 'primereact/tag';
 import { type JSX, useState } from 'react';
@@ -21,13 +22,19 @@ import { useSelection } from '@/app/useSelection';
 import { useSemester } from '@/app/useSemester';
 import { useUrlParam } from '@/app/useUrlParam';
 import { SyntheticDataTag } from '@/components/ui/SyntheticDataTag';
-import { buildInstrumentRows, type InstrumentRow, matchesInstrument, runsOf } from '@/domain/instrumentFinder';
+import {
+  buildInstrumentRows,
+  type InstrumentRow,
+  locationLabel,
+  locationOptions,
+  matchesInstrument,
+  runsOf,
+} from '@/domain/instrumentFinder';
 import { firstEveningDate, lastEveningDate, observingNightInterval } from '@/domain/siteTime';
 import { USAGE_LABEL } from '@/domain/timeline';
 import type { Mounting, Site } from '@/domain/types';
-import { LOCATION_LABEL } from '@/features/components/componentLabels';
 import { INSTRUMENT_LABEL, instrumentColor } from '@/features/timeline/timelineOptions';
-import { useSemesterSchedule } from '@/gql/hooks';
+import { usePublishedSemesters, useSemesterSchedule } from '@/gql/hooks';
 
 const EVENING_FORMAT = new Intl.DateTimeFormat('en-GB', {
   timeZone: 'UTC',
@@ -37,20 +44,6 @@ const EVENING_FORMAT = new Intl.DateTimeFormat('en-GB', {
 });
 
 const printEvening = (eveningDate: string): string => EVENING_FORMAT.format(new Date(`${eveningDate}T12:00:00Z`));
-
-/** Where an instrument is, in the words the schedule uses for a port. */
-const whereLabel = (row: InstrumentRow): string => {
-  switch (row.where.kind) {
-    case 'PORT':
-      return row.where.rowLabel;
-    case 'OFF_PORT':
-      // The workbook records usable-with-no-port and never says where the
-      // instrument physically sits, so UNKNOWN prints as the plain fact.
-      return row.where.location === 'UNKNOWN' ? 'Not on a port' : `Not on a port · ${LOCATION_LABEL.UNKNOWN}`;
-    default:
-      return 'Not recorded';
-  }
-};
 
 /** The expansion: every run over the semester, in evening dates. */
 function Runs({ runs, site }: { runs: readonly Mounting[]; site: Site }): JSX.Element {
@@ -75,19 +68,48 @@ function Runs({ runs, site }: { runs: readonly Mounting[]; site: Site }): JSX.El
 export default function InstrumentsPage(): JSX.Element {
   const { site, observingNight } = useSelection();
   const { semester: selected, loading: loadingSets, error: setsError } = useSemester();
+  const { semesters } = usePublishedSemesters();
   const [search, setSearch] = useUrlParam('q', '', { replace: true });
+  const [location, setLocation] = useUrlParam('location', '', { replace: true });
   const [expanded, setExpanded] = useState<InstrumentRow[]>([]);
 
+  const activeSite = selected?.site ?? site;
+
+  /*
+   * The site's whole recorded span, not the selected semester.
+   *
+   * "Every instrument at this site" is not "every instrument this semester
+   * happens to mount": Zorro sits out GS 2025B and `Alopeke sits out two GN
+   * semesters, and a browser that hid them would answer "where is Zorro" with
+   * silence. Site assignment is time-bounded operational data carried by the
+   * availability blocks (v1-domain-model.md §5.1), so the site's instruments
+   * are exactly the ones its records have ever named.
+   */
+  const siteNights = semesters.filter((entry) => entry.site === activeSite);
   const bounds =
-    selected === null
+    siteNights.length === 0
       ? null
-      : { start: `${selected.firstNight}T00:00:00.000Z`, end: `${selected.lastNight}T23:59:59.999Z` };
+      : {
+          start: `${siteNights.map((entry) => entry.firstNight).sort()[0] ?? ''}T00:00:00.000Z`,
+          end: `${
+            siteNights
+              .map((entry) => entry.lastNight)
+              .sort()
+              .at(-1) ?? ''
+          }T23:59:59.999Z`,
+        };
 
-  const { mountings, loading, error } = useSemesterSchedule(selected?.site ?? site, bounds);
+  const { mountings, loading, error } = useSemesterSchedule(activeSite, bounds);
 
-  const night = observingNightInterval(selected?.site ?? site, observingNight);
+  const night = observingNightInterval(activeSite, observingNight);
   const rows = buildInstrumentRows({ mountings, night });
-  const visible = rows.filter((row) => matchesInstrument(row, search));
+  const locations = locationOptions(rows);
+  // Sorted by the name on screen, not the enum tag behind it: CAL_ZORRO reads
+  // "Zorro", and a list alphabetised by a tag the reader cannot see looks
+  // unsorted.
+  const visible = rows
+    .filter((row) => matchesInstrument(row, search) && (location === '' || locationLabel(row) === location))
+    .sort((a, b) => INSTRUMENT_LABEL[a.instrument].localeCompare(INSTRUMENT_LABEL[b.instrument]));
 
   const onTelescope = rows.filter((row) => row.where.kind === 'PORT').length;
   const failure = setsError ?? error;
@@ -101,8 +123,9 @@ export default function InstrumentsPage(): JSX.Element {
             {selected?.demo === true && <SyntheticDataTag />}
           </div>
           <p className="mt-1 text-xs text-foreground-muted">
-            Where every instrument is on the night of {printEvening(firstEveningDate(selected?.site ?? site, night))}.{' '}
-            {onTelescope} on the telescope. Open a row for its runs this semester.
+            Every instrument {activeSite} has ever recorded, and where it is on the night of{' '}
+            {printEvening(firstEveningDate(activeSite, night))}. {onTelescope} of {rows.length} on the telescope. Open a
+            row for its runs.
           </p>
         </div>
       </header>
@@ -124,6 +147,23 @@ export default function InstrumentsPage(): JSX.Element {
             placeholder="Instrument or published name"
             aria-label="Search instruments"
             className="w-72"
+          />
+        </label>
+        <label className="flex flex-col gap-1 text-xs text-foreground-secondary">
+          Location
+          <Dropdown
+            value={locations.some((entry) => entry.label === location) ? location : null}
+            options={locations.map((entry) => ({
+              label: `${entry.label} (${String(entry.count)})`,
+              value: entry.label,
+            }))}
+            onChange={(event) => {
+              setLocation((event.value as string | undefined) ?? '');
+            }}
+            showClear
+            placeholder="Anywhere"
+            aria-label="Location"
+            className="w-56"
           />
         </label>
       </div>
@@ -178,7 +218,7 @@ export default function InstrumentsPage(): JSX.Element {
                   }
                 />
                 <span className={row.where.kind === 'NOT_RECORDED' ? 'text-foreground-muted italic' : ''}>
-                  {whereLabel(row)}
+                  {locationLabel(row)}
                 </span>
                 {row.changesTonight && <Tag value="changes tonight" severity="warning" className="!text-[0.6rem]" />}
               </span>
