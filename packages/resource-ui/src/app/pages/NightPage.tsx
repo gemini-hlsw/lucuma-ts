@@ -16,12 +16,7 @@ import type { PublishedSemester, Site } from '@/domain/types';
 import { buildNightChartOptions, clockLabel } from '@/features/night/nightChartOptions';
 import { NightComponentsTable } from '@/features/night/NightComponentsTable';
 import { TimelineChart, TimelineLegendBar } from '@/features/timeline/TimelineChart';
-import {
-  modeLegendExtras,
-  subsystemLegendExtras,
-  telescopeLegendExtras,
-  tooLegendExtras,
-} from '@/features/timeline/timelineOptions';
+import { modeLegendExtras, telescopeLegendExtras, tooLegendExtras } from '@/features/timeline/timelineOptions';
 import { toApiInterval, useNightSchedule, usePublishedSemesters } from '@/gql/hooks';
 
 /** A night is short enough that the marker should keep up with the clock. */
@@ -207,7 +202,6 @@ export default function NightPage(): JSX.Element {
             telescope={telescopeLegendExtras(closures)}
             mode={modeLegendExtras(modeBlocks)}
             too={tooLegendExtras(tooBlocks)}
-            subsystems={subsystemLegendExtras(subsystemBlocks)}
           />
           {night.transitions.length > 0 && (
             <p className="mb-3 text-xs text-foreground-secondary">

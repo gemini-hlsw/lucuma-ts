@@ -169,7 +169,6 @@ export function TimelineLegendBar({
   telescope = [],
   mode = [],
   too = [],
-  subsystems = [],
   extras = [],
 }: {
   legend: TimelineLegend;
@@ -180,8 +179,6 @@ export function TimelineLegendBar({
   mode?: readonly LegendExtra[];
   /** The ToO section's keys (`tooLegendExtras`). */
   too?: readonly LegendExtra[];
-  /** The Subsystems section's keys (`subsystemLegendExtras`). */
-  subsystems?: readonly LegendExtra[];
   /** Extra keys for the Instruments section - the grid's cell states. */
   extras?: readonly LegendExtra[];
 }): JSX.Element {
@@ -219,7 +216,6 @@ export function TimelineLegendBar({
       <LegendSection label="Telescope" entries={[...telescope, ...(legend.hasClosure ? [closureKey] : [])]} />
       <LegendSection label="Mode" entries={mode} />
       <LegendSection label="ToO" entries={too} />
-      <LegendSection label="Subsystems" entries={subsystems} />
       <LegendSection
         label="Instruments"
         entries={[

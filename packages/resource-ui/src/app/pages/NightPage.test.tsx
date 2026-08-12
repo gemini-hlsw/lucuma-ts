@@ -195,11 +195,11 @@ describe('NightPage', () => {
 
     await expect.element(screen.getByText('PWFS1').first()).toBeVisible();
     await expect.element(screen.getByText('PWFS2').first()).toBeVisible();
-    // GS has no laser: the LGS row states Not available - a recorded fact -
-    // and the Subsystems legend section keys the usage words.
+    // GS has no laser: the LGS row states Not available - a recorded fact,
+    // printed in words rather than shouted in the bright neutral, which would
+    // otherwise fire on every GS night forever.
     await expect.element(screen.getByText('LGS').first()).toBeVisible();
-    const legend = screen.getByLabelText('Legend');
-    await expect.element(legend.getByRole('group', { name: 'Subsystems' })).toBeInTheDocument();
+    await expect.element(screen.getByText('Not available').first()).toBeVisible();
   });
 
   it('draws an off-port usability run on its own row, named by the instrument', async () => {

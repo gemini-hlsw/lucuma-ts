@@ -41,16 +41,7 @@ import {
 
 // Re-exported beside the fills that draw it, so chart code has one import.
 export { USAGE_LABEL } from '@/domain/timeline';
-import type {
-  Closure,
-  Instrument,
-  ModeBlock,
-  Site,
-  SubsystemBlock,
-  TelescopeModeType,
-  TooBlock,
-  TooSupport,
-} from '@/domain/types';
+import type { Closure, Instrument, ModeBlock, Site, TelescopeModeType, TooBlock, TooSupport } from '@/domain/types';
 
 /**
  * One colour per instrument. Keyed by the enum, not by position, so colour
@@ -216,17 +207,11 @@ export const tooLegendExtras = (tooBlocks: readonly TooBlock[]): LegendExtra[] =
     swatch: { backgroundColor: tooColor(too) },
   }));
 
-/**
- * The subsystem rows' keys - one Subsystems legend section for all of them,
- * since every subsystem row speaks the same usage vocabulary: quiet for
- * Science, the bright neutral for anything worth noticing.
+/*
+ * No subsystem legend section, deliberately: every subsystem span draws in the
+ * one quiet neutral (`isNotableState`) and prints its state in words, so a
+ * colour key there would key no distinction. The gutter label names the row.
  */
-export const subsystemLegendExtras = (subsystemBlocks: readonly SubsystemBlock[]): LegendExtra[] =>
-  [...new Set(subsystemBlocks.map((block) => block.usage))].map((usage) => ({
-    key: `subsystem-${usage}`,
-    label: USAGE_LABEL[usage],
-    swatch: { backgroundColor: stateFill(usage !== 'SCIENCE') },
-  }));
 
 /**
  * The engineering-use treatment: the instrument's own hue, hatched with its

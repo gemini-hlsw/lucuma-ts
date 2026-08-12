@@ -328,9 +328,15 @@ const isModeType = (variant: string): variant is TelescopeModeType => variant in
  * neutral.
  */
 export const isNotableState = (block: Pick<TimelineBlock, 'state' | 'variant' | 'usage'>): boolean => {
-  // A subsystem's ordinary state is Science; anything else should catch the eye.
+  // Subsystems are never notable, deliberately - they say their state in words
+  // instead. Mode and ToO departures are rare and event-like, so brightness
+  // there is signal; subsystem availability is recorded every night and is
+  // dominated by standing facts - Gemini South has no laser at all, so a bright
+  // "Not available" would shout on every GS night forever and out-shout the
+  // instrument runs the page is actually about. Revisit if real ICTD data shows
+  // subsystem outages are rare enough to be news.
   if (block.state === 'SUBSYSTEM') {
-    return block.usage !== 'SCIENCE';
+    return false;
   }
   if (block.variant === null) {
     return false;
