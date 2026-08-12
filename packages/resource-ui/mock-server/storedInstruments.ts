@@ -12,8 +12,8 @@
  *   pattern; the spans are derived from the site's own schedule span, so a
  *   re-import moves them with the data rather than decaying against it.
  * - **Never on a port.** These records carry `port: null`, so no schedule view
- *   draws them (a view's rows come from `rowLabels`, which is ports only) and
- *   the ports' picture stays exactly what the workbook says.
+ *   draws them - a view's rows are the ports - and the ports' picture stays
+ *   exactly what the workbook says.
  * - **Never decides `dataAvailable`.** Invented records must not turn an
  *   un-entered night into a recorded one (resolvers.ts).
  *
@@ -83,8 +83,7 @@ export interface SynthesizedInstrumentBlock {
   readonly site: ImportSite;
   readonly instrument: Instrument;
   readonly publishedName: string;
-  /** The instrument's own name - never a port, which is what keeps it off the charts. */
-  readonly rowLabel: string;
+  /** Never PORT, which is what keeps these off the schedule charts. */
   readonly place: InstrumentPlace;
   readonly usage: StoredInstrumentUsage;
   readonly start: string;
@@ -178,7 +177,6 @@ export const synthesizeStoredInstruments = (
       site: entry.site,
       instrument: entry.instrument,
       publishedName: entry.publishedName,
-      rowLabel: entry.publishedName,
       place: held.place,
       usage: held.usage,
       start: iso(held.span.start),

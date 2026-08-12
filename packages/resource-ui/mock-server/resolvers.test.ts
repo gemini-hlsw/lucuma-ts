@@ -68,7 +68,7 @@ describe('TimestampInterval - the type the ODB schema shares', () => {
 
 describe('publishedSemesters', () => {
   it('offers every semester the workbook holds, for the site + semester picker', async () => {
-    const data = await run('{ publishedSemesters { site semester title version firstNight lastNight rowLabels } }');
+    const data = await run('{ publishedSemesters { site semester title version firstNight lastNight } }');
     const sets = data.publishedSemesters as { site: string; semester: string }[];
 
     // The operations workbook: GS runs 2024B through 2026A, GN through 2026B
@@ -88,17 +88,17 @@ describe('publishedSemesters', () => {
   });
 
   it('describes a semester by what it holds, not by the calendar', async () => {
-    const data = await run('{ publishedSemesters { site semester firstNight lastNight rowLabels } }');
+    const data = await run('{ publishedSemesters { site semester firstNight lastNight } }');
     const sets = data.publishedSemesters as {
       site: string;
       semester: string;
       firstNight: string;
-      rowLabels: string[];
+      lastNight: string;
     }[];
     const gs2025B = sets.find((set) => set.site === 'GS' && set.semester === '2025B');
 
     expect(gs2025B?.firstNight).toBe('2025-08-02');
-    expect(gs2025B?.rowLabels).toContain('Port 3');
+    expect(gs2025B?.lastNight).toBe('2026-02-01');
   });
 });
 
@@ -253,7 +253,6 @@ describe('instrumentAvailability', () => {
     query ($site: Site!, $start: Timestamp!, $end: Timestamp!, $clip: Boolean!) {
       instrumentAvailability(site: $site, interval: { start: $start, end: $end }, clip: $clip) {
         instrument
-        rowLabel
         location { type port }
         interval { start end }
       }
@@ -270,13 +269,12 @@ describe('instrumentAvailability', () => {
     });
     const records = data.instrumentAvailability as {
       instrument: string;
-      rowLabel: string;
       location: { type: string; port: number | null };
     }[];
 
     const alopeke = records.find((record) => record.instrument === 'ALOPEKE');
-    expect(alopeke).toMatchObject({ rowLabel: '`Alopeke', location: { type: 'UNKNOWN', port: null } });
-    const mounted = records.find((record) => record.rowLabel === 'Port 1');
+    expect(alopeke?.location).toEqual({ type: 'UNKNOWN', port: null });
+    const mounted = records.find((record) => record.location.port === 1);
     expect(mounted?.location).toEqual({ type: 'PORT', port: 1 });
   });
 
@@ -316,7 +314,7 @@ describe('instrumentAvailability', () => {
       instrumentAvailability(site: $site, interval: { start: $start, end: $end }, clip: false) {
         instrument
         publishedName
-        rowLabel
+        location { port }
         note
         interval { start end }
       }
@@ -325,7 +323,7 @@ describe('instrumentAvailability', () => {
   interface NamedRecord {
     instrument: string;
     publishedName: string;
-    rowLabel: string;
+    location: { port: number | null };
     note: string | null;
   }
 
@@ -337,7 +335,7 @@ describe('instrumentAvailability', () => {
       start: '2024-09-17T00:00:00.000Z',
       end: '2024-09-19T00:00:00.000Z',
     });
-    const portTwo = (data.instrumentAvailability as NamedRecord[]).filter((record) => record.rowLabel === 'Port 2');
+    const portTwo = (data.instrumentAvailability as NamedRecord[]).filter((record) => record.location.port === 2);
 
     expect(portTwo.map((record) => `${record.instrument}:${record.publishedName}`)).toEqual(['CAL_ZORRO:Zorro']);
   });
@@ -352,7 +350,7 @@ describe('instrumentAvailability', () => {
       end: '2024-08-20T00:00:00.000Z',
     });
 
-    expect((data.instrumentAvailability as NamedRecord[]).some((record) => record.rowLabel === 'Port 3')).toBe(false);
+    expect((data.instrumentAvailability as NamedRecord[]).some((record) => record.location.port === 3)).toBe(false);
   });
 
   it('returns a whole semester in one response, unpaged', async () => {

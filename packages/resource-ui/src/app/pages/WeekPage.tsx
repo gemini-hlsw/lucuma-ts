@@ -53,7 +53,6 @@ export default function WeekPage(): JSX.Element {
 
   const nightLabels = weekNightLabels(observingNight);
   const held = semesterOverlapping(semesters, site, nightLabels);
-  const rowLabels = held?.rowLabels ?? [];
 
   // The page speaks evening dates - the date each night begins, which is how
   // the published columns, the chart axis and the cards are all headed. The
@@ -68,7 +67,6 @@ export default function WeekPage(): JSX.Element {
   const draft = buildWeekTimeline({
     site,
     firstNight: observingNight,
-    rowLabels: [],
     mountings: [],
     closures: [],
     nightsWithData: undefined,
@@ -90,7 +88,6 @@ export default function WeekPage(): JSX.Element {
   const week = buildWeekTimeline({
     site,
     firstNight: observingNight,
-    rowLabels,
     mountings,
     closures,
     tooBlocks,

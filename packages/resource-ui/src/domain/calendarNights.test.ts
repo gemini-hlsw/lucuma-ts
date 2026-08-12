@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { brightnessOf, buildCalendarNights } from './calendarNights';
+import { portRowLabel, TELESCOPE_PORTS } from './ports';
 import { buildSemesterCells } from './semesterCells';
 import { buildSemesterTimeline } from './semesterTimeline';
 import { observingNightInterval } from './siteTime';
@@ -18,7 +19,6 @@ const mounting = (over: Partial<Mounting> = {}): Mounting => ({
   instrument: 'GMOS',
   publishedName: 'GMOS',
   usage: 'SCIENCE',
-  rowLabel: 'Port 3',
   port: 3,
   locationType: 'PORT',
   interval: nights('2026-08-08', '2026-08-14'),
@@ -45,7 +45,6 @@ const build = ({
 }: BuildOptions = {}) => {
   const timeline = buildSemesterTimeline({
     site: SITE,
-    rowLabels: ['Port 3', 'Port 4'],
     firstNight,
     lastNight,
     mountings,
@@ -119,15 +118,15 @@ describe('brightness', () => {
 });
 
 describe('the complement', () => {
-  it('gives one chip per row, in the order the schedule files them', () => {
-    expect(build()[0]?.complement.map((chip) => chip.rowLabel)).toEqual(['Port 3', 'Port 4']);
+  it('gives one chip per port, in port order', () => {
+    expect(build()[0]?.complement.map((chip) => chip.rowLabel)).toEqual(TELESCOPE_PORTS.map(portRowLabel));
   });
 
-  it('names the instrument on the row that has one and leaves the other empty', () => {
+  it('names the instrument on the port that has one and leaves the others empty', () => {
     const complement = build()[0]?.complement;
 
-    expect(complement?.[0]).toMatchObject({ rowLabel: 'Port 3', instrument: 'GMOS', kind: 'MOUNTED' });
-    expect(complement?.[1]).toMatchObject({ rowLabel: 'Port 4', instrument: null, kind: 'EMPTY' });
+    expect(complement?.[2]).toMatchObject({ rowLabel: 'Port 3', instrument: 'GMOS', kind: 'MOUNTED' });
+    expect(complement?.[3]).toMatchObject({ rowLabel: 'Port 4', instrument: null, kind: 'EMPTY' });
   });
 
   it('says a night is not recorded when no row holds anything, never that it is closed', () => {

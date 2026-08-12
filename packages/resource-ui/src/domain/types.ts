@@ -42,17 +42,19 @@ export interface Interval {
   readonly end: number;
 }
 
-/** An instrument on a port (or usable, at Gemini North) over an interval. */
+/** An instrument on a port, or recorded usable off one, over an interval. */
 export interface Mounting {
   readonly id: string;
   readonly instrument: Instrument;
   /** The name exactly as the schedule prints it, e.g. "cal/ZORRO". */
   readonly publishedName: string;
-  /** The row the schedule files this under: "Port 3" at GS, "GMOS" at GN. */
-  readonly rowLabel: string;
   /** What the mounted instrument can be used for over this span. */
   readonly usage: ResourceUsage;
-  /** Port number, or null when the run is not on a port. */
+  /**
+   * Port number, or null when the run is not on a port. This alone says which
+   * schedule row the run draws on (`domain/ports.ts`); a null port draws on
+   * none, and the instrument browser is where such a run is legible.
+   */
   readonly port: number | null;
   /**
    * Where the instrument is over this span. PORT for a mounting; UNKNOWN for
@@ -116,8 +118,6 @@ export interface PublishedSemester {
   readonly demo: boolean;
   readonly firstNight: string;
   readonly lastNight: string;
-  /** Ports at Gemini South, instruments at Gemini North. */
-  readonly rowLabels: readonly string[];
   /**
    * Public holidays the sheet marks, ISO dates. Empty at Gemini North, which
    * publishes none - a site convention rather than missing data.

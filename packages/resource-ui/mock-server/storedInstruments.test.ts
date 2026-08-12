@@ -19,8 +19,8 @@ describe('synthesizeStoredInstruments', () => {
   });
 
   it('never puts a stored instrument on a port - that is what keeps it off the charts', () => {
-    // A schedule view builds its rows from `rowLabels`, which is ports only,
-    // so a record with no port is structurally unable to reach one.
+    // A schedule view's rows are the telescope's ports and a record's row is
+    // its port, so a record with no port is structurally unable to reach one.
     for (const block of blocks) {
       expect(block.place).not.toBe('PORT');
       expect(['FLOOR', 'LAB', 'BASE', 'UNKNOWN']).toContain(block.place);

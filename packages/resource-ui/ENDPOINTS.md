@@ -35,7 +35,7 @@ described below.
 
 | Query                                                                                | What it answers                                                                                                                                             | Consumers                                                                                           |
 | ------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| `publishedSemesters`                                                                 | every site + semester Resource holds: title, version, `demo` flag, first/last night, `rowLabels`, holidays, moon events                                     | the masthead picker; every view's bounds                                                            |
+| `publishedSemesters`                                                                 | every site + semester Resource holds: title, version, `demo` flag, first/last night, holidays, moon events                                                  | the masthead picker; every view's bounds                                                            |
 | `telescopeNight(site, observingNight)`                                               | one night as a projection: `dataAvailable`, the night's interval, and every record clipped to it (instruments, closures, ToO, mode, subsystems, components) | night view                                                                                          |
 | `telescopeNights(site, nights)`                                                      | a range of nights, same shape per night; bounded at 400                                                                                                     | **the scheduler's only query**; week view (per-night `dataAvailable`)                               |
 | `instrumentAvailability(site, interval, clip)`                                       | every instrument record intersecting an interval - mountings on a port, and instruments off the telescope with the place they sit                           | semester, week and night charts; the instrument browser; the component browser's "where is it" join |
@@ -65,17 +65,17 @@ Every interval record implements `ScheduleBlock` - `id`, `site`, `interval`, `no
 and adds a subject and a state. Six kinds, plus two identity types and the night
 projection.
 
-| Type                                   | Subject                                   | State it carries                                                                    |
-| -------------------------------------- | ----------------------------------------- | ----------------------------------------------------------------------------------- |
-| `InstrumentAvailabilityBlock`          | `instrument`, `publishedName`, `rowLabel` | `usage`, `location { type, port }`                                                  |
-| `TelescopeAvailabilityBlock`           | the site, or one `port`                   | `availability` (OPEN/CLOSED), `reason`                                              |
-| `TelescopeModeBlock`                   | the site                                  | `mode`, `programReferences[]`, `partner`                                            |
-| `TooSupportBlock`                      | the site                                  | `tooSupport`                                                                        |
-| `TelescopeSubsystemAvailabilityBlock`  | `subsystem`                               | `usage`, `powerSource`                                                              |
-| `InstrumentComponentAvailabilityBlock` | `component` (nested identity)             | `usage`, `location`                                                                 |
-| `InstrumentComponent`                  | identity only                             | `code`, `name`, `barcode`, `aliases`, `existence`                                   |
-| `PublishedSemester`                    | site + semester                           | `title`, `version`, `demo`, first/last night, `rowLabels`, `holidays`, `moonEvents` |
-| `TelescopeNight`                       | one night                                 | `dataAvailable`, `interval`, and all six block lists clipped to it                  |
+| Type                                   | Subject                       | State it carries                                                       |
+| -------------------------------------- | ----------------------------- | ---------------------------------------------------------------------- |
+| `InstrumentAvailabilityBlock`          | `instrument`, `publishedName` | `usage`, `location { type, port }`                                     |
+| `TelescopeAvailabilityBlock`           | the site, or one `port`       | `availability` (OPEN/CLOSED), `reason`                                 |
+| `TelescopeModeBlock`                   | the site                      | `mode`, `programReferences[]`, `partner`                               |
+| `TooSupportBlock`                      | the site                      | `tooSupport`                                                           |
+| `TelescopeSubsystemAvailabilityBlock`  | `subsystem`                   | `usage`, `powerSource`                                                 |
+| `InstrumentComponentAvailabilityBlock` | `component` (nested identity) | `usage`, `location`                                                    |
+| `InstrumentComponent`                  | identity only                 | `code`, `name`, `barcode`, `aliases`, `existence`                      |
+| `PublishedSemester`                    | site + semester               | `title`, `version`, `demo`, first/last night, `holidays`, `moonEvents` |
+| `TelescopeNight`                       | one night                     | `dataAvailable`, `interval`, and all six block lists clipped to it     |
 
 ### The enumerations
 
@@ -122,6 +122,12 @@ the mock.
   asked interval. `clip: false` (the default) returns stored intervals, so a view can
   draw a mounting running past its window's edge; `clip: true` trims. The night
   projection always clips.
+- **Where a record is says which row it draws on.** A schedule view's subject rows are
+  the telescope's five instrument ports, and `location.port` is the whole of a
+  mounting's place in that picture - the API carries no row label and no row list, and
+  a consumer must never parse a port out of a string. A record with no port (an
+  instrument between mounts, or one in the summit lab) belongs to no row and reaches a
+  reader through the instrument browser instead.
 - **Stable record ids, contextual intervals.** A block's id names the stored record;
   its interval in a clipped response is a value scoped to that query, not an update to
   the entity. (Normalizing clipped blocks by id let one night's response overwrite
@@ -156,7 +162,6 @@ query {
     demo
     firstNight
     lastNight
-    rowLabels
   }
 }
 ```
@@ -173,7 +178,6 @@ query {
         "demo": false,
         "firstNight": "2024-08-02",
         "lastNight": "2025-02-01",
-        "rowLabels": ["Port 1", "Port 2", "Port 3", "Port 4", "Port 5"],
       },
       // … eight more site + semester entries
     ],
@@ -200,7 +204,10 @@ query {
     instrumentAvailability {
       instrument
       publishedName
-      rowLabel
+      location {
+        type
+        port
+      }
       usage
       interval {
         start
@@ -263,7 +270,7 @@ query {
         {
           "instrument": "GHOST",
           "publishedName": "GHOST",
-          "rowLabel": "Port 1",
+          "location": { "type": "PORT", "port": 1 },
           "usage": "SCIENCE",
           "interval": { "start": "2025-11-19T17:00:00Z", "end": "2025-11-20T17:00:00Z" },
         },
@@ -401,7 +408,6 @@ query {
     id
     instrument
     publishedName
-    rowLabel
     usage
     location {
       type
@@ -423,7 +429,6 @@ query {
         "id": "GS-2025B-b-0",
         "instrument": "GHOST",
         "publishedName": "GHOST",
-        "rowLabel": "Port 1",
         "usage": "SCIENCE",
         "location": { "type": "PORT", "port": 1 },
         "interval": { "start": "2025-08-01T18:00:00Z", "end": "2026-02-01T17:00:00Z" },

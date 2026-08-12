@@ -25,7 +25,6 @@ const mounting = (over: Partial<Mounting> = {}): Mounting => ({
   instrument: 'GMOS',
   publishedName: 'GMOS-S',
   usage: 'SCIENCE',
-  rowLabel: 'Port 3',
   port: 3,
   locationType: 'PORT',
   interval: nights('2026-08-08', '2026-08-14'),
@@ -38,7 +37,7 @@ describe('buildInstrumentRows', () => {
     const [row] = buildInstrumentRows({ mountings: [mounting()], night });
 
     expect(row).toMatchObject({ instrument: 'GMOS', publishedName: 'GMOS-S', usage: 'SCIENCE' });
-    expect(row?.where).toEqual({ kind: 'PORT', port: 3, rowLabel: 'Port 3' });
+    expect(row?.where).toEqual({ kind: 'PORT', port: 3 });
     expect(row?.run).toEqual(nights('2026-08-08', '2026-08-14'));
   });
 
@@ -46,7 +45,7 @@ describe('buildInstrumentRows', () => {
     // The workbook's usable-with-no-port run: it never says where the
     // instrument physically sits, so the row must not claim one.
     const [row] = buildInstrumentRows({
-      mountings: [mounting({ instrument: 'CAL_ZORRO', rowLabel: 'Zorro', port: null, locationType: 'UNKNOWN' })],
+      mountings: [mounting({ instrument: 'CAL_ZORRO', port: null, locationType: 'UNKNOWN' })],
       night,
     });
 
@@ -70,12 +69,12 @@ describe('buildInstrumentRows', () => {
     const [row] = buildInstrumentRows({
       mountings: [
         mounting({ id: 'a', interval: { start: night.start, end: changeover } }),
-        mounting({ id: 'b', rowLabel: 'Port 5', port: 5, interval: { start: changeover, end: night.end } }),
+        mounting({ id: 'b', port: 5, interval: { start: changeover, end: night.end } }),
       ],
       night,
     });
 
-    expect(row?.where).toEqual({ kind: 'PORT', port: 5, rowLabel: 'Port 5' });
+    expect(row?.where).toEqual({ kind: 'PORT', port: 5 });
     expect(row?.changesTonight).toBe(true);
     expect(row?.transitions).toEqual([changeover]);
   });
@@ -96,10 +95,10 @@ describe('locationOptions', () => {
   it('offers the ports in order, then the two plain facts, each with its count', () => {
     const rows = buildInstrumentRows({
       mountings: [
-        mounting({ instrument: 'GHOST', rowLabel: 'Port 1', port: 1 }),
-        mounting({ instrument: 'GCAL', rowLabel: 'Port 2', port: 2 }),
-        mounting({ instrument: 'F2', rowLabel: 'Port 1', port: 1 }),
-        mounting({ instrument: 'CAL_ZORRO', rowLabel: 'Zorro', port: null, locationType: 'UNKNOWN' }),
+        mounting({ instrument: 'GHOST', port: 1 }),
+        mounting({ instrument: 'GCAL', port: 2 }),
+        mounting({ instrument: 'F2', port: 1 }),
+        mounting({ instrument: 'CAL_ZORRO', port: null, locationType: 'UNKNOWN' }),
         // Recorded elsewhere in the window, nothing tonight.
         mounting({ instrument: 'CANOPUS', interval: nights('2026-09-01', '2026-09-05') }),
       ],

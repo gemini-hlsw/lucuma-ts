@@ -61,7 +61,14 @@ export interface SiteRows {
 
 const SITE_NAME = { GN: 'North', GS: 'South' } as const;
 export const WORKBOOK_VERSION = 'telescope_schedules.xlsx';
-const ROW_LABELS = ['Port 1', 'Port 2', 'Port 3', 'Port 4', 'Port 5'] as const;
+/**
+ * The instrument ports, in the order the reader hands their columns over
+ * (`PORT_COLUMNS` in importWorkbook.ts). Five at each telescope, which is a
+ * fact about the instrument support structure rather than about a schedule -
+ * the sheet prints "Port 1-up", but the suffix names the port's fixed
+ * orientation, not schedule data.
+ */
+const PORTS = [1, 2, 3, 4, 5] as const;
 
 const addDays = (isoDate: string, days: number): string => {
   const date = new Date(`${isoDate}T00:00:00Z`);
@@ -168,7 +175,7 @@ const buildSemester = (
 ): ImportedSchedule => {
   const blocks: ImportedBlock[] = [];
 
-  for (const [index, rowLabel] of ROW_LABELS.entries()) {
+  for (const [index, port] of PORTS.entries()) {
     interface PortKey {
       readonly name: string;
       readonly usage: 'SCIENCE' | 'ENGINEERING' | 'UNAVAILABLE' | undefined;
@@ -190,14 +197,13 @@ const buildSemester = (
       const instrument = instrumentOf(run.key.name);
       if (instrument === null) {
         warnings.push(
-          `${site} ${semester}: unrecognised instrument "${run.key.name}" on ${rowLabel} - kept as UNKNOWN.`,
+          `${site} ${semester}: unrecognised instrument "${run.key.name}" on Port ${String(port)} - kept as UNKNOWN.`,
         );
       }
       blocks.push({
         kind: instrument === null ? 'UNKNOWN' : 'MOUNTED',
         site,
-        rowLabel,
-        port: index + 1,
+        port,
         instrument,
         publishedName: run.key.name,
         ...spanFields(site, run.first, run.last),
@@ -302,10 +308,10 @@ const buildSemester = (
   // mounting with no port; where it physically is, the workbook does not say,
   // so its location resolves to UNKNOWN rather than a guessed port.
   //
-  // Deliberately **not** in `rowLabels` (Dan, 2026-08-12): the schedule views
-  // are the ports' picture, and a row that is empty in four months of six
-  // buys nothing there. The instrument browser is where an off-port run is
-  // legible, which is why these records are still served.
+  // The null port is what keeps these off every schedule view (Dan,
+  // 2026-08-12): those views are the ports' picture, and a row that is empty
+  // in four months of six buys nothing there. The instrument browser is where
+  // an off-port run is legible, which is why these records are still served.
   for (const column of Object.keys(rows[0]?.statuses ?? {})) {
     const instrument = instrumentOf(column);
     if (instrument === null) {
@@ -324,7 +330,6 @@ const buildSemester = (
       blocks.push({
         kind: 'MOUNTED',
         site,
-        rowLabel: column,
         port: null,
         instrument,
         publishedName: column,
@@ -381,7 +386,6 @@ const buildSemester = (
     version: WORKBOOK_VERSION,
     nightLabelling: 'EVENING',
     legend: [],
-    rowLabels: [...ROW_LABELS],
     blocks,
     closures,
     tooSupport,

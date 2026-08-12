@@ -14,6 +14,7 @@
  */
 import { brightnessOf, darkHoursOf, type LunarBrightness } from './calendarNights';
 import { type MoonPhase, moonPhaseAt } from './moon';
+import { portRowLabel } from './ports';
 import type { TimelineNight } from './timeline';
 import type {
   Closure,
@@ -157,13 +158,17 @@ export const buildWeekChanges = ({
 
   // Ports only, as the calendar's news is: a stored instrument changing shelf
   // is not a change to the week's observing.
-  for (const mounting of mountings.filter((candidate) => candidate.port !== null)) {
+  for (const mounting of mountings) {
+    if (mounting.port === null) {
+      continue;
+    }
+    const rowLabel = portRowLabel(mounting.port);
     if (inside(mounting.interval.start)) {
       changes.push({
         kind: 'RUN_BEGINS',
         instant: mounting.interval.start,
         label: mounting.publishedName,
-        rowLabel: mounting.rowLabel,
+        rowLabel,
         note: mounting.note,
       });
     }
@@ -172,7 +177,7 @@ export const buildWeekChanges = ({
         kind: 'RUN_ENDS',
         instant: mounting.interval.end,
         label: mounting.publishedName,
-        rowLabel: mounting.rowLabel,
+        rowLabel,
         note: null,
       });
     }
@@ -185,7 +190,7 @@ export const buildWeekChanges = ({
       continue;
     }
     const label = closure.reason ?? (closure.port === null ? 'Telescope closed' : 'Closed');
-    const rowLabel = closure.port === null ? null : `Port ${closure.port}`;
+    const rowLabel = closure.port === null ? null : portRowLabel(closure.port);
     if (inside(closure.interval.start)) {
       changes.push({ kind: 'CLOSURE_BEGINS', instant: closure.interval.start, label, rowLabel });
     }

@@ -13,6 +13,7 @@
  * a run or availability record reaching the window's own edge was there
  * before the page and after it, which is furniture, not news.
  */
+import { portRowLabel } from './ports';
 import type { TimelineNight } from './timeline';
 import { nightAt, USAGE_LABEL } from './timeline';
 import type { Closure, Instrument, Mounting } from './types';
@@ -40,8 +41,11 @@ export interface CalendarNewsItem {
 }
 
 interface RowBoundary {
-  readonly ending?: Mounting;
-  readonly beginning?: Mounting;
+  /** The port the change is on - the row the chip belongs to. */
+  readonly port: number;
+  readonly instant: number;
+  ending?: Mounting;
+  beginning?: Mounting;
 }
 
 /**
@@ -81,27 +85,29 @@ export const buildCalendarNews = ({
   // One boundary per row and instant, so a swap (or a usability change, which
   // the importer records as two abutting mountings) is one chip, not an "out"
   // and an "in" saying the same thing twice.
-  const boundaries = new Map<string, { ending?: Mounting; beginning?: Mounting }>();
-  const boundaryAt = (rowLabel: string, instant: number) => {
-    const key = `${rowLabel}@${String(instant)}`;
-    const existing = boundaries.get(key) ?? {};
+  const boundaries = new Map<string, RowBoundary>();
+  const boundaryAt = (port: number, instant: number): RowBoundary => {
+    const key = `${String(port)}@${String(instant)}`;
+    const existing = boundaries.get(key) ?? { port, instant };
     boundaries.set(key, existing);
     return existing;
   };
   // Ports only: the calendar's news is the schedule's news, and an instrument
   // in the summit lab moving to the dome floor is inventory, not a night's
   // headline (Dan, 2026-08-12).
-  for (const mounting of mountings.filter((candidate) => candidate.port !== null)) {
+  for (const mounting of mountings) {
+    if (mounting.port === null) {
+      continue;
+    }
     if (inside(mounting.interval.start)) {
-      boundaryAt(mounting.rowLabel, mounting.interval.start).beginning = mounting;
+      boundaryAt(mounting.port, mounting.interval.start).beginning = mounting;
     }
     if (inside(mounting.interval.end)) {
-      boundaryAt(mounting.rowLabel, mounting.interval.end).ending = mounting;
+      boundaryAt(mounting.port, mounting.interval.end).ending = mounting;
     }
   }
-  for (const [key, boundary] of boundaries) {
-    const instant = Number(key.slice(key.lastIndexOf('@') + 1));
-    const evening = eveningOf(instant);
+  for (const boundary of boundaries.values()) {
+    const evening = eveningOf(boundary.instant);
     if (evening === null) {
       continue;
     }
@@ -110,7 +116,7 @@ export const buildCalendarNews = ({
       eveningDate: evening,
       kind: 'INSTRUMENT',
       label: phrase(boundary),
-      rowLabel: boundary.beginning?.rowLabel ?? boundary.ending?.rowLabel ?? null,
+      rowLabel: portRowLabel(boundary.port),
       instrument: incoming?.instrument ?? boundary.ending?.instrument ?? null,
       detail: incoming?.note ?? boundary.ending?.note ?? null,
     });

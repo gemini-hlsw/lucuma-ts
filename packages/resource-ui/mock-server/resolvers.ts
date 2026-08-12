@@ -96,7 +96,6 @@ const instrumentBlock = (block: StoredBlock, interval: MockInterval): unknown =>
   // unrecognised workbook name. Its printed text, when it has any, is in `note`.
   instrument: block.instrument ?? 'UNKNOWN',
   publishedName: block.publishedName ?? block.note ?? 'Unknown',
-  rowLabel: block.rowLabel,
   location: { type: block.port === null ? 'UNKNOWN' : 'PORT', port: block.port },
   // The workbook's per-instrument usability column, where it recorded one;
   // SCIENCE otherwise - the sources never record a mounted instrument as
@@ -117,7 +116,6 @@ const storedInstrumentBlock = (block: SynthesizedInstrumentBlock, interval: Mock
   note: block.note,
   instrument: block.instrument,
   publishedName: block.publishedName,
-  rowLabel: block.rowLabel,
   location: { type: block.place, port: null },
   usage: block.usage,
 });
@@ -282,7 +280,6 @@ export const buildResolvers = (store: MockStore) => ({
           demo: schedule.demo === true,
           firstNight: nights[0] ?? null,
           lastNight: nights.at(-1) ?? null,
-          rowLabels: schedule.rowLabels,
           holidays: schedule.holidays,
           moonEvents: schedule.moonEvents,
         };

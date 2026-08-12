@@ -5,12 +5,10 @@
   "version": "telescope_schedules.xlsx",
   "nightLabelling": "EVENING",
   "legend": [],
-  "rowLabels": ["Port 1", "Port 2", "Port 3", "Port 4", "Port 5"],
   "blocks": [
     {
       "kind": "MOUNTED",
       "site": "GS",
-      "rowLabel": "Port 1",
       "port": 1,
       "instrument": "GHOST",
       "publishedName": "GHOST",
@@ -26,7 +24,6 @@
     {
       "kind": "MOUNTED",
       "site": "GS",
-      "rowLabel": "Port 2",
       "port": 2,
       "instrument": "GCAL",
       "publishedName": "GCAL",
@@ -42,7 +39,6 @@
     {
       "kind": "MOUNTED",
       "site": "GS",
-      "rowLabel": "Port 3",
       "port": 3,
       "instrument": "GMOS",
       "publishedName": "GMOS-S",
@@ -58,7 +54,6 @@
     {
       "kind": "MOUNTED",
       "site": "GS",
-      "rowLabel": "Port 4",
       "port": 4,
       "instrument": "CANOPUS",
       "publishedName": "Canopus",
@@ -74,7 +69,6 @@
     {
       "kind": "MOUNTED",
       "site": "GS",
-      "rowLabel": "Port 5",
       "port": 5,
       "instrument": "F2",
       "publishedName": "Flamingos2",

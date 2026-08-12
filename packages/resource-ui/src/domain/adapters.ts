@@ -49,7 +49,6 @@ export const toPublishedSemesters = (data: GetPublishedSemestersQuery): readonly
     demo: entry.demo,
     firstNight: entry.firstNight,
     lastNight: entry.lastNight,
-    rowLabels: entry.rowLabels,
     holidays: entry.holidays,
     moonEvents: entry.moonEvents.map((event) => ({ date: event.date, phase: event.phase })),
   }));
@@ -59,7 +58,6 @@ export const toMountings = (blocks: readonly InstrumentBlockFieldsFragment[]): r
     id: block.id,
     instrument: block.instrument,
     publishedName: block.publishedName,
-    rowLabel: block.rowLabel,
     usage: block.usage,
     port: block.location.port ?? null,
     locationType: block.location.type,

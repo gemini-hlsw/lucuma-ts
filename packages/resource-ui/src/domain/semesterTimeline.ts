@@ -83,7 +83,6 @@ const isWeekendDate = (isoDate: string): boolean => {
 
 export interface BuildSemesterTimelineOptions {
   readonly site: Site;
-  readonly rowLabels: readonly string[];
   readonly firstNight: string;
   readonly lastNight: string;
   readonly mountings: readonly Mounting[];
@@ -97,7 +96,6 @@ export interface BuildSemesterTimelineOptions {
 /** Builds the month-by-month timeline the semester view draws. */
 export const buildSemesterTimeline = ({
   site,
-  rowLabels,
   firstNight,
   lastNight,
   mountings,
@@ -121,10 +119,7 @@ export const buildSemesterTimeline = ({
 
   // The state rows join once, here, so every month and the whole-semester rows
   // (the block table's reading) carry the same head.
-  const collected = [
-    ...collectStateRows(closures, tooBlocks, modeBlocks),
-    ...collectBlocks({ rowLabels, mountings, closures }),
-  ];
+  const collected = [...collectStateRows(closures, tooBlocks, modeBlocks), ...collectBlocks({ mountings, closures })];
 
   // Group by the evening date's month, so a column sits under the month the
   // sheet prints it under.

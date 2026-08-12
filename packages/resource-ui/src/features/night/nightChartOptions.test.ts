@@ -8,6 +8,7 @@ import type { AxisLabelsFormatterContextObject, XAxisOptions, XAxisPlotLinesOpti
 import { describe, expect, it } from 'vitest';
 
 import { buildNightTimeline } from '@/domain/nightTimeline';
+import { portRowLabel, TELESCOPE_PORTS } from '@/domain/ports';
 import { observingNightInterval } from '@/domain/siteTime';
 import type { Closure, Mounting } from '@/domain/types';
 import { buildTimelinePoints, type TimelinePoint } from '@/features/timeline/timelineOptions';
@@ -24,21 +25,21 @@ import {
 
 const NIGHT = '2026-11-14';
 const interval = observingNightInterval('GS', NIGHT);
-const ROWS = ['Port 1-up', 'Port 2', 'Port 3'];
+/** Every night draws the telescope's ports, whatever tonight happens to hold. */
+const ROWS = TELESCOPE_PORTS.map(portRowLabel);
 const HOUR = 3_600_000;
 
-const mounting = (over: Partial<Mounting> & Pick<Mounting, 'id' | 'rowLabel' | 'interval'>): Mounting => ({
+const mounting = (over: Partial<Mounting> & Pick<Mounting, 'id' | 'port' | 'interval'>): Mounting => ({
   instrument: 'GMOS',
   publishedName: 'GMOS',
   usage: 'SCIENCE',
-  port: null,
-  locationType: 'UNKNOWN',
+  locationType: 'PORT',
   note: null,
   ...over,
 });
 
 const build = (mountings: readonly Mounting[] = []) =>
-  buildNightTimeline({ site: 'GS', observingNight: NIGHT, rowLabels: ROWS, mountings, closures: [] });
+  buildNightTimeline({ site: 'GS', observingNight: NIGHT, mountings, closures: [] });
 
 describe('clock and duration labels', () => {
   it('reads the clock in the site zone, not the browser one', () => {
@@ -76,7 +77,7 @@ describe('describing a block', () => {
   const describe_ = nightDescriber('GS', interval, 'site');
 
   it('says "all night" rather than a span, when nothing changes', () => {
-    const block = build([mounting({ id: 'a', rowLabel: 'Port 3', interval })]).rows[2]?.blocks[0];
+    const block = build([mounting({ id: 'a', port: 3, interval })]).rows[2]?.blocks[0];
 
     // A night is 23 or 25 hours either side of a DST change, so a duration here
     // would be both noisy and beside the point.
@@ -87,7 +88,7 @@ describe('describing a block', () => {
     const partial = build([
       mounting({
         id: 'a',
-        rowLabel: 'Port 3',
+        port: 3,
         interval: { start: interval.start + 6 * HOUR, end: interval.start + 9 * HOUR },
       }),
     ]).rows[2]?.blocks[0];
@@ -100,7 +101,7 @@ describe('describing a block', () => {
     const partial = build([
       mounting({
         id: 'a',
-        rowLabel: 'Port 3',
+        port: 3,
         interval: { start: interval.start + 6 * HOUR, end: interval.start + 9 * HOUR },
       }),
     ]).rows[2]?.blocks[0];
@@ -203,8 +204,7 @@ describe('the telescope-state header band', () => {
   const stateNight = buildNightTimeline({
     site: 'GS',
     observingNight: NIGHT,
-    rowLabels: ROWS,
-    mountings: [mounting({ id: 'g1', rowLabel: 'Port 2', interval })],
+    mountings: [mounting({ id: 'g1', port: 2, interval })],
     closures: [],
     modeBlocks: [{ id: 'm1', mode: 'PRIORITY_VISITOR', programReferences: [], partner: null, interval, note: null }],
     tooBlocks: [{ id: 't1', tooSupport: 'STANDARD', interval, note: null }],
@@ -259,8 +259,7 @@ describe('instrument usability treatments', () => {
     const night = buildNightTimeline({
       site: 'GS',
       observingNight: NIGHT,
-      rowLabels: ROWS,
-      mountings: [mounting({ id: 'a', rowLabel: 'Port 3', usage, interval })],
+      mountings: [mounting({ id: 'a', port: 3, usage, interval })],
       closures: [],
     });
     return buildTimelinePoints(night.rows, nightDescriber('GS', interval, 'site'))[0];
@@ -300,7 +299,7 @@ describe('a port closure on the night', () => {
   });
 
   const pointsFor = (closures: readonly Closure[]) => {
-    const night = buildNightTimeline({ site: 'GS', observingNight: NIGHT, rowLabels: ROWS, mountings: [], closures });
+    const night = buildNightTimeline({ site: 'GS', observingNight: NIGHT, mountings: [], closures });
     return buildTimelinePoints(night.rows, nightDescriber('GS', interval, 'site'));
   };
 

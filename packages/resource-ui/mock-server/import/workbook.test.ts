@@ -68,16 +68,11 @@ describe('the off-port usability import', () => {
     const schedules = build(nights('2025-08-01', 2, () => ({ statuses: { Zorro: 'Science' } })));
     const zorro = schedules[0]?.blocks.find((block) => block.publishedName === 'Zorro');
 
-    expect(zorro).toMatchObject({ kind: 'MOUNTED', instrument: 'CAL_ZORRO', rowLabel: 'Zorro', port: null });
+    // The null port is what keeps it off every chart: a row empty in most
+    // months buys nothing on the schedule, and the instrument browser is where
+    // an off-port run is legible.
+    expect(zorro).toMatchObject({ kind: 'MOUNTED', instrument: 'CAL_ZORRO', port: null });
     expect(zorro?.usage).toBeUndefined();
-  });
-
-  it('keeps an off-port run out of rowLabels - the schedule views are the ports picture', () => {
-    // Served, but never a chart row: a row empty in most months buys nothing
-    // on the schedule, and the instrument browser is where it is legible.
-    const schedules = build(nights('2025-08-01', 2, () => ({ statuses: { Zorro: 'Science' } })));
-
-    expect(schedules[0]?.rowLabels).toEqual(['Port 1', 'Port 2', 'Port 3', 'Port 4', 'Port 5']);
   });
 
   it('leaves a Not Available column as the gap it is - absence is not a record', () => {
@@ -86,7 +81,6 @@ describe('the off-port usability import', () => {
     const schedules = build(nights('2025-08-01', 2, () => ({ statuses: { Zorro: 'Not Available' } })));
 
     expect(schedules[0]?.blocks.find((block) => block.publishedName === 'Zorro')).toBeUndefined();
-    expect(schedules[0]?.rowLabels).toEqual(['Port 1', 'Port 2', 'Port 3', 'Port 4', 'Port 5']);
   });
 
   it('does not double a mounted instrument whose usability column also says Science', () => {
@@ -95,7 +89,6 @@ describe('the off-port usability import', () => {
     const schedules = build(nights('2025-08-01', 2));
 
     expect(schedules[0]?.blocks.filter((block) => block.instrument === 'GHOST')).toHaveLength(1);
-    expect(schedules[0]?.rowLabels).toHaveLength(5);
   });
 });
 
@@ -105,7 +98,19 @@ describe('buildWorkbookSchedules', () => {
 
     expect(schedules.map((schedule) => schedule.semester)).toEqual(['2025A', '2025B']);
     expect(schedules[0]?.version).toBe('telescope_schedules.xlsx');
-    expect(schedules[0]?.rowLabels).toEqual(['Port 1', 'Port 2', 'Port 3', 'Port 4', 'Port 5']);
+  });
+
+  it('numbers each port column, which is the whole of where a run sits', () => {
+    // The port is the only thing that says which row a run draws on, so the
+    // column order has to survive the import exactly.
+    const schedules = build(nights('2025-08-01', 2));
+    const ports = new Map(schedules[0]?.blocks.map((block) => [block.publishedName, block.port]));
+
+    expect(ports.get('GHOST')).toBe(1);
+    expect(ports.get('GCAL')).toBe(2);
+    expect(ports.get('GMOS-S')).toBe(3);
+    expect(ports.get('Canopus')).toBe(4);
+    expect(ports.get('Flamingos2')).toBe(5);
   });
 
   it('folds a run of equal nights into one block labelled by observing nights', () => {
@@ -116,7 +121,6 @@ describe('buildWorkbookSchedules', () => {
     expect(ghost).toMatchObject({
       kind: 'MOUNTED',
       instrument: 'GHOST',
-      rowLabel: 'Port 1',
       port: 1,
       firstObservingNight: '2025-08-02',
       lastObservingNight: '2025-08-04',

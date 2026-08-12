@@ -8,7 +8,6 @@ import { buildWeekTimeline } from './weekTimeline';
 const week = buildWeekTimeline({
   site: 'GS',
   firstNight: '2026-11-22',
-  rowLabels: [],
   mountings: [],
   closures: [],
   nightsWithData: undefined,
@@ -67,7 +66,6 @@ describe('the changes list', () => {
   const { interval } = week;
 
   const mounting = (over: Partial<Mounting> & Pick<Mounting, 'id' | 'interval'>): Mounting => ({
-    rowLabel: 'Port 3',
     instrument: 'GMOS',
     publishedName: 'GMOS',
     usage: 'SCIENCE',
@@ -85,7 +83,7 @@ describe('the changes list', () => {
         mounting({
           id: 'begins',
           publishedName: 'Maroon-X Run',
-          rowLabel: 'Visiting',
+          port: 5,
           interval: { start: interval.start + 3 * DAY, end: interval.end + 30 * DAY },
         }),
       ],
@@ -95,7 +93,7 @@ describe('the changes list', () => {
     });
 
     expect(changes.map((change) => change.kind)).toEqual(['RUN_ENDS', 'RUN_BEGINS']);
-    expect(changes[1]).toMatchObject({ label: 'Maroon-X Run', rowLabel: 'Visiting' });
+    expect(changes[1]).toMatchObject({ label: 'Maroon-X Run', rowLabel: 'Port 5' });
   });
 
   it('does not call a boundary at the window’s edge a change', () => {

@@ -32,7 +32,6 @@ const mounting: Mounting = {
   instrument: 'GMOS',
   publishedName: 'GMOS',
   usage: 'SCIENCE',
-  rowLabel: 'Port 3',
   port: 3,
   locationType: 'PORT',
   interval: { start: night.start - 60 * 86_400_000, end: night.end + 60 * 86_400_000 },

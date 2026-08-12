@@ -42,7 +42,6 @@ export interface BuildWeekTimelineOptions {
   readonly site: Site;
   /** The first of the seven nights, labelled by the date it ends on. */
   readonly firstNight: string;
-  readonly rowLabels: readonly string[];
   readonly mountings: readonly Mounting[];
   readonly closures: readonly Closure[];
   /** ToO support and telescope mode records reaching the week; the state rows
@@ -71,7 +70,6 @@ const isWeekendDate = (isoDate: string): boolean => {
 export const buildWeekTimeline = ({
   site,
   firstNight,
-  rowLabels,
   mountings,
   closures,
   tooBlocks = [],
@@ -94,7 +92,7 @@ export const buildWeekTimeline = ({
     end: nights.at(-1)?.interval.end ?? 0,
   };
   const rows = placeBlocks(
-    [...collectStateRows(closures, tooBlocks, modeBlocks), ...collectBlocks({ rowLabels, mountings, closures })],
+    [...collectStateRows(closures, tooBlocks, modeBlocks), ...collectBlocks({ mountings, closures })],
     interval,
   );
   const bands = placeBands(closures, interval);

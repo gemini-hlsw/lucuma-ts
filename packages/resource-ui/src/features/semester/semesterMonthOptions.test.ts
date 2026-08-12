@@ -6,6 +6,7 @@
  */
 import { describe, expect, it } from 'vitest';
 
+import { portRowLabel, TELESCOPE_PORTS } from '@/domain/ports';
 import { buildSemesterTimeline, type TimelineMonth } from '@/domain/semesterTimeline';
 import { observingNightInterval } from '@/domain/siteTime';
 import type { Closure, Mounting, Site } from '@/domain/types';
@@ -24,11 +25,11 @@ const buildMonthPoints = (month: TimelineMonth, site: Site) => buildTimelinePoin
 const night = (label: string) => observingNightInterval('GS', label);
 const span = (from: string, to: string) => ({ start: night(from).start, end: night(to).end });
 
-const ROWS = ['Port 1-up', 'Port 2', 'Port 3', 'Port 4', 'Port 5'];
+/** Every month draws the telescope's ports, whatever the semester holds. */
+const ROWS = TELESCOPE_PORTS.map(portRowLabel);
 
 const GHOST: Mounting = {
   id: 'ghost',
-  rowLabel: 'Port 1-up',
   instrument: 'GHOST',
   publishedName: 'GHOST',
   usage: 'SCIENCE',
@@ -48,7 +49,6 @@ const AG: Closure = {
 
 const timeline = buildSemesterTimeline({
   site: 'GS',
-  rowLabels: ROWS,
   firstNight: '2026-08-02',
   lastNight: '2027-02-01',
   mountings: [GHOST],
@@ -104,10 +104,9 @@ describe('points', () => {
     // A semester missing an instrument must not repaint the ones that remain.
     const withoutGhost = buildSemesterTimeline({
       site: 'GS',
-      rowLabels: ROWS,
       firstNight: '2026-08-02',
       lastNight: '2026-09-01',
-      mountings: [{ ...GHOST, id: 'gmos', instrument: 'GMOS', publishedName: 'GMOS', rowLabel: 'Port 3' }],
+      mountings: [{ ...GHOST, id: 'gmos', instrument: 'GMOS', publishedName: 'GMOS', port: 3 }],
       closures: [],
     });
 
@@ -118,7 +117,6 @@ describe('points', () => {
   it('falls back to the state when the sheet named nothing', () => {
     const unnamed = buildSemesterTimeline({
       site: 'GS',
-      rowLabels: ROWS,
       firstNight: '2026-08-02',
       lastNight: '2026-09-01',
       mountings: [],
@@ -174,7 +172,6 @@ describe('bands', () => {
   it('washes a telescope-wide closure across every row, labelled once', () => {
     const shut = buildSemesterTimeline({
       site: 'GS',
-      rowLabels: ROWS,
       firstNight: '2026-08-02',
       lastNight: '2026-09-01',
       mountings: [],

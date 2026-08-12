@@ -207,6 +207,11 @@ input DateIntervalInput {
   end: Date!
 }
 
+"""
+Where an instrument is over a span, and the only thing that says which row a
+schedule view files a record under: the schedule views are the ports' picture,
+so a PORT record draws on its port's row and everything else draws nowhere.
+"""
 type InstrumentLocation {
   type: InstrumentLocationType!
   "Non-null iff `type` is PORT."
@@ -279,15 +284,6 @@ type InstrumentAvailabilityBlock implements ScheduleBlock {
   instrument: Instrument!
   "The name exactly as the schedule prints it, e.g. \"cal/ZORRO\", \"Maroon-X Run\"."
   publishedName: String!
-  """
-  The row the published schedule files this under - "Port 3" at Gemini South,
-  "GMOS" or "Visiting" at Gemini North.
-
-  Present because the two sites organise the same facts differently, and a view
-  reproducing either layout needs to know which row a record belongs to. It
-  pairs with `PublishedSemester.rowLabels`.
-  """
-  rowLabel: String!
   location: InstrumentLocation!
   usage: ResourceUsage!
 }
@@ -404,13 +400,6 @@ type PublishedSemester {
   demo: Boolean!
   firstNight: Date!
   lastNight: Date!
-  """
-  The subjects this semester's schedule is organised by: telescope ports at GS
-  ("Port 1" … "Port 5"), instruments at GN. Both describe the same facts. Port
-  labels are normalized - the sheet prints "Port 1-up", but the suffix names
-  the port's fixed orientation, not schedule data.
-  """
-  rowLabels: [String!]!
 
   """
   Public holidays over the semester, as the sheet marks them.

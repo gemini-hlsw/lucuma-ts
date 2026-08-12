@@ -12,7 +12,6 @@ export const INSTRUMENT_BLOCK_FIELDS = graphql(`
     id
     instrument
     publishedName
-    rowLabel
     usage
     note
     interval {
@@ -116,7 +115,6 @@ export const PUBLISHED_SEMESTERS_QUERY = graphql(`
       demo
       firstNight
       lastNight
-      rowLabels
       holidays
       moonEvents {
         date

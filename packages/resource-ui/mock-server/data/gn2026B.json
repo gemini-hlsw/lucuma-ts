@@ -5,12 +5,10 @@
   "version": "telescope_schedules.xlsx",
   "nightLabelling": "EVENING",
   "legend": [],
-  "rowLabels": ["Port 1", "Port 2", "Port 3", "Port 4", "Port 5"],
   "blocks": [
     {
       "kind": "MOUNTED",
       "site": "GN",
-      "rowLabel": "Port 1",
       "port": 1,
       "instrument": "IGRINS2",
       "publishedName": "IGRINS-2",
@@ -26,7 +24,6 @@
     {
       "kind": "MOUNTED",
       "site": "GN",
-      "rowLabel": "Port 1",
       "port": 1,
       "instrument": "MAROON_X",
       "publishedName": "MAROON-X",
@@ -42,7 +39,6 @@
     {
       "kind": "MOUNTED",
       "site": "GN",
-      "rowLabel": "Port 1",
       "port": 1,
       "instrument": "IGRINS2",
       "publishedName": "IGRINS-2",
@@ -58,7 +54,6 @@
     {
       "kind": "MOUNTED",
       "site": "GN",
-      "rowLabel": "Port 1",
       "port": 1,
       "instrument": "MAROON_X",
       "publishedName": "MAROON-X",
@@ -74,7 +69,6 @@
     {
       "kind": "MOUNTED",
       "site": "GN",
-      "rowLabel": "Port 1",
       "port": 1,
       "instrument": "IGRINS2",
       "publishedName": "IGRINS-2",
@@ -90,7 +84,6 @@
     {
       "kind": "MOUNTED",
       "site": "GN",
-      "rowLabel": "Port 1",
       "port": 1,
       "instrument": "MAROON_X",
       "publishedName": "MAROON-X",
@@ -106,7 +99,6 @@
     {
       "kind": "MOUNTED",
       "site": "GN",
-      "rowLabel": "Port 1",
       "port": 1,
       "instrument": "IGRINS2",
       "publishedName": "IGRINS-2",
@@ -122,7 +114,6 @@
     {
       "kind": "MOUNTED",
       "site": "GN",
-      "rowLabel": "Port 1",
       "port": 1,
       "instrument": "MAROON_X",
       "publishedName": "MAROON-X",
@@ -138,7 +129,6 @@
     {
       "kind": "MOUNTED",
       "site": "GN",
-      "rowLabel": "Port 1",
       "port": 1,
       "instrument": "IGRINS2",
       "publishedName": "IGRINS-2",
@@ -154,7 +144,6 @@
     {
       "kind": "MOUNTED",
       "site": "GN",
-      "rowLabel": "Port 2",
       "port": 2,
       "instrument": "GCAL",
       "publishedName": "GCAL",
@@ -170,7 +159,6 @@
     {
       "kind": "MOUNTED",
       "site": "GN",
-      "rowLabel": "Port 3",
       "port": 3,
       "instrument": "GNIRS",
       "publishedName": "GNIRS",
@@ -186,7 +174,6 @@
     {
       "kind": "MOUNTED",
       "site": "GN",
-      "rowLabel": "Port 3",
       "port": 3,
       "instrument": "GNIRS",
       "publishedName": "GNIRS",
@@ -203,7 +190,6 @@
     {
       "kind": "MOUNTED",
       "site": "GN",
-      "rowLabel": "Port 3",
       "port": 3,
       "instrument": "GNIRS",
       "publishedName": "GNIRS",
@@ -219,7 +205,6 @@
     {
       "kind": "MOUNTED",
       "site": "GN",
-      "rowLabel": "Port 4",
       "port": 4,
       "instrument": "ALTAIR",
       "publishedName": "Altair",
@@ -235,7 +220,6 @@
     {
       "kind": "MOUNTED",
       "site": "GN",
-      "rowLabel": "Port 5",
       "port": 5,
       "instrument": "GMOS",
       "publishedName": "GMOS-N",
@@ -251,7 +235,6 @@
     {
       "kind": "MOUNTED",
       "site": "GN",
-      "rowLabel": "`Alopeke",
       "port": null,
       "instrument": "ALOPEKE",
       "publishedName": "`Alopeke",
@@ -267,7 +250,6 @@
     {
       "kind": "MOUNTED",
       "site": "GN",
-      "rowLabel": "`Alopeke",
       "port": null,
       "instrument": "ALOPEKE",
       "publishedName": "`Alopeke",

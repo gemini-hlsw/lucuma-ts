@@ -90,7 +90,6 @@ export default function SemesterPage(): JSX.Element {
       ? null
       : buildSemesterTimeline({
           site: selected.site,
-          rowLabels: selected.rowLabels,
           firstNight: selected.firstNight,
           lastNight: selected.lastNight,
           mountings,

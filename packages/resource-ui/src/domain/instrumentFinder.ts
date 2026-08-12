@@ -12,11 +12,12 @@
  * component's whereabouts resolve through its instrument's mounting; an
  * instrument's resolve through its own availability records.
  */
+import { portRowLabel } from './ports';
 import type { Instrument, InstrumentLocationType, Interval, Mounting, ResourceUsage } from './types';
 
 export type InstrumentWhere =
   /** Mounted on a port over the night. */
-  | { readonly kind: 'PORT'; readonly port: number; readonly rowLabel: string }
+  | { readonly kind: 'PORT'; readonly port: number }
   /**
    * Recorded usable, but on no port - a visitor between mounts. The workbook
    * does not say where it physically sits, so the location is whatever the
@@ -56,7 +57,7 @@ const transitionsOf = (runs: readonly Mounting[]): readonly number[] =>
 const whereOf = (mounting: Mounting): InstrumentWhere =>
   mounting.port === null
     ? { kind: 'OFF_PORT', location: mounting.locationType }
-    : { kind: 'PORT', port: mounting.port, rowLabel: mounting.rowLabel };
+    : { kind: 'PORT', port: mounting.port };
 
 export interface BuildInstrumentRowsOptions {
   /** Every mounting over the window - the browser's whole subject. */
@@ -118,10 +119,11 @@ export const buildInstrumentRows = ({ mountings, night }: BuildInstrumentRowsOpt
  * How a row's location reads - the one phrasing the Where cell prints and the
  * location filter groups by, so the two can never drift.
  *
- * A port reads as the schedule's own row label. Everything else is the plain
- * fact: the workbook records usable-with-no-port without saying where the
- * instrument sits, and an absence stays an absence (I4) - never carried
- * forward from the last night that had a record.
+ * A port reads as its schedule row, the same label the charts print
+ * (`domain/ports.ts`). Everything else is the plain fact: the workbook records
+ * usable-with-no-port without saying where the instrument sits, and an absence
+ * stays an absence (I4) - never carried forward from the last night that had a
+ * record.
  */
 export const OFF_PORT_LABEL = 'Not on a port';
 export const NOT_RECORDED_LABEL = 'Not recorded';
@@ -146,12 +148,12 @@ export const mountingLocationLabel = (mounting: Mounting): string =>
     ? mounting.locationType === 'PORT'
       ? OFF_PORT_LABEL
       : PLACE_LABEL[mounting.locationType]
-    : mounting.rowLabel;
+    : portRowLabel(mounting.port);
 
 export const locationLabel = (row: InstrumentRow): string => {
   switch (row.where.kind) {
     case 'PORT':
-      return row.where.rowLabel;
+      return portRowLabel(row.where.port);
     case 'OFF_PORT':
       return row.where.location === 'PORT' ? OFF_PORT_LABEL : PLACE_LABEL[row.where.location];
     default:

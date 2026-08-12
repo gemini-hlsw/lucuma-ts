@@ -34,6 +34,7 @@
  * alone - A&G on Port 4, F2 on Port 5 in 2026A - and the fragments disappear,
  * because they had no span of their own to begin with.
  */
+import { portRowLabel, portRows } from './ports';
 import type {
   Closure,
   Instrument,
@@ -188,12 +189,6 @@ export const subtract = (interval: Interval, holes: readonly Interval[]): readon
     });
   }
   return pieces;
-};
-
-/** Which row a closure belongs to: its port number, matched against "Port 3". */
-const closureIsOnRow = (closure: Closure, rowLabel: string): boolean => {
-  const port = /^port\s*(\d+)/i.exec(rowLabel)?.[1];
-  return port !== undefined && closure.port === Number(port);
 };
 
 /**
@@ -503,7 +498,6 @@ export const stateRowCount = (rows: readonly { readonly label: string }[]): numb
 };
 
 export interface TimelineSource {
-  readonly rowLabels: readonly string[];
   readonly mountings: readonly Mounting[];
   readonly closures: readonly Closure[];
 }
@@ -512,9 +506,13 @@ export interface TimelineSource {
  * Every block on every row, with the telescope-wide spans already subtracted
  * from the port closures. Window-independent, so a semester can place the same
  * blocks in six months without rebuilding them.
+ *
+ * The rows are the telescope's ports (`portRows`), which is the whole of the
+ * subject axis: a record's port says which row it belongs to, and one with no
+ * port - an instrument between mounts, or one in the summit lab - belongs to
+ * none and is the instrument browser's subject instead.
  */
 export const collectBlocks = ({
-  rowLabels,
   mountings,
   closures,
 }: TimelineSource): readonly { readonly label: string; readonly blocks: readonly UnplacedBlock[] }[] => {
@@ -524,13 +522,14 @@ export const collectBlocks = ({
     .filter((closure) => closure.port === null && closure.availability === 'CLOSED')
     .map((closure) => closure.interval);
 
-  return rowLabels.map((rowLabel) => {
-    const onRow = mountings.filter((mounting) => mounting.rowLabel === rowLabel);
-    // Gemini North's sheet has two physical "Visiting" rows sharing one label,
-    // so an unidentified (UNKNOWN) band can genuinely coincide with a named
-    // run. This chart has one row per label, so the identified run wins the
-    // shared span and the unknown keeps what is genuinely its own - the same
-    // rule the wide closure spans apply to port closures below.
+  return portRows([...mountings, ...closures].map((record) => record.port)).map((port) => {
+    const rowLabel = portRowLabel(port);
+    const onRow = mountings.filter((mounting) => mounting.port === port);
+    // A source can put an unidentified (UNKNOWN) band over the same port and
+    // span as a named run - Gemini North's sheets did it with their two
+    // "Visiting" rows. One row per port, so the identified run wins the shared
+    // span and the unknown keeps what is genuinely its own - the same rule the
+    // wide closure spans apply to port closures below.
     const identifiedSpans = onRow
       .filter((mounting) => mounting.instrument !== 'UNKNOWN')
       .map((mounting) => mounting.interval);
@@ -559,7 +558,7 @@ export const collectBlocks = ({
             : [mountingBlock(mounting, mounting.interval, mounting.id)],
         ),
         ...closures
-          .filter((closure) => closure.availability === 'CLOSED' && closureIsOnRow(closure, rowLabel))
+          .filter((closure) => closure.availability === 'CLOSED' && closure.port === port)
           .flatMap((closure) =>
             subtract(closure.interval, wideSpans).map((piece, index) => ({
               id: `${closure.id}-${index}`,

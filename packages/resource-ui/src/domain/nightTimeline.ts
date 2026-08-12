@@ -47,7 +47,6 @@ export interface NightTimeline extends TimelineLegend {
 export interface BuildNightTimelineOptions {
   readonly site: Site;
   readonly observingNight: string;
-  readonly rowLabels: readonly string[];
   readonly mountings: readonly Mounting[];
   readonly closures: readonly Closure[];
   /** ToO support records reaching the night. The row appears only when some do. */
@@ -77,7 +76,6 @@ const transitionsIn = (rows: readonly TimelineRow[], night: Interval): readonly 
 export const buildNightTimeline = ({
   site,
   observingNight,
-  rowLabels,
   mountings,
   closures,
   tooBlocks = [],
@@ -86,10 +84,7 @@ export const buildNightTimeline = ({
 }: BuildNightTimelineOptions): NightTimeline => {
   const interval = observingNightInterval(site, observingNight);
   const rows = placeBlocks(
-    [
-      ...collectStateRows(closures, tooBlocks, modeBlocks, subsystemBlocks),
-      ...collectBlocks({ rowLabels, mountings, closures }),
-    ],
+    [...collectStateRows(closures, tooBlocks, modeBlocks, subsystemBlocks), ...collectBlocks({ mountings, closures })],
     interval,
   );
   const bands = placeBands(closures, interval);

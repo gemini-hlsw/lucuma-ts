@@ -3,20 +3,21 @@
  */
 import { describe, expect, it } from 'vitest';
 
+import { portRowLabel, TELESCOPE_PORTS } from './ports';
 import { observingNightInterval } from './siteTime';
 import { nightAt } from './timeline';
 import type { Closure, Mounting } from './types';
 import { buildWeekTimeline, WEEK_NIGHTS, weekNightLabels } from './weekTimeline';
 
 const FIRST = '2026-11-14';
-const ROWS = ['Port 1-up', 'Port 2', 'Port 3'];
+/** Every week draws the telescope's ports, whatever the seven nights hold. */
+const ROWS = TELESCOPE_PORTS.map(portRowLabel);
 
-const mounting = (over: Partial<Mounting> & Pick<Mounting, 'id' | 'rowLabel' | 'interval'>): Mounting => ({
+const mounting = (over: Partial<Mounting> & Pick<Mounting, 'id' | 'port' | 'interval'>): Mounting => ({
   instrument: 'GMOS',
   publishedName: 'GMOS',
   usage: 'SCIENCE',
-  port: null,
-  locationType: 'UNKNOWN',
+  locationType: 'PORT',
   note: null,
   ...over,
 });
@@ -31,7 +32,6 @@ const build = (
   buildWeekTimeline({
     site: 'GS',
     firstNight: FIRST,
-    rowLabels: ROWS,
     mountings: over.mountings ?? [],
     closures: over.closures ?? [],
     nightsWithData: 'nightsWithData' in over ? over.nightsWithData : undefined,
@@ -91,7 +91,7 @@ describe('runs across the week', () => {
       mountings: [
         mounting({
           id: 'ghost',
-          rowLabel: 'Port 1-up',
+          port: 1,
           instrument: 'GHOST',
           publishedName: 'GHOST',
           interval: {
@@ -101,7 +101,7 @@ describe('runs across the week', () => {
         }),
       ],
     });
-    const blocks = week.rows.find((row) => row.key === 'Port 1-up')?.blocks ?? [];
+    const blocks = week.rows.find((row) => row.key === 'Port 1')?.blocks ?? [];
 
     expect(blocks).toHaveLength(1);
     expect(blocks[0]?.interval).toEqual(week.interval);
@@ -116,7 +116,6 @@ describe('the telescope-state rows', () => {
     const week = buildWeekTimeline({
       site: 'GS',
       firstNight: FIRST,
-      rowLabels: ROWS,
       mountings: [],
       closures: [{ id: 'a1', availability: 'OPEN', port: null, interval: span, reason: null }],
       tooBlocks: [{ id: 't1', tooSupport: 'NONE', interval: span, note: null }],

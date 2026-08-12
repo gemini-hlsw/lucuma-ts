@@ -26,7 +26,6 @@ const mounting = (over: Partial<Mounting> = {}): Mounting => ({
   instrument: 'GMOS',
   publishedName: 'GMOS',
   usage: 'SCIENCE',
-  rowLabel: 'Port 3',
   port: 3,
   locationType: 'PORT',
   interval: nights('2026-08-08', '2026-08-14'),
@@ -46,7 +45,6 @@ const closure = (over: Partial<Closure> = {}): Closure => ({
 const build = (over: Partial<Parameters<typeof buildSemesterTimeline>[0]> = {}) => {
   const timeline = buildSemesterTimeline({
     site: SITE,
-    rowLabels: ['Port 3', 'Port 4'],
     firstNight: '2026-08-08',
     lastNight: '2026-08-14',
     mountings: [mounting()],

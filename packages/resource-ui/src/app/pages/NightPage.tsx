@@ -69,7 +69,6 @@ export default function NightPage(): JSX.Element {
   const night = buildNightTimeline({
     site,
     observingNight,
-    rowLabels: held?.rowLabels ?? [],
     mountings,
     closures,
     tooBlocks,

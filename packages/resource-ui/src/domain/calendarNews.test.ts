@@ -36,7 +36,6 @@ const mounting = (over: Partial<Mounting> & Pick<Mounting, 'id' | 'interval'>): 
   instrument: 'GMOS',
   publishedName: 'GMOS',
   usage: 'SCIENCE',
-  rowLabel: 'Port 1',
   port: 1,
   locationType: 'PORT',
   note: null,

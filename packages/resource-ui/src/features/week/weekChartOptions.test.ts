@@ -15,13 +15,11 @@ import {
 } from './weekChartOptions';
 
 const FIRST = '2026-11-14';
-const ROWS = ['Port 1-up', 'Port 2', 'Port 3'];
 
 const build = (nightsWithData?: ReadonlySet<string>) =>
   buildWeekTimeline({
     site: 'GS',
     firstNight: FIRST,
-    rowLabels: ROWS,
     mountings: [],
     closures: [],
     nightsWithData,

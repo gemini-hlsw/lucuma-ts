@@ -10,22 +10,23 @@
 import { describe, expect, it } from 'vitest';
 
 import { buildNightTimeline } from './nightTimeline';
+import { portRowLabel, TELESCOPE_PORTS } from './ports';
 import { observingNightInterval } from './siteTime';
 import { MODE_ROW_LABEL, TOO_ROW_LABEL } from './timeline';
 import type { Closure, ModeBlock, Mounting, SubsystemBlock, TooBlock } from './types';
 
 const NIGHT = '2026-11-14';
 const interval = observingNightInterval('GS', NIGHT);
-const ROWS = ['Port 1-up', 'Port 2', 'Port 3'];
+/** Every night draws the telescope's ports, whatever tonight happens to hold. */
+const ROWS = TELESCOPE_PORTS.map(portRowLabel);
 
 const HOUR = 3_600_000;
 
-const mounting = (over: Partial<Mounting> & Pick<Mounting, 'id' | 'rowLabel' | 'interval'>): Mounting => ({
+const mounting = (over: Partial<Mounting> & Pick<Mounting, 'id' | 'port' | 'interval'>): Mounting => ({
   instrument: 'GMOS',
   publishedName: 'GMOS',
   usage: 'SCIENCE',
-  port: null,
-  locationType: 'UNKNOWN',
+  locationType: 'PORT',
   note: null,
   ...over,
 });
@@ -42,7 +43,6 @@ const build = (
   buildNightTimeline({
     site: 'GS',
     observingNight: NIGHT,
-    rowLabels: ROWS,
     mountings: over.mountings ?? [],
     closures: over.closures ?? [],
     tooBlocks: over.tooBlocks ?? [],
@@ -65,14 +65,14 @@ describe('the night window', () => {
       mountings: [
         mounting({
           id: 'ghost',
-          rowLabel: 'Port 1-up',
+          port: 1,
           instrument: 'GHOST',
           publishedName: 'GHOST',
           interval: { start: interval.start - 100 * 24 * HOUR, end: interval.end + 60 * 24 * HOUR },
         }),
       ],
     });
-    const block = rowIn(night, 'Port 1-up')?.blocks[0];
+    const block = rowIn(night, 'Port 1')?.blocks[0];
 
     expect(block?.interval).toEqual(interval);
     expect(block?.continuesBefore).toBe(true);
@@ -81,7 +81,7 @@ describe('the night window', () => {
 
   it('reports no transitions when the night is uniform, which every published night is', () => {
     const night = build({
-      mountings: [mounting({ id: 'a', rowLabel: 'Port 3', interval })],
+      mountings: [mounting({ id: 'a', port: 3, interval })],
     });
 
     expect(night.transitions).toEqual([]);
@@ -96,14 +96,14 @@ describe('partial nights', () => {
   const SPLIT_NIGHT: readonly Mounting[] = [
     mounting({
       id: 'first',
-      rowLabel: 'Port 3',
+      port: 3,
       instrument: 'GMOS',
       publishedName: 'GMOS',
       interval: { start: interval.start, end: CHANGEOVER },
     }),
     mounting({
       id: 'second',
-      rowLabel: 'Port 3',
+      port: 3,
       instrument: 'F2',
       publishedName: 'F2',
       interval: { start: CHANGEOVER, end: interval.end },
@@ -132,7 +132,7 @@ describe('partial nights', () => {
         ...SPLIT_NIGHT,
         mounting({
           id: 'other',
-          rowLabel: 'Port 2',
+          port: 2,
           instrument: 'GHOST',
           publishedName: 'GHOST',
           interval: { start: interval.start + 3 * HOUR, end: interval.end },

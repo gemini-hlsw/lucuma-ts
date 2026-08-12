@@ -12,7 +12,6 @@ const semester = (
   site: 'GS',
   title: over.semester,
   version: null,
-  rowLabels: [],
   holidays: [],
   moonEvents: [],
   demo: false,

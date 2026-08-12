@@ -49,11 +49,12 @@ export interface ImportedBlock {
   readonly kind: ImportedBlockKind;
   readonly site: ImportSite;
   /**
-   * The row's label: "Port 3" for a port mounting, or the instrument's own
-   * workbook name for an off-port usability run.
+   * Port number when the run is on a port; null for an off-port usability run.
+   *
+   * This is the whole of where a run sits, and therefore the whole of which row
+   * a schedule view draws it on - there is no separate row label, because the
+   * label a view prints ("Port 3") is a rendering of this number.
    */
-  readonly rowLabel: string;
-  /** Port number when the row is a port; null for an off-port run. */
   readonly port: number | null;
   /** Resolved instrument. Non-null exactly when `kind` is MOUNTED. */
   readonly instrument: Instrument | null;
@@ -176,7 +177,6 @@ export interface ImportedSchedule {
   readonly demo?: true;
   readonly nightLabelling: NightLabelling;
   readonly legend: readonly LegendEntry[];
-  readonly rowLabels: readonly string[];
   readonly blocks: readonly ImportedBlock[];
   readonly closures: readonly ImportedClosure[];
   /** ToO support and telescope mode records, from the workbook's columns. */

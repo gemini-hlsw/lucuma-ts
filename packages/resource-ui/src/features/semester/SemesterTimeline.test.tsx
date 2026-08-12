@@ -24,12 +24,9 @@ import { SemesterTimeline } from './SemesterTimeline';
 const render = async (element: ReactElement) => renderBare(<MemoryRouter>{element}</MemoryRouter>);
 
 const night = (label: string) => observingNightInterval('GS', label);
-const ROWS = ['Port 1-up', 'Port 2', 'Port 3'];
-
 const MOUNTINGS: readonly Mounting[] = [
   {
     id: 'ghost',
-    rowLabel: 'Port 1-up',
     instrument: 'GHOST',
     publishedName: 'GHOST',
     usage: 'SCIENCE',
@@ -42,7 +39,6 @@ const MOUNTINGS: readonly Mounting[] = [
 
 const timeline = buildSemesterTimeline({
   site: 'GS',
-  rowLabels: ROWS,
   firstNight: '2026-08-02',
   lastNight: '2026-09-01',
   mountings: MOUNTINGS,

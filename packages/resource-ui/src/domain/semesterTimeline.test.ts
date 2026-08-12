@@ -7,6 +7,7 @@
  */
 import { describe, expect, it } from 'vitest';
 
+import { portRowLabel, TELESCOPE_PORTS } from './ports';
 import { buildSemesterTimeline } from './semesterTimeline';
 import { observingNightInterval } from './siteTime';
 import { clip, subtract } from './timeline';
@@ -17,14 +18,14 @@ const night = (label: string) => observingNightInterval('GS', label);
 /** [start of the night labelled `from`, end of the night labelled `to`). */
 const span = (from: string, to: string) => ({ start: night(from).start, end: night(to).end });
 
-const ROWS = ['Port 1-up', 'Port 2', 'Port 3', 'Port 4', 'Port 5'];
+/** Every month draws the telescope's ports, whatever the semester holds. */
+const ROWS = TELESCOPE_PORTS.map(portRowLabel);
 
-const mounting = (over: Partial<Mounting> & Pick<Mounting, 'id' | 'rowLabel' | 'interval'>): Mounting => ({
+const mounting = (over: Partial<Mounting> & Pick<Mounting, 'id' | 'port' | 'interval'>): Mounting => ({
   instrument: 'GMOS',
   publishedName: 'GMOS',
   usage: 'SCIENCE',
-  port: null,
-  locationType: 'UNKNOWN',
+  locationType: 'PORT',
   note: null,
   ...over,
 });
@@ -39,7 +40,6 @@ const closure = (over: Partial<Closure> & Pick<Closure, 'id' | 'interval'>): Clo
 const build = (over: { mountings?: readonly Mounting[]; closures?: readonly Closure[] } = {}) =>
   buildSemesterTimeline({
     site: 'GS',
-    rowLabels: ROWS,
     firstNight: '2026-08-02',
     lastNight: '2027-02-01',
     mountings: over.mountings ?? [],
@@ -128,23 +128,22 @@ describe('closures at Gemini South', () => {
 
 describe('unknown bands', () => {
   it('lets an identified run win the span it shares with an unknown band', () => {
-    // Gemini North's sheet has two physical "Visiting" rows sharing one label,
-    // so an unidentified (UNKNOWN) band can genuinely coincide with a named
-    // run - 'Alopeke inside the light-orange MIQ band in GN 2026B. One chart
-    // row cannot draw both, so the named run keeps its whole span and the
+    // A source can put an unidentified (UNKNOWN) band over the same port and
+    // span as a named run - 'Alopeke inside the light-orange MIQ band in GN
+    // 2026B. One row per port, so the named run keeps its whole span and the
     // unknown keeps only what is its own.
     const timeline = build({
       mountings: [
         mounting({
           id: 'miq',
-          rowLabel: 'Port 2',
+          port: 2,
           instrument: 'UNKNOWN',
           publishedName: 'Unknown',
           interval: span('2026-09-25', '2026-10-22'),
         }),
         mounting({
           id: 'alopeke',
-          rowLabel: 'Port 2',
+          port: 2,
           instrument: 'ALOPEKE',
           publishedName: "'Alopeke Run",
           interval: span('2026-09-25', '2026-10-01'),
@@ -166,7 +165,7 @@ describe('unknown bands', () => {
 describe('months', () => {
   const GHOST = mounting({
     id: 'ghost',
-    rowLabel: 'Port 1-up',
+    port: 1,
     instrument: 'GHOST',
     publishedName: 'GHOST',
     interval: span('2026-08-08', '2027-02-01'),
@@ -191,8 +190,8 @@ describe('months', () => {
 
   it('clips a run to each month it crosses and says which edges are cut', () => {
     const timeline = build({ mountings: [GHOST] });
-    const august = rowIn(timeline, 'August 2026', 'Port 1-up')?.blocks[0];
-    const october = rowIn(timeline, 'October 2026', 'Port 1-up')?.blocks[0];
+    const august = rowIn(timeline, 'August 2026', 'Port 1')?.blocks[0];
+    const october = rowIn(timeline, 'October 2026', 'Port 1')?.blocks[0];
 
     expect(august?.continuesBefore).toBe(false);
     expect(august?.continuesAfter).toBe(true);
@@ -203,7 +202,7 @@ describe('months', () => {
   });
 
   it('keeps the run its own full span for the tooltip, whatever month it is drawn in', () => {
-    const october = rowIn(build({ mountings: [GHOST] }), 'October 2026', 'Port 1-up')?.blocks[0];
+    const october = rowIn(build({ mountings: [GHOST] }), 'October 2026', 'Port 1')?.blocks[0];
 
     expect(october?.fullInterval).toEqual(GHOST.interval);
     expect(october?.nights).toBe(178);
@@ -219,10 +218,10 @@ describe('the legend', () => {
   it('lists only the instruments actually drawn, in a stable order', () => {
     const timeline = build({
       mountings: [
-        mounting({ id: 'a', rowLabel: 'Port 3', instrument: 'GMOS', interval: span('2026-08-08', '2026-08-20') }),
+        mounting({ id: 'a', port: 3, instrument: 'GMOS', interval: span('2026-08-08', '2026-08-20') }),
         mounting({
           id: 'b',
-          rowLabel: 'Port 1-up',
+          port: 1,
           instrument: 'GHOST',
           publishedName: 'GHOST',
           interval: span('2026-08-08', '2026-09-01'),
@@ -243,7 +242,7 @@ describe('the legend', () => {
       mountings: [
         mounting({
           id: 'eng',
-          rowLabel: 'Port 3',
+          port: 3,
           instrument: 'ENGINEERING',
           publishedName: 'Engineering',
           interval: span('2026-10-05', '2026-10-09'),
