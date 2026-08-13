@@ -29,6 +29,7 @@
     "@tsconfig/node-ts": "23.6.4",
     "@tsconfig/node26": "26.0.0",
     "@types/node": "26.1.2",
+    "@typescript/native": "npm:typescript@7.0.2",
     "eslint": "10.8.1",
     "eslint-import-resolver-typescript": "4.4.5",
     "eslint-plugin-import-x": "4.17.1",
@@ -42,7 +43,6 @@
     "stylelint": "17.14.1",
     "stylelint-config-standard": "40.0.0",
     "tailwindcss": "4.3.3",
-    "@typescript/native": "npm:typescript@7.0.2",
     "typescript": "npm:@typescript/typescript6@6.0.2",
     "typescript-eslint": "8.66.0"
   },

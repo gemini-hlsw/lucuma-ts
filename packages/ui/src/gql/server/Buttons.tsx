@@ -2,7 +2,7 @@
 
 import type { ApolloCache, MutationUpdaterFunction, OperationVariables } from '@apollo/client';
 import { useMutation } from '@apollo/client/react';
-import { cn, when } from '@gemini-hlsw/lucuma-common-ui';
+import { cn, isNullish, when } from '@gemini-hlsw/lucuma-common-ui';
 import { useConfiguration } from '@gql/configs/Configuration';
 import { useSlewFlags } from '@gql/configs/SlewFlags';
 import type { TypedDocumentNode } from '@graphql-typed-document-node/core';
@@ -14,7 +14,7 @@ import type { ReactNode } from 'react';
 import { Crosshairs, CrosshairsSlash, Parking, ParkingSlash } from '@/components/Icons';
 import { BTN_CLASSES } from '@/Helpers/constants';
 import type { SetStale } from '@/Helpers/hooks';
-import type { MechSystemState, SlewFlags, TelescopeState } from '@/types';
+import type { EnclosureState, MechSystemState, SlewFlags, TelescopeState } from '@/types';
 
 import {
   AG_ALL_PARK_MUTATION,
@@ -23,6 +23,18 @@ import {
   AG_SCIENCE_FOLD_PARK_MUTATION,
 } from './AgMechanism';
 import {
+  ECS_CLOSE_EAST_VENT_GATE_MUTATION,
+  ECS_CLOSE_WEST_VENT_GATE_MUTATION,
+  ECS_DISABLE_DOME_MUTATION,
+  ECS_DISABLE_SHUTTERS_MUTATION,
+  ECS_DOME_PARK_MUTATION,
+  ECS_ENABLE_DOME_MUTATION,
+  ECS_ENABLE_SHUTTERS_MUTATION,
+  ECS_MOVE_EAST_VENT_GATE_MUTATION,
+  ECS_MOVE_WEST_VENT_GATE_MUTATION,
+  ECS_SHUTTERS_PARK_MUTATION,
+} from './ecs';
+import {
   MOUNT_FOLLOW_MUTATION,
   OIWFS_FOLLOW_MUTATION,
   PWFS1_FOLLOW_MUTATION,
@@ -30,7 +42,7 @@ import {
   ROTATOR_FOLLOW_MUTATION,
   SCS_FOLLOW_MUTATION,
 } from './follow';
-import type { RunSlewMutationVariables } from './gen/graphql';
+import type { DomeMode, RunSlewMutationVariables, ShutterControlMode, ShutterModeInput } from './gen/graphql';
 import {
   MOUNT_PARK_MUTATION,
   MOUNT_UNWRAP_MUTATION,
@@ -44,7 +56,6 @@ import {
 } from './park';
 import { SLEW_MUTATION } from './Slew';
 import { GET_TELESCOPE_STATE } from './TelescopeState';
-import { ECS_CLOSE_EAST_VENT_GATE_MUTATION, ECS_CLOSE_WEST_VENT_GATE_MUTATION } from './VentGates';
 
 // Generic mutation button
 function MutationButton<TResult, TVariables extends OperationVariables>({
@@ -273,14 +284,6 @@ export function Pwfs2Unwrap(props: ButtonProps) {
   return <MutationButton mutation={PWFS2_UNWRAP_MUTATION} variables={{}} {...props} />;
 }
 
-export function EcsCloseEastVentGate(props: ButtonProps) {
-  return <MutationButton mutation={ECS_CLOSE_EAST_VENT_GATE_MUTATION} variables={{}} {...props} />;
-}
-
-export function EcsCloseWestVentGate(props: ButtonProps) {
-  return <MutationButton mutation={ECS_CLOSE_WEST_VENT_GATE_MUTATION} variables={{}} {...props} />;
-}
-
 export function AgScienceFoldPark(props: ButtonProps) {
   return <MutationButton mutation={AG_SCIENCE_FOLD_PARK_MUTATION} variables={{}} {...props} />;
 }
@@ -295,6 +298,180 @@ export function AgPickoffMirrorPark(props: ButtonProps) {
 
 export function AgAllPark(props: ButtonProps) {
   return <MutationButton mutation={AG_ALL_PARK_MUTATION} variables={{}} {...props} />;
+}
+
+// ECS
+export function EcsDome({ enclosure, ...props }: ButtonProps & { enclosure?: EnclosureState }) {
+  if (!enclosure?.domeEnabled) {
+    return <Button {...props} disabled title="Select a dome mode and press Set to enable the dome" />;
+  }
+
+  return <EcsDisableDome {...props} />;
+}
+
+export function EcsShutters({ enclosure, ...props }: ButtonProps & { enclosure?: EnclosureState }) {
+  if (!enclosure?.shuttersEnabled) {
+    return <Button {...props} disabled title="Select a shutter mode and press Set to enable the shutters" />;
+  }
+
+  return <EcsDisableShutters {...props} />;
+}
+
+export function EcsEnableDome({ mode, ...props }: ButtonProps & { mode: DomeMode | null }) {
+  if (isNullish(mode)) return <Button {...props} disabled />;
+
+  return (
+    <MutationButton
+      mutation={ECS_ENABLE_DOME_MUTATION}
+      variables={{ mode }}
+      update={(cache) =>
+        updateTelescopeStateCache(cache, (telescopeState) => ({
+          ...telescopeState,
+          enclosure: {
+            ...telescopeState.enclosure,
+            domeEnabled: true,
+            domeMode: mode,
+          },
+        }))
+      }
+      {...props}
+    />
+  );
+}
+
+export function EcsDisableDome(props: ButtonProps) {
+  return (
+    <MutationButton
+      mutation={ECS_DISABLE_DOME_MUTATION}
+      variables={{}}
+      update={(cache) =>
+        updateTelescopeStateCache(cache, (telescopeState) => ({
+          ...telescopeState,
+          enclosure: {
+            ...telescopeState.enclosure,
+            domeEnabled: false,
+          },
+        }))
+      }
+      {...props}
+    />
+  );
+}
+
+export function EcsDomePark(props: ButtonProps) {
+  return <MutationButton mutation={ECS_DOME_PARK_MUTATION} variables={{}} {...props} />;
+}
+
+export function EcsEnableShutters({
+  mode,
+  aperture,
+  ...props
+}: ButtonProps & { mode: ShutterControlMode | null; aperture: number | null }) {
+  if (isNullish(mode)) return <Button {...props} disabled />;
+
+  const input: ShutterModeInput = {
+    mode,
+    aperture: when(aperture, (meters) => ({ meters })) ?? null,
+  };
+  return (
+    <MutationButton
+      mutation={ECS_ENABLE_SHUTTERS_MUTATION}
+      variables={{ mode: input }}
+      update={(cache) =>
+        updateTelescopeStateCache(cache, (telescopeState) => ({
+          ...telescopeState,
+          enclosure: {
+            ...telescopeState.enclosure,
+            shuttersMode: {
+              ...telescopeState.enclosure.shuttersMode,
+              __typename: 'ShutterMode',
+              mode: mode,
+              aperture:
+                when(aperture, (meters) => ({
+                  __typename: 'Distance',
+                  meters,
+                })) ?? null,
+            },
+            shuttersEnabled: true,
+          },
+        }))
+      }
+      {...props}
+    />
+  );
+}
+
+export function EcsDisableShutters(props: ButtonProps) {
+  return (
+    <MutationButton
+      mutation={ECS_DISABLE_SHUTTERS_MUTATION}
+      variables={{}}
+      update={(cache) =>
+        updateTelescopeStateCache(cache, (telescopeState) => ({
+          ...telescopeState,
+          enclosure: {
+            ...telescopeState.enclosure,
+            shuttersEnabled: false,
+          },
+        }))
+      }
+      {...props}
+    />
+  );
+}
+
+export function EcsShuttersPark(props: ButtonProps) {
+  return <MutationButton mutation={ECS_SHUTTERS_PARK_MUTATION} variables={{}} {...props} />;
+}
+
+export function EcsMoveEastVentGate({ position, ...props }: ButtonProps & { position: number | null }) {
+  if (isNullish(position)) return <Button {...props} disabled />;
+
+  return (
+    <MutationButton
+      mutation={ECS_MOVE_EAST_VENT_GATE_MUTATION}
+      variables={{ position }}
+      update={(cache) =>
+        updateTelescopeStateCache(cache, (telescopeState) => ({
+          ...telescopeState,
+          enclosure: {
+            ...telescopeState.enclosure,
+            eastVentGateAperture: position,
+          },
+        }))
+      }
+      {...props}
+    />
+  );
+}
+
+export function EcsCloseEastVentGate(props: ButtonProps) {
+  return <MutationButton mutation={ECS_CLOSE_EAST_VENT_GATE_MUTATION} variables={{}} {...props} />;
+}
+
+export function EcsMoveWestVentGate({ position, ...props }: ButtonProps & { position: number | null }) {
+  if (isNullish(position)) return <Button {...props} disabled />;
+
+  return (
+    <MutationButton
+      mutation={ECS_MOVE_WEST_VENT_GATE_MUTATION}
+      variables={{ position }}
+      update={(cache) =>
+        updateTelescopeStateCache(cache, (telescopeState) => ({
+          ...telescopeState,
+          enclosure: {
+            ...telescopeState.enclosure,
+            westVentGateAperture: position,
+          },
+        }))
+      }
+      {...props}
+    />
+  );
+}
+
+export function EcsCloseWestVentGate(props: ButtonProps) {
+  return <MutationButton mutation={ECS_CLOSE_WEST_VENT_GATE_MUTATION} variables={{}} {...props} />;
 }
 
 // SLEW

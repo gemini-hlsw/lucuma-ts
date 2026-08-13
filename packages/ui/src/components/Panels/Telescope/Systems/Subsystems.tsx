@@ -1,11 +1,24 @@
-import { cn } from '@gemini-hlsw/lucuma-common-ui';
-import type { UpdateMechanismMutationVariables } from '@gql/configs/gen/graphql';
-import { useMechanism, useUpdateMechanism } from '@gql/configs/Mechanism';
+import {
+  cn,
+  isNotNullish,
+  isNullish,
+  type Labelled,
+  parseNumber,
+  useSyncedState,
+  when,
+} from '@gemini-hlsw/lucuma-common-ui';
+import { useMechanism } from '@gql/configs/Mechanism';
 import {
   CrcsPark,
   CrcsUnwrap,
   EcsCloseEastVentGate,
   EcsCloseWestVentGate,
+  EcsDomePark,
+  EcsEnableDome,
+  EcsEnableShutters,
+  EcsMoveEastVentGate,
+  EcsMoveWestVentGate,
+  EcsShuttersPark,
   McsPark,
   McsUnwrap,
   OiwfsPark,
@@ -14,12 +27,14 @@ import {
   Pwfs2Park,
   Pwfs2Unwrap,
 } from '@gql/server/Buttons';
+import type { DomeMode, ShutterControlMode } from '@gql/server/gen/graphql';
+import { useTelescopeState } from '@gql/server/TelescopeState';
 import { Button } from 'primereact/button';
 import { Dropdown } from 'primereact/dropdown';
 import { InputNumber } from 'primereact/inputnumber';
 import { Slider } from 'primereact/slider';
-import { startTransition, useEffect, useState } from 'react';
 
+import { TriangleExclamation } from '@/components/Icons';
 import { BTN_CLASSES } from '@/Helpers/constants';
 import type { Mechanism } from '@/types';
 
@@ -38,60 +53,53 @@ export function TopSubsystems({ canEdit }: { canEdit: boolean }) {
   );
 }
 
-const DOME_MODE = [
-  { label: 'MinVibration', value: 'MinVibration' },
-  { label: 'Rome', value: 'RM' },
-  { label: 'London', value: 'LDN' },
-  { label: 'Istanbul', value: 'IST' },
-  { label: 'Paris', value: 'PRS' },
+const DOME_MODE: Labelled<DomeMode>[] = [
+  { label: 'Min Vibration', value: 'MIN_VIBRATION' },
+  { label: 'Min Scatter', value: 'MIN_SCATTER' },
+  { label: 'Basic', value: 'BASIC' },
 ];
 
-const SHUTTER_MODE = [
-  { label: 'Tracking', value: 'Tracking' },
-  { label: 'Rome', value: 'RM' },
-  { label: 'London', value: 'LDN' },
-  { label: 'Istanbul', value: 'IST' },
-  { label: 'Paris', value: 'PRS' },
+const SHUTTER_MODE: Labelled<ShutterControlMode>[] = [
+  { label: 'Tracking', value: 'TRACKING' },
+  { label: 'Fully Open', value: 'FULLY_OPEN' },
 ];
+
+const APERTURE_RANGE = { min: 0, max: 100, step: 1 };
 
 export function BotSubsystems({ canEdit }: { canEdit: boolean }) {
-  const [domeMode, setDomeMode] = useState('MinVibration');
-  const [shutterMode, setShutterMode] = useState('Tracking');
-  const [aperture, setAperture] = useState(90);
-  const [WVGate, setWVGate] = useState(50);
-  const [EVGate, setEVGate] = useState(50);
-
   const { data, loading: mechanismLoading } = useMechanism();
-  useEffect(() => {
-    startTransition(() => {
-      if (data?.mechanism) {
-        setDomeMode(data.mechanism.domeMode);
-        setShutterMode(data.mechanism.shutterMode);
-        setAperture(data.mechanism.shutterAperture);
-        setWVGate(data.mechanism.wVGateValue);
-        setEVGate(data.mechanism.eVGateValue);
-      }
-    });
-  }, [data]);
+  const { data: telescopeData, loading: telescopeLoading } = useTelescopeState({ useStale: false });
+
+  const enclosure = telescopeData?.enclosure;
+  const domeStateMode = enclosure?.domeMode;
+  const shutterStateMode = enclosure?.shuttersMode?.mode;
+  const shutterStateAperture = parseNumber(enclosure?.shuttersMode?.aperture?.meters) ?? null;
+  const westVentGateState = enclosure?.westVentGateAperture ?? null;
+  const eastVentGateState = enclosure?.eastVentGateAperture ?? null;
+
+  const [domeMode, setDomeMode] = useSyncedState(domeStateMode, null);
+  const [shutterMode, setShutterMode] = useSyncedState(shutterStateMode, null);
+  const [aperture, setAperture] = useSyncedState(shutterStateAperture, null);
+  const [WVGate, setWVGate] = useSyncedState<number | null>(westVentGateState, null);
+  const [EVGate, setEVGate] = useSyncedState<number | null>(eastVentGateState, null);
+
   const state = data?.mechanism ?? ({} as Mechanism);
 
-  const [updateMechanism, { loading: updateLoading }] = useUpdateMechanism();
+  const loading = mechanismLoading || telescopeLoading;
 
-  const loading = mechanismLoading || updateLoading;
+  const domeOff = !enclosure?.domeEnabled;
+  const shuttersOff = !enclosure?.shuttersEnabled;
+  const domeModeDirty = isNotNullish(domeMode) && (domeOff || domeMode !== domeStateMode);
+  const shutterModeDirty =
+    isNotNullish(shutterMode) && (shuttersOff || shutterMode !== shutterStateMode || aperture !== shutterStateAperture);
+  const westVentGateDirty = isNotNullish(westVentGateState) && WVGate !== westVentGateState;
+  const eastVentGateDirty = isNotNullish(eastVentGateState) && EVGate !== eastVentGateState;
 
-  const modifyMechanism = (vars: Omit<UpdateMechanismMutationVariables, 'pk'>) =>
-    updateMechanism({ variables: { pk: state.pk, ...vars } });
+  const dirtyButtonIcon = <TriangleExclamation />;
 
   return (
     <div className="bottom">
       <OiwfsPark disabled={!canEdit} loading={loading} style={{ gridArea: 'g11' }} label="Park" />
-      {/* <Button
-        disabled={!canEdit}
-        loading={loading}
-        style={{ gridArea: 'g11' }}
-        label="Park"
-        className={cn(BTN_CLASSES[state.oiwfsPark], 'under-construction')}
-      /> */}
       <Button
         disabled={!canEdit}
         loading={loading}
@@ -105,12 +113,13 @@ export function BotSubsystems({ canEdit }: { canEdit: boolean }) {
         label="Park"
         className={cn(BTN_CLASSES[state.aowfsPark], 'under-construction')}
       />
-      <Button
+      <EcsDomePark
         disabled={!canEdit}
         loading={loading}
         style={{ gridArea: 'g41' }}
         label="Park"
-        className={cn(BTN_CLASSES[state.domePark], 'under-construction')}
+        className={cn(BTN_CLASSES[state.domePark])}
+        data-testid="park-dome"
       />
       <label
         htmlFor="dome-mode"
@@ -128,22 +137,26 @@ export function BotSubsystems({ canEdit }: { canEdit: boolean }) {
         style={{ gridArea: 'g43' }}
         value={domeMode}
         options={DOME_MODE}
-        onChange={(e) => setDomeMode(e.value as string)}
+        onChange={(e) => setDomeMode(e.value as DomeMode)}
         placeholder="Select a Dome Mode"
-        className="under-construction"
       />
-      <Button
-        disabled={!canEdit}
+      <EcsEnableDome
+        mode={domeMode}
+        disabled={!canEdit || !domeModeDirty}
         style={{ gridArea: 'g46' }}
         label="Set"
-        onClick={() => modifyMechanism({ domeMode: domeMode })}
-        className="under-construction"
+        data-testid="set-dome-mode"
+        icon={domeModeDirty ? dirtyButtonIcon : undefined}
+        className={domeModeDirty ? BTN_CLASSES.ACTIVE : undefined}
+        tooltip={when(domeModeDirty, () => (domeOff ? 'Press Set to enable the dome' : 'Selected mode is not applied'))}
       />
-      <Button
+      <EcsShuttersPark
         disabled={!canEdit}
+        loading={loading}
         style={{ gridArea: 'g51' }}
         label="Park"
-        className={cn(BTN_CLASSES[state.shuttersPark], 'under-construction')}
+        className={cn(BTN_CLASSES[state.shuttersPark])}
+        data-testid="park-shutters"
       />
       <label
         htmlFor="shutter-mode"
@@ -161,9 +174,8 @@ export function BotSubsystems({ canEdit }: { canEdit: boolean }) {
         style={{ gridArea: 'g53' }}
         value={shutterMode}
         options={SHUTTER_MODE}
-        onChange={(e) => setShutterMode(e.value as string)}
+        onChange={(e) => setShutterMode(e.value as ShutterControlMode)}
         placeholder="Select a Shutter Mode"
-        className="under-construction"
       />
       <label
         htmlFor="aperture"
@@ -180,77 +192,95 @@ export function BotSubsystems({ canEdit }: { canEdit: boolean }) {
         disabled={!canEdit}
         style={{ gridArea: 'g55' }}
         value={aperture}
-        onValueChange={(e) => setAperture(e.value ?? 0)}
-        mode="decimal"
-        className="under-construction"
+        onValueChange={(e) => setAperture(e.value ?? null)}
+        suffix="m"
+        minFractionDigits={2}
+        maxFractionDigits={2}
       />
-      <Button
-        disabled={!canEdit}
+      <EcsEnableShutters
+        mode={shutterMode}
+        aperture={aperture}
+        disabled={!canEdit || !shutterModeDirty}
         style={{ gridArea: 'g56' }}
         label="Set"
-        onClick={() =>
-          modifyMechanism({
-            shutterMode: shutterMode,
-            shutterAperture: aperture,
-          })
-        }
-        className="under-construction"
+        data-testid="set-shutter-mode"
+        icon={shutterModeDirty ? dirtyButtonIcon : undefined}
+        className={shutterModeDirty ? BTN_CLASSES.ACTIVE : undefined}
+        tooltip={when(shutterModeDirty, () =>
+          shuttersOff ? 'Press Set to enable the shutters' : 'Selected mode is not applied',
+        )}
       />
       <EcsCloseWestVentGate
         disabled={!canEdit}
         style={{ gridArea: 'g61' }}
         label="Close"
         className={cn(BTN_CLASSES[state.wVGateClose])}
+        data-testid="close-west-vent-gate"
       />
       <InputNumber
+        inputId="west-vent-gate"
+        aria-label="West vent gate"
         disabled={!canEdit}
         style={{ gridArea: 'g62' }}
         value={WVGate}
-        onValueChange={(e) => setWVGate(e.value ?? 0)}
+        onValueChange={(e) => setWVGate(e.value ?? null)}
         mode="decimal"
-        className="under-construction"
+        {...APERTURE_RANGE}
+        minFractionDigits={0}
+        maxFractionDigits={0}
       />
       <Slider
-        disabled={!canEdit || true} // under construction!
+        disabled={!canEdit || isNullish(WVGate)}
         style={{ gridArea: 'g63', marginTop: '10px' }}
-        value={WVGate}
+        value={WVGate ?? APERTURE_RANGE.min}
         onChange={(e) => setWVGate(e.value as number)}
-        className="under-construction"
+        {...APERTURE_RANGE}
       />
-      <Button
-        disabled={!canEdit}
+      <EcsMoveWestVentGate
+        position={WVGate}
+        disabled={!canEdit || !westVentGateDirty}
         style={{ gridArea: 'g66' }}
         label="Move"
-        onClick={() => modifyMechanism({ wVGateValue: WVGate })}
-        className="under-construction"
+        data-testid="move-west-vent-gate"
+        icon={westVentGateDirty ? dirtyButtonIcon : undefined}
+        className={westVentGateDirty ? BTN_CLASSES.ACTIVE : undefined}
+        tooltip={westVentGateDirty ? 'Selected position is not applied' : undefined}
       />
       <EcsCloseEastVentGate
         disabled={!canEdit}
         style={{ gridArea: 'g71' }}
         label="Close"
         className={cn(BTN_CLASSES[state.eVGateClose])}
+        data-testid="close-east-vent-gate"
       />
       <InputNumber
+        inputId="east-vent-gate"
+        aria-label="East vent gate"
         disabled={!canEdit}
         style={{ gridArea: 'g72' }}
         value={EVGate}
-        onValueChange={(e) => setEVGate(e.value ?? 0)}
+        onValueChange={(e) => setEVGate(e.value ?? null)}
         mode="decimal"
-        className="under-construction"
+        {...APERTURE_RANGE}
+        minFractionDigits={0}
+        maxFractionDigits={0}
       />
       <Slider
-        disabled={!canEdit || true} // under construction!
+        disabled={!canEdit || isNullish(EVGate)}
         style={{ gridArea: 'g73', marginTop: '10px' }}
-        value={EVGate}
+        value={EVGate ?? APERTURE_RANGE.min}
         onChange={(e) => setEVGate(e.value as number)}
-        className="under-construction"
+        {...APERTURE_RANGE}
       />
-      <Button
-        disabled={!canEdit}
+      <EcsMoveEastVentGate
+        position={EVGate}
+        disabled={!canEdit || !eastVentGateDirty}
         style={{ gridArea: 'g76' }}
         label="Move"
-        onClick={() => modifyMechanism({ eVGateValue: EVGate })}
-        className="under-construction"
+        data-testid="move-east-vent-gate"
+        icon={eastVentGateDirty ? dirtyButtonIcon : undefined}
+        className={eastVentGateDirty ? BTN_CLASSES.ACTIVE : undefined}
+        tooltip={eastVentGateDirty ? 'Selected position is not applied' : undefined}
       />
     </div>
   );

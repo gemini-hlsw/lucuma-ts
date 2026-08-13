@@ -1,3 +1,4 @@
+import type { Labelled } from '@gemini-hlsw/lucuma-common-ui';
 import { Chips } from 'primereact/chips';
 import { Dropdown } from 'primereact/dropdown';
 import { InputNumber } from 'primereact/inputnumber';
@@ -41,7 +42,7 @@ const EMPTY: Proposal[] = [];
  *  Change Requests view for why null option values misbehave in PrimeReact). */
 const ALL = 'ALL';
 
-const STATUS_OPTIONS: { label: string; value: ProposalStatus | typeof ALL }[] = [
+const STATUS_OPTIONS: Labelled<ProposalStatus | typeof ALL>[] = [
   { label: 'All statuses', value: ALL },
   { label: 'Submitted', value: 'SUBMITTED' },
   { label: 'Accepted', value: 'ACCEPTED' },

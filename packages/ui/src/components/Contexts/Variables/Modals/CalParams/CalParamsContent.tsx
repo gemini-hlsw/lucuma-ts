@@ -1,4 +1,4 @@
-import { cn, isNotNullish, when } from '@gemini-hlsw/lucuma-common-ui';
+import { cn, isNotNullish, useSyncedState, when } from '@gemini-hlsw/lucuma-common-ui';
 import { useCalParams, useCalParamsHistory, useCreateCalParams } from '@gql/configs/CalParams';
 import type { CalParamsCreateInput } from '@gql/configs/gen/graphql';
 import { useServerConfigValue } from '@gql/server/ServerConfiguration';
@@ -6,7 +6,7 @@ import { CommentConfirmButton } from '@Shared/CommentConfirmButton';
 import { Button } from 'primereact/button';
 import { InputNumber, type InputNumberProps } from 'primereact/inputnumber';
 import { Tooltip } from 'primereact/tooltip';
-import { startTransition, useEffect, useId, useState } from 'react';
+import { useId, useMemo } from 'react';
 
 import { useCanEdit } from '@/components/atoms/auth';
 import { useSetCalParamsHistoryVisible } from '@/components/atoms/calparams';
@@ -31,36 +31,33 @@ export function CalParamsContent() {
 
   const loading = createCalparamsLoading || calParamsLoading;
 
-  const [auxCalParams, setAuxCalParams] = useState<Omit<
+  const filteredCalParams = useMemo(
+    () =>
+      when(calParams, (calParams) => ({
+        acqCamX: calParams.acqCamX,
+        acqCamY: calParams.acqCamY,
+        baffleVisible: calParams.baffleVisible,
+        baffleNearIR: calParams.baffleNearIR,
+        topShutterCurrentLimit: calParams.topShutterCurrentLimit,
+        bottomShutterCurrentLimit: calParams.bottomShutterCurrentLimit,
+        pwfs1CenterX: calParams.pwfs1CenterX,
+        pwfs1CenterY: calParams.pwfs1CenterY,
+        pwfs1CenterZ: calParams.pwfs1CenterZ,
+        pwfs2CenterX: calParams.pwfs2CenterX,
+        pwfs2CenterY: calParams.pwfs2CenterY,
+        pwfs2CenterZ: calParams.pwfs2CenterZ,
+        gmosSfoDefocus: calParams.gmosSfoDefocus,
+        gnirsSfoDefocus: calParams.gnirsSfoDefocus,
+        gmosP1Defocus: calParams.gmosP1Defocus,
+        gmosOiDefocus: calParams.gmosOiDefocus,
+        gnirsP1Defocus: calParams.gnirsP1Defocus,
+      })),
+    [calParams],
+  );
+  const [auxCalParams, setAuxCalParams] = useSyncedState<Omit<
     CalParamsCreateInput,
     'site' | 'defocusEnabled' | 'comment' | 'createdAt' | '__typename'
-  > | null>(null);
-
-  useEffect(() => {
-    if (calParams) {
-      startTransition(() =>
-        setAuxCalParams({
-          acqCamX: calParams.acqCamX,
-          acqCamY: calParams.acqCamY,
-          baffleVisible: calParams.baffleVisible,
-          baffleNearIR: calParams.baffleNearIR,
-          topShutterCurrentLimit: calParams.topShutterCurrentLimit,
-          bottomShutterCurrentLimit: calParams.bottomShutterCurrentLimit,
-          pwfs1CenterX: calParams.pwfs1CenterX,
-          pwfs1CenterY: calParams.pwfs1CenterY,
-          pwfs1CenterZ: calParams.pwfs1CenterZ,
-          pwfs2CenterX: calParams.pwfs2CenterX,
-          pwfs2CenterY: calParams.pwfs2CenterY,
-          pwfs2CenterZ: calParams.pwfs2CenterZ,
-          gmosSfoDefocus: calParams.gmosSfoDefocus,
-          gnirsSfoDefocus: calParams.gnirsSfoDefocus,
-          gmosP1Defocus: calParams.gmosP1Defocus,
-          gmosOiDefocus: calParams.gmosOiDefocus,
-          gnirsP1Defocus: calParams.gnirsP1Defocus,
-        }),
-      );
-    }
-  }, [calParams]);
+  > | null>(filteredCalParams, null);
 
   const changedValues = (Object.entries(auxCalParams ?? {}) as [keyof NonNullable<typeof auxCalParams>, number][])
     .filter(([key, value]) => value !== calParams?.[key] && isNotNullish(calParams))

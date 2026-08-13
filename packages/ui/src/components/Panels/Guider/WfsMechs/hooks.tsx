@@ -1,10 +1,9 @@
-import { isNotNullish, isNullish, when } from '@gemini-hlsw/lucuma-common-ui';
+import { isNotNullish, isNullish, type Labelled, when } from '@gemini-hlsw/lucuma-common-ui';
 import { useState } from 'react';
 
-const findLabel = <T,>(options: { value: T; label: string }[], value: T | undefined) =>
-  options.find((o) => o.value === value)?.label;
+const findLabel = <T,>(options: Labelled<T>[], value: T | undefined) => options.find((o) => o.value === value)?.label;
 
-export function useMovingLabel<T>(loading: boolean, state: T | undefined, options: { value: T; label: string }[]) {
+export function useMovingLabel<T>(loading: boolean, state: T | undefined, options: Labelled<T>[]) {
   const [requestedState, setRequestedState] = useState<T | null>(null);
 
   if (!loading && requestedState === state && isNotNullish(state)) {
