@@ -30,7 +30,7 @@
     "jotai": "2.20.2"
   },
   "devDependencies": {
-    "@apollo/client": "4.2.10",
+    "@apollo/client": "4.2.11",
     "@eslint/js": "10.0.1",
     "@graphql-typed-document-node/core": "3.2.0",
     "@tsconfig/strictest": "2.0.8",
