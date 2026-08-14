@@ -122,16 +122,16 @@ export const CONFLICTS_QUERY = graphql(`
           proposal {
             gemini {
               ... on Queue {
-                toOActivation
+                tooActivationCeiling
               }
               ... on LargeProgram {
-                toOActivation
+                tooActivationCeiling
               }
               ... on DirectorsTime {
-                toOActivation
+                tooActivationCeiling
               }
               ... on FastTurnaround {
-                toOActivation
+                tooActivationCeiling
               }
             }
           }
@@ -224,8 +224,11 @@ export function mapConflictCandidates(raw: AdminConflictCheckResult): ConflictCa
   const fromToO = raw.observations.matches
     .filter((o) => {
       const gemini = o.program.proposal?.gemini;
-      const activation = gemini && 'toOActivation' in gemini ? gemini.toOActivation : undefined;
-      return activation === 'STANDARD' || activation === 'RAPID';
+      const ceiling = gemini && 'tooActivationCeiling' in gemini ? gemini.tooActivationCeiling : undefined;
+      // The ceiling is the most disruptive activation the program's
+      // observations may declare, so any value above NONE marks a ToO program.
+      // Excluding NONE keeps new levels (INTERRUPTING) in scope automatically.
+      return ceiling !== undefined && ceiling !== 'NONE';
     })
     .map((o): ConflictCandidate => {
       const target = o.targetEnvironment.firstScienceTarget;

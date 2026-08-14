@@ -54,7 +54,7 @@ export const PROGRAM_ITEM_FRAGMENT = graphql(`
         __typename
         scienceSubtype
         ... on Queue {
-          toOActivation
+          tooActivationCeiling
           considerForBand3
           minPercentTime
         }
@@ -167,12 +167,14 @@ export function useUpdateProposalType() {
 }
 
 /** ToO / minPercentTime / band-3 edits → `GeminiProposalTypeInput` (a oneOf),
- *  keyed by the program's class. Only Queue proposals carry ToO and band-3. */
+ *  keyed by the program's class. Only Queue proposals carry ToO and band-3.
+ *  The ODB derives `tooActivationCeiling` from the explicit ceiling when one is
+ *  set, so an admin edit writes `explicitTooActivationCeiling`. */
 export function proposalTypeInput(p: Program): GeminiProposalTypeInput {
   return p.programClass === 'QUEUE'
     ? {
         queue: {
-          toOActivation: p.tooStatus,
+          explicitTooActivationCeiling: p.tooStatus,
           minPercentTime: p.minPercentTime,
           considerForBand3: p.considerForBand3 ? 'CONSIDER' : 'DO_NOT_CONSIDER',
         },
@@ -291,7 +293,7 @@ export function mapPrograms(raw: AdminProgramsResult): Program[] {
       // The full proposal subtype for the table's Type column (sc-9581),
       // preserved rather than collapsed like programClass.
       programType: proposalType?.scienceSubtype ?? null,
-      tooStatus: queue?.toOActivation ?? 'NONE',
+      tooStatus: queue?.tooActivationCeiling ?? 'NONE',
       contactScientists,
       activeStart,
       activeEnd,

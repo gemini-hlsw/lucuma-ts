@@ -44,7 +44,7 @@ import {
   type ScienceSubtype,
   TOO_LABEL,
   TOO_STATUSES,
-  type ToOActivation,
+  type TooActivation,
 } from '@/gql/types';
 import { matchesQuery } from '@/lib/search';
 
@@ -301,7 +301,7 @@ function ProgramEditor({
 
             <label
               htmlFor="too"
-              title="Target-of-Opportunity status — whether this program may interrupt the queue for transient events (None / Standard / Rapid). Queue programs only."
+              title="Target-of-Opportunity ceiling — the most disruptive activation this program's observations may declare (None / Standard / Rapid / Interrupting). Queue programs only."
             >
               ToO Status
             </label>
@@ -309,7 +309,7 @@ function ProgramEditor({
               inputId="too"
               value={draft.tooStatus}
               options={TOO_STATUSES.map((t) => ({ label: TOO_LABEL[t], value: t }))}
-              onChange={(e) => set('tooStatus', e.value as ToOActivation)}
+              onChange={(e) => set('tooStatus', e.value as TooActivation)}
               disabled={draft.programClass !== 'QUEUE'}
             />
 
