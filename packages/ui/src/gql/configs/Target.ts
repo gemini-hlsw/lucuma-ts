@@ -103,7 +103,7 @@ export const NONSIDEREAL_TARGET_FRAGMENT = graphql(`
 `);
 
 export const GET_TARGETS = graphql(`
-  query getTargets {
+  query Targets {
     targets {
       ...ConfigsTargetItem
     }
@@ -136,7 +136,7 @@ export function useTargets() {
 }
 
 export const UPDATE_TARGET = graphql(`
-  mutation updateTarget(
+  mutation UpdateTarget(
     $pk: PosInt!
     $id: TargetId
     $name: String
@@ -182,7 +182,7 @@ export function useUpdateTarget() {
 }
 
 export const REMOVE_AND_CREATE_BASE_TARGETS = graphql(`
-  mutation removeAndCreateBaseTargets($targets: [TargetInput!]!) {
+  mutation RemoveAndCreateBaseTargets($targets: [TargetInput!]!) {
     removeAndCreateBaseTargets(targets: $targets) {
       ...ConfigsTargetItem
     }
@@ -197,7 +197,7 @@ export function useRemoveAndCreateBaseTargets() {
 }
 
 export const DO_IMPORT_OBSERVATION = graphql(`
-  mutation doImportObservation($input: ImportObservationInput!) {
+  mutation DoImportObservation($input: ImportObservationInput!) {
     importObservation(input: $input) {
       rotator {
         ...RotatorItem

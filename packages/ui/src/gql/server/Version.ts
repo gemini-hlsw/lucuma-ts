@@ -4,7 +4,7 @@ import type { OptionsOf } from '@gql/util';
 import { graphql } from './gen';
 
 export const GET_VERSION = graphql(`
-  query version {
+  query Version {
     serverVersion
   }
 `);

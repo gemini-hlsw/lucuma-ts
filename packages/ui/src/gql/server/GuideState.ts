@@ -20,7 +20,7 @@ export const GUIDE_CONFIGURATION_STATE_FRAGMENT = graphql(`
   }
 `);
 export const GUIDE_STATE_SUBSCRIPTION = graphql(`
-  subscription guideState {
+  subscription GuideStateSub {
     guideState {
       ...GuideConfigurationStateItem
     }
@@ -28,7 +28,7 @@ export const GUIDE_STATE_SUBSCRIPTION = graphql(`
 `);
 
 export const GUIDE_STATE_QUERY = graphql(`
-  query getGuideState {
+  query GuideState {
     guideState {
       ...GuideConfigurationStateItem
     }
@@ -40,7 +40,7 @@ export function useGuideState() {
 }
 
 const GUIDE_ENABLE = graphql(`
-  mutation guideEnable($config: GuideConfigurationInput!) {
+  mutation GuideEnable($config: GuideConfigurationInput!) {
     guideEnable(config: $config) {
       result
       msg
@@ -53,7 +53,7 @@ export function useGuideEnable() {
 }
 
 const GUIDE_DISABLE = graphql(`
-  mutation guideDisable {
+  mutation GuideDisable {
     guideDisable {
       result
       msg

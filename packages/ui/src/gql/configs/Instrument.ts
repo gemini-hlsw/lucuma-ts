@@ -9,7 +9,7 @@ import { useConfiguration } from './Configuration';
 import { graphql } from './gen';
 
 export const GET_DISTINCT_INSTRUMENTS = graphql(`
-  query getDistinctInstruments($site: Site!) {
+  query DistinctInstruments($site: Site!) {
     distinctInstruments(site: $site)
   }
 `);
@@ -27,7 +27,7 @@ export function useDistinctInstruments(options: OptionsOf<typeof GET_DISTINCT_IN
 }
 
 export const GET_DISTINCT_PORTS = graphql(`
-  query getDistinctPorts($name: Instrument!) {
+  query DistinctPorts($name: Instrument!) {
     distinctPorts(name: $name)
   }
 `);
@@ -64,7 +64,7 @@ export const INSTRUMENT_CONFIG_FRAGMENT = graphql(`
 `);
 
 export const GET_INSTRUMENTS = graphql(`
-  query getInstruments($name: Instrument!, $issPort: Int, $wfs: WfsType, $extraParams: JSON) {
+  query Instruments($name: Instrument!, $issPort: Int, $wfs: WfsType, $extraParams: JSON) {
     instruments(name: $name, issPort: $issPort, wfs: $wfs, extraParams: $extraParams) {
       ...InstrumentConfigItem
     }
@@ -84,7 +84,7 @@ export function useInstruments(options: OptionsOf<typeof GET_INSTRUMENTS>) {
 }
 
 export const GET_INSTRUMENT = graphql(`
-  query getInstrument($name: Instrument!, $issPort: Int, $wfs: WfsType, $extraParams: JSON) {
+  query Instrument($name: Instrument!, $issPort: Int, $wfs: WfsType, $extraParams: JSON) {
     instrument(name: $name, issPort: $issPort, wfs: $wfs, extraParams: $extraParams) {
       ...InstrumentConfigItem
     }
@@ -105,7 +105,7 @@ export function useInstrument(options: OptionsOf<typeof GET_INSTRUMENT>) {
 }
 
 export const SET_TEMPORARY_INSTRUMENT = graphql(`
-  mutation setTemporaryInstrument(
+  mutation SetTemporaryInstrument(
     $name: Instrument!
     $iaa: Float
     $issPort: Int!
@@ -143,7 +143,7 @@ export function useSetTemporaryInstrument() {
 }
 
 export const UPDATE_INSTRUMENT = graphql(`
-  mutation updateInstrument(
+  mutation UpdateInstrument(
     $pk: PosInt!
     $name: Instrument
     $iaa: Float
@@ -185,7 +185,7 @@ export function useUpdateInstrument() {
 }
 
 const DELETE_INSTRUMENT = graphql(`
-  mutation deleteInstrument($pk: PosInt!) {
+  mutation DeleteInstrument($pk: PosInt!) {
     deleteInstrument(pk: $pk)
   }
 `);

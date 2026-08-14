@@ -20,9 +20,9 @@ import { useMemo } from 'react';
 
 import { searchRadiusArcsec, separationArcsec } from '@/lib/geminiArchive';
 
-import type { DocumentType } from './odb/gen';
-import { graphql } from './odb/gen';
-import type { ConfigurationRequestStatus, ObservingModeType } from './odb/gen/graphql';
+import type { DocumentType } from './gen';
+import { graphql } from './gen';
+import type { ConfigurationRequestStatus, ObservingModeType } from './gen/graphql';
 import { asObservingModeType } from './shared';
 
 /** sc-9243's "similar" observing modes: the same configuration style on the

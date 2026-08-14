@@ -11,7 +11,7 @@ export const SERVER_CONFIGURATION_FRAGMENT = graphql(`
 `);
 
 export const SERVER_CONFIGURATION = graphql(`
-  query serverConfiguration {
+  query ServerConfiguration {
     serverConfiguration {
       ...ServerConfigurationItem
     }

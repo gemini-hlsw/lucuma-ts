@@ -19,7 +19,7 @@ export const ALTAIR_INSTRUMENT_FRAGMENT = graphql(`
 `);
 
 const GET_ALTAIR_INSTRUMENT = graphql(`
-  query getAltairInstrument {
+  query AltairInstrument {
     altairInstrument {
       ...AltairInstrumentItem
     }
@@ -33,7 +33,7 @@ export function useAltairInstrument() {
 }
 
 const UPDATE_ALTAIR_INSTRUMENT = graphql(`
-  mutation updateAltairInstrument(
+  mutation UpdateAltairInstrument(
     $pk: PosInt!
     $beamsplitter: String
     $startMagnitude: Float

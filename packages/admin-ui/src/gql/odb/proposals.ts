@@ -6,11 +6,11 @@
 import { useMutation, useQuery } from '@apollo/client/react';
 import { useEffect } from 'react';
 
-import type { DocumentType } from './odb/gen';
-import { graphql } from './odb/gen';
-import type { ScienceSubtype } from './odb/gen/graphql';
+import type { Proposal, SpecialProposalType } from '../types';
+import type { DocumentType } from './gen';
+import { graphql } from './gen';
+import type { ScienceSubtype } from './gen/graphql';
 import { isScienceObservation, mapObservationRow, telluricGroupHours } from './shared';
-import type { Proposal, SpecialProposalType } from './types';
 
 export const PROPOSALS_QUERY = graphql(`
   query AdminProposals($offset: ProgramId) {

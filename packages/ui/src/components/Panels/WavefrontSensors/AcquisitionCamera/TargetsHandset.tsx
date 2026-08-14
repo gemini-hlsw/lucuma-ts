@@ -1,7 +1,7 @@
 import { isNotNullish, type Labelled, when } from '@gemini-hlsw/lucuma-common-ui';
 import { useConfiguration } from '@gql/configs/Configuration';
 import { useConfiguredInstrument, useUpdateInstrument } from '@gql/configs/Instrument';
-import type { AdjustTarget, GetTargetAdjustmentOffsetsQuery } from '@gql/server/gen/graphql';
+import type { AdjustTarget } from '@gql/server/gen/graphql';
 import {
   useAbsorbTargetAdjustment,
   useAdjustTarget,
@@ -13,13 +13,11 @@ import { ButtonGroup } from 'primereact/buttongroup';
 import { Dropdown } from 'primereact/dropdown';
 import { useState } from 'react';
 
-import type { Configuration } from '@/types';
+import type { Configuration, FocalPlaneOffset } from '@/types';
 
 import { AlignAngleInput, AlignmentSelector, CurrentCoordinates, InputControls, OpenLoopsInput } from './Controls';
 import type { Coords, HandsetStrategy } from './strategy';
 import { strategies } from './strategy';
-
-type FocalPlaneOffset = NonNullable<GetTargetAdjustmentOffsetsQuery['targetAdjustmentOffsets']['oiwfs']>;
 
 export default function TargetsHandset({ canEdit }: { canEdit: boolean }) {
   // GraphQL Queries

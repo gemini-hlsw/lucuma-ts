@@ -1,9 +1,9 @@
-import type { GetCentralWavelengthQuery } from '@gql/odb/gen/graphql';
+import type { CentralWavelengthQuery } from '@gql/odb/gen/graphql';
 
 import type { Fpu, Visitor } from '@/types';
 
 export function extractCentralWavelength(
-  data: GetCentralWavelengthQuery | undefined,
+  data: CentralWavelengthQuery | undefined,
   visitor: Visitor | undefined | null,
 ): { wavelength: number | undefined; fpu: Fpu | null | undefined } {
   if (visitor) {

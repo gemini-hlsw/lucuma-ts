@@ -1,6 +1,6 @@
 /*
  * View-model types for the Admin views: the shapes the tables and editors
- * render, produced by each view's mapper (cfp.ts, programs.ts, …) from the
+ * render, produced by each view's mapper (odb/cfp.ts, odb/programs.ts, …) from the
  * codegen-typed ODB responses. Wire types come from codegen (src/gql/odb/gen);
  * these stay hand-modeled because they are UI domain shapes, not the schema.
  */
@@ -30,7 +30,7 @@ export type {
 };
 
 /** Which Gemini telescope a request's instrument belongs to. A UI-derived
- *  notion (from the instrument, in changeRequests.ts), not the schema's
+ *  notion (from the instrument, in odb/changeRequests.ts), not the schema's
  *  `Site` enum (GN/GS) — none of our operations select a Site field, so
  *  codegen doesn't emit that type. */
 export type Site = 'NORTH' | 'SOUTH';

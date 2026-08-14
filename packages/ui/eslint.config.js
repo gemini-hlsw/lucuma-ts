@@ -21,53 +21,40 @@ export default defineConfig(
       react: { version: '19.2' },
     },
   },
-  ...graphqlConfigForSchema(
-    [
-      import.meta.resolve('@gemini-hlsw/lucuma-odb-schemas/odb'),
-      import.meta.resolve('@gemini-hlsw/lucuma-apps-schemas/navigate'),
-    ],
-    './src/gql/{server,odb}',
-  ),
-  // @graphql-eslint tries to merge all schemas, even if defined separately. Because some same names are used but with different types we can't enable linting for both server/odb and configs at the same time
-  // ...graphqlConfigForSchema(
-  //   join(dirname(fileURLToPath(import.meta.resolve('navigate-configs'))), '..', 'src/**/*.graphql'),
-  //   './src/gql/configs',
-  // ),
-);
-
-/**
- * Create a GraphQL ESLint config for a specific schema.
- *
- * @param {string | string[]} schema schema location
- * @param {string} base base directory for the TS files containing the GraphQL operations
- * @returns {Parameters<typeof defineConfig>} ESLint config for GraphQL files
- */
-function graphqlConfigForSchema(schema, base) {
-  return [
-    {
-      files: [`${base}/*.{ts,tsx}`],
-      processor: graphqlPlugin.processor,
-    },
-    {
-      files: [`${base}/**/*.graphql`],
-      languageOptions: {
-        parser: graphqlPlugin.parser,
-        parserOptions: {
-          graphQLConfig: {
-            schema,
-            documents: [`${base}/**/*.{ts,tsx}`],
+  {
+    files: [`./src/gql/{odb,server,configs}/*.{ts,tsx}`],
+    processor: graphqlPlugin.processor,
+  },
+  {
+    files: [`./src/gql/**/*.graphql`],
+    languageOptions: {
+      parser: graphqlPlugin.parser,
+      parserOptions: {
+        graphQLConfig: {
+          projects: {
+            odb: {
+              schema: import.meta.resolve('@gemini-hlsw/lucuma-odb-schemas/odb'),
+              documents: [`./src/gql/odb/*.{ts,tsx}`],
+            },
+            server: {
+              schema: import.meta.resolve('@gemini-hlsw/lucuma-apps-schemas/navigate'),
+              documents: [`./src/gql/server/*.{ts,tsx}`],
+            },
+            configs: {
+              schema: '../configs/src/**/*.graphql',
+              documents: [`./src/gql/configs/*.{ts,tsx}`],
+            },
           },
         },
       },
-      plugins: {
-        '@graphql-eslint': graphqlPlugin,
-      },
-      rules: {
-        ...graphqlPlugin.configs['flat/operations-recommended'].rules,
-
-        '@graphql-eslint/naming-convention': ['error', { types: 'PascalCase', FieldDefinition: 'camelCase' }],
-        '@graphql-eslint/require-selections': ['error', { fieldName: ['id', 'pk'] }],
-      },
     },
-  ];
-}
+    plugins: {
+      '@graphql-eslint': graphqlPlugin,
+    },
+    rules: {
+      ...graphqlPlugin.configs['flat/operations-recommended'].rules,
+
+      '@graphql-eslint/require-selections': ['error', { fieldName: ['id', 'pk'] }],
+    },
+  },
+);

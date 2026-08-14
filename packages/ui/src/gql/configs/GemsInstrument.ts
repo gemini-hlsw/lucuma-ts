@@ -12,7 +12,7 @@ export const GEMS_INSTRUMENT_FRAGMENT = graphql(`
 `);
 
 const GET_GEMS_INSTRUMENT = graphql(`
-  query getGemsInstrument {
+  query GemsInstrument {
     gemsInstrument {
       ...GemsInstrumentItem
     }
@@ -26,7 +26,7 @@ export function useGemsInstrument() {
 }
 
 const UPDATE_GEMS_INSTRUMENT = graphql(`
-  mutation updateGemsInstrument($pk: PosInt!, $beamsplitter: String, $adc: Boolean, $astrometricMode: String) {
+  mutation UpdateGemsInstrument($pk: PosInt!, $beamsplitter: String, $adc: Boolean, $astrometricMode: String) {
     updateGemsInstrument(pk: $pk, beamsplitter: $beamsplitter, adc: $adc, astrometricMode: $astrometricMode) {
       ...GemsInstrumentItem
     }

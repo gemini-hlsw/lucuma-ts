@@ -6,10 +6,6 @@ import { skipToken, useMutation, useQuery } from '@apollo/client/react';
 import { parseNumber } from '@gemini-hlsw/lucuma-common-ui';
 import { useEffect } from 'react';
 
-import type { DocumentType } from './odb/gen';
-import { graphql } from './odb/gen';
-import type { Instrument } from './odb/gen/graphql';
-import { formatConditions, isScienceObservation, mapObservationRow } from './shared';
 import type {
   ChangeRequest,
   ConfigurationRequestStatus,
@@ -17,7 +13,11 @@ import type {
   ProgramCrStatus,
   ProgramWithChangeRequests,
   Site,
-} from './types';
+} from '../types';
+import type { DocumentType } from './gen';
+import { graphql } from './gen';
+import type { Instrument } from './gen/graphql';
+import { formatConditions, isScienceObservation, mapObservationRow } from './shared';
 
 export const CHANGE_REQUESTS_QUERY = graphql(`
   query AdminChangeRequests($offset: ConfigurationRequestId) {

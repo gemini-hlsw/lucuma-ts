@@ -32,7 +32,7 @@ import {
   useUpdateProgram,
   useUpdateProgramNote,
   useUpdateProposalType,
-} from '@/gql/programs';
+} from '@/gql/odb/programs';
 import { mapRosterUsers, useUsers } from '@/gql/sso/roster';
 import {
   type ContactScientist,
@@ -90,7 +90,7 @@ export default function ProgramsPage(): JSX.Element {
    *  remaining step is independent. Throws on the first failure so the user
    *  sees exactly what broke (the ODB is transactional per mutation). */
   async function saveProgram(original: Program, draft: Program): Promise<void> {
-    await updateProgram({ variables: { programId: draft.id, SET: programPropertiesInput(draft) } });
+    await updateProgram({ variables: { programId: draft.id, set: programPropertiesInput(draft) } });
 
     await updateProposalType({ variables: { programId: draft.id, gemini: proposalTypeInput(draft) } });
 

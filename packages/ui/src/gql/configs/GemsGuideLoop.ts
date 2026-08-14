@@ -15,7 +15,7 @@ export const GEMS_GUIDE_LOOP_FRAGMENT = graphql(`
 `);
 
 const GET_GEMS_GUIDE_LOOP = graphql(`
-  query getGemsGuideLoop {
+  query GemsGuideLoop {
     gemsGuideLoop {
       ...GemsGuideLoopItem
     }
@@ -29,7 +29,7 @@ export function useGetGemsGuideLoop() {
 }
 
 const UPDATE_GEMS_GUIDE_LOOP = graphql(`
-  mutation updateGemsGuideLoop(
+  mutation UpdateGemsGuideLoop(
     $pk: PosInt!
     $aoEnabled: Boolean
     $focus: Boolean

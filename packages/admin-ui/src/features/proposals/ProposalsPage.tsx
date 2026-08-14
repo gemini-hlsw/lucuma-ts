@@ -11,8 +11,8 @@ import { TimeAwardsGrid } from '@/components/TimeAwardsGrid';
 import { useToast } from '@/components/toastContext';
 import { friendlyError } from '@/gql/errors';
 import type { ProgramPropertiesInput } from '@/gql/odb/gen/graphql';
-import { allocationsInput, useSetAllocations, useUpdateProgram } from '@/gql/programs';
-import { mapProposals, useProposals, useSetProposalStatus } from '@/gql/proposals';
+import { allocationsInput, useSetAllocations, useUpdateProgram } from '@/gql/odb/programs';
+import { mapProposals, useProposals, useSetProposalStatus } from '@/gql/odb/proposals';
 import {
   type Allocation,
   type Proposal,
@@ -126,7 +126,7 @@ export default function ProposalsPage(): JSX.Element {
       if (decision === 'ACCEPT') {
         const award = awards.get(p.id) ?? BLANK_AWARD;
         const allocations = allocationsInput(award.allocations);
-        const SET: ProgramPropertiesInput = {
+        const set: ProgramPropertiesInput = {
           goa: { proprietaryMonths: award.proprietaryMonths },
           ...(award.activeStart ? { activeStart: award.activeStart } : {}),
           ...(award.activeEnd ? { activeEnd: award.activeEnd } : {}),
@@ -137,7 +137,7 @@ export default function ProposalsPage(): JSX.Element {
         if (allocations.length > 0) {
           await setAllocations({ variables: { programId: p.id, allocations } });
         }
-        await updateProgram({ variables: { programId: p.id, SET } });
+        await updateProgram({ variables: { programId: p.id, set } });
         toast.success('Proposal accepted', p.reference);
       } else {
         await setProposalStatus({ variables: { programId: p.id, status: 'NOT_ACCEPTED' } });

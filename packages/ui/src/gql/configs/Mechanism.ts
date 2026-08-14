@@ -46,7 +46,7 @@ export const MECHANISM_FRAGMENT = graphql(`
 `);
 
 export const GET_MECHANISM = graphql(`
-  query getMechanism {
+  query Mechanism {
     mechanism {
       ...MechanismItem
     }
@@ -66,7 +66,7 @@ export function useMechanism(options: OptionsOf<typeof GET_MECHANISM> = {}) {
 }
 
 const UPDATE_MECHANISM = graphql(`
-  mutation updateMechanism(
+  mutation UpdateMechanism(
     $pk: PosInt!
     $mcs: StatusType
     $mcsPark: StatusType

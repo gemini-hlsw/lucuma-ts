@@ -64,7 +64,7 @@ export function archiveSearchSpec(modeType: string | null): ArchiveSearchSpec | 
 
 /** The shared DISTANCE rule of sc-9243/sc-9244: half the configuration's
  *  largest field-of-view dimension, floored at 60″. Also used by the ODB
- *  conflict check (conflicts.ts), which applies it to modes the archive
+ *  conflict check (gql/odb/conflicts.ts), which applies it to modes the archive
  *  can't search (VISITOR_*). */
 export function searchRadiusArcsec(modeType: string | null): number {
   return archiveSearchSpec(modeType)?.radiusArcsec ?? MIN_RADIUS_ARCSEC;

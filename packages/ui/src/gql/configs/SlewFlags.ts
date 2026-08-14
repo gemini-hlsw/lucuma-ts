@@ -25,7 +25,7 @@ export const SLEW_FLAGS_FRAGMENT = graphql(`
 `);
 
 export const GET_SLEW_FLAGS = graphql(`
-  query getSlewFlags {
+  query SlewFlags {
     slewFlags {
       ...SlewFlagsItem
     }
@@ -39,7 +39,7 @@ export function useSlewFlags() {
 }
 
 const UPDATE_SLEW_FLAGS = graphql(`
-  mutation updateSlewFlags(
+  mutation UpdateSlewFlags(
     $pk: PosInt!
     $zeroChopThrow: Boolean
     $zeroSourceOffset: Boolean

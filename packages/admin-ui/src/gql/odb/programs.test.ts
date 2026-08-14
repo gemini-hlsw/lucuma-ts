@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import type { Program } from '../types';
 import {
   type AdminProgramsResult,
   allocationsInput,
@@ -7,7 +8,6 @@ import {
   programPropertiesInput,
   proposalTypeInput,
 } from './programs';
-import type { Program } from './types';
 
 type RawProgram = AdminProgramsResult['programs']['matches'][number];
 type RawProgramUser = RawProgram['users'][number];

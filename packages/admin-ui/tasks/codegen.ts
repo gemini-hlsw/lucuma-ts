@@ -3,7 +3,7 @@
  * dirs in the navigate-ui style. Both schemas come from the published
  * @gemini-hlsw/lucuma-odb-schemas package:
  *
- *   - ODB (src/gql, gen in src/gql/odb/gen) — the /odb export.
+ *   - ODB (src/gql/odb, gen in src/gql/odb/gen) — the /odb export.
  *   - SSO (src/gql/sso, gen in src/gql/sso/gen) — the /sso export.
  */
 
@@ -59,7 +59,7 @@ const config: CodegenConfig = {
   generates: {
     'src/gql/odb/gen/': {
       schema: import.meta.resolve('@gemini-hlsw/lucuma-odb-schemas/odb'),
-      documents: ['src/gql/*.ts', 'src/**/*.tsx'],
+      documents: ['src/gql/odb/*.ts', 'src/**/*.tsx'],
       preset: 'client',
       config: { ...sharedConfig, scalars: odbScalars },
       presetConfig,

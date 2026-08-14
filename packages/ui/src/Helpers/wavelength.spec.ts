@@ -1,4 +1,4 @@
-import type { GetCentralWavelengthQuery } from '@gql/odb/gen/graphql';
+import type { CentralWavelengthQuery } from '@gql/odb/gen/graphql';
 
 import type { Visitor } from '@/types';
 
@@ -17,7 +17,7 @@ describe(extractCentralWavelength.name, () => {
   });
 
   it('returns undefined for unsupported instruments', () => {
-    const data: GetCentralWavelengthQuery = {
+    const data: CentralWavelengthQuery = {
       executionConfig: {
         instrument: 'SCORPIO',
         flamingos2: null,
@@ -33,7 +33,7 @@ describe(extractCentralWavelength.name, () => {
   });
 
   it('returns the central wavelength for FLAMINGOS2', () => {
-    const data: GetCentralWavelengthQuery = {
+    const data: CentralWavelengthQuery = {
       executionConfig: {
         instrument: 'FLAMINGOS2',
         flamingos2: {
@@ -117,7 +117,7 @@ describe(extractCentralWavelength.name, () => {
   });
 
   it('returns science central wavelength if acquisition is not present', () => {
-    const data: GetCentralWavelengthQuery = {
+    const data: CentralWavelengthQuery = {
       executionConfig: {
         instrument: 'FLAMINGOS2',
         flamingos2: {
@@ -176,7 +176,7 @@ describe(extractCentralWavelength.name, () => {
   });
 
   it('returns the central wavelength for GMOS_NORTH', () => {
-    const data: GetCentralWavelengthQuery = {
+    const data: CentralWavelengthQuery = {
       executionConfig: {
         instrument: 'GMOS_NORTH',
         gmosNorth: {
@@ -216,7 +216,7 @@ describe(extractCentralWavelength.name, () => {
   });
 
   it('returns central wavelength for GMOS_SOUTH', () => {
-    const data: GetCentralWavelengthQuery = {
+    const data: CentralWavelengthQuery = {
       executionConfig: {
         instrument: 'GMOS_SOUTH',
         flamingos2: null,
@@ -256,7 +256,7 @@ describe(extractCentralWavelength.name, () => {
   });
 
   it('returns central wavelength for GHOST', () => {
-    const data: GetCentralWavelengthQuery = {
+    const data: CentralWavelengthQuery = {
       executionConfig: {
         instrument: 'GHOST',
         flamingos2: null,
@@ -305,7 +305,7 @@ describe(extractCentralWavelength.name, () => {
   });
 
   it('returns central wavelength for IGRINS2', () => {
-    const data: GetCentralWavelengthQuery = {
+    const data: CentralWavelengthQuery = {
       executionConfig: {
         instrument: 'IGRINS2',
         flamingos2: null,
@@ -343,7 +343,7 @@ describe(extractCentralWavelength.name, () => {
   });
 
   it('returns central wavelength for GNIRS', () => {
-    const data: GetCentralWavelengthQuery = {
+    const data: CentralWavelengthQuery = {
       executionConfig: {
         instrument: 'GNIRS',
         flamingos2: null,
@@ -413,7 +413,7 @@ describe(extractCentralWavelength.name, () => {
       __typename: 'Visitor',
       centralWavelength: { __typename: 'Wavelength', nanometers: 1234 },
     };
-    const data: GetCentralWavelengthQuery = {
+    const data: CentralWavelengthQuery = {
       executionConfig: {
         instrument: 'GMOS_NORTH',
         gmosNorth: {

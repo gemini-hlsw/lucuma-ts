@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { executionDigest } from '@/test/factories';
 
+import type { ChangeRequest } from '../types';
 import {
   type AdminChangeRequestsResult,
   type AdminProgramObservationsResult,
@@ -9,7 +10,6 @@ import {
   mapChangeRequests,
   observationsByIdFrom,
 } from './changeRequests';
-import type { ChangeRequest } from './types';
 
 type RawRequest = AdminChangeRequestsResult['configurationRequests']['matches'][number];
 

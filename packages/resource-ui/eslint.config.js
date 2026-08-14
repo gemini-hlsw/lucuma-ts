@@ -26,8 +26,12 @@ export default defineConfig(
       parser: graphqlPlugin.parser,
       parserOptions: {
         graphQLConfig: {
-          schema: import.meta.resolve('@gemini-hlsw/lucuma-odb-schemas/resource'),
-          documents: [`./src/gql/**/*.{ts,tsx}`],
+          projects: {
+            resource: {
+              schema: import.meta.resolve('@gemini-hlsw/lucuma-odb-schemas/resource'),
+              documents: [`./src/gql/*.{ts,tsx}`],
+            },
+          },
         },
       },
     },
