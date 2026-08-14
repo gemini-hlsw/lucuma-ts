@@ -45,7 +45,7 @@ export const MECHANISM_FRAGMENT = graphql(`
   }
 `);
 
-const GET_MECHANISM = graphql(`
+export const GET_MECHANISM = graphql(`
   query getMechanism {
     mechanism {
       ...MechanismItem

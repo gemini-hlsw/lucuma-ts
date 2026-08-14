@@ -1,4 +1,4 @@
-import { isNullish, parseNumber, when } from '@gemini-hlsw/lucuma-common-ui';
+import { isNotNullish, parseNumber, when } from '@gemini-hlsw/lucuma-common-ui';
 import { dms2deg, hms2deg, toAngle, toDeclination, toRightAscension } from '@gemini-hlsw/lucuma-core';
 import type { EphemerisKeyType } from '@gql/odb/gen/graphql';
 import { isBaseTarget } from '@gql/util';
@@ -382,7 +382,7 @@ function makeTryToConverter<T>(
   return (value) => {
     try {
       const num = typeof value === 'string' && value.includes(':') ? parseColon(value) : parseNumber(value);
-      if (!isNullish(num) && !isNaN(num)) {
+      if (isNotNullish(num) && !isNaN(num)) {
         return convert(num);
       } else {
         return undefined;

@@ -1,4 +1,4 @@
-import { isNotNullish, when } from '@gemini-hlsw/lucuma-common-ui';
+import { isNotNullish, type Labelled, when } from '@gemini-hlsw/lucuma-common-ui';
 import { useConfiguration } from '@gql/configs/Configuration';
 import { useConfiguredInstrument, useUpdateInstrument } from '@gql/configs/Instrument';
 import type { AdjustTarget, GetTargetAdjustmentOffsetsQuery } from '@gql/server/gen/graphql';
@@ -149,11 +149,7 @@ export default function TargetsHandset({ canEdit }: { canEdit: boolean }) {
   );
 }
 
-const targetOptionsBase: {
-  label: string;
-  value: AdjustTarget;
-  show: (c: Configuration | undefined | null) => boolean;
-}[] = [
+const targetOptionsBase: (Labelled<AdjustTarget> & { show: (c: Configuration | undefined | null) => boolean })[] = [
   { value: 'OIWFS', label: 'OIWFS', show: (c) => isNotNullish(c?.selectedOiTarget) },
   { value: 'PWFS1', label: 'PWFS1', show: (c) => isNotNullish(c?.selectedP1Target) },
   { value: 'PWFS2', label: 'PWFS2', show: (c) => isNotNullish(c?.selectedP2Target) },
@@ -168,7 +164,7 @@ function TargetSelector({
   canEdit,
 }: {
   value: AdjustTarget | undefined;
-  options: { label: string; value: AdjustTarget }[];
+  options: Labelled<AdjustTarget>[];
   onChange: (value: AdjustTarget) => void;
   loading: boolean;
   canEdit: boolean;

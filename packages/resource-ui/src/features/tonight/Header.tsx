@@ -1,6 +1,7 @@
 /**
  * Header component for the Tonight feature.
  */
+import type { Labelled } from '@gemini-hlsw/lucuma-common-ui';
 import { SelectButton, type SelectButtonChangeEvent } from 'primereact/selectbutton';
 import type { JSX } from 'react';
 
@@ -14,15 +15,9 @@ interface HeaderProps {
   onTimeDisplayChange: (timeDisplay: TimelineTimeDisplay) => void;
 }
 
-interface SiteOption {
-  readonly label: string;
-  readonly value: Site;
-}
+type SiteOption = Labelled<Site>;
 
-interface TimeDisplayOption {
-  readonly label: string;
-  readonly value: TimelineTimeDisplay;
-}
+type TimeDisplayOption = Labelled<TimelineTimeDisplay>;
 
 const siteOptions = [
   { label: 'GN', value: 'GN' },

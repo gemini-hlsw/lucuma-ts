@@ -3,12 +3,15 @@ import type {
   CalParams,
   Configuration,
   Declination,
+  EnclosureState,
   FocalPlaneOffset,
   GuideAlarm,
   GuideLoop,
   GuideQuality,
   GuideState,
   InstrumentConfig,
+  Mechanism,
+  MechSystemState,
   NonsiderealTarget,
   ProperMotion,
   ProperMotionDeclination,
@@ -19,6 +22,7 @@ import type {
   ServerConfiguration,
   SiderealTarget,
   Target,
+  TelescopeState,
   WfsConfigState,
 } from '@/types';
 
@@ -278,6 +282,94 @@ export function createWfsConfigState(overrides?: OverridePartial<WfsConfigState>
   return {
     __typename: 'WfsConfigState',
     saving: false,
+    ...overrides,
+  };
+}
+
+export function createMechSystemState(overrides?: OverridePartial<MechSystemState>): MechSystemState {
+  return {
+    __typename: 'MechSystemState',
+    parked: 'NOT_PARKED',
+    follow: 'FOLLOWING',
+    ...overrides,
+  };
+}
+
+export function createEnclosureState(overrides?: OverridePartial<EnclosureState>): EnclosureState {
+  return {
+    __typename: 'EnclosureState',
+    domeEnabled: true,
+    domeMode: 'MIN_VIBRATION',
+    shuttersEnabled: true,
+    shuttersMode: {
+      __typename: 'ShutterMode',
+      mode: 'TRACKING',
+      aperture: { __typename: 'Distance', meters: 0.5 },
+    },
+    eastVentGateAperture: 50,
+    westVentGateAperture: 50,
+    ...overrides,
+  };
+}
+
+export function createTelescopeState(
+  overrides?: OverridePartial<Omit<TelescopeState, 'enclosure'>> & {
+    enclosure?: OverridePartial<EnclosureState>;
+  },
+): TelescopeState {
+  return {
+    __typename: 'TelescopeState',
+    mount: createMechSystemState(),
+    scs: createMechSystemState(),
+    crcs: createMechSystemState(),
+    pwfs1: createMechSystemState(),
+    pwfs2: createMechSystemState(),
+    oiwfs: createMechSystemState(),
+    ...overrides,
+    enclosure: createEnclosureState(overrides?.enclosure),
+  };
+}
+
+export function createMechanism(overrides?: OverridePartial<Mechanism>): Mechanism {
+  return {
+    __typename: 'Mechanism',
+    pk: 1,
+    mcs: 'ACTIVE',
+    mcsPark: 'ACTIVE',
+    mcsUnwrap: 'ACTIVE',
+    scs: 'ACTIVE',
+    crcs: 'ACTIVE',
+    crcsPark: 'ACTIVE',
+    crcsUnwrap: 'ACTIVE',
+    pwfs1: 'ACTIVE',
+    pwfs1Park: 'ACTIVE',
+    pwfs1Unwrap: 'ACTIVE',
+    pwfs2: 'ACTIVE',
+    pwfs2Park: 'ACTIVE',
+    pwfs2Unwrap: 'ACTIVE',
+    oiwfs: 'ACTIVE',
+    oiwfsPark: 'ACTIVE',
+    odgw: 'ACTIVE',
+    odgwPark: 'ACTIVE',
+    aowfs: 'ACTIVE',
+    aowfsPark: 'ACTIVE',
+    dome: 'ACTIVE',
+    domePark: 'ACTIVE',
+    domeMode: 'MinVibration',
+    shutters: 'ACTIVE',
+    shuttersPark: 'ACTIVE',
+    shutterMode: 'Tracking',
+    shutterAperture: 90,
+    wVGate: 'ACTIVE',
+    wVGateClose: 'ACTIVE',
+    wVGateValue: 50,
+    eVGate: 'ACTIVE',
+    eVGateClose: 'ACTIVE',
+    eVGateValue: 50,
+    agScienceFoldPark: 'ACTIVE',
+    agAoFoldPark: 'ACTIVE',
+    agAcPickoffPark: 'ACTIVE',
+    agParkAll: 'ACTIVE',
     ...overrides,
   };
 }

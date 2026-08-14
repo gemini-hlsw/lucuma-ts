@@ -10,6 +10,7 @@ import { userEvent } from 'vitest/browser';
 import {
   createCalParams,
   createConfiguration,
+  createEnclosureState,
   createInstrumentConfig,
   createProperMotion,
   createProperMotionDeclination,
@@ -22,7 +23,8 @@ import {
 import { operationOutcome } from '@/test/helpers';
 import { renderWithContext } from '@/test/render';
 
-import { OIWFS, Slew } from './Buttons';
+import { EcsDome, EcsShutters, OIWFS, Slew } from './Buttons';
+import { ECS_DISABLE_DOME_MUTATION, ECS_DISABLE_SHUTTERS_MUTATION } from './ecs';
 import { OIWFS_FOLLOW_MUTATION } from './follow';
 import { GET_INSTRUMENT_PORT } from './Instrument';
 import { SLEW_MUTATION } from './Slew';
@@ -184,6 +186,64 @@ describe(OIWFS.name, () => {
     });
   });
 });
+
+describe(EcsDome.name, () => {
+  it('turns the dome off while it is on', async () => {
+    const sut = await renderWithContext(<EcsDome label="Dome" enclosure={createEnclosureState()} />, {
+      mocks: [disableDomeMock],
+    });
+
+    await userEvent.click(sut.getByRole('button'));
+
+    expect(disableDomeMock.request.variables).toHaveBeenCalledOnce();
+  });
+
+  it('is disabled while the dome is off, because the Set button turns it on', async () => {
+    const sut = await renderWithContext(
+      <EcsDome label="Dome" enclosure={createEnclosureState({ domeEnabled: false, domeMode: null })} />,
+      { mocks: [disableDomeMock] },
+    );
+
+    await expect.element(sut.getByRole('button')).toBeDisabled();
+  });
+});
+
+describe(EcsShutters.name, () => {
+  it('turns the shutters off while they are on', async () => {
+    const sut = await renderWithContext(<EcsShutters label="Shutters" enclosure={createEnclosureState()} />, {
+      mocks: [disableShuttersMock],
+    });
+
+    await userEvent.click(sut.getByRole('button'));
+
+    expect(disableShuttersMock.request.variables).toHaveBeenCalledOnce();
+  });
+
+  it('is disabled while the shutters are off, because the Set button turns them on', async () => {
+    const sut = await renderWithContext(
+      <EcsShutters label="Shutters" enclosure={createEnclosureState({ shuttersEnabled: false, shuttersMode: null })} />,
+      { mocks: [disableShuttersMock] },
+    );
+
+    await expect.element(sut.getByRole('button')).toBeDisabled();
+  });
+});
+
+const disableDomeMock = {
+  request: {
+    query: ECS_DISABLE_DOME_MUTATION,
+    variables: vi.fn().mockReturnValue(true),
+  },
+  result: { data: { ecsDisableDome: operationOutcome } },
+} satisfies MockedResponseOf<typeof ECS_DISABLE_DOME_MUTATION>;
+
+const disableShuttersMock = {
+  request: {
+    query: ECS_DISABLE_SHUTTERS_MUTATION,
+    variables: vi.fn().mockReturnValue(true),
+  },
+  result: { data: { ecsDisableShutters: operationOutcome } },
+} satisfies MockedResponseOf<typeof ECS_DISABLE_SHUTTERS_MUTATION>;
 
 const configurationMock = {
   request: {

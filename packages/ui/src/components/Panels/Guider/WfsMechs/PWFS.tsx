@@ -1,4 +1,4 @@
-import { isNotNullish } from '@gemini-hlsw/lucuma-common-ui';
+import { isNotNullish, type Labelled } from '@gemini-hlsw/lucuma-common-ui';
 import type { PwfsFieldStop, PwfsFilter } from '@gql/server/gen/graphql';
 import type { PwfsFieldStopResult, PwfsFilterResult, PwfsMechsStateResult } from '@gql/server/MechsState';
 import {
@@ -13,7 +13,7 @@ import { Dropdown } from 'primereact/dropdown';
 
 import { useMovingLabel } from './hooks';
 
-const filterOptions: { value: PwfsFilter; label: string }[] = [
+const filterOptions: Labelled<PwfsFilter>[] = [
   { value: 'NEUTRAL', label: 'neutral' },
   { value: 'BLUE', label: 'Blue' },
   { value: 'GREEN', label: 'Green' },
@@ -22,7 +22,7 @@ const filterOptions: { value: PwfsFilter; label: string }[] = [
   { value: 'RED1', label: 'Red1' },
 ];
 
-const fieldStopOptions: { value: PwfsFieldStop; label: string }[] = [
+const fieldStopOptions: Labelled<PwfsFieldStop>[] = [
   { value: 'PRISM', label: 'prism' },
   { value: 'FS10', label: '10.0' },
   { value: 'FS6_4', label: '6.4' },
