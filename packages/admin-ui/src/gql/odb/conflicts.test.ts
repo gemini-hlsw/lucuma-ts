@@ -7,6 +7,7 @@ import {
   matchConflicts,
   similarModeTypes,
 } from './conflicts';
+import type { TooActivation } from './gen/graphql';
 import { formatModeType } from './shared';
 
 describe('similarModeTypes', () => {
@@ -38,7 +39,7 @@ type RawObservation = AdminConflictCheckResult['observations']['matches'][number
 
 function tooObservation(
   id: string,
-  toOActivation: 'RAPID' | 'NONE',
+  tooActivationCeiling: TooActivation,
   target: RawObservation['targetEnvironment']['firstScienceTarget'],
   reference: string | null,
   workflow: RawObservation['workflow'],
@@ -52,7 +53,7 @@ function tooObservation(
     program: {
       __typename: 'Program',
       id: `p-${id}`,
-      proposal: { __typename: 'Proposal', gemini: { __typename: 'Queue', toOActivation } },
+      proposal: { __typename: 'Proposal', gemini: { __typename: 'Queue', tooActivationCeiling } },
     },
     targetEnvironment: { __typename: 'TargetEnvironment', firstScienceTarget: target },
   };
@@ -111,12 +112,32 @@ describe('mapConflictCandidates', () => {
             },
           ),
           tooObservation('o-2', 'NONE', null, null, null),
+          tooObservation(
+            'o-3',
+            'INTERRUPTING',
+            {
+              __typename: 'Target',
+              id: 't-3',
+              name: 'SN 2027aa',
+              sidereal: {
+                __typename: 'Sidereal',
+                ra: { __typename: 'RightAscension', degrees: 31 },
+                dec: { __typename: 'Declination', degrees: -31 },
+              },
+            },
+            'G-2027B-0058-Q-0001',
+            {
+              __typename: 'CalculatedObservationWorkflow',
+              value: { __typename: 'ObservationWorkflow', state: 'READY' },
+            },
+          ),
         ],
       },
     });
-    expect(candidates).toHaveLength(2); // the NONE-activation observation is dropped
+    expect(candidates).toHaveLength(3); // the NONE-ceiling observation is dropped
     expect(candidates[0]).toMatchObject({ label: 'G-2027B-0421-P x-42', status: 'Approved', requestId: 'x-42' });
     expect(candidates[1]).toMatchObject({ label: 'G-2027B-0057-Q-0311', status: 'Ready', target: 'NGC 1027' });
+    expect(candidates[2]).toMatchObject({ label: 'G-2027B-0058-Q-0001', status: 'Ready', target: 'SN 2027aa' });
   });
 });
 
