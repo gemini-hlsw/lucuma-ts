@@ -10,10 +10,6 @@ import { reactRefresh } from 'eslint-plugin-react-refresh';
 import shared from '../../eslint.config.shared.js';
 
 export default defineConfig(
-  // The checked-in SSO schema is SDL consumed by codegen/graphql-config, not
-  // an operations document — nothing to lint.
-  // TODO: replace with `@gemini-hlsw/lucuma-odb-schemas/sso` once all operations are merged
-  { ignores: ['src/gql/sso/Sso.graphql'] },
   ...shared,
   reactPlugin.configs.flat.recommended,
   reactPlugin.configs.flat['jsx-runtime'],
@@ -38,8 +34,7 @@ export default defineConfig(
               documents: [`./src/gql/*.{ts,tsx}`, `./src/features/**/*.tsx`, `./src/components/**/*.tsx`],
             },
             sso: {
-              // TODO: replace with `@gemini-hlsw/lucuma-odb-schemas/sso` once all operations are merged
-              schema: `./src/gql/sso/Sso.graphql`,
+              schema: import.meta.resolve('@gemini-hlsw/lucuma-odb-schemas/sso'),
               documents: [`./src/gql/sso/*.ts`],
             },
           },

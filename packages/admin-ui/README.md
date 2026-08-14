@@ -17,9 +17,9 @@ doc chapter 11). Five views:
 
 Two GraphQL services back one Apollo client (split on the operation's
 `clientName` context): the **ODB** (programs, proposals, change requests,
-calls — codegen-typed via `@gemini-hlsw/lucuma-odb-schemas/odb`) and **SSO**
-(`@gemini-hlsw/lucuma-odb-schemas/sso`). The SSO `users` roster query is in development upstream (sc-9059);
-until it deploys, the Users view surfaces SSO's error. The sc-9244 duplication check calls
+calls) and **SSO** (the user roster and role mutations). Both schemas are
+codegen-typed from the published `@gemini-hlsw/lucuma-odb-schemas` package
+(the `/odb` and `/sso` exports). The sc-9244 duplication check calls
 archive.gemini.edu, which sends no CORS headers — the dev server proxies
 `/archive`; a deployed equivalent (hosting proxy or archive-side CORS) is an
 open question.

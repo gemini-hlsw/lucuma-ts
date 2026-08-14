@@ -1,14 +1,10 @@
 /*
  * SSO GraphQL operations: the admin user roster (sc-9096) and the role
  * mutations (sc-8978). Documents are validated and typed against the
- * checked-in SSO schema (Sso.graphql — see its header for provenance) and
- * routed to the SSO endpoint by their `clientName: 'sso'` context
+ * published SSO schema (@gemini-hlsw/lucuma-odb-schemas/sso) and routed to
+ * the SSO endpoint by their `clientName: 'sso'` context
  * (gql/ApolloConfigs.ts). Every operation requires the Admin role
  * server-side.
- *
- * The `users` roster query is not yet deployed to SSO — it is in development
- * upstream as sc-9059. Until it ships, the Users view surfaces SSO's error
- * rather than an empty table.
  */
 import { useMutation, useQuery } from '@apollo/client/react';
 
@@ -53,21 +49,27 @@ export interface RosterUser {
 /** Routes an operation to the SSO endpoint (gql/ApolloConfigs.ts). */
 const SSO_CONTEXT = { context: { clientName: 'sso' } } as const;
 
+/** Role assignment only applies to ORCID-backed people, so the roster leaves
+ *  out guest and service users. Disabled users are excluded by the server
+ *  default (`includeDisabled: false`). */
 export const USERS_QUERY = graphql(`
   query AdminUserRoster {
-    users {
-      id
-      orcidId
-      profile {
-        givenName
-        familyName
-        email
-      }
-      roles {
+    users(WHERE: { type: { EQ: STANDARD } }) {
+      matches {
         id
-        type
-        partner
+        orcidId
+        profile {
+          givenName
+          familyName
+          email
+        }
+        roles {
+          id
+          type
+          partner
+        }
       }
+      hasMore
     }
   }
 `);
@@ -81,14 +83,19 @@ export function useUsers() {
 }
 
 export function mapRosterUsers(raw: AdminUserRosterResult): RosterUser[] {
-  return raw.users.map((u) => ({
+  return raw.users.matches.map((u) => ({
     id: u.id,
-    givenName: u.profile.givenName ?? '',
-    familyName: u.profile.familyName ?? '',
-    email: u.profile.email ?? '',
-    orcidId: u.orcidId,
+    givenName: u.profile?.givenName ?? '',
+    familyName: u.profile?.familyName ?? '',
+    email: u.profile?.email ?? '',
+    orcidId: u.orcidId ?? '',
     roles: u.roles.map((r) => ({ id: r.id, type: r.type, ...(r.partner ? { partner: r.partner } : {}) })),
   }));
+}
+
+/** `true` when SSO capped the result set (1000 users) and dropped the rest. */
+export function rosterHasMore(raw: AdminUserRosterResult): boolean {
+  return raw.users.hasMore;
 }
 
 export const ADD_ROLE_MUTATION = graphql(`

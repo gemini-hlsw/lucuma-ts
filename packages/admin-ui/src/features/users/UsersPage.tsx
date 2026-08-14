@@ -1,5 +1,6 @@
 import './UsersPage.css';
 
+import { when } from '@gemini-hlsw/lucuma-common-ui';
 import { Checkbox } from 'primereact/checkbox';
 import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
@@ -16,6 +17,7 @@ import {
   PARTNER_NAME,
   PARTNERS,
   type RoleType,
+  rosterHasMore,
   type RosterUser,
   useAddRole,
   useDeleteRole,
@@ -50,6 +52,7 @@ export default function UsersPage(): JSX.Element {
   const toast = useToast();
   const { data, loading, error } = useUsers();
   const users = useMemo(() => (data ? mapRosterUsers(data) : []), [data]);
+  const truncated = data ? rosterHasMore(data) : false;
   const [addRole] = useAddRole();
   const [deleteRole] = useDeleteRole();
   const [globalFilter, setGlobalFilter] = useState('');
@@ -139,8 +142,16 @@ export default function UsersPage(): JSX.Element {
   const controls = (
     <>
       <DataSourceBadge loading={loading} error={error && friendlyError(error)} empty={users.length === 0} />
-      <span className="users-count" title="Users shown / users loaded from SSO.">
+      <span
+        className="users-count"
+        title={
+          truncated
+            ? 'Users shown / users loaded from SSO. SSO returns at most 1000 users, and more users match than are shown here.'
+            : 'Users shown / users loaded from SSO.'
+        }
+      >
         {visibleUsers.length}/{users.length}
+        {when(truncated, () => '+')}
       </span>
       <SearchInput
         value={globalFilter}
