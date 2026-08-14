@@ -30,13 +30,13 @@
   },
   "dependencies": {
     "@gemini-hlsw/lucuma-core": "0.228.0",
-    "@gemini-hlsw/lucuma-apps-schemas": "0.177.2-20260810-b23ee65d",
+    "@gemini-hlsw/lucuma-apps-schemas": "0.177.2-20260813-fa975554",
     "@gemini-hlsw/lucuma-odb-schemas": "0.90.0-85-4766185",
     "@prisma/adapter-pg": "7.9.1",
     "@prisma/client": "7.9.1",
     "graphql": "17.0.2",
     "graphql-parse-resolve-info": "4.14.1",
-    "graphql-scalars": "1.25.0",
+    "graphql-scalars": "1.26.0",
     "graphql-yoga": "5.21.2",
     "prisma": "7.9.1"
   },
@@ -50,10 +50,10 @@
     "eslint": "10.8.1",
     "eslint-import-resolver-typescript": "4.4.5",
     "eslint-plugin-simple-import-sort": "14.0.0",
-    "globals": "17.9.0",
+    "globals": "17.10.0",
     "@typescript/native": "npm:typescript@7.0.2",
     "typescript": "npm:@typescript/typescript6@6.0.2",
-    "typescript-eslint": "8.66.0"
+    "typescript-eslint": "8.67.0"
   },
   "files": [
     "dist",

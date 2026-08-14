@@ -9,10 +9,31 @@ export const MECH_SYSTEM_STATE_FRAGMENT = graphql(`
   }
 `);
 
+export const DISTANCE_FRAGMENT = graphql(`
+  fragment DistanceItem on Distance {
+    meters
+  }
+`);
+
+export const SHUTTER_MODE_FRAGMENT = graphql(`
+  fragment ShutterModeItem on ShutterMode {
+    mode
+    aperture {
+      ...DistanceItem
+    }
+  }
+`);
+
 export const ENCLOSURE_STATE_FRAGMENT = graphql(`
   fragment EnclosureStateItem on EnclosureState {
     domeEnabled
+    domeMode
     shuttersEnabled
+    shuttersMode {
+      ...ShutterModeItem
+    }
+    eastVentGateAperture
+    westVentGateAperture
   }
 `);
 
@@ -50,7 +71,7 @@ export const GET_TELESCOPE_STATE = graphql(`
   }
 `);
 
-const TELESCOPE_STATE_SUBSCRIPTION = graphql(`
+export const TELESCOPE_STATE_SUBSCRIPTION = graphql(`
   subscription telescopeStates {
     telescopeState {
       ...TelescopeStateItem

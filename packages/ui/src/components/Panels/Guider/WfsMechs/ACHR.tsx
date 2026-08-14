@@ -1,4 +1,4 @@
-import { isNotNullish, when } from '@gemini-hlsw/lucuma-common-ui';
+import { isNotNullish, type Labelled, when } from '@gemini-hlsw/lucuma-common-ui';
 import { useCalParams } from '@gql/configs/CalParams';
 import type { AcFilter, AcLens, AcNdFilter, AcWindowSize } from '@gql/server/gen/graphql';
 import { useAcFilter, useAcLens, useAcMechsState, useAcNdFilter, useAcWindowSize } from '@gql/server/MechsState';
@@ -8,11 +8,11 @@ import { useState } from 'react';
 
 import { useMovingLabel } from './hooks';
 
-const lensOptions: { value: AcLens; label: string }[] = [
+const lensOptions: Labelled<AcLens>[] = [
   { value: 'AC', label: 'AC' },
   { value: 'HRWFS', label: 'HRWFS' },
 ];
-const filterOptions: { value: AcFilter; label: string }[] = [
+const filterOptions: Labelled<AcFilter>[] = [
   { value: 'NEUTRAL', label: 'neutral' },
   { value: 'B_BLUE', label: 'B-blue' },
   { value: 'V_GREEN', label: 'V-green' },
@@ -21,14 +21,14 @@ const filterOptions: { value: AcFilter; label: string }[] = [
   { value: 'I_RED3', label: 'I-red3' },
 ];
 
-const gsNdFilterOptions: { value: AcNdFilter; label: string }[] = [
+const gsNdFilterOptions: Labelled<AcNdFilter>[] = [
   { value: 'OPEN', label: 'Open' },
   { value: 'ND1', label: 'ND1' },
   { value: 'ND2', label: 'ND2' },
   { value: 'ND3', label: 'ND3' },
 ];
 
-const gnNdFilterOptions: { value: AcNdFilter; label: string }[] = [
+const gnNdFilterOptions: Labelled<AcNdFilter>[] = [
   { value: 'OPEN', label: 'open' },
 
   { value: 'ND100', label: 'nd100' },
@@ -37,7 +37,7 @@ const gnNdFilterOptions: { value: AcNdFilter; label: string }[] = [
   { value: 'FILT06', label: 'filt06' },
   { value: 'FILT08', label: 'filt08' },
 ];
-const windowSizeOptions: { value: AcWindowSize; label: string }[] = [
+const windowSizeOptions: Labelled<AcWindowSize>[] = [
   { value: 'WINDOW_100X100', label: '100x100' },
   { value: 'WINDOW_200X200', label: '200x200' },
   { value: 'FULL', label: 'Full' },

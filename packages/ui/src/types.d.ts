@@ -36,6 +36,7 @@ export type {
 } from '@gql/odb/gen/graphql';
 export type {
   AcMechsItemFragment as AcMechs,
+  EnclosureStateItemFragment as EnclosureState,
   FocalPlaneOffsetItemFragment as FocalPlaneOffset,
   GuideQualityItemFragment as GuideQuality,
   GuideConfigurationStateItemFragment as GuideState,
@@ -43,6 +44,7 @@ export type {
   MechSystemStateItemFragment as MechSystemState,
   PwfsMechsStateItemFragment as PwfsMechs,
   ServerConfigurationItemFragment as ServerConfiguration,
+  ShutterModeItemFragment as ShutterMode,
   TelescopeStateItemFragment as TelescopeState,
   WfsConfigStateItemFragment as WfsConfigState,
 } from '@gql/server/gen/graphql';
