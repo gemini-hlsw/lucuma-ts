@@ -39,7 +39,7 @@ export const ENGINEERING_TARGET_FRAGMENT = graphql(`
 `);
 
 const GET_ENGINEERING_TARGETS = graphql(`
-  query getEngineeringTargets {
+  query EngineeringTargets {
     engineeringTargets {
       ...EngineeringTargetItem
     }

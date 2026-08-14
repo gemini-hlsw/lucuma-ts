@@ -1,7 +1,8 @@
 /** Selections and mapping helpers shared by more than one view. */
 import { parseNumber } from '@gemini-hlsw/lucuma-common-ui';
 
-import { graphql } from './odb/gen';
+import { type Instrument, INSTRUMENT_LABEL, type ObservationRow } from '../types';
+import { graphql } from './gen';
 import type {
   CloudExtinctionPreset,
   GroupElementItemFragment,
@@ -10,8 +11,7 @@ import type {
   ObservingModeType,
   SkyBackground,
   WaterVapor,
-} from './odb/gen/graphql';
-import { type Instrument, INSTRUMENT_LABEL, type ObservationRow } from './types';
+} from './gen/graphql';
 
 /** ODB instrument enum (e.g. `GMOS_NORTH`) → the display label used across
  *  Programs/CfP/Proposals/Change Requests. Unknown values (a future enum

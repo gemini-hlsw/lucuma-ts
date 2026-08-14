@@ -14,6 +14,7 @@ import { DuplicatesTable } from '@/components/DuplicatesTable';
 import { Check, PaperPlane, XMark } from '@/components/Icons';
 import { Tile } from '@/components/Tile';
 import { useToast } from '@/components/toastContext';
+import { friendlyError } from '@/gql/errors';
 import {
   groupChangeRequestsByProgram,
   mapChangeRequests,
@@ -21,8 +22,7 @@ import {
   useChangeRequests,
   useProgramObservations,
   useUpdateConfigurationRequests,
-} from '@/gql/changeRequests';
-import { friendlyError } from '@/gql/errors';
+} from '@/gql/odb/changeRequests';
 import type { ChangeRequest, ConfigurationRequestStatus, ObservationRow, ProgramCrStatus, Site } from '@/gql/types';
 
 const EMPTY: ChangeRequest[] = [];

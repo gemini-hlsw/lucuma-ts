@@ -27,7 +27,7 @@ export const HORIZONTAL_OFFSET_FRAGMENT = graphql(`
 `);
 
 const POINTING_ADJUSTMENT_OFFSET_QUERY = graphql(`
-  query getPointingAdjustmentOffset {
+  query PointingAdjustmentOffset {
     pointingAdjustmentOffset {
       ...PointingCorrectionsItem
     }
@@ -35,7 +35,7 @@ const POINTING_ADJUSTMENT_OFFSET_QUERY = graphql(`
 `);
 
 const POINTING_ADJUSTMENT_OFFSET_SUBSCRIPTION = graphql(`
-  subscription pointingAdjustmentOffset {
+  subscription PointingAdjustmentOffsetSub {
     pointingAdjustmentOffset {
       ...PointingCorrectionsItem
     }
@@ -52,7 +52,7 @@ export function usePointingAdjustmentOffset(options?: QueryAndSubscriptionOption
 }
 
 const ADJUST_POINTING_MUTATION = graphql(`
-  mutation adjustPointing($offset: HandsetAdjustmentInput!) {
+  mutation AdjustPointing($offset: HandsetAdjustmentInput!) {
     adjustPointing(offset: $offset) {
       result
       msg
@@ -65,7 +65,7 @@ export function useAdjustPointing() {
 }
 
 const RESET_LOCAL_POINTING_ADJUSTMENT_MUTATION = graphql(`
-  mutation resetLocalPointingAdjustment {
+  mutation ResetLocalPointingAdjustment {
     resetLocalPointingAdjustment {
       result
       msg
@@ -78,7 +78,7 @@ export function useResetLocalPointingAdjustment() {
 }
 
 const RESET_GUIDE_POINTING_ADJUSTMENT_MUTATION = graphql(`
-  mutation resetGuidePointingAdjustment {
+  mutation ResetGuidePointingAdjustment {
     resetGuidePointingAdjustment {
       result
       msg
@@ -91,7 +91,7 @@ export function useResetGuidePointingAdjustment() {
 }
 
 const ABSORB_GUIDE_POINTING_ADJUSTMENT_MUTATION = graphql(`
-  mutation absorbGuidePointingAdjustment {
+  mutation AbsorbGuidePointingAdjustment {
     absorbGuidePointingAdjustment {
       result
       msg

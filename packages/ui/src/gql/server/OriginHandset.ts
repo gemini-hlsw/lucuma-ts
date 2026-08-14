@@ -5,7 +5,7 @@ import { useQueryAndSubscription } from '@gql/use-query-and-subscription';
 import { graphql } from './gen';
 
 const ORIGIN_ADJUSTMENT_OFFSET_QUERY = graphql(`
-  query getOriginAdjustmentOffset {
+  query OriginAdjustmentOffset {
     originAdjustmentOffset {
       ...FocalPlaneOffsetItem
     }
@@ -13,7 +13,7 @@ const ORIGIN_ADJUSTMENT_OFFSET_QUERY = graphql(`
 `);
 
 const ORIGIN_ADJUSTMENT_OFFSET_SUBSCRIPTION = graphql(`
-  subscription originAdjustmentOffset {
+  subscription OriginAdjustmentOffsetSub {
     originAdjustmentOffset {
       ...FocalPlaneOffsetItem
     }
@@ -30,7 +30,7 @@ export function useOriginAdjustmentOffset(options?: QueryAndSubscriptionOptions)
 }
 
 const ADJUST_ORIGIN_MUTATION = graphql(`
-  mutation adjustOrigin($offset: HandsetAdjustmentInput!, $openLoops: Boolean!) {
+  mutation AdjustOrigin($offset: HandsetAdjustmentInput!, $openLoops: Boolean!) {
     adjustOrigin(offset: $offset, openLoops: $openLoops) {
       result
       msg
@@ -43,7 +43,7 @@ export function useAdjustOrigin() {
 }
 
 const RESET_ORIGIN_ADJUSTMENT_MUTATION = graphql(`
-  mutation resetOriginAdjustment($openLoops: Boolean!) {
+  mutation ResetOriginAdjustment($openLoops: Boolean!) {
     resetOriginAdjustment(openLoops: $openLoops) {
       result
       msg
@@ -56,7 +56,7 @@ export function useResetOriginAdjustment() {
 }
 
 const ABSORB_ORIGIN_ADJUSTMENT_MUTATION = graphql(`
-  mutation absorbOriginAdjustment {
+  mutation AbsorbOriginAdjustment {
     absorbOriginAdjustment {
       result
       msg

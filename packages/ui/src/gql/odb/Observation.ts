@@ -141,7 +141,7 @@ export const VISITOR_FRAGMENT = graphql(`
 `);
 
 const GET_OBSERVATION_BY_ID = graphql(`
-  query getObservationById($obsId: ObservationId!) {
+  query ObservationById($obsId: ObservationId!) {
     observation(observationId: $obsId) {
       ...ObservationItem
     }
@@ -154,7 +154,7 @@ export function useObservationById() {
 
 const GET_OBSERVATIONS_BY_STATE = graphql(`
   # eslint-disable @graphql-eslint/selection-set-depth
-  query getObservationsByState($states: [ObservationWorkflowState!]!, $site: Site!, $date: Date!) {
+  query ObservationsByState($states: [ObservationWorkflowState!]!, $site: Site!, $date: Date!) {
     observations(
       WHERE: {
         workflow: { workflowState: { IN: $states } }
@@ -185,7 +185,7 @@ export function useObservationsByState(options: OptionsOf<typeof GET_OBSERVATION
 
 export const GET_GUIDE_ENVIRONMENT = graphql(`
   # eslint-disable @graphql-eslint/selection-set-depth
-  query getGuideEnvironment($obsId: ObservationId!) {
+  query GuideEnvironment($obsId: ObservationId!) {
     observation(observationId: $obsId) {
       id
       observingMode {
@@ -337,7 +337,7 @@ export const GNIRS_EXECUTION_SEQUENCE_FRAGMENT = graphql(`
 `);
 
 export const GET_CENTRAL_WAVELENGTH = graphql(`
-  query getCentralWavelength($obsId: ObservationId!) {
+  query CentralWavelength($obsId: ObservationId!) {
     executionConfig(observationId: $obsId) {
       instrument
       gmosNorth {

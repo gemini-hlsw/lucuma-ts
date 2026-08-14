@@ -17,7 +17,12 @@ export default defineConfig(
   reactHooks.configs.flat['recommended-latest'],
   reactRefresh.configs.vite(),
   {
-    files: [`./src/gql/*.{ts,tsx}`, `./src/gql/sso/*.ts`],
+    files: [
+      `./src/gql/odb/*.{ts,tsx}`,
+      `./src/gql/sso/*.{ts,tsx}`,
+      `./src/features/**/*.tsx`,
+      `./src/components/**/*.tsx`,
+    ],
     processor: graphqlPlugin.processor,
   },
   {
@@ -31,7 +36,7 @@ export default defineConfig(
           projects: {
             odb: {
               schema: import.meta.resolve('@gemini-hlsw/lucuma-odb-schemas/odb'),
-              documents: [`./src/gql/*.{ts,tsx}`, `./src/features/**/*.tsx`, `./src/components/**/*.tsx`],
+              documents: [`./src/gql/odb/*.{ts,tsx}`, `./src/features/**/*.tsx`, `./src/components/**/*.tsx`],
             },
             sso: {
               schema: import.meta.resolve('@gemini-hlsw/lucuma-odb-schemas/sso'),
@@ -47,7 +52,6 @@ export default defineConfig(
     rules: {
       ...graphqlPlugin.configs['flat/operations-recommended'].rules,
 
-      '@graphql-eslint/naming-convention': ['error', { types: 'PascalCase', FieldDefinition: 'camelCase' }],
       '@graphql-eslint/require-selections': ['error', { fieldName: ['id', 'pk'] }],
       // Observation rows nested under program matches reach deep but intrinsic
       // ODB paths — not over-fetches: coordinates at depth 9 (programs > matches

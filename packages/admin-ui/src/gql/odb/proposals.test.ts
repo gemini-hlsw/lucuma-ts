@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { executionDigest } from '@/test/factories';
 
-import type { GroupElementItemFragment, ObservationItemFragment } from './odb/gen/graphql';
+import type { GroupElementItemFragment, ObservationItemFragment } from './gen/graphql';
 import { type AdminProposalsResult, mapProposals, semesterOfReference } from './proposals';
 
 type RawProgram = AdminProposalsResult['programs']['matches'][number];

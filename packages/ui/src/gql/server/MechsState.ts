@@ -12,7 +12,7 @@ export const AC_MECHS_FRAGMENT = graphql(`
 `);
 
 export const AC_MECHS_STATE = graphql(`
-  query acMechsState {
+  query AcMechsState {
     acMechsState {
       ...AcMechsItem
     }
@@ -20,7 +20,7 @@ export const AC_MECHS_STATE = graphql(`
 `);
 
 export const AC_MECHS_STATE_SUB = graphql(`
-  subscription acMechsStateSub {
+  subscription AcMechsStateSub {
     acMechsState {
       ...AcMechsItem
     }
@@ -32,7 +32,7 @@ export function useAcMechsState() {
 }
 
 export const AC_LENS = graphql(`
-  mutation acLens($lens: AcLens!) {
+  mutation AcLens($lens: AcLens!) {
     acLens(lens: $lens) {
       result
       msg
@@ -45,7 +45,7 @@ export function useAcLens() {
 }
 
 export const AC_FILTER = graphql(`
-  mutation acFilter($filter: AcFilter!) {
+  mutation AcFilter($filter: AcFilter!) {
     acFilter(filter: $filter) {
       result
       msg
@@ -58,7 +58,7 @@ export function useAcFilter() {
 }
 
 export const AC_ND_FILTER = graphql(`
-  mutation acNdFilter($ndFilter: AcNdFilter!) {
+  mutation AcNdFilter($ndFilter: AcNdFilter!) {
     acNdFilter(ndFilter: $ndFilter) {
       result
       msg
@@ -71,7 +71,7 @@ export function useAcNdFilter() {
 }
 
 export const AC_WINDOW_SIZE = graphql(`
-  mutation acWindowSize($size: AcWindowInput!) {
+  mutation AcWindowSize($size: AcWindowInput!) {
     acWindowSize(size: $size) {
       result
       msg
@@ -91,7 +91,7 @@ export const PWFS_MECHS_STATE_FRAGMENT = graphql(`
 `);
 
 export const PWFS1_MECHS_STATE = graphql(`
-  query pwfs1MechsState {
+  query Pwfs1MechsState {
     pwfs1MechsState {
       ...PwfsMechsStateItem
     }
@@ -99,7 +99,7 @@ export const PWFS1_MECHS_STATE = graphql(`
 `);
 
 export const PWFS1_MECHS_STATE_SUB = graphql(`
-  subscription pwfs1MechsStateSub {
+  subscription Pwfs1MechsStateSub {
     pwfs1MechsState {
       ...PwfsMechsStateItem
     }
@@ -111,7 +111,7 @@ export function usePwfs1MechsState() {
 }
 
 export const PWFS2_MECHS_STATE = graphql(`
-  query pwfs2MechsState {
+  query Pwfs2MechsState {
     pwfs2MechsState {
       ...PwfsMechsStateItem
     }
@@ -119,7 +119,7 @@ export const PWFS2_MECHS_STATE = graphql(`
 `);
 
 export const PWFS2_MECHS_STATE_SUB = graphql(`
-  subscription pwfs2MechsStateSub {
+  subscription Pwfs2MechsStateSub {
     pwfs2MechsState {
       ...PwfsMechsStateItem
     }
@@ -133,7 +133,7 @@ export function usePwfs2MechsState() {
 export type PwfsMechsStateResult = ReturnType<typeof usePwfs1MechsState | typeof usePwfs2MechsState>;
 
 export const PWFS1_FILTER = graphql(`
-  mutation pwfs1Filter($filter: PwfsFilter!) {
+  mutation Pwfs1Filter($filter: PwfsFilter!) {
     pwfs1Filter(filter: $filter) {
       result
       msg
@@ -146,7 +146,7 @@ export function usePwfs1Filter() {
 }
 
 export const PWFS2_FILTER = graphql(`
-  mutation pwfs2Filter($filter: PwfsFilter!) {
+  mutation Pwfs2Filter($filter: PwfsFilter!) {
     pwfs2Filter(filter: $filter) {
       result
       msg
@@ -161,7 +161,7 @@ export function usePwfs2Filter() {
 }
 
 export const PWFS1_FIELD_STOP = graphql(`
-  mutation pwfs1FieldStop($fieldStop: PwfsFieldStop!) {
+  mutation Pwfs1FieldStop($fieldStop: PwfsFieldStop!) {
     pwfs1FieldStop(fieldStop: $fieldStop) {
       result
       msg
@@ -174,7 +174,7 @@ export function usePwfs1FieldStop() {
 }
 
 export const PWFS2_FIELD_STOP = graphql(`
-  mutation pwfs2FieldStop($fieldStop: PwfsFieldStop!) {
+  mutation Pwfs2FieldStop($fieldStop: PwfsFieldStop!) {
     pwfs2FieldStop(fieldStop: $fieldStop) {
       result
       msg

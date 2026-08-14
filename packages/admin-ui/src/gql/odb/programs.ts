@@ -6,15 +6,15 @@
 import { useMutation, useQuery } from '@apollo/client/react';
 import { parseNumber } from '@gemini-hlsw/lucuma-common-ui';
 
-import type { DocumentType } from './odb/gen';
-import { graphql } from './odb/gen';
+import type { Allocation, Program } from '../types';
+import type { DocumentType } from './gen';
+import { graphql } from './gen';
 import type {
   AllocationInput,
   GeminiProposalTypeInput,
   ProgramItemFragment,
   ProgramPropertiesInput,
-} from './odb/gen/graphql';
-import type { Allocation, Program } from './types';
+} from './gen/graphql';
 
 export const PROGRAM_ITEM_FRAGMENT = graphql(`
   fragment ProgramItem on Program {
@@ -112,8 +112,8 @@ export function programPropertiesInput(draft: Program): ProgramPropertiesInput {
 }
 
 export const UPDATE_PROGRAM_MUTATION = graphql(`
-  mutation AdminUpdateProgram($programId: ProgramId!, $SET: ProgramPropertiesInput!) {
-    updatePrograms(input: { WHERE: { id: { EQ: $programId } }, SET: $SET }) {
+  mutation AdminUpdateProgram($programId: ProgramId!, $set: ProgramPropertiesInput!) {
+    updatePrograms(input: { WHERE: { id: { EQ: $programId } }, SET: $set }) {
       programs {
         id
       }

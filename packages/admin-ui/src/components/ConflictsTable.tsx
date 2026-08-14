@@ -5,9 +5,9 @@ import { DataTable } from 'primereact/datatable';
 import { type JSX, useMemo } from 'react';
 
 import { Spinner, TriangleExclamation } from '@/components/Icons';
-import { type ConflictRow, type ConflictSource, matchConflicts, useConflictCandidates } from '@/gql/conflicts';
 import { friendlyError } from '@/gql/errors';
-import { formatModeType } from '@/gql/shared';
+import { type ConflictRow, type ConflictSource, matchConflicts, useConflictCandidates } from '@/gql/odb/conflicts';
+import { formatModeType } from '@/gql/odb/shared';
 
 /**
  * "Potential Conflicts" table (sc-9243): active programs planning equivalent

@@ -2,7 +2,7 @@ import { graphql } from './gen';
 
 // MCS
 export const MOUNT_FOLLOW_MUTATION = graphql(`
-  mutation changeMountState($enable: Boolean!) {
+  mutation ChangeMountState($enable: Boolean!) {
     mountFollow(enable: $enable) {
       result
       msg
@@ -12,7 +12,7 @@ export const MOUNT_FOLLOW_MUTATION = graphql(`
 
 // CRCS
 export const ROTATOR_FOLLOW_MUTATION = graphql(`
-  mutation changeRotatorState($enable: Boolean!) {
+  mutation ChangeRotatorState($enable: Boolean!) {
     rotatorFollow(enable: $enable) {
       result
       msg
@@ -22,7 +22,7 @@ export const ROTATOR_FOLLOW_MUTATION = graphql(`
 
 // SCS
 export const SCS_FOLLOW_MUTATION = graphql(`
-  mutation changeScsState($enable: Boolean!) {
+  mutation ChangeScsState($enable: Boolean!) {
     scsFollow(enable: $enable) {
       result
       msg
@@ -32,7 +32,7 @@ export const SCS_FOLLOW_MUTATION = graphql(`
 
 // OIWFS
 export const OIWFS_FOLLOW_MUTATION = graphql(`
-  mutation changeOiwfsState($enable: Boolean!) {
+  mutation ChangeOiwfsState($enable: Boolean!) {
     oiwfsFollow(enable: $enable) {
       result
       msg
@@ -41,7 +41,7 @@ export const OIWFS_FOLLOW_MUTATION = graphql(`
 `);
 
 export const PWFS1_FOLLOW_MUTATION = graphql(`
-  mutation changePwfs1State($enable: Boolean!) {
+  mutation ChangePwfs1State($enable: Boolean!) {
     pwfs1Follow(enable: $enable) {
       result
       msg
@@ -50,7 +50,7 @@ export const PWFS1_FOLLOW_MUTATION = graphql(`
 `);
 
 export const PWFS2_FOLLOW_MUTATION = graphql(`
-  mutation changePwfs2State($enable: Boolean!) {
+  mutation ChangePwfs2State($enable: Boolean!) {
     pwfs2Follow(enable: $enable) {
       result
       msg

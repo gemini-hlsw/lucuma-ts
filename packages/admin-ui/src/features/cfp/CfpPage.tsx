@@ -13,6 +13,7 @@ import { DataSourceBadge } from '@/components/DataSourceBadge';
 import { CircleCheck, CircleXMark, Copy, Plus, Upload, XMark } from '@/components/Icons';
 import { Tile } from '@/components/Tile';
 import { useToast } from '@/components/toastContext';
+import { friendlyError } from '@/gql/errors';
 import {
   cfpPropertiesInput,
   currentSemester,
@@ -21,8 +22,7 @@ import {
   useCfps,
   useCreateCfp,
   useUpdateCfp,
-} from '@/gql/cfp';
-import { friendlyError } from '@/gql/errors';
+} from '@/gql/odb/cfp';
 import type { CallForProposalsPropertiesInput } from '@/gql/odb/gen/graphql';
 import { type Partner, PARTNER_NAME, PARTNERS } from '@/gql/sso/roster';
 import {
@@ -83,18 +83,18 @@ export default function CfpPage(): JSX.Element {
 
   async function save(draft: CallForProposals): Promise<void> {
     try {
-      await updateCfp({ variables: { id: draft.id, SET: cfpPropertiesInput(draft) } });
+      await updateCfp({ variables: { id: draft.id, set: cfpPropertiesInput(draft) } });
       toast.success('Call saved', draft.title || draft.id);
     } catch (err) {
       toast.error('Save failed', friendlyError(err));
     }
   }
 
-  /** Create a call and select it. `SET` is a fresh minimal call for New, or the
+  /** Create a call and select it. `set` is a fresh minimal call for New, or the
    *  selected call's full properties for Copy. */
-  async function create(SET: CallForProposalsPropertiesInput, verb: string): Promise<void> {
+  async function create(set: CallForProposalsPropertiesInput, verb: string): Promise<void> {
     try {
-      const res = await createCfp({ variables: { SET } });
+      const res = await createCfp({ variables: { set } });
       const newId = res.data?.createCallForProposals.callForProposals?.id;
       if (newId) setSelectedId(newId);
       toast.success(`Call ${verb}`, newId ?? '');

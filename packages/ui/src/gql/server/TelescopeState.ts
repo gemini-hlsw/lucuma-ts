@@ -64,7 +64,7 @@ export const TELESCOPE_STATE_FRAGMENT = graphql(`
 `);
 
 export const GET_TELESCOPE_STATE = graphql(`
-  query getTelescopeState {
+  query TelescopeState {
     telescopeState {
       ...TelescopeStateItem
     }
@@ -72,7 +72,7 @@ export const GET_TELESCOPE_STATE = graphql(`
 `);
 
 export const TELESCOPE_STATE_SUBSCRIPTION = graphql(`
-  subscription telescopeStates {
+  subscription TelescopeStates {
     telescopeState {
       ...TelescopeStateItem
     }

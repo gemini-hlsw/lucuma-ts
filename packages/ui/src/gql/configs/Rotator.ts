@@ -11,7 +11,7 @@ export const ROTATOR_FRAGMENT = graphql(`
 `);
 
 export const GET_ROTATOR = graphql(`
-  query getRotator {
+  query Rotator {
     rotator {
       ...RotatorItem
     }
@@ -25,7 +25,7 @@ export function useRotator() {
 }
 
 export const UPDATE_ROTATOR = graphql(`
-  mutation updateRotator($pk: PosInt!, $angle: Float, $tracking: RotatorTrackingMode) {
+  mutation UpdateRotator($pk: PosInt!, $angle: Float, $tracking: RotatorTrackingMode) {
     updateRotator(pk: $pk, angle: $angle, tracking: $tracking) {
       ...RotatorItem
     }

@@ -17,7 +17,7 @@ export const ALTAIR_GUIDE_LOOP_FRAGMENT = graphql(`
 `);
 
 const GET_ALTAIR_GUIDE_LOOP = graphql(`
-  query getAltairGuideLoop {
+  query AltairGuideLoop {
     altairGuideLoop {
       ...AltairGuideLoopItem
     }
@@ -31,7 +31,7 @@ export function useAltairGuideLoop() {
 }
 
 const UPDATE_ALTAIR_GUIDE_LOOP = graphql(`
-  mutation updateAltairGuideLoop(
+  mutation UpdateAltairGuideLoop(
     $pk: PosInt!
     $aoEnabled: Boolean
     $oiBlend: Boolean

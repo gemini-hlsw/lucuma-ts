@@ -31,7 +31,7 @@ export const CAL_PARAMS_FRAGMENT = graphql(`
 `);
 
 export const CAL_PARAMS = graphql(`
-  query calParams($site: Site!) {
+  query CalParams($site: Site!) {
     calParams(site: $site) {
       ...CalParamsItem
     }
@@ -45,7 +45,7 @@ export function useCalParams(site: Site) {
   });
 }
 const CREATE_CAL_PARAMS = graphql(`
-  mutation createCalParams($input: CalParamsCreateInput!) {
+  mutation CreateCalParams($input: CalParamsCreateInput!) {
     createCalParams(input: $input) {
       ...CalParamsItem
     }
@@ -60,7 +60,7 @@ export function useCreateCalParams() {
 }
 
 const CAL_PARAMS_HISTORY = graphql(`
-  query calParamsHistory($site: Site!) {
+  query CalParamsHistory($site: Site!) {
     calParamsHistory(site: $site) {
       pk
       comment
@@ -77,7 +77,7 @@ export function useCalParamsHistory(site: Site) {
 }
 
 const REVERT_CAL_PARAMS = graphql(`
-  mutation revertCalParams($pk: PosInt!, $comment: String) {
+  mutation RevertCalParams($pk: PosInt!, $comment: String) {
     revertCalParams(pk: $pk, comment: $comment) {
       ...CalParamsItem
     }
@@ -93,7 +93,7 @@ export function useRevertCalParams() {
 }
 
 const DELETE_CAL_PARAMS = graphql(`
-  mutation deleteCalParams($pk: PosInt!) {
+  mutation DeleteCalParams($pk: PosInt!) {
     deleteCalParams(pk: $pk)
   }
 `);

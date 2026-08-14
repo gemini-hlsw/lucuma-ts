@@ -24,7 +24,7 @@ export const GUIDE_QUALITY_FRAGMENT = graphql(`
 `);
 
 export const GUIDE_QUALITY_QUERY = graphql(`
-  query getGuidersQualityValues {
+  query GuidersQualityValues {
     guidersQualityValues {
       ...GuidersQualityValuesItem
     }
@@ -32,7 +32,7 @@ export const GUIDE_QUALITY_QUERY = graphql(`
 `);
 
 export const GUIDE_QUALITY_SUBSCRIPTION = graphql(`
-  subscription guidersQualityValues {
+  subscription GuidersQualityValuesSub {
     guidersQualityValues {
       ...GuidersQualityValuesItem
     }
