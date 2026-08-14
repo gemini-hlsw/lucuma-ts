@@ -11,22 +11,26 @@ const rosterMock = (): MockedResponseOf<typeof USERS_QUERY> => ({
   request: { query: USERS_QUERY },
   result: {
     data: {
-      users: [
-        {
-          __typename: 'User',
-          id: 'u-1',
-          orcidId: '0000-0001',
-          profile: { __typename: 'UserProfile', givenName: 'Ada', familyName: 'Staffer', email: 'ada@x.org' },
-          roles: [{ __typename: 'Role', id: 'r-1', type: 'STAFF', partner: null }],
-        },
-        {
-          __typename: 'User',
-          id: 'u-2',
-          orcidId: '0000-0002',
-          profile: { __typename: 'UserProfile', givenName: 'Bob', familyName: 'Plain', email: 'bob@x.org' },
-          roles: [],
-        },
-      ],
+      users: {
+        __typename: 'UserSelectResult',
+        hasMore: false,
+        matches: [
+          {
+            __typename: 'User',
+            id: 'u-1',
+            orcidId: '0000-0001',
+            profile: { __typename: 'UserProfile', givenName: 'Ada', familyName: 'Staffer', email: 'ada@x.org' },
+            roles: [{ __typename: 'Role', id: 'r-1', type: 'STAFF', partner: null }],
+          },
+          {
+            __typename: 'User',
+            id: 'u-2',
+            orcidId: '0000-0002',
+            profile: { __typename: 'UserProfile', givenName: 'Bob', familyName: 'Plain', email: 'bob@x.org' },
+            roles: [],
+          },
+        ],
+      },
     },
   },
 });
