@@ -20,7 +20,7 @@
     "preview": "vite preview"
   },
   "devDependencies": {
-    "@apollo/client": "4.2.10",
+    "@apollo/client": "4.2.11",
     "@eslint/js": "10.0.1",
     "@fortawesome/fontawesome-svg-core": "7.3.1",
     "@fortawesome/pro-regular-svg-icons": "7.3.1",
