@@ -32,7 +32,7 @@ import {
   useUpdateProgram,
   useUpdateProgramNote,
   useUpdateProposalType,
-} from '@/gql/programs';
+} from '@/gql/odb/programs';
 import { mapRosterUsers, useUsers } from '@/gql/sso/roster';
 import {
   type ContactScientist,
@@ -44,7 +44,7 @@ import {
   type ScienceSubtype,
   TOO_LABEL,
   TOO_STATUSES,
-  type ToOActivation,
+  type TooActivation,
 } from '@/gql/types';
 import { matchesQuery } from '@/lib/search';
 
@@ -90,7 +90,7 @@ export default function ProgramsPage(): JSX.Element {
    *  remaining step is independent. Throws on the first failure so the user
    *  sees exactly what broke (the ODB is transactional per mutation). */
   async function saveProgram(original: Program, draft: Program): Promise<void> {
-    await updateProgram({ variables: { programId: draft.id, SET: programPropertiesInput(draft) } });
+    await updateProgram({ variables: { programId: draft.id, set: programPropertiesInput(draft) } });
 
     await updateProposalType({ variables: { programId: draft.id, gemini: proposalTypeInput(draft) } });
 
@@ -301,7 +301,7 @@ function ProgramEditor({
 
             <label
               htmlFor="too"
-              title="Target-of-Opportunity status — whether this program may interrupt the queue for transient events (None / Standard / Rapid). Queue programs only."
+              title="Target-of-Opportunity ceiling — the most disruptive activation this program's observations may declare (None / Standard / Rapid / Interrupting). Queue programs only."
             >
               ToO Status
             </label>
@@ -309,7 +309,7 @@ function ProgramEditor({
               inputId="too"
               value={draft.tooStatus}
               options={TOO_STATUSES.map((t) => ({ label: TOO_LABEL[t], value: t }))}
-              onChange={(e) => set('tooStatus', e.value as ToOActivation)}
+              onChange={(e) => set('tooStatus', e.value as TooActivation)}
               disabled={draft.programClass !== 'QUEUE'}
             />
 

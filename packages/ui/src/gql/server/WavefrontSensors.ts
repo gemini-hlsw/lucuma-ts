@@ -4,7 +4,7 @@ import type { Dispatch } from 'react';
 import { graphql } from './gen';
 
 export const OIWFS_OBSERVE = graphql(`
-  mutation oiwfsObserve($period: TimeSpanInput!) {
+  mutation OiwfsObserve($period: TimeSpanInput!) {
     oiwfsObserve(period: $period) {
       result
       msg
@@ -19,7 +19,7 @@ export function useOiwfsObserve(setStale: Dispatch<boolean>) {
 }
 
 const OIWFS_STOP_OBSERVE = graphql(`
-  mutation oiwfsStopObserve {
+  mutation OiwfsStopObserve {
     oiwfsStopObserve {
       result
       msg
@@ -34,7 +34,7 @@ export function useOiwfsStopObserve(setStale: Dispatch<boolean>) {
 }
 
 export const PWFS1_OBSERVE = graphql(`
-  mutation pwfs1Observe($period: TimeSpanInput!) {
+  mutation Pwfs1Observe($period: TimeSpanInput!) {
     pwfs1Observe(period: $period) {
       result
       msg
@@ -49,7 +49,7 @@ export function usePwfs1Observe(setStale: Dispatch<boolean>) {
 }
 
 const PWFS1_STOP_OBSERVE = graphql(`
-  mutation pwfs1StopObserve {
+  mutation Pwfs1StopObserve {
     pwfs1StopObserve {
       result
       msg
@@ -64,7 +64,7 @@ export function usePwfs1StopObserve(setStale: Dispatch<boolean>) {
 }
 
 const PWFS2_OBSERVE = graphql(`
-  mutation pwfs2Observe($period: TimeSpanInput!) {
+  mutation Pwfs2Observe($period: TimeSpanInput!) {
     pwfs2Observe(period: $period) {
       result
       msg
@@ -79,7 +79,7 @@ export function usePwfs2Observe(setStale: Dispatch<boolean>) {
 }
 
 const PWFS2_STOP_OBSERVE = graphql(`
-  mutation pwfs2StopObserve {
+  mutation Pwfs2StopObserve {
     pwfs2StopObserve {
       result
       msg
@@ -94,7 +94,7 @@ export function usePwfs2StopObserve(setStale: Dispatch<boolean>) {
 }
 
 const AC_OBSERVE = graphql(`
-  mutation acObserve($period: TimeSpanInput!) {
+  mutation AcObserve($period: TimeSpanInput!) {
     acObserve(period: $period) {
       result
       msg
@@ -109,7 +109,7 @@ export function useAcObserve(setStale: Dispatch<boolean>) {
 }
 
 const AC_STOP_OBSERVE = graphql(`
-  mutation acStopObserve {
+  mutation AcStopObserve {
     acStopObserve {
       result
       msg
@@ -124,7 +124,7 @@ export function useAcStopObserve(setStale: Dispatch<boolean>) {
 }
 
 export const PWFS1_QL_MODE = graphql(`
-  mutation setPwfs1QlMode($mode: QlMode) {
+  mutation SetPwfs1QlMode($mode: QlMode) {
     pwfs1QlMode(mode: $mode) {
       result
       msg
@@ -139,7 +139,7 @@ export function usePwfs1QlMode(setStale?: Dispatch<boolean>) {
 }
 
 export const PWFS2_QL_MODE = graphql(`
-  mutation setPwfs2QlMode($mode: QlMode) {
+  mutation SetPwfs2QlMode($mode: QlMode) {
     pwfs2QlMode(mode: $mode) {
       result
       msg
@@ -154,7 +154,7 @@ export function usePwfs2QlMode(setStale?: Dispatch<boolean>) {
 }
 
 export const OIWFS_QL_MODE = graphql(`
-  mutation setOiwfsQlMode($mode: QlMode) {
+  mutation SetOiwfsQlMode($mode: QlMode) {
     oiwfsQlMode(mode: $mode) {
       result
       msg
@@ -178,7 +178,7 @@ export type StopObserveResult = ReturnType<
 >;
 
 export const TAKE_SKY = graphql(`
-  mutation wfsSky($period: TimeSpanInput!, $wfs: GuideProbe!) {
+  mutation WfsSky($period: TimeSpanInput!, $wfs: GuideProbe!) {
     wfsSky(period: $period, wfs: $wfs) {
       result
       msg

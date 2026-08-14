@@ -1,10 +1,10 @@
 import { parseNumber, when } from '@gemini-hlsw/lucuma-common-ui';
 import type { TargetInput } from '@gql/configs/gen/graphql';
-import type { GetGuideEnvironmentQuery } from '@gql/odb/gen/graphql';
+import type { GuideEnvironmentQuery } from '@gql/odb/gen/graphql';
 
 import { extractMagnitude } from './bands';
 
-export function extractGuideTargets(data: GetGuideEnvironmentQuery | undefined) {
+export function extractGuideTargets(data: GuideEnvironmentQuery | undefined) {
   return (data?.observation?.targetEnvironment.guideEnvironment.guideTargets ?? []).reduce<
     Record<'oiwfs' | 'pwfs1' | 'pwfs2', TargetInput[]>
   >(

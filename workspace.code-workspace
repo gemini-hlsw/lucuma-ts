@@ -48,6 +48,7 @@
       "source.fixAll.eslint": "explicit",
     },
     "eslint.rules.customizations": [{ "rule": "*", "severity": "warn" }],
+    "eslint.workingDirectories": [{ "mode": "auto" }],
     "[css]": {
       "editor.codeActionsOnSave": {
         "source.fixAll.stylelint": "explicit",

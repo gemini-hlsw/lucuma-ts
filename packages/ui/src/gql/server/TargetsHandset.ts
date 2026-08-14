@@ -33,7 +33,7 @@ export const FOCAL_PLANE_OFFSET_FRAGMENT = graphql(`
 `);
 
 export const TARGET_ADJUSTMENT_OFFSETS_QUERY = graphql(`
-  query getTargetAdjustmentOffsets {
+  query TargetAdjustmentOffsets {
     targetAdjustmentOffsets {
       ...TargetOffsetsItem
     }
@@ -41,7 +41,7 @@ export const TARGET_ADJUSTMENT_OFFSETS_QUERY = graphql(`
 `);
 
 export const TARGET_ADJUSTMENT_OFFSETS_SUBSCRIPTION = graphql(`
-  subscription targetAdjustmentOffsets {
+  subscription TargetAdjustmentOffsetsSub {
     targetAdjustmentOffsets {
       ...TargetOffsetsItem
     }
@@ -58,7 +58,7 @@ export function useTargetAdjustmentOffsets(options?: QueryAndSubscriptionOptions
 }
 
 export const ADJUST_TARGET_MUTATION = graphql(`
-  mutation adjustTarget($target: AdjustTarget!, $offset: HandsetAdjustmentInput!, $openLoops: Boolean!) {
+  mutation AdjustTarget($target: AdjustTarget!, $offset: HandsetAdjustmentInput!, $openLoops: Boolean!) {
     adjustTarget(target: $target, offset: $offset, openLoops: $openLoops) {
       result
       msg
@@ -71,7 +71,7 @@ export function useAdjustTarget() {
 }
 
 export const RESET_TARGET_ADJUSTMENT_MUTATION = graphql(`
-  mutation resetTargetAdjustment($target: AdjustTarget!, $openLoops: Boolean!) {
+  mutation ResetTargetAdjustment($target: AdjustTarget!, $openLoops: Boolean!) {
     resetTargetAdjustment(target: $target, openLoops: $openLoops) {
       result
       msg
@@ -84,7 +84,7 @@ export function useResetTargetAdjustment() {
 }
 
 export const ABSORB_TARGET_ADJUSTMENT_MUTATION = graphql(`
-  mutation absorbTargetAdjustment($target: AdjustTarget!) {
+  mutation AbsorbTargetAdjustment($target: AdjustTarget!) {
     absorbTargetAdjustment(target: $target) {
       result
       msg

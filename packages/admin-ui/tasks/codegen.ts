@@ -1,11 +1,10 @@
 /**
  * GraphQL Codegen config for the Admin UI's two endpoints, per-endpoint gen
- * dirs in the navigate-ui style:
+ * dirs in the navigate-ui style. Both schemas come from the published
+ * @gemini-hlsw/lucuma-odb-schemas package:
  *
- *   - ODB (src/gql, gen in src/gql/odb/gen) — schema from the published
- *     @gemini-hlsw/lucuma-odb-schemas package.
- *   - SSO (src/gql/sso, gen in src/gql/sso/gen) — schema checked into the
- *     repo (src/gql/sso/Sso.graphql; see its header for provenance).
+ *   - ODB (src/gql/odb, gen in src/gql/odb/gen) — the /odb export.
+ *   - SSO (src/gql/sso, gen in src/gql/sso/gen) — the /sso export.
  */
 
 import type { CodegenConfig } from '@graphql-codegen/cli';
@@ -40,6 +39,7 @@ const ssoScalars = {
   OrcidId: 'string',
   RoleId: 'string',
   ApiKeyId: 'string',
+  NonNegInt: 'number',
 } satisfies Record<string, string>;
 
 const sharedConfig = {
@@ -59,13 +59,13 @@ const config: CodegenConfig = {
   generates: {
     'src/gql/odb/gen/': {
       schema: import.meta.resolve('@gemini-hlsw/lucuma-odb-schemas/odb'),
-      documents: ['src/gql/*.ts', 'src/**/*.tsx'],
+      documents: ['src/gql/odb/*.ts', 'src/**/*.tsx'],
       preset: 'client',
       config: { ...sharedConfig, scalars: odbScalars },
       presetConfig,
     },
     'src/gql/sso/gen/': {
-      schema: 'src/gql/sso/Sso.graphql',
+      schema: import.meta.resolve('@gemini-hlsw/lucuma-odb-schemas/sso'),
       documents: ['src/gql/sso/*.ts'],
       preset: 'client',
       config: { ...sharedConfig, scalars: ssoScalars },

@@ -23,7 +23,7 @@ export const ACQUISITION_ADJUSTMENT_STATE_FRAGMENT = graphql(`
 `);
 
 const ACQUISITION_ADJUSTMENT_STATE_SUBSCRIPTION = graphql(`
-  subscription acquisitionAdjustmentState {
+  subscription AcquisitionAdjustmentState {
     acquisitionAdjustmentState {
       ...AcquisitionAdjustmentStateItem
     }
@@ -35,7 +35,7 @@ export function useAcquisitionAdjustmentState() {
 }
 
 const ACQUISITION_ADJUSTMENT = graphql(`
-  mutation acquisitionAdjustment($input: AcquisitionAdjustmentInput!) {
+  mutation AcquisitionAdjustment($input: AcquisitionAdjustmentInput!) {
     acquisitionAdjustment(adjustment: $input) {
       result
       msg

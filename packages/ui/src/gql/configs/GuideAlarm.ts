@@ -12,7 +12,7 @@ export const GUIDE_ALARM_FRAGMENT = graphql(`
 `);
 
 export const GET_GUIDE_ALARMS = graphql(`
-  query guideAlarms {
+  query GuideAlarms {
     guideAlarms {
       OIWFS {
         ...GuideAlarmItem
@@ -34,7 +34,7 @@ export function useGuideAlarms() {
 }
 
 export const UPDATE_GUIDE_ALARM = graphql(`
-  mutation updateGuideAlarm($wfs: WfsType!, $enabled: Boolean, $limit: Int) {
+  mutation UpdateGuideAlarm($wfs: WfsType!, $enabled: Boolean, $limit: Int) {
     updateGuideAlarm(wfs: $wfs, enabled: $enabled, limit: $limit) {
       ...GuideAlarmItem
     }

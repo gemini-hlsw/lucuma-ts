@@ -117,7 +117,7 @@ of the synthetic R400 failure named at its clock time. It was removed because it
 did not help a reader of the night: the pieces are the component browser's
 subject, and the one thing the table demonstrated - a boundary inside a night -
 the chart's own synthetic tests already pin. The view is deliberately bare for
-now and expected to gain things back. `GetNightSchedule` therefore stops
+now and expected to gain things back. `NightSchedule` therefore stops
 selecting the projection's `components`; the field stays in the schema, since it
 is the scheduler's. If a night-scoped table returns, build its rows through
 `componentFinder` as that one did - do not give a view its own path from blocks

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { PROPOSALS_QUERY } from '@/gql/proposals';
+import { PROPOSALS_QUERY } from '@/gql/odb/proposals';
 import { fakeJwt, standardUser } from '@/test/factories';
 import { type MockedResponseOf, renderWithContext } from '@/test/render';
 

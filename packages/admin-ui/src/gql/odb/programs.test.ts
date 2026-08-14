@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import type { Program } from '../types';
 import {
   type AdminProgramsResult,
   allocationsInput,
@@ -7,7 +8,6 @@ import {
   programPropertiesInput,
   proposalTypeInput,
 } from './programs';
-import type { Program } from './types';
 
 type RawProgram = AdminProgramsResult['programs']['matches'][number];
 type RawProgramUser = RawProgram['users'][number];
@@ -56,7 +56,7 @@ function program(overrides: Partial<RawProgram>): RawProgram {
       gemini: {
         __typename: 'Queue',
         scienceSubtype: 'QUEUE',
-        toOActivation: 'STANDARD',
+        tooActivationCeiling: 'STANDARD',
         considerForBand3: 'CONSIDER',
         minPercentTime: 80,
       },
@@ -206,7 +206,7 @@ describe('proposalTypeInput', () => {
 
   it('builds the queue arm of the oneOf for Queue programs', () => {
     expect(proposalTypeInput(base)).toEqual({
-      queue: { toOActivation: 'RAPID', minPercentTime: 75, considerForBand3: 'CONSIDER' },
+      queue: { explicitTooActivationCeiling: 'RAPID', minPercentTime: 75, considerForBand3: 'CONSIDER' },
     });
   });
 

@@ -21,7 +21,7 @@ export const GUIDE_LOOP_FRAGMENT = graphql(`
 `);
 
 export const GET_GUIDE_LOOP = graphql(`
-  query getGuideLoop {
+  query GuideLoop {
     guideLoop {
       ...GuideLoopItem
     }
@@ -35,7 +35,7 @@ export function useGetGuideLoop() {
 }
 
 export const UPDATE_GUIDE_LOOP = graphql(`
-  mutation updateGuideLoop(
+  mutation UpdateGuideLoop(
     $pk: PosInt!
     $m2TipTiltEnable: Boolean
     $m2TipTiltSource: String

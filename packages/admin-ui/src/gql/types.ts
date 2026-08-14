@@ -1,6 +1,6 @@
 /*
  * View-model types for the Admin views: the shapes the tables and editors
- * render, produced by each view's mapper (cfp.ts, programs.ts, …) from the
+ * render, produced by each view's mapper (odb/cfp.ts, odb/programs.ts, …) from the
  * codegen-typed ODB responses. Wire types come from codegen (src/gql/odb/gen);
  * these stay hand-modeled because they are UI domain shapes, not the schema.
  */
@@ -14,7 +14,7 @@ import type {
   ScienceBand,
   ScienceSubtype,
   TimeAccountingCategory,
-  ToOActivation,
+  TooActivation,
 } from './odb/gen/graphql';
 
 // The schema enums the views model with — re-exported so feature code can
@@ -26,11 +26,11 @@ export type {
   ScienceBand,
   ScienceSubtype,
   TimeAccountingCategory,
-  ToOActivation,
+  TooActivation,
 };
 
 /** Which Gemini telescope a request's instrument belongs to. A UI-derived
- *  notion (from the instrument, in changeRequests.ts), not the schema's
+ *  notion (from the instrument, in odb/changeRequests.ts), not the schema's
  *  `Site` enum (GN/GS) — none of our operations select a Site field, so
  *  codegen doesn't emit that type. */
 export type Site = 'NORTH' | 'SOUTH';
@@ -186,8 +186,13 @@ export interface Allocation {
   readonly hours: number;
 }
 
-export const TOO_STATUSES: readonly ToOActivation[] = ['NONE', 'STANDARD', 'RAPID'];
-export const TOO_LABEL: Record<ToOActivation, string> = { NONE: 'None', STANDARD: 'Standard', RAPID: 'Rapid' };
+export const TOO_STATUSES: readonly TooActivation[] = ['NONE', 'STANDARD', 'RAPID', 'INTERRUPTING'];
+export const TOO_LABEL: Record<TooActivation, string> = {
+  NONE: 'None',
+  STANDARD: 'Standard',
+  RAPID: 'Rapid',
+  INTERRUPTING: 'Interrupting',
+};
 
 /** A contact scientist: an SSO/ODB user holding a SUPPORT_* ProgramUser role.
  *  `programUserId` is set for contacts already on the program (used to remove
@@ -214,8 +219,9 @@ export interface Program {
    *  proposal. Distinct from programClass, which the editor collapses to the
    *  two editable classes. */
   readonly programType: ScienceSubtype | null;
-  /** Only Queue proposals carry ToOActivation; Classical/others have none. */
-  readonly tooStatus: ToOActivation;
+  /** The proposal's ToO activation ceiling. Only Queue proposals carry one;
+   *  Classical and the other types have none. */
+  readonly tooStatus: TooActivation;
   /** Program users with role SUPPORT_PRIMARY/SUPPORT_SECONDARY — the real
    *  Gemini "contact scientist" roles. */
   readonly contactScientists: readonly ContactScientist[];

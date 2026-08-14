@@ -106,7 +106,7 @@ export const NIGHT_COMPONENT_FIELDS = graphql(`
 `);
 
 export const PUBLISHED_SEMESTERS_QUERY = graphql(`
-  query GetPublishedSemesters {
+  query PublishedSemesters {
     publishedSemesters {
       site
       semester
@@ -131,7 +131,7 @@ export const PUBLISHED_SEMESTERS_QUERY = graphql(`
  * real interval, so the view can show that it was already there.
  */
 export const SEMESTER_SCHEDULE_QUERY = graphql(`
-  query GetSemesterSchedule($site: Site!, $interval: TimestampIntervalInput!) {
+  query SemesterSchedule($site: Site!, $interval: TimestampIntervalInput!) {
     instrumentAvailability(site: $site, interval: $interval, clip: false) {
       ...InstrumentBlockFields
     }
@@ -162,7 +162,7 @@ export const SEMESTER_SCHEDULE_QUERY = graphql(`
  * the component browser is where a reader meets a piece.
  */
 export const NIGHT_SCHEDULE_QUERY = graphql(`
-  query GetNightSchedule($site: Site!, $night: Date!, $interval: TimestampIntervalInput!) {
+  query NightSchedule($site: Site!, $night: Date!, $interval: TimestampIntervalInput!) {
     telescopeNight(site: $site, observingNight: $night) {
       observingNight
       dataAvailable
@@ -199,7 +199,7 @@ export const NIGHT_SCHEDULE_QUERY = graphql(`
  * piece failing or a mask going in is exactly the kind of thing a week is for.
  */
 export const WEEK_SCHEDULE_QUERY = graphql(`
-  query GetWeekSchedule($site: Site!, $nights: DateIntervalInput!, $interval: TimestampIntervalInput!) {
+  query WeekSchedule($site: Site!, $nights: DateIntervalInput!, $interval: TimestampIntervalInput!) {
     telescopeNights(site: $site, nights: $nights) {
       observingNight
       dataAvailable
@@ -228,7 +228,7 @@ export const WEEK_SCHEDULE_QUERY = graphql(`
  * it" join resolves INSTALLED against.
  */
 export const COMPONENT_BROWSER_QUERY = graphql(`
-  query GetComponentBrowser($site: Site!, $interval: TimestampIntervalInput!) {
+  query ComponentBrowser($site: Site!, $interval: TimestampIntervalInput!) {
     components(site: $site) {
       id
       instrument

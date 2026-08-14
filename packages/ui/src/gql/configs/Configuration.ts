@@ -26,7 +26,7 @@ export const CONFIGURATION_FRAGMENT = graphql(`
 `);
 
 export const GET_CONFIGURATION = graphql(`
-  query getConfiguration {
+  query Configuration {
     configuration {
       ...ConfigurationItem
     }
@@ -40,7 +40,7 @@ export function useConfiguration() {
 }
 
 export const UPDATE_CONFIGURATION = graphql(`
-  mutation updateConfiguration(
+  mutation UpdateConfiguration(
     $pk: PosInt!
     $selectedTarget: Int
     $selectedOiTarget: Int

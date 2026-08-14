@@ -16,6 +16,6 @@ describe('INSTRUMENTS', () => {
 describe('option lists', () => {
   it('cover their enums with human labels', () => {
     expect(BANDS.map((b) => BAND_LABEL[b])).toEqual(['Band-1', 'Band-2', 'Band-3', 'Band-4']);
-    expect(TOO_STATUSES.map((t) => TOO_LABEL[t])).toEqual(['None', 'Standard', 'Rapid']);
+    expect(TOO_STATUSES.map((t) => TOO_LABEL[t])).toEqual(['None', 'Standard', 'Rapid', 'Interrupting']);
   });
 });

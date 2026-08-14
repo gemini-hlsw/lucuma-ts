@@ -5,7 +5,7 @@ import type { OptionsOf } from '@gql/util';
 import { graphql } from './gen';
 
 export const GET_INSTRUMENT_PORT = graphql(`
-  query instrumentPort($instrument: Instrument!) {
+  query InstrumentPort($instrument: Instrument!) {
     instrumentPort(instrument: $instrument)
   }
 `);

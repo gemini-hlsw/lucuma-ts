@@ -10,11 +10,11 @@
  */
 import type {
   ClosureFieldsFragment,
-  GetComponentBrowserQuery,
-  GetPublishedSemestersQuery,
+  ComponentBrowserQuery,
   InstrumentBlockFieldsFragment,
   ModeBlockFieldsFragment,
   NightComponentFieldsFragment,
+  PublishedSemestersQuery,
   SubsystemBlockFieldsFragment,
   TooBlockFieldsFragment,
 } from '@gql/gen/graphql';
@@ -40,7 +40,7 @@ const toInterval = (interval: ApiInterval): { start: number; end: number } => ({
   end: Date.parse(interval.end),
 });
 
-export const toPublishedSemesters = (data: GetPublishedSemestersQuery): readonly PublishedSemester[] =>
+export const toPublishedSemesters = (data: PublishedSemestersQuery): readonly PublishedSemester[] =>
   data.publishedSemesters.map((entry) => ({
     site: entry.site,
     semester: entry.semester,
@@ -102,7 +102,7 @@ export const toSubsystemBlocks = (blocks: readonly SubsystemBlockFieldsFragment[
     note: block.note ?? null,
   }));
 
-export const toComponents = (data: GetComponentBrowserQuery): readonly ComponentRecord[] =>
+export const toComponents = (data: ComponentBrowserQuery): readonly ComponentRecord[] =>
   data.components.map((component) => ({
     id: component.id,
     instrument: component.instrument,
@@ -156,7 +156,7 @@ export const toNightComponents = (blocks: readonly NightComponentFieldsFragment[
   };
 };
 
-export const toComponentBlocks = (data: GetComponentBrowserQuery): readonly ComponentBlock[] =>
+export const toComponentBlocks = (data: ComponentBrowserQuery): readonly ComponentBlock[] =>
   data.instrumentComponentAvailability.map((block) => ({
     id: block.id,
     componentId: block.component.id,

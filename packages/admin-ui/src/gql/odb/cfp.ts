@@ -10,10 +10,10 @@
 import { useMutation, useQuery } from '@apollo/client/react';
 import { parseNumber } from '@gemini-hlsw/lucuma-common-ui';
 
-import type { DocumentType } from './odb/gen';
-import { graphql } from './odb/gen';
-import type { CallForProposalsItemFragment, CallForProposalsPropertiesInput } from './odb/gen/graphql';
-import type { CallForProposals, SiteCoordinateLimits } from './types';
+import type { CallForProposals, SiteCoordinateLimits } from '../types';
+import type { DocumentType } from './gen';
+import { graphql } from './gen';
+import type { CallForProposalsItemFragment, CallForProposalsPropertiesInput } from './gen/graphql';
 
 export const CFP_ITEM_FRAGMENT = graphql(`
   fragment CallForProposalsItem on CallForProposals {
@@ -141,11 +141,11 @@ function mapCoordinateLimits(limits: RawLimits): SiteCoordinateLimits {
 }
 
 export const UPDATE_CFP_MUTATION = graphql(`
-  mutation AdminUpdateCfp($id: CallForProposalsId!, $SET: CallForProposalsPropertiesInput!) {
+  mutation AdminUpdateCfp($id: CallForProposalsId!, $set: CallForProposalsPropertiesInput!) {
     # includeDeleted so an already-invisible call can be edited/restored — the
     # update WHERE, like the query, otherwise skips DELETED rows, so toggling
     # Visible back on would silently match nothing (sc-9612).
-    updateCallsForProposals(input: { WHERE: { id: { EQ: $id } }, includeDeleted: true, SET: $SET }) {
+    updateCallsForProposals(input: { WHERE: { id: { EQ: $id } }, includeDeleted: true, SET: $set }) {
       callsForProposals {
         id
       }
@@ -154,8 +154,8 @@ export const UPDATE_CFP_MUTATION = graphql(`
 `);
 
 export const CREATE_CFP_MUTATION = graphql(`
-  mutation AdminCreateCfp($SET: CallForProposalsPropertiesInput!) {
-    createCallForProposals(input: { SET: $SET }) {
+  mutation AdminCreateCfp($set: CallForProposalsPropertiesInput!) {
+    createCallForProposals(input: { SET: $set }) {
       callForProposals {
         id
       }

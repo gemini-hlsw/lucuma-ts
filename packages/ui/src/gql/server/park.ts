@@ -1,7 +1,7 @@
 import { graphql } from './gen';
 
 export const MOUNT_PARK_MUTATION = graphql(`
-  mutation mountPark {
+  mutation MountPark {
     mountPark {
       result
       msg
@@ -10,7 +10,7 @@ export const MOUNT_PARK_MUTATION = graphql(`
 `);
 
 export const ROTATOR_PARK_MUTATION = graphql(`
-  mutation rotatorPark {
+  mutation RotatorPark {
     rotatorPark {
       result
       msg
@@ -19,7 +19,7 @@ export const ROTATOR_PARK_MUTATION = graphql(`
 `);
 
 export const OIWFS_PARK_MUTATION = graphql(`
-  mutation oiwfsPark {
+  mutation OiwfsPark {
     oiwfsPark {
       result
       msg
@@ -28,7 +28,7 @@ export const OIWFS_PARK_MUTATION = graphql(`
 `);
 
 export const PWFS1_PARK_MUTATION = graphql(`
-  mutation pwfs1Park {
+  mutation Pwfs1Park {
     pwfs1Park {
       result
       msg
@@ -37,7 +37,7 @@ export const PWFS1_PARK_MUTATION = graphql(`
 `);
 
 export const PWFS2_PARK_MUTATION = graphql(`
-  mutation pwfs2Park {
+  mutation Pwfs2Park {
     pwfs2Park {
       result
       msg
@@ -46,7 +46,7 @@ export const PWFS2_PARK_MUTATION = graphql(`
 `);
 
 export const MOUNT_UNWRAP_MUTATION = graphql(`
-  mutation mountUnwrap {
+  mutation MountUnwrap {
     mountUnwrap {
       result
       msg
@@ -55,7 +55,7 @@ export const MOUNT_UNWRAP_MUTATION = graphql(`
 `);
 
 export const ROTATOR_UNWRAP_MUTATION = graphql(`
-  mutation rotatorUnwrap {
+  mutation RotatorUnwrap {
     rotatorUnwrap {
       result
       msg
@@ -64,7 +64,7 @@ export const ROTATOR_UNWRAP_MUTATION = graphql(`
 `);
 
 export const PWFS1_UNWRAP_MUTATION = graphql(`
-  mutation pwfs1Unwrap {
+  mutation Pwfs1Unwrap {
     pwfs1Unwrap {
       result
       msg
@@ -73,7 +73,7 @@ export const PWFS1_UNWRAP_MUTATION = graphql(`
 `);
 
 export const PWFS2_UNWRAP_MUTATION = graphql(`
-  mutation pwfs2Unwrap {
+  mutation Pwfs2Unwrap {
     pwfs2Unwrap {
       result
       msg

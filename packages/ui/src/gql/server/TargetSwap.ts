@@ -4,7 +4,7 @@ import type { Dispatch } from 'react';
 import { graphql } from './gen';
 
 export const SWAP_TARGET_MUTATION = graphql(`
-  mutation swapTarget($swapConfig: SwapConfigInput!) {
+  mutation SwapTarget($swapConfig: SwapConfigInput!) {
     swapTarget(swapConfig: $swapConfig) {
       result
       msg
@@ -12,7 +12,7 @@ export const SWAP_TARGET_MUTATION = graphql(`
   }
 `);
 export const RESTORE_TARGET_MUTATION = graphql(`
-  mutation restoreTarget($config: TcsConfigInput!) {
+  mutation RestoreTarget($config: TcsConfigInput!) {
     restoreTarget(config: $config) {
       result
       msg

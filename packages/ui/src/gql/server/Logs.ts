@@ -17,7 +17,7 @@ export const LOG_MESSAGE_FRAGMENT = graphql(`
 `);
 
 const LOGS_SUBSCRIPTION = graphql(`
-  subscription logMessage {
+  subscription LogMessage {
     logMessage {
       ...LogMessageItem
     }
