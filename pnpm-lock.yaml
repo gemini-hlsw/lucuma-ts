@@ -335,8 +335,8 @@ importers:
         specifier: 1.26.0
         version: 1.26.0(graphql@17.0.2)
       graphql-yoga:
-        specifier: 5.21.2
-        version: 5.21.2(graphql@17.0.2)
+        specifier: 5.21.3
+        version: 5.21.3(graphql@17.0.2)
       prisma:
         specifier: 7.9.1
         version: 7.9.1(@types/react-dom@19.2.4(@types/react@19.2.18))(@types/react@19.2.18)(@typescript/typescript6@6.0.2)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
@@ -544,8 +544,8 @@ importers:
         specifier: 6.2.1
         version: 6.2.1(graphql@16.14.2)(ws@8.21.3)
       graphql-yoga:
-        specifier: 5.21.2
-        version: 5.21.2(graphql@16.14.2)
+        specifier: 5.21.3
+        version: 5.21.3(graphql@16.14.2)
       playwright:
         specifier: 1.62.1
         version: 1.62.1
@@ -3656,8 +3656,8 @@ packages:
       ws:
         optional: true
 
-  graphql-yoga@5.21.2:
-    resolution: {integrity: sha512-IIRF/3xtjj2D6caAWL9177hQ8tV3mWB3hve1GRnz7njPhQ3iY1jFtSp98fNGv0yV9kaPh9kKQ8JWdJZnedVmDw==}
+  graphql-yoga@5.21.3:
+    resolution: {integrity: sha512-1hJTKZd7k2V0Q2tFMb+rIUSbcovL6uIkkKnW2W9HcldtrC1udukdf5CswKi6SzaI5keG4scxKPEolyZ6U83i/g==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
       graphql: ^15.2.0 || ^16.0.0
@@ -5865,7 +5865,7 @@ snapshots:
       graphql: 17.0.2
       graphql-parse-resolve-info: 4.14.1(graphql@17.0.2)(supports-color@10.2.2)
       graphql-scalars: 1.26.0(graphql@17.0.2)
-      graphql-yoga: 5.21.2(graphql@17.0.2)
+      graphql-yoga: 5.21.3(graphql@17.0.2)
       prisma: 7.9.1(@types/react-dom@19.2.4(@types/react@19.2.18))(@types/react@19.2.18)(@typescript/typescript6@6.0.2)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
     transitivePeerDependencies:
       - '@types/react'
@@ -9239,7 +9239,7 @@ snapshots:
     optionalDependencies:
       ws: 8.21.3
 
-  graphql-yoga@5.21.2(graphql@16.14.2):
+  graphql-yoga@5.21.3(graphql@16.14.2):
     dependencies:
       '@envelop/core': 5.5.1
       '@envelop/instrumentation': 1.0.0
@@ -9255,7 +9255,7 @@ snapshots:
       lru-cache: 10.4.3
       tslib: 2.8.1
 
-  graphql-yoga@5.21.2(graphql@17.0.2):
+  graphql-yoga@5.21.3(graphql@17.0.2):
     dependencies:
       '@envelop/core': 5.5.1
       '@envelop/instrumentation': 1.0.0
