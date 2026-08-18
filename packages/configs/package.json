@@ -29,7 +29,7 @@
     "production": "pnpm prisma migrate deploy && pnpm prisma db seed && pnpm preview"
   },
   "dependencies": {
-    "@gemini-hlsw/lucuma-core": "0.228.0",
+    "@gemini-hlsw/lucuma-core": "0.232.2",
     "@gemini-hlsw/lucuma-apps-schemas": "0.177.2-20260813-fa975554",
     "@gemini-hlsw/lucuma-odb-schemas": "0.91.0-eafc35d",
     "@prisma/adapter-pg": "7.9.1",
@@ -37,11 +37,11 @@
     "graphql": "17.0.2",
     "graphql-parse-resolve-info": "4.14.1",
     "graphql-scalars": "1.26.0",
-    "graphql-yoga": "5.21.2",
+    "graphql-yoga": "5.21.3",
     "prisma": "7.9.1"
   },
   "devDependencies": {
-    "@eddeee888/gcg-typescript-resolver-files": "0.18.0",
+    "@eddeee888/gcg-typescript-resolver-files": "0.18.1",
     "@eslint/js": "10.0.1",
     "@graphql-codegen/cli": "7.2.0",
     "@graphql-eslint/eslint-plugin": "4.4.1",
@@ -50,7 +50,7 @@
     "eslint": "10.8.1",
     "eslint-import-resolver-typescript": "4.4.5",
     "eslint-plugin-simple-import-sort": "14.0.0",
-    "globals": "17.10.0",
+    "globals": "17.11.0",
     "@typescript/native": "npm:typescript@7.0.2",
     "typescript": "npm:@typescript/typescript6@6.0.2",
     "typescript-eslint": "8.67.0"

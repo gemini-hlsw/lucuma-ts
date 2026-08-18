@@ -22,7 +22,7 @@
     "lint:eslint": "eslint ."
   },
   "dependencies": {
-    "@gemini-hlsw/lucuma-core": "0.228.0",
+    "@gemini-hlsw/lucuma-core": "0.232.2",
     "date-fns": "4.4.0",
     "tailwind-merge": "3.6.0"
   },
@@ -30,7 +30,7 @@
     "jotai": "2.20.2"
   },
   "devDependencies": {
-    "@apollo/client": "4.2.11",
+    "@apollo/client": "4.2.12",
     "@eslint/js": "10.0.1",
     "@graphql-typed-document-node/core": "3.2.0",
     "@tsconfig/strictest": "2.0.8",
@@ -46,7 +46,7 @@
     "eslint-plugin-react-hooks": "7.1.1",
     "eslint-plugin-react-refresh": "0.5.4",
     "eslint-plugin-simple-import-sort": "14.0.0",
-    "globals": "17.10.0",
+    "globals": "17.11.0",
     "graphql": "16.14.2",
     "jotai": "2.20.2",
     "playwright": "1.62.1",
