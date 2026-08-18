@@ -15,7 +15,7 @@
  * the page's, because only the page knows which of the two it is speaking.
  */
 import { Button } from 'primereact/button';
-import type { JSX } from 'react';
+import { type JSX, useId } from 'react';
 
 import { ChevronLeft, ChevronRight } from './Icons';
 
@@ -47,6 +47,8 @@ export function NightStepper({
   onTonight,
   isTonight,
 }: NightStepperProps): JSX.Element {
+  const dateInputId = useId();
+
   return (
     // FontAwesome, not PrimeReact's `icon="pi pi-…"`: this app never loads
     // PrimeIcons, so those buttons rendered as empty boxes.
@@ -67,6 +69,10 @@ export function NightStepper({
         <ChevronLeft />
       </Button>
       <input
+        // The toolbar prints no caption, so `aria-label` is the name - but the
+        // field still needs an id, or the browser cannot associate it with
+        // anything (and warns about exactly that in the console).
+        id={dateInputId}
         type="date"
         value={value}
         aria-label={dateLabel}

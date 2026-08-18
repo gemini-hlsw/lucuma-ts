@@ -1,17 +1,18 @@
 /**
- * One labelled control in a finder's filter bar.
+ * One labelled control in a finder's filter bar: the caption above its field.
  *
- * A real `<label>` wrapping its control, so the caption is the control's name
- * to assistive readers and clicking it focuses the field - which is why this is
- * a wrapper rather than a class string the pages repeat.
+ * The binding between the two is `LabelledControl`, which the masthead uses as
+ * well - this is the filter bar's layout over it, so the two places cannot
+ * label a dropdown differently while looking different.
  */
 import type { JSX, ReactNode } from 'react';
 
-export function FilterField({ label, children }: { label: string; children: ReactNode }): JSX.Element {
+import { LabelledControl } from './LabelledControl';
+
+export function FilterField({ label, children }: { label: string; children: (id: string) => ReactNode }): JSX.Element {
   return (
-    <label className="flex flex-col gap-1 text-xs text-foreground-secondary">
-      {label}
+    <LabelledControl label={label} className="flex flex-col gap-1 text-xs text-foreground-secondary">
       {children}
-    </label>
+    </LabelledControl>
   );
 }

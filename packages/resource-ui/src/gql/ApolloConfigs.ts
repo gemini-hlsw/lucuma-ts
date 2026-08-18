@@ -1,17 +1,18 @@
 /**
- * Apollo Client for the Resource UI, wired to the selected data source.
+ * Apollo Client for the Resource UI.
  *
- * - **DEMO** executes against the in-browser mock: the same `buildMockSchema`
- *   over the same SDL the dev server serves and the browser tests run - one
- *   schema, three consumers, none of which can drift. A deployed build needs
- *   no backend at all.
- * - **LIVE** is HTTP to the actual Resource service - in development too,
- *   where the vite proxy carries `/resource/graphql` to the dev deployment
- *   purely to sidestep CORS. The live service does not serve the v1 API yet,
- *   so the link watches for failure and reports it in plain words
- *   (`dataSource.ts`), where the banner offers the way back to demo data.
- *   The local mock server hosts the demo data over HTTP (GraphiQL, external
- *   consumers) at :4000 directly; it never stands in for the live server.
+ * One backend: HTTP to the Resource service, which in development the vite
+ * proxy carries to the dev deployment purely to sidestep CORS. The service does
+ * not serve the v1 API yet, so the link watches for failure and reports it in
+ * plain words (`liveStatus.ts`), where the banner says so.
+ *
+ * There was a second source until 2026-08-14 (Hugo's review): the mock schema
+ * executed in the browser over Apollo `SchemaLink`, chosen from a masthead
+ * control. It put graphql-yoga, an executable schema and the SDL - 245 kB of
+ * server-side code - into the frontend bundle, and it is gone. The mock is
+ * still the browser tests' backend and still runs as a GraphQL server on :4000
+ * (`pnpm dev:mock-server`) for inspecting the contract; it is simply not
+ * something the app can be pointed at any more.
  *
  * When the Scala backend ships, the endpoint mapping below is the only thing
  * that changes.
@@ -19,14 +20,11 @@
 import { ApolloClient, ApolloLink, HttpLink } from '@apollo/client';
 import { CombinedGraphQLErrors } from '@apollo/client/errors';
 import { ErrorLink } from '@apollo/client/link/error';
-import { SchemaLink } from '@apollo/client/link/schema';
+import { Observable } from '@apollo/client/utilities';
 import { withAbsoluteUri } from '@gemini-hlsw/lucuma-common-ui';
 
-import { buildMockSchema } from '../../mock-server/schema';
-// The SDL is the codegen source of truth; importing it raw keeps the demo in sync.
-import schemaSource from '../../mock-server/schema.graphql?raw';
 import { buildCache } from './cache';
-import { readDataSource, reportLiveFailure } from './dataSource';
+import { clearLiveFailure, reportLiveFailure } from './liveStatus';
 
 const graphqlEndpoints = {
   'resource-dev.lucuma.xyz': 'https://lucuma-resource-dev.lucuma.xyz/resource/graphql',
@@ -55,21 +53,54 @@ export const liveFailureMessage = (error: unknown): string => {
   return `The live server could not be reached${detail}.`;
 };
 
+/**
+ * Clears the failure banner on an answer that carries no error.
+ *
+ * The counterpart to `ErrorLink` below, and the reason the banner states the
+ * situation rather than the worst moment of the session: without it one
+ * transient failure - a restarting deployment, a dropped connection - pins the
+ * banner for good, while every query behind it succeeds. A result *with*
+ * errors is left alone; `ErrorLink` passes those through untouched and is the
+ * one that speaks for them.
+ *
+ * Exported so a test can compose it over a stub link, the way `liveLink` does
+ * over HTTP.
+ */
+export const clearOnSuccessLink = (): ApolloLink =>
+  new ApolloLink(
+    (operation, forward) =>
+      new Observable<ApolloLink.Result>((observer) =>
+        forward(operation).subscribe({
+          next: (result) => {
+            if (result.errors === undefined || result.errors.length === 0) {
+              clearLiveFailure();
+            }
+            observer.next(result);
+          },
+          error: (error: unknown) => {
+            observer.error(error);
+          },
+          complete: () => {
+            observer.complete();
+          },
+        }),
+      ),
+  );
+
 const liveLink = (): ApolloLink =>
   ApolloLink.from([
+    clearOnSuccessLink(),
     new ErrorLink(({ error }) => {
       reportLiveFailure(liveFailureMessage(error));
     }),
     new HttpLink({ uri: withAbsoluteUri(liveGraphqlEndpoint) }),
   ]);
 
-const demoLink = (): ApolloLink => new SchemaLink({ schema: buildMockSchema(schemaSource).schema });
-
 export const client = new ApolloClient({
   clientAwareness: {
     name: 'resource-ui',
     version: import.meta.env.FRONTEND_VERSION,
   },
-  link: readDataSource() === 'LIVE' ? liveLink() : demoLink(),
+  link: liveLink(),
   cache: buildCache(),
 });
