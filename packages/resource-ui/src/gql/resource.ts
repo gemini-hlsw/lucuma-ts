@@ -9,7 +9,6 @@ import { graphql } from './gen';
 
 export const INSTRUMENT_BLOCK_FIELDS = graphql(`
   fragment InstrumentBlockFields on InstrumentAvailabilityBlock {
-    id
     instrument
     publishedName
     usage
@@ -19,7 +18,7 @@ export const INSTRUMENT_BLOCK_FIELDS = graphql(`
       end
     }
     location {
-      type
+      place
       port
     }
   }
@@ -27,7 +26,6 @@ export const INSTRUMENT_BLOCK_FIELDS = graphql(`
 
 export const CLOSURE_FIELDS = graphql(`
   fragment ClosureFields on TelescopeAvailabilityBlock {
-    id
     availability
     port
     reason
@@ -40,7 +38,6 @@ export const CLOSURE_FIELDS = graphql(`
 
 export const TOO_BLOCK_FIELDS = graphql(`
   fragment TooBlockFields on TooSupportBlock {
-    id
     tooSupport
     note
     interval {
@@ -52,7 +49,6 @@ export const TOO_BLOCK_FIELDS = graphql(`
 
 export const MODE_BLOCK_FIELDS = graphql(`
   fragment ModeBlockFields on TelescopeModeBlock {
-    id
     mode
     programReferences
     partner
@@ -71,7 +67,6 @@ export const MODE_BLOCK_FIELDS = graphql(`
  */
 export const SUBSYSTEM_BLOCK_FIELDS = graphql(`
   fragment SubsystemBlockFields on TelescopeSubsystemAvailabilityBlock {
-    id
     subsystem
     usage
     powerSource
@@ -85,7 +80,6 @@ export const SUBSYSTEM_BLOCK_FIELDS = graphql(`
 
 export const NIGHT_COMPONENT_FIELDS = graphql(`
   fragment NightComponentFields on InstrumentComponentAvailabilityBlock {
-    id
     usage
     location
     note
@@ -113,8 +107,10 @@ export const PUBLISHED_SEMESTERS_QUERY = graphql(`
       title
       version
       demo
-      firstNight
-      lastNight
+      nights {
+        start
+        end
+      }
       holidays
       moonEvents {
         date
@@ -239,7 +235,6 @@ export const COMPONENT_BROWSER_QUERY = graphql(`
       aliases
     }
     instrumentComponentAvailability(site: $site, interval: $interval, clip: false) {
-      id
       usage
       location
       note

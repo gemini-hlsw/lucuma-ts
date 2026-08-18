@@ -33,7 +33,7 @@ const mounting: Mounting = {
   publishedName: 'GMOS',
   usage: 'SCIENCE',
   port: 3,
-  locationType: 'PORT',
+  place: null,
   interval: { start: night.start - 60 * 86_400_000, end: night.end + 60 * 86_400_000 },
   note: null,
 };

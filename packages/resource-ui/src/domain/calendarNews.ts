@@ -83,7 +83,7 @@ export const buildCalendarNews = ({
   const items: CalendarNewsItem[] = [];
 
   // One boundary per row and instant, so a swap (or a usability change, which
-  // the importer records as two abutting mountings) is one chip, not an "out"
+  // the records carry as two abutting mountings) is one chip, not an "out"
   // and an "in" saying the same thing twice.
   const boundaries = new Map<string, RowBoundary>();
   const boundaryAt = (port: number, instant: number): RowBoundary => {

@@ -187,41 +187,47 @@ export default function ComponentsPage(): JSX.Element {
 
       <div className="mb-3 flex flex-wrap items-end gap-3">
         <FilterField label="Search">
-          <InputText
-            value={search}
-            onChange={(event) => {
-              setSearch(event.target.value);
-            }}
-            placeholder="Name, code, barcode or alias"
-            aria-label="Search components"
-            className="w-72"
-          />
+          {(id) => (
+            <InputText
+              id={id}
+              value={search}
+              onChange={(event) => {
+                setSearch(event.target.value);
+              }}
+              placeholder="Name, code, barcode or alias"
+              className="w-72"
+            />
+          )}
         </FilterField>
         <FilterField label="Instrument">
-          <Dropdown
-            value={instrument}
-            options={instrumentOptions}
-            onChange={(event) => {
-              setInstrumentParam((event.value as string | undefined) ?? '');
-            }}
-            showClear
-            placeholder="All"
-            aria-label="Instrument"
-            className="w-44"
-          />
+          {(id) => (
+            <Dropdown
+              inputId={id}
+              value={instrument}
+              options={instrumentOptions}
+              onChange={(event) => {
+                setInstrumentParam((event.value as string | undefined) ?? '');
+              }}
+              showClear
+              placeholder="All"
+              className="w-44"
+            />
+          )}
         </FilterField>
         <FilterField label="Type">
-          <Dropdown
-            value={componentType}
-            options={typeOptions}
-            onChange={(event) => {
-              setTypeParam((event.value as string | undefined) ?? '');
-            }}
-            showClear
-            placeholder="All"
-            aria-label="Component type"
-            className="w-40"
-          />
+          {(id) => (
+            <Dropdown
+              inputId={id}
+              value={componentType}
+              options={typeOptions}
+              onChange={(event) => {
+                setTypeParam((event.value as string | undefined) ?? '');
+              }}
+              showClear
+              placeholder="All"
+              className="w-40"
+            />
+          )}
         </FilterField>
       </div>
 

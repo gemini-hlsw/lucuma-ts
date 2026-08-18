@@ -26,7 +26,7 @@ const mounting = (over: Partial<Mounting> = {}): Mounting => ({
   publishedName: 'GMOS-S',
   usage: 'SCIENCE',
   port: 3,
-  locationType: 'PORT',
+  place: null,
   interval: nights('2026-08-08', '2026-08-14'),
   note: null,
   ...over,
@@ -45,11 +45,11 @@ describe('buildInstrumentRows', () => {
     // The workbook's usable-with-no-port run: it never says where the
     // instrument physically sits, so the row must not claim one.
     const [row] = buildInstrumentRows({
-      mountings: [mounting({ instrument: 'CAL_ZORRO', port: null, locationType: 'UNKNOWN' })],
+      mountings: [mounting({ instrument: 'CAL_ZORRO', port: null, place: 'UNKNOWN' })],
       night,
     });
 
-    expect(row?.where).toEqual({ kind: 'OFF_PORT', location: 'UNKNOWN' });
+    expect(row?.where).toEqual({ kind: 'OFF_PORT', place: 'UNKNOWN' });
     expect(row?.usage).toBe('SCIENCE');
   });
 
@@ -98,7 +98,7 @@ describe('locationOptions', () => {
         mounting({ instrument: 'GHOST', port: 1 }),
         mounting({ instrument: 'GCAL', port: 2 }),
         mounting({ instrument: 'F2', port: 1 }),
-        mounting({ instrument: 'CAL_ZORRO', port: null, locationType: 'UNKNOWN' }),
+        mounting({ instrument: 'CAL_ZORRO', port: null, place: 'UNKNOWN' }),
         // Recorded elsewhere in the window, nothing tonight.
         mounting({ instrument: 'CANOPUS', interval: nights('2026-09-01', '2026-09-05') }),
       ],

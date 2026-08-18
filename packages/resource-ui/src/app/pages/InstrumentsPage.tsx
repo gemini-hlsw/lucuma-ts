@@ -137,28 +137,32 @@ export default function InstrumentsPage(): JSX.Element {
 
       <div className="mb-3 flex flex-wrap items-end gap-3">
         <FilterField label="Search">
-          <InputText
-            value={search}
-            onChange={(event) => {
-              setSearch(event.target.value);
-            }}
-            placeholder="Instrument or published name"
-            aria-label="Search instruments"
-            className="w-72"
-          />
+          {(id) => (
+            <InputText
+              id={id}
+              value={search}
+              onChange={(event) => {
+                setSearch(event.target.value);
+              }}
+              placeholder="Instrument or published name"
+              className="w-72"
+            />
+          )}
         </FilterField>
         <FilterField label="Location">
-          <Dropdown
-            value={locations.some((entry) => entry.label === location) ? location : null}
-            options={locations.map((entry) => countedOption(entry.label, entry.label, entry.count))}
-            onChange={(event) => {
-              setLocation((event.value as string | undefined) ?? '');
-            }}
-            showClear
-            placeholder="Anywhere"
-            aria-label="Location"
-            className="w-56"
-          />
+          {(id) => (
+            <Dropdown
+              inputId={id}
+              value={locations.some((entry) => entry.label === location) ? location : null}
+              options={locations.map((entry) => countedOption(entry.label, entry.label, entry.count))}
+              onChange={(event) => {
+                setLocation((event.value as string | undefined) ?? '');
+              }}
+              showClear
+              placeholder="Anywhere"
+              className="w-56"
+            />
+          )}
         </FilterField>
       </div>
 

@@ -33,7 +33,7 @@ const cell = (over: Partial<SemesterCell> = {}): SemesterCell => ({
 
 const row = (cells: readonly SemesterCell[], label = 'Port 3'): SemesterCellRow => ({ key: label, label, cells });
 
-describe('cellColor', () => {
+describe(cellColor.name, () => {
   it('gives a mounted night its instrument hue, which is the point of the view', () => {
     // The sheet encodes identity as colour, so this does too. The version this
     // replaces spent colour on availability and came out one shade of green.
@@ -57,7 +57,7 @@ describe('cellColor', () => {
   });
 });
 
-describe('cellInk', () => {
+describe(cellInk.name, () => {
   it('takes the ink measured for the fill, never one fixed colour', () => {
     // White on GSAOI's lime manages 1.3:1 - the first version of this view
     // wrote every label in the timeline text colour and lost the bright cells.
@@ -73,7 +73,7 @@ describe('cellInk', () => {
   });
 });
 
-describe('buildHeatmapPoints', () => {
+describe(buildHeatmapPoints.name, () => {
   it('lays cells out one column per night and one row per subject', () => {
     const points = buildHeatmapPoints([row([cell(), cell()]), row([cell(), cell()], 'Port 4')]);
 
@@ -135,7 +135,7 @@ describe('buildHeatmapPoints', () => {
   });
 });
 
-describe('buildWeekendBands', () => {
+describe(buildWeekendBands.name, () => {
   it('covers the weekend column rather than sitting on its boundary', () => {
     const bands = buildWeekendBands([cell(), cell({ isWeekend: true }), cell()]);
 
@@ -144,7 +144,7 @@ describe('buildWeekendBands', () => {
   });
 });
 
-describe('dayTickPositions', () => {
+describe(dayTickPositions.name, () => {
   it('always numbers the first night, so a month starts from a known day', () => {
     for (const step of [1, 2, 5]) {
       expect(dayTickPositions(31, step)[0]).toBe(0);
@@ -158,7 +158,7 @@ describe('dayTickPositions', () => {
   });
 });
 
-describe('buildClosureBands', () => {
+describe(buildClosureBands.name, () => {
   // Three abutting synthetic nights; the closure spans the middle one.
   const NIGHT_MS = 24 * 3_600_000;
   const nights: TimelineNight[] = Array.from({ length: 3 }, (_, index) => ({

@@ -13,17 +13,17 @@
  * instrument's resolve through its own availability records.
  */
 import { portRowLabel } from './ports';
-import type { Instrument, InstrumentLocationType, Interval, Mounting, ResourceUsage } from './types';
+import type { Instrument, Interval, Mounting, OffPortPlace, ResourceUsage } from './types';
 
 export type InstrumentWhere =
   /** Mounted on a port over the night. */
   | { readonly kind: 'PORT'; readonly port: number }
   /**
    * Recorded usable, but on no port - a visitor between mounts. The workbook
-   * does not say where it physically sits, so the location is whatever the
-   * record carries, usually UNKNOWN.
+   * does not say where it physically sits, so the place is whatever the record
+   * carries, usually UNKNOWN.
    */
-  | { readonly kind: 'OFF_PORT'; readonly location: InstrumentLocationType }
+  | { readonly kind: 'OFF_PORT'; readonly place: OffPortPlace }
   /** No record covers the night. Never rendered as "unavailable" (I4). */
   | { readonly kind: 'NOT_RECORDED' };
 
@@ -54,9 +54,13 @@ const transitionsOf = (runs: readonly Mounting[]): readonly number[] =>
       : [run.interval.start];
   });
 
+// `?? 'UNKNOWN'` is unreachable: `Mounting` promises `place` is non-null exactly
+// when `port` is null (`types.ts`). It stays because `Mounting` types the two
+// fields independently, so the compiler cannot see that exclusivity - not
+// because the invariant is soft.
 const whereOf = (mounting: Mounting): InstrumentWhere =>
   mounting.port === null
-    ? { kind: 'OFF_PORT', location: mounting.locationType }
+    ? { kind: 'OFF_PORT', place: mounting.place ?? 'UNKNOWN' }
     : { kind: 'PORT', port: mounting.port };
 
 export interface BuildInstrumentRowsOptions {
@@ -140,26 +144,27 @@ export const PLACE_LABEL = {
   LAB: 'Summit lab',
   BASE: 'Base facility',
   UNKNOWN: OFF_PORT_LABEL,
-} satisfies Record<Exclude<InstrumentLocationType, 'PORT'>, string>;
+} satisfies Record<OffPortPlace, string>;
 
-/** Where one record puts an instrument: its port, or the place it is stored. */
-export const mountingLocationLabel = (mounting: Mounting): string =>
-  mounting.port === null
-    ? mounting.locationType === 'PORT'
-      ? OFF_PORT_LABEL
-      : PLACE_LABEL[mounting.locationType]
-    : portRowLabel(mounting.port);
-
-export const locationLabel = (row: InstrumentRow): string => {
-  switch (row.where.kind) {
+/**
+ * One reading of "where", in words - the only place the three cases are
+ * phrased, so a row and the record behind it cannot answer differently.
+ */
+const whereLabel = (where: InstrumentWhere): string => {
+  switch (where.kind) {
     case 'PORT':
-      return portRowLabel(row.where.port);
+      return portRowLabel(where.port);
     case 'OFF_PORT':
-      return row.where.location === 'PORT' ? OFF_PORT_LABEL : PLACE_LABEL[row.where.location];
+      return PLACE_LABEL[where.place];
     default:
       return NOT_RECORDED_LABEL;
   }
 };
+
+/** Where one record puts an instrument: its port, or the place it is stored. */
+export const mountingLocationLabel = (mounting: Mounting): string => whereLabel(whereOf(mounting));
+
+export const locationLabel = (row: InstrumentRow): string => whereLabel(row.where);
 
 /**
  * The locations the rows actually hold, each with its count - ports in their

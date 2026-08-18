@@ -10,22 +10,41 @@ planning documents (PLAN.md, NEED-CLARIFICATION.md, VALIDATION.md) were retired 
 
 ## State of the package
 
-**The v1 surface is complete (2026-08-10) and heading to public testing.** The one
-data source is the operations workbook export (`mock-server/fixtures/telescope_schedules.xlsx`,
-pivot 2026-08-11): nine semesters (GS 2024B-2026A, GN 2024B-2026B), both sites
-organised by ports, with telescope mode and ToO support riding along. Four
-destinations draw the same data: `/night` as a single night, `/week` as seven
-nights on one continuous axis, `/semester`, and `/components` (the ICTD half).
-The sidebar names the source on every page. The raw API browser that once
-lived at `/api` was removed at Dan's direction (2026-08-11) - GraphiQL against
-the demo-data server on :4000 is the way to inspect the contract.
+**The v1 surface is complete (2026-08-10) and waiting on its backend.** Five
+destinations draw the one record: `/night` as a single night, `/week` as seven
+nights on one continuous axis, `/semester`, `/instruments` and `/components` (the
+two inventory browsers). The sidebar names the endpoint on every page. The raw API
+browser that once lived at `/api` was removed at Dan's direction (2026-08-11) -
+GraphiQL against the mock server on :4000 is the way to inspect the contract.
 
-**The app carries its own data.** The masthead's Data control picks the backend:
-the built-in demo - the mock schema executed in the browser over Apollo
-`SchemaLink`, so a deployed build (and local dev) needs no server at all - or the
-live `/resource/graphql` endpoint, which does not serve the v1 API yet. Switching
-persists in localStorage and reloads for a clean client (`src/gql/dataSource.ts`);
-a live failure raises a banner naming the situation with a switch-back button.
+**The schedule the views were built against** is the operations workbook export
+(`mock-server/fixtures/telescope_schedules.xlsx`, pivot 2026-08-11): nine semesters
+(GS 2024B-2026A, GN 2024B-2026B), both sites organised by ports, with telescope
+mode and ToO support riding along. It lives in `mock-server/data/*.json` and is
+what the browser tests and the :4000 server serve - **not** something the app can
+read (see below).
+
+**The app reads one backend: the live Resource service** at `/resource/graphql`.
+It does not serve the v1 API yet, so every view is empty behind an amber banner
+naming the situation (`src/gql/liveStatus.ts`, `LiveFailureBanner`) until the
+Scala service ships. That is the expected state of this branch, in development
+and deployed alike.
+
+**There is no demo data source, and no way to select one** (2026-08-14, Hugo's
+review). The app used to carry the mock schema and execute it in the browser
+over Apollo `SchemaLink`, chosen from a masthead Data control. That put
+graphql-yoga, an executable schema and the SDL - 245 kB of server-side code -
+into a frontend bundle. Two lighter-touch versions were tried and both rejected
+in favour of removing it outright: gating on `import.meta.env.DEV`, and loading
+it as a lazy chunk. **Do not reintroduce it.** If the app is ever given a data
+source before the backend serves v1, it has to be something it reaches over
+HTTP - the shape `pnpm dev:mock-server` already has on :4000 - and never a
+schema executed in the client. Wiring that up would be a change to
+`src/gql/ApolloConfigs.ts`, and nobody has asked for it.
+
+`mock-server/` itself stays, and is untouched by this: it is what the browser
+tests execute against, what codegen reads, and what :4000 serves. It is simply
+not something the app can be pointed at.
 
 **Tonight is the front door.** The index route lands on `/night`, no `night` in the
 URL means the night in progress, the masthead wordmark links home to it, and the
@@ -91,20 +110,27 @@ and nothing else. Adding a fourth window should not mean copying any of it.
 Two gotchas that cost real debugging, both fixed structurally - do not undo them:
 
 - **Availability blocks are contextual values, never cache entities.** Every query
-  clips its blocks to the asked interval under stable ids, so Apollo id-normalization
-  let one night's response overwrite another's intervals (empty chart, "no components
-  tonight" on a scheduled night). `src/gql/cache.ts` sets `keyFields: false` on the
-  three block types; `Component` stays normalized, being identity-only.
+  clips its blocks to the asked interval, so a block is a projection onto a window
+  rather than a thing - and blocks carried a stable `id` on which Apollo normalized,
+  which let one night's response overwrite another's intervals (empty chart, "no
+  components tonight" on a scheduled night). `ScheduleBlock` no longer has an `id`
+  at all (2026-08-14, Hugo's review); `domain/adapters.ts` makes the row keys the
+  views need, from response position. `src/gql/cache.ts` still sets
+  `keyFields: false` on every implementor as the second lock, and `cache.test.ts`
+  reads the SDL so a new implementor cannot quietly miss the list.
+  `InstrumentComponent` keeps its id and stays normalized, being identity-only.
 - **`TimelineChart` keys its Highcharts chart by the axis window.** Highcharts 12
   answers an update that swaps axis extremes and xrange data together with an empty
   series; a window change is therefore a fresh chart, while same-window updates
   (data arriving, the "now" marker) update in place.
 
-**Port closures draw per view.** Every no-instrument block derives from a closure
-record, but what a port closure means for availability is still open with
-operations - so the wide views keep the hollow absence, and the
-night view alone opts into the closure red (`unscheduledAs: 'closure'` on the shared
-chart builder), with one "Shut down" legend key for bands and port closures alike.
+**A port closure draws as an absence, in every view.** Every no-instrument block
+derives from a closure record, but what a port closure means for availability is
+still open with operations, so no view claims a failure it cannot evidence: the
+hollow "nothing scheduled" ghost everywhere (`schedule-ghost` in
+`features/timeline/timelineOptions.ts`). The night view had a per-view opt-in to
+the closure red on top of this - `unscheduledAs: 'closure'` - and it went with
+that machinery; red is the telescope's alone (see the shutdown rule below).
 
 **The night view is where partial nights are visible.** The workbook is
 whole-night granular, so no served night splits a row and the chart's tests are
@@ -157,7 +183,8 @@ state spans** as bars - routine values every week would bury the runs. **The
 legend is sectioned** - Telescope (open/closed, modes, the shut-down key), ToO
 and Instruments, each labelled, so three vocabularies never read as one line
 of colours (Dan, 2026-08-11); a section with no keys does not render
-(`TimelineLegendBar` + the `*LegendExtras` helpers in `timelineOptions.ts`).
+(`TimelineLegendBar` in `features/timeline/TimelineChart.tsx`, fed by the
+`*LegendExtras` helpers in `timelineOptions.ts`).
 Do not give a state a hue; if a new state kind arrives, it joins the two
 neutrals or the closure red.
 
@@ -215,8 +242,8 @@ what makes the palette safe for a reader who cannot separate two of the hues.
 **Absence is drawn hollow, not as a fourteenth colour** - a fill would crowd the palette
 and claim to be an instrument.
 
-**Unknown is a reserved neutral, like the closure red.** A run the importer cannot
-identify is served as `Instrument.UNKNOWN` and draws zinc grey, labelled "Unknown",
+**Unknown is a reserved neutral, like the closure red.** A run the schedule names
+that the instrument list does not is served as `Instrument.UNKNOWN` and draws zinc grey, labelled "Unknown",
 deliberately outside the two validated hue sets so an unidentified band never reads as
 an instrument. Where one coincides with a named run - GN's two "Visiting" rows share a
 label - the named run wins the shared span (`domain/timeline.ts`), the same rule wide
@@ -232,8 +259,8 @@ assumption for, rather than silently inventing an answer:
   mounts is modelled as a Resource `Instrument` for now (Dan, 2026-08-07),
   including the AO subsystems (Altair, Canopus) and Engineering; whether some
   belong elsewhere is deferred.
-- **Unidentified runs.** An unrecognised workbook name is served as `UNKNOWN`
-  with its text in `note` - a lookup question, not a parse failure.
+- **Unidentified runs.** A workbook name the instrument list does not hold is
+  served as `UNKNOWN` with its text in `note` - a lookup question, not an error.
 - **What the LGS column means.** It is _constant per site_ in this export - GN
   prints "Yes" on all 915 nights, GS "No" on all 730 - so it may record the
   site's laser capability rather than a nightly state. Recorded as spans
@@ -259,9 +286,11 @@ the locations the rows actually hold, counted, from the telescope outwards.
 `mock-server/storedInstruments.ts` (2026-08-12), a second **quarantine
 boundary** alongside `components.ts` and under the same three rules -
 deterministic, anchored to the site's own recorded span, never deciding
-`dataAvailable`. `lucuma-core` enumerates fourteen instruments and the workbook
-schedules a subset, so the acquisition cameras, GPI, NIRI and SCORPIO would
-otherwise be invisible. **Site is fixed per instrument** (an instrument does not
+`dataAvailable`. Resource's `Instrument` names eighteen (plus `UNKNOWN`) and the
+workbook mounts eleven of them on ports, so the acquisition cameras, GPI, NIRI and
+SCORPIO would otherwise be invisible - which is what this layer answers for.
+`ENGINEERING`, `GSAOI` and `IQUEYE` are named by the enum and served by neither
+layer; they are in the palette against the day a record names one. **Site is fixed per instrument** (an instrument does not
 move between telescopes; AcqCam appears at both under one tag exactly as GMOS
 does) and **location is what moves** - summit lab to dome floor and back. These
 records carry **no port**, which is structurally what keeps them out of every
@@ -368,9 +397,15 @@ presentation shape rather than either page's domain row:
   views share. It owns the chrome, the aria labels and the cleared-input guard;
   the page owns the date vocabulary, since only it knows whether the input shows
   a night's label or the evening a week begins.
-- **`FilterField`** is a real `<label>` wrapping its control, and
-  `filterOptions.countedOption` is the "(12)" suffix every filter dropdown
-  carries. **`InstrumentSwatch`** (in `features/timeline/`, beside the palette
+- **`LabelledControl`** binds a caption to its control by id - a render prop, so
+  the caller decides which prop carries the id (`id` on an input, `inputId` on a
+  PrimeReact Dropdown). It does **not** wrap the control: implicit labelling only
+  reaches a labelable element, and a label wrapping a Dropdown both named nothing
+  and swallowed the control's own words into the name ("Instrument All All").
+  **`FilterField`** is the finder bar's layout over it; the masthead uses it
+  directly. The caption is then the control's only name - no call site repeats it
+  as an `aria-label`. `filterOptions.countedOption` is the "(12)" suffix every
+  filter dropdown carries. **`InstrumentSwatch`** (in `features/timeline/`, beside the palette
   it reads) is the colour square plus name, so colour-follows-the-instrument
   holds outside the charts too.
 - **`siteTime.eveningLabel`/`eveningRange`** are the one evening formatter.
@@ -384,11 +419,26 @@ read as twins, but the shapes diverge - grouped-by-instrument subheaders against
 a flat list, two filters against one, different expansions - and a `FinderPage`
 taking a dozen props would hide nothing.
 
+## Not doing yet
+
+Wanted-but-unbuilt, carried over from the 2026-08-10 walkthrough punch list when
+TODO.md was retired (2026-08-17). Each is still open; none is scheduled. Anything
+built here needs a reason recorded beside it, the same as any other capability.
+
+- **A visible "List" as a fourth view toggle.** The block table already exists as
+  the accessible reading of every chart, so exposing it is nearly free - but it
+  adds a mode, and the semester toggle is chart / grid / calendar today.
+- **A retry affordance on the load-error banner**, which is message-only.
+- **A components table on the night view.** It had one, removed on 2026-08-12 as
+  not helping a reader of the night. If it returns it should answer a question
+  `/components` cannot.
+- **"Jump to current month"** in the calendar, when the viewed semester holds today.
+
 ## Commands
 
 ```bash
 pnpm --filter @gemini-hlsw/resource-ui dev            # vite dev server (proxies /resource/graphql → the real dev service)
-pnpm --filter @gemini-hlsw/resource-ui dev:mock-server# demo-data GraphQL server on :4000
+pnpm --filter @gemini-hlsw/resource-ui dev:mock-server# mock GraphQL server on :4000 (GraphiQL)
 pnpm --filter @gemini-hlsw/resource-ui codegen        # regenerate src/gql/gen from mock-server/schema.graphql
 pnpm --filter @gemini-hlsw/resource-ui test           # vitest - runs in a real browser (Playwright chromium)
 pnpm --filter @gemini-hlsw/resource-ui build          # tsc -b && vite build (prebuild runs codegen)
@@ -398,37 +448,37 @@ pnpm --filter @gemini-hlsw/resource-ui lint:eslint
 There is **no** `test:browser` script - `test` already runs in the browser. First-time
 browser tests need `pnpm --filter @gemini-hlsw/resource-ui exec playwright install chromium`.
 
-`dev` alone is a working app: the default data source executes the mock in the browser.
-`dev:mock-server` hosts the same demo data over HTTP at :4000, for GraphiQL and for
-external consumers trying the API. It is **not** the "Live server" source: Live means
-the actual Resource service, in development too (the vite proxy carries
-`/resource/graphql` to the dev deployment purely to sidestep CORS), and fails with
-the banner until the real backend serves v1.
+`dev` reads the live Resource service - the vite proxy carries `/resource/graphql` to
+the dev deployment purely to sidestep CORS - so **until the Scala backend serves v1 it
+shows the failure banner and no data**. That is deliberate (2026-08-14): the app has one
+backend, and standing something else in for it in development is how a frontend ends up
+shipping a server. `dev:mock-server` hosts the mock over HTTP at :4000 for GraphiQL and
+for external consumers trying the API; it is where to look at what the contract answers,
+and the browser tests are where the views are exercised against it.
 
 **Treat port 4000 as untrusted at session start.** A mock server from an old session can
 outlive it and serve a schema that no longer exists - this has caused confusion three
 times now. Check with `lsof -nP -iTCP:4000 -sTCP:LISTEN` and restart via the pnpm script.
 
-## Importing the workbook
+## Where the schedule data came from
 
-`mock-server/import/` turns the operations workbook export into the JSON the mock
-seeds from. **It is the only schedule source.** The published web overview sheets
-this package used to fetch and parse are gone - the workbook is the operations
-team's own record and supersedes them where they disagreed (the 2026-08-09
-validation pass found several such runs, and the workbook flatly omits some
-published visits).
+`mock-server/data/*.json` **is** the schedule source. It was parsed once out of the
+operations workbook export (`mock-server/fixtures/telescope_schedules.xlsx`, kept
+beside it as provenance). The published web overview sheets this package used to
+fetch and parse are gone - the workbook is the operations team's own record and
+supersedes them where they disagreed (the 2026-08-09 validation pass found several
+such runs, and the workbook flatly omits some published visits).
 
-```bash
-pnpm --filter @gemini-hlsw/resource-ui import:schedule
-```
+**The reader is no longer in this package** (2026-08-14, Hugo's review): operations
+will not send another export, so an unmaintained spreadsheet dependency bought
+nothing. It lives on the `resource/workbook-importer` branch - `workbook.ts` pure and
+unit-tested, `importWorkbook.ts` the only part touching disk (ExcelJS). Revive that
+branch if an Excel import is ever needed again; edit the JSON if the mock's data has
+to change. `mock-server/records.ts` holds the record types either way, and they take
+their vocabularies from the schema's own enums.
 
-A new export from operations means replacing
-`mock-server/fixtures/telescope_schedules.xlsx` and re-running the import. Nothing
-is fetched from the web.
+What the JSON holds, and how the workbook was read into it:
 
-- `workbook.ts` is pure and unit-tested; `importWorkbook.ts` is the only part
-  touching disk (ExcelJS - default import only, its CJS bundle breaks named
-  imports under plain node).
 - One sheet per site, one row per **evening** ("Local Date" is the evening a
   night begins; both sites start 2024-08-01, 2024B's first evening - the other
   reading would start both on 2024A's final night). Semester split follows the
@@ -448,7 +498,7 @@ is fetched from the web.
   (Dan, 2026-08-11) - a written level is a fact and supersedes it. (An earlier
   import silently defaulted the blank to "None", which read as a recorded
   prohibition; that was the bug.)
-- **Off-port usability is imported** (2026-08-12): an instrument the workbook
+- **Off-port usability is recorded** (2026-08-12): an instrument the workbook
   marks usable with no port recorded - the `Alopeke and Zorro visitor runs
   between mounts - becomes a mounting with no port, location UNKNOWN, because
   the workbook never says where an unmounted instrument physically is. The null
@@ -458,7 +508,7 @@ is fetched from the web.
 - **PWFS1, PWFS2 and the LGS column become subsystem records** (2026-08-12).
   The LGS Yes/No is the laser available for science or not - both recorded
   facts, and GS records "No" every night rather than a gap.
-- **Deliberately not imported**, each with a warning: the OIWFS columns (an
+- **Deliberately not imported**, each warned about at the time: the OIWFS columns (an
   OIWFS is an instrument _component_, and the component layer stays synthetic
   until real ICTD data arrives - importing these would cross that quarantine),
   and GN's single trailing 2027A evening (an export artifact). An unrecognised
@@ -468,13 +518,23 @@ is fetched from the web.
 
 ## Mock server
 
-`mock-server/` is one typed mock shared by the dev server, the browser tests **and the
-app's own demo data source**, so all three exercise the same resolvers and the same SDL
-that codegen reads. **Preserve that property** - it is why a browser test, a manual
-click-through and a deployed demo cannot disagree.
+`mock-server/` is one typed mock shared by the :4000 dev server and the browser tests,
+both exercising the same resolvers and the same SDL that codegen reads. **Preserve that
+property** - it is why a browser test and a GraphiQL click-through cannot disagree. The
+app itself is no longer a consumer (see "no demo data source" above).
 
 - `schema.graphql` - the SDL. Codegen source and served schema. Keep it small; every
-  type needs a requirement behind it.
+  type needs a requirement behind it. Its ODB scalars come in through
+  `#import ... from "@gemini-hlsw/lucuma-odb-schemas/odb"` rather than being restated
+  (2026-08-14, Hugo's review), the way `packages/configs`' schema files take theirs.
+- `sdl.ts` - the SDL with those imports resolved. `#import` is @graphql-tools' and
+  GraphQL reads it as a comment, so a raw read builds a schema whose `Timestamp` is
+  undefined. Codegen and @graphql-eslint resolve it through their own loaders; this
+  module is the node side and `tasks/graphqlSdlPlugin.ts` routes the browser's
+  `?raw` imports through it, so all four consumers see one expanded schema. **The
+  `#import` line has to be the file's first content** - the loader only looks for
+  imports when the SDL _starts_ with one, and a header comment above it silently
+  turns every type below into an unknown type.
 - `seed.ts` - imports the nine generated `data/*.json` files. Everything is
   imported from the workbook - there is no hand-written schedule any more (the
   GS 2099B stress semester left with the source pivot, 2026-08-11), which is why
@@ -484,6 +544,11 @@ click-through and a deployed demo cannot disagree.
 - `store.ts` / `resolvers.ts` - read-only so far. A night is a **projection**: clip every
   record to the night's interval and report what is left. Nothing is stored per night,
   which is what makes partial nights work with no special case.
+- `records.ts` - the record types `data/*.json` holds, taking their vocabularies from
+  the schema's own enums (`Instrument`, `ResourceUsage`, `Partner`, …) rather than
+  restating them, so a value the SDL renames is a compile error here. The one place
+  `mock-server/` reaches into `src/`, type-only, at the cost of needing codegen to
+  have run.
 - `schema.ts` / `server.ts` / `time.ts` - the harness. `buildMockSchema(sdl)` returns an
   executable schema over a fresh store; `server.ts` is the yoga dev server.
 
@@ -498,16 +563,21 @@ a page test unnoticed. Validate explicitly against the schema where it matters.
 
 - Operations live in `src/gql/resource.ts` as `graphql(...)` tagged documents. Hooks that
   return **domain models** (not raw fragments) belong in `src/gql/hooks.ts`.
+  `src/gql/ApolloConfigs.ts` is the client setup.
 - Codegen source is `mock-server/schema.graphql`, configured in `tasks/codegen.ts`.
-  Output is `src/gql/gen/` (gitignored, never hand-edit).
+  Output is `src/gql/gen/` (gitignored, never hand-edit). Codegen resolves the SDL's
+  `#import`s itself; `mock-server/sdl.ts` does the same for the two runtime readers.
 - **After changing any operation or the schema, run `codegen`.** `prebuild` does it on build.
 - The client preset only emits types an operation selects. If a type you need is missing
   from `gen/`, the fix is an operation that selects it, not a hand-written duplicate.
 - When the backend ships, point `tasks/codegen.ts` at `@gemini-hlsw/lucuma-schemas/resource`.
 
 `@graphql-eslint` operation linting runs in `eslint.config.js` against
-`mock-server/schema.graphql` (navigate-ui's `graphqlConfigForSchema` helper), on top
-of codegen's own validation - an invalid selection fails both.
+`mock-server/schema.graphql`, on top of codegen's own validation - an invalid
+selection fails both, and both resolve the SDL's `#import`s through their own
+loaders. `require-selections` there asks for an `id` wherever a type has one,
+which is why `InstrumentComponent` selections carry it and blocks - which have no
+id - are unaffected.
 
 ## Data flow
 
@@ -526,13 +596,43 @@ These are the standing invariants, from what went wrong last time.
 - **Never put a `date` on a block.** Intervals only. The moment a `LocalDate` becomes a
   field, partial nights turn into a retrofit. (Referred to across the code as **the
   partial-night non-negotiable**.)
+- **Every interval this API serves is half-open**, `start` inclusive and `end`
+  exclusive - including a semester's `nights: DateInterval!`, which is why it is not a
+  `firstNight`/`lastNight` pair. A _last_ night reads inclusive while
+  `DateIntervalInput.end` is exclusive, so the obvious `telescopeNights` call came back
+  one night short and nothing said so (2026-08-14, Hugo's review). The domain model
+  reads a semester inclusively, and `toPublishedSemesters` is the one line where the
+  two meet.
+- **A block has no `id`.** Every query clips its records to the window asked for, so a
+  block is a projection rather than an entity, and an id on one invites exactly the
+  cache bug this app shipped. Row keys are the adapters' (`domain/adapters.ts`).
+  `InstrumentComponent` keeps its id, being real hardware.
+- **`InstrumentLocation` is one type**, `place: InstrumentPlace!` with an optional
+  `port` (Dan, 2026-08-17, reversing the union of 2026-08-14). `place` includes `PORT`
+  and is total, so one field answers "where is this" for a port and a shelf alike and a
+  client needs no fragment. **The schema cannot enforce the pairing, so the server owes
+  it**: `port` is non-null exactly when `place` is `PORT`, and explicitly null
+  otherwise. `mock-server/resolvers.ts`'s `instrumentLocation` is the only place a
+  location value is built, and `domain/adapters.ts`'s `toLocation` is the only place the
+  app re-checks it - a contradictory record reads as off-port/`UNKNOWN` with a dev-mode
+  warning naming it, never as an error, because one bad record must not empty a night.
+  Do not build a location literal at a call site, and do not push the `place`/`port`
+  pair past the adapter: the domain model carries the exclusive pair (`Mounting.port`
+  xor `Mounting.place`, whose type `OffPortPlace` excludes `PORT`) so nothing downstream
+  can hold both.
 - **A gap means "not recorded", never "unavailable"** (invariant **I4**). The
-  workbook's empty port cells must not render as closed.
+  workbook's empty port cells must not render as closed, and **empty calendar
+  squares stay empty** - the not-recorded/closed distinction is load-bearing, so
+  do not decorate a gap to make the month look finished.
 - **`ResourceUsage` is one enum** - `SCIENCE`/`ENGINEERING`/`UNAVAILABLE`. Do not split it
   into separate availability and usage fields.
+- **Types the ODB already defines are imported, never restated** - the scalars,
+  `TimestampInterval`, `TimeSpan`, `Site`, `Partner`. `Instrument` is the deliberate
+  exception: the schedules mount things the ODB's enum does not name, and reconciling
+  the two is still open with operations.
 - **A record's port is its row; there is no row label** (Dan, 2026-08-12). The schedule
-  views draw the telescope's ports, so `location.port` alone says which row a record
-  belongs to and `domain/ports.ts` renders the label. The API carried a `rowLabel` on
+  views draw the telescope's ports, so a location's `port` alone says which row
+  a record belongs to and `domain/ports.ts` renders the label. The API carried a `rowLabel` on
   every block and a `rowLabels` list on every semester until both were removed as
   restatements of the port - the timeline was regex-parsing "Port 3" back into a
   number. Do not reintroduce a display string the model can derive. The row set is
@@ -566,6 +666,17 @@ interactions with accessible queries (`getByRole`, `getByLabelText`).
   `src/test/helpers.ts` (`openDropdown` / `selectDropdownOption`), which clicks with
   `userEvent` and reaches the panel via `page`, scoped through `getByRole('listbox')`
   so the hidden native `<select>` mirror does not also match.
+- **The tests load no app stylesheet** (2026-08-14, Hugo's review): a test that needs
+  styling to pass is testing the stylesheet. The one exception is
+  `styles/chartOverlays.css`, which is behaviour rather than appearance - a Highcharts
+  overlay that catches the pointer swallows the hover under it - and the single test
+  that asserts that imports it for itself.
+- **The URL hooks in `src/app/` are driven through the URL**, not through
+  `renderHook`: `test/probe.tsx` renders a hook inside the real router, prints what a
+  test asserts on and offers buttons standing in for the app's controls, and the
+  assertion is on the resulting URL. One `Probe` per route, though - two routes
+  rendering it at the same position let React reuse the fiber, and two `use` bodies
+  with different hook counts is a hook-order violation.
 - Prefer tests driven by configuration (e.g. `SIDEBAR_MENU_SECTIONS`) over hard-coded
   lists, so adding a destination does not break unrelated guards.
 - Don't assert on internal React structure; don't over-mock.
@@ -584,6 +695,22 @@ utilities on equal specificity - reach for `!` when overriding them.
 
 Prefer Tailwind utilities over CSS files except where Tailwind can't express it (complex
 selectors, keyframes, third-party overrides).
+
+**Density is one number.** The root font size is 13px (`shell.css`), matched against
+Explore at both widths; everything is sized in rem, so that one value trades density
+for roominess without touching a layout. It is settled - re-measure against Explore
+before changing it.
+
+**The masthead has a measured width budget**, and its arithmetic is in `shell.css`
+beside `.xp-masthead-right`. Check it there before adding an item to the bar:
+
+- **831px** is where the bar stops fitting - 133.7 wordmark + 137.2 badge + 503.1
+  right group + 31.2 gaps + 26 padding. Nothing wraps there; the items' contents
+  break instead.
+- **848px (53rem)** is where the three control captions are visually hidden, buying
+  112.3px back. A media query's rem is the initial 16px, not the 13px root.
+- **~693px** is the floor, where the menu button starts clipping. The shell is
+  `overflow-x: hidden`, so there is no scrollbar to reach what goes past it.
 
 ## Architecture docs
 

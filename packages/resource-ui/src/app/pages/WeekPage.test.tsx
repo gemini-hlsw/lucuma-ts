@@ -19,7 +19,7 @@ const openWeek = async (route: string) =>
     ],
   });
 
-describe('WeekPage', () => {
+describe(WeekPage.name, () => {
   it('draws seven nights from the one asked for', async () => {
     const screen = await openWeek('/week?site=GS&night=2025-11-14');
 

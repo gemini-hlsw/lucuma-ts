@@ -19,7 +19,7 @@ const mounting = (over: Partial<Mounting> = {}): Mounting => ({
   publishedName: 'GMOS',
   usage: 'SCIENCE',
   port: 3,
-  locationType: 'PORT',
+  place: null,
   interval: nights('2026-08-08', '2026-08-14'),
   note: null,
   ...over,
@@ -52,7 +52,7 @@ describe('buildBlockRows', () => {
   });
 
   it('keeps a run that crosses a month boundary as one row', () => {
-    // The importer merges GHOST across the sheet's month blocks, and the table
+    // The records merge GHOST across the sheet's month blocks, and the table
     // has to preserve that or a reader gets six rows for one fact.
     const rows = build({
       firstNight: '2026-08-08',

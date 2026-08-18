@@ -8,7 +8,7 @@ import type {
   ComponentLocation,
   Instrument,
   InstrumentComponentType,
-  InstrumentLocationType,
+  InstrumentPlace,
   Partner,
   PowerSource,
   ResourceUsage,
@@ -25,7 +25,7 @@ import type {
 export type {
   ComponentLocation,
   Instrument,
-  InstrumentLocationType,
+  InstrumentPlace,
   Partner,
   PowerSource,
   ResourceUsage,
@@ -36,13 +36,46 @@ export type {
   TooSupport,
 };
 
+/**
+ * Where an instrument sits when it is on no port: every `InstrumentPlace`
+ * except the one that carries a port number.
+ *
+ * The wire type states `place` and `port` separately and promises they agree.
+ * The domain holds that promise as a type instead: `Mounting.port` and
+ * `Mounting.place` are exclusive, so nothing past the adapter can carry both,
+ * and a phantom `PORT` place is unrepresentable off a port.
+ *
+ * `mock-server/records.ts` declares the same `Exclude` for the server side, and
+ * says there why the two cannot share one declaration.
+ */
+export type OffPortPlace = Exclude<InstrumentPlace, 'PORT'>;
+
+/**
+ * The observatory's two sites, in the order the masthead offers them.
+ *
+ * A fact about Gemini, not about the data - the same reasoning as
+ * `TELESCOPE_PORTS`. Deriving the site list from what the schedules happen to
+ * hold left the masthead's Site control **blank** whenever the server answered
+ * with nothing, which since the demo source went (2026-08-14) is the app's
+ * whole state until the backend serves v1. `satisfies` keeps it honest: a site
+ * added to the schema fails to compile until it is listed.
+ */
+export const SITES = ['GN', 'GS'] as const satisfies readonly Site[];
+
 /** A half-open interval, start inclusive and end exclusive, as epoch milliseconds. */
 export interface Interval {
   readonly start: number;
   readonly end: number;
 }
 
-/** An instrument on a port, or recorded usable off one, over an interval. */
+/**
+ * An instrument on a port, or recorded usable off one, over an interval.
+ *
+ * `id` is the adapter's own row key, not the API's: a block is a projection
+ * onto the window that was asked for, so the API gives it no identity
+ * (`ScheduleBlock` in the SDL says why). Unique within one response, which is
+ * all a rendered row or a chart point needs.
+ */
 export interface Mounting {
   readonly id: string;
   readonly instrument: Instrument;
@@ -57,11 +90,13 @@ export interface Mounting {
    */
   readonly port: number | null;
   /**
-   * Where the instrument is over this span. PORT for a mounting; UNKNOWN for
-   * an off-port run, which the workbook records as usable without saying
-   * where the instrument physically sits.
+   * Where an off-port run physically sits - non-null **exactly** when `port` is
+   * null. The API states place and port separately and promises they agree;
+   * `toMountings` is where that promise is checked and turned into this
+   * exclusive pair. Usually UNKNOWN: the workbook records an instrument usable
+   * between mounts without saying where it was.
    */
-  readonly locationType: InstrumentLocationType;
+  readonly place: OffPortPlace | null;
   readonly interval: Interval;
   readonly note: string | null;
 }
@@ -116,6 +151,13 @@ export interface PublishedSemester {
   readonly version: string | null;
   /** True for a synthetic schedule that was never published - the pickers must say so. */
   readonly demo: boolean;
+  /**
+   * The semester's nights, **both ends inclusive** - the reading every date
+   * comparison in this app uses (`firstNight <= night && night <= lastNight`).
+   *
+   * The API states the same range half-open, as `DateInterval`; `toPublishedSemesters`
+   * is the one place the conversion happens.
+   */
   readonly firstNight: string;
   readonly lastNight: string;
   /**

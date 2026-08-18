@@ -21,8 +21,9 @@ describe('synthesizeStoredInstruments', () => {
   it('never puts a stored instrument on a port - that is what keeps it off the charts', () => {
     // A schedule view's rows are the telescope's ports and a record's row is
     // its port, so a record with no port is structurally unable to reach one.
+    // That `place` is never PORT is now the type's job (`OffPortPlace`); what
+    // is left to assert is the values these records actually serve.
     for (const block of blocks) {
-      expect(block.place).not.toBe('PORT');
       expect(['FLOOR', 'LAB', 'BASE', 'UNKNOWN']).toContain(block.place);
     }
   });

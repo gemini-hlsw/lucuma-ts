@@ -24,11 +24,11 @@
  * ## Closures at Gemini South are spelled across the rows
  *
  * The sheet writes "Telescope Shutdown A&G Maintenance" vertically down the port
- * rows during a shutdown, one word per row, and the importer faithfully records
+ * rows during a shutdown, one word per row, and the records carry
  * each word as that port's closure reason. Rendered per row it reads as though
  * Port 2 were called "Telescope".
  *
- * The importer also emits the telescope-wide record, with the whole phrase. So
+ * There is a telescope-wide record too, with the whole phrase. So
  * the wide closure becomes a band across every row, and each port closure has
  * the band's span subtracted. What survives is the part genuinely about that port
  * alone - A&G on Port 4, F2 on Port 5 in 2026A - and the fragments disappear,

@@ -15,7 +15,7 @@
  * space, because the sighted reader already has the picture.
  *
  * The rows are placed over the whole semester rather than per month, so a run
- * crossing a month boundary is one row - the same reason the importer merges
+ * crossing a month boundary is one row - the same reason the import merged
  * GHOST on Port 1 into one block from August to January rather than six.
  */
 import type { JSX } from 'react';

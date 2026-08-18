@@ -37,7 +37,7 @@ const mounting = (over: Partial<Mounting> & Pick<Mounting, 'id' | 'interval'>): 
   publishedName: 'GMOS',
   usage: 'SCIENCE',
   port: 1,
-  locationType: 'PORT',
+  place: null,
   note: null,
   ...over,
 });

@@ -25,7 +25,7 @@ const mounting = (over: Partial<Mounting> & Pick<Mounting, 'id' | 'port' | 'inte
   instrument: 'GMOS',
   publishedName: 'GMOS',
   usage: 'SCIENCE',
-  locationType: 'PORT',
+  place: null,
   note: null,
   ...over,
 });
@@ -73,7 +73,7 @@ describe('interval helpers', () => {
 
 describe('closures at Gemini South', () => {
   // The published shape: the sheet spells "Telescope Shutdown A&G Maintenance"
-  // down the port rows one word at a time, and the importer records both the
+  // down the port rows one word at a time, and the records carry both the
   // fragments and the telescope-wide record that carries the whole phrase.
   const SHUTDOWN = span('2026-08-02', '2026-08-07');
   const PUBLISHED_CLOSURES = [

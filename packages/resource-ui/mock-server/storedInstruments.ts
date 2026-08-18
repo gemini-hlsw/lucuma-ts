@@ -32,13 +32,11 @@
  * **Location is not fixed**: that is the point of these records - a stored
  * instrument moves between the summit lab, the dome floor and the base.
  */
-import type { ImportedSchedule, ImportSite } from './import/blocks.ts';
-import type { Instrument } from './import/instruments.ts';
+import type { ImportedSchedule, ImportedUsage, ImportSite, Instrument, OffPortPlace } from './records.ts';
 
-/** Where a stored instrument sits - the schema's `InstrumentLocationType`. */
-export type InstrumentPlace = 'FLOOR' | 'LAB' | 'BASE' | 'UNKNOWN';
+export type { OffPortPlace };
 
-export type StoredInstrumentUsage = 'SCIENCE' | 'ENGINEERING' | 'UNAVAILABLE';
+export type StoredInstrumentUsage = ImportedUsage;
 
 /**
  * How a stored instrument's whereabouts move over a site's recorded span.
@@ -83,8 +81,9 @@ export interface SynthesizedInstrumentBlock {
   readonly site: ImportSite;
   readonly instrument: Instrument;
   readonly publishedName: string;
-  /** Never PORT, which is what keeps these off the schedule charts. */
-  readonly place: InstrumentPlace;
+  /** Off the charts by construction: `OffPortPlace` cannot be `PORT`, and a
+   *  schedule view's rows are the ports. */
+  readonly place: OffPortPlace;
   readonly usage: StoredInstrumentUsage;
   readonly start: string;
   readonly end: string;
@@ -97,7 +96,7 @@ interface Span {
 }
 
 interface Stay {
-  readonly place: InstrumentPlace;
+  readonly place: OffPortPlace;
   readonly usage: StoredInstrumentUsage;
   readonly span: Span;
   readonly note: string | null;
@@ -119,7 +118,7 @@ const siteSpan = (schedules: readonly ImportedSchedule[], site: ImportSite): Spa
   return edges.length === 0 ? null : { start: Math.min(...edges), end: Math.max(...edges) };
 };
 
-const stay = (span: Span, place: InstrumentPlace, usage: StoredInstrumentUsage, note: string | null = null): Stay => ({
+const stay = (span: Span, place: OffPortPlace, usage: StoredInstrumentUsage, note: string | null = null): Stay => ({
   place,
   usage,
   span,

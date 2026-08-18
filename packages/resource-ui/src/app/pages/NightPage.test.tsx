@@ -1,3 +1,9 @@
+// The one stylesheet a test loads, and only because the rule in it is
+// behaviour rather than appearance: a Highcharts overlay that catches the
+// pointer swallows the hover under it. The rest of `src/styles/` is
+// appearance and these tests run without it (see `vite.config.ts`).
+import '@/styles/chartOverlays.css';
+
 import { describe, expect, it } from 'vitest';
 import { page } from 'vitest/browser';
 
@@ -235,9 +241,10 @@ describe('NightPage', () => {
     await expect.poll(() => document.querySelector('[data-testid="night-timeline"] .highcharts-point')).not.toBeNull();
 
     // Near the bar's left edge the cursor is deep in the daylight wash, which
-    // is deliberately drawn over the bars. Hover resolves to the
-    // element under the cursor, so an overlay that catches the pointer swallows
-    // the tooltip - the wash must be pointer-transparent (global.css).
+    // is deliberately drawn over the bars. Hover resolves to the element under
+    // the cursor, so an overlay that catches the pointer swallows the tooltip -
+    // the wash must be pointer-transparent (`styles/chartOverlays.css`,
+    // imported above).
     const bar = document.querySelector('[data-testid="night-timeline"] .highcharts-point');
     await page.elementLocator(bar!).hover({ position: { x: 6, y: 8 } });
 

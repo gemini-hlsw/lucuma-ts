@@ -27,7 +27,7 @@ const mounting = (over: Partial<Mounting> = {}): Mounting => ({
   publishedName: 'GMOS',
   usage: 'SCIENCE',
   port: 3,
-  locationType: 'PORT',
+  place: null,
   interval: nights('2026-08-08', '2026-08-14'),
   note: null,
   ...over,

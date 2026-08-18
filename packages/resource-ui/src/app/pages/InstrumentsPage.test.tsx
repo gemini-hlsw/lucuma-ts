@@ -14,7 +14,7 @@ import InstrumentsPage from './InstrumentsPage';
 
 const open = async (route: string) => renderApp({ element: <InstrumentsPage />, route });
 
-describe('InstrumentsPage', () => {
+describe(InstrumentsPage.name, () => {
   it('lists the site catalog with where each instrument is tonight', async () => {
     const screen = await open('/instruments?site=GN&semester=2026B&night=2026-09-26');
 
@@ -91,7 +91,7 @@ describe('InstrumentsPage', () => {
     const screen = await open('/instruments?site=GN&semester=2026B&night=2026-09-26');
     await expect.element(screen.getByText('GNIRS')).toBeVisible();
 
-    await screen.getByLabelText('Search instruments').fill('maroon');
+    await screen.getByLabelText('Search').fill('maroon');
 
     await expect.element(screen.getByText('Maroon-X').first()).toBeVisible();
     await expect.element(screen.getByText('GNIRS')).not.toBeInTheDocument();

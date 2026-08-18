@@ -26,7 +26,7 @@ const mounting = (over: Partial<Mounting> & Pick<Mounting, 'id' | 'port' | 'inte
   instrument: 'GMOS',
   publishedName: 'GMOS',
   usage: 'SCIENCE',
-  locationType: 'PORT',
+  place: null,
   note: null,
   ...over,
 });

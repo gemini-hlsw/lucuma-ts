@@ -39,7 +39,7 @@ describe('ComponentsPage - the finder', () => {
     const screen = await open('/components?site=GS&semester=2025B&night=2025-10-15');
     await expect.element(screen.getByText('Mask GS2026B-011')).toBeVisible();
 
-    await screen.getByLabelText('Search components').fill('the long mask');
+    await screen.getByLabelText('Search').fill('the long mask');
 
     await expect.element(screen.getByText('Mask GS2026B-012')).toBeVisible();
     await expect.element(screen.getByText('Mask GS2026B-011')).not.toBeInTheDocument();
@@ -52,21 +52,21 @@ describe('ComponentsPage - the finder', () => {
     await expect.element(screen.getByText('Mask GS2026B-012')).toBeVisible();
     await expect.element(screen.getByText('Mask GS2026B-011')).not.toBeInTheDocument();
     // The controls show the linked state, so refining it starts from there.
-    await expect.element(screen.getByLabelText('Search components')).toHaveValue('the long mask');
+    await expect.element(screen.getByLabelText('Search')).toHaveValue('the long mask');
   });
 
   // One render per test: a second render in the same test overlaps act() calls
   // and corrupts the container bookkeeping for every test after it.
   it('shows the failing piece installed before its failure', async () => {
     const screen = await open('/components?site=GS&semester=2025B&night=2025-09-01');
-    await screen.getByLabelText('Search components').fill('R400');
+    await screen.getByLabelText('Search').fill('R400');
 
     await expect.element(screen.getByText('Port 3 · GMOS')).toBeVisible();
   });
 
   it('shows the failing piece in the lab after its failure, with the reason on the row', async () => {
     const screen = await open('/components?site=GS&semester=2025B&night=2025-12-15');
-    await screen.getByLabelText('Search components').fill('R400');
+    await screen.getByLabelText('Search').fill('R400');
 
     await expect.element(screen.getByText('Summit lab')).toBeVisible();
     // Red is reserved for a piece actually out of service, and the record's own
@@ -77,7 +77,7 @@ describe('ComponentsPage - the finder', () => {
 
   it('gives the record its own Note column rather than tucking it under the status', async () => {
     const screen = await open('/components?site=GS&semester=2025B&night=2025-12-15');
-    await screen.getByLabelText('Search components').fill('R400');
+    await screen.getByLabelText('Search').fill('R400');
 
     const table = screen.getByTestId('component-table');
     await expect.element(table.getByRole('columnheader', { name: 'Note' })).toBeVisible();
@@ -93,7 +93,7 @@ describe('ComponentsPage - the finder', () => {
 
   it('says a stored piece with nothing wrong is a spare, not broken', async () => {
     const screen = await open('/components?site=GS&semester=2025B&night=2025-12-15');
-    await screen.getByLabelText('Search components').fill('R831');
+    await screen.getByLabelText('Search').fill('R831');
 
     await expect.element(screen.getByText('Spare')).toBeVisible();
     await expect.element(screen.getByText('Unavailable')).not.toBeInTheDocument();
@@ -111,7 +111,7 @@ describe('ComponentsPage - the finder', () => {
 
   it('opens a row into the piece history, phrased in evening dates', async () => {
     const screen = await open('/components?site=GS&semester=2025B&night=2025-12-15');
-    await screen.getByLabelText('Search components').fill('R400');
+    await screen.getByLabelText('Search').fill('R400');
 
     // PrimeReact labels the toggler with the row's dataKey.
     await screen.getByRole('button', { name: /expand k-gs-R400_G5325/i }).click();
@@ -123,7 +123,7 @@ describe('ComponentsPage - the finder', () => {
 
   it('carries the whole site record, not the semester the masthead happens to show', async () => {
     const screen = await open('/components?site=GS&semester=2025B&night=2025-12-15');
-    await screen.getByLabelText('Search components').fill('R400');
+    await screen.getByLabelText('Search').fill('R400');
     await screen.getByRole('button', { name: /expand k-gs-R400_G5325/i }).click();
 
     // The R400 fails periodically across the site's whole record. Scoped to
@@ -136,7 +136,7 @@ describe('ComponentsPage - the finder', () => {
 
   it('heads the history with its columns, so a reader need not infer them from position', async () => {
     const screen = await open('/components?site=GS&semester=2025B&night=2025-12-15');
-    await screen.getByLabelText('Search components').fill('R400');
+    await screen.getByLabelText('Search').fill('R400');
     await screen.getByRole('button', { name: /expand k-gs-R400_G5325/i }).click();
 
     const history = screen.getByTestId('component-history');
@@ -147,7 +147,7 @@ describe('ComponentsPage - the finder', () => {
 
   it('says where "Installed" was, resolving the span against the same mountings the row uses', async () => {
     const screen = await open('/components?site=GS&semester=2025B&night=2025-12-15');
-    await screen.getByLabelText('Search components').fill('R400');
+    await screen.getByLabelText('Search').fill('R400');
     await screen.getByRole('button', { name: /expand k-gs-R400_G5325/i }).click();
 
     // The block only says INSTALLED; the port and the instrument's published
@@ -160,7 +160,7 @@ describe('ComponentsPage - the finder', () => {
 
   it('counts the nights a record covers, which is what "how long was it out" asks', async () => {
     const screen = await open('/components?site=GS&semester=2025B&night=2025-12-15');
-    await screen.getByLabelText('Search components').fill('R400');
+    await screen.getByLabelText('Search').fill('R400');
     await screen.getByRole('button', { name: /expand k-gs-R400_G5325/i }).click();
 
     // The 2025B failure runs 19 Nov 2025 - 31 Jan 2026, both evenings counted.
@@ -170,7 +170,7 @@ describe('ComponentsPage - the finder', () => {
 
   it('speaks the row status vocabulary in the history, never the bare enum', async () => {
     const screen = await open('/components?site=GS&semester=2025B&night=2025-12-15');
-    await screen.getByLabelText('Search components').fill('R400');
+    await screen.getByLabelText('Search').fill('R400');
     await screen.getByRole('button', { name: /expand k-gs-R400_G5325/i }).click();
 
     // The piece is in the lab under a failure note, so its record is
@@ -196,7 +196,7 @@ describe('ComponentsPage - the finder', () => {
     const screen = await open('/components?site=GS&semester=2025B&night=2025-10-15');
     await expect.element(screen.getByText('Mask GS2026B-011')).toBeVisible();
 
-    await selectDropdownOption(screen, 'Component type', 'Disperser');
+    await selectDropdownOption(screen, 'Type', 'Disperser');
 
     // Masks are FPUs and clear out; the gratings stay.
     await expect.element(screen.getByText('Mask GS2026B-011')).not.toBeInTheDocument();
