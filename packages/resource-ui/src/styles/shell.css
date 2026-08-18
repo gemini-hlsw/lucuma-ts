@@ -13,7 +13,7 @@
  *
  * The palette tokens themselves live in styles/global.css (Tailwind @theme);
  * this file only wires them into the shared variables. When this look is
- * extracted to a shared package (see TODO.md), this file goes away.
+ * extracted to a shared package, this file goes away.
  */
 
 /* Shared GPP green, matching admin-ui's --xp-green. Kept in sync with
@@ -86,7 +86,10 @@ body {
   padding-right: 0.3rem;
 }
 
-/* Stretched so the badge can hang flush from the top edge, as Explore's does. */
+/* Stretched so the badge can hang flush from the top edge, as Explore's does.
+   It is also the one part of the bar that gives way when the window is too
+   narrow for all of it - by clipping the badge, never by squeezing the
+   controls to its right (see the width budget below). */
 .xp-masthead-center {
   flex: 1;
   display: flex;
@@ -94,6 +97,8 @@ body {
   align-self: stretch;
   align-items: stretch;
   gap: 0.75rem;
+  min-width: 0;
+  overflow: hidden;
 }
 
 /* Environment badge, exactly Explore's DEVELOPMENT block: the brand light
@@ -113,12 +118,41 @@ body {
   white-space: nowrap;
 }
 
+/* ---- The masthead's width budget ----
+ *
+ * Measured in Chromium at the 13px root above, and the arithmetic is here so
+ * the next person adding an item to the bar can check it by adding rather than
+ * by bisecting widths in a browser:
+ *
+ *   133.7 wordmark + 137.2 badge + 503.1 right group + 31.2 gaps + 26 padding
+ *   = 831px, the width below which the bar stops fitting.
+ *
+ * Nothing wraps or overflows there - the flex algorithm squeezes the items
+ * instead, and their *contents* break: the clock's UTC segment dropped onto a
+ * second line 5.6px below the fixed-height bar, and "Guest User" broke in two.
+ * `flex: none` on the right group is what stops that at its source, by pinning
+ * the cluster at its natural width; the centre then yields by clipping the
+ * badge rather than by squeezing its neighbours.
+ *
+ * Hiding the three captions below 53rem (848px - a media query's rem is the
+ * initial 16px, not the 13px root above) saves 112.3px and takes the bar to
+ * ~719. The 17px of margin over the 831px cliff is deliberate: these are macOS
+ * metrics and a wider system font pushes the natural width up. That hide is
+ * `max-[53rem]:sr-only` on the captions themselves in Navbar.tsx, not a rule
+ * here - visually hidden rather than `display: none`, since a caption is its
+ * control's only accessible name.
+ *
+ * The floor is ~693px, where the menu button starts clipping - the shell is
+ * `overflow-x: hidden`, so there is no scrollbar to reach it with. Below about
+ * 640px the selection controls would have to move into the hamburger menu.
+ * That is a feature nobody has asked for, and deliberately not built here. */
 .xp-masthead-right {
   display: flex;
   align-items: center;
   gap: 0.9rem;
   color: var(--color-foreground);
   font-size: 0.85rem;
+  flex: none;
 }
 
 /* The masthead's selection controls, compacted to fit the 2.5rem bar. */
@@ -291,6 +325,24 @@ body {
   color: var(--color-foreground);
   font-weight: 600;
   box-shadow: inset 0 -2px 0 0 var(--xp-green);
+}
+
+/* The modal scrim. On this near-black canvas a darker black says nothing -
+   the page behind a dialog looked exactly as it did before it opened - so the
+   blur is what states that a modal is up. Global, not scoped to one dialog:
+   every modal in the app has the same canvas behind it.
+
+   The `body` is load-bearing, not decoration. Measured in the running app: the
+   plain `.p-dialog-mask.p-component-overlay` rule did not take effect - the
+   scrim stayed at the theme's own 40% and only the blur landed - and the
+   `body`-prefixed rule does. The mechanism was not established, so no claim
+   about it here; the extra element selector simply outranks the theme's
+   `.dark`/`.light .p-component-overlay` whatever the load order and whichever
+   theme wrapper is active. Setting `background-color`, not the `background`
+   shorthand: one property, one place to look. */
+body .p-dialog-mask.p-component-overlay {
+  background-color: rgb(0 0 0 / 60%);
+  backdrop-filter: blur(2px);
 }
 
 /* The About dialog (masthead hamburger -> About Resource): Explore's green

@@ -9,12 +9,11 @@ import { Link, useSearchParams } from 'react-router';
 import { useSelection } from '@/app/useSelection';
 import { useSemester } from '@/app/useSemester';
 import { AboutResource } from '@/components/layout/AboutResource';
+import { LabelledControl } from '@/components/ui/LabelledControl';
 import { SegmentedControl, type SegmentedOption } from '@/components/ui/SegmentedControl';
 import { FOCUS_RING } from '@/components/ui/styles';
 import type { TimeDisplay } from '@/domain/siteTime';
-import type { Site } from '@/domain/types';
-import { DATA_SOURCE_LABEL, type DataSource, readDataSource, switchDataSource } from '@/gql/dataSource';
-import { usePublishedSemesters } from '@/gql/hooks';
+import { type Site, SITES } from '@/domain/types';
 
 const BRAND_LABEL = 'Resource';
 
@@ -43,11 +42,6 @@ const CLOCK_OPTIONS: readonly SegmentedOption<TimeDisplay>[] = [
  * width - nothing here is conditional, so the shell below it never moves.
  *
  * ## The selection lives here, not on the pages
- *
- * The Data control picks the backend: the built-in demo (the mock schema
- * executed in the browser - a deployed build needs no server) or the live
- * endpoint, which does not serve the v1 API yet; switching persists and
- * reloads so the new source starts on a clean client (`gql/dataSource.ts`).
  *
  * Every page reads the same site, and two of them read the semester - so the
  * selection is chrome, not page content (Dan, 2026-08-10). Choosing a semester
@@ -87,12 +81,10 @@ export default function Navbar(): JSX.Element {
   }
 
   const { site, observingNight, timeDisplay, setSite, setSemesterSelection, setTimeDisplay } = useSelection();
-  const { semesters } = usePublishedSemesters();
   // The resolved semester, never the raw URL value: a stale link, a site
   // switch or Tonight walking past the data's edge must not blank the control
   // (domain/coverage.ts resolveSemester).
   const { semester, semestersForSite } = useSemester();
-  const sites = [...new Set(semesters.map((entry) => entry.site))];
 
   const chooseSemester = (value: string): void => {
     const chosen = semestersForSite.find((entry) => entry.semester === value);
@@ -115,63 +107,79 @@ export default function Navbar(): JSX.Element {
         <span
           className="xp-env-marker"
           data-testid="env-marker"
-          title="Development build. Data comes from the built-in demo (the mock v1 API, executed in the browser) or the live server - the Data control chooses. No authentication yet."
+          title="Development build. Data comes from the Resource service, which does not serve this API yet. No authentication yet."
         >
           {ENV_LABEL}
         </span>
       </div>
 
       <div className="xp-masthead-right">
-        <label className="flex items-center gap-1.5 text-[0.65rem] tracking-wide text-foreground-muted uppercase">
-          Data
-          <Dropdown
-            value={readDataSource()}
-            options={(Object.keys(DATA_SOURCE_LABEL) as DataSource[]).map((value) => ({
-              label: DATA_SOURCE_LABEL[value],
-              value,
-            }))}
-            onChange={(event) => {
-              // Persist-and-reload, so the new source gets a clean Apollo
-              // client and cache (dataSource.ts).
-              switchDataSource(event.value as DataSource);
-            }}
-            aria-label="Data source"
-            className="xp-masthead-select w-32"
-          />
-        </label>
-        <label className="flex items-center gap-1.5 text-[0.65rem] tracking-wide text-foreground-muted uppercase">
-          Site
-          <Dropdown
-            value={site}
-            options={sites.map((value) => ({ label: value, value }))}
-            onChange={(event) => {
-              setSite(event.value as Site);
-            }}
-            aria-label="Site"
-            className="xp-masthead-select w-20"
-          />
-        </label>
-        <label className="flex items-center gap-1.5 text-[0.65rem] tracking-wide text-foreground-muted uppercase">
-          Semester
-          <Dropdown
-            value={semester?.semester ?? null}
-            // The demo flag stays on the option: synthetic records must never
-            // pass for an operations record, should one ever ship again.
-            options={semestersForSite.map((entry) => ({
-              label: entry.demo ? `${entry.semester} (demo)` : entry.semester,
-              value: entry.semester,
-            }))}
-            onChange={(event) => {
-              chooseSemester(event.value as string);
-            }}
-            aria-label="Semester"
-            className="xp-masthead-select w-32"
-          />
-        </label>
+        <LabelledControl
+          label="Site"
+          className="flex items-center gap-1.5 text-[0.65rem] tracking-wide text-foreground-muted uppercase"
+          // Visually hidden once the bar runs out of room (see the width budget
+          // in shell.css). `sr-only` rather than `hidden`: the caption is the
+          // control's only accessible name, so it has to stay in the
+          // accessibility tree. An absolutely positioned child is not a flex
+          // item, so its `gap` goes with it.
+          labelClassName="max-[53rem]:sr-only"
+        >
+          {(id) => (
+            <Dropdown
+              inputId={id}
+              // The caption is hidden below the breakpoint, so the control has
+              // to say its own name to a sighted reader; a screen reader still
+              // reads the label.
+              title="Site"
+              // Named so the browser stops warning about a form field with
+              // neither id nor name: PrimeReact puts this on the hidden
+              // <select> mirror it renders for form submission.
+              name="site"
+              value={site}
+              // The observatory's own two, not whatever the data holds: the
+              // control must still work when the server answers with nothing.
+              options={SITES.map((value) => ({ label: value, value }))}
+              onChange={(event) => {
+                setSite(event.value as Site);
+              }}
+              className="xp-masthead-select w-20"
+            />
+          )}
+        </LabelledControl>
+        <LabelledControl
+          label="Semester"
+          className="flex items-center gap-1.5 text-[0.65rem] tracking-wide text-foreground-muted uppercase"
+          labelClassName="max-[53rem]:sr-only"
+        >
+          {(id) => (
+            <Dropdown
+              inputId={id}
+              title="Semester"
+              name="semester"
+              value={semester?.semester ?? null}
+              // Says why it is empty, rather than looking broken, on a server
+              // that does not serve the schedule yet.
+              placeholder="None"
+              // The demo flag stays on the option: synthetic records must never
+              // pass for an operations record, should one ever ship again.
+              options={semestersForSite.map((entry) => ({
+                label: entry.demo ? `${entry.semester} (demo)` : entry.semester,
+                value: entry.semester,
+              }))}
+              onChange={(event) => {
+                chooseSemester(event.value as string);
+              }}
+              className="xp-masthead-select w-32"
+            />
+          )}
+        </LabelledControl>
         {/* A span, not a label: SelectButton is a button group, and the group
             already announces itself through its own aria-label. */}
         <span className="flex items-center gap-1.5 text-[0.65rem] tracking-wide text-foreground-muted uppercase">
-          Clock
+          {/* Only the word is hidden below the breakpoint - the outer span
+              carries the group's layout, so the control has to stay outside
+              the hidden element. */}
+          <span className="max-[53rem]:sr-only">Clock</span>
           <SegmentedControl
             size="sm"
             value={timeDisplay}
