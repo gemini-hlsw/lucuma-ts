@@ -9,7 +9,16 @@ import { render } from 'vitest-browser-react';
 
 import { createMockApollo, type MockApollo } from './mockClient';
 
-export type RenderedApp = Awaited<ReturnType<typeof render>> & { mock: MockApollo };
+/**
+ * The rendered app, plus the two things a test drives it through: the mock
+ * store behind Apollo, and the router itself - which is how a test steps back
+ * through history, since a memory router keeps its own and `window.history`
+ * would navigate the test page away.
+ */
+export type RenderedApp = Awaited<ReturnType<typeof render>> & {
+  mock: MockApollo;
+  router: ReturnType<typeof createMemoryRouter>;
+};
 
 interface RenderOptions {
   /** Route element to mount at the initial path. */
@@ -54,5 +63,5 @@ export async function renderApp({
       <RouterProvider router={router} />
     </ApolloProvider>,
   );
-  return Object.assign(result, { mock });
+  return Object.assign(result, { mock, router });
 }

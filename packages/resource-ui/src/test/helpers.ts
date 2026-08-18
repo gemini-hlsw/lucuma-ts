@@ -1,11 +1,13 @@
 /**
  * Shared browser-test helpers - navigate-ui's dropdown driver, adapted to
- * dropdowns named by aria-label.
+ * dropdowns named by their `<label>`.
  *
- * PrimeReact's aria-label sits on a hidden input; the clickable surface is its
- * .p-dropdown wrapper, and the options panel renders into document.body -
- * outside any render container - so options are reached through `page`, scoped
- * through the listbox so the hidden native <select> mirror never matches.
+ * The name lands on a hidden input (`LabelledControl` points `htmlFor` at the
+ * Dropdown's `inputId`, which PrimeReact puts on its keyboard helper); the
+ * clickable surface is the .p-dropdown wrapper around it, and the options panel
+ * renders into document.body - outside any render container - so options are
+ * reached through `page`, scoped through the listbox so the hidden native
+ * <select> mirror never matches.
  */
 import { expect } from 'vitest';
 import { type LocatorSelectors, page, userEvent } from 'vitest/browser';

@@ -21,7 +21,7 @@ describe('mock pipeline', () => {
     const result = await client.query({ query: PUBLISHED_SEMESTERS_QUERY });
 
     // The nine semesters the operations workbook holds - GS 2024B through
-    // 2026A, GN 2024B through 2026B (mock-server/import/workbook.ts).
+    // 2026A, GN 2024B through 2026B (mock-server/data/).
     expect(result.data?.publishedSemesters).toHaveLength(9);
     expect(result.data?.publishedSemesters.map((entry) => `${entry.site} ${entry.semester}`)).toContain('GS 2025B');
   });

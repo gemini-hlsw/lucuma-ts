@@ -221,21 +221,6 @@
   --schedule-today: var(--color-gpp);
 }
 
-/*
- * Plot bands and plot lines are annotations drawn over the data - the sun wash,
- * the closure band, the "now" line. They must never catch the pointer: xrange
- * hover resolves to the element under the cursor, so a band on top of a bar
- * otherwise swallows the hover and the tooltip never appears. This is the same
- * rule the chart's data labels already follow (pointerEvents: 'none' in
- * timelineOptions.ts), applied to every overlay in every chart at once.
- */
-.highcharts-plot-band,
-.highcharts-plot-line,
-.highcharts-plot-band-label,
-.highcharts-plot-line-label {
-  pointer-events: none;
-}
-
 /* Highcharts paints the point rect itself, so the hollow block is a stroke
    override on the rendered SVG rather than something the options can express. */
 .highcharts-point.schedule-ghost {
