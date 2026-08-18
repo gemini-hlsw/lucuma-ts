@@ -3,8 +3,6 @@ import { cn } from '@gemini-hlsw/lucuma-common-ui';
 import type { JSX } from 'react';
 import { NavLink, useLocation } from 'react-router';
 
-import { readDataSource } from '@/gql/dataSource';
-
 import type { SidebarMenuItem } from './SidebarMenu';
 import { SIDEBAR_MENU_SECTIONS } from './SidebarMenu';
 
@@ -95,29 +93,16 @@ export default function Sidebar(): JSX.Element {
         ))}
       </nav>
       {/* Where every record comes from, stated so no page can be read without
-          knowing it. The demo is populated from the operations workbook; on
-          the live source the server decides, so claiming the workbook there
-          would be a lie - and this note is also what makes a source switch
-          visible when both sources happen to serve the same data. */}
-      {readDataSource() === 'DEMO' ? (
-        <p
-          className="px-4 pt-6 pb-2 text-[11px] leading-4 text-foreground-muted max-md:hidden"
-          data-testid="data-source-note"
-        >
-          Demo data, built in - populated from the operations workbook
-          <br />
-          <span className="font-mono">telescope_schedules.xlsx</span>
-        </p>
-      ) : (
-        <p
-          className="px-4 pt-6 pb-2 text-[11px] leading-4 text-foreground-muted max-md:hidden"
-          data-testid="data-source-note"
-        >
-          Reading the live server at
-          <br />
-          <span className="font-mono">/resource/graphql</span>
-        </p>
-      )}
+          knowing it. The server decides what it serves, so this names the
+          endpoint rather than claiming a provenance the app cannot see. */}
+      <p
+        className="px-4 pt-6 pb-2 text-[11px] leading-4 text-foreground-muted max-md:hidden"
+        data-testid="data-source-note"
+      >
+        Reading the live server at
+        <br />
+        <span className="font-mono">/resource/graphql</span>
+      </p>
     </aside>
   );
 }

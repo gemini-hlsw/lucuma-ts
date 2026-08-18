@@ -1,7 +1,7 @@
 import type { JSX } from 'react';
 import { Outlet } from 'react-router';
 
-import { DataSourceBanner } from './DataSourceBanner';
+import { LiveFailureBanner } from './LiveFailureBanner';
 import Navbar from './Navbar';
 import Sidebar from './Sidebar';
 
@@ -26,7 +26,7 @@ export default function Layout(): JSX.Element {
           heights to both and the body geometry below never needs to change. */}
       <div className="print:hidden">
         <Navbar />
-        <DataSourceBanner />
+        <LiveFailureBanner />
       </div>
       <div className="row-start-2 grid min-h-0 grid-cols-[14rem_1fr] overflow-hidden max-md:grid-cols-1 max-md:grid-rows-[auto_1fr] print:row-start-auto print:block print:overflow-visible">
         <div className="contents print:hidden">

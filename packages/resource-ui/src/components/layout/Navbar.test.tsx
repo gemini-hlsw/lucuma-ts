@@ -1,20 +1,12 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { page } from 'vitest/browser';
 
 import NightPage from '@/app/pages/NightPage';
-import type * as dataSourceModule from '@/gql/dataSource';
-import { switchDataSource } from '@/gql/dataSource';
 import { selectDropdownOption } from '@/test/helpers';
 import { renderApp } from '@/test/renderApp';
 
 import Layout from './Layout';
 import Navbar from './Navbar';
-
-// The real switch persists and reloads the page; a test asserts the intent.
-vi.mock('@/gql/dataSource', async (importOriginal) => {
-  const actual = await importOriginal<typeof dataSourceModule>();
-  return { ...actual, switchDataSource: vi.fn() };
-});
 
 // The navbar carries the global selection, so it reads the mock API (the
 // published semesters) - renderApp provides the Apollo client and the router.
@@ -71,18 +63,14 @@ describe(Navbar.name, () => {
     expect(wrapper?.querySelector('.p-dropdown-label')?.textContent).toBe('2026A');
   });
 
-  it('offers the data source, defaulting to the demo that always works', async () => {
+  it('offers no way to choose a backend - there is one, and it is not a setting', async () => {
+    // The masthead carried a Demo | Live control until 2026-08-14. The demo
+    // put server-side code in the bundle and went with it; a control over one
+    // backend would be chrome pretending to be a choice.
     const screen = await renderNavbar();
 
-    const wrapper = screen.getByLabelText('Data source', { exact: true }).element().closest('.p-dropdown');
-    // The visible label, not the hidden native <option> mirror.
-    expect(wrapper?.querySelector('.p-dropdown-label')?.textContent).toBe('Demo data');
-
-    await selectDropdownOption(screen, 'Data source', 'Live server');
-
-    // Persist-and-reload is the switch's contract; the control's job ends at
-    // asking for it.
-    expect(switchDataSource).toHaveBeenCalledWith('LIVE');
+    await expect.element(screen.getByLabelText('Site', { exact: true })).toBeInTheDocument();
+    await expect.element(screen.getByLabelText('Data', { exact: true })).not.toBeInTheDocument();
   });
 
   it('moves the night into a chosen semester the current night is outside', async () => {
@@ -155,11 +143,10 @@ describe(Navbar.name, () => {
 
     const dialog = page.getByTestId('about-resource');
     await expect.element(dialog).toBeVisible();
-    // The build version in Explore's DATE-COMMIT-ENV form, and the data rows
-    // that say what this running Resource is actually reading.
+    // The build version in Explore's DATE-COMMIT-ENV form, and the endpoint
+    // this running Resource is actually reading.
     await expect.element(dialog.getByText(/Version: .+-DEV/)).toBeVisible();
-    await expect.element(dialog.getByText('Demo data', { exact: false })).toBeVisible();
-    await expect.element(dialog.getByText('telescope_schedules.xlsx')).toBeVisible();
+    await expect.element(dialog.getByText('/resource/graphql', { exact: false })).toBeVisible();
   });
 
   it('keeps the login in the menu, disabled until SSO arrives', async () => {

@@ -6,7 +6,7 @@
  * What it says is about the *running* Resource, locally and hosted alike: the
  * version is baked in at build time (vite.config.ts - git locally, the GitHub
  * ref in CI) and suffixed with the environment the page is actually served
- * from, and the data rows read the live state of the data-source switch.
+ * from, and the endpoint row names the service this serving talks to.
  */
 import { faCheck, faCopy } from '@fortawesome/pro-regular-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -14,7 +14,6 @@ import { Dialog } from 'primereact/dialog';
 import { type JSX, useState } from 'react';
 
 import { liveGraphqlEndpoint } from '@/gql/ApolloConfigs';
-import { DATA_SOURCE_LABEL, readDataSource } from '@/gql/dataSource';
 
 /**
  * Hostname -> the version-string suffix, matching Explore's scheme. The same
@@ -31,7 +30,6 @@ const displayVersion = (): string =>
 
 export function AboutResource({ visible, onHide }: { visible: boolean; onHide: () => void }): JSX.Element {
   const [copied, setCopied] = useState(false);
-  const source = readDataSource();
   const version = displayVersion();
 
   const copyVersion = async (): Promise<void> => {
@@ -58,15 +56,8 @@ export function AboutResource({ visible, onHide }: { visible: boolean; onHide: (
       data-testid="about-resource"
     >
       <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 pt-3 text-sm">
-        <dt className="text-foreground-muted">Data</dt>
-        <dd className="text-foreground-secondary">
-          {DATA_SOURCE_LABEL[source]}
-          {source === 'DEMO' ? ' - the mock API, executed in the browser' : ''}
-        </dd>
-        <dt className="text-foreground-muted">{source === 'DEMO' ? 'Populated from' : 'Endpoint'}</dt>
-        <dd className="font-mono text-[0.8rem] text-foreground-secondary">
-          {source === 'DEMO' ? 'telescope_schedules.xlsx' : liveGraphqlEndpoint}
-        </dd>
+        <dt className="text-foreground-muted">Endpoint</dt>
+        <dd className="font-mono text-[0.8rem] text-foreground-secondary">{liveGraphqlEndpoint}</dd>
       </dl>
       <div className="mt-4 flex items-center justify-end gap-2">
         <span className="font-mono text-[0.85rem] text-foreground-muted">Version: {version}</span>

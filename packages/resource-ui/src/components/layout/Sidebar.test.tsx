@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { renderApp } from '@/test/renderApp';
 
@@ -59,26 +59,11 @@ describe(Sidebar.name, () => {
 });
 
 describe('the data-source note', () => {
-  afterEach(() => {
-    window.localStorage.removeItem('resource-ui.data-source');
-  });
-
-  it('names the workbook on the demo source, so no page reads without its provenance', async () => {
+  it('names the live endpoint, so no page reads without knowing where it came from', async () => {
     const screen = await renderApp({ element: <Sidebar />, route: '/night' });
 
     const note = screen.getByTestId('data-source-note');
     await expect.element(note).toBeVisible();
-    await expect.element(note.getByText('telescope_schedules.xlsx')).toBeVisible();
-  });
-
-  it('names the live endpoint on the live source - the server decides what it serves', async () => {
-    // Also what makes a source switch visible at all when the local mock
-    // server happens to serve the very same data as the built-in demo.
-    window.localStorage.setItem('resource-ui.data-source', 'LIVE');
-    const screen = await renderApp({ element: <Sidebar />, route: '/night' });
-
-    const note = screen.getByTestId('data-source-note');
     await expect.element(note.getByText('/resource/graphql')).toBeVisible();
-    await expect.element(note.getByText('telescope_schedules.xlsx')).not.toBeInTheDocument();
   });
 });
