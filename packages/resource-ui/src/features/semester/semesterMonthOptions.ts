@@ -23,9 +23,7 @@ import {
   MARKER_LINE_Z,
 } from '@/features/timeline/timelineOptions';
 
-const ROW_HEIGHT = 26;
-const BOTTOM_MARGIN = 26;
-const LABEL_GUTTER = 92;
+import { BOTTOM_MARGIN, LABEL_GUTTER, ROW_HEIGHT, widthForEveryNight, widthForEveryOtherNight } from './monthGeometry';
 
 /**
  * Day-number positions, every `step` nights.
@@ -40,17 +38,6 @@ const LABEL_GUTTER = 92;
  */
 export const dayTickPositions = (month: TimelineMonth, step: number): number[] =>
   month.nights.filter((_, index) => index % step === 0).map((night) => midpoint(night.interval));
-
-/**
- * Room a two-digit day number needs, and the widths a month therefore needs to
- * number every night or every other one. Derived from the night count rather
- * than fixed, because a 28-night February fits numbers a 31-night August cannot.
- */
-const PX_PER_LABEL = 15;
-const PX_PER_LABEL_TIGHT = 8;
-
-export const widthForEveryNight = (nightCount: number): number => nightCount * PX_PER_LABEL;
-export const widthForEveryOtherNight = (nightCount: number): number => nightCount * PX_PER_LABEL_TIGHT;
 
 /** Weekend nights, shaded, plus the wash under a telescope-wide closure. */
 export const buildMonthBands = (month: TimelineMonth): XAxisPlotBandsOptions[] => [

@@ -357,10 +357,26 @@ export interface TimelinePoint extends XrangePointOptionsObject {
 
 /** Rough advance of the label font (0.68rem, semibold), for the fit test. */
 const LABEL_CHAR_WIDTH = 6.2;
-const LABEL_PADDING = 4;
+
+/** Breathing room a data label keeps at each end of the shape it sits in. */
+export const LABEL_PADDING = 4;
 
 /** The same advance normalised per rem, for labels set at other sizes. */
 const LABEL_CHAR_WIDTH_PER_REM = LABEL_CHAR_WIDTH / 0.68;
+
+/**
+ * The label, or `''` when it will not fit the space it has.
+ *
+ * A label wider than its shape is dropped rather than truncated: the grid this
+ * replaced printed "I…" and "Eng…", which tell a reader nothing the tooltip
+ * would not tell them better. Highcharts has no fit test of its own for xrange
+ * or heatmap data labels, so every view measures - and this is the one place
+ * the measurement lives, so the xrange and the grid cannot answer the same
+ * label differently. Callers subtract `LABEL_PADDING * 2` from the rendered
+ * width to get `availablePx`.
+ */
+export const labelIfItFits = (label: string, availablePx: number): string =>
+  label.length * LABEL_CHAR_WIDTH <= availablePx ? label : '';
 
 /**
  * The pieces a wrapped band label breaks into. Highcharts wraps a plot-band
@@ -419,11 +435,27 @@ export const fitBandLabels = (chart: BandFitChart): void => {
   }
 };
 
-/** What the data-label formatter needs off the rendered point. */
-interface PointContext {
-  readonly custom?: TimelinePointCustom;
+/**
+ * What a formatter needs off the rendered point: the per-point payload every
+ * view carries through Highcharts, and - for the data-label formatters - the
+ * rendered width to measure a label against.
+ */
+interface FormatterPoint<C> {
+  readonly custom?: C;
   readonly shapeArgs?: { readonly width?: number };
 }
+
+/**
+ * The point a Highcharts formatter is called for.
+ *
+ * Highcharts does not type `point.custom`, and a formatter's `this` is untyped
+ * besides, so reaching either needs a cast. This is the one place that cast
+ * happens - four formatters wrote it out with four hand-written inline types,
+ * free to describe the payload differently from the type the points were
+ * actually built with.
+ */
+export const formatterPoint = <C>(context: unknown): FormatterPoint<C> | undefined =>
+  (context as { point?: FormatterPoint<C> }).point;
 
 /** How a view phrases a block's extent. Nights read differently from months. */
 export interface BlockDescriber {
@@ -505,7 +537,9 @@ export interface TimelineChartModel {
   readonly timeDisplay?: TimeDisplay;
 }
 
-const TOP_MARGIN = 8;
+/** Room above the plot area. Shared with the semester grid, which draws the
+ *  same page's months at the same height. */
+export const TOP_MARGIN = 8;
 
 /** How much of a row's height its bar leaves free. */
 const BAR_INSET = 8;
@@ -678,18 +712,16 @@ export const buildTimelineChart = ({
           enabled: true,
           overflow: 'allow',
           crop: false,
-          // A label wider than its block is dropped rather than truncated: the
-          // grid this replaced printed "I…" and "Eng…", which tell a reader
-          // nothing the tooltip would not tell them better. Highcharts has no fit
-          // test of its own for xrange, so measure against the rendered width.
+          // A label wider than its block is dropped rather than truncated
+          // (`labelIfItFits`); Highcharts has no fit test of its own for
+          // xrange, so measure against the rendered width.
           formatter() {
-            const point = (this as unknown as { point?: PointContext }).point;
+            const point = formatterPoint<TimelinePointCustom>(this);
             const custom = point?.custom;
             if (custom === undefined) {
               return '';
             }
-            const available = (point?.shapeArgs?.width ?? 0) - LABEL_PADDING * 2;
-            return custom.label.length * LABEL_CHAR_WIDTH <= available ? custom.label : '';
+            return labelIfItFits(custom.label, (point?.shapeArgs?.width ?? 0) - LABEL_PADDING * 2);
           },
           style: {
             color: 'var(--timeline-text)',

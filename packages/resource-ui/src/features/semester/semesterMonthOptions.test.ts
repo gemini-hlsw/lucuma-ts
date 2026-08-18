@@ -12,12 +12,8 @@ import { observingNightInterval } from '@/domain/siteTime';
 import type { Closure, Mounting, Site } from '@/domain/types';
 import { buildTimelinePoints, eveningDescriber } from '@/features/timeline/timelineOptions';
 
-import {
-  buildMonthBands,
-  buildSemesterMonthOptions,
-  dayTickPositions,
-  widthForEveryNight,
-} from './semesterMonthOptions';
+import { widthForEveryNight } from './monthGeometry';
+import { buildMonthBands, buildSemesterMonthOptions, dayTickPositions } from './semesterMonthOptions';
 
 /** The month's points, built the way buildSemesterMonthOptions builds them. */
 const buildMonthPoints = (month: TimelineMonth, site: Site) => buildTimelinePoints(month.rows, eveningDescriber(site));
@@ -34,7 +30,7 @@ const GHOST: Mounting = {
   publishedName: 'GHOST',
   usage: 'SCIENCE',
   port: 1,
-  locationType: 'PORT',
+  place: null,
   note: null,
   interval: span('2026-08-08', '2027-02-01'),
 };

@@ -36,27 +36,24 @@ import type { Site } from '@/domain/types';
 import {
   engineeringPattern,
   fitBandLabels,
+  formatterPoint,
   groupedRowLayout,
   HEADING_MASK_Z,
   headingLabelHtml,
   INSTRUMENT_INK_DARK,
   instrumentColor,
   instrumentInk,
+  LABEL_PADDING,
+  labelIfItFits,
   LABELLED_BAND_Z,
   stateFill,
   stateFillInk,
+  TOP_MARGIN,
   UNSCHEDULED_LABEL,
   USAGE_LABEL,
 } from '@/features/timeline/timelineOptions';
 
-const ROW_HEIGHT = 26;
-const BOTTOM_MARGIN = 26;
-const LABEL_GUTTER = 92;
-const TOP_MARGIN = 8;
-
-/** Rough advance of the label font (0.68rem, semibold), for the fit test. */
-const LABEL_CHAR_WIDTH = 6.2;
-const LABEL_PADDING = 4;
+import { BOTTOM_MARGIN, LABEL_GUTTER, ROW_HEIGHT, widthForEveryNight, widthForEveryOtherNight } from './monthGeometry';
 
 /**
  * The fill for a cell.
@@ -158,12 +155,6 @@ export interface HeatmapPointCustom {
 
 export interface HeatmapPoint extends PointOptionsObject {
   readonly custom: HeatmapPointCustom;
-}
-
-/** What the data-label formatter needs off the rendered point. */
-interface PointContext {
-  readonly custom?: HeatmapPointCustom;
-  readonly shapeArgs?: { readonly width?: number };
 }
 
 const toPoint = (cell: SemesterCell, x: number, y: number, rowLabel: string): HeatmapPoint => {
@@ -282,12 +273,6 @@ export interface SemesterHeatmapModel {
  */
 export const dayTickPositions = (nightCount: number, step: number): number[] =>
   Array.from({ length: nightCount }, (_, index) => index).filter((index) => index % step === 0);
-
-const PX_PER_LABEL = 15;
-const PX_PER_LABEL_TIGHT = 8;
-
-export const widthForEveryNight = (nightCount: number): number => nightCount * PX_PER_LABEL;
-export const widthForEveryOtherNight = (nightCount: number): number => nightCount * PX_PER_LABEL_TIGHT;
 
 /** Builds the Highcharts options for one month block of the semester heatmap. */
 export const buildSemesterHeatmapOptions = ({
@@ -434,13 +419,12 @@ export const buildSemesterHeatmapOptions = ({
           // that still will not fit is dropped rather than truncated - "Eng…"
           // tells a reader nothing the tooltip would not tell them better.
           formatter() {
-            const point = (this as unknown as { point?: PointContext }).point;
+            const point = formatterPoint<HeatmapPointCustom>(this);
             const custom = point?.custom;
             if (custom === undefined || custom.labelSpan === 0 || custom.label === '') {
               return '';
             }
-            const available = (point?.shapeArgs?.width ?? 0) * custom.labelSpan - LABEL_PADDING * 2;
-            return custom.label.length * LABEL_CHAR_WIDTH <= available ? custom.label : '';
+            return labelIfItFits(custom.label, (point?.shapeArgs?.width ?? 0) * custom.labelSpan - LABEL_PADDING * 2);
           },
           style: {
             color: 'var(--timeline-text)',

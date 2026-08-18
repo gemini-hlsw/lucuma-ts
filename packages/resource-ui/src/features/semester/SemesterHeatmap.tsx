@@ -24,6 +24,7 @@ import { buildSemesterCells, type CellKind, type SemesterCellRow } from '@/domai
 import type { SemesterTimeline as Timeline, TimelineMonth } from '@/domain/semesterTimeline';
 import type { Site } from '@/domain/types';
 import { type LegendExtra, TimelineLegendBar } from '@/features/timeline/TimelineChart';
+import { formatterPoint } from '@/features/timeline/timelineOptions';
 
 import { buildSemesterHeatmapOptions, type HeatmapPointCustom } from './semesterHeatmapOptions';
 
@@ -141,7 +142,7 @@ function MonthGrid({ month, site }: { month: TimelineMonth; site: Site }): JSX.E
       tooltip: {
         ...base.tooltip,
         formatter() {
-          const custom = (this as unknown as { point?: { custom?: HeatmapPointCustom } }).point?.custom;
+          const custom = formatterPoint<HeatmapPointCustom>(this)?.custom;
           return custom === undefined ? '' : cellTooltip(custom);
         },
       },

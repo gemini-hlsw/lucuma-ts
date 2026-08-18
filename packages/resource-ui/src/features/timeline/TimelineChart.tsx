@@ -20,6 +20,7 @@ import type { TimelineLegend } from '@/domain/timeline';
 
 import {
   CLOSURE_LABEL,
+  formatterPoint,
   INSTRUMENT_LABEL,
   instrumentColor,
   type LegendExtra,
@@ -102,7 +103,7 @@ export function TimelineChart({
     tooltip: {
       ...options.tooltip,
       formatter() {
-        const custom = (this as unknown as { point?: { custom?: TimelinePointCustom } }).point?.custom;
+        const custom = formatterPoint<TimelinePointCustom>(this)?.custom;
         return custom === undefined ? '' : tooltipHtml(custom, continuesLabel);
       },
     },
