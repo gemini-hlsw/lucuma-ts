@@ -54,8 +54,9 @@
       "matchPackageNames": ["@fortawesome/**"]
     },
     {
-      "description": "Schedule schema updates to run daily",
+      "description": "Schedule latest schema updates to run daily",
       "matchPackageNames": ["@gemini-hlsw/lucuma-odb-schemas", "@gemini-hlsw/lucuma-apps-schemas"],
+      "followTag": "latest",
       "schedule": ["* 0-4 * * *"],
       "minimumReleaseAge": "0 days"
     }
