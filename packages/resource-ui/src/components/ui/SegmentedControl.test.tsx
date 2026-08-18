@@ -11,7 +11,7 @@ const OPTIONS = [
   { label: 'Semester', value: 'semester' },
 ] as const;
 
-describe('SegmentedControl', () => {
+describe(SegmentedControl.name, () => {
   it('marks exactly one option selected and reports the group role', async () => {
     const screen = await render(
       <SegmentedControl ariaLabel="View" value="week" options={OPTIONS} onChange={vi.fn()} />,
