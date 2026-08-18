@@ -38,8 +38,7 @@
  * its instrument is", resolved by joining the instrument's own records, so the
  * two cannot disagree by construction.
  */
-import type { ImportedBlock, ImportedSchedule, ImportSite } from './import/blocks.ts';
-import type { Instrument } from './import/instruments.ts';
+import type { ImportedBlock, ImportedSchedule, ImportSite, Instrument } from './records.ts';
 
 export type ComponentType = 'FILTER' | 'DISPERSER' | 'FPU' | 'WFS' | 'OTHER';
 export type ComponentLocation = 'INSTALLED' | 'FLOOR' | 'LAB' | 'BASE' | 'UNKNOWN';

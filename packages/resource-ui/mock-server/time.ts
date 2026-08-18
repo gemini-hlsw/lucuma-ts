@@ -45,7 +45,8 @@ const localHourToUtc = (isoDate: string, hour: number, timeZone: string): number
   return guess - offset * 60_000;
 };
 
-const addDaysIso = (isoDate: string, days: number): string => {
+/** `isoDate` moved by whole days, staying on the calendar. */
+export const addDaysIso = (isoDate: string, days: number): string => {
   const date = new Date(`${isoDate}T00:00:00Z`);
   date.setUTCDate(date.getUTCDate() + days);
   return date.toISOString().slice(0, 10);

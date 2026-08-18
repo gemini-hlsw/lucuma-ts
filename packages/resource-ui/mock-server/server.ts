@@ -4,22 +4,17 @@
  * Serves the v1 schema preview backed by the in-memory store. Mutations persist for
  * the life of the process (no database). Run with `pnpm dev:mock-server`.
  */
-import { readFileSync } from 'node:fs';
 import { createServer } from 'node:http';
-import { fileURLToPath } from 'node:url';
 
-import { createSchema, createYoga } from 'graphql-yoga';
+import { createYoga } from 'graphql-yoga';
 
-import { buildResolvers } from './resolvers.ts';
-import { MockStore } from './store.ts';
+import { buildMockSchema } from './schema.ts';
+import { mockSdl } from './sdl.ts';
 
 const PORT = 4000;
 const GRAPHQL_ENDPOINT = '/graphql';
 
-const typeDefs = readFileSync(fileURLToPath(new URL('./schema.graphql', import.meta.url)), 'utf8');
-
-const store = new MockStore();
-const schema = createSchema({ typeDefs, resolvers: buildResolvers(store) });
+const { schema } = buildMockSchema(mockSdl());
 
 const yoga = createYoga({ schema, graphqlEndpoint: GRAPHQL_ENDPOINT });
 
