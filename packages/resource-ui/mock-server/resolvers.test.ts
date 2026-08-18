@@ -21,6 +21,30 @@ const run = async (source: string, variableValues?: Record<string, unknown>): Pr
   return result.data ?? {};
 };
 
+/** `run`'s counterpart for the designed errors: the message, not the data. */
+const runExpectingError = async (source: string, variableValues?: Record<string, unknown>): Promise<string> => {
+  const result = await graphql({ schema, source, variableValues });
+  const [error] = result.errors ?? [];
+  expect(error).toBeDefined();
+  return error?.message ?? '';
+};
+
+/**
+ * An `InstrumentLocation` as these queries select it.
+ *
+ * Written out rather than taken from `src/gql/gen`, because these tests execute
+ * raw documents against the schema instead of the app's typed operations - the
+ * point being to catch a selection the generated types would never have let us
+ * write.
+ */
+interface BlockLocation {
+  readonly place: string;
+  readonly port: number | null;
+}
+
+/** The selection every location assertion below shares. */
+const LOCATION = 'location { place port }';
+
 describe('TimestampInterval - the type the ODB schema shares', () => {
   const INTERVAL = `
     query ($site: Site!, $night: Date!) {
@@ -68,7 +92,7 @@ describe('TimestampInterval - the type the ODB schema shares', () => {
 
 describe('publishedSemesters', () => {
   it('offers every semester the workbook holds, for the site + semester picker', async () => {
-    const data = await run('{ publishedSemesters { site semester title version firstNight lastNight } }');
+    const data = await run('{ publishedSemesters { site semester title version nights { start end } } }');
     const sets = data.publishedSemesters as { site: string; semester: string }[];
 
     // The operations workbook: GS runs 2024B through 2026A, GN through 2026B
@@ -88,17 +112,105 @@ describe('publishedSemesters', () => {
   });
 
   it('describes a semester by what it holds, not by the calendar', async () => {
-    const data = await run('{ publishedSemesters { site semester firstNight lastNight } }');
+    const data = await run('{ publishedSemesters { site semester nights { start end } } }');
     const sets = data.publishedSemesters as {
       site: string;
       semester: string;
-      firstNight: string;
-      lastNight: string;
+      nights: { start: string; end: string };
     }[];
     const gs2025B = sets.find((set) => set.site === 'GS' && set.semester === '2025B');
 
-    expect(gs2025B?.firstNight).toBe('2025-08-02');
-    expect(gs2025B?.lastNight).toBe('2026-02-01');
+    expect(gs2025B?.nights.start).toBe('2025-08-02');
+    // Exclusive: the semester's last night is 2026-02-01, so the range ends the day after.
+    expect(gs2025B?.nights.end).toBe('2026-02-02');
+  });
+
+  it('answers a real DateInterval for every schedule, never a null-sided one', async () => {
+    // `nights` is a `DateInterval!` of two non-null `Date`s, and the resolver
+    // used to build it from whatever the schedule's records happened to hold -
+    // so a schedule with no records served nulls into non-null fields. The
+    // store now derives it once and refuses such a schedule at construction.
+    const data = await run('{ publishedSemesters { site semester nights { start end } } }');
+    const sets = data.publishedSemesters as { nights: { start: string; end: string } }[];
+
+    const isoDate = /^\d{4}-\d{2}-\d{2}$/;
+    for (const set of sets) {
+      expect(set.nights.start).toMatch(isoDate);
+      expect(set.nights.end).toMatch(isoDate);
+      expect(set.nights.start < set.nights.end).toBe(true);
+    }
+  });
+});
+
+/**
+ * The second designed error. A malformed interval - reversed, or with a bound
+ * that does not parse - used to answer `[]` from all seven range resolvers,
+ * which is precisely what a well-formed query over an unrecorded span answers -
+ * so a caller's mistake read as "nothing is recorded here", the one distinction
+ * this API exists to keep (I4).
+ */
+describe('a malformed interval is refused, not answered with an empty list', () => {
+  it('names the offending argument on telescopeNights, whose range is dates', async () => {
+    const message = await runExpectingError(
+      '{ telescopeNights(site: GS, nights: { start: "2025-09-10", end: "2025-09-01" }) { observingNight } }',
+    );
+
+    expect(message).toContain('nights is reversed');
+    expect(message).toContain('2025-09-10');
+    expect(message).toContain('2025-09-01');
+  });
+
+  it('refuses one on instrumentAvailability, whose range is instants', async () => {
+    const message = await runExpectingError(
+      `{ instrumentAvailability(
+           site: GS
+           interval: { start: "2025-09-10T00:00:00Z", end: "2025-09-01T00:00:00Z" }
+         ) { instrument } }`,
+    );
+
+    expect(message).toContain('interval is reversed');
+  });
+
+  // The other five interval queries, which answer the same way for the same
+  // reason - a table rather than five near-identical tests.
+  const REVERSED = 'interval: { start: "2025-09-10T00:00:00Z", end: "2025-09-01T00:00:00Z" }';
+  const OTHERS: readonly { query: string; selection: string }[] = [
+    { query: 'instrumentComponentAvailability', selection: 'usage' },
+    { query: 'telescopeAvailability', selection: 'availability' },
+    { query: 'tooSupport', selection: 'tooSupport' },
+    { query: 'telescopeMode', selection: 'mode' },
+    { query: 'telescopeSubsystemAvailability', selection: 'subsystem' },
+  ];
+
+  for (const { query, selection } of OTHERS) {
+    it(`refuses one on ${query}`, async () => {
+      const message = await runExpectingError(`{ ${query}(site: GS, ${REVERSED}) { ${selection} } }`);
+
+      expect(message).toContain('interval is reversed');
+    });
+  }
+
+  it('states it in an error graphql-yoga will not mask', async () => {
+    const result = await graphql({
+      schema,
+      source: `{ tooSupport(site: GS, ${REVERSED}) { tooSupport } }`,
+    });
+    const error = result.errors?.[0];
+
+    expect(maskError(error, 'Unexpected error.', false)).toHaveProperty('message', error?.message);
+  });
+
+  // The other way into the same silence. Neither the `Timestamp` scalar nor
+  // `Date` validates its input, so an unparseable bound parses to `NaN` and
+  // every overlap comparison against it is false - `[]` again, from a query the
+  // caller got wrong. One resolver stands for all seven; they share the guard.
+  it('refuses an unparseable bound, and says which one', async () => {
+    const message = await runExpectingError(
+      '{ tooSupport(site: GS, interval: { start: "garbage", end: "2025-09-10T00:00:00Z" }) { tooSupport } }',
+    );
+
+    expect(message).toContain('interval start is unparseable');
+    expect(message).toContain('garbage');
   });
 });
 
@@ -109,7 +221,13 @@ describe('telescopeNight', () => {
         observingNight
         dataAvailable
         interval { start end }
-        instrumentAvailability { instrument publishedName usage location { type port } interval { start end } }
+        instrumentAvailability {
+          instrument
+          publishedName
+          usage
+          ${LOCATION}
+          interval { start end }
+        }
         telescopeAvailability { availability port reason }
       }
     }`;
@@ -120,24 +238,26 @@ describe('telescopeNight', () => {
     // with a place instead of a port, which is what keeps them off the charts.
     const data = await run(NIGHT, { site: 'GS', night: '2025-11-20' });
     const night = data.telescopeNight as {
-      instrumentAvailability: { instrument: string; location: { type: string; port: number | null } }[];
+      instrumentAvailability: { instrument: string; location: BlockLocation }[];
     };
-    const stored = night.instrumentAvailability.filter((block) => block.location.type !== 'PORT');
+    const stored = night.instrumentAvailability
+      .map((block) => block.location)
+      .filter((location) => location.place !== 'PORT');
 
     expect(stored.length).toBeGreaterThan(0);
-    for (const block of stored) {
-      expect(block.location.port).toBeNull();
-      expect(['FLOOR', 'LAB', 'BASE', 'UNKNOWN']).toContain(block.location.type);
+    for (const location of stored) {
+      expect(['FLOOR', 'LAB', 'BASE', 'UNKNOWN']).toContain(location.place);
+      expect(location.port).toBeNull();
     }
   });
 
   it('returns the instruments mounted on a night, with their ports', async () => {
     const data = await run(NIGHT, { site: 'GS', night: '2025-09-10' });
     const night = data.telescopeNight as Record<string, unknown>;
-    const all = night.instrumentAvailability as { instrument: string; location: { type: string; port: number } }[];
+    const all = night.instrumentAvailability as { instrument: string; location: BlockLocation }[];
     // Ports only: the stored instruments ride the same list (test above) and
     // are not what "mounted on a night" means.
-    const mounted = all.filter((entry) => entry.location.type === 'PORT');
+    const mounted = all.filter((entry) => entry.location.place === 'PORT');
 
     expect(night.dataAvailable).toBe(true);
     expect(mounted.map((entry) => `${entry.instrument}@${String(entry.location.port)}`).sort()).toEqual([
@@ -253,7 +373,7 @@ describe('instrumentAvailability', () => {
     query ($site: Site!, $start: Timestamp!, $end: Timestamp!, $clip: Boolean!) {
       instrumentAvailability(site: $site, interval: { start: $start, end: $end }, clip: $clip) {
         instrument
-        location { type port }
+        ${LOCATION}
         interval { start end }
       }
     }`;
@@ -269,13 +389,13 @@ describe('instrumentAvailability', () => {
     });
     const records = data.instrumentAvailability as {
       instrument: string;
-      location: { type: string; port: number | null };
+      location: BlockLocation;
     }[];
 
     const alopeke = records.find((record) => record.instrument === 'ALOPEKE');
-    expect(alopeke?.location).toEqual({ type: 'UNKNOWN', port: null });
+    expect(alopeke?.location).toEqual({ place: 'UNKNOWN', port: null });
     const mounted = records.find((record) => record.location.port === 1);
-    expect(mounted?.location).toEqual({ type: 'PORT', port: 1 });
+    expect(mounted?.location).toEqual({ place: 'PORT', port: 1 });
   });
 
   it('returns stored intervals by default, so a view can draw past its own edge', async () => {
@@ -314,7 +434,7 @@ describe('instrumentAvailability', () => {
       instrumentAvailability(site: $site, interval: { start: $start, end: $end }, clip: false) {
         instrument
         publishedName
-        location { port }
+        ${LOCATION}
         note
         interval { start end }
       }
@@ -323,7 +443,7 @@ describe('instrumentAvailability', () => {
   interface NamedRecord {
     instrument: string;
     publishedName: string;
-    location: { port: number | null };
+    location: BlockLocation;
     note: string | null;
   }
 
@@ -363,8 +483,29 @@ describe('instrumentAvailability', () => {
 
     // GS 2025B is five uninterrupted mountings, one per port - plus the
     // stored instruments, which are not the semester's schedule.
-    const records = data.instrumentAvailability as { location: { type: string } }[];
-    expect(records.filter((record) => record.location.type === 'PORT')).toHaveLength(5);
+    const records = data.instrumentAvailability as { location: BlockLocation }[];
+    expect(records.filter((record) => record.location.place === 'PORT')).toHaveLength(5);
+  });
+
+  it('pairs place and port on every record, which the schema no longer enforces', async () => {
+    // `InstrumentLocation` is one type with a total `place` and an optional
+    // `port` (2026-08-17), so "a port number exactly when it is on a port" is a
+    // promise this server keeps rather than a shape the SDL holds. The block
+    // builders return `unknown`, so the compiler does not check it either -
+    // this assertion is what does, over both branches of the one constructor
+    // and every fixture at once.
+    const data = await run(RANGE, {
+      site: 'GS',
+      start: '2025-08-02T00:00:00.000Z',
+      end: '2026-02-01T00:00:00.000Z',
+      clip: false,
+    });
+    const records = data.instrumentAvailability as { location: BlockLocation }[];
+
+    expect(records.length).toBeGreaterThan(5);
+    for (const { location } of records) {
+      expect(location.port !== null).toBe(location.place === 'PORT');
+    }
   });
 });
 
@@ -540,8 +681,8 @@ describe('instrumentComponentAvailability', () => {
 describe('tooSupport and telescopeMode - the telescope-state blocks', () => {
   const RANGE = `
     query ($site: Site!, $interval: TimestampIntervalInput!, $clip: Boolean!) {
-      tooSupport(site: $site, interval: $interval, clip: $clip) { id tooSupport note interval { start end } }
-      telescopeMode(site: $site, interval: $interval, clip: $clip) { id mode note interval { start end } }
+      tooSupport(site: $site, interval: $interval, clip: $clip) { tooSupport note interval { start end } }
+      telescopeMode(site: $site, interval: $interval, clip: $clip) { mode note interval { start end } }
     }`;
 
   // The whole of GS 2024B, the workbook's first semester.

@@ -20,52 +20,67 @@ import type {
   ImportedTelescopeMode,
   ImportedTooSupport,
   ImportSite,
-} from './import/blocks.ts';
+} from './records.ts';
 import { buildSeedState, type MockState } from './seed.ts';
 import { type SynthesizedInstrumentBlock, synthesizeStoredInstruments } from './storedInstruments.ts';
+import { addDaysIso } from './time.ts';
 
-/** A block with the stable id the API exposes it under. */
+/**
+ * A record with the semester it came from, which is the only thing the store
+ * adds to what the schedules hold.
+ *
+ * Deliberately **no id**. These records carried a positional one until
+ * 2026-08-14, when `ScheduleBlock.id` left the API: every query clips its
+ * records to the window asked for, so the thing that comes back is a
+ * projection and an identifier on it invites a client to cache it as an
+ * entity. The published sheets carry no identifiers of their own either.
+ */
 export interface StoredBlock extends ImportedBlock {
-  readonly id: string;
   readonly semester: string;
 }
 
-/** A closure with the stable id the API exposes it under. */
 export interface StoredClosure extends ImportedClosure {
-  readonly id: string;
   readonly semester: string;
 }
 
-/** A ToO support record with the stable id the API exposes it under. */
 export interface StoredTooSupport extends ImportedTooSupport {
-  readonly id: string;
   readonly semester: string;
 }
 
-/** A telescope mode record with the stable id the API exposes it under. */
 export interface StoredTelescopeMode extends ImportedTelescopeMode {
-  readonly id: string;
   readonly semester: string;
 }
 
-/** A subsystem record with the stable id the API exposes it under. */
 export interface StoredSubsystem extends ImportedSubsystem {
-  readonly id: string;
   readonly semester: string;
 }
 
 /**
- * Ids are positional within a schedule.
+ * A schedule with the nights it actually covers, derived once here.
  *
- * The published sheets carry no identifiers of their own, and a re-import of the
- * same sheet produces the same order, so this is stable across runs without
- * inventing a persistent identity the source does not have.
+ * `nights` cannot live on `ImportedSchedule` - that is the shape of the JSON on
+ * disk, and this is a fact about the records inside it. Half-open like every
+ * other interval this API serves: `end` is the night *after* the semester's
+ * last, so the value goes straight back into `telescopeNights` and covers the
+ * semester exactly. Deriving it in the constructor also makes it total -
+ * `PublishedSemester.nights` is a `DateInterval!` with two non-null `Date`
+ * fields, which a schedule holding no records could not answer.
  */
-const idOf = (schedule: ImportedSchedule, kind: string, index: number): string =>
-  `${schedule.site}-${schedule.semester}-${kind}-${String(index)}`;
+export interface StoredSchedule extends ImportedSchedule {
+  readonly nights: { readonly start: string; readonly end: string };
+}
+
+/** Every observing night the schedule's own records name, in order. */
+const observingNightsOf = (schedule: ImportedSchedule): readonly string[] =>
+  [
+    ...schedule.blocks.flatMap((block) => [block.firstObservingNight, block.lastObservingNight]),
+    ...schedule.closures.flatMap((closure) => [closure.firstObservingNight, closure.lastObservingNight]),
+  ].sort();
 
 export class MockStore {
   readonly state: MockState;
+  /** The seeded schedules, each with the nights its records cover. */
+  readonly schedules: readonly StoredSchedule[];
   readonly blocks: readonly StoredBlock[];
   readonly closures: readonly StoredClosure[];
   readonly tooSupport: readonly StoredTooSupport[];
@@ -79,38 +94,46 @@ export class MockStore {
 
   constructor(seed: () => MockState = buildSeedState) {
     this.state = seed();
+    this.schedules = this.state.schedules.map((schedule) => {
+      const nights = observingNightsOf(schedule);
+      const first = nights[0];
+      const last = nights.at(-1);
+      if (first === undefined || last === undefined) {
+        // Loud at construction rather than serving a `DateInterval!` with null
+        // fields, which is what this did until the invariant moved here.
+        throw new Error(
+          `Schedule ${schedule.site} ${schedule.semester} covers no observing nights: it holds no blocks and no closures.`,
+        );
+      }
+      return { ...schedule, nights: { start: first, end: addDaysIso(last, 1) } };
+    });
     this.blocks = this.state.schedules.flatMap((schedule) =>
-      schedule.blocks.map((block, index) => ({
+      schedule.blocks.map((block) => ({
         ...block,
-        id: idOf(schedule, 'b', index),
         semester: schedule.semester,
       })),
     );
     this.closures = this.state.schedules.flatMap((schedule) =>
-      schedule.closures.map((closure, index) => ({
+      schedule.closures.map((closure) => ({
         ...closure,
-        id: idOf(schedule, 'c', index),
         semester: schedule.semester,
       })),
     );
     this.tooSupport = this.state.schedules.flatMap((schedule) =>
-      (schedule.tooSupport ?? []).map((record, index) => ({
+      (schedule.tooSupport ?? []).map((record) => ({
         ...record,
-        id: idOf(schedule, 't', index),
         semester: schedule.semester,
       })),
     );
     this.modes = this.state.schedules.flatMap((schedule) =>
-      (schedule.modes ?? []).map((record, index) => ({
+      (schedule.modes ?? []).map((record) => ({
         ...record,
-        id: idOf(schedule, 'm', index),
         semester: schedule.semester,
       })),
     );
     this.subsystems = this.state.schedules.flatMap((schedule) =>
-      (schedule.subsystems ?? []).map((record, index) => ({
+      (schedule.subsystems ?? []).map((record) => ({
         ...record,
-        id: idOf(schedule, 's', index),
         semester: schedule.semester,
       })),
     );
@@ -131,14 +154,10 @@ export class MockStore {
     return this.components.find((component) => component.id === id);
   }
 
-  schedulesFor(site: ImportSite): readonly ImportedSchedule[] {
-    return this.state.schedules.filter((schedule) => schedule.site === site);
-  }
-
   /**
-   * MOUNTED blocks name an instrument; UNKNOWN blocks are runs the importer
-   * could not identify, served as `Instrument.UNKNOWN` so every recorded run
-   * is drawn rather than silently missing. ANNOTATION blocks are
+   * MOUNTED blocks name an instrument; UNKNOWN blocks are runs the schedule
+   * names that the instrument list does not, served as `Instrument.UNKNOWN` so
+   * every recorded run is drawn rather than silently missing. ANNOTATION blocks are
    * text over unpainted cells - they mark nothing as available, so they stay
    * unserved until operations say what they mean.
    */

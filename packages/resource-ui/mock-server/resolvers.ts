@@ -13,7 +13,7 @@
 import { GraphQLError, GraphQLScalarType } from 'graphql';
 
 import type { CatalogComponent, SynthesizedComponentBlock } from './components.ts';
-import type { ImportSite } from './import/blocks.ts';
+import type { ImportSite, InstrumentPlace, OffPortPlace } from './records.ts';
 import type {
   MockStore,
   StoredBlock,
@@ -27,6 +27,37 @@ import { clipInterval, intervalsOverlap, type MockInterval, observingNightInterv
 
 /** Above a semester, below an accidental decade (v1-scheduler-integration.md §4). */
 const MAX_NIGHTS = 400;
+
+/**
+ * Refuses an interval a range query cannot honestly answer: one whose bounds do
+ * not parse, and one whose `end` precedes its `start`.
+ *
+ * Every range query here filters on overlap, so both answer `[]` - which is
+ * exactly what a well-formed query over an unrecorded span answers. That makes
+ * a caller's mistake indistinguishable from "nothing is recorded here", the one
+ * distinction this API exists to keep (I4). An unparseable bound gets there by
+ * a different route than a reversed one: neither the `Timestamp` scalar nor
+ * `Date` validates its input, so "garbage" reaches the comparisons as `NaN` and
+ * every one of them is false.
+ *
+ * Two messages, because they are two different mistakes and the message is the
+ * whole point of throwing a `GraphQLError` here: graphql-yoga masks anything
+ * else as "Unexpected error.", which would hide the mistake from the consumer
+ * who made it. An empty interval (`start === end`) is well-formed and passes.
+ */
+const assertWellFormedInterval = (interval: { start: string; end: string }, argName: string): void => {
+  const start = Date.parse(interval.start);
+  if (Number.isNaN(start)) {
+    throw new GraphQLError(`${argName} start is unparseable: ${interval.start} is not a date or timestamp.`);
+  }
+  const end = Date.parse(interval.end);
+  if (Number.isNaN(end)) {
+    throw new GraphQLError(`${argName} end is unparseable: ${interval.end} is not a date or timestamp.`);
+  }
+  if (end < start) {
+    throw new GraphQLError(`${argName} is reversed: start ${interval.start} is after end ${interval.end}.`);
+  }
+};
 
 /**
  * The ODB `Timestamp` scalar is ISO-8601 in the form "2011-12-03T10:15:30Z"
@@ -87,16 +118,38 @@ const isoDuration = (microseconds: number): string => {
   return parts === '' ? 'PT0S' : `PT${parts}`;
 };
 
+/**
+ * The one place an `InstrumentLocation` is built.
+ *
+ * The SDL no longer enforces its own pairing - `port` is non-null exactly when
+ * `place` is `PORT`, and that is now a promise the server keeps rather than a
+ * shape the type system holds. Two call sites building the object literal is
+ * precisely how such a promise drifts, so both go through here. `port` is
+ * written explicitly as `null` off a port, which is what the SDL documents.
+ *
+ * `place` has no default. It is ignored on a port, but off one it is the whole
+ * answer, and a caller that never states it is a caller that has not decided:
+ * the schedules' own off-port case is UNKNOWN - usable between mounts, with the
+ * sheet never saying where it physically sat - while a stored instrument knows
+ * its shelf. A future record that is off a port for some third reason has to
+ * say which, rather than inheriting a default written for a different case.
+ */
+const instrumentLocation = (
+  port: number | null,
+  place: OffPortPlace,
+): { place: InstrumentPlace; port: number | null } => (port === null ? { place, port: null } : { place: 'PORT', port });
+
 const instrumentBlock = (block: StoredBlock, interval: MockInterval): unknown => ({
-  id: block.id,
   site: block.site,
   interval,
   note: block.note,
-  // An UNKNOWN block is a run the importer could not identify - an
-  // unrecognised workbook name. Its printed text, when it has any, is in `note`.
+  // An UNKNOWN block is a run the schedule names that the instrument list does
+  // not. Its printed text, when it has any, is in `note`.
   instrument: block.instrument ?? 'UNKNOWN',
   publishedName: block.publishedName ?? block.note ?? 'Unknown',
-  location: { type: block.port === null ? 'UNKNOWN' : 'PORT', port: block.port },
+  // UNKNOWN off a port: the workbook records an instrument usable between
+  // mounts without recording where it sat.
+  location: instrumentLocation(block.port, 'UNKNOWN'),
   // The workbook's per-instrument usability column, where it recorded one;
   // SCIENCE otherwise - the sources never record a mounted instrument as
   // anything else without saying so.
@@ -106,17 +159,17 @@ const instrumentBlock = (block: StoredBlock, interval: MockInterval): unknown =>
 /**
  * A stored instrument, in the same shape a mounting answers in.
  *
- * `location` carries the place rather than a port, which is what tells a
- * consumer this is an instrument in storage rather than one on the telescope.
+ * Its `location.place` is a storage place and never `PORT`, which is what tells
+ * a consumer this is an instrument in storage rather than one on the telescope -
+ * and, the ports being a schedule view's rows, what keeps it off every chart.
  */
 const storedInstrumentBlock = (block: SynthesizedInstrumentBlock, interval: MockInterval): unknown => ({
-  id: block.id,
   site: block.site,
   interval,
   note: block.note,
   instrument: block.instrument,
   publishedName: block.publishedName,
-  location: { type: block.place, port: null },
+  location: instrumentLocation(null, block.place),
   usage: block.usage,
 });
 
@@ -138,7 +191,6 @@ const componentBlock = (store: MockStore, block: SynthesizedComponentBlock, inte
     throw new GraphQLError(`Component block ${block.id} references an unknown component.`);
   }
   return {
-    id: block.id,
     site: block.site,
     interval,
     note: block.note,
@@ -163,7 +215,6 @@ const componentFilter =
     (componentTypes === null || componentTypes === undefined || componentTypes.includes(component.componentType));
 
 const closureBlock = (closure: StoredClosure, interval: MockInterval): unknown => ({
-  id: closure.id,
   site: closure.site,
   interval,
   note: null,
@@ -173,7 +224,6 @@ const closureBlock = (closure: StoredClosure, interval: MockInterval): unknown =
 });
 
 const tooBlock = (record: StoredTooSupport, interval: MockInterval): unknown => ({
-  id: record.id,
   site: record.site,
   interval,
   note: record.note,
@@ -181,7 +231,6 @@ const tooBlock = (record: StoredTooSupport, interval: MockInterval): unknown => 
 });
 
 const modeBlock = (record: StoredTelescopeMode, interval: MockInterval): unknown => ({
-  id: record.id,
   site: record.site,
   interval,
   note: record.note,
@@ -191,7 +240,6 @@ const modeBlock = (record: StoredTelescopeMode, interval: MockInterval): unknown
 });
 
 const subsystemBlock = (record: StoredSubsystem, interval: MockInterval): unknown => ({
-  id: record.id,
   site: record.site,
   interval,
   note: record.note,
@@ -267,28 +315,25 @@ export const buildResolvers = (store: MockStore) => ({
 
   Query: {
     publishedSemesters: (): unknown =>
-      store.state.schedules.map((schedule) => {
-        const nights = [
-          ...schedule.blocks.flatMap((block) => [block.firstObservingNight, block.lastObservingNight]),
-          ...schedule.closures.flatMap((closure) => [closure.firstObservingNight, closure.lastObservingNight]),
-        ].sort();
-        return {
-          site: schedule.site,
-          semester: schedule.semester,
-          title: schedule.title,
-          version: schedule.version,
-          demo: schedule.demo === true,
-          firstNight: nights[0] ?? null,
-          lastNight: nights.at(-1) ?? null,
-          holidays: schedule.holidays,
-          moonEvents: schedule.moonEvents,
-        };
-      }),
+      store.schedules.map((schedule) => ({
+        site: schedule.site,
+        semester: schedule.semester,
+        title: schedule.title,
+        version: schedule.version,
+        demo: schedule.demo === true,
+        // Derived once in the store's constructor, which is also where the
+        // "a schedule covers at least one night" invariant is enforced - this
+        // field is a `DateInterval!` and cannot answer with nulls.
+        nights: schedule.nights,
+        holidays: schedule.holidays,
+        moonEvents: schedule.moonEvents,
+      })),
 
     telescopeNight: (_: unknown, args: { site: ImportSite; observingNight: string }): unknown =>
       nightProjection(store, args.site, args.observingNight),
 
     telescopeNights: (_: unknown, args: { site: ImportSite; nights: { start: string; end: string } }): unknown => {
+      assertWellFormedInterval(args.nights, 'nights');
       // A GraphQLError rather than an Error: graphql-yoga masks anything else as
       // "Unexpected error.", which would hide the bound from the very consumer
       // that has to stay under it.
@@ -305,6 +350,7 @@ export const buildResolvers = (store: MockStore) => ({
       _: unknown,
       args: { site: ImportSite; interval: MockInterval; clip: boolean },
     ): unknown => {
+      assertWellFormedInterval(args.interval, 'interval');
       const overlapping = <T extends { start: string; end: string }>(records: readonly T[]): readonly T[] =>
         records.filter((record) => intervalsOverlap(record.start, record.end, args.interval.start, args.interval.end));
       const touching = overlapping(store.mountingsFor(args.site));
@@ -352,6 +398,7 @@ export const buildResolvers = (store: MockStore) => ({
         componentTypes?: readonly string[] | null;
       },
     ): unknown => {
+      assertWellFormedInterval(args.interval, 'interval');
       const keeps = componentFilter(args.instruments, args.componentTypes);
       const touching = store
         .componentBlocksFor(args.site)
@@ -367,6 +414,7 @@ export const buildResolvers = (store: MockStore) => ({
     },
 
     telescopeAvailability: (_: unknown, args: { site: ImportSite; interval: MockInterval; clip: boolean }): unknown => {
+      assertWellFormedInterval(args.interval, 'interval');
       const touching = store
         .closuresFor(args.site)
         .filter((closure) => intervalsOverlap(closure.start, closure.end, args.interval.start, args.interval.end));
@@ -377,6 +425,7 @@ export const buildResolvers = (store: MockStore) => ({
     },
 
     tooSupport: (_: unknown, args: { site: ImportSite; interval: MockInterval; clip: boolean }): unknown => {
+      assertWellFormedInterval(args.interval, 'interval');
       const touching = store
         .tooSupportFor(args.site)
         .filter((record) => intervalsOverlap(record.start, record.end, args.interval.start, args.interval.end));
@@ -387,6 +436,7 @@ export const buildResolvers = (store: MockStore) => ({
     },
 
     telescopeMode: (_: unknown, args: { site: ImportSite; interval: MockInterval; clip: boolean }): unknown => {
+      assertWellFormedInterval(args.interval, 'interval');
       const touching = store
         .modesFor(args.site)
         .filter((record) => intervalsOverlap(record.start, record.end, args.interval.start, args.interval.end));
@@ -400,6 +450,7 @@ export const buildResolvers = (store: MockStore) => ({
       _: unknown,
       args: { site: ImportSite; interval: MockInterval; clip: boolean; subsystems?: readonly string[] | null },
     ): unknown => {
+      assertWellFormedInterval(args.interval, 'interval');
       const touching = store
         .subsystemsFor(args.site)
         .filter(
