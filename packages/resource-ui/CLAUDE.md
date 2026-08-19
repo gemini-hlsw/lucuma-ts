@@ -438,7 +438,7 @@ built here needs a reason recorded beside it, the same as any other capability.
 
 ```bash
 pnpm --filter @gemini-hlsw/resource-ui dev            # vite dev server (proxies /resource/graphql → the real dev service)
-pnpm --filter @gemini-hlsw/resource-ui dev:mock-server# mock GraphQL server on :4000 (GraphiQL)
+pnpm --filter @gemini-hlsw/resource-ui dev:mock-server# mock GraphQL server on :4000 (predev:mock-server runs codegen)
 pnpm --filter @gemini-hlsw/resource-ui codegen        # regenerate src/gql/gen from mock-server/schema.graphql
 pnpm --filter @gemini-hlsw/resource-ui test           # vitest - runs in a real browser (Playwright chromium)
 pnpm --filter @gemini-hlsw/resource-ui build          # tsc -b && vite build (prebuild runs codegen)
@@ -459,6 +459,12 @@ and the browser tests are where the views are exercised against it.
 **Treat port 4000 as untrusted at session start.** A mock server from an old session can
 outlive it and serve a schema that no longer exists - this has caused confusion three
 times now. Check with `lsof -nP -iTCP:4000 -sTCP:LISTEN` and restart via the pnpm script.
+It serves the generated `src/gql/gen/schema.graphql`, so **the artifact has to exist
+and has to be current**. Starting through the pnpm script guarantees both:
+`predev:mock-server` runs `codegen` first. Two routes get past that hook and re-serve the
+previous schema - invoking `node ./mock-server/server.ts` directly, and editing the SDL
+while `--watch` is already running, since `--watch` restarts the process without re-running
+the hook. Run `codegen` by hand in either case.
 
 ## Where the schedule data came from
 
@@ -519,22 +525,42 @@ What the JSON holds, and how the workbook was read into it:
 ## Mock server
 
 `mock-server/` is one typed mock shared by the :4000 dev server and the browser tests,
-both exercising the same resolvers and the same SDL that codegen reads. **Preserve that
-property** - it is why a browser test and a GraphiQL click-through cannot disagree. The
-app itself is no longer a consumer (see "no demo data source" above).
+both exercising the same resolvers and, since 2026-08-19, literally the same file of
+SDL - codegen's expansion of the schema it also generates the client types from.
+**Preserve that property** - it is why a browser test and a GraphiQL click-through
+cannot disagree. The app itself is no longer a consumer (see "no demo data source"
+above).
 
-- `schema.graphql` - the SDL. Codegen source and served schema. Keep it small; every
+- `schema.graphql` - the SDL, and the source codegen reads. Keep it small; every
   type needs a requirement behind it. Its ODB scalars come in through
   `#import ... from "@gemini-hlsw/lucuma-odb-schemas/odb"` rather than being restated
   (2026-08-14, Hugo's review), the way `packages/configs`' schema files take theirs.
-- `sdl.ts` - the SDL with those imports resolved. `#import` is @graphql-tools' and
-  GraphQL reads it as a comment, so a raw read builds a schema whose `Timestamp` is
-  undefined. Codegen and @graphql-eslint resolve it through their own loaders; this
-  module is the node side and `tasks/graphqlSdlPlugin.ts` routes the browser's
-  `?raw` imports through it, so all four consumers see one expanded schema. **The
-  `#import` line has to be the file's first content** - the loader only looks for
-  imports when the SDL _starts_ with one, and a header comment above it silently
-  turns every type below into an unknown type.
+  **The `#import` line has to be the file's first content** - the loader only looks
+  for imports when the SDL _starts_ with one, and a header comment above it silently
+  turns every type below into an unknown type (`schemaArtifact.test.ts` catches that).
+- `src/gql/gen/schema.graphql` - the same SDL with those imports resolved, written by
+  codegen and read by all four consumers: the :4000 server, `resolvers.test.ts`,
+  `src/gql/cache.test.ts` and `src/test/mockClient.ts`. Generated, gitignored, never
+  hand-edited. It sits with the typed operations rather than under `mock-server/`
+  because generated code lives under `src/*/gen/` in every package here, and a
+  package-specific convention costs an ignore line in every tool's config
+  (moved 2026-08-19). `#import` is @graphql-tools' rather than GraphQL's - GraphQL reads it
+  as a comment - so a raw read of the source builds a schema whose `Timestamp` is
+  undefined; codegen already resolves it to generate the client types, so it writes
+  the expansion back out instead of the package resolving imports a second time at
+  runtime (2026-08-19). That is what `packages/configs` does with
+  `typeDefs.generated.ts`, and it is why this package declares no @graphql-tools
+  dependency. The one thing to know about the artifact: **it is only as fresh as the
+  last `codegen` run**, so a schema edit that has not been through codegen is a mock
+  server serving the previous schema. Hence `predev:mock-server` in `package.json`,
+  on the precedent `prebuild` already set for the same generated-artifact dependency:
+  a missing artifact failed loudly on its own (`ENOENT` naming the path), but a stale
+  one started successfully and answered from the old schema, silently, which is the
+  failure port 4000 has already cost this package repeatedly. The hook couples
+  starting the server to codegen, so an invalid document anywhere in `src/gql/` now
+  fails `pnpm dev:mock-server`; that price was accepted deliberately, a failure naming
+  the broken document being strictly better than a server answering from last week's
+  schema.
 - `seed.ts` - imports the nine generated `data/*.json` files. Everything is
   imported from the workbook - there is no hand-written schedule any more (the
   GS 2099B stress semester left with the source pivot, 2026-08-11), which is why
@@ -546,11 +572,20 @@ app itself is no longer a consumer (see "no demo data source" above).
   which is what makes partial nights work with no special case.
 - `records.ts` - the record types `data/*.json` holds, taking their vocabularies from
   the schema's own enums (`Instrument`, `ResourceUsage`, `Partner`, …) rather than
-  restating them, so a value the SDL renames is a compile error here. The one place
-  `mock-server/` reaches into `src/`, type-only, at the cost of needing codegen to
-  have run.
+  restating them, so a value the SDL renames is a compile error here.
 - `schema.ts` / `server.ts` / `time.ts` - the harness. `buildMockSchema(sdl)` returns an
   executable schema over a fresh store; `server.ts` is the yoga dev server.
+
+**The dependency between the two directories runs one way: `mock-server/` reads from
+`src/gql/gen/`, and nothing in `src/` imports from `mock-server/` outside the tests.**
+It reaches for two generated things - the schema's enums, type-only, in `records.ts`;
+and the SDL as a value, which `resolvers.test.ts` and `schemaArtifact.test.ts` import
+and `server.ts` reads off disk by path. The cost is what it always was and is the part
+worth keeping in mind: **`mock-server/` neither typechecks nor starts until `codegen`
+has run.** This rule used to be phrased as "the one place `mock-server/` reaches into
+`src/`, type-only"; that stopped being true on 2026-08-19, when the SDL artifact moved
+from `mock-server/gen/` to `src/gql/gen/`. The direction and the codegen dependency are
+what the old phrasing was actually protecting, and both still hold.
 
 `src/test/mockClient.ts` wires the same schema into Apollo via `SchemaLink`, and
 `src/test/mockPipeline.test.ts` pins the whole loop. If that test breaks, the dev server
@@ -565,8 +600,14 @@ a page test unnoticed. Validate explicitly against the schema where it matters.
   return **domain models** (not raw fragments) belong in `src/gql/hooks.ts`.
   `src/gql/ApolloConfigs.ts` is the client setup.
 - Codegen source is `mock-server/schema.graphql`, configured in `tasks/codegen.ts`.
-  Output is `src/gql/gen/` (gitignored, never hand-edit). Codegen resolves the SDL's
-  `#import`s itself; `mock-server/sdl.ts` does the same for the two runtime readers.
+  It writes two outputs into `src/gql/gen/`, both gitignored and never hand-edited:
+  the typed operations, and `schema.graphql` (the SDL with its `#import`s resolved,
+  which is what the mock serves). Nothing resolves imports at runtime.
+  `tasks/printSchemaPlugin.ts` is the one-line plugin that prints the second one -
+  named by path, not as `schema-ast`, because the codegen CLI resolves a named plugin
+  from its own install directory and in this workspace that lands on the copy built
+  against graphql 17, whose type predicates answer false for this package's graphql 16
+  objects (`Unknown type BigDecimal.`, 2026-08-19).
 - **After changing any operation or the schema, run `codegen`.** `prebuild` does it on build.
 - The client preset only emits types an operation selects. If a type you need is missing
   from `gen/`, the fix is an operation that selects it, not a hand-written duplicate.
@@ -578,6 +619,14 @@ selection fails both, and both resolve the SDL's `#import`s through their own
 loaders. `require-selections` there asks for an `id` wherever a type has one,
 which is why `InstrumentComponent` selections carry it and blocks - which have no
 id - are unaffected.
+
+That config globs `./src/gql/**/*.graphql`, which since 2026-08-19 also contains
+the generated SDL, and those rules read a `.graphql` file as **operations**: run
+them over a schema and every type in it fails `executable-definitions`. What keeps
+the two apart is the `src/*/gen` entry in `eslint.config.shared.js`'s
+`globalIgnores`, the same pre-existing glob that covers the artifact for git and
+Prettier. It is load-bearing - narrowing it turns the generated schema into forty
+lint errors that say nothing about the code.
 
 ## Data flow
 

@@ -12,7 +12,7 @@ import { describe, expect, it } from 'vitest';
 
 import doc from '../../ENDPOINTS.md?raw';
 import { buildMockSchema } from '../../mock-server/schema';
-import sdl from '../../mock-server/schema.graphql?raw';
+import sdl from '../gql/gen/schema.graphql?raw';
 
 const examples = [...doc.matchAll(/```graphql\n([\s\S]*?)```/g)].map((match) => match[1] ?? '');
 

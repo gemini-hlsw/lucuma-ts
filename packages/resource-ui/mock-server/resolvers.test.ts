@@ -10,7 +10,7 @@ import { graphql } from 'graphql';
 import { maskError } from 'graphql-yoga';
 import { describe, expect, it } from 'vitest';
 
-import sdl from './schema.graphql?raw';
+import sdl from '../src/gql/gen/schema.graphql?raw';
 import { buildMockSchema } from './schema.ts';
 
 const { schema } = buildMockSchema(sdl);

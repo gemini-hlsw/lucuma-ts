@@ -9,9 +9,10 @@ import { ApolloClient } from '@apollo/client';
 import { SchemaLink } from '@apollo/client/link/schema';
 
 import { buildMockSchema, type MockSchema } from '../../mock-server/schema';
-// The SDL is the codegen source of truth; importing it raw keeps the mock in sync.
-import schemaSource from '../../mock-server/schema.graphql?raw';
 import { buildCache } from '../gql/cache';
+// Codegen's expansion of mock-server/schema.graphql, which is also what the :4000
+// server reads - so a browser test and a GraphiQL click-through cannot disagree.
+import schemaSource from '../gql/gen/schema.graphql?raw';
 
 export interface MockApollo {
   client: ApolloClient;

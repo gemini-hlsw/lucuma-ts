@@ -17,8 +17,13 @@ pnpm --filter @gemini-hlsw/resource-ui dev:mock-server   # http://localhost:4000
 Yoga serves GraphiQL at that URL. The UI's Vite dev server proxies `/resource/graphql` to it.
 
 **Treat port 4000 as untrusted at session start.** A server from an earlier session can outlive it
-and serve a schema that no longer exists. `--watch` does not pick up `schema.graphql`, so restart
-after any SDL change. Check with `lsof -nP -iTCP:4000 -sTCP:LISTEN`.
+and serve a schema that no longer exists. Check with `lsof -nP -iTCP:4000 -sTCP:LISTEN`.
+
+The server reads `../src/gql/gen/schema.graphql`, which codegen writes, so the script above runs
+codegen first (`predev:mock-server`). That covers a start from cold; it does not cover an SDL edit made
+while the server is already running, because `--watch` restarts the node process without
+re-running the hook and does not reload on `schema.graphql` either. Run
+`pnpm --filter @gemini-hlsw/resource-ui codegen` and restart the script after any SDL change.
 
 ## The API
 
@@ -50,8 +55,15 @@ field, so the payload here is the payload the Scala service will send.
 
 ## Layout
 
-- `schema.graphql` - the SDL. Codegen source (`tasks/codegen.ts`) **and** the served schema, so the
-  UI's generated types cannot drift from what the mock answers with.
+- `schema.graphql` - the SDL, and codegen's only source (`tasks/codegen.ts`), so the UI's generated
+  types cannot drift from what the mock answers with. Its ODB types arrive by `#import`, which is
+  @graphql-tools' convention and a comment to GraphQL, so the file on its own does not build.
+- `../src/gql/gen/schema.graphql` - that file with the imports resolved, written by codegen and
+  served. It is generated code, so it lives under `src/*/gen/` with the typed operations rather
+  than in this directory, the way every package in this workspace keeps its generated output.
+  Gitignored, never hand-edited; `schemaArtifact.test.ts` pins what the expansion has to hold.
+  Nothing here resolves imports at runtime, which is why the package declares no @graphql-tools
+  dependency of its own.
 - `seed.ts` - imports the nine generated `data/*.json` files. Everything is imported from the
   workbook - there is no hand-written schedule - which is why the mock cannot drift from the
   operations record or decay with the wall clock.
@@ -65,14 +77,15 @@ field, so the payload here is the payload the Scala service will send.
   interval math (14:00 to 14:00 site-local, via `Intl`, correct across DST at Gemini South).
 - `import/` - the operations workbook export to `data/*.json`. See [../CLAUDE.md](../CLAUDE.md).
 
-## One schema, three consumers
+## One schema, four consumers
 
-`src/test/mockClient.ts` wires the same executable schema into Apollo via `SchemaLink` for the
-browser tests, and `src/gql/ApolloConfigs.ts` does the same for the app's default **Demo data**
-source - the deployed app carries this whole mock in its bundle and needs no server. All three
-consumers (dev server, tests, demo source) exercise the same resolvers and the same SDL codegen
-reads. **Preserve that property** - `src/test/mockPipeline.test.ts` pins it, and if it breaks they
-have diverged.
+`../src/gql/gen/schema.graphql` is read by the `:4000` server, by `resolvers.test.ts`, by
+`src/gql/cache.test.ts` and by `src/test/mockClient.ts` - which wires the same executable schema
+into Apollo via `SchemaLink` for the browser tests. One file, so a browser test and a GraphiQL
+click-through cannot disagree, and none of them can disagree with the types codegen wrote from the
+same source. **Preserve that property** - `src/test/mockPipeline.test.ts` pins it, and if it breaks
+they have diverged. The app is not a consumer: it reads the live service over HTTP and carries no
+mock schema (2026-08-14).
 
 Two things that property does not give you for free:
 

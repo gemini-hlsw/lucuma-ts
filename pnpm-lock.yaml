@@ -483,12 +483,6 @@ importers:
       '@graphql-eslint/eslint-plugin':
         specifier: 4.4.1
         version: 4.4.1(@types/node@26.2.0)(@typescript/typescript6@6.0.2)(eslint@10.8.1(jiti@2.7.0)(supports-color@10.2.2))(graphql@16.14.2)(supports-color@10.2.2)
-      '@graphql-tools/import':
-        specifier: ^7.1.19
-        version: 7.1.19(graphql@16.14.2)
-      '@graphql-tools/merge':
-        specifier: ^9.2.3
-        version: 9.2.3(graphql@16.14.2)
       '@graphql-typed-document-node/core':
         specifier: 3.2.0
         version: 3.2.0(graphql@16.14.2)

@@ -10,8 +10,8 @@
 import { buildSchema, isObjectType } from 'graphql';
 import { describe, expect, it } from 'vitest';
 
-import sdl from '../../mock-server/schema.graphql?raw';
 import { buildCache, CONTEXTUAL_BLOCK_TYPES } from './cache';
+import sdl from './gen/schema.graphql?raw';
 
 const scheduleBlockImplementors = Object.values(buildSchema(sdl).getTypeMap())
   .filter(isObjectType)

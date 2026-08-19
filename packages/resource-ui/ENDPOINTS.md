@@ -5,8 +5,9 @@ the query the scheduler team consumes. This file is self-contained - it is the w
 contract, not a summary of one held elsewhere.
 
 The authoritative SDL is [`mock-server/schema.graphql`](mock-server/schema.graphql) - it
-is both what the mock serves and what the frontend's codegen reads, so the wire shapes
-below are the ones the UI is already built against. Every query quoted here is executed
+is what the frontend's codegen reads, and what the mock serves is codegen's own expansion
+of it (`src/gql/gen/schema.graphql`), so the wire shapes below are the ones the UI is
+already built against. Every query quoted here is executed
 against that schema on **every test run** (`src/test/endpointsExamples.test.ts`), so a
 documented query cannot drift into being unanswerable; the response values beside them
 were taken from a run on 2026-08-14 and move with the data.

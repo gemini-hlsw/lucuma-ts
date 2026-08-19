@@ -40,9 +40,10 @@ pnpm resource-ui dev:mock-server   # mock GraphQL API on http://localhost:4000/g
 pnpm resource-ui codegen
 ```
 
-Regenerates the typed GraphQL operations in `src/gql/gen/` (gitignored). Run it whenever
-`mock-server/schema.graphql` or an operation in `src/gql/` changes; `prebuild` also runs it
-automatically.
+Regenerates the typed GraphQL operations and the SDL the mock serves, both into
+`src/gql/gen/` (gitignored). Run it whenever `mock-server/schema.graphql` or an
+operation in `src/gql/` changes - the mock server reads the generated SDL, so until codegen
+runs, `:4000` still serves the previous schema. `prebuild` runs it automatically on build.
 
 ### Tests and checks
 

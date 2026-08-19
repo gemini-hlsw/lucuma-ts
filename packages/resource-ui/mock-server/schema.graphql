@@ -35,10 +35,13 @@
 #
 # The `#import` at the top of this file is not GraphQL - it is
 # @graphql-tools/import, which inlines the named types and whatever they depend
-# on (about 2kB of the ODB's 500kB). Codegen and @graphql-eslint resolve it
-# through their own loaders; the mock's runtime SDL is resolved by
-# `mock-server/sdl.ts` (node) and `tasks/graphqlSdlPlugin.ts` (browser), so all
-# four consumers see the same expanded schema.
+# on (about 2kB of the ODB's 500kB). Codegen and @graphql-eslint each resolve it
+# through their own loader; nothing resolves it at runtime. Codegen writes its
+# expansion back out as `src/gql/gen/schema.graphql`, and that generated file
+# is the SDL all four consumers read - the :4000 server, the resolver tests, the
+# cache test and the browser-test Apollo client - so none of them can build a
+# schema the client types were not generated from. It is only as fresh as the
+# last `codegen` run.
 #
 # Imported: BigDecimal, Date, Long, NonEmptyString, Partner, PosInt,
 # ProgramReferenceLabel, Semester, Site, TimeSpan, Timestamp,
