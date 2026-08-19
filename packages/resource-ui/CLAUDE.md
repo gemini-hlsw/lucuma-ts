@@ -459,11 +459,11 @@ taking a dozen props would hide nothing.
 
 ## Not doing yet
 
-Wanted-but-unbuilt, carried over from the 2026-08-10 walkthrough punch list. Each
-is still open; none is scheduled. Anything built here needs a reason recorded
-beside it, the same as any other capability. `TODO.md` is still in the tree and
-still lists these same four items; it has not been touched since 2026-08-12, so
-**this list is the current one** and that file is a duplicate awaiting a decision.
+Wanted-but-unbuilt, carried over from the 2026-08-10 walkthrough punch list, which
+was retired with `TODO.md` on 2026-08-19 - it had not been touched since
+2026-08-12 and held nothing this list does not. Each item is still open; none is
+scheduled. Anything built here needs a reason recorded beside it, the same as any
+other capability.
 
 - **A visible "List" as a fourth view toggle.** The block table already exists as
   the accessible reading of every chart, so exposing it is nearly free - but it
