@@ -24,19 +24,28 @@ the v1 scope trims.
 pnpm resource-ui dev            # vite dev server on http://localhost:5173
 ```
 
-The app reads **one backend**: the live Resource service at `/resource/graphql`. The
-vite proxy carries that path to the real dev deployment purely to sidestep CORS, never
-to stand something else in for it. That service does not serve the v1 API yet, so `dev`
-shows an amber banner naming the situation and every view is empty. **That is the
-expected state of this branch**, in development and deployed alike - the views are
-exercised against the mock by the browser tests, not by the dev server.
+The app reads **one backend**, over HTTP, at `/resource/graphql`. The vite proxy carries
+that path to the real dev deployment, purely to sidestep CORS. That service does not
+serve the v1 API yet, so `dev` shows an amber banner naming the situation and every view
+is empty. **That is the expected state of this branch**, and it is what a deployed build
+shows too.
 
-To look at what the contract answers - GraphiQL, or an external consumer trying the
-API - run the mock server on :4000:
+To see the views with data, point the proxy at the local mock instead - two terminals:
 
 ```bash
 pnpm resource-ui dev:mock-server   # mock GraphQL API on http://localhost:4000/graphql
+pnpm resource-ui dev:mock          # dev server, proxying /resource/graphql to :4000
 ```
+
+`dev:mock` is `RESOURCE_API=mock vite`. The switch is in the dev server, never in the
+app: there is no control to choose a backend and no second Apollo link, because the mock
+schema was once executed in the browser behind one and put 245 kB of server-side code
+into the bundle. Start `dev:mock-server` first or every query 502s, and restart it after
+editing the schema - a mock left over from an old session serves a schema that no longer
+exists.
+
+The mock server is also what to run on its own for GraphiQL, or for an external consumer
+trying the API.
 
 ### Codegen
 

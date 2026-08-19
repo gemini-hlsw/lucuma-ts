@@ -11,8 +11,13 @@
  * control. It put graphql-yoga, an executable schema and the SDL - 245 kB of
  * server-side code - into the frontend bundle, and it is gone. The mock is
  * still the browser tests' backend and still runs as a GraphQL server on :4000
- * (`pnpm dev:mock-server`) for inspecting the contract; it is simply not
- * something the app can be pointed at any more.
+ * (`pnpm dev:mock-server`).
+ *
+ * `RESOURCE_API=mock` points the dev server's proxy at it, so a developer can
+ * see the views with data. That is a vite setting and nothing here changes for
+ * it: this file builds one link to one path either way, and only which process
+ * answers on localhost differs. No control, no second link, no schema in the
+ * bundle - which is the distinction the 2026-08-14 decision was drawing.
  *
  * When the Scala backend ships, the endpoint mapping below is the only thing
  * that changes.

@@ -43,8 +43,16 @@ schema executed in the client. Wiring that up would be a change to
 `src/gql/ApolloConfigs.ts`, and nobody has asked for it.
 
 `mock-server/` itself stays, and is untouched by this: it is what the browser
-tests execute against, what codegen reads, and what :4000 serves. It is simply
-not something the app can be pointed at.
+tests execute against, what codegen reads, and what :4000 serves.
+
+**The dev server can be pointed at it, and that is the whole of the mechanism**
+(2026-08-19): `RESOURCE_API=mock`, or `pnpm dev:mock`, switches the vite proxy's
+target to :4000. It is the shape the rule above asks for - the app reaches a
+server over HTTP - and it needed no change to `ApolloConfigs.ts` after all,
+because the app already makes one request to one path and does not care which
+process answers. There is still no control, no second link and no schema in the
+bundle, and the live service is still the default. What is switchable is the dev
+server's proxy, never the app.
 
 **Tonight is the front door.** The index route lands on `/night`, no `night` in the
 URL means the night in progress, the masthead wordmark links home to it, and the
@@ -478,6 +486,7 @@ other capability.
 
 ```bash
 pnpm --filter @gemini-hlsw/resource-ui dev            # vite dev server (proxies /resource/graphql → the real dev service)
+pnpm --filter @gemini-hlsw/resource-ui dev:mock       # the same, proxied to the mock on :4000 (RESOURCE_API=mock)
 pnpm --filter @gemini-hlsw/resource-ui dev:mock-server# mock GraphQL server on :4000 (predev:mock-server runs codegen)
 pnpm --filter @gemini-hlsw/resource-ui codegen        # regenerate src/gql/gen: typed operations + the SDL the mock serves
 pnpm --filter @gemini-hlsw/resource-ui test           # vitest - runs in a real browser (Playwright chromium)

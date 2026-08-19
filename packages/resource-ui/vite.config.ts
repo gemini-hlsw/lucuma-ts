@@ -49,15 +49,41 @@ export default defineConfig({
   server: {
     allowedHosts: ['localhost', '.lucuma.xyz', '.gemini.edu'],
     proxy: {
-      // "Live server" means the actual Resource service, in development too -
-      // the proxy only exists to sidestep CORS, never to stand something else
-      // in for the real endpoint. The local mock server (pnpm dev:mock-server)
-      // hosts the demo data over HTTP for GraphiQL and external consumers at
-      // :4000 directly; it is not part of this path.
-      '/resource/graphql': {
-        target: 'https://lucuma-resource-dev.lucuma.xyz',
-        changeOrigin: true,
-      },
+      /*
+       * Where `pnpm dev` gets its data. The real Resource service by default -
+       * the proxy exists to sidestep CORS, and it never stands something else in
+       * for the real endpoint unless asked.
+       *
+       * `RESOURCE_API=mock` (or `pnpm dev:mock`) points it at the local mock
+       * server instead, which is worth having because the deployment does not
+       * serve the v1 API yet, so the default is the live-failure banner and empty
+       * views until the Scala service ships.
+       *
+       * A switch here rather than in the app, deliberately. The mock schema was
+       * once executed in the browser behind a masthead control, and that put
+       * graphql-yoga, an executable schema and the SDL - 245 kB of server-side
+       * code - into the frontend bundle (2026-08-14, Hugo's review). This adds no
+       * link, no control and nothing to the bundle: the app still makes one HTTP
+       * request to one path, and only which process answers on localhost changes.
+       *
+       * Two things to know when the mock is the target. `pnpm dev:mock-server`
+       * has to be running or every query 502s, and a mock server left over from
+       * an old session serves a schema that no longer exists - see "Treat port
+       * 4000 as untrusted" in CLAUDE.md.
+       *
+       * Only localhost goes through here. A deployed build resolves its endpoint
+       * by hostname (`graphqlEndpoints` in `src/gql/ApolloConfigs.ts`) and never
+       * touches this proxy.
+       */
+      '/resource/graphql':
+        process.env.RESOURCE_API === 'mock'
+          ? {
+              // Yoga serves `/graphql`; the app asks for `/resource/graphql`.
+              target: 'http://localhost:4000',
+              changeOrigin: true,
+              rewrite: (path: string) => path.replace(/^\/resource\/graphql/, '/graphql'),
+            }
+          : { target: 'https://lucuma-resource-dev.lucuma.xyz', changeOrigin: true },
     },
   },
   test: {
