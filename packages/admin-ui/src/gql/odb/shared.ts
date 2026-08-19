@@ -91,11 +91,14 @@ export const MODE_TYPE_FORMAT: Record<ObservingModeType, { readonly instrument: 
   EXCHANGE_SUBARU: { instrument: 'Subaru', mode: '' },
   FLAMINGOS_2_IMAGING: { instrument: 'Flamingos-2', mode: 'Imaging' },
   FLAMINGOS_2_LONG_SLIT: { instrument: 'Flamingos-2', mode: 'LongSlit' },
+  FLAMINGOS_2_MOS: { instrument: 'Flamingos-2', mode: 'MOS' },
   GHOST_IFU: { instrument: 'GHOST', mode: 'Ifu' },
   GMOS_NORTH_IMAGING: { instrument: 'GMOS-N', mode: 'Imaging' },
   GMOS_NORTH_LONG_SLIT: { instrument: 'GMOS-N', mode: 'LongSlit' },
+  GMOS_NORTH_MOS: { instrument: 'GMOS-N', mode: 'MOS' },
   GMOS_SOUTH_IMAGING: { instrument: 'GMOS-S', mode: 'Imaging' },
   GMOS_SOUTH_LONG_SLIT: { instrument: 'GMOS-S', mode: 'LongSlit' },
+  GMOS_SOUTH_MOS: { instrument: 'GMOS-S', mode: 'MOS' },
   GNIRS_IFU: { instrument: 'GNIRS', mode: 'Ifu' },
   GNIRS_IMAGING: { instrument: 'GNIRS', mode: 'Imaging' },
   GNIRS_LONG_SLIT: { instrument: 'GNIRS', mode: 'LongSlit' },
@@ -105,8 +108,6 @@ export const MODE_TYPE_FORMAT: Record<ObservingModeType, { readonly instrument: 
   VISITOR_SOUTH: { instrument: 'Visitor South', mode: '' },
   ZORRO_SPECKLE: { instrument: 'Zorro', mode: 'Speckle' },
   ZORRO_WIDE_FIELD: { instrument: 'Zorro', mode: 'WideField' },
-  GMOS_NORTH_MOS: { instrument: 'GMOS-N', mode: 'MOS' },
-  GMOS_SOUTH_MOS: { instrument: 'GMOS-S', mode: 'MOS' },
 };
 
 /** Narrow a wire value (the fragment types carry `string` for
