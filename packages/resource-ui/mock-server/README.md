@@ -14,7 +14,9 @@ nine semesters across both sites, the operations team's own record rather than i
 pnpm --filter @gemini-hlsw/resource-ui dev:mock-server   # http://localhost:4000/graphql
 ```
 
-Yoga serves GraphiQL at that URL. The UI's Vite dev server proxies `/resource/graphql` to it.
+Yoga serves GraphiQL at that URL. **The app is not a consumer**: the UI's Vite dev server proxies
+`/resource/graphql` to the real dev deployment, so :4000 is for GraphiQL and for an external
+consumer trying the API, never for the running app (see [../CLAUDE.md](../CLAUDE.md)).
 
 **Treat port 4000 as untrusted at session start.** A server from an earlier session can outlive it
 and serve a schema that no longer exists. Check with `lsof -nP -iTCP:4000 -sTCP:LISTEN`.
@@ -27,18 +29,21 @@ re-running the hook and does not reload on `schema.graphql` either. Run
 
 ## The API
 
-Seven queries, all read-only. Resource reproduces schedules that already exist, so there is
+Ten queries, all read-only. Resource reproduces schedules that already exist, so there is
 nothing to mutate - editing was descoped from v1 outright.
 
-| Query                                                   | For                                               |
-| ------------------------------------------------------- | ------------------------------------------------- |
-| `publishedSemesters`                                    | the site + semester picker                        |
-| `telescopeNight(site, observingNight)`                  | one night, every record clipped to it             |
-| `telescopeNights(site, nights)`                         | the scheduler's only query; bounded at 400 nights |
-| `instrumentAvailability(site, interval, clip)`          | the semester and week views                       |
-| `telescopeAvailability(site, interval, clip)`           | closures, the other half of a semester view       |
-| `components(site, instruments, componentTypes, search)` | the component browser's catalog                   |
-| `instrumentComponentAvailability(site, interval, clip)` | where each piece is, over a window                |
+| Query                                                              | For                                                      |
+| ------------------------------------------------------------------ | -------------------------------------------------------- |
+| `publishedSemesters`                                               | the site + semester picker                               |
+| `telescopeNight(site, observingNight)`                             | one night, every record clipped to it                    |
+| `telescopeNights(site, nights)`                                    | the scheduler's only query; bounded at 400 nights        |
+| `instrumentAvailability(site, interval, clip)`                     | the semester and week views                              |
+| `telescopeAvailability(site, interval, clip)`                      | closures, the other half of a semester view              |
+| `tooSupport(site, interval, clip)`                                 | the ToO state row, every schedule view                   |
+| `telescopeMode(site, interval, clip)`                              | the Mode state row, every schedule view                  |
+| `telescopeSubsystemAvailability(site, interval, clip, subsystems)` | the night view's subsystem rows; the scheduler's LGS row |
+| `components(site, instruments, componentTypes, search)`            | the component browser's catalog                          |
+| `instrumentComponentAvailability(site, interval, clip)`            | where each piece is, over a window                       |
 
 Three contracts the resolvers exist to keep:
 
@@ -49,9 +54,11 @@ Three contracts the resolvers exist to keep:
 - **`clip: false`** (the default) returns stored intervals, so a view can draw a mounting running
   past the edge of the window it asked for. `clip: true` trims. The night projection always clips.
 
-Types the real schema imports from `OdbSchema.graphql` - `TimestampInterval` with its `duration`,
-`TimeSpan`, `NonEmptyString`, `PosInt`, and the `Timestamp` wire format - are reproduced field for
-field, so the payload here is the payload the Scala service will send.
+Types the ODB already defines - `TimestampInterval` with its `duration`, `TimeSpan`,
+`NonEmptyString`, `PosInt`, and the `Timestamp` wire format - are **imported, never restated**
+(2026-08-14, Hugo's review): `schema.graphql` opens with an `#import … from
+"@gemini-hlsw/lucuma-odb-schemas/odb"`. A reproduction can drift from the ODB; an import cannot,
+so the payload here is the payload the Scala service will send.
 
 ## Layout
 
@@ -70,22 +77,26 @@ field, so the payload here is the payload the Scala service will send.
 - `components.ts` - the synthetic component layer: a catalog of real identities (lucuma-core enum
   tags) whose blocks are derived deterministically from the imported mountings. **The quarantine
   boundary** - swap this one file when the real catalog arrives.
-- `store.ts` - the in-memory store, built fresh per consumer. Assigns each block a positional id.
-- `resolvers.ts` - the seven queries, plus the `Timestamp` scalar and the derived `duration`.
+- `store.ts` - the in-memory store, built fresh per consumer. It adds one thing to what the
+  schedules hold: the semester a record came from.
+- `resolvers.ts` - the ten queries, plus the `Timestamp` scalar and the derived `duration`.
 - `schema.ts` / `server.ts` / `time.ts` - the harness. `buildMockSchema(sdl)` returns an executable
   schema over a fresh store; `server.ts` is the yoga dev server; `time.ts` does observing-night
   interval math (14:00 to 14:00 site-local, via `Intl`, correct across DST at Gemini South).
-- `import/` - the operations workbook export to `data/*.json`. See [../CLAUDE.md](../CLAUDE.md).
+- `data/` and `fixtures/` - the imported JSON, and the workbook export it was parsed from, kept
+  beside it as provenance. The reader itself is no longer in this package; it lives on the
+  `resource/workbook-importer` branch. See [../CLAUDE.md](../CLAUDE.md).
 
-## One schema, four consumers
+## One schema, one file
 
-`../src/gql/gen/schema.graphql` is read by the `:4000` server, by `resolvers.test.ts`, by
-`src/gql/cache.test.ts` and by `src/test/mockClient.ts` - which wires the same executable schema
-into Apollo via `SchemaLink` for the browser tests. One file, so a browser test and a GraphiQL
-click-through cannot disagree, and none of them can disagree with the types codegen wrote from the
-same source. **Preserve that property** - `src/test/mockPipeline.test.ts` pins it, and if it breaks
-they have diverged. The app is not a consumer: it reads the live service over HTTP and carries no
-mock schema (2026-08-14).
+`../src/gql/gen/schema.graphql` is the one file every consumer reads: the `:4000` server reads it
+off disk, and the tests import it with `?raw` - including `src/test/mockClient.ts`, which wires the
+same executable schema into Apollo via `SchemaLink` for the browser tests. **One file and no second
+copy** is the property, not the number of readers: it is what stops a browser test and a GraphiQL
+click-through disagreeing, and stops either disagreeing with the types codegen wrote from the same
+source. **Preserve it** - `src/test/mockPipeline.test.ts` pins it, and if that test breaks they have
+diverged. The app is not a consumer: it reads the live service over HTTP and carries no mock schema
+(2026-08-14).
 
 Two things that property does not give you for free:
 
@@ -101,6 +112,5 @@ Two things that property does not give you for free:
 - The `Instrument` enum is the schedules' vocabulary, not lucuma-core's - `ALTAIR` and `CANOPUS` are
   AO subsystems and `CAL_ZORRO` names two things. Mapping it onto lucuma-core is deferred, still
   open with operations.
-- Block ids are plain strings, positional within a schedule. Gid prefixes are the backend's call.
 - Temporary. Point `tasks/codegen.ts` at `@gemini-hlsw/lucuma-schemas/resource` when the real
   backend ships.

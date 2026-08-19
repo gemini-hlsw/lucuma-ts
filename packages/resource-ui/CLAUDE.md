@@ -107,6 +107,38 @@ block-and-closure logic and the chart frame. A view supplies its own axis and it
 of phrasing a span - dates and nights for the semester and week, clock times for a night -
 and nothing else. Adding a fourth window should not mean copying any of it.
 
+**The week view carries a briefing under its chart**, because seven nights of a
+whole-night-granular schedule that changes twice a month are usually seven identical
+columns - the chart shows the runs, and what makes one week different from the next
+is the sky and the changes. Both come from `domain/weekBriefing.ts`, pure and
+unit-tested like every other projection, and `features/week/WeekBriefing.tsx` draws
+them in two plain standard pieces (`app/pages/WeekPage.tsx` renders both):
+
+- **`WeekNightStrip`** - one card per night: the evening's weekday label, the moon
+  disc and its percentage, hours of astronomical dark, and tags for a published
+  new/full moon, a holiday, and a night with nothing recorded. Every card **is** a
+  button onto its night view, because every night-shaped thing opens its night view.
+  `summarizeWeek` folds the same facts into the page subtitle (dark hours, moon at
+  each end).
+- **`WeekChangesTable`** - "Changes this week": When / What / Where, one row per
+  block boundary falling **inside** the window. A boundary exactly on the window's
+  edge is not a change, since a run that began last week merely continues. The kinds
+  are a run beginning or ending, a closure beginning or ending, and a component
+  moving. When nothing changes it says so ("every run carries straight through")
+  rather than drawing an empty table.
+
+Like the calendar's news, the changes read **ports only** (`buildWeekChanges` skips a
+mounting with a null port): a shelf change is inventory, not a night's headline, and
+the instrument browser is where an off-port run is legible.
+
+**A night no semester covers says what is covered** (`domain/coverage.ts`). A dead end
+that only says "no schedule covers this night" leaves the reader guessing and typing
+dates until one lands, so `coverageRanges` merges the site's published semesters into
+contiguous spans for the message and `nearestCoveredNight` offers the way back;
+a demo semester never merges with a real one, so a synthetic range stays its own
+entry and can be labelled as such. `app/useSemester.ts` reads the same module's
+`resolveSemester`.
+
 Two gotchas that cost real debugging, both fixed structurally - do not undo them:
 
 - **Availability blocks are contextual values, never cache entities.** Every query
@@ -151,9 +183,12 @@ to rows.
 
 **The night view alone adds the subsystem rows** (2026-08-12): PWFS1, PWFS2 and
 LGS beneath the state rows, monochrome in the same usage words a mounted span
-uses, with their own Subsystems legend section. The wide views stay without
-them - three semester-constant rows per month would bury the runs, the same
-reason the calendar draws no routine bars.
+uses. They get **no legend section of their own**, deliberately: every subsystem
+span draws in the one quiet neutral and prints its state in words, so a colour
+key there would key no distinction, and the gutter label already names the row
+(the reason is recorded beside the extras in `timelineOptions.ts`). The wide
+views stay without the rows entirely - three semester-constant rows per month
+would bury the runs, the same reason the calendar draws no routine bars.
 
 **Every schedule view heads itself with the Telescope, Mode and ToO rows**
 when records reach its window (Dan, 2026-08-11) - the workbook's Telescope and
@@ -180,11 +215,11 @@ exempt from the closure band (a closure does not erase a state record; a
 shutdown night's missing mode stays a gap, I4), except the Telescope row's own
 Closed cells, which are the closure. The **calendar draws only the notable
 state spans** as bars - routine values every week would bury the runs. **The
-legend is sectioned** - Telescope (open/closed, modes, the shut-down key), ToO
-and Instruments, each labelled, so three vocabularies never read as one line
-of colours (Dan, 2026-08-11); a section with no keys does not render
-(`TimelineLegendBar` in `features/timeline/TimelineChart.tsx`, fed by the
-`*LegendExtras` helpers in `timelineOptions.ts`).
+legend is sectioned**, each section labelled, so the vocabularies never read as
+one line of colours (Dan, 2026-08-11), and a section a window has no keys for
+does not render (`TimelineLegendBar` in `features/timeline/TimelineChart.tsx`,
+fed by the `*LegendExtras` helpers in `timelineOptions.ts`). The sections
+themselves are listed once, with the shutdown rule below.
 Do not give a state a hue; if a new state kind arrives, it joins the two
 neutrals or the closure red.
 
@@ -212,7 +247,10 @@ draws as the hollow absence in every view - the night view's old red port
 bars are gone with the whole `unscheduledAs` machinery. **The legend has one
 section per state row** - Telescope, Mode, ToO, then Instruments - because the
 neutrals repeat across rows and a repeated grey must be keyed under the row it
-belongs to (Dan, 2026-08-11).
+belongs to (Dan, 2026-08-11). Two further sections follow those wherever a view
+supplies keys for them, keying chrome rather than a row's vocabulary: **Sky**
+(the daylight and twilight washes) and **Calendar** (weekends, the now marker,
+un-entered nights). Six sections in all, in that order, in `TimelineLegendBar`.
 
 **One colour per instrument, keyed by the enum.** A single fill for every mounting made
 the chart unreadable - you had to read every label to find GMOS. The map lives in
@@ -421,9 +459,11 @@ taking a dozen props would hide nothing.
 
 ## Not doing yet
 
-Wanted-but-unbuilt, carried over from the 2026-08-10 walkthrough punch list when
-TODO.md was retired (2026-08-17). Each is still open; none is scheduled. Anything
-built here needs a reason recorded beside it, the same as any other capability.
+Wanted-but-unbuilt, carried over from the 2026-08-10 walkthrough punch list. Each
+is still open; none is scheduled. Anything built here needs a reason recorded
+beside it, the same as any other capability. `TODO.md` is still in the tree and
+still lists these same four items; it has not been touched since 2026-08-12, so
+**this list is the current one** and that file is a duplicate awaiting a decision.
 
 - **A visible "List" as a fourth view toggle.** The block table already exists as
   the accessible reading of every chart, so exposing it is nearly free - but it
@@ -439,7 +479,7 @@ built here needs a reason recorded beside it, the same as any other capability.
 ```bash
 pnpm --filter @gemini-hlsw/resource-ui dev            # vite dev server (proxies /resource/graphql → the real dev service)
 pnpm --filter @gemini-hlsw/resource-ui dev:mock-server# mock GraphQL server on :4000 (predev:mock-server runs codegen)
-pnpm --filter @gemini-hlsw/resource-ui codegen        # regenerate src/gql/gen from mock-server/schema.graphql
+pnpm --filter @gemini-hlsw/resource-ui codegen        # regenerate src/gql/gen: typed operations + the SDL the mock serves
 pnpm --filter @gemini-hlsw/resource-ui test           # vitest - runs in a real browser (Playwright chromium)
 pnpm --filter @gemini-hlsw/resource-ui build          # tsc -b && vite build (prebuild runs codegen)
 pnpm --filter @gemini-hlsw/resource-ui lint:eslint
@@ -539,8 +579,10 @@ above).
   for imports when the SDL _starts_ with one, and a header comment above it silently
   turns every type below into an unknown type (`schemaArtifact.test.ts` catches that).
 - `src/gql/gen/schema.graphql` - the same SDL with those imports resolved, written by
-  codegen and read by all four consumers: the :4000 server, `resolvers.test.ts`,
-  `src/gql/cache.test.ts` and `src/test/mockClient.ts`. Generated, gitignored, never
+  codegen and read by every consumer: the :4000 server off disk, and the tests with
+  `?raw`. **One file and no second copy** is the property worth protecting, which is
+  why no count of readers is kept here - the count was load-bearing for nothing and
+  went stale as soon as a test was added. Generated, gitignored, never
   hand-edited. It sits with the typed operations rather than under `mock-server/`
   because generated code lives under `src/*/gen/` in every package here, and a
   package-specific convention costs an ignore line in every tool's config
@@ -634,9 +676,11 @@ GraphQL response → **pure adapters** (`src/domain/adapters.ts`) → **UI domai
 (`src/domain/types.ts`) → components. All null handling and timestamp parsing lives in the
 adapters; components never touch generated fragment shapes.
 
-Pure domain modules currently in place: `interval.ts`, `localDate.ts`, `siteTime.ts`,
-`semester.ts`, `moon.ts`, `sun.ts`. Keep date math and chart builders pure and
-unit-tested; keep components focused on rendering and interaction.
+`src/domain/` is where the pure modules live - date, interval and semester math, the
+sky (`moon.ts`, `sun.ts`), the timeline and calendar projections, the two finders, the
+week briefing - each with its own unit tests beside it. Read the directory rather than
+a list here: the list this replaced named six of twenty. Keep date math and chart
+builders pure and unit-tested; keep components focused on rendering and interaction.
 
 ## Non-negotiables
 

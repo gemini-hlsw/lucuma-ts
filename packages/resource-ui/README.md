@@ -8,12 +8,15 @@ so") and `/components` ("where is the R400 grating"). **v1 is read-only**: Resou
 reproduces schedules that already exist; nothing edits them. [CLAUDE.md](CLAUDE.md) is
 the working guide and design record.
 
-React 19 + Apollo Client + Highcharts (XRange) + PrimeReact + Tailwind CSS 4. The app
-carries its own mock GraphQL API (see [`mock-server/README.md`](mock-server/README.md))
-serving nine semesters imported from the operations workbook export; the real Scala
-backend does not exist yet. [ENDPOINTS.md](ENDPOINTS.md) is the self-contained contract
-for the backend team - every query the UI and the scheduler need, with the record types,
-the invariants and executable examples. CLAUDE.md records the v1 scope trims.
+React 19 + Apollo Client + Highcharts (XRange) + react-big-calendar + PrimeReact +
+Tailwind CSS 4. The real Scala backend does not exist yet, so the package carries a
+standalone mock GraphQL server (see [`mock-server/README.md`](mock-server/README.md))
+serving nine semesters imported from the operations workbook export - it is what the
+browser tests execute against, what codegen reads and what `:4000` serves, and it is
+**not** something the app can be pointed at. [ENDPOINTS.md](ENDPOINTS.md) is the
+self-contained contract for the backend team - every query the UI and the scheduler
+need, with the record types, the invariants and executable examples. CLAUDE.md records
+the v1 scope trims.
 
 ## Development
 
@@ -21,14 +24,15 @@ the invariants and executable examples. CLAUDE.md records the v1 scope trims.
 pnpm resource-ui dev            # vite dev server on http://localhost:5173
 ```
 
-That alone is a working app: the default **Demo data** source executes the mock
-GraphQL schema in the browser. The masthead's Data control switches to the
-**Live server** (`/resource/graphql`, proxied in dev to the real dev deployment
-purely to sidestep CORS); it does not serve the v1 API yet, so selecting it
-surfaces a banner with the way back to demo data.
+The app reads **one backend**: the live Resource service at `/resource/graphql`. The
+vite proxy carries that path to the real dev deployment purely to sidestep CORS, never
+to stand something else in for it. That service does not serve the v1 API yet, so `dev`
+shows an amber banner naming the situation and every view is empty. **That is the
+expected state of this branch**, in development and deployed alike - the views are
+exercised against the mock by the browser tests, not by the dev server.
 
-To inspect the demo data over HTTP - GraphiQL, or an external consumer trying
-the API - host the same mock on :4000:
+To look at what the contract answers - GraphiQL, or an external consumer trying the
+API - run the mock server on :4000:
 
 ```bash
 pnpm resource-ui dev:mock-server   # mock GraphQL API on http://localhost:4000/graphql
