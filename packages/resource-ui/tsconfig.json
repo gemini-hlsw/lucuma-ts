@@ -1,7 +1,6 @@
 {
   "extends": ["@tsconfig/strictest/tsconfig.json", "@tsconfig/vite-react/tsconfig.json"],
   "compilerOptions": {
-    "rootDir": "./src",
     "paths": {
       "@gql/*": ["./src/gql/*"],
       "@/*": ["./src/*"]
@@ -13,5 +12,7 @@
     "exactOptionalPropertyTypes": false,
     "noPropertyAccessFromIndexSignature": false
   },
-  "include": ["src"]
+  "comment": "mock-server is included so tests can typecheck the shared mock core; server.ts is node-only and typechecked by tsconfig.node.json.",
+  "include": ["src", "mock-server"],
+  "exclude": ["mock-server/server.ts"]
 }

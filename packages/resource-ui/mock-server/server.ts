@@ -1,64 +1,39 @@
 /**
- * Creates a local mock GraphQL server for developing the Resource UI.
+ * Local mock GraphQL server for developing the Resource UI.
+ *
+ * Serves the v1 schema preview backed by the in-memory store. Mutations persist for
+ * the life of the process (no database). Run with `pnpm dev:mock-server`.
+ *
+ * The SDL is `src/gql/gen/schema.graphql`, codegen's expansion of
+ * `schema.graphql`'s `#import`, generated beside the typed operations because
+ * that is where this workspace keeps generated code. The browser consumers read
+ * the same file through `?raw`; nothing resolves imports at runtime.
+ *
+ * `predev:mock-server` runs `codegen` first, which is why this can just read the
+ * file. Without the hook a missing artifact failed loudly (`ENOENT` naming the
+ * path) but a *stale* one did not: an SDL edit that had not been through codegen
+ * left this serving the previous schema, silently and successfully - the failure
+ * a wrong :4000 server has cost this package repeatedly (CLAUDE.md keeps the
+ * count, under "Treat port 4000 as untrusted"). The hook costs the
+ * coupling - an invalid document anywhere in `src/gql/` now fails
+ * `pnpm dev:mock-server` - and that trade was taken deliberately, because a
+ * failure naming the broken document beats a server answering from last week's
+ * schema. `--watch` restarts this process on a source change but does not
+ * re-run the hook, so an SDL edit mid-session still needs `pnpm codegen`.
  */
-
 import { readFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 
-import { createSchema, createYoga } from 'graphql-yoga';
+import { createYoga } from 'graphql-yoga';
 
-import { mockTelescopeNightTimelines } from './data/mockTelescopeNightTimelines.ts';
+import { buildMockSchema } from './schema.ts';
 
 const PORT = 4000;
 const GRAPHQL_ENDPOINT = '/graphql';
-const SCHEMA_PATH = 'mock-server/schema.graphql';
 
-interface TelescopeNightTimelineArgs {
-  site: string;
-  observingDate: string;
-}
+const { schema } = buildMockSchema(readFileSync(new URL('../src/gql/gen/schema.graphql', import.meta.url), 'utf8'));
 
-/**
- * Returns mock telescope night timeline data.
- *
- * @param _parent - Unused GraphQL parent resolver value.
- * @param args - Query arguments from the GraphQL request.
- * @returns Matching mock telescope night timeline, or null if none exists.
- */
-function getMockTelescopeNightTimeline(_parent: unknown, args: TelescopeNightTimelineArgs) {
-  console.info(`Looking up telescopeNightTimeline for site=${args.site}, observingDate=${args.observingDate}`);
-
-  const timeline = mockTelescopeNightTimelines.find(
-    (entry) => entry.site === args.site && entry.observingDate === args.observingDate,
-  );
-
-  if (!timeline) {
-    console.warn(`No mock telescope night timeline found for site=${args.site}, observingDate=${args.observingDate}`);
-
-    return null;
-  }
-
-  return timeline;
-}
-
-console.info(`Loading mock GraphQL schema from ${SCHEMA_PATH}`);
-
-const typeDefs = readFileSync(SCHEMA_PATH, 'utf8');
-
-const schema = createSchema({
-  typeDefs,
-  resolvers: {
-    Query: {
-      // Define queries here, matching the schema's Query type.
-      telescopeNightTimeline: getMockTelescopeNightTimeline,
-    },
-  },
-});
-
-const yoga = createYoga({
-  schema,
-  graphqlEndpoint: GRAPHQL_ENDPOINT,
-});
+const yoga = createYoga({ schema, graphqlEndpoint: GRAPHQL_ENDPOINT });
 
 // eslint-disable-next-line @typescript-eslint/no-misused-promises
 const server = createServer(yoga);

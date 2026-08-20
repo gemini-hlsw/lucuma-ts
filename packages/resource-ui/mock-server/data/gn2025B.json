@@ -1,0 +1,148 @@
+{
+  "site": "GN",
+  "semester": "2025B",
+  "title": "Gemini North Semester 2025B",
+  "version": "telescope_schedules.xlsx",
+  "nightLabelling": "EVENING",
+  "legend": [],
+  "blocks": [
+    {
+      "kind": "MOUNTED",
+      "site": "GN",
+      "port": 1,
+      "instrument": "MAROON_X",
+      "publishedName": "MAROON-X",
+      "firstSheetDate": "2025-08-01",
+      "lastSheetDate": "2026-01-31",
+      "firstObservingNight": "2025-08-02",
+      "lastObservingNight": "2026-02-01",
+      "start": "2025-08-02T00:00:00.000Z",
+      "end": "2026-02-02T00:00:00.000Z",
+      "note": null,
+      "background": ""
+    },
+    {
+      "kind": "MOUNTED",
+      "site": "GN",
+      "port": 2,
+      "instrument": "GCAL",
+      "publishedName": "GCAL",
+      "firstSheetDate": "2025-08-01",
+      "lastSheetDate": "2026-01-31",
+      "firstObservingNight": "2025-08-02",
+      "lastObservingNight": "2026-02-01",
+      "start": "2025-08-02T00:00:00.000Z",
+      "end": "2026-02-02T00:00:00.000Z",
+      "note": null,
+      "background": ""
+    },
+    {
+      "kind": "MOUNTED",
+      "site": "GN",
+      "port": 3,
+      "instrument": "GNIRS",
+      "publishedName": "GNIRS",
+      "firstSheetDate": "2025-08-01",
+      "lastSheetDate": "2026-01-31",
+      "firstObservingNight": "2025-08-02",
+      "lastObservingNight": "2026-02-01",
+      "start": "2025-08-02T00:00:00.000Z",
+      "end": "2026-02-02T00:00:00.000Z",
+      "note": null,
+      "background": ""
+    },
+    {
+      "kind": "MOUNTED",
+      "site": "GN",
+      "port": 4,
+      "instrument": "ALTAIR",
+      "publishedName": "Altair",
+      "firstSheetDate": "2025-08-01",
+      "lastSheetDate": "2026-01-31",
+      "firstObservingNight": "2025-08-02",
+      "lastObservingNight": "2026-02-01",
+      "start": "2025-08-02T00:00:00.000Z",
+      "end": "2026-02-02T00:00:00.000Z",
+      "note": null,
+      "background": ""
+    },
+    {
+      "kind": "MOUNTED",
+      "site": "GN",
+      "port": 5,
+      "instrument": "GMOS",
+      "publishedName": "GMOS-N",
+      "firstSheetDate": "2025-08-01",
+      "lastSheetDate": "2026-01-31",
+      "firstObservingNight": "2025-08-02",
+      "lastObservingNight": "2026-02-01",
+      "start": "2025-08-02T00:00:00.000Z",
+      "end": "2026-02-02T00:00:00.000Z",
+      "note": null,
+      "background": ""
+    }
+  ],
+  "closures": [
+    {
+      "site": "GN",
+      "port": null,
+      "availability": "OPEN",
+      "firstSheetDate": "2025-08-01",
+      "lastSheetDate": "2026-01-31",
+      "firstObservingNight": "2025-08-02",
+      "lastObservingNight": "2026-02-01",
+      "start": "2025-08-02T00:00:00.000Z",
+      "end": "2026-02-02T00:00:00.000Z",
+      "reason": null
+    }
+  ],
+  "tooSupport": [
+    {
+      "site": "GN",
+      "start": "2025-08-02T00:00:00.000Z",
+      "end": "2026-02-02T00:00:00.000Z",
+      "tooSupport": "STANDARD",
+      "note": "Assumed: the workbook does not record ToO support"
+    }
+  ],
+  "modes": [
+    {
+      "site": "GN",
+      "start": "2025-08-02T00:00:00.000Z",
+      "end": "2026-02-02T00:00:00.000Z",
+      "mode": "QUEUE",
+      "programReferences": [],
+      "partner": null,
+      "note": null
+    }
+  ],
+  "subsystems": [
+    {
+      "site": "GN",
+      "subsystem": "PWFS1",
+      "usage": "SCIENCE",
+      "start": "2025-08-02T00:00:00.000Z",
+      "end": "2026-02-02T00:00:00.000Z",
+      "note": null
+    },
+    {
+      "site": "GN",
+      "subsystem": "PWFS2",
+      "usage": "SCIENCE",
+      "start": "2025-08-02T00:00:00.000Z",
+      "end": "2026-02-02T00:00:00.000Z",
+      "note": null
+    },
+    {
+      "site": "GN",
+      "subsystem": "LGS",
+      "usage": "SCIENCE",
+      "start": "2025-08-02T00:00:00.000Z",
+      "end": "2026-02-02T00:00:00.000Z",
+      "note": null
+    }
+  ],
+  "holidays": [],
+  "moonEvents": [],
+  "warnings": []
+}

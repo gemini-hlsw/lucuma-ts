@@ -5,6 +5,11 @@ coverage/
 reports/
 .metals
 .bloop
+packages/*/src/gql/gen
 packages/*/src/gql/*/gen
 packages/*/src/graphql/gen
 packages/*/gen/
+
+# The operations workbook export, vendored verbatim as the importer's one source.
+# It is an Excel export and must stay byte-exact - the importer parses these bytes.
+packages/resource-ui/mock-server/fixtures

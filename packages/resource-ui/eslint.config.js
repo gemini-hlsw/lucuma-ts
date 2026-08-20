@@ -28,7 +28,7 @@ export default defineConfig(
         graphQLConfig: {
           projects: {
             resource: {
-              schema: import.meta.resolve('@gemini-hlsw/lucuma-odb-schemas/resource'),
+              schema: './mock-server/schema.graphql',
               documents: [`./src/gql/*.{ts,tsx}`],
             },
           },
@@ -41,7 +41,6 @@ export default defineConfig(
     rules: {
       ...graphqlPlugin.configs['flat/operations-recommended'].rules,
 
-      '@graphql-eslint/naming-convention': ['error', { types: 'PascalCase', FieldDefinition: 'camelCase' }],
       '@graphql-eslint/require-selections': ['error', { fieldName: ['id', 'pk'] }],
     },
   },

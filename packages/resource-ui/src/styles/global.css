@@ -1,17 +1,369 @@
 @import 'tailwindcss';
 
 @theme {
-  /* GPP brand accent */
-  --color-gpp: hsl(120deg 73.4% 74.9% / 80%);
-  --color-gpp-dark: hsl(120deg 73.4% 69.9% / 80%);
-  --color-gpp-light: hsl(120deg 73.4% 79.9% / 80%);
+  /*
+   * The Explore theme.
+   *
+   * Every value in this block was measured from https://explore-dev.lucuma.xyz/
+   * (the flagship GPP app) on 2026-08-10, so Resource reads as the same
+   * product. Explore ships no CSS custom properties - its SCSS compiles to
+   * literal colours - so this block is the reusable form of its palette:
+   * extend the app from these tokens, never from a hex in a component.
+   */
 
-  /* Dark theme foundation */
-  --color-canvas: var(--color-neutral-950);
-  --color-surface: var(--color-neutral-900);
-  --color-surface-raised: var(--color-neutral-800);
-  --color-subtle: var(--color-neutral-700);
-  --color-foreground: var(--color-neutral-100);
-  --color-foreground-secondary: var(--color-neutral-400);
-  --color-foreground-muted: var(--color-neutral-500);
+  /*
+   * GPP green - the single primary action color. Identical to Explore's
+   * "Add an observation" button (rgb(76 175 80)); spelled as the hsl admin-ui
+   * uses so the two stay comparable. Mapped onto PrimeReact's --primary-color
+   * in shell.css, so buttons, chrome and the timeline heat-map share it.
+   */
+  --color-gpp: hsl(122deg 39% 49%);
+  --color-gpp-dark: hsl(122deg 39% 43%);
+  --color-gpp-light: hsl(122deg 39% 55%);
+
+  /*
+   * Explore's brand light green: its DEVELOPMENT badge, the active side-tab
+   * edge, the login title underline. An identity accent, never an action -
+   * actions stay --color-gpp.
+   */
+  --color-gpp-accent: rgb(144 238 144 / 80%);
+
+  /* Explore's other action colors: the blue of its Select All / plot toggles,
+     the slate of its Getting Started button. For controls that must not read
+     as the primary action. */
+  --color-action-info: rgb(33 108 165);
+  --color-action-secondary: rgb(106 115 124);
+
+  /*
+   * The surface ladder, canvas to raised - Explore's exact layering:
+   * page canvas, chrome (.main-header / .sidetabs), tile body, tile title
+   * bar, table header, active side tab. Climb it in order; do not invent
+   * intermediate greys.
+   */
+  --color-canvas: #000;
+  --color-surface: #1e1e1e;
+  --color-panel: #262626;
+  --color-panel-header: #313131;
+  --color-surface-raised: #414141;
+  --color-subtle: #454545;
+
+  /* Text: Explore's white-opacity ladder (Material dark), not a grey ramp. */
+  --color-foreground: rgb(255 255 255 / 87%);
+  --color-foreground-secondary: rgb(255 255 255 / 60%);
+  --color-foreground-muted: rgb(255 255 255 / 38%);
+}
+
+/*
+ * Semantic color tokens for the timeline charts.
+ *
+ * One source of truth for every chart color; the maps in
+ * `features/timeline/timelineOptions.ts` name these, and components never
+ * hard-code one. Dark neutral base, GPP green accent, red reserved for
+ * closed/unavailable, amber for unknown/warning.
+ */
+:root {
+  --timeline-text: var(--color-foreground);
+  --timeline-muted-text: var(--color-foreground-secondary);
+  --timeline-grid: var(--color-neutral-800);
+  --timeline-axis: var(--color-foreground-muted);
+  --timeline-block-border: rgb(255 255 255 / 12%);
+  --timeline-now: var(--color-gpp);
+  --timeline-tooltip-bg: var(--color-neutral-900);
+  --timeline-tooltip-border: var(--color-neutral-700);
+
+  /*
+   * The night chart's telescope-state rows: monochrome, on purpose. Hue on
+   * these charts means instrument identity and nothing else - the palette
+   * below was measured over instrument pairs only, and the per-state hues
+   * this replaces (sky, purple, cyan, the Engineering blue, the ToO green)
+   * re-used that vocabulary for facts that are not instruments (Dan,
+   * 2026-08-11). So the Mode and ToO rows spend no hue at all: the ordinary
+   * state reads as the quiet neutral, and a state worth noticing - a mode
+   * other than queue, a night a ToO can land on - is the same neutral turned
+   * bright. The value is printed on every block either way; the fill only
+   * ever says "ordinary" or "look".
+   *
+   * Measured like the instrument set, against the #0a0a0a surface and under
+   * the ink timelineOptions.ts maps to each fill.
+   */
+  --state-routine: #737373; /* neutral-500 · white ink 4.7:1 · surface 4.2:1 */
+  --state-notable: #d4d4d4; /* neutral-300 · dark ink 13.4:1 · surface 13.4:1 */
+
+  /*
+   * One colour per instrument, so a reader picks GMOS out of a semester without
+   * reading every label. Tailwind steps, resolved to hex because the set was
+   * chosen by measurement rather than by eye.
+   *
+   * Fourteen hues cannot all separate at once, but no chart ever shows
+   * fourteen: the operations workbook mounts six subjects at Gemini South and
+   * seven at Gemini North, sharing GCAL and GMOS. So the assignment is
+   * optimised over the pairs that can actually share a chart, and both groups
+   * clear every separation check:
+   *
+   *   GN  CVD ΔE 14.0 (deutan) · normal 16.5 · contrast all >= 3:1
+   *   GS  CVD ΔE 10.2 (protan) · normal 23.7 · contrast all >= 3:1
+   *
+   * The validator's lightness-band check deliberately fails. Uniform lightness
+   * was tried and drops normal-vision separation to 12.2, below the hard floor of
+   * 15; varying lightness is what buys the separation back. Re-run the two site
+   * sets, not all fourteen at once, before changing any of these:
+   *
+   *   validate_palette.js "#ffdf20,#ec003f,#c27aff,#53eafd,#ff8904,#00bba7,#4f39f6" \
+   *     --mode dark --surface "#0a0a0a" --pairs all      # Gemini North
+   *   validate_palette.js "#c27aff,#ffb900,#f54900,#009689,#53eafd,#155dfc" \
+   *     --mode dark --surface "#0a0a0a" --pairs all      # Gemini South
+   *
+   * Red is reserved for the closure band and is not an instrument colour. The
+   * first pass ignored that and handed GHOST red-600, which put the loudest
+   * signal on a working instrument right beside a shutdown. Holding red back
+   * costs nothing measurable; holding rose back too does - it drops normal-vision
+   * separation under the floor - so rose stays available.
+   *
+   * Zorro wears amber where the superseded joint "Cal/ZORRO" subject wore sky:
+   * the workbook split GCAL out (purple-400, the one hue that clears both site
+   * sets), and amber echoes 'Alopeke - Zorro's twin at the other site, never on
+   * the same chart. GSAOI, IQUEYE, Engineering keep their hues although the
+   * workbook mounts none of them; they are enum values and may return.
+   *
+   * Colour follows the instrument, never its position in a list: the map in
+   * timelineOptions.ts is keyed by the enum so a semester with fewer
+   * instruments does not repaint the ones that remain.
+   */
+  --instrument-alopeke: #ffdf20; /* yellow-300 */
+  --instrument-altair: #ec003f; /* rose-600 */
+  --instrument-cal-zorro: #ffb900; /* amber-400 */
+  --instrument-canopus: #155dfc; /* blue-600 */
+  --instrument-engineering: #51a2ff; /* blue-400 */
+  --instrument-f2: #f54900; /* orange-600 */
+  --instrument-gcal: #c27aff; /* purple-400 */
+  --instrument-ghost: #009689; /* teal-600 */
+  --instrument-gmos: #53eafd; /* cyan-300 */
+  --instrument-gnirs: #ff8904; /* orange-400 */
+  --instrument-gsaoi: #bbf451; /* lime-300 */
+  --instrument-igrins2: #00bba7; /* teal-500 */
+  --instrument-iqueye: #00d492; /* emerald-400 */
+  --instrument-maroon-x: #4f39f6; /* indigo-600 */
+
+  /*
+   * Instruments lucuma-core enumerates that the workbook never schedules
+   * (2026-08-12). They exist in the instrument browser, where their swatch sits
+   * beside their name in a table, and they never draw a bar - so they are
+   * deliberately **outside** the two measured site sets and take no part in the
+   * separation checks above. If operations ever schedule one on a port, re-run
+   * that site's check before trusting its hue.
+   */
+  --instrument-acq-cam: #94a3b8; /* slate-400 */
+  --instrument-gpi: #f472b6; /* pink-400 */
+  --instrument-niri: #a78bfa; /* violet-400 */
+  --instrument-scorpio: #fb923c; /* orange-400 */
+
+  /* A run the importer cannot identify. A
+     reserved neutral like the closure red, deliberately outside the two
+     validated hue sets: it must read as "identity unresolved", not as an
+     instrument, so it is not part of the separation measurement. */
+  --instrument-unknown: #a1a1aa; /* zinc-400 */
+
+  /* Label ink per fill: whichever of light or dark clears 4.5:1 on it. Most of
+     these hues are light enough that dark text is the legible choice. */
+  --instrument-ink-light: #fff;
+  --instrument-ink-dark: #0a0a0a;
+
+  /*
+   * "No instrument scheduled" is an absence, so it is drawn as one: a hollow
+   * block rather than a fourteenth colour, which would both crowd the palette
+   * and claim to be an instrument.
+   */
+  --schedule-ghost-fill: rgb(148 163 184 / 7%);
+  --schedule-ghost-edge: rgb(148 163 184 / 45%);
+
+  /* A telescope-wide closure washes every row at once instead of repainting
+     each of them, so the reason is read once rather than a word per row.
+     red-600, the hue held back from the instruments above. The Telescope
+     row's own Closed block is the one solid red statement of the fact:
+     red-700, measured - white ink 6.0:1, surface 3.3:1. */
+  --schedule-band: rgb(231 0 11 / 22%);
+  --schedule-band-edge: rgb(231 0 11 / 70%);
+  --schedule-closed: #b91c1c;
+
+  /*
+   * The night chart's sun wash, painted over the bars rather than behind them.
+   *
+   * An instrument mounted at noon is still mounted, so its bar covers the whole
+   * night and a band behind it is invisible - so the wash sits on top. It paints
+   * what the sky is doing: golden while the sun is up, a faint gold through
+   * twilight, and nothing at all over the dark hours. The first version dimmed
+   * the daytime with a black wash instead, which inverted the reading - day
+   * rendered darker than night (Dan, 2026-08-10: make it golden).
+   */
+  --night-daylight-wash: rgb(255 190 90 / 28%);
+  --night-twilight-wash: rgb(255 190 90 / 11%);
+
+  /* A night Resource holds nothing for: a hole in the record, so a dark veil -
+     deliberately nothing like the sun's golden wash. */
+  --schedule-no-data: rgb(10 10 10 / 78%);
+
+  /*
+   * A night that holds more than one state, in a view whose cell is a whole
+   * night. Amber rather than a fourteenth instrument hue, because the cell is
+   * saying "ask the night view", not naming something.
+   *
+   * Only the heatmap and the calendar can produce this: the xrange draws the
+   * change where it happens and never needs to flatten a night.
+   */
+  --schedule-mixed: rgb(217 119 6 / 38%);
+  --schedule-mixed-edge: rgb(245 158 11 / 70%);
+
+  /* Chart chrome. Night lines are faint on purpose: at thirty a month they are a
+     texture that lets you count days, not a grid to be read. */
+  --schedule-weekend: rgb(148 163 184 / 13%);
+  --schedule-night-line: rgb(255 255 255 / 7%);
+  --schedule-week-line: rgb(255 255 255 / 20%);
+  --schedule-today: var(--color-gpp);
+}
+
+/* Highcharts paints the point rect itself, so the hollow block is a stroke
+   override on the rendered SVG rather than something the options can express. */
+.highcharts-point.schedule-ghost {
+  fill: var(--schedule-ghost-fill);
+  stroke: var(--schedule-ghost-edge);
+  stroke-dasharray: 3 3;
+  stroke-width: 1;
+}
+
+/* A night that is not uniform. Solid edge rather than the ghost's dashes: it is
+   a positive statement about the night, not an absence. */
+.highcharts-point.schedule-mixed {
+  fill: var(--schedule-mixed);
+  stroke: var(--schedule-mixed-edge);
+  stroke-width: 1;
+}
+
+/*
+ * A night nothing is recorded for, in the cell grid.
+ *
+ * The cell keeps its border so the column still reads as a column - the sheet's
+ * empty cells are ruled too - but takes no fill at all. Invariant I4: a gap means
+ * "not recorded", so it must not look like a state.
+ */
+.highcharts-point.schedule-empty {
+  fill: transparent;
+  stroke: var(--timeline-grid);
+  stroke-width: 1;
+}
+
+/*
+ * react-big-calendar, in the dark shell.
+ *
+ * The library ships a light theme in plain selectors, so this is a remap onto
+ * the tokens the rest of the package already uses - CSS and not Tailwind
+ * because the selectors reach inside a third-party DOM this package does not
+ * render. Every rule is scoped under .resource-calendar.
+ */
+.resource-calendar {
+  color: var(--color-foreground);
+  font-size: 0.75rem;
+}
+
+/* The grid's height is inline in SemesterCalendar.tsx - the browser tests do
+   not load this stylesheet, and the height decides how many bars fit a week. */
+.resource-calendar .rbc-calendar {
+  font-family: inherit;
+}
+
+.resource-calendar .rbc-month-view {
+  border-color: var(--timeline-grid);
+  border-radius: 4px;
+  background: transparent;
+}
+
+.resource-calendar .rbc-header {
+  padding: 0.3rem 0;
+  border-color: var(--timeline-grid);
+  color: var(--color-foreground-secondary);
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.resource-calendar .rbc-month-row {
+  border-color: var(--timeline-grid);
+}
+
+.resource-calendar .rbc-day-bg {
+  border-color: var(--timeline-grid);
+}
+
+/* Whole-square click-through: the cell background navigates, so say so. */
+.resource-calendar .rbc-day-bg.night-clickable {
+  cursor: pointer;
+}
+
+/* A day the semester does not cover, kept only so the week stays seven wide. */
+.resource-calendar .rbc-off-range-bg {
+  background: transparent;
+}
+
+.resource-calendar .rbc-off-range {
+  opacity: 0.35;
+}
+
+.resource-calendar .rbc-today {
+  background: rgb(45 212 191 / 8%);
+}
+
+/* The date header owns the top of the square: number, moon, dark hours. */
+.resource-calendar .rbc-date-cell {
+  padding: 0;
+  text-align: left;
+}
+
+/*
+ * Lunar brightness, as a wash behind the night.
+ *
+ * The darkest nights read darkest, so a semester's dark runs are visible as
+ * bands down the month without reading any number. Phase only - see
+ * `domain/calendarNights.ts` for why that is a reading aid and not a scheduling
+ * input.
+ */
+.resource-calendar .rbc-day-bg.night-dark {
+  background: rgb(2 6 23 / 55%);
+}
+
+.resource-calendar .rbc-day-bg.night-grey {
+  background: rgb(100 116 139 / 10%);
+}
+
+.resource-calendar .rbc-day-bg.night-bright {
+  background: rgb(226 232 240 / 15%);
+}
+
+/* A public holiday. Amber is already "unknown/warning" in this palette, so it
+   reads as "treat this night differently" rather than as a state of the sky. */
+.resource-calendar .rbc-day-bg.night-holiday {
+  box-shadow: inset 0 2px 0 0 var(--color-amber-400);
+}
+
+/* A telescope-wide closure, using the band colour the other two views use. */
+.resource-calendar .rbc-day-bg.night-closed {
+  background: var(--schedule-band);
+}
+
+/* A run's bar. The fill and ink are set inline per instrument. Kept tight so
+   a week row holds the whole five-port complement without scrolling. */
+.resource-calendar .rbc-event {
+  padding: 0 4px;
+  border: none;
+  border-radius: 2px;
+  font-size: 0.64rem;
+  line-height: 1rem;
+}
+
+.resource-calendar .rbc-row-segment {
+  padding: 0 1px 1px;
+}
+
+.resource-calendar .rbc-event:focus-visible {
+  outline: 2px solid var(--color-gpp);
+  outline-offset: 1px;
 }

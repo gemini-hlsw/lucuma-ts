@@ -1,137 +1,69 @@
-# React + TypeScript + Vite
+# @gemini-hlsw/resource-ui
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Web UI for the GPP Resource service (telescope calendar and operational-resource manager):
+an accurate, readable, interactive reproduction of the telescope schedules -
+tonight, a week, and a semester of observing nights - plus the two inventory browsers,
+the ICTD half: `/instruments` ("where is GNIRS, tonight - and if it is on no port, say
+so") and `/components` ("where is the R400 grating"). **v1 is read-only**: Resource
+reproduces schedules that already exist; nothing edits them. [CLAUDE.md](CLAUDE.md) is
+the working guide and design record.
 
-Currently, two official plugins are available:
+React 19 + Apollo Client + Highcharts (XRange) + react-big-calendar + PrimeReact +
+Tailwind CSS 4. The real Scala backend does not exist yet, so the package carries a
+standalone mock GraphQL server (see [`mock-server/README.md`](mock-server/README.md))
+serving nine semesters imported from the operations workbook export - it is what the
+browser tests execute against, what codegen reads and what `:4000` serves, and it is
+**not** something the app can be pointed at. [ENDPOINTS.md](ENDPOINTS.md) is the
+self-contained contract for the backend team - every query the UI and the scheduler
+need, with the record types, the invariants and executable examples. CLAUDE.md records
+the v1 scope trims.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## React Compiler
-
-The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
-
-Note: This will impact Vite dev & build performances.
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-]);
-```
-
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x';
-import reactDom from 'eslint-plugin-react-dom';
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-]);
-```
-
-## Development Workflow
-
-This project uses a local mock GraphQL server and GraphQL code generation to power the UI.
-
-### 1. Start the mock GraphQL server
+## Development
 
 ```bash
-pnpm resource-ui dev:mock-server
+pnpm resource-ui dev            # vite dev server on http://localhost:5173
 ```
 
-This starts a local GraphQL API at:
+The app reads **one backend**, over HTTP, at `/resource/graphql`. The vite proxy carries
+that path to the real dev deployment, purely to sidestep CORS. That service does not
+serve the v1 API yet, so `dev` shows an amber banner naming the situation and every view
+is empty. **That is the expected state of this branch**, and it is what a deployed build
+shows too.
 
+To see the views with data, point the proxy at the local mock instead - two terminals:
+
+```bash
+pnpm resource-ui dev:mock-server   # mock GraphQL API on http://localhost:4000/graphql
+pnpm resource-ui dev:mock          # dev server, proxying /resource/graphql to :4000
 ```
-http://localhost:4000/graphql
-```
 
-The UI proxies requests to this endpoint via Vite.
+`dev:mock` is `RESOURCE_API=mock vite`. The switch is in the dev server, never in the
+app: there is no control to choose a backend and no second Apollo link, because the mock
+schema was once executed in the browser behind one and put 245 kB of server-side code
+into the bundle. Start `dev:mock-server` first or every query 502s, and restart it after
+editing the schema - a mock left over from an old session serves a schema that no longer
+exists.
 
----
+The mock server is also what to run on its own for GraphiQL, or for an external consumer
+trying the API.
 
-### 2. Generate GraphQL types
+### Codegen
 
 ```bash
 pnpm resource-ui codegen
 ```
 
-This generates typed GraphQL operations into:
+Regenerates the typed GraphQL operations and the SDL the mock serves, both into
+`src/gql/gen/` (gitignored). Run it whenever `mock-server/schema.graphql` or an
+operation in `src/gql/` changes - the mock server reads the generated SDL, so until codegen
+runs, `:4000` still serves the previous schema. `prebuild` runs it automatically on build.
 
-```
-./src/gql/gen/
-```
-
-You must run this when:
-
-- The GraphQL schema changes (`./mock-server/schema.graphql`)
-- GraphQL queries change (`./src/gql/**/*.ts`)
-
----
-
-### 3. Start the UI
+### Tests and checks
 
 ```bash
-pnpm resource-ui dev
+pnpm resource-ui test           # vitest, runs in a real browser (Playwright chromium)
+pnpm resource-ui build          # tsc -b && vite build
+pnpm resource-ui lint:eslint
 ```
 
-This runs the Vite dev server at `http://localhost:5173`.
-
----
-
-### Typical workflow
-
-In two terminals:
-
-```bash
-# Terminal 1
-pnpm resource-ui dev:mock-server
-
-# Terminal 2
-pnpm resource-ui codegen
-pnpm resource-ui dev
-```
+First-time browser tests need `pnpm resource-ui exec playwright install chromium`.

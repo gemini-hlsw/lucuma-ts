@@ -1,0 +1,256 @@
+{
+  "site": "GN",
+  "semester": "2026A",
+  "title": "Gemini North Semester 2026A",
+  "version": "telescope_schedules.xlsx",
+  "nightLabelling": "EVENING",
+  "legend": [],
+  "blocks": [
+    {
+      "kind": "MOUNTED",
+      "site": "GN",
+      "port": 1,
+      "instrument": "IGRINS2",
+      "publishedName": "IGRINS-2",
+      "firstSheetDate": "2026-02-01",
+      "lastSheetDate": "2026-03-02",
+      "firstObservingNight": "2026-02-02",
+      "lastObservingNight": "2026-03-03",
+      "start": "2026-02-02T00:00:00.000Z",
+      "end": "2026-03-04T00:00:00.000Z",
+      "note": null,
+      "background": ""
+    },
+    {
+      "kind": "MOUNTED",
+      "site": "GN",
+      "port": 1,
+      "instrument": "MAROON_X",
+      "publishedName": "MAROON-X",
+      "firstSheetDate": "2026-03-03",
+      "lastSheetDate": "2026-04-20",
+      "firstObservingNight": "2026-03-04",
+      "lastObservingNight": "2026-04-21",
+      "start": "2026-03-04T00:00:00.000Z",
+      "end": "2026-04-22T00:00:00.000Z",
+      "note": null,
+      "background": ""
+    },
+    {
+      "kind": "MOUNTED",
+      "site": "GN",
+      "port": 1,
+      "instrument": "IGRINS2",
+      "publishedName": "IGRINS-2",
+      "firstSheetDate": "2026-04-21",
+      "lastSheetDate": "2026-05-13",
+      "firstObservingNight": "2026-04-22",
+      "lastObservingNight": "2026-05-14",
+      "start": "2026-04-22T00:00:00.000Z",
+      "end": "2026-05-15T00:00:00.000Z",
+      "note": null,
+      "background": ""
+    },
+    {
+      "kind": "MOUNTED",
+      "site": "GN",
+      "port": 1,
+      "instrument": "MAROON_X",
+      "publishedName": "MAROON-X",
+      "firstSheetDate": "2026-05-14",
+      "lastSheetDate": "2026-07-01",
+      "firstObservingNight": "2026-05-15",
+      "lastObservingNight": "2026-07-02",
+      "start": "2026-05-15T00:00:00.000Z",
+      "end": "2026-07-03T00:00:00.000Z",
+      "note": null,
+      "background": ""
+    },
+    {
+      "kind": "MOUNTED",
+      "site": "GN",
+      "port": 1,
+      "instrument": "IGRINS2",
+      "publishedName": "IGRINS-2",
+      "firstSheetDate": "2026-07-02",
+      "lastSheetDate": "2026-07-31",
+      "firstObservingNight": "2026-07-03",
+      "lastObservingNight": "2026-08-01",
+      "start": "2026-07-03T00:00:00.000Z",
+      "end": "2026-08-02T00:00:00.000Z",
+      "note": null,
+      "background": ""
+    },
+    {
+      "kind": "MOUNTED",
+      "site": "GN",
+      "port": 2,
+      "instrument": "GCAL",
+      "publishedName": "GCAL",
+      "firstSheetDate": "2026-02-01",
+      "lastSheetDate": "2026-07-31",
+      "firstObservingNight": "2026-02-02",
+      "lastObservingNight": "2026-08-01",
+      "start": "2026-02-02T00:00:00.000Z",
+      "end": "2026-08-02T00:00:00.000Z",
+      "note": null,
+      "background": ""
+    },
+    {
+      "kind": "MOUNTED",
+      "site": "GN",
+      "port": 3,
+      "instrument": "GNIRS",
+      "publishedName": "GNIRS",
+      "firstSheetDate": "2026-02-01",
+      "lastSheetDate": "2026-07-31",
+      "firstObservingNight": "2026-02-02",
+      "lastObservingNight": "2026-08-01",
+      "start": "2026-02-02T00:00:00.000Z",
+      "end": "2026-08-02T00:00:00.000Z",
+      "note": null,
+      "background": ""
+    },
+    {
+      "kind": "MOUNTED",
+      "site": "GN",
+      "port": 4,
+      "instrument": "ALTAIR",
+      "publishedName": "Altair",
+      "firstSheetDate": "2026-02-01",
+      "lastSheetDate": "2026-07-31",
+      "firstObservingNight": "2026-02-02",
+      "lastObservingNight": "2026-08-01",
+      "start": "2026-02-02T00:00:00.000Z",
+      "end": "2026-08-02T00:00:00.000Z",
+      "note": null,
+      "background": ""
+    },
+    {
+      "kind": "MOUNTED",
+      "site": "GN",
+      "port": 5,
+      "instrument": "GMOS",
+      "publishedName": "GMOS-N",
+      "firstSheetDate": "2026-02-01",
+      "lastSheetDate": "2026-07-31",
+      "firstObservingNight": "2026-02-02",
+      "lastObservingNight": "2026-08-01",
+      "start": "2026-02-02T00:00:00.000Z",
+      "end": "2026-08-02T00:00:00.000Z",
+      "note": null,
+      "background": ""
+    },
+    {
+      "kind": "MOUNTED",
+      "site": "GN",
+      "port": null,
+      "instrument": "ALOPEKE",
+      "publishedName": "`Alopeke",
+      "firstSheetDate": "2026-03-31",
+      "lastSheetDate": "2026-04-03",
+      "firstObservingNight": "2026-04-01",
+      "lastObservingNight": "2026-04-04",
+      "start": "2026-04-01T00:00:00.000Z",
+      "end": "2026-04-05T00:00:00.000Z",
+      "note": null,
+      "background": ""
+    },
+    {
+      "kind": "MOUNTED",
+      "site": "GN",
+      "port": null,
+      "instrument": "ALOPEKE",
+      "publishedName": "`Alopeke",
+      "firstSheetDate": "2026-07-24",
+      "lastSheetDate": "2026-07-30",
+      "firstObservingNight": "2026-07-25",
+      "lastObservingNight": "2026-07-31",
+      "start": "2026-07-25T00:00:00.000Z",
+      "end": "2026-08-01T00:00:00.000Z",
+      "note": null,
+      "background": ""
+    }
+  ],
+  "closures": [
+    {
+      "site": "GN",
+      "port": null,
+      "availability": "OPEN",
+      "firstSheetDate": "2026-02-01",
+      "lastSheetDate": "2026-07-31",
+      "firstObservingNight": "2026-02-02",
+      "lastObservingNight": "2026-08-01",
+      "start": "2026-02-02T00:00:00.000Z",
+      "end": "2026-08-02T00:00:00.000Z",
+      "reason": null
+    }
+  ],
+  "tooSupport": [
+    {
+      "site": "GN",
+      "start": "2026-02-02T00:00:00.000Z",
+      "end": "2026-08-02T00:00:00.000Z",
+      "tooSupport": "STANDARD",
+      "note": "Assumed: the workbook does not record ToO support"
+    }
+  ],
+  "modes": [
+    {
+      "site": "GN",
+      "start": "2026-02-02T00:00:00.000Z",
+      "end": "2026-07-25T00:00:00.000Z",
+      "mode": "QUEUE",
+      "programReferences": [],
+      "partner": null,
+      "note": null
+    },
+    {
+      "site": "GN",
+      "start": "2026-07-25T00:00:00.000Z",
+      "end": "2026-08-01T00:00:00.000Z",
+      "mode": "PRIORITY_VISITOR",
+      "programReferences": [],
+      "partner": null,
+      "note": "`Alopeke"
+    },
+    {
+      "site": "GN",
+      "start": "2026-08-01T00:00:00.000Z",
+      "end": "2026-08-02T00:00:00.000Z",
+      "mode": "QUEUE",
+      "programReferences": [],
+      "partner": null,
+      "note": null
+    }
+  ],
+  "subsystems": [
+    {
+      "site": "GN",
+      "subsystem": "PWFS1",
+      "usage": "SCIENCE",
+      "start": "2026-02-02T00:00:00.000Z",
+      "end": "2026-08-02T00:00:00.000Z",
+      "note": null
+    },
+    {
+      "site": "GN",
+      "subsystem": "PWFS2",
+      "usage": "SCIENCE",
+      "start": "2026-02-02T00:00:00.000Z",
+      "end": "2026-08-02T00:00:00.000Z",
+      "note": null
+    },
+    {
+      "site": "GN",
+      "subsystem": "LGS",
+      "usage": "SCIENCE",
+      "start": "2026-02-02T00:00:00.000Z",
+      "end": "2026-08-02T00:00:00.000Z",
+      "note": null
+    }
+  ],
+  "holidays": [],
+  "moonEvents": [],
+  "warnings": []
+}

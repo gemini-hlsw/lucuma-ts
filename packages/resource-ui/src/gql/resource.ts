@@ -1,0 +1,253 @@
+/**
+ * Typed GraphQL operations for the Resource API.
+ *
+ * The block selections are fragments, so the semester, week and night queries
+ * ask for the same fields and the adapters take one generated type rather than
+ * one per operation.
+ */
+import { graphql } from './gen';
+
+export const INSTRUMENT_BLOCK_FIELDS = graphql(`
+  fragment InstrumentBlockFields on InstrumentAvailabilityBlock {
+    instrument
+    publishedName
+    usage
+    note
+    interval {
+      start
+      end
+    }
+    location {
+      place
+      port
+    }
+  }
+`);
+
+export const CLOSURE_FIELDS = graphql(`
+  fragment ClosureFields on TelescopeAvailabilityBlock {
+    availability
+    port
+    reason
+    interval {
+      start
+      end
+    }
+  }
+`);
+
+export const TOO_BLOCK_FIELDS = graphql(`
+  fragment TooBlockFields on TooSupportBlock {
+    tooSupport
+    note
+    interval {
+      start
+      end
+    }
+  }
+`);
+
+export const MODE_BLOCK_FIELDS = graphql(`
+  fragment ModeBlockFields on TelescopeModeBlock {
+    mode
+    programReferences
+    partner
+    note
+    interval {
+      start
+      end
+    }
+  }
+`);
+
+/**
+ * A component block as the night projection carries it: clipped to the night,
+ * with the piece's full identity nested so the night view needs no second
+ * round trip to the catalog.
+ */
+export const SUBSYSTEM_BLOCK_FIELDS = graphql(`
+  fragment SubsystemBlockFields on TelescopeSubsystemAvailabilityBlock {
+    subsystem
+    usage
+    powerSource
+    note
+    interval {
+      start
+      end
+    }
+  }
+`);
+
+export const NIGHT_COMPONENT_FIELDS = graphql(`
+  fragment NightComponentFields on InstrumentComponentAvailabilityBlock {
+    usage
+    location
+    note
+    interval {
+      start
+      end
+    }
+    component {
+      id
+      instrument
+      componentType
+      code
+      name
+      barcode
+      aliases
+    }
+  }
+`);
+
+export const PUBLISHED_SEMESTERS_QUERY = graphql(`
+  query PublishedSemesters {
+    publishedSemesters {
+      site
+      semester
+      title
+      version
+      demo
+      nights {
+        start
+        end
+      }
+      holidays
+      moonEvents {
+        date
+        phase
+      }
+    }
+  }
+`);
+
+/**
+ * Everything a semester view draws, in one response.
+ *
+ * Unclipped: a mounting that starts before the window still comes back with its
+ * real interval, so the view can show that it was already there.
+ */
+export const SEMESTER_SCHEDULE_QUERY = graphql(`
+  query SemesterSchedule($site: Site!, $interval: TimestampIntervalInput!) {
+    instrumentAvailability(site: $site, interval: $interval, clip: false) {
+      ...InstrumentBlockFields
+    }
+    telescopeAvailability(site: $site, interval: $interval, clip: false) {
+      ...ClosureFields
+    }
+    tooSupport(site: $site, interval: $interval, clip: false) {
+      ...TooBlockFields
+    }
+    telescopeMode(site: $site, interval: $interval, clip: false) {
+      ...ModeBlockFields
+    }
+  }
+`);
+
+/**
+ * One night, and the runs that reach it.
+ *
+ * `telescopeNight` is the projection the scheduler consumes, and it is asked for
+ * here to carry the fact a range query cannot: `dataAvailable`, which separates
+ * "nothing is recorded for this night" from "nothing is available". The
+ * instrument, closure, ToO and mode blocks come unclipped, so the view can say a
+ * run continues beyond tonight rather than implying it ends at 14:00.
+ *
+ * The projection's `components` are deliberately **not** selected: the night
+ * view does not draw them (Dan, 2026-08-12), and an operation should not fetch
+ * what nothing reads. The field stays in the schema - it is the scheduler's, and
+ * the component browser is where a reader meets a piece.
+ */
+export const NIGHT_SCHEDULE_QUERY = graphql(`
+  query NightSchedule($site: Site!, $night: Date!, $interval: TimestampIntervalInput!) {
+    telescopeNight(site: $site, observingNight: $night) {
+      observingNight
+      dataAvailable
+      interval {
+        start
+        end
+      }
+    }
+    instrumentAvailability(site: $site, interval: $interval, clip: false) {
+      ...InstrumentBlockFields
+    }
+    telescopeAvailability(site: $site, interval: $interval, clip: false) {
+      ...ClosureFields
+    }
+    tooSupport(site: $site, interval: $interval, clip: false) {
+      ...TooBlockFields
+    }
+    telescopeMode(site: $site, interval: $interval, clip: false) {
+      ...ModeBlockFields
+    }
+    telescopeSubsystemAvailability(site: $site, interval: $interval, clip: false) {
+      ...SubsystemBlockFields
+    }
+  }
+`);
+
+/**
+ * A week of nights, and the runs that cross them.
+ *
+ * `telescopeNights` is the scheduler's own query, asked here only for each
+ * night's `dataAvailable` - the blocks come unclipped from the range queries so
+ * a run spanning the week draws as one bar rather than seven abutting ones.
+ * Component records ride along for the briefing's "changes this week" list: a
+ * piece failing or a mask going in is exactly the kind of thing a week is for.
+ */
+export const WEEK_SCHEDULE_QUERY = graphql(`
+  query WeekSchedule($site: Site!, $nights: DateIntervalInput!, $interval: TimestampIntervalInput!) {
+    telescopeNights(site: $site, nights: $nights) {
+      observingNight
+      dataAvailable
+    }
+    instrumentAvailability(site: $site, interval: $interval, clip: false) {
+      ...InstrumentBlockFields
+    }
+    telescopeAvailability(site: $site, interval: $interval, clip: false) {
+      ...ClosureFields
+    }
+    instrumentComponentAvailability(site: $site, interval: $interval, clip: false) {
+      ...NightComponentFields
+    }
+    tooSupport(site: $site, interval: $interval, clip: false) {
+      ...TooBlockFields
+    }
+    telescopeMode(site: $site, interval: $interval, clip: false) {
+      ...ModeBlockFields
+    }
+  }
+`);
+
+/**
+ * Everything the component browser needs, in one response: the catalog, every
+ * piece's records over the window, and the instrument mountings the "where is
+ * it" join resolves INSTALLED against.
+ */
+export const COMPONENT_BROWSER_QUERY = graphql(`
+  query ComponentBrowser($site: Site!, $interval: TimestampIntervalInput!) {
+    components(site: $site) {
+      id
+      instrument
+      componentType
+      code
+      name
+      barcode
+      aliases
+    }
+    instrumentComponentAvailability(site: $site, interval: $interval, clip: false) {
+      usage
+      location
+      note
+      interval {
+        start
+        end
+      }
+      component {
+        id
+      }
+    }
+    instrumentAvailability(site: $site, interval: $interval, clip: false) {
+      ...InstrumentBlockFields
+    }
+  }
+`);
