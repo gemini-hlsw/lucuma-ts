@@ -145,18 +145,16 @@ the mock.
   another's in the frontend cache. Removing it is what makes that unrepeatable rather
   than merely configured-around.)
 - **Unpaged, deliberately** - and the interval queries are far smaller than the shape
-  suggests, because a record is a span, not a row per night. Measured against this
-  export: a whole GS 2025B schedule (`instrumentAvailability` + `telescopeAvailability` +
-  `tooSupport` + `telescopeMode`) is **14 blocks, ~2.7 kB**; a site's whole component
-  history is **188 blocks, ~36 kB**; a site's catalog is **60-75 pieces**. The one large
-  response is the scheduler's simulation-mode range, where the projection repeats every
-  block on every night it touches: GS 2025B is 184 nights and **16,384 blocks** over all
-  six lists, and the payload runs from **~3.2 MB** selecting component identity only
-  (`component { code name barcode }`, as the night example below does) to **~4.8 MB**
-  selecting every field of every list, before gzip. **Size the SQL by the block count**,
-  which is a fact about the export; a byte figure is only ever true of the selection it
-  was measured with. That is the case worth designing around; nothing the UI asks for
-  comes close.
+  suggests, because a record is a span, not a row per night. Counted against this export:
+  a whole GS 2025B schedule (`instrumentAvailability` + `telescopeAvailability` +
+  `tooSupport` + `telescopeMode`) is **14 blocks**; a site's whole component history is
+  **188 blocks**; a site's catalog is **60-75 pieces**. The one large response is the
+  scheduler's simulation-mode range, where the projection repeats every block on every
+  night it touches: GS 2025B is 184 nights and **16,384 blocks** over all six lists,
+  which runs to megabytes and varies several-fold with what is selected. **Size the SQL
+  by the block count** - that is a fact about the export, where a byte figure is only ever
+  true of the selection and the compression it was measured with. That is the case worth
+  designing around; nothing the UI asks for comes close.
 - **Two designed errors**, both plain `GraphQLError`s naming what was wrong.
   `telescopeNights` rejects more than 400 nights, naming the bound - above a semester,
   below an accidental decade. And every interval query rejects an interval whose `end`
