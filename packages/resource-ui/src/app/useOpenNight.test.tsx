@@ -6,8 +6,8 @@
  * selection across the jump, so a click from a UTC-clocked GS calendar does
  * not land on a GN night in site time. And it must be **one stable identity**
  * for the life of the component: the function is embedded in Highcharts
- * options, and a fresh identity per URL change triggered `update()` on every
- * masthead clock toggle - which the heatmap answers by garbling its cells.
+ * options, and a fresh identity per URL change triggers `update()` on every
+ * masthead clock toggle - a needless redraw of any chart holding it.
  */
 import type { JSX } from 'react';
 import { useLocation } from 'react-router';
@@ -44,7 +44,7 @@ function NightProbe(): JSX.Element {
  *
  * A per-value counter rather than a render count: what a chart cares about is
  * whether the *same function* comes back after a re-render, and a changed
- * number here is exactly the `update()` that garbled the heatmap.
+ * number here is exactly the `update()` that redraws the chart.
  */
 const identities = new Map<unknown, number>();
 const identityOf = (value: unknown): string => {
@@ -84,7 +84,7 @@ describe(useOpenNight.name, () => {
   });
 
   it('carries the rest of the selection over, so the jump does not change the site or the clock', async () => {
-    const screen = await openProbe('/semester?site=GS&semester=2025B&clock=utc&view=grid');
+    const screen = await openProbe('/semester?site=GS&semester=2025B&clock=utc&view=calendar');
 
     await screen.getByRole('button', { name: 'open 2025-12-24' }).click();
 

@@ -22,7 +22,7 @@ export interface UrlParamOptions {
   /**
    * Parameters deleted whenever this one changes: state subordinate to this
    * one, which a new value makes meaningless. The calendar month under the
-   * semester view is the standing example - a chart or grid link must carry
+   * semester view is the standing example - a chart link must carry
    * just the semester, never a month naming a calendar page nobody is on.
    * One update, so the URL never holds the half-changed state.
    */

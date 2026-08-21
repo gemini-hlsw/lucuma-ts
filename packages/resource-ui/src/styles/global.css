@@ -202,17 +202,6 @@
      deliberately nothing like the sun's golden wash. */
   --schedule-no-data: rgb(10 10 10 / 78%);
 
-  /*
-   * A night that holds more than one state, in a view whose cell is a whole
-   * night. Amber rather than a fourteenth instrument hue, because the cell is
-   * saying "ask the night view", not naming something.
-   *
-   * Only the heatmap and the calendar can produce this: the xrange draws the
-   * change where it happens and never needs to flatten a night.
-   */
-  --schedule-mixed: rgb(217 119 6 / 38%);
-  --schedule-mixed-edge: rgb(245 158 11 / 70%);
-
   /* Chart chrome. Night lines are faint on purpose: at thirty a month they are a
      texture that lets you count days, not a grid to be read. */
   --schedule-weekend: rgb(148 163 184 / 13%);
@@ -227,27 +216,6 @@
   fill: var(--schedule-ghost-fill);
   stroke: var(--schedule-ghost-edge);
   stroke-dasharray: 3 3;
-  stroke-width: 1;
-}
-
-/* A night that is not uniform. Solid edge rather than the ghost's dashes: it is
-   a positive statement about the night, not an absence. */
-.highcharts-point.schedule-mixed {
-  fill: var(--schedule-mixed);
-  stroke: var(--schedule-mixed-edge);
-  stroke-width: 1;
-}
-
-/*
- * A night nothing is recorded for, in the cell grid.
- *
- * The cell keeps its border so the column still reads as a column - the sheet's
- * empty cells are ruled too - but takes no fill at all. Invariant I4: a gap means
- * "not recorded", so it must not look like a state.
- */
-.highcharts-point.schedule-empty {
-  fill: transparent;
-  stroke: var(--timeline-grid);
   stroke-width: 1;
 }
 

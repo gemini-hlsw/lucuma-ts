@@ -12,8 +12,12 @@ import { observingNightInterval } from '@/domain/siteTime';
 import type { Closure, Mounting, Site } from '@/domain/types';
 import { buildTimelinePoints, eveningDescriber } from '@/features/timeline/timelineOptions';
 
-import { widthForEveryNight } from './monthGeometry';
-import { buildMonthBands, buildSemesterMonthOptions, dayTickPositions } from './semesterMonthOptions';
+import {
+  buildMonthBands,
+  buildSemesterMonthOptions,
+  dayTickPositions,
+  widthForEveryNight,
+} from './semesterMonthOptions';
 
 /** The month's points, built the way buildSemesterMonthOptions builds them. */
 const buildMonthPoints = (month: TimelineMonth, site: Site) => buildTimelinePoints(month.rows, eveningDescriber(site));

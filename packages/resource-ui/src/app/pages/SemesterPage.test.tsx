@@ -9,12 +9,6 @@ import SemesterPage from './SemesterPage';
 
 const openSemester = async (route: string) => renderApp({ element: <SemesterPage />, route });
 
-/** The grid is a click away; the chart is what the page opens on. */
-const showGrid = async (screen: Awaited<ReturnType<typeof openSemester>>) => {
-  await screen.getByRole('button', { name: 'Grid' }).click();
-  await expect.element(screen.getByTestId('semester-heatmap')).toBeVisible();
-};
-
 describe('SemesterPage - the chart', () => {
   it('opens on the chart, one block per month', async () => {
     const screen = await openSemester('/semester?site=GS&semester=2025B');
@@ -100,9 +94,8 @@ describe('SemesterPage - the chart', () => {
   });
 
   it('survives the masthead clock toggle without redrawing a single bar', async () => {
-    // The xrange sibling of the grid's regression below: the chart speaks
-    // dates, never clock times, so the toggle's re-render must leave every
-    // bar - geometry and paint alike - exactly where it was.
+    // The chart speaks dates, never clock times, so the toggle's re-render
+    // must leave every bar - geometry and paint alike - exactly where it was.
     const screen = await renderApp({
       element: <Layout />,
       route: '/semester?site=GN&semester=2026B',
@@ -146,89 +139,6 @@ describe('SemesterPage - the chart', () => {
   });
 });
 
-describe('SemesterPage - the grid', () => {
-  it('keeps the cell grid a click away, for counting nights down a column', async () => {
-    const screen = await openSemester('/semester?site=GS&semester=2025B');
-    await showGrid(screen);
-
-    await expect.element(screen.getByRole('region', { name: 'August 2025' })).toBeVisible();
-  });
-
-  it('draws only one of the views at a time', async () => {
-    const screen = await openSemester('/semester?site=GS&semester=2025B');
-    await expect.element(screen.getByTestId('semester-timeline')).toBeVisible();
-
-    await showGrid(screen);
-    await expect.element(screen.getByTestId('semester-timeline')).not.toBeInTheDocument();
-  });
-
-  it('survives the masthead clock toggle without redrawing a single cell', async () => {
-    // The clock lives in the URL, so toggling it re-renders the page - but the
-    // grids' options must stay referentially stable, because Highcharts 12
-    // answers an in-place heatmap update by garbling the cell geometry
-    // (found on the grid view, 2026-08-11). Same shapes before and after is
-    // the whole assertion.
-    const screen = await renderApp({
-      element: <Layout />,
-      route: '/semester?site=GN&semester=2026B&view=grid',
-      path: '/',
-      childRoutes: [{ path: 'semester', element: <SemesterPage /> }],
-    });
-    await expect.element(screen.getByRole('region', { name: 'August 2026' })).toBeVisible();
-    // Geometry and paint both: the observed corruption turned the hollow
-    // not-available cells black (per-point fills lost) while their paths held.
-    const shapes = () =>
-      [...document.querySelectorAll('[data-testid^="semester-heatmap-"] .highcharts-point')]
-        .map((point) => `${point.getAttribute('d') ?? ''}#${point.getAttribute('fill') ?? ''}`)
-        .join('|');
-    await expect.poll(() => shapes().length).toBeGreaterThan(0);
-    const before = shapes();
-
-    await screen.getByRole('button', { name: 'Coordinated Universal Time' }).click();
-
-    await expect
-      .element(screen.getByRole('button', { name: 'Coordinated Universal Time' }))
-      .toHaveAttribute('aria-pressed', 'true');
-    await expect.poll(shapes).toBe(before);
-  });
-
-  it('surfaces the night under the cursor when a cell is hovered', async () => {
-    // The grid's tooltip is its own wiring (cellTooltip, a night not a span),
-    // separate from the charts' shared one - so it gets its own hover.
-    const screen = await openSemester('/semester?site=GS&semester=2025B');
-    await showGrid(screen);
-    const august = '[data-testid="semester-heatmap-August 2025"]';
-    await expect.poll(() => document.querySelector(`${august} .highcharts-point`)).not.toBeNull();
-
-    const cell = document.querySelector(`${august} .highcharts-point`);
-    const { page } = await import('vitest/browser');
-    await page.elementLocator(cell!).hover();
-
-    // The first cell is the evening of 1 August, phrased "beginning" - "Night
-    // of" is the end-labelled name the click-through opens (2025-08-02).
-    await expect.element(page.getByText('Night beginning 2025-08-01')).toBeVisible();
-  });
-
-  it('opens the night view when a cell is clicked', async () => {
-    const screen = await renderApp({
-      element: <SemesterPage />,
-      route: '/semester?site=GS&semester=2025B',
-      extraRoutes: [{ path: '/night', element: <NightPage /> }],
-    });
-    await showGrid(screen);
-    const august = '[data-testid="semester-heatmap-August 2025"]';
-    await expect.poll(() => document.querySelector(`${august} .highcharts-point`)).not.toBeNull();
-
-    // The first cell of August is the evening of the 1st, the night labelled
-    // the 2nd - a cell is one night, so the click is exact.
-    const cell = document.querySelector(`${august} .highcharts-point`);
-    const { page } = await import('vitest/browser');
-    await page.elementLocator(cell!).click();
-
-    await expect.element(screen.getByText('Night of 2025-08-02')).toBeVisible();
-  });
-});
-
 describe('SemesterPage - the calendar', () => {
   const showCalendar = async (screen: Awaited<ReturnType<typeof openSemester>>) => {
     await screen.getByRole('button', { name: 'Calendar' }).click();
@@ -254,15 +164,15 @@ describe('SemesterPage - the calendar', () => {
     await expect.element(screen.getByRole('button', { name: 'Open night beginning 2025-11-14' })).toBeVisible();
   });
 
-  it('drops the month when leaving the calendar - chart and grid links carry just the semester', async () => {
+  it('drops the month when leaving the calendar - a chart link carries just the semester', async () => {
     const screen = await openSemester('/semester?site=GS&semester=2025B&view=calendar&month=2025-11');
     await expect.element(screen.getByRole('button', { name: 'Open night beginning 2025-11-14' })).toBeVisible();
 
-    await screen.getByRole('button', { name: 'Grid' }).click();
-    await expect.element(screen.getByTestId('semester-heatmap')).toBeVisible();
+    await screen.getByRole('button', { name: 'Chart' }).click();
+    await expect.element(screen.getByTestId('semester-timeline')).toBeVisible();
     await screen.getByRole('button', { name: 'Calendar' }).click();
 
-    // November is forgotten, not resurrected: the grid link had no month to
+    // November is forgotten, not resurrected: the chart link had no month to
     // carry, so returning starts from the semester's first month.
     await expect.element(screen.getByRole('button', { name: 'Open night beginning 2025-08-14' })).toBeVisible();
   });
@@ -318,7 +228,7 @@ describe('SemesterPage - the calendar', () => {
   it('draws the news as single-evening chips, never the steady run bars', async () => {
     // GN 2026B, August: the Port 1 swap is one chip naming both instruments
     // on the evening it happens; Altair and GMOS-N run the whole semester and
-    // are furniture - the chart and grid state them, and drawing them here
+    // are furniture - the chart states them, and drawing them here
     // buried the facts only the calendar carries (Dan, 2026-08-11).
     const screen = await openSemester('/semester?site=GN&semester=2026B&view=calendar');
     const calendar = screen.getByTestId('semester-calendar');
@@ -387,12 +297,11 @@ describe('SemesterPage - the calendar', () => {
     await expect.element(screen.getByText('Night of 2025-08-15')).toBeVisible();
   });
 
-  it('replaces the other views rather than joining them', async () => {
+  it('replaces the chart rather than joining it', async () => {
     const screen = await openSemester('/semester?site=GS&semester=2025B');
     await showCalendar(screen);
 
     await expect.element(screen.getByTestId('semester-timeline')).not.toBeInTheDocument();
-    await expect.element(screen.getByTestId('semester-heatmap')).not.toBeInTheDocument();
   });
 
   it('keeps the block table, which is the reading for every view', async () => {
@@ -404,7 +313,7 @@ describe('SemesterPage - the calendar', () => {
 });
 
 /**
- * The reading for someone who cannot see any of the three pictures. It is not a
+ * The reading for someone who cannot see either picture. It is not a
  * view, so it must be present whichever one is drawn.
  */
 describe('SemesterPage - the block table', () => {
@@ -424,13 +333,6 @@ describe('SemesterPage - the block table', () => {
     await expect
       .element(screen.getByTestId('semester-block-table').getByRole('row', { name: /Whole telescope/ }))
       .toBeInTheDocument();
-  });
-
-  it('stays present when the grid is showing', async () => {
-    const screen = await openSemester('/semester?site=GS&semester=2025B');
-    await showGrid(screen);
-
-    await expect.element(screen.getByTestId('semester-block-table')).toBeInTheDocument();
   });
 });
 

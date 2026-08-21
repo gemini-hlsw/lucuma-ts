@@ -10,7 +10,6 @@ import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { buildSemesterTimeline } from '@/domain/semesterTimeline';
 import { SemesterBlockTable } from '@/features/semester/SemesterBlockTable';
 import { SemesterCalendar, SemesterCalendarLegend } from '@/features/semester/SemesterCalendar';
-import { SemesterHeatmap, SemesterHeatmapLegend } from '@/features/semester/SemesterHeatmap';
 import { SemesterTimeline, SemesterTimelineLegend } from '@/features/semester/SemesterTimeline';
 import {
   calendarLegendExtras,
@@ -21,27 +20,24 @@ import {
 import { useSemesterSchedule } from '@/gql/hooks';
 
 /**
- * Three readings of one semester.
+ * Two readings of one semester.
  *
  * They are not fallbacks for each other, which is why this is a control rather
- * than a breakpoint. Each answers a question the others answer badly:
+ * than a breakpoint. Each answers a question the other answers badly:
  *
  * - **Chart** - how long does a run last? Blocks keep their true intervals, so a
  *   night that changes partway through is drawn where it changes.
- * - **Grid** - what does the sheet say on the 17th? One cell per night, lined up
- *   in columns you can count along, which is how the published sheet is checked.
  * - **Calendar** - what can I do on a given night? The week structure and the
  *   moon, which a linear axis hides.
  *
- * All three project from the same placed blocks (`domain/timeline.ts`). The
- * version of the grid this replaces built its own cells from the raw records and
+ * Both project from the same placed blocks (`domain/timeline.ts`). The DOM grid
+ * an earlier revision carried built its own cells from the raw records and
  * drifted away from the chart on closures, on A&G and on colour, silently.
  */
-type View = 'chart' | 'grid' | 'calendar';
+type View = 'chart' | 'calendar';
 
 const VIEW_OPTIONS = [
   { label: 'Chart', value: 'chart' as const },
-  { label: 'Grid', value: 'grid' as const },
   { label: 'Calendar', value: 'calendar' as const },
 ];
 
@@ -62,10 +58,10 @@ export default function SemesterPage(): JSX.Element {
   const { semester: selected, loading: loadingSets, error: setsError } = useSemester();
   // In the URL, so "look at the calendar" is a sendable link, not a set of
   // clicks to describe. An unrecognised value reads as the default chart. The
-  // month goes with it when the view changes: chart and grid links carry just
-  // the semester, and only a calendar link names one of its months.
+  // month goes with it when the view changes: a chart link carries just the
+  // semester, and only a calendar link names one of its months.
   const [viewParam, setView] = useUrlParam('view', 'chart', { clears: ['month'] });
-  const view: View = viewParam === 'grid' || viewParam === 'calendar' ? viewParam : 'chart';
+  const view: View = viewParam === 'calendar' ? viewParam : 'chart';
   const now = useNow(NOW_TICK_MS);
 
   const bounds =
@@ -84,8 +80,9 @@ export default function SemesterPage(): JSX.Element {
     bounds,
   );
 
-  // One timeline for every view: the chart draws its blocks, the grid projects
-  // them onto nights. Building it once is what makes disagreeing impossible.
+  // One timeline for every view: the chart draws its blocks, the calendar
+  // projects them onto nights. Building it once is what makes disagreeing
+  // impossible.
   const timeline =
     selected === null
       ? null
@@ -104,8 +101,8 @@ export default function SemesterPage(): JSX.Element {
   const telescopeExtras = telescopeLegendExtras(closures);
   const modeExtras = modeLegendExtras(modeBlocks);
   const tooExtras = tooLegendExtras(tooBlocks);
-  // The chart and grid both shade weekends and mark today; the calendar draws
-  // its own chrome and keys only hues, so it takes none of this.
+  // The chart shades weekends and marks today; the calendar draws its own
+  // chrome and keys only hues, so it takes none of this.
   const semesterNights = timeline?.months.flatMap((month) => month.nights) ?? [];
   const calendarExtras = calendarLegendExtras({
     weekend: true,
@@ -171,19 +168,6 @@ export default function SemesterPage(): JSX.Element {
                 calendar={calendarExtras}
               />
               <SemesterTimeline timeline={timeline} site={selected.site} now={now} />
-            </>
-          )}
-
-          {view === 'grid' && (
-            <>
-              <SemesterHeatmapLegend
-                timeline={timeline}
-                telescope={telescopeExtras}
-                mode={modeExtras}
-                too={tooExtras}
-                calendar={calendarExtras}
-              />
-              <SemesterHeatmap timeline={timeline} site={selected.site} />
             </>
           )}
 

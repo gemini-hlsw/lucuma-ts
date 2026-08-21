@@ -1,9 +1,9 @@
 /**
  * The semester as text: one row per block, not one cell per night.
  *
- * ## Why this exists rather than a fourth tab
+ * ## Why this exists rather than a third tab
  *
- * All three views are pictures, so none of them is readable without sight. The
+ * Both views are pictures, so neither is readable without sight. The
  * view this package used to ship called itself "the accessible reading" and was
  * a grid of one cell per night - about nine hundred of them for GS 2026B,
  * announcing "Port 3: GMOS, night of 7 Aug", then the 8th, then the 9th, for

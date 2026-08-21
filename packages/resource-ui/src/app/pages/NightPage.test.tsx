@@ -165,7 +165,7 @@ describe('NightPage', () => {
   });
 
   it('moves the chart clock to UT with the masthead toggle', async () => {
-    // The dual of the semester grid's stability regression: there nothing may
+    // The dual of the semester chart's stability test: there nothing may
     // move when the clock does; here everything must. The toggle keeps the
     // axis window, so no remount - the axis labels prove the in-place
     // Highcharts update actually took the new zone rather than silently

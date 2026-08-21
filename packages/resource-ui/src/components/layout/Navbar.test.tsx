@@ -23,7 +23,7 @@ describe(Navbar.name, () => {
     // From a deep link into a specific night, the brand goes home: /night with
     // no night parameter means the night in progress. The site survives;
     // page state does not.
-    const screen = await renderNavbar('/semester?site=GS&night=2026-11-14&view=grid');
+    const screen = await renderNavbar('/semester?site=GS&night=2026-11-14&view=calendar');
 
     const brand = screen.getByRole('link', { name: 'Resource', exact: false });
     await expect.element(brand).toHaveAttribute('href', '/night?site=GS');

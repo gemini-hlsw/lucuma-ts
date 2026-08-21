@@ -59,16 +59,16 @@ describe('fitBandLabels', () => {
     expect(hyphenated.calls).toEqual(['show']);
   });
 
-  it('scales the advance to the label font, so the grid judges at its own size', () => {
-    // "Wash" needs ~25px at the xrange's 0.68rem but ~23px at the grid's
-    // 0.62rem; 23px of band holds only the smaller.
+  it('scales the advance to the label font, so a smaller-set label judges at its own size', () => {
+    // "Wash" needs ~25px at the xrange's 0.68rem but only ~23px at 0.62rem;
+    // 23px of band holds only the smaller.
     const atChartSize = band(0, 23, 'Wash', '0.68rem');
-    const atGridSize = band(0, 23, 'Wash', '0.62rem');
+    const atSmallSize = band(0, 23, 'Wash', '0.62rem');
 
-    fitBandLabels(chartOf(atChartSize, atGridSize));
+    fitBandLabels(chartOf(atChartSize, atSmallSize));
 
     expect(atChartSize.calls).toEqual(['hide']);
-    expect(atGridSize.calls).toEqual(['show']);
+    expect(atSmallSize.calls).toEqual(['show']);
   });
 
   it('re-fits on every pass, so a resize can bring a label back', () => {

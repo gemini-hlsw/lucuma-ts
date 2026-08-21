@@ -176,10 +176,10 @@ export const tooColor = (too: TooSupport): string => stateFill(NOTABLE_TOO[too])
 /**
  * A key a view adds to the legend's shared ones.
  *
- * The heatmap and the calendar can say things the xrange never can - a night
- * that is not uniform, a night nothing is recorded for - because their cell is
- * a whole night. Rather than let either grow a second legend that drifts from
- * the shared one, they pass their extra keys through.
+ * The section helpers below phrase what a window actually holds - the state
+ * rows' values, the sky and calendar chrome - and pass them through here
+ * rather than letting any view grow a second legend that drifts from the
+ * shared one.
  */
 export interface LegendExtra {
   readonly key: string;
@@ -367,13 +367,13 @@ const LABEL_CHAR_WIDTH_PER_REM = LABEL_CHAR_WIDTH / 0.68;
 /**
  * The label, or `''` when it will not fit the space it has.
  *
- * A label wider than its shape is dropped rather than truncated: the grid this
- * replaced printed "I…" and "Eng…", which tell a reader nothing the tooltip
- * would not tell them better. Highcharts has no fit test of its own for xrange
- * or heatmap data labels, so every view measures - and this is the one place
- * the measurement lives, so the xrange and the grid cannot answer the same
- * label differently. Callers subtract `LABEL_PADDING * 2` from the rendered
- * width to get `availablePx`.
+ * A label wider than its shape is dropped rather than truncated: the DOM grid
+ * this superseded printed "I…" and "Eng…", which tell a reader nothing the
+ * tooltip would not tell them better. Highcharts has no fit test of its own
+ * for xrange data labels, so every view measures - and this is the one place
+ * the measurement lives, so two views cannot answer the same label
+ * differently. Callers subtract `LABEL_PADDING * 2` from the rendered width
+ * to get `availablePx`.
  */
 export const labelIfItFits = (label: string, availablePx: number): string =>
   label.length * LABEL_CHAR_WIDTH <= availablePx ? label : '';
@@ -537,8 +537,7 @@ export interface TimelineChartModel {
   readonly timeDisplay?: TimeDisplay;
 }
 
-/** Room above the plot area. Shared with the semester grid, which draws the
- *  same page's months at the same height. */
+/** Room above the plot area. */
 export const TOP_MARGIN = 8;
 
 /** How much of a row's height its bar leaves free. */

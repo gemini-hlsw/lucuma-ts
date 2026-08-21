@@ -172,7 +172,6 @@ export function TimelineLegendBar({
   too = [],
   sky = [],
   calendar = [],
-  extras = [],
 }: {
   legend: TimelineLegend;
   /** The Telescope section's keys ahead of the shared closure key - the Open
@@ -186,8 +185,6 @@ export function TimelineLegendBar({
   sky?: readonly LegendExtra[];
   /** The Calendar section's keys - weekends, now, un-entered nights. */
   calendar?: readonly LegendExtra[];
-  /** Extra keys for the Instruments section - the grid's cell states. */
-  extras?: readonly LegendExtra[];
 }): JSX.Element {
   const closureKey: LegendExtra = {
     key: 'closure',
@@ -234,7 +231,6 @@ export function TimelineLegendBar({
           ...(legend.hasEngineeringUse ? [engineeringKey] : []),
           ...(legend.hasUnavailable ? [unavailableKey] : []),
           ...(legend.hasUnscheduled ? [unscheduledKey] : []),
-          ...extras,
         ]}
       />
       <LegendSection label="Sky" entries={sky} />

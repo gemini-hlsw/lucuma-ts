@@ -23,7 +23,35 @@ import {
   MARKER_LINE_Z,
 } from '@/features/timeline/timelineOptions';
 
-import { BOTTOM_MARGIN, LABEL_GUTTER, ROW_HEIGHT, widthForEveryNight, widthForEveryOtherNight } from './monthGeometry';
+/** Height of one row, headings and data rows alike. */
+const ROW_HEIGHT = 26;
+
+/** Room below the plot area, where the day numbers sit. */
+const BOTTOM_MARGIN = 26;
+
+/**
+ * Width of the left gutter the row labels are drawn in. Load-bearing beyond
+ * layout: the group heading type is sized to fit it, so re-check the headings
+ * before narrowing it.
+ */
+const LABEL_GUTTER = 92;
+
+/**
+ * Room a two-digit day number needs, and the widths a month therefore needs to
+ * number every night or every other one. Derived from the night count rather
+ * than fixed, because a 28-night February fits numbers a 31-night August cannot.
+ */
+const PX_PER_LABEL = 15;
+const PX_PER_LABEL_TIGHT = 8;
+
+export const widthForEveryNight = (nightCount: number): number => nightCount * PX_PER_LABEL;
+const widthForEveryOtherNight = (nightCount: number): number => nightCount * PX_PER_LABEL_TIGHT;
+
+/**
+ * The night and week charts keep their own geometry (`nightChartOptions.ts`,
+ * `weekChartOptions.ts`): different windows, different label lengths, and no
+ * page reads both, so their agreement with these numbers is coincidence.
+ */
 
 /**
  * Day-number positions, every `step` nights.

@@ -7,9 +7,8 @@
  *
  * The returned function is one stable identity, reading the current location
  * through a ref at call time. It is embedded in chart options, and a fresh
- * identity per URL change meant a Highcharts `update()` on every masthead
- * clock toggle - which the heatmap answers by garbling its cells (Highcharts
- * 12). A chart's options must only change when what it draws changes.
+ * identity per URL change means a Highcharts `update()` on every masthead
+ * clock toggle. A chart's options must only change when what it draws changes.
  */
 import { useCallback, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';

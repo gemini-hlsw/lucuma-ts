@@ -1,9 +1,9 @@
 /**
  * The published semester schedule, drawn as a month calendar on react-big-calendar.
  *
- * ## What the calendar answers that the chart and grid do not
+ * ## What the calendar answers that the chart does not
  *
- * The chart and grid are run views on a linear axis. The calendar restores the
+ * The chart is a run view on a linear axis. The calendar restores the
  * week structure and is the click-through surface: **every square opens its
  * night view** - the date header, the empty cell, and the bars all navigate.
  *
@@ -14,7 +14,7 @@
  *   `domain/calendarNews.ts` decides what counts, and more kinds of news are
  *   expected to join it (component failures next). Run bars said nothing per
  *   square and buried the facts only this view carries; the runs live on the
- *   chart and grid, one click away. A chip wears the incoming instrument's
+ *   chart, one click away. A chip wears the incoming instrument's
  *   hue with its name in the text, so identity never rides on colour alone;
  *   the telescope's own news wears the closure red or the quiet neutral.
  *   News is sparse, so `showAllEvents` folds nothing behind a "+N more".
@@ -60,16 +60,15 @@ import { buildCalendarNews } from '@/domain/calendarNews';
 import { buildCalendarNights, type CalendarNight } from '@/domain/calendarNights';
 import { moonPhaseLabel } from '@/domain/moon';
 import { addDays } from '@/domain/semester';
-import { buildSemesterCells } from '@/domain/semesterCells';
 import type { SemesterTimeline as Timeline } from '@/domain/semesterTimeline';
 import type { TimelineNight } from '@/domain/timeline';
 import type { Closure, Mounting, PublishedSemester, Site } from '@/domain/types';
 import { MoonDisc } from '@/features/calendar/MoonDisc';
 import { instrumentColor, instrumentInk, stateFill, stateFillInk } from '@/features/timeline/timelineOptions';
 
-// The chart's legend, not the grid's: the calendar draws runs as bars, so its
-// key is instruments + unscheduled + closure - never the grid's cell states
-// ("changes during the night", "nothing recorded"), which no bar draws.
+// The chart's legend: the calendar's key is instruments + unscheduled +
+// closure - never per-night cell states ("changes during the night",
+// "nothing recorded"), which no chip draws.
 export { TimelineLegendBar as SemesterCalendarLegend } from '@/features/timeline/TimelineChart';
 
 const localizer = dateFnsLocalizer({
@@ -116,7 +115,7 @@ const monthKeyOf = (date: Date): string => `${String(date.getFullYear()).padStar
  * The semester's critical events as single-evening chips (Dan, 2026-08-11):
  * an instrument changing on a port, the telescope closing or reopening -
  * `domain/calendarNews.ts` decides what counts. No run bars: the runs live on
- * the chart and grid, and the calendar's squares belong to the night facts.
+ * the chart, and the calendar's squares belong to the night facts.
  * A chip wears the incoming instrument's hue - identity never rides anywhere
  * else - and the telescope's own news wears the closure red or the quiet
  * state neutral.
@@ -178,11 +177,9 @@ export function SemesterCalendar({
 }): JSX.Element {
   const nights = timeline.months.flatMap((month) => month.nights);
 
-  // The same cells the grid draws, so a night cannot disagree between views.
-  const cellRows = buildSemesterCells({ rows: timeline.rows, nights });
+  // The nights the chart placed, so a night cannot disagree between views.
   const calendarNights = buildCalendarNights({
     site,
-    rows: cellRows,
     observingNights: nights.map((night) => night.observingNight),
     holidays: semester.holidays,
     moonEvents: semester.moonEvents,

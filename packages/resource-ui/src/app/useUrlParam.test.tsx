@@ -22,7 +22,7 @@ const openView = async (route: string, options?: Parameters<typeof useUrlParam>[
         use={() => useUrlParam('view', 'chart', options)}
         readout={([value]) => ({ value })}
         actions={([, set]) => [
-          { label: 'grid', run: () => set('grid') },
+          { label: 'calendar', run: () => set('calendar') },
           { label: 'chart', run: () => set('chart') },
           { label: 'blank', run: () => set('') },
         ]}
@@ -32,9 +32,9 @@ const openView = async (route: string, options?: Parameters<typeof useUrlParam>[
 
 describe(useUrlParam.name, () => {
   it('reads the parameter the URL carries', async () => {
-    const screen = await openView('/semester?view=grid');
+    const screen = await openView('/semester?view=calendar');
 
-    await expect.element(screen.getByTestId('probe-value')).toHaveTextContent('grid');
+    await expect.element(screen.getByTestId('probe-value')).toHaveTextContent('calendar');
   });
 
   it('falls back when the URL names none, so a bare link is not a blank view', async () => {
@@ -46,13 +46,13 @@ describe(useUrlParam.name, () => {
   it('writes a chosen value into the URL, which is what makes the view linkable', async () => {
     const screen = await openView('/semester');
 
-    await screen.getByRole('button', { name: 'grid' }).click();
+    await screen.getByRole('button', { name: 'calendar' }).click();
 
-    await expect.element(screen.getByTestId(PROBE_URL_TESTID)).toHaveTextContent('/semester?view=grid');
+    await expect.element(screen.getByTestId(PROBE_URL_TESTID)).toHaveTextContent('/semester?view=calendar');
   });
 
   it('deletes the value rather than writing it when it equals the fallback', async () => {
-    const screen = await openView('/semester?view=grid');
+    const screen = await openView('/semester?view=calendar');
 
     await screen.getByRole('button', { name: 'chart' }).click();
 
@@ -63,7 +63,7 @@ describe(useUrlParam.name, () => {
   });
 
   it('reads an empty value as the fallback too, so a cleared filter drops out of the URL', async () => {
-    const screen = await openView('/semester?view=grid');
+    const screen = await openView('/semester?view=calendar');
 
     await screen.getByRole('button', { name: 'blank' }).click();
 
@@ -76,17 +76,17 @@ describe(useUrlParam.name, () => {
     // disagreeing.
     const screen = await openView('/semester?view=calendar&month=2026-11', { clears: ['month'] });
 
-    await screen.getByRole('button', { name: 'grid' }).click();
+    await screen.getByRole('button', { name: 'chart' }).click();
 
-    await expect.element(screen.getByTestId(PROBE_URL_TESTID)).toHaveTextContent('/semester?view=grid');
+    await expect.element(screen.getByTestId(PROBE_URL_TESTID)).toHaveTextContent('/semester');
     await expect.element(screen.getByTestId(PROBE_URL_TESTID)).not.toHaveTextContent('month');
   });
 
   it('pushes history by default, so the back button undoes a view switch', async () => {
     const screen = await openView('/semester');
 
-    await screen.getByRole('button', { name: 'grid' }).click();
-    await expect.element(screen.getByTestId(PROBE_URL_TESTID)).toHaveTextContent('view=grid');
+    await screen.getByRole('button', { name: 'calendar' }).click();
+    await expect.element(screen.getByTestId(PROBE_URL_TESTID)).toHaveTextContent('view=calendar');
 
     // The memory router's own history - `window.history.back()` would navigate
     // the test page itself.
@@ -98,13 +98,13 @@ describe(useUrlParam.name, () => {
   it('replaces history when asked, so a per-keystroke control does not bury the back button', async () => {
     const screen = await openView('/semester', { replace: true });
 
-    await screen.getByRole('button', { name: 'grid' }).click();
-    await expect.element(screen.getByTestId(PROBE_URL_TESTID)).toHaveTextContent('view=grid');
+    await screen.getByRole('button', { name: 'calendar' }).click();
+    await expect.element(screen.getByTestId(PROBE_URL_TESTID)).toHaveTextContent('view=calendar');
 
     await screen.router.navigate(-1);
 
     // The entry was replaced, so back leaves the parameter where it is rather
     // than stepping through every intermediate value.
-    await expect.element(screen.getByTestId(PROBE_URL_TESTID)).toHaveTextContent('view=grid');
+    await expect.element(screen.getByTestId(PROBE_URL_TESTID)).toHaveTextContent('view=calendar');
   });
 });
