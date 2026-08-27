@@ -28,7 +28,7 @@ const block = (location: Block['location'], publishedName = 'GMOS-S'): Block => 
   location,
 });
 
-describe(toMountings.name, () => {
+describe(toMountings, () => {
   let warn: MockInstance<typeof console.warn>;
 
   beforeEach(() => {

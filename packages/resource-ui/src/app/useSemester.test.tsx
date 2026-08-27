@@ -31,7 +31,7 @@ const openSemester = async (route: string) =>
     ),
   });
 
-describe(useSemester.name, () => {
+describe(useSemester, () => {
   it('takes the semester the URL names', async () => {
     const screen = await openSemester('/semester?site=GS&semester=2025A');
 

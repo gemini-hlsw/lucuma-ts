@@ -53,7 +53,7 @@ describe('the live-failure store', () => {
  * query behind it succeeded, which is a banner reporting the worst moment of
  * the session rather than the situation.
  */
-describe(clearOnSuccessLink.name, () => {
+describe(clearOnSuccessLink, () => {
   // A real operation, because @graphql-eslint validates documents in this
   // package against the schema. It never reaches a server: the stub below
   // answers it.
@@ -117,7 +117,7 @@ describe(clearOnSuccessLink.name, () => {
   });
 });
 
-describe(liveFailureMessage.name, () => {
+describe(liveFailureMessage, () => {
   it('says the server does not serve this API when it answered with GraphQL errors', () => {
     const error = new CombinedGraphQLErrors({ errors: [{ message: 'Cannot query field "publishedSemesters"' }] });
 

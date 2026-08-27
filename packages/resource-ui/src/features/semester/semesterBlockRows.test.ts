@@ -38,7 +38,7 @@ const build = (over: Partial<Parameters<typeof buildSemesterTimeline>[0]> = {}) 
     SITE,
   );
 
-describe('buildBlockRows', () => {
+describe(buildBlockRows, () => {
   it('states a run once with its extent, not once per night', () => {
     const rows = build();
     expect(rows).toHaveLength(1);

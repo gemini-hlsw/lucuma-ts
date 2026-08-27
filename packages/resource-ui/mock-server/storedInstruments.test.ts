@@ -13,7 +13,7 @@ import { synthesizeStoredInstruments } from './storedInstruments.ts';
 const schedules = buildSeedState().schedules;
 const blocks = synthesizeStoredInstruments(schedules);
 
-describe('synthesizeStoredInstruments', () => {
+describe(synthesizeStoredInstruments, () => {
   it('holds the lucuma-core instruments the workbook never schedules', () => {
     expect(new Set(blocks.map((block) => block.instrument))).toEqual(new Set(['ACQ_CAM', 'NIRI', 'GPI', 'SCORPIO']));
   });

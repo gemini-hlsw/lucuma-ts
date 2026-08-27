@@ -15,7 +15,7 @@ function Clock({ intervalMs }: { intervalMs: number }): React.JSX.Element {
   return <span data-testid="clock">{String(useNow(intervalMs))}</span>;
 }
 
-describe(useNow.name, () => {
+describe(useNow, () => {
   it('starts at the current time rather than at zero', async () => {
     const before = Date.now();
     const screen = await render(<Clock intervalMs={60_000} />);
@@ -50,7 +50,7 @@ describe(useNow.name, () => {
   });
 });
 
-describe(nowWithin.name, () => {
+describe(nowWithin, () => {
   const interval = { start: 100, end: 200 };
 
   it('reports the instant when it falls inside the window', () => {

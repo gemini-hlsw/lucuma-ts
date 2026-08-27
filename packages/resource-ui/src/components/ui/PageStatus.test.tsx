@@ -13,7 +13,7 @@ import { render } from 'vitest-browser-react';
 
 import { EmptyPanel, ErrorAlert, Loading } from './PageStatus';
 
-describe('ErrorAlert', () => {
+describe(ErrorAlert, () => {
   it('announces the failure and quotes the error, so a reader can report it', async () => {
     const screen = await render(<ErrorAlert what="the night" error={new Error('Network request failed')} />);
 
@@ -25,7 +25,7 @@ describe('ErrorAlert', () => {
   });
 });
 
-describe('Loading', () => {
+describe(Loading, () => {
   it('says what it is waiting for, and is not an alert', async () => {
     const screen = await render(<Loading what="the catalog" />);
 
@@ -34,7 +34,7 @@ describe('Loading', () => {
   });
 });
 
-describe('EmptyPanel', () => {
+describe(EmptyPanel, () => {
   it('states an absence without announcing it as a failure', async () => {
     // I4 reaching the chrome: "nothing is recorded" is an answer, not an error,
     // so it must not carry the alert role or the reserved red.

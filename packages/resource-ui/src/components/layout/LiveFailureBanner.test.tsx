@@ -11,7 +11,7 @@ import { clearLiveFailure, reportLiveFailure } from '@/gql/liveStatus';
 
 import { LiveFailureBanner } from './LiveFailureBanner';
 
-describe(LiveFailureBanner.name, () => {
+describe(LiveFailureBanner, () => {
   beforeEach(() => {
     clearLiveFailure();
   });

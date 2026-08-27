@@ -10,7 +10,7 @@ import { render } from 'vitest-browser-react';
 
 import { AboutResource } from './AboutResource';
 
-describe(AboutResource.name, () => {
+describe(AboutResource, () => {
   afterEach(() => {
     vi.restoreAllMocks();
   });

@@ -73,7 +73,7 @@ const openProbe = async (route: string) =>
     extraRoutes: [{ path: '/night', element: <NightProbe /> }],
   });
 
-describe(useOpenNight.name, () => {
+describe(useOpenNight, () => {
   it('lands on the night view at the night asked for', async () => {
     const screen = await openProbe('/semester?site=GS&semester=2025B');
 

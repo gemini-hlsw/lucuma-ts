@@ -12,7 +12,7 @@ import Navbar from './Navbar';
 // published semesters) - renderApp provides the Apollo client and the router.
 const renderNavbar = async (route = '/') => renderApp({ element: <Navbar />, route });
 
-describe(Navbar.name, () => {
+describe(Navbar, () => {
   it('renders the Resource wordmark', async () => {
     const screen = await renderNavbar();
 

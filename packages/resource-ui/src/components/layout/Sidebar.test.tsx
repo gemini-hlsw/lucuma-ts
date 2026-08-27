@@ -9,7 +9,7 @@ const ALL_ITEMS = SIDEBAR_MENU_SECTIONS.flatMap((section) => section.items);
 
 // Driven by the menu rather than a hard-coded list, so a new destination can be
 // added without rewriting these behavioural guards.
-describe(Sidebar.name, () => {
+describe(Sidebar, () => {
   it('offers every destination as a real link in a named landmark', async () => {
     const screen = await renderApp({ element: <Sidebar />, route: '/semester?site=GN&semester=2026B' });
 

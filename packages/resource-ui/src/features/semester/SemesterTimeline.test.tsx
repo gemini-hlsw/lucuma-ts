@@ -48,7 +48,7 @@ const timeline = buildSemesterTimeline({
 const chartWidth = (container: HTMLElement): number =>
   Math.round(container.querySelector('.highcharts-container')?.getBoundingClientRect().width ?? 0);
 
-describe('SemesterTimeline', () => {
+describe(SemesterTimeline, () => {
   it('resizes its charts when the container does, not when the window does', async () => {
     const screen = await render(
       <div style={{ width: '900px' }} data-testid="host">

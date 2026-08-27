@@ -56,7 +56,7 @@ describe('NightPage - the telescope-state rows the workbook records', () => {
   });
 });
 
-describe('NightPage', () => {
+describe(NightPage, () => {
   it('draws the night, one row per published port', async () => {
     const screen = await openNight('/night?site=GS&night=2025-11-14');
 
@@ -218,7 +218,7 @@ describe('NightPage', () => {
 
   it('keeps an off-port run off the chart - the schedule is the ports picture', async () => {
     // GN, inside the late-September 2026 `Alopeke visitor run: the API serves
-    // it (resolvers.test.ts pins that), but the chart draws the five ports
+    // it, and resolvers.test.ts pins that, but the chart draws the five ports
     // and nothing else. The instrument browser is where it shows.
     const screen = await openNight('/night?site=GN&night=2026-09-26');
 

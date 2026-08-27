@@ -32,7 +32,7 @@ const mounting = (over: Partial<Mounting> = {}): Mounting => ({
   ...over,
 });
 
-describe('buildInstrumentRows', () => {
+describe(buildInstrumentRows, () => {
   it('says which port an instrument is on tonight, and how long the run is', () => {
     const [row] = buildInstrumentRows({ mountings: [mounting()], night });
 
@@ -91,7 +91,7 @@ describe('buildInstrumentRows', () => {
   });
 });
 
-describe('locationOptions', () => {
+describe(locationOptions, () => {
   it('offers the ports in order, then the two plain facts, each with its count', () => {
     const rows = buildInstrumentRows({
       mountings: [
@@ -120,7 +120,7 @@ describe('locationOptions', () => {
   });
 });
 
-describe('runsOf', () => {
+describe(runsOf, () => {
   it('gives an instrument its runs over the window, oldest first', () => {
     const later = mounting({ id: 'b', interval: nights('2026-09-01', '2026-09-05') });
     const earlier = mounting({ id: 'a', interval: nights('2026-08-01', '2026-08-05') });
@@ -129,7 +129,7 @@ describe('runsOf', () => {
   });
 });
 
-describe('matchesInstrument', () => {
+describe(matchesInstrument, () => {
   it('matches the enum tag and the name the schedule prints, case-insensitively', () => {
     const [row] = buildInstrumentRows({ mountings: [mounting()], night });
 

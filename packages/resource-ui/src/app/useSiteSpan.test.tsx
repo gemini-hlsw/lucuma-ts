@@ -36,7 +36,7 @@ const openSpan = async (route: string) =>
     ),
   });
 
-describe(useSiteSpan.name, () => {
+describe(useSiteSpan, () => {
   it('covers the site s whole record, from its first semester to its last', async () => {
     const screen = await openSpan('/components?site=GS&semester=2025B');
 

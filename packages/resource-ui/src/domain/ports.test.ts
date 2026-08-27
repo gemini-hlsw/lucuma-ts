@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { portRowLabel, portRows, TELESCOPE_PORTS } from './ports';
 
-describe('portRows', () => {
+describe(portRows, () => {
   it('draws every port the telescope has, whatever the records happen to name', () => {
     // A quiet port keeps its row: blank is "nothing recorded" (I4), while a
     // missing row would tell the reader the port does not exist.
@@ -20,7 +20,7 @@ describe('portRows', () => {
   });
 });
 
-describe('portRowLabel', () => {
+describe(portRowLabel, () => {
   it('labels a port the way every view prints it', () => {
     expect(portRowLabel(3)).toBe('Port 3');
   });

@@ -42,7 +42,7 @@ const mounting = (over: Partial<Mounting> & Pick<Mounting, 'id' | 'interval'>): 
   ...over,
 });
 
-describe('buildCalendarNews', () => {
+describe(buildCalendarNews, () => {
   it('turns a port swap into one chip naming both instruments, on the evening it happens', () => {
     const swap = startOfNight('2026-08-05');
     const items = buildCalendarNews({

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { addDays, clampWindowStart, semesterNightDates, semesterNightRange, weekNightDates } from './semester';
 
-describe('semesterNightRange', () => {
+describe(semesterNightRange, () => {
   it('runs Feb-Jul for an A semester', () => {
     expect(semesterNightRange('2026A')).toEqual({ start: '2026-02-01', end: '2026-07-31' });
   });
@@ -16,7 +16,7 @@ describe('semesterNightRange', () => {
   });
 });
 
-describe('semesterNightDates', () => {
+describe(semesterNightDates, () => {
   it('enumerates every night in order and spans the year boundary', () => {
     const dates = semesterNightDates('2026B');
     expect(dates[0]).toBe('2026-08-01');
@@ -26,7 +26,7 @@ describe('semesterNightDates', () => {
   });
 });
 
-describe('weekNightDates', () => {
+describe(weekNightDates, () => {
   it('returns seven consecutive dates', () => {
     expect(weekNightDates('2026-08-01')).toEqual([
       '2026-08-01',
@@ -40,13 +40,13 @@ describe('weekNightDates', () => {
   });
 });
 
-describe('addDays', () => {
+describe(addDays, () => {
   it('crosses month boundaries', () => {
     expect(addDays('2026-08-31', 1)).toBe('2026-09-01');
   });
 });
 
-describe('clampWindowStart', () => {
+describe(clampWindowStart, () => {
   it('pulls a start from another semester into the selected one', () => {
     // The URL default (2026-08-01) with 2027A selected lands on the semester start.
     expect(clampWindowStart('2026-08-01', '2027A', 14)).toBe('2027-02-01');

@@ -4,7 +4,7 @@ import { firstEveningDate, lastEveningDate, nightCount, observingNightInterval, 
 
 const ms = (iso: string): number => Date.parse(iso);
 
-describe('observingNightInterval', () => {
+describe(observingNightInterval, () => {
   it('spans 14:00 -> 14:00 local at Gemini North (UTC-10, no DST)', () => {
     expect(observingNightInterval('GN', '2026-08-12')).toEqual({
       start: ms('2026-08-12T00:00:00Z'),
@@ -31,7 +31,7 @@ describe('observingNightInterval', () => {
  * The "tonight" resolver: a URL with no night means the night this instant
  * belongs to, so the 14:00 rollover is the app's front door.
  */
-describe('observingNightOf', () => {
+describe(observingNightOf, () => {
   it('rolls the label over at exactly 14:00 local', () => {
     // Gemini North is UTC-10, so 14:00 local on the 12th is 00:00Z on the 13th.
     expect(observingNightOf('GN', ms('2026-08-12T23:59:59Z'))).toBe('2026-08-12');

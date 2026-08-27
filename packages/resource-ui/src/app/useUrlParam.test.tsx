@@ -30,7 +30,7 @@ const openView = async (route: string, options?: Parameters<typeof useUrlParam>[
     ),
   });
 
-describe(useUrlParam.name, () => {
+describe(useUrlParam, () => {
   it('reads the parameter the URL carries', async () => {
     const screen = await openView('/semester?view=calendar');
 

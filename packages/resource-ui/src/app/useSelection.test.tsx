@@ -42,7 +42,7 @@ const openSelection = async (route: string) =>
     ),
   });
 
-describe(useSelection.name, () => {
+describe(useSelection, () => {
   it('reads the whole selection out of the query string', async () => {
     const screen = await openSelection('/night?site=GS&semester=2025B&night=2025-11-14&clock=utc');
 

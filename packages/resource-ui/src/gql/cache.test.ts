@@ -19,7 +19,7 @@ const scheduleBlockImplementors = Object.values(buildSchema(sdl).getTypeMap())
   .map((type) => type.name)
   .sort();
 
-describe(buildCache.name, () => {
+describe(buildCache, () => {
   it('finds the schema implementors - an empty list would pin nothing', () => {
     expect(scheduleBlockImplementors.length).toBeGreaterThan(0);
   });

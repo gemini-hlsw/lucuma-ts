@@ -4,7 +4,7 @@ import { coversNight } from './interval';
 
 const NIGHT = { start: 100, end: 200 };
 
-describe('coversNight', () => {
+describe(coversNight, () => {
   it('is true for an interval matching the night exactly', () => {
     expect(coversNight({ start: 100, end: 200 }, NIGHT)).toBe(true);
   });

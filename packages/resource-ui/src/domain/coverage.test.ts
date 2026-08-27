@@ -25,7 +25,7 @@ const GS = [
   semester({ semester: '2099B', firstNight: '2099-08-02', lastNight: '2100-02-01', demo: true }),
 ];
 
-describe('coverageRanges', () => {
+describe(coverageRanges, () => {
   it('merges adjacent semesters into one unbroken run of nights', () => {
     // 2025B starts the night after 2025A ends; 2026B stands alone (no 2026A here).
     expect(coverageRanges(GS, 'GS')).toEqual([
@@ -51,7 +51,7 @@ describe('coverageRanges', () => {
   });
 });
 
-describe('nearestCoveredNight', () => {
+describe(nearestCoveredNight, () => {
   const ranges = coverageRanges(GS, 'GS');
 
   it('offers the last covered night to someone past the end of a range', () => {
@@ -75,7 +75,7 @@ describe('nearestCoveredNight', () => {
   });
 });
 
-describe('resolveSemester', () => {
+describe(resolveSemester, () => {
   it('honours an explicit request that names a semester the site holds', () => {
     // Even when the night sits in a different semester: a /semester link means
     // the semester it says.

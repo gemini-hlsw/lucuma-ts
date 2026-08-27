@@ -6,7 +6,7 @@ const DAY_MS = 86_400_000;
 // The reference new moon the module is anchored to.
 const NEW_MOON = Date.UTC(2000, 0, 6, 18, 14);
 
-describe('moonPhaseAt', () => {
+describe(moonPhaseAt, () => {
   it('is dark and waxing at the reference new moon', () => {
     const phase = moonPhaseAt(NEW_MOON);
     expect(phase.age).toBeCloseTo(0, 5);
@@ -41,7 +41,7 @@ describe('moonPhaseAt', () => {
   });
 });
 
-describe('moonPhaseLabel', () => {
+describe(moonPhaseLabel, () => {
   it('names the principal phases with an illumination percentage', () => {
     expect(moonPhaseLabel(moonPhaseAt(NEW_MOON))).toBe('New moon, 0% illuminated');
     expect(moonPhaseLabel(moonPhaseAt(NEW_MOON + (SYNODIC_DAYS / 2) * DAY_MS))).toBe('Full moon, 100% illuminated');

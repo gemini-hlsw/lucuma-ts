@@ -8,7 +8,7 @@ const HOUR = 3_600_000;
 /** Hour-of-day (site-local, roughly) for sanity windows. */
 const hstHour = (epochMillis: number): number => new Date(epochMillis - 10 * HOUR).getUTCHours();
 
-describe('nightSunTimes', () => {
+describe(nightSunTimes, () => {
   it('finds an ordered sunset, dusk, dawn, sunrise for a Maunakea August night', () => {
     const night = observingNightInterval('GN', '2026-08-02');
     const sun = nightSunTimes('GN', night);

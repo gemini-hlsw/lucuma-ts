@@ -27,7 +27,7 @@ const chartOf = (...bands: ReturnType<typeof band>[]): BandFitChart => ({
   ],
 });
 
-describe('fitBandLabels', () => {
+describe(fitBandLabels, () => {
   it('keeps the label of a closure wide enough to wrap it', () => {
     // Six nights of the semester chart hold "Maintenance" per wrapped line,
     // which is the treatment the wide closures rely on.
