@@ -1,6 +1,5 @@
 import './styles/global.css';
 import './styles/main.css';
-import './styles/chartOverlays.css';
 
 import { ApolloProvider } from '@apollo/client/react';
 import { type ReactNode, StrictMode } from 'react';
