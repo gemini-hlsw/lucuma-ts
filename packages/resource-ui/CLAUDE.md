@@ -514,9 +514,23 @@ mount against the mock via `src/test/renderApp.tsx` and drive real interactions 
 (`--color-gpp`), the brand light green (`--color-gpp-accent` - the DEVELOPMENT badge and identity accents, never
 an action), and Explore's info blue / secondary slate. Extend from these tokens, never from a hex in a component;
 `shell.css` wires them into PrimeReact. Red stays closed/unavailable, amber unknown/warning. Use PrimeReact first
-for controls, Tailwind for layout and small adjustments; PrimeReact widths sometimes beat Tailwind utilities on
-equal specificity, so reach for `!` when overriding them. Prefer Tailwind utilities over CSS files except where
-Tailwind can't express it (complex selectors, keyframes, third-party overrides).
+for controls, Tailwind for layout and small adjustments.
+
+**When a Tailwind utility loses to a PrimeReact control, the winner is `lucuma-ui-css`, not PrimeReact.**
+PrimeReact's own classes are wrapped in `@layer primereact` and set almost nothing (`.p-tag` gets three
+flexbox properties), so they lose to anything. The theme is `lucuma-ui-css`, and `lucuma-ui.scss` loads it
+**unlayered** inside `.dark { }` - so its rules are `.dark .p-tag` at 0-2-0, beating a Tailwind utility at
+0-1-0 in `@layer utilities` twice over: unlayered outranks layered, and the specificity is higher anyway.
+Declaring PrimeReact's documented layer order (`@layer tailwind-base, primereact, tailwind-utilities`) does
+nothing here, because PrimeReact's layer is not the competitor - do not reach for it.
+
+Override through the variables first: `shell.css` re-tints `lucuma-ui-css` by reassigning its own
+`--surface-*`, `--text-color`, `--primary-color` and `--highlight-*`, which is why the app matches without
+fighting any selector. Reach for `!` only where `lucuma-ui-css` hardcodes a value with no variable behind
+it - today that is `.p-tag { font-size: 0.75rem }`, the reason every `!` in this package sits on a `<Tag>`.
+
+Prefer Tailwind utilities over CSS files except where Tailwind can't express it (complex selectors,
+keyframes, third-party overrides).
 
 **Density is one number.** The root font size is 13px (`shell.css`), matched against Explore at both widths;
 everything is sized in rem. Settled - re-measure against Explore before changing it.
