@@ -47,218 +47,92 @@ serves. The app is not a consumer of it.
 
 ## The views
 
-`/semester` carries a **Chart | Calendar** toggle: an xrange per month for how long a run lasts,
-and a react-big-calendar month grid for what a given night holds - the only one of the two that
-shows the week, or the moon.
+Five destinations draw the one record. `/semester` carries a **Chart | Calendar** toggle.
 
-**Do not give a view its own path from records to pixels.** Both project from the placed rows
-`domain/timeline.ts` produced, never from a `Mounting`. The one deliberate exception is
-`domain/calendarNews.ts`, which reads raw records because its subject is the records' own
-boundaries rather than placed spans.
+**Do not give a view its own path from records to pixels.** Every view projects from the placed rows
+`domain/timeline.ts` produced, never from a `Mounting`, and both charts build on `domain/timeline.ts`
+plus `features/timeline/`. A view supplies its own axis and its own way of phrasing a span - dates and
+nights for the semester and week, clock times for a night - and nothing else. Adding a fourth window
+should not mean copying any of it. The one deliberate exception is `domain/calendarNews.ts`, which
+reads raw records because its subject is the records' own boundaries rather than placed spans.
 
-Both charts are built on `domain/timeline.ts` and `features/timeline/`. A view supplies its own
-axis and its own way of phrasing a span - dates and nights for the semester and week, clock times
-for a night - and nothing else. Adding a fourth window should not mean copying any of it.
+| View              | What it draws                                                                                             | Its module                                    |
+| ----------------- | --------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
+| Night             | the chart alone, deliberately bare, plus PWFS1/PWFS2/LGS subsystem rows no other view shows               | `features/night/`                             |
+| Week              | the run chart, plus `WeekNightStrip` (a card per night, each one a button onto it) and `WeekChangesTable` | `domain/weekBriefing.ts`                      |
+| Semester chart    | an xrange per month: how long a run lasts                                                                 | `features/semester/`                          |
+| Semester calendar | night chrome plus single-evening critical-event chips                                                     | `domain/calendarNews.ts`, `calendarNights.ts` |
+| `/instruments`    | a row per instrument the site's records name, expanding into its runs                                     | `domain/instrumentFinder.ts`                  |
+| `/components`     | the ICTD half: the piece catalog grouped by instrument, expanding into its history                        | `domain/componentFinder.ts`                   |
 
-### Calendar
+Rules the code does not state for itself:
 
-Night chrome plus critical-event chips; every square clicks through to its night view.
+- **The calendar draws no run bars, ever** - single-evening chips only, for the critical events (an
+  instrument changing on a port, the telescope closing with its reason, reopening). A window-edge
+  boundary is furniture, not news. More news kinds are expected as the semester query carries them.
+- **A boundary on the window's edge is not a change**, in the week's changes table or the calendar's
+  news. Both read **ports only**: a shelf change is inventory, not a night's headline.
+- **Subsystem rows are the night view's alone.** They carry no legend section - every span draws in the
+  one quiet neutral and prints its state in words, so a colour key would key no distinction. Three
+  semester-constant rows per month would bury the runs on the wide views.
+- **Both finders are site-scoped, never semester-scoped** (`app/useSiteSpan.ts`). "Where is Zorro" is not
+  a semester question, and a piece's history does not restart in February. The masthead's semester
+  control moves the **night** these pages report for; it does not decide what they can see.
+- **The two browser pages are deliberately not shared.** The shapes diverge - grouped subheaders against
+  a flat list, two filters against one, different expansions - and a `FinderPage` taking a dozen props
+  would hide nothing. Both open a row into `components/ui/RecordHistoryTable.tsx`, which is a plain
+  `<table>` rather than a nested DataTable, keeps its columns even when empty, and puts a note in a
+  column that wraps rather than a second line that truncates.
+- **A night no semester covers says what is covered** (`domain/coverage.ts`), and offers the nearest
+  covered night. A demo semester never merges with a real one.
+- **Both quarantine boundaries are one file each** - `mock-server/storedInstruments.ts` for instruments
+  GPP knows but the schedule never mounts, `components.ts` for the synthetic piece catalog. Same three
+  rules: deterministic, anchored to the site's own recorded span, never deciding `dataAvailable`. Swap
+  the one file when real data arrives. Stored instruments carry **no port**, which is structurally what
+  keeps them off every schedule view.
 
-**No run bars, ever.** Single-evening chips for the critical events - an instrument changing on a
-port ("IGRINS-2 → MAROON-X", one chip per boundary, phrased by the new usage), the telescope
-closing (red, the reason) and reopening - projected by `domain/calendarNews.ts`, with window-edge
-boundaries treated as furniture. More news kinds are expected (component failures next, once the
-semester query carries them). A chip wears the incoming instrument's hue with its name in the text.
-
-Square chrome (moon disc, published new/full, dark hours, holiday, closed wash, brightness wash)
-comes from `domain/calendarNights.ts`. The legend keys only hues and the closure - chips say their
-own words. The toolbar title is a month picker; view and month are URL state
-(`?view=calendar&month=2026-11`).
-
-Three traps:
+Three traps in the calendar, each of which has cost real time:
 
 - A square is the **evening** a night begins, not the night's label, or it sits a day off the grid.
-- All-day event **ends are exclusive** (local midnight after the last evening) or bars draw a day
-  short.
-- The calendar's height is **inline in the component**, not in `global.css` - the browser tests do
-  not load the app stylesheet, and the height decides the week-row geometry.
-
-### Week
-
-Seven nights of a whole-night-granular schedule are usually seven identical columns, so the chart
-shows the runs and a briefing under it shows the sky and the changes. Both come from
-`domain/weekBriefing.ts`; `features/week/WeekBriefing.tsx` draws them.
-
-- **`WeekNightStrip`** - one card per night: weekday label, moon disc and percentage, hours of
-  astronomical dark, tags for a published new/full moon, a holiday, and a night with nothing
-  recorded. Every card **is** a button onto its night view. `summarizeWeek` folds the same facts
-  into the page subtitle.
-- **`WeekChangesTable`** - "Changes this week": When / What / Where, one row per block boundary
-  falling **inside** the window. A boundary on the window's edge is not a change. The kinds are a
-  run beginning or ending, a closure beginning or ending, and a component moving. When nothing
-  changes it says so rather than drawing an empty table.
-
-Like the calendar's news, the changes read **ports only** (`buildWeekChanges` skips a mounting with
-a null port): a shelf change is inventory, not a night's headline.
-
-### Night
-
-**Where partial nights are visible.** The workbook is whole-night granular, so no served night
-splits a row and the chart's tests are synthetic on purpose - they pin the partial-night capability
-the non-negotiables protect, not the current data.
-
-**The chart alone**, deliberately bare for now and expected to gain things back. `NightSchedule`
-does not select the projection's `components`; the field stays in the schema, since it is the
-scheduler's. If a night-scoped table returns, build its rows through `componentFinder`.
-
-**The night view alone adds the subsystem rows**: PWFS1, PWFS2 and LGS beneath the state rows,
-monochrome in the same usage words a mounted span uses, with **no legend section of their own** -
-every subsystem span draws in the one quiet neutral and prints its state in words, so a colour key
-would key no distinction. The wide views omit the rows entirely; three semester-constant rows per
-month would bury the runs.
-
-### Coverage
-
-**A night no semester covers says what is covered** (`domain/coverage.ts`). `coverageRanges` merges
-the site's published semesters into contiguous spans for the message, `nearestCoveredNight` offers
-the way back, and a demo semester never merges with a real one. `app/useSemester.ts` reads the same
-module's `resolveSemester`.
-
-### `/instruments`
-
-One row per instrument the site's records name: which port it is on tonight (or plainly none), the
-run's extent, and a row expansion listing its runs, which is where the workbook's Not Available
-windows become legible. An instrument with no record on the chosen night reads "Not recorded", never
-carried forward. The **Location filter** groups by the same phrasing the Where cell prints
-(`locationLabel`, so the two cannot drift), offering only the locations the rows hold, counted, from
-the telescope outwards. The run column is headed **"Dates"**, echoing the expansion's first column.
-
-`domain/instrumentFinder.ts` mirrors `componentFinder` - same night-not-instant reading, same
-last-record-decides, same honest absence.
-
-**Instruments GPP knows but the schedule never mounts** come from `mock-server/storedInstruments.ts`,
-a **quarantine boundary** alongside `components.ts` under the same three rules: deterministic,
-anchored to the site's own recorded span, never deciding `dataAvailable`. Resource's `Instrument`
-names eighteen (plus `UNKNOWN`) and the workbook mounts eleven on ports, so the acquisition cameras,
-GPI, NIRI and SCORPIO would otherwise be invisible. `ENGINEERING`, `GSAOI` and `IQUEYE` are served by
-neither layer but are in the palette against the day a record names one.
-
-**Site is fixed per instrument** (AcqCam appears at both sites under one tag exactly as GMOS does) and
-**location is what moves**. These records carry **no port**, which is structurally what keeps them out
-of every schedule view. Their hues sit outside the two measured site sets deliberately; if one is ever
-scheduled, re-run that site's separation check.
-
-### `/components`
-
-The ICTD half: a finder DataTable over the component catalog, grouped by instrument under subheaders
-(colour swatch, piece count, how many are on the telescope tonight), with filter dropdowns carrying
-their counts. Status speaks operations, not the enum: Science / Engineering / a muted "Spare" for a
-stored piece with nothing wrong / red "Unavailable", with the record's own words in the Note column -
-derived once in `componentLabels.componentStatus` and worn by the browser row and its history alike.
-
-The catalog carries **real identities** (lucuma-core enum tags and G-numbers; honest hand-written codes
-where no enum exists) but its blocks are **synthetic** - `mock-server/components.ts` is the quarantine
-boundary; swap that one file when real data arrives. A piece's place is `INSTALLED` or a storage
-location, never a port; INSTALLED resolves through the instrument's own mounting records
-(`domain/componentFinder.ts`).
-
-### Both finders
-
-**Site-scoped, never semester-scoped**, via `app/useSiteSpan.ts`. "Where is Zorro" is not a semester
-question - Zorro sits out GS 2025B - and a piece's history does not restart in February. The masthead's
-semester control still moves the **night** these pages report for; it does not decide what they can see.
-
-**Both open a row into `components/ui/RecordHistoryTable.tsx`** - Dates, Nights, where, Status, Note,
-one line per record. A plain `<table>`, not a nested DataTable: this is presentation, not a control, and
-PrimeReact's header fill, stripes and hover would compete with the table it hangs inside. Five rules:
-
-- **It reads as the row it hangs under, continued.** Full width and responsive, the note taking the
-  slack; indented `pl-12` (the expander column's 2.5rem plus a cell's 0.5rem) so its first cell starts
-  under the name; and wearing that row's own background, which needs a `shell.css` rule.
-- **Status is words, not badges.** Ten badges stacked under one row is a column of shouting pills.
-  Colour marks only the state worth noticing - red for out of service. `components/ui/StatusTag.tsx`
-  holds both facets (`severity` for a row's badge, `tone` for the words) so one derivation drives both.
-- **A note is a column, never a second line under the status** (`components/ui/NoteCell.tsx`), on the
-  browsers and their expansions alike. Last column everywhere, and it **wraps** rather than truncating
-  or scrolling - a clipped note reads as the whole note.
-- **The columns never move**, even when nothing fills them. An empty cell is the honest answer.
-- **It says what the record cannot say alone**, from what the one query already returns - never a second
-  round trip. A component block says INSTALLED and never a port, so the history resolves it through the
-  same mountings the row uses (`componentFinder.whereOf`); every span carries its length in nights
-  (`siteTime.nightCount`, counted over evening dates because a night is not a fixed number of hours).
-
-Each page maps its own records onto `HistoryRow` and keeps its own vocabulary. **The two browser pages
-themselves are deliberately not shared**: the shapes diverge (grouped subheaders against a flat list, two
-filters against one, different expansions) and a `FinderPage` taking a dozen props would hide nothing.
+- All-day event **ends are exclusive** (local midnight after the last evening) or bars draw a day short.
+- The calendar's height is **inline in the component**, not in `global.css` - the browser tests do not
+  load the app stylesheet, and the height decides the week-row geometry.
 
 ## Chart rows, colour and treatment
 
 **Every schedule view heads itself with the Telescope, Mode and ToO rows** when records reach its window,
-through `collectStateRows` in `domain/timeline.ts`. The Telescope row states the recorded availability: a
-quiet "Open" block, or "Closed" in the reserved closure red alongside the band.
+through `collectStateRows` in `domain/timeline.ts`. All of the layout below is derived from the rows
+inside the shared builders - no view passes categories or header counts alongside its data.
 
-**The state rows are monochrome and draw as a header band.** Hue means instrument identity and nothing
-else. The ordinary state (Open, Queue, Standard ToOs) is the quiet neutral; a state worth noticing
-(`NOTABLE_MODE`/`NOTABLE_TOO`: any other mode, any departure from standard ToOs) the bright one. **Do not
-give a state a hue** - a new state kind joins the two neutrals or the closure red.
+- **State rows are monochrome and draw as a header band.** The ordinary state (Open, Queue, Standard
+  ToOs) is the quiet neutral; a state worth noticing (`NOTABLE_MODE`/`NOTABLE_TOO`) the bright one.
+  **Do not give a state a hue** - a new state kind joins the two neutrals or the closure red. The
+  calendar draws only the notable spans; routine values every week would bury the runs.
+- **One colour per instrument, keyed by the enum**, in `features/timeline/timelineOptions.ts` as
+  `satisfies Record<Instrument, string>`, so a new instrument fails to compile until it has a colour.
+  Colour follows the instrument, never its position in a list, and **identity never rides on colour
+  alone** - every block carries its published name.
+- **Red is the telescope's alone.** A shutdown is said once: the Telescope row's solid red block
+  (`--schedule-closed`), a translucent `--schedule-band` wash over the subject rows, the reason printed
+  once on the band, one legend key. Never per-row red painting - the ports are not each closed.
+- **Absence is drawn hollow, not as a fourteenth colour** (`schedule-ghost`). What a port closure means
+  for availability is still open with operations, and no view may claim a failure it cannot evidence.
+- **Unknown is a reserved neutral** - zinc grey, outside the validated hue sets. Where an unknown run
+  coincides with a named one, the named run wins the shared span.
+- **Usability is a treatment over the identity hue, never a second palette.** Science is the plain bar;
+  Engineering-use the same hue hatched; Not-available hollow with the hue on the outline and a muted
+  label, distinct from the ghost and never red.
+- **The legend has one section per state row**, then Instruments, then Sky and Calendar where a view
+  supplies them - six, in that order, in `TimelineLegendBar`. The neutrals repeat across rows, so a
+  repeated grey must be keyed under the row it belongs to. A section with no keys does not render.
+- **Group headings, not axis breaks.** Small-caps "Telescope" and "Instruments" heading rows name the
+  groups in the gutter and double as the band's breathing room. An axis break drops the adjacent gutter
+  label out of line with its bar; heading type is sized to fit the narrowest 92px gutter.
 
-State bars keep the instrument size, every row label draws at full strength, and the groups are named in
-the gutter: a small-caps **"Telescope" heading row over the state rows and an "Instruments" heading row
-over the subjects** (`groupedRowLayout`/`headingLabelHtml`), on every chart, doubling as the band's
-breathing room. Not an axis break, which drops the adjacent gutter label out of line with its bar; heading
-type is sized to fit the narrowest 92px gutter. All derived from the rows inside the shared builders - no
-view passes categories or header counts alongside its data. The **calendar draws only the notable state
-spans**; routine values every week would bury the runs.
-
-**One colour per instrument, keyed by the enum.** The map lives in `features/timeline/timelineOptions.ts`
-as `satisfies Record<Instrument, string>`, so a new instrument in the schema fails to compile until it has
-a colour. Colour follows the instrument, never its position in a list.
-
-**The palette was chosen by measurement, per site.** No chart shows all fourteen hues - the workbook mounts
-six subjects at GS and seven at GN, sharing GCAL and GMOS - so the assignment is optimised over the pairs
-that can actually share a chart. Both groups clear every separation check (GN 14.0 deutan / 16.5 normal, GS
-10.2 protan / 23.7 normal). Two things follow, both recorded with their numbers in `src/styles/global.css`:
-
-- The validator's **lightness-band check deliberately fails**. Uniform lightness drops normal-vision
-  separation to 12.2, under the hard floor of 15.
-- **Red is reserved for the closure band**, not an instrument. Holding rose back as well drops separation
-  to 14.7, so rose stays available.
-
-Re-run the two site sets, not all fourteen at once, before changing any of them. The commands are in the
-stylesheet.
-
-**Identity never rides on colour alone.** Every block carries its published name, and the legend keys only
-the instruments the window actually contains.
-
-**Absence is drawn hollow, not as a fourteenth colour.** A port closure draws as an absence in every view -
-the hollow "nothing scheduled" ghost (`schedule-ghost` in `timelineOptions.ts`) - because what a port
-closure means for availability is still open with operations and no view may claim a failure it cannot
-evidence. Red is the telescope's alone.
-
-**Unknown is a reserved neutral**, like the closure red: a run the schedule names that the instrument list
-does not is served as `Instrument.UNKNOWN` and draws zinc grey, labelled "Unknown", outside the two
-validated hue sets. Where one coincides with a named run - GN's two "Visiting" rows share a label - the
-named run wins the shared span (`domain/timeline.ts`).
-
-**Usability is a treatment over the identity hue, never a second palette.** Science is the plain filled bar;
-Engineering-use is the same hue hatched with its measured ink (`engineeringPattern`, the pattern-fill
-Highcharts module; a CSS stripe on calendar bars); Not-available is hollow with the hue on the outline and a
-muted label - distinct from the grey dashed ghost, and never red. The tooltip states the usage in words; the
-Instruments legend gains neutral "Engineering use" / "Not available" keys only when the window holds them.
-`usage` rides `Mounting` and `TimelineBlock`.
-
-**A telescope shutdown is said once**: the Telescope row's Closed block is the one solid red statement
-(`--schedule-closed`), the closed span is the translucent `--schedule-band` wash over the subject rows
-(never per-row red painting - the ports are not each closed, the telescope is), the reason prints once on
-the wash band, and one legend key names the red everywhere. Subject rows under a shutdown keep their own
-records.
-
-**The legend has one section per state row** - Telescope, Mode, ToO, then Instruments - because the neutrals
-repeat across rows and a repeated grey must be keyed under the row it belongs to. Two chrome sections follow
-wherever a view supplies keys: **Sky** (daylight and twilight washes) and **Calendar** (weekends, the now
-marker, un-entered nights). Six sections, in that order, in `TimelineLegendBar`
-(`features/timeline/TimelineChart.tsx`, fed by the `*LegendExtras` helpers in `timelineOptions.ts`). A
-section with no keys does not render.
+**The palette was measured per site, not chosen.** No chart shows all fourteen hues, so the assignment is
+optimised over the pairs that can actually share a chart (six subjects at GS, seven at GN). Re-run **the
+two site sets, not all fourteen at once**, before changing any of them. The numbers, the commands, and why
+the validator's lightness-band check deliberately fails all live in `src/styles/global.css`.
 
 ## Shared pixels, page-owned words
 
@@ -315,68 +189,31 @@ Each is open; none is scheduled. Anything built here needs a reason recorded bes
 
 ## Commands
 
-Prefix each with `pnpm --filter @gemini-hlsw/resource-ui`.
-
-| Script            | What it does                                                          |
-| ----------------- | --------------------------------------------------------------------- |
-| `dev`             | vite dev server, proxying `/resource/graphql` to the real dev service |
-| `dev:mock`        | the same, proxied to the mock on :4000 (`RESOURCE_API=mock`)          |
-| `dev:mock-server` | mock GraphQL server on :4000 (`predev:mock-server` runs codegen)      |
-| `codegen`         | regenerate `src/gql/gen`: typed operations + the SDL the mock serves  |
-| `test`            | vitest, in a real browser (Playwright chromium)                       |
-| `build`           | `tsc -b && vite build` (`prebuild` runs codegen)                      |
-| `lint:eslint`     | eslint                                                                |
-
-There is **no** `test:browser` script - `test` already runs in the browser. First-time browser tests need
-`pnpm --filter @gemini-hlsw/resource-ui exec playwright install chromium`.
-
-`dev` reads the live service, so **until the backend serves v1 it shows the failure banner and no data**.
-That is deliberate: standing something else in for the backend in development is how a frontend ends up
-shipping a server. `dev:mock-server` hosts the mock over HTTP for GraphiQL and for external consumers trying
-the API; the browser tests are where the views are exercised against it.
-
-**Treat port 4000 as untrusted at session start.** A mock server from an old session can outlive it and serve
-a schema that no longer exists - this has caused confusion three times. Check with
-`lsof -nP -iTCP:4000 -sTCP:LISTEN` and restart via the pnpm script, which runs `codegen` first. Two routes get
-past that hook and re-serve the previous schema: invoking `node ./mock-server/server.ts` directly, and editing
-the SDL while `--watch` is already running (it restarts the process without re-running the hook). Run
-`codegen` by hand in either case.
+**`README.md` is the command reference** - every script, the two-terminal mock setup, codegen, the
+first-time `playwright install chromium`, and why `dev` shows the failure banner. It is not repeated here.
 
 ## Where the schedule data came from
 
-`mock-server/data/*.json` **is** the schedule source: nine semesters (GS 2024B-2026A, GN 2024B-2026B), both
-sites organised by ports, with telescope mode and ToO support riding along. It was parsed once out of the
-operations workbook export (`mock-server/fixtures/telescope_schedules.xlsx`, kept as provenance), which is the
-operations team's own record and supersedes the published web overview sheets where they disagreed.
+`mock-server/data/*.json` **is** the schedule source: nine semesters (GS 2024B-2026A, GN 2024B-2026B),
+parsed once out of the operations workbook export (`mock-server/fixtures/telescope_schedules.xlsx`, kept
+as provenance), which supersedes the published web overview sheets where they disagreed. **The reader is
+not in this package** - it lives on the `resource/workbook-importer` branch. Revive that branch if an
+Excel import is ever needed; edit the JSON if the mock's data has to change.
 
-**The reader is not in this package.** It lives on the `resource/workbook-importer` branch - `workbook.ts`
-pure and unit-tested, `importWorkbook.ts` the only part touching disk (ExcelJS). Revive that branch if an
-Excel import is ever needed; edit the JSON if the mock's data has to change. `mock-server/records.ts` holds
-the record types either way, taking their vocabularies from the schema's own enums.
+Four reading decisions that the JSON cannot show you, each of which was a judgment call:
 
-How the workbook was read:
-
-- One sheet per site, one row per **evening** ("Local Date" is the evening a night begins; both sites start
-  2024-08-01). Semester split follows the evenings: Feb-Jul is A, Aug-Jan is B; observing nights are
-  evening + 1.
-- **Both sites are organised by ports.** Port columns decide what is served; the usability column supplies
-  `usage` (Science / Engineering / Not Available), and a usage change splits the block.
-- `Telescope` becomes whole-telescope availability records, **Open and Closed alike** - the sheet states both,
-  so an Open night is a fact, never a gap. "Shutdown" is a closure's reason when Mode/Program names it; a
-  night closed under an operating mode ("Queue" - weather) gets none, and its **mode stays unrecorded**.
-- `Mode/Program` becomes `TelescopeModeBlock`s ("Visitor: X" is PRIORITY_VISITOR with X as the note). The
-  `ToOs` column is **blank on every night of the current export**; blank is served as the observatory's
-  default, **Standard support, wearing the assumption** as the record's note. A written level supersedes it.
-  (Defaulting blank to "None" read as a recorded prohibition; that was the bug.)
-- **Off-port usability is recorded**: an instrument marked usable with no port - the `Alopeke and Zorro
-  visitor runs between mounts - becomes a mounting with no port, location UNKNOWN. The null port keeps it off
-  every chart.
-- **PWFS1, PWFS2 and the LGS column become subsystem records.**
-- **Deliberately not imported**, each warned about at the time: the OIWFS columns (an OIWFS is an instrument
-  _component_, and importing these would cross the synthetic-component quarantine), and GN's single trailing
-  2027A evening (an export artifact). An unrecognised port name becomes an UNKNOWN block, never a silent drop.
-- The workbook carries no colours, holidays or moon dates: legends key the enum palette, the calendar computes
-  its moon, and no holiday chrome appears.
+- **A row is an evening**, not an observing night ("Local Date" is the evening a night begins; the night
+  is evening + 1). Semester split follows the evenings: Feb-Jul is A, Aug-Jan is B.
+- **Open is a fact, not a gap.** The sheet states Open and Closed alike. "Shutdown" is a closure's reason
+  only when Mode/Program names it; a night closed under an operating mode gets none and its **mode stays
+  unrecorded**.
+- **A blank `ToOs` column is served as Standard support**, wearing the assumption as the record's note.
+  It is blank on every night of the current export. Defaulting it to "None" read as a recorded
+  prohibition, and that was the bug.
+- **The OIWFS columns were deliberately not imported** - an OIWFS is an instrument _component_, so
+  importing them would cross the synthetic-component quarantine. GN's single trailing 2027A evening is an
+  export artifact and is also dropped. An unrecognised port name becomes an UNKNOWN block, never a silent
+  drop.
 
 ## Mock server
 
@@ -414,6 +251,12 @@ click-through cannot disagree.
 - `src/test/mockClient.ts` wires the same schema into Apollo via `SchemaLink`; `src/test/mockPipeline.test.ts`
   pins the loop. If that test breaks, the dev server and the tests have diverged. SchemaLink **executes
   without validating**, so validate explicitly against the schema where it matters.
+- **Treat port 4000 as untrusted at session start.** A mock server from an old session can outlive it and
+  serve a schema that no longer exists - this has caused confusion three times. Check with
+  `lsof -nP -iTCP:4000 -sTCP:LISTEN` and restart through the pnpm script, which runs `codegen` first. Two
+  routes get past that hook and re-serve the previous schema: invoking `node ./mock-server/server.ts`
+  directly, and editing the SDL while `--watch` is already running, which restarts the process without
+  re-running the hook. Run `codegen` by hand in either case.
 
 ## GraphQL & codegen workflow
 
@@ -448,37 +291,29 @@ date math and chart builders pure; keep components focused on rendering and inte
 
 ## Non-negotiables
 
-- **Never put a `date` on a block.** Intervals only. The moment a `LocalDate` becomes a field, partial nights
-  turn into a retrofit. (Referred to across the code as **the partial-night non-negotiable**.)
-- **Every interval this API serves is half-open**, `start` inclusive and `end` exclusive - including a
-  semester's `nights: DateInterval!`, which is why it is not a `firstNight`/`lastNight` pair. A _last_ night
-  reads inclusive while `DateIntervalInput.end` is exclusive, so the obvious `telescopeNights` call came back
-  one night short and nothing said so. The domain model reads a semester inclusively, and
-  `toPublishedSemesters` is the one line where the two meet.
-- **A block has no `id`.** Row keys are the adapters'. `InstrumentComponent` keeps its id, being real hardware.
-- **`InstrumentLocation` is one type**, `place: InstrumentPlace!` with an optional `port`. `place` includes
-  `PORT` and is total, so one field answers "where is this" for a port and a shelf alike and a client needs no
-  fragment. **The schema cannot enforce the pairing, so the server owes it**: `port` is non-null exactly when
-  `place` is `PORT`, and explicitly null otherwise. `mock-server/resolvers.ts`'s `instrumentLocation` is the
-  only place a location value is built, and `domain/adapters.ts`'s `toLocation` the only place the app
-  re-checks it - a contradictory record reads as off-port/`UNKNOWN` with a dev-mode warning, never an error,
-  because one bad record must not empty a night. Do not build a location literal at a call site, and do not
-  push the `place`/`port` pair past the adapter: the domain model carries the exclusive pair (`Mounting.port`
-  xor `Mounting.place`, whose type `OffPortPlace` excludes `PORT`).
-- **A gap means "not recorded", never "unavailable"** (invariant **I4**). Empty port cells must not render as
-  closed, and **empty calendar squares stay empty**. Do not decorate a gap to make a month look finished.
-- **`ResourceUsage` is one enum** - `SCIENCE`/`ENGINEERING`/`UNAVAILABLE`. Do not split it into separate
-  availability and usage fields.
-- **Types the ODB already defines are imported, never restated** - the scalars, `TimestampInterval`,
-  `TimeSpan`, `Site`, `Partner`. `Instrument` is the deliberate exception: the schedules mount things the ODB's
-  enum does not name.
-- **A record's port is its row; there is no row label.** `domain/ports.ts` renders the label from the port.
-  Do not reintroduce a display string the model can derive. The row set is `TELESCOPE_PORTS` (five, a fact
-  about the instrument support structure) unioned with any port the records name, so a quiet port keeps its
-  blank row - blank says "nothing recorded" (I4), a missing row would say the port does not exist - and a
-  record on an unexpected port still draws instead of vanishing.
-- **No new schema type without a requirement behind it**: a column in the workbook, a line in the scheduler
-  contract, or a request from Bryan or Andrew.
+**The API contract half of these lives in `ENDPOINTS.md`** ("Contracts the resolvers must keep"): half-open
+intervals, a block as a value rather than an entity, partial nights as first-class, I4 absence, clipping,
+`ResourceUsage` as one enum, and `location` as one total `place` with an optional `port`. Read it before
+changing the schema. What follows is the half that is this app's, plus the rules with no other home.
+
+- **Never put a `date` on a block.** Intervals only. The moment a `LocalDate` becomes a field, partial
+  nights turn into a retrofit. (Referred to across the code as **the partial-night non-negotiable**.)
+- **A gap means "not recorded", never "unavailable"** (invariant **I4**). Empty port cells must not render
+  as closed, and **empty calendar squares stay empty**. Do not decorate a gap to make a month look
+  finished.
+- **`toLocation` in `domain/adapters.ts` is the only place the app re-checks the `place`/`port` pairing**,
+  and a contradictory record reads as off-port/`UNKNOWN` with a dev-mode warning, never an error, because
+  one bad record must not empty a night. Do not build a location literal at a call site, and do not push
+  the pair past the adapter: the domain model carries the exclusive form (`Mounting.port` xor
+  `Mounting.place`, whose type `OffPortPlace` excludes `PORT`).
+- **A record's port is its row; there is no row label.** `domain/ports.ts` renders the label from the port
+  - do not reintroduce a display string the model can derive. The row set is `TELESCOPE_PORTS` unioned
+    with any port the records name, so a quiet port keeps its blank row (blank says "nothing recorded"; a
+    missing row would say the port does not exist) and a record on an unexpected port still draws.
+- **A block has no `id`**; row keys are the adapters'. `InstrumentComponent` keeps its id, being real
+  hardware. The cache lock that enforces this is under "Gotchas" below.
+- **No new schema type without a requirement behind it**: a column in the workbook, a line in the
+  scheduler contract, or a request from Bryan or Andrew.
 - **One capability per commit**, with its tests.
 
 ## Testing
