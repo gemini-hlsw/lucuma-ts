@@ -1,11 +1,24 @@
 // @ts-check
 
 import eslint from '@eslint/js';
+import vitestPlugin from '@vitest/eslint-plugin';
 import { importX } from 'eslint-plugin-import-x';
 import simpleImportSort from 'eslint-plugin-simple-import-sort';
 import { defineConfig, globalIgnores } from 'eslint/config';
 import globals from 'globals';
 import { configs } from 'typescript-eslint';
+
+export const vitest = defineConfig({
+  name: 'lucuma/vitest',
+  files: ['**/*.{spec,test}.{ts,tsx}'],
+  plugins: { vitest: vitestPlugin },
+  // `valid-title` accepts a function or class title only when it can read the
+  // argument's type, and it only asks for types when this is set.
+  settings: { vitest: { typecheck: true } },
+  rules: {
+    ...vitestPlugin.configs.recommended.rules,
+  },
+});
 
 export default defineConfig(
   eslint.configs.recommended,

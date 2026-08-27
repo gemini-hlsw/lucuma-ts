@@ -43,6 +43,7 @@
     "@types/react-dom": "19.2.4",
     "@vitejs/plugin-react": "6.1.0",
     "@vitest/browser-playwright": "4.1.11",
+    "@vitest/eslint-plugin": "1.6.27",
     "@xyflow/react": "12.11.3",
     "babel-plugin-react-compiler": "1.0.0",
     "date-fns": "4.4.0",
