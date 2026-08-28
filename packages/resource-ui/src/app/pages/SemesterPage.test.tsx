@@ -1,6 +1,9 @@
+import { isNotNullish } from '@gemini-hlsw/lucuma-common-ui';
 import { describe, expect, it } from 'vitest';
 
 import Layout from '@/components/layout/Layout';
+import { buildSemesterTimeline } from '@/domain/semesterTimeline';
+import { buildMonthLines } from '@/features/semester/semesterMonthOptions';
 import { selectDropdownOption } from '@/test/helpers';
 import { renderApp } from '@/test/renderApp';
 
@@ -333,6 +336,66 @@ describe('SemesterPage - the block table', () => {
     await expect
       .element(screen.getByTestId('semester-block-table').getByRole('row', { name: /Whole telescope/ }))
       .toBeInTheDocument();
+  });
+});
+
+/**
+ * The chart and the calendar are two readings of one dataset, so anything both
+ * of them draw has to be drawn in the same place. The week boundary is the one
+ * they each derive for themselves - the chart from the evening date's weekday,
+ * the calendar from its `en-US` localizer - and they sat a night apart.
+ */
+describe('SemesterPage - the week boundary both views draw', () => {
+  const EVENING_PREFIX = 'Open night beginning ';
+
+  /** The evening date a calendar square opens, or null for one outside the semester. */
+  const eveningOf = (cell: Element): string | null =>
+    cell.querySelector(`[aria-label^="${EVENING_PREFIX}"]`)?.getAttribute('aria-label')?.slice(EVENING_PREFIX.length) ??
+    null;
+
+  it('emphasises the nights the calendar puts in its first column', async () => {
+    const screen = await openSemester('/semester?site=GS&semester=2025B&view=calendar&month=2025-11');
+    await expect.element(screen.getByRole('button', { name: 'Open night beginning 2025-11-14' })).toBeVisible();
+
+    // The month on screen, built the way the page builds it. Only the evening
+    // dates matter here, so it needs no records: the nights labelled 2 Nov to
+    // 1 Dec are the ones whose evenings fall in November.
+    const november = buildSemesterTimeline({
+      site: 'GS',
+      firstNight: '2025-11-02',
+      lastNight: '2025-12-01',
+      mountings: [],
+      closures: [],
+    }).months[0]!;
+    const monthEvenings = new Set(november.nights.map((night) => night.eveningDate));
+
+    const lines = buildMonthLines(november);
+    const chartWeekStarts = new Set(
+      november.nights
+        .filter((night) =>
+          lines.some((line) => line.value === night.interval.start && line.color === 'var(--schedule-week-line)'),
+        )
+        .map((night) => night.eveningDate),
+    );
+
+    // react-big-calendar lays a month out seven squares to a row, so a square's
+    // column is its index modulo seven and column zero is where the localizer
+    // starts the week. The grid reaches into the neighbouring months, whose
+    // nights the semester also holds and whose squares therefore also carry a
+    // label - hence the restriction to the evenings this month's chart drew.
+    const cells = [...document.querySelectorAll('.rbc-date-cell')];
+    expect(cells.length % 7).toBe(0);
+    const calendarWeekStarts = new Set(
+      cells
+        .filter((_, index) => index % 7 === 0)
+        .map(eveningOf)
+        .filter(isNotNullish)
+        .filter((evening) => monthEvenings.has(evening)),
+    );
+
+    // Non-empty first: two empty sets agree about nothing.
+    expect(calendarWeekStarts.size).toBeGreaterThan(3);
+    expect(chartWeekStarts).toEqual(calendarWeekStarts);
   });
 });
 

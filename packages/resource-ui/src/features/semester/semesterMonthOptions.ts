@@ -96,10 +96,16 @@ export const buildMonthBands = (month: TimelineMonth): XAxisPlotBandsOptions[] =
   })),
 ];
 
-/** Night boundaries as a faint texture, with the week's first night stronger. */
+/**
+ * Night boundaries as a faint texture, with the week's first night stronger.
+ *
+ * The week starts on Sunday, matching the calendar's `en-US` localizer and the
+ * published grids it follows - the two views read the same dataset, so their
+ * week boundaries cannot sit a night apart.
+ */
 export const buildMonthLines = (month: TimelineMonth): XAxisPlotLinesOptions[] =>
   month.nights.map((night) => {
-    const startsWeek = new Date(`${night.eveningDate}T00:00:00Z`).getUTCDay() === 1;
+    const startsWeek = new Date(`${night.eveningDate}T00:00:00Z`).getUTCDay() === 0;
     return {
       value: night.interval.start,
       color: startsWeek ? 'var(--schedule-week-line)' : 'var(--schedule-night-line)',
