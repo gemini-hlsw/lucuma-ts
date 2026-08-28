@@ -1,3 +1,4 @@
+import { ApolloLink } from '@apollo/client';
 import { isNotNullish } from '@gemini-hlsw/lucuma-common-ui';
 import { describe, expect, it } from 'vitest';
 
@@ -5,6 +6,7 @@ import Layout from '@/components/layout/Layout';
 import { buildSemesterTimeline } from '@/domain/semesterTimeline';
 import { buildMonthLines } from '@/features/semester/semesterMonthOptions';
 import { selectDropdownOption } from '@/test/helpers';
+import { createMockApollo } from '@/test/mockClient';
 import { renderApp } from '@/test/renderApp';
 
 import NightPage from './NightPage';
@@ -396,6 +398,35 @@ describe('SemesterPage - the week boundary both views draw', () => {
     // Non-empty first: two empty sets agree about nothing.
     expect(calendarWeekStarts.size).toBeGreaterThan(3);
     expect(chartWeekStarts).toEqual(calendarWeekStarts);
+  });
+});
+
+describe('SemesterPage - the window it asks for', () => {
+  it('asks over the observing nights, not the calendar days they are labelled by', async () => {
+    const sent: { name: string; variables: Record<string, unknown> }[] = [];
+    const screen = await renderApp({
+      element: <SemesterPage />,
+      route: '/semester?site=GS&semester=2025B',
+      mock: createMockApollo(
+        new ApolloLink((operation, forward) => {
+          sent.push({ name: operation.operationName ?? '', variables: operation.variables });
+          return forward(operation);
+        }),
+      ),
+    });
+    await expect.element(screen.getByRole('region', { name: 'August 2025' })).toBeVisible();
+
+    // GS 2025B holds the nights labelled 2025-08-02 to 2026-02-01. The first
+    // opens at 14:00 Santiago the afternoon *before* its label - 18:00Z, Chile
+    // being on UTC-4 in August - and the last closes at 14:00 on its own label
+    // date, 17:00Z, Chile being on UTC-3 in February. A calendar-day window is
+    // wrong at both ends, and no fixed offset repairs it: the two ends sit in
+    // different offsets, four hours from the first night and three at the last.
+    const semester = sent.find((operation) => operation.name === 'SemesterSchedule');
+    expect(semester?.variables.interval).toEqual({
+      start: '2025-08-01T18:00:00.000Z',
+      end: '2026-02-01T17:00:00.000Z',
+    });
   });
 });
 

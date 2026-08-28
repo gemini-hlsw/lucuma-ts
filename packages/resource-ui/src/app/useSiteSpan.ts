@@ -15,7 +15,8 @@
  * nothing at all.
  */
 import { useSemester } from '@/app/useSemester';
-import type { ApiInterval } from '@/gql/hooks';
+import { observingNightInterval } from '@/domain/siteTime';
+import { type ApiInterval, toApiInterval } from '@/gql/hooks';
 
 export const useSiteSpan = (): ApiInterval | null => {
   // `semestersForSite` is already in date order and the semesters are
@@ -26,5 +27,13 @@ export const useSiteSpan = (): ApiInterval | null => {
 
   return first === undefined || last === undefined
     ? null
-    : { start: `${first.firstNight}T00:00:00.000Z`, end: `${last.lastNight}T23:59:59.999Z` };
+    : {
+        // The observing-night interval, not the calendar day: a night runs
+        // 14:00 local to 14:00 local. The site comes off the semesters
+        // themselves - the same reading the pages take (`selected?.site`), and
+        // the one already scoping this list - so the window and the nights it
+        // bounds can never name different sites.
+        start: toApiInterval(observingNightInterval(first.site, first.firstNight)).start,
+        end: toApiInterval(observingNightInterval(last.site, last.lastNight)).end,
+      };
 };

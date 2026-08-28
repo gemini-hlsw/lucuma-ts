@@ -42,18 +42,25 @@ describe(useSiteSpan, () => {
 
     // GS runs 2024B through 2026A in the workbook. A semester-scoped window
     // would answer with silence for a piece that sits out the chosen one.
+    //
+    // Observing-night edges, not calendar days: 14:00 Santiago on the evening
+    // before the first night's label, to 14:00 on the last night's own date -
+    // 18:00Z at both ends, since Chile is on UTC-4 in August.
     await expect
       .element(screen.getByTestId('probe-span'))
-      .toHaveTextContent('2024-08-02T00:00:00.000Z/2026-08-01T23:59:59.999Z');
+      .toHaveTextContent('2024-08-01T18:00:00.000Z/2026-08-01T18:00:00.000Z');
   });
 
   it('follows the site, since a site s record is not the other s', async () => {
     const screen = await openSpan('/components?site=GN&semester=2026B');
 
-    // GN carries a further semester than GS: 2026B, ending 2027-02-01.
+    // GN carries a further semester than GS: 2026B, whose last night is
+    // labelled 2027-02-01 and ends at 14:00 Honolulu that day - 2027-02-02T00:00Z,
+    // Hawaii being a fixed UTC-10. The site is read off the semesters, so both
+    // ends move to the site's own 14:00 boundary rather than GS's.
     await expect
       .element(screen.getByTestId('probe-span'))
-      .toHaveTextContent('2024-08-02T00:00:00.000Z/2027-02-01T23:59:59.999Z');
+      .toHaveTextContent('2024-08-02T00:00:00.000Z/2027-02-02T00:00:00.000Z');
   });
 
   it('answers null before the semester list arrives, rather than an empty window', async () => {

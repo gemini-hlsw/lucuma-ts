@@ -8,6 +8,7 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { ErrorAlert, Loading } from '@/components/ui/PageStatus';
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { buildSemesterTimeline } from '@/domain/semesterTimeline';
+import { observingNightInterval } from '@/domain/siteTime';
 import { SemesterBlockTable } from '@/features/semester/SemesterBlockTable';
 import { SemesterCalendar, SemesterCalendarLegend } from '@/features/semester/SemesterCalendar';
 import { SemesterTimeline, SemesterTimelineLegend } from '@/features/semester/SemesterTimeline';
@@ -17,7 +18,7 @@ import {
   telescopeLegendExtras,
   tooLegendExtras,
 } from '@/features/timeline/timelineOptions';
-import { useSemesterSchedule } from '@/gql/hooks';
+import { toApiInterval, useSemesterSchedule } from '@/gql/hooks';
 
 /**
  * Two readings of one semester.
@@ -68,11 +69,11 @@ export default function SemesterPage(): JSX.Element {
     selected === null
       ? null
       : {
-          // The first night starts the evening before it is labelled, and the
-          // last one ends the following afternoon - so reach a day either side
-          // and let the records answer for themselves.
-          start: `${selected.firstNight}T00:00:00.000Z`,
-          end: `${selected.lastNight}T23:59:59.999Z`,
+          // The observing-night interval, not the calendar day: a night runs
+          // 14:00 local to 14:00 local, so the window opens the afternoon
+          // before the first night's label and closes on the last night's own.
+          start: toApiInterval(observingNightInterval(selected.site, selected.firstNight)).start,
+          end: toApiInterval(observingNightInterval(selected.site, selected.lastNight)).end,
         };
 
   const { mountings, closures, tooBlocks, modeBlocks, loading, error } = useSemesterSchedule(
