@@ -104,8 +104,12 @@ export default function ComponentsPage(): JSX.Element {
   const [search, setSearch] = useUrlParam('q', '', { replace: true });
   const [instrumentParam, setInstrumentParam] = useUrlParam('instrument', '', { replace: true });
   const [typeParam, setTypeParam] = useUrlParam('type', '', { replace: true });
-  const instrument = instrumentParam in INSTRUMENT_LABEL ? (instrumentParam as Instrument) : null;
-  const componentType = typeParam in TYPE_LABEL ? (typeParam as ComponentType) : null;
+  // `Object.hasOwn`, not `in`: both maps are plain objects, so `in` also
+  // answers true for `toString`, `constructor` and `__proto__` - values that
+  // match no row and leave the Dropdown on its "All" placeholder, a filter
+  // reading All over an empty table.
+  const instrument = Object.hasOwn(INSTRUMENT_LABEL, instrumentParam) ? (instrumentParam as Instrument) : null;
+  const componentType = Object.hasOwn(TYPE_LABEL, typeParam) ? (typeParam as ComponentType) : null;
   // Which rows are open stays local: it is reading posture, not a finding.
   const [expanded, setExpanded] = useState<FinderRow[]>([]);
 

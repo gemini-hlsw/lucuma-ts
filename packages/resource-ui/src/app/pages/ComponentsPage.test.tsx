@@ -55,6 +55,41 @@ describe('ComponentsPage - the finder', () => {
     await expect.element(screen.getByLabelText('Search')).toHaveValue('the long mask');
   });
 
+  /*
+   * A sendable link is also a typeable one, and the label maps are plain
+   * objects: `in` answers true for every key `Object.prototype` carries, so
+   * these URLs used to pass the guard, filter to a value no piece holds, and
+   * leave an empty table under a Dropdown still reading "All" - a filter
+   * claiming to show everything over nothing. `toString` and `constructor`
+   * stand for the whole set (`valueOf`, `hasOwnProperty`, `__proto__` are the
+   * same key by another name).
+   *
+   * Two instruments' pieces are the assertion, because that is what "All"
+   * promises: `Mask GS2026B-011` is GMOS's, `K-short` is carried by F2 and
+   * GSAOI. One render per test, per the note above.
+   */
+  it('reads instrument=toString as no filter at all, not as a filter matching nothing', async () => {
+    const screen = await open('/components?site=GS&semester=2025B&night=2025-10-15&instrument=toString');
+
+    await expect.element(screen.getByText('Mask GS2026B-011')).toBeVisible();
+    await expect.element(screen.getByText('K-short').first()).toBeVisible();
+  });
+
+  it('reads instrument=constructor as no filter at all', async () => {
+    const screen = await open('/components?site=GS&semester=2025B&night=2025-10-15&instrument=constructor');
+
+    await expect.element(screen.getByText('Mask GS2026B-011')).toBeVisible();
+    await expect.element(screen.getByText('K-short').first()).toBeVisible();
+  });
+
+  it('guards the type filter the same way - both maps are plain objects', async () => {
+    const screen = await open('/components?site=GS&semester=2025B&night=2025-10-15&type=hasOwnProperty');
+
+    // An FPU and a disperser: both types survive, so nothing was filtered.
+    await expect.element(screen.getByText('Mask GS2026B-011')).toBeVisible();
+    await expect.element(screen.getByText('B1200').first()).toBeVisible();
+  });
+
   // One render per test: a second render in the same test overlaps act() calls
   // and corrupts the container bookkeeping for every test after it.
   it('shows the failing piece installed before its failure', async () => {
