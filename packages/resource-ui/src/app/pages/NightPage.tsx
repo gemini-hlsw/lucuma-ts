@@ -147,7 +147,13 @@ export default function NightPage(): JSX.Element {
         <EmptyPanel>Nothing is recorded for this night. That is not the same as nothing being available.</EmptyPanel>
       )}
 
-      {!busy && held !== undefined && dataAvailable !== false && (
+      {/*
+        Three answers, not two: `true` draws, `false` says "not recorded", and
+        `undefined` - the query errored, so Apollo's default `none` policy left
+        no data - draws neither and leaves the alert above to speak. Testing
+        `!== false` here drew a full empty timeline beside the error.
+      */}
+      {!busy && held !== undefined && dataAvailable === true && (
         <>
           <TimelineLegendBar
             legend={night}

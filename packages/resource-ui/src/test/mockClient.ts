@@ -5,7 +5,7 @@
  * same schema and resolvers the dev mock server uses. Each call returns an
  * independent client and store, so tests do not share mutable state.
  */
-import { ApolloClient } from '@apollo/client';
+import { ApolloClient, ApolloLink } from '@apollo/client';
 import { SchemaLink } from '@apollo/client/link/schema';
 
 import { buildMockSchema, type MockSchema } from '../../mock-server/schema';
@@ -25,11 +25,19 @@ export interface MockApollo {
   schema: MockSchema['schema'];
 }
 
-/** Creates a fresh mock-backed Apollo client and its store. */
-export const createMockApollo = (): MockApollo => {
+/**
+ * Creates a fresh mock-backed Apollo client and its store.
+ *
+ * `before` is composed in front of the schema link, for the two things the
+ * resolvers cannot be asked for: an operation that fails at the *transport*,
+ * which is what leaves Apollo's default `none` policy with no data at all, and
+ * a record of the variables a page actually sent.
+ */
+export const createMockApollo = (before?: ApolloLink): MockApollo => {
   const { schema, store } = buildMockSchema(schemaSource);
+  const schemaLink = new SchemaLink({ schema });
   const client = new ApolloClient({
-    link: new SchemaLink({ schema }),
+    link: before === undefined ? schemaLink : ApolloLink.from([before, schemaLink]),
     cache: buildCache(),
   });
   return { client, store, schema };

@@ -4,6 +4,8 @@
 // appearance and these tests run without it (see `vite.config.ts`).
 import '@/styles/chartOverlays.css';
 
+import { ApolloLink } from '@apollo/client';
+import { Observable } from '@apollo/client/utilities';
 import { describe, expect, it } from 'vitest';
 import { page } from 'vitest/browser';
 
@@ -18,6 +20,27 @@ import SemesterPage from './SemesterPage';
 
 const openNight = async (route: string) =>
   renderApp({ element: <NightPage />, route, extraRoutes: [{ path: '/semester', element: <SemesterPage /> }] });
+
+/**
+ * A backend where the night query alone fails, and every other operation
+ * resolves as usual.
+ *
+ * The failure is at the transport because that is the deterministic way to
+ * reach the state the page has to answer for: the query errors, no
+ * `errorPolicy` is set anywhere in `src/` so Apollo's default `none` leaves no
+ * data, and `dataAvailable` arrives as `undefined` once loading ends. The
+ * mock's resolvers answer for every night, so no argument to them produces it.
+ */
+const nightQueryCannotBeReached = () =>
+  createMockApollo(
+    new ApolloLink((operation, forward) =>
+      operation.operationName === 'NightSchedule'
+        ? new Observable<ApolloLink.Result>((observer) => {
+            observer.error(new Error('the Resource service did not answer'));
+          })
+        : forward(operation),
+    ),
+  );
 
 describe('NightPage - the telescope-state rows the workbook records', () => {
   it('draws the workbook shutdown as a band and a closed Telescope row, with no mode row', async () => {
@@ -97,6 +120,32 @@ describe(NightPage, () => {
   // filled in - is not reachable from its data: every night carries at least
   // the ToOs column. `dataAvailable: false` is pinned at the API instead, in
   // mock-server/resolvers.test.ts.
+
+  it('draws no timeline when the night query fails, rather than an empty one beside the alert', async () => {
+    // The semesters resolve and the night does not, which is the state the
+    // three answers exist for: the page knows 2025B holds this night while
+    // knowing nothing at all about the night. Drawing the chart here asserts
+    // "this night is scheduled and nothing is on it" - the very claim the
+    // "Nothing is recorded" branch exists to keep distinct from an absence
+    // of knowledge.
+    const screen = await renderApp({
+      element: <NightPage />,
+      route: '/night?site=GS&night=2025-11-14',
+      mock: nightQueryCannotBeReached(),
+    });
+
+    // Settle on the failure first, so the absences below are read after the
+    // query resolved rather than before it started.
+    await expect.element(screen.getByRole('alert')).toHaveTextContent('the Resource service did not answer');
+    await expect.element(screen.getByText('Gemini South Semester 2025B', { exact: false })).toBeVisible();
+
+    await expect.element(screen.getByTestId('night-timeline')).not.toBeInTheDocument();
+    // Nor the other answer: a query that never arrived is not a recorded
+    // absence, and must not be reported as one.
+    await expect
+      .element(screen.getByText('Nothing is recorded for this night', { exact: false }))
+      .not.toBeInTheDocument();
+  });
 
   it('links the semester it belongs to - the reverse of the calendar click-through', async () => {
     const screen = await openNight('/night?site=GS&night=2025-11-14');
