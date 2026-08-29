@@ -47,13 +47,13 @@
     "@graphql-eslint/eslint-plugin": "4.4.1",
     "@testcontainers/postgresql": "12.1.0",
     "@tsconfig/strictest": "2.0.8",
-    "eslint": "10.9.0",
+    "eslint": "10.9.1",
     "eslint-import-resolver-typescript": "4.4.5",
     "eslint-plugin-simple-import-sort": "14.0.0",
     "globals": "17.11.0",
     "@typescript/native": "npm:typescript@7.0.2",
     "typescript": "npm:@typescript/typescript6@6.0.2",
-    "typescript-eslint": "8.67.0"
+    "typescript-eslint": "8.68.0"
   },
   "files": [
     "dist",
