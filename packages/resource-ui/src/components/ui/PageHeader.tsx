@@ -16,7 +16,7 @@ import type { JSX, ReactNode } from 'react';
 
 import { SyntheticDataTag } from './SyntheticDataTag';
 
-export interface PageHeaderProps {
+interface PageHeaderProps {
   readonly title: string;
   /** True when the schedule behind this page was never published. */
   readonly demo?: boolean;

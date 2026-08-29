@@ -25,7 +25,7 @@ const extent = (interval: Interval, site: Site): { from: string; to: string } =>
 
 const nightCount = (nights: number): string => `${nights} ${nights === 1 ? 'night' : 'nights'}`;
 
-export interface BlockRow {
+interface BlockRow {
   readonly key: string;
   readonly rowLabel: string;
   readonly subject: string;

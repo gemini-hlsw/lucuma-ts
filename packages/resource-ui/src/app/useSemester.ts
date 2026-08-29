@@ -14,10 +14,10 @@ import { resolveSemester } from '@/domain/coverage';
 import type { PublishedSemester } from '@/domain/types';
 import { usePublishedSemesters } from '@/gql/hooks';
 
-export interface ResolvedSemester {
+interface ResolvedSemester {
   /** The semester to show. Null only while the list is loading or empty. */
   readonly semester: PublishedSemester | null;
-  /** The site's semesters in date order, for the masthead's options. */
+  /** For the masthead's options. */
   readonly semestersForSite: readonly PublishedSemester[];
   readonly loading: boolean;
   readonly error: Error | undefined;

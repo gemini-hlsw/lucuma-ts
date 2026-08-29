@@ -1,18 +1,10 @@
 /*
  * FontAwesome Pro (regular) icons wrapped as components, following
  * packages/ui's Icons.tsx - one named export per icon so call sites read as
- * `<Plus />` and the icon set stays consistent across the GPP apps.
+ * `<ChevronLeft />` and the icon set stays consistent across the GPP apps.
  */
 import type { IconDefinition } from '@fortawesome/pro-regular-svg-icons';
-import {
-  faChevronLeft,
-  faChevronRight,
-  faCloud,
-  faPencil,
-  faPenToSquare,
-  faPlus,
-  faTriangleExclamation,
-} from '@fortawesome/pro-regular-svg-icons';
+import { faChevronLeft, faChevronRight } from '@fortawesome/pro-regular-svg-icons';
 import type { FontAwesomeIconProps } from '@fortawesome/react-fontawesome';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
@@ -33,8 +25,3 @@ const iconFactory = (icon: IconDefinition) =>
 
 export const ChevronLeft = iconFactory(faChevronLeft);
 export const ChevronRight = iconFactory(faChevronRight);
-export const Cloud = iconFactory(faCloud);
-export const Pencil = iconFactory(faPencil);
-export const PenToSquare = iconFactory(faPenToSquare);
-export const Plus = iconFactory(faPlus);
-export const TriangleExclamation = iconFactory(faTriangleExclamation);

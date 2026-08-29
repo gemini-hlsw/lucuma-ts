@@ -78,11 +78,10 @@ const INSTRUMENT_COLOR = {
 const INSTRUMENT_INK_LIGHT = 'var(--instrument-ink-light)';
 
 /**
- * The dark ink. Exported by name so a caller can ask whether a fill takes it:
- * light ink reads on every dark chrome fill as well, but dark ink is legible
- * only on the bright instrument fill it was chosen for.
+ * The dark ink. Light ink reads on every dark chrome fill as well, but dark ink
+ * is legible only on the bright instrument fill it was chosen for.
  */
-export const INSTRUMENT_INK_DARK = 'var(--instrument-ink-dark)';
+const INSTRUMENT_INK_DARK = 'var(--instrument-ink-dark)';
 
 /**
  * Whichever of light or dark ink clears 4.5:1 on that instrument's fill.
@@ -168,10 +167,10 @@ export const stateFill = (notable: boolean): string => (notable ? 'var(--state-n
 export const stateFillInk = (notable: boolean): string => (notable ? INSTRUMENT_INK_DARK : INSTRUMENT_INK_LIGHT);
 
 /** The Mode row's fill for a recorded mode - the legend's swatch source. */
-export const modeColor = (mode: TelescopeModeType): string => stateFill(NOTABLE_MODE[mode]);
+const modeColor = (mode: TelescopeModeType): string => stateFill(NOTABLE_MODE[mode]);
 
 /** The ToO row's fill for a recorded support level - the legend's swatch source. */
-export const tooColor = (too: TooSupport): string => stateFill(NOTABLE_TOO[too]);
+const tooColor = (too: TooSupport): string => stateFill(NOTABLE_TOO[too]);
 
 /**
  * A key a view adds to the legend's shared ones.
@@ -225,8 +224,7 @@ export const tooLegendExtras = (tooBlocks: readonly TooBlock[]): LegendExtra[] =
  * The sky keys - the washes a reader sees before any bar.
  *
  * Daylight and twilight are the largest painted areas on a night or week
- * chart and had no key at all; naming them is what stops a reader reading
- * them as schedule facts.
+ * chart; naming them is what stops a reader reading them as schedule facts.
  */
 export const skyLegendExtras = (): LegendExtra[] => [
   { key: 'daylight', label: 'Daylight', swatch: { backgroundColor: 'var(--night-daylight-wash)' } },
@@ -275,7 +273,7 @@ export const calendarLegendExtras = (options: {
  * pattern-fill module renders it (loaded by the chart components); the ink
  * guarantees the stripes separate on every fill.
  */
-export const engineeringPattern = (instrument: Instrument): PatternObject => ({
+const engineeringPattern = (instrument: Instrument): PatternObject => ({
   pattern: {
     path: { d: 'M 0 8 L 8 0', strokeWidth: 2.5 },
     width: 8,
@@ -359,7 +357,7 @@ export interface TimelinePoint extends XrangePointOptionsObject {
 const LABEL_CHAR_WIDTH = 6.2;
 
 /** Breathing room a data label keeps at each end of the shape it sits in. */
-export const LABEL_PADDING = 4;
+const LABEL_PADDING = 4;
 
 /** The same advance normalised per rem, for labels set at other sizes. */
 const LABEL_CHAR_WIDTH_PER_REM = LABEL_CHAR_WIDTH / 0.68;
@@ -375,7 +373,7 @@ const LABEL_CHAR_WIDTH_PER_REM = LABEL_CHAR_WIDTH / 0.68;
  * differently. Callers subtract `LABEL_PADDING * 2` from the rendered width
  * to get `availablePx`.
  */
-export const labelIfItFits = (label: string, availablePx: number): string =>
+const labelIfItFits = (label: string, availablePx: number): string =>
   label.length * LABEL_CHAR_WIDTH <= availablePx ? label : '';
 
 /**
@@ -450,9 +448,8 @@ interface FormatterPoint<C> {
  *
  * Highcharts does not type `point.custom`, and a formatter's `this` is untyped
  * besides, so reaching either needs a cast. This is the one place that cast
- * happens - four formatters wrote it out with four hand-written inline types,
- * free to describe the payload differently from the type the points were
- * actually built with.
+ * happens, so no formatter can describe the payload differently from the type
+ * the points were built with.
  */
 export const formatterPoint = <C>(context: unknown): FormatterPoint<C> | undefined =>
   (context as { point?: FormatterPoint<C> }).point;
@@ -517,7 +514,7 @@ const toPoint = (block: TimelineBlock, rowIndex: number, describe: BlockDescribe
 export const buildTimelinePoints = (rows: readonly TimelineRow[], describe: BlockDescriber): readonly TimelinePoint[] =>
   rows.flatMap((row, rowIndex) => row.blocks.map((block) => toPoint(block, rowIndex, describe)));
 
-export interface TimelineChartModel {
+interface TimelineChartModel {
   readonly rows: readonly TimelineRow[];
   readonly site: Site;
   readonly describe: BlockDescriber;
@@ -538,13 +535,13 @@ export interface TimelineChartModel {
 }
 
 /** Room above the plot area. */
-export const TOP_MARGIN = 8;
+const TOP_MARGIN = 8;
 
 /** How much of a row's height its bar leaves free. */
 const BAR_INSET = 8;
 
 /** How the y axis lays grouped rows out: heading rows over each group. */
-export interface GroupedRowLayout {
+interface GroupedRowLayout {
   /** The category list, headings included. */
   readonly categories: readonly string[];
   /** Category indices that are headings, for the label formatter. */
@@ -566,13 +563,23 @@ export interface GroupedRowLayout {
  * everything whose job is to shade the *data*. Above it: any band or line that
  * must still be seen or that hangs a label in the top row.
  */
-export const HEADING_MASK_Z = 6;
+const HEADING_MASK_Z = 6;
 /** A band whose label lives in the heading row, so it draws over the mask. */
 export const LABELLED_BAND_Z = 8;
 /** A marker line that must stay visible the whole chart height. */
 export const MARKER_LINE_Z = 9;
 
-export const groupedRowLayout = (labels: readonly string[], headerRows: number): GroupedRowLayout => {
+/**
+ * Lays the rows out under group headings: "Telescope" over the state rows,
+ * "Instruments" over the subjects, so each group is named above its bars and
+ * the heading row doubles as the band's breathing room. A window with no state
+ * rows gets no headings: one group needs no name.
+ *
+ * Heading rows rather than an axis break: a break inflates the adjacent
+ * category's slot and drops its gutter label half a row out of line with its
+ * bar.
+ */
+const groupedRowLayout = (labels: readonly string[], headerRows: number): GroupedRowLayout => {
   if (headerRows === 0) {
     return { categories: [...labels], headingPositions: new Set(), offsetFor: (rowIndex) => rowIndex };
   }
@@ -585,7 +592,7 @@ export const groupedRowLayout = (labels: readonly string[], headerRows: number):
 
 /** A heading category's gutter label: small caps, muted, tracked out. Sized
  * so "INSTRUMENTS" fits the narrowest gutter (the 92px semester charts). */
-export const headingLabelHtml = (value: string): string =>
+const headingLabelHtml = (value: string): string =>
   `<span style="color: var(--timeline-muted-text); font-size: 0.55rem; font-weight: 700; letter-spacing: 1px;">${value.toUpperCase()}</span>`;
 
 /** Builds the Highcharts options every timeline view shares. */
@@ -604,12 +611,6 @@ export const buildTimelineChart = ({
   // Everything derived from the rows, never passed alongside them: a category
   // list or header count that could disagree with the data is a mismatch
   // waiting for a window whose state rows differ.
-  //
-  // The telescope-state rows and the subjects each sit under their own group
-  // heading (`groupedRowLayout`), which names the group above its bars and
-  // gives the band its breathing room. Heading rows rather than an axis
-  // break: a break inflates the adjacent category's slot and drops its gutter
-  // label half a row out of line with its bar.
   const headerRows = stateRowCount(rows);
   const { categories, headingPositions, offsetFor } = groupedRowLayout(
     rows.map((row) => row.label),
@@ -730,7 +731,7 @@ export const buildTimelineChart = ({
             // A label is decoration and must not take the pointer: it sits over
             // the middle of its own bar, so without this anything aimed at the
             // block - hover, or a future interaction - lands on the <text>
-            // instead. Kept from the removed editing work, where it cost a day.
+            // instead.
             pointerEvents: 'none',
           },
         },

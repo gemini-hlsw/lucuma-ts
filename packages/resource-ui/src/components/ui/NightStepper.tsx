@@ -19,7 +19,7 @@ import { type JSX, useId } from 'react';
 
 import { ChevronLeft, ChevronRight } from './Icons';
 
-export interface NightStepperProps {
+interface NightStepperProps {
   /** The ISO date the input shows - a night label, or an evening. */
   readonly value: string;
   /** The date the reader typed, in the same vocabulary `value` is in. */
@@ -51,10 +51,10 @@ export function NightStepper({
 
   return (
     // FontAwesome, not PrimeReact's `icon="pi pi-…"`: this app never loads
-    // PrimeIcons, so those buttons rendered as empty boxes.
+    // PrimeIcons, so a "pi pi-…" button renders as an empty box.
     <div className="xp-toolbar">
       {/* From a deep link, back to the night in progress without typing a
-          date. Disabled when the view already sits on it. */}
+          date. */}
       <Button size="small" severity="secondary" disabled={isTonight} onClick={onTonight} className="mr-1">
         Tonight
       </Button>

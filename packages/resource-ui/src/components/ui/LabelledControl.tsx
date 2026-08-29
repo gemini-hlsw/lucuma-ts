@@ -23,7 +23,7 @@
  */
 import { type JSX, type ReactNode, useId } from 'react';
 
-export interface LabelledControlProps {
+interface LabelledControlProps {
   label: string;
   /** Layout for the caption-and-control pair; the caller owns how it reads. */
   className?: string;

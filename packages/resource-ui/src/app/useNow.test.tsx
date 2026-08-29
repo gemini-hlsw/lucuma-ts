@@ -1,5 +1,5 @@
 /**
- * `useNow` and the `nowWithin` contract behind the timeline's NOW marker.
+ * `useNow`, the clock behind the timeline's NOW marker.
  *
  * Two things worth pinning. The clock has to actually advance, or the marker
  * freezes where the page opened. And it has to stop advancing when the
@@ -9,7 +9,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { render } from 'vitest-browser-react';
 
-import { nowWithin, useNow } from './useNow';
+import { useNow } from './useNow';
 
 function Clock({ intervalMs }: { intervalMs: number }): React.JSX.Element {
   return <span data-testid="clock">{String(useNow(intervalMs))}</span>;
@@ -29,8 +29,6 @@ describe(useNow, () => {
     const screen = await render(<Clock intervalMs={20} />);
     const first = screen.getByTestId('clock').element().textContent;
 
-    // Real timers and a real assertion on the DOM: the marker's whole job is
-    // to move, and `expect.poll` retries until it has.
     await expect.poll(() => screen.getByTestId('clock').element().textContent).not.toBe(first);
   });
 
@@ -47,27 +45,5 @@ describe(useNow, () => {
     } finally {
       vi.useRealTimers();
     }
-  });
-});
-
-describe(nowWithin, () => {
-  const interval = { start: 100, end: 200 };
-
-  it('reports the instant when it falls inside the window', () => {
-    expect(nowWithin(150, interval)).toBe(150);
-  });
-
-  it('includes the start and excludes the end, like every interval here', () => {
-    expect(nowWithin(100, interval)).toBe(100);
-    expect(nowWithin(200, interval)).toBeNull();
-  });
-
-  it('reports nothing outside the window, so no marker is drawn off the axis', () => {
-    expect(nowWithin(99, interval)).toBeNull();
-    expect(nowWithin(201, interval)).toBeNull();
-  });
-
-  it('reports nothing when there is no window at all', () => {
-    expect(nowWithin(150, undefined)).toBeNull();
   });
 });

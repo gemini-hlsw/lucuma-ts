@@ -54,7 +54,7 @@ const TONE_CLASS = {
   alert: 'text-red-300',
 } satisfies Record<StatusTone, string>;
 
-export interface RecordHistoryTableProps {
+interface RecordHistoryTableProps {
   readonly rows: readonly HistoryRow[];
   /** What the third column is called - "Location" for a piece, "Where" for an instrument. */
   readonly whereHeader: string;

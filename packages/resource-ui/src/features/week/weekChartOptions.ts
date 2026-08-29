@@ -113,7 +113,7 @@ export const buildWeekLines = (week: WeekTimeline): XAxisPlotLinesOptions[] =>
     className: 'week-night-line',
   }));
 
-export interface WeekChartModel {
+interface WeekChartModel {
   readonly week: WeekTimeline;
   readonly site: Site;
   /** Epoch millis of "now", drawn as a marker when it lands inside the week. */

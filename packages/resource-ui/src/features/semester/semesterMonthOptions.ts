@@ -114,7 +114,7 @@ export const buildMonthLines = (month: TimelineMonth): XAxisPlotLinesOptions[] =
     };
   });
 
-export interface SemesterMonthModel {
+interface SemesterMonthModel {
   readonly month: TimelineMonth;
   readonly site: Site;
   /** Epoch millis of "now", drawn as a marker when it lands inside the month. */

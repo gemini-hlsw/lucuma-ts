@@ -3,9 +3,8 @@
  *
  * Colour follows the instrument and nothing else (CLAUDE.md), which only holds
  * if every place that draws one reads the same map. The charts get theirs from
- * the point builder and the legend from `TimelineChart`; the two browsers drew
- * their own square, twice, from the same two hex-free tokens. This is that
- * square, once, beside the palette it reads.
+ * the point builder and the legend from `TimelineChart`; every other swatch in
+ * the app is this one, beside the palette it reads.
  *
  * `aria-hidden` on the swatch, always: identity never rides on colour alone, so
  * the name beside it is the identity and the square is decoration.
@@ -17,7 +16,7 @@ import type { Instrument } from '@/domain/types';
 
 import { INSTRUMENT_LABEL, instrumentColor } from './timelineOptions';
 
-export interface InstrumentSwatchProps {
+interface InstrumentSwatchProps {
   readonly instrument: Instrument;
   /**
    * The name the schedule printed, when it differs from the instrument's own.

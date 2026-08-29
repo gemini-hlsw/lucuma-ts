@@ -114,7 +114,7 @@ const sunLine = (value: number, text: string): XAxisPlotLinesOptions => ({
 });
 
 /** Sunset and sunrise as marked lines; the twilight edges are the band edges. */
-export const buildSunLines = (sun: NightSunTimes): XAxisPlotLinesOptions[] => [
+const buildSunLines = (sun: NightSunTimes): XAxisPlotLinesOptions[] => [
   ...(sun.sunset === null ? [] : [sunLine(sun.sunset, 'sunset')]),
   ...(sun.sunrise === null ? [] : [sunLine(sun.sunrise, 'sunrise')]),
 ];
@@ -134,7 +134,7 @@ export const buildTransitionLines = (transitions: readonly number[]): XAxisPlotL
     className: 'night-transition',
   }));
 
-export interface NightChartModel {
+interface NightChartModel {
   readonly night: NightTimeline;
   readonly site: Site;
   /** Epoch millis of "now", drawn as a marker when it falls inside the night. */

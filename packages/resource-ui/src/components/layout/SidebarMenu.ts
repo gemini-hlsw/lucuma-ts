@@ -25,7 +25,7 @@ export interface SidebarMenuItem {
  * A sidebar menu section: a heading and its links, nothing else - captions
  * under the headings were removed at Dan's direction (2026-08-11).
  */
-export interface SidebarMenuSection {
+interface SidebarMenuSection {
   /** Section label shown above the items. */
   label: string;
   /** Items rendered under the section. */

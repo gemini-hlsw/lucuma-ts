@@ -12,7 +12,7 @@
  */
 import { useSearchParams } from 'react-router';
 
-export interface UrlParamOptions {
+interface UrlParamOptions {
   /**
    * Replace the history entry instead of pushing one. For states that change
    * on every keystroke - a search box - where stepping back through each

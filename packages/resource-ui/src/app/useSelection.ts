@@ -1,8 +1,7 @@
 /**
  * Reads and writes the shared view selection (site, semester, night) from the
  * URL query string, so views are linkable and navigation preserves context.
- * Every view reads the published record - there is no other document to select
- * (the schedule lifecycle was dropped from v1).
+ * Every view reads the published record; v1 has no other document to select.
  */
 import { useSearchParams } from 'react-router';
 
@@ -10,7 +9,7 @@ import { useNow } from '@/app/useNow';
 import { observingNightOf, type TimeDisplay } from '@/domain/siteTime';
 import type { Site } from '@/domain/types';
 
-export interface Selection {
+interface Selection {
   readonly site: Site;
   /**
    * The semester the URL explicitly asks for, or null when it names none.
@@ -23,13 +22,12 @@ export interface Selection {
    */
   readonly semester: string | null;
   readonly observingNight: string;
-  /** Which clock every clock time renders in - the site's own, or UT. */
   readonly timeDisplay: TimeDisplay;
 }
 
 const asSite = (value: string | null): Site => (value === 'GS' ? 'GS' : 'GN');
 
-export interface SelectionControls extends Selection {
+interface SelectionControls extends Selection {
   /** The night in progress at the selected site - what a URL with no night means. */
   tonight: string;
   setSite: (site: Site) => void;
@@ -43,7 +41,6 @@ export interface SelectionControls extends Selection {
    */
   setSemesterSelection: (semester: string, observingNight: string | null) => void;
   setObservingNight: (observingNight: string) => void;
-  /** Back to the night in progress: drops the explicit night from the URL. */
   clearObservingNight: () => void;
   setTimeDisplay: (display: TimeDisplay) => void;
 }
@@ -100,7 +97,6 @@ export function useSelection(): SelectionControls {
         (previous) => {
           const next = new URLSearchParams(previous);
           next.set('semester', semester);
-          // The month named a page of the old semester's calendar.
           next.delete('month');
           if (observingNight !== null) {
             next.set('night', observingNight);

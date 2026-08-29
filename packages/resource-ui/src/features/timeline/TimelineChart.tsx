@@ -30,10 +30,7 @@ import {
   USAGE_LABEL,
 } from './timelineOptions';
 
-// Re-exported so legend consumers need not know which module owns the type.
-export type { LegendExtra } from './timelineOptions';
-
-export interface TimelineChartProps {
+interface TimelineChartProps {
   readonly options: Options;
   /** How this window says a block reaches past its edge. */
   readonly continuesLabel: string;
@@ -158,8 +155,8 @@ function LegendSection({ label, entries }: { label: string; entries: readonly Le
  * vocabularies never read as one line of colours, and a grey repeated across
  * rows is keyed under the row it belongs to (Dan, 2026-08-11). A section a
  * window has no keys for does not render. Only what the window actually
- * contains: a fixed list of all thirteen instruments would mostly be keys to
- * colours that are not on the page.
+ * contains: a fixed list of every instrument would mostly be keys to colours
+ * that are not on the page.
  *
  * The name still rides on every block as well. The legend makes the colours
  * learnable; the labels make them unnecessary, which is what keeps the view

@@ -15,7 +15,7 @@ const SITE_COORDINATES: Record<Site, { latDeg: number; lonDeg: number }> = {
 const RAD = Math.PI / 180;
 
 /** Solar altitude in degrees at an instant, for a location. */
-export const solarAltitude = (epochMillis: number, latDeg: number, lonDeg: number): number => {
+const solarAltitude = (epochMillis: number, latDeg: number, lonDeg: number): number => {
   const days = epochMillis / 86_400_000 + 2_440_587.5 - 2_451_545.0;
   const meanAnomaly = RAD * (357.529 + 0.985_600_28 * days);
   const meanLongitude = 280.459 + 0.985_647_36 * days;
@@ -50,7 +50,6 @@ export interface NightSunTimes {
 
 const STEP_MS = 60_000;
 
-/** Scans the night for the four crossings. */
 export const nightSunTimes = (site: Site, night: Interval): NightSunTimes => {
   const { latDeg, lonDeg } = SITE_COORDINATES[site];
   let sunset: number | null = null;
