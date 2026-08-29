@@ -27,7 +27,7 @@
     "tailwind-merge": "3.6.0"
   },
   "peerDependencies": {
-    "jotai": "2.20.2"
+    "jotai": "2.20.3"
   },
   "devDependencies": {
     "@apollo/client": "4.2.12",
@@ -48,7 +48,7 @@
     "eslint-plugin-simple-import-sort": "14.0.0",
     "globals": "17.11.0",
     "graphql": "16.14.2",
-    "jotai": "2.20.2",
+    "jotai": "2.20.3",
     "playwright": "1.62.1",
     "react": "19.2.8",
     "react-dom": "19.2.8",
