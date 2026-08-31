@@ -1,4 +1,3 @@
-import type { Mock } from 'vitest';
 import { beforeEach, describe, expect } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
 import { render } from 'vitest-browser-react';
@@ -46,33 +45,6 @@ describe('Title test with args', () => {
 
     expect(nextPanelFunction).toHaveBeenCalledOnce();
     expect(prevPanelFunction).toHaveBeenCalledOnce();
-  });
-});
-
-describe('Title test with args', () => {
-  const title = 'My title';
-
-  let nextPanelMock: Mock;
-  let prevPanelMock: Mock;
-
-  beforeEach(() => {
-    nextPanelMock = vi.fn();
-    prevPanelMock = vi.fn();
-  });
-
-  it('functions should be called', async () => {
-    await render(
-      <Title title={title} prevPanel={prevPanelMock} nextPanel={nextPanelMock}>
-        <h3>Hola</h3>
-      </Title>,
-    );
-    await expect.element(page.getByText(title)).toBeInTheDocument();
-    await userEvent.click(page.getByTitle('Next panel'));
-
-    await userEvent.click(page.getByTitle('Previous panel'));
-
-    expect(nextPanelMock).toHaveBeenCalledOnce();
-    expect(prevPanelMock).toHaveBeenCalledOnce();
   });
 });
 
