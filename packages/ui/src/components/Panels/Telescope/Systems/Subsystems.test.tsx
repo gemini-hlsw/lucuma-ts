@@ -27,7 +27,7 @@ import type { EnclosureState } from '@/types';
 
 import { BotSubsystems, TopSubsystems } from './Subsystems';
 
-describe(TopSubsystems.name, () => {
+describe(TopSubsystems, () => {
   let sut: RenderResultWithStore;
   beforeEach(async () => {
     sut = await renderWithContext(<TopSubsystems canEdit={true} />, {
@@ -89,7 +89,7 @@ describe(TopSubsystems.name, () => {
   });
 });
 
-describe(BotSubsystems.name, () => {
+describe(BotSubsystems, () => {
   let sut: RenderResultWithStore;
 
   async function renderBotSubsystems(enclosure?: Partial<EnclosureState>) {

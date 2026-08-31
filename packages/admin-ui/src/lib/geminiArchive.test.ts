@@ -9,7 +9,7 @@ import {
   separationArcsec,
 } from './geminiArchive';
 
-describe('archiveSearchSpec', () => {
+describe(archiveSearchSpec, () => {
   it('searches both GMOS sites with a single GMOS query', () => {
     const spec = archiveSearchSpec('GMOS_SOUTH_LONG_SLIT');
     expect(spec?.instruments).toEqual(['GMOS']);
@@ -37,7 +37,7 @@ describe('archiveSearchSpec', () => {
   });
 });
 
-describe('archiveQueryUrl', () => {
+describe(archiveQueryUrl, () => {
   it('builds the proxied jsonsummary cone-search URL', () => {
     expect(archiveQueryUrl('GMOS', 'IMAGING', 327.79593, 28.86399, 165)).toBe(
       '/archive/jsonsummary/CANONICAL/SCIENCE/RAW/OBJECT/notengineering/NotFail/GMOS/IMAGING/ra=327.79593/dec=28.86399/SR=165',
@@ -45,7 +45,7 @@ describe('archiveQueryUrl', () => {
   });
 });
 
-describe('separationArcsec', () => {
+describe(separationArcsec, () => {
   it('is zero for identical coordinates', () => {
     expect(separationArcsec(30, -30, 30, -30)).toBe(0);
   });
@@ -77,7 +77,7 @@ function file(overrides: Partial<ArchiveFile>): ArchiveFile {
   };
 }
 
-describe('aggregateDuplicates', () => {
+describe(aggregateDuplicates, () => {
   it('produces one row per observation_id with file and QA-Pass counts', () => {
     const rows = aggregateDuplicates('x-125', 30.0, -30.001, [
       file({}),
@@ -104,7 +104,7 @@ describe('aggregateDuplicates', () => {
   });
 });
 
-describe('findDuplicates', () => {
+describe(findDuplicates, () => {
   const gmosSource = { id: 'x-1', raDeg: 30, decDeg: -30, modeType: 'GMOS_SOUTH_LONG_SLIT' };
   const file = { observation_id: 'GS-2025B-Q-1-1', instrument: 'GMOS-S', object: 'T', ra: 30, dec: -30 };
   const okResponse = () => new Response(JSON.stringify([file]), { status: 200 });

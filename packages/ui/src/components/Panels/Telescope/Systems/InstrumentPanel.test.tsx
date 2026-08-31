@@ -13,7 +13,7 @@ import type { InstrumentConfig } from '@/types';
 
 import { InstrumentPanel } from './InstrumentPanel';
 
-describe(InstrumentPanel.name, () => {
+describe(InstrumentPanel, () => {
   let sut: RenderResultWithStore;
   beforeEach(async () => {
     sut = await renderWithContext(<InstrumentPanel canEdit={true} />, {

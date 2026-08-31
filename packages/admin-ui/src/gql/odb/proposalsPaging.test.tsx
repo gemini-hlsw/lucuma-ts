@@ -48,7 +48,7 @@ function Harness() {
   );
 }
 
-describe('useProposals', () => {
+describe(useProposals, () => {
   it('follows hasMore so a special proposal past the first page is never dropped (sc-9589)', async () => {
     const screen = await renderWithContext(<Harness />, {
       token: STAFF_TOKEN,

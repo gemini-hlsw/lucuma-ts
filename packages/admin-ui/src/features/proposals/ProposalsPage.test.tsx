@@ -45,7 +45,7 @@ const proposalsMock = (): MockedResponseOf<typeof PROPOSALS_QUERY> => ({
   },
 });
 
-describe('ProposalsPage', () => {
+describe(ProposalsPage, () => {
   it('lists special proposals with the master-list columns', async () => {
     const screen = await renderWithContext(<ProposalsPage />, { token: STAFF_TOKEN, mocks: [proposalsMock()] });
     await expect.element(screen.getByText('Proposals', { exact: true })).toBeInTheDocument();

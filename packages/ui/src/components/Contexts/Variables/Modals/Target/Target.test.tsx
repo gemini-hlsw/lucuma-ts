@@ -11,7 +11,7 @@ import type { Target as TargetType } from '@/types';
 
 import { Target } from './Target';
 
-describe(Target.name, () => {
+describe(Target, () => {
   const targetEditVisible = {
     isVisible: true,
     target: target,

@@ -12,11 +12,12 @@ export const vitest = defineConfig({
   name: 'lucuma/vitest',
   files: ['**/*.{spec,test}.{ts,tsx}'],
   plugins: { vitest: vitestPlugin },
-  // `valid-title` accepts a function or class title only when it can read the
-  // argument's type, and it only asks for types when this is set.
+  // Title rules need type information to avoid rewriting imported string
+  // constants as non-function identifiers.
   settings: { vitest: { typecheck: true } },
   rules: {
     ...vitestPlugin.configs.recommended.rules,
+    'vitest/prefer-describe-function-title': 'error',
   },
 });
 

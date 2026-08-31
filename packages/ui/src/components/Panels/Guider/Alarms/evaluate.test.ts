@@ -2,7 +2,7 @@ import { createGuideAlarm, createGuideQuality, createGuideState } from '@/test/c
 
 import { evaluateAlarm, evaluateAlarmSound } from './evaluate';
 
-describe(evaluateAlarm.name, () => {
+describe(evaluateAlarm, () => {
   it('should be false if no alarm is set', () => {
     expect(evaluateAlarm(undefined, createGuideQuality({}), createGuideState())).toBeUndefined();
   });
@@ -88,7 +88,7 @@ describe(evaluateAlarm.name, () => {
   });
 });
 
-describe(evaluateAlarmSound.name, () => {
+describe(evaluateAlarmSound, () => {
   it('should be true if all conditions are met', () => {
     expect(
       evaluateAlarmSound(

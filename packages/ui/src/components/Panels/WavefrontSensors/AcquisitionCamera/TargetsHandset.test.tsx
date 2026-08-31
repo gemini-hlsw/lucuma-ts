@@ -23,7 +23,7 @@ import type { InstrumentConfig } from '@/types';
 import type { Alignment } from './Controls';
 import TargetsHandset from './TargetsHandset';
 
-describe(TargetsHandset.name, () => {
+describe(TargetsHandset, () => {
   let sut: RenderResultWithStore;
 
   beforeEach(async () => {

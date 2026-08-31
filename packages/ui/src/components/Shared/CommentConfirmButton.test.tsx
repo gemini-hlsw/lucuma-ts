@@ -4,7 +4,7 @@ import { render } from 'vitest-browser-react';
 
 import { CommentConfirmButton } from './CommentConfirmButton';
 
-describe(CommentConfirmButton.name, () => {
+describe(CommentConfirmButton, () => {
   let onConfirm: Mock;
   beforeEach(() => {
     onConfirm = vi.fn();

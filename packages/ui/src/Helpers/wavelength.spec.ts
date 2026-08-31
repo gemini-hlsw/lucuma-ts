@@ -4,7 +4,7 @@ import type { Visitor } from '@/types';
 
 import { extractCentralWavelength } from './wavelength';
 
-describe(extractCentralWavelength.name, () => {
+describe(extractCentralWavelength, () => {
   it('returns undefined if no data is provided', () => {
     expect(extractCentralWavelength(undefined, undefined)).deep.eq({ wavelength: undefined, fpu: undefined });
   });

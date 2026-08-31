@@ -12,7 +12,7 @@ function Harness(): JSX.Element {
   return <SearchInput value={value} onChange={setValue} placeholder="Filter reference, PI, or title" title="Search" />;
 }
 
-describe('SearchInput', () => {
+describe(SearchInput, () => {
   it('shows the placeholder and reflects what the user types', async () => {
     const screen = await renderWithContext(<Harness />);
     const box = screen.getByPlaceholder('Filter reference, PI, or title');

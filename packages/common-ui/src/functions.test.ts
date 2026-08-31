@@ -9,7 +9,7 @@ import {
   when,
 } from './functions.ts';
 
-describe(isNullish.name, () => {
+describe(isNullish, () => {
   it('should return true for null or undefined', () => {
     expect(isNullish(null)).true;
     expect(isNullish(undefined)).true;
@@ -24,7 +24,7 @@ describe(isNullish.name, () => {
   });
 });
 
-describe(isNotNullish.name, () => {
+describe(isNotNullish, () => {
   it('should return false for null or undefined', () => {
     expect(isNotNullish(null)).false;
     expect(isNotNullish(undefined)).false;
@@ -39,7 +39,7 @@ describe(isNotNullish.name, () => {
   });
 });
 
-describe(formatToSignedArcseconds.name, () => {
+describe(formatToSignedArcseconds, () => {
   it('should format signed arcseconds correctly', () => {
     expect(formatToSignedArcseconds(360 * 60 * 60)).toBe('0.00');
     expect(formatToSignedArcseconds(180 * 60 * 60)).toBe('-648000.00');
@@ -69,7 +69,7 @@ describe(formatToSignedArcseconds.name, () => {
   });
 });
 
-describe(round.name, () => {
+describe(round, () => {
   it('should round numbers correctly', () => {
     expect(round(1.23, 2)).toBe('1.23');
     expect(round(1.2349, 2)).toBe('1.23');
@@ -90,7 +90,7 @@ describe(round.name, () => {
   });
 });
 
-describe(when.name, () => {
+describe(when, () => {
   it('should return the value when condition is not nullish', () => {
     expect(when('value', (t) => t)).toBe('value');
     expect(when(true, () => 'value')).toBe('value');
@@ -119,7 +119,7 @@ describe(when.name, () => {
   });
 });
 
-describe(firstIfOnlyOne.name, () => {
+describe(firstIfOnlyOne, () => {
   it('should return the first element if there is only one', () => {
     expect(firstIfOnlyOne([1])).toBe(1);
     expect(firstIfOnlyOne(['a'])).toBe('a');
@@ -139,7 +139,7 @@ describe(firstIfOnlyOne.name, () => {
   });
 });
 
-describe(formatDateTime.name, () => {
+describe(formatDateTime, () => {
   it('should format date with seconds', () => {
     const date = new Date('2024-01-01 12:34:56');
     expect(formatDateTime(date)).toBe('2024-01-01 12:34:56');
@@ -155,7 +155,7 @@ describe(formatDateTime.name, () => {
   });
 });
 
-describe(parseNumber.name, () => {
+describe(parseNumber, () => {
   it('should parse strings', () => {
     expect(parseNumber('1.5')).toBe(1.5);
     expect(parseNumber('-3')).toBe(-3);

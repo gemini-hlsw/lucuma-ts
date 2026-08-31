@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { friendlyError } from './errors';
 
-describe(friendlyError.name, () => {
+describe(friendlyError, () => {
   it('translates auth failures into actionable messages', () => {
     expect(friendlyError(new Error('Access denied for user u-123'))).toBe('Access denied for this token’s role.');
     expect(friendlyError(new Error('The JWT signature is invalid'))).toBe('Token expired or invalid — sign in again.');

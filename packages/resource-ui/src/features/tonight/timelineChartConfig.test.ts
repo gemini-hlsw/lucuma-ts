@@ -33,7 +33,7 @@ const createConfig = (
     onBlockSelect: overrides.onBlockSelect ?? vi.fn(),
   });
 
-describe(createTimelineChartConfig.name, () => {
+describe(createTimelineChartConfig, () => {
   it('maps timeline blocks to xrange points', () => {
     const config = createConfig();
 

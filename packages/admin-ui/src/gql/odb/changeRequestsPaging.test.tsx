@@ -59,7 +59,7 @@ function Harness() {
   );
 }
 
-describe('useChangeRequests', () => {
+describe(useChangeRequests, () => {
   it('follows hasMore across pages so a request past the first page is never dropped (sc-9604)', async () => {
     const screen = await renderWithContext(<Harness />, {
       token: STAFF_TOKEN,

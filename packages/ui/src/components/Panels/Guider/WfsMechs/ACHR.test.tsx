@@ -7,7 +7,7 @@ import { renderWithContext } from '@/test/render';
 
 import { ACHR } from './ACHR';
 
-describe(ACHR.name, () => {
+describe(ACHR, () => {
   it('should render', async () => {
     const sut = await renderWithContext(<ACHR disabled={false} />, { mocks });
     await expect.element(sut.getByLabelText('Lens', { exact: true })).toHaveValue('AC');

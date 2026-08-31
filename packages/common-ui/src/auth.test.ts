@@ -10,7 +10,7 @@ const withRole = (type: StandardRole['type']): User => ({
   profile: { orcidId: '0000-0001', profile: {} },
 });
 
-describe(currentAccess.name, () => {
+describe(currentAccess, () => {
   it('reads the active standard role', () => {
     expect(currentAccess(withRole('staff'))).toBe('staff');
   });
@@ -38,7 +38,7 @@ describe('accessAtLeast (hierarchy guest<pi<ngo<staff<admin<service)', () => {
   });
 });
 
-describe(displayName.name, () => {
+describe(displayName, () => {
   const withProfile = (profile: OrcidProfile['profile']): User => ({
     type: 'standard',
     id: 'u-1',

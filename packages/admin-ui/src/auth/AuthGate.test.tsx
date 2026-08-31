@@ -7,7 +7,7 @@ import { AuthGate } from './AuthGate';
 
 const CHILD = <div>ADMIN CONTENT</div>;
 
-describe('AuthGate', () => {
+describe(AuthGate, () => {
   it('blocks when not signed in, and does not show admin content', async () => {
     const screen = await renderWithContext(<AuthGate>{CHILD}</AuthGate>);
     await expect.element(screen.getByRole('button', { name: /sign in with orcid/i })).toBeInTheDocument();

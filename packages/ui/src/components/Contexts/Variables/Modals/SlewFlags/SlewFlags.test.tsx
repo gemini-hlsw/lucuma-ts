@@ -7,7 +7,7 @@ import { renderWithContext } from '@/test/render';
 
 import { SlewFlags } from './SlewFlags';
 
-describe(SlewFlags.name, () => {
+describe(SlewFlags, () => {
   it('should render', async () => {
     await renderWithContext(<SlewFlags />, { initialValues: [[slewVisibleAtom, true]] });
 

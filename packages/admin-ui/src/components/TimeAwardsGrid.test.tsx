@@ -13,7 +13,7 @@ function Harness({ initial }: { readonly initial: readonly Allocation[] }): JSX.
   return <TimeAwardsGrid allocations={allocations} onChange={setAllocations} />;
 }
 
-describe('TimeAwardsGrid', () => {
+describe(TimeAwardsGrid, () => {
   it('keeps a category row visible when its only allocation is zeroed', async () => {
     // Regression: zeroing the last non-zero cell dropped the allocation and
     // with it the whole category row, losing the reviewer's place mid-edit.

@@ -37,7 +37,7 @@ const rosterMock = (): MockedResponseOf<typeof USERS_QUERY> => ({
 
 const ADMIN_TOKEN = fakeJwt(standardUser('admin'));
 
-describe('UsersPage', () => {
+describe(UsersPage, () => {
   it('renders the role-assignment grid with a column per partner + Staff/Adm', async () => {
     const screen = await renderWithContext(<UsersPage />, { token: ADMIN_TOKEN, mocks: [rosterMock()] });
     for (const h of ['Last', 'First', 'Email', 'ORCiD']) {

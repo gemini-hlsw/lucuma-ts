@@ -2,13 +2,13 @@ import { describe, expect, it } from 'vitest';
 
 import { formatTime, getDurationLabel, getNowTimestamp, getTimestamp } from './time';
 
-describe(getTimestamp.name, () => {
+describe(getTimestamp, () => {
   it('converts an ISO timestamp to epoch milliseconds', () => {
     expect(getTimestamp('2026-08-01T19:00:00-10:00')).toBe(new Date('2026-08-01T19:00:00-10:00').getTime());
   });
 });
 
-describe(formatTime.name, () => {
+describe(formatTime, () => {
   it('formats Gemini North times in the telescope site timezone', () => {
     expect(formatTime('2026-08-02T05:00:00Z', 'GN', 'site')).toBe('19:00');
   });
@@ -22,13 +22,13 @@ describe(formatTime.name, () => {
   });
 });
 
-describe(getNowTimestamp.name, () => {
+describe(getNowTimestamp, () => {
   it('returns the fixed demo timestamp', () => {
     expect(getNowTimestamp()).toBe('2026-08-02T00:30:00-10:00');
   });
 });
 
-describe(getDurationLabel.name, () => {
+describe(getDurationLabel, () => {
   it('formats seconds as minutes', () => {
     expect(getDurationLabel(45 * 60)).toBe('45 minutes');
   });

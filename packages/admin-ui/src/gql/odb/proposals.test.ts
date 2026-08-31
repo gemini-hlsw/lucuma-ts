@@ -57,7 +57,7 @@ function specialProgram(overrides: Partial<RawProgram>): RawProgram {
   };
 }
 
-describe('mapProposals', () => {
+describe(mapProposals, () => {
   it('projects only special-subtype proposals, with abstract + observation rows', () => {
     const out = mapProposals({
       programs: {
@@ -144,7 +144,7 @@ describe('mapProposals', () => {
   });
 });
 
-describe('semesterOfReference', () => {
+describe(semesterOfReference, () => {
   it('parses the semester token, degrading to an em-dash', () => {
     expect(semesterOfReference('G-2027B-0042-DD')).toBe('2027B');
     expect(semesterOfReference('p-110')).toBe('—');

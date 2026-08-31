@@ -8,7 +8,7 @@ import type { GuideLoop } from '@/types';
 
 import { Configuration } from './Configuration';
 
-describe(Configuration.name, () => {
+describe(Configuration, () => {
   describe('m2ComaNotAllowed — M2 Coma checkbox disabled state', () => {
     it.each([
       // source is 'OIWFS' -> always disabled

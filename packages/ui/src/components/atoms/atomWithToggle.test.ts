@@ -2,7 +2,7 @@ import { createStore } from 'jotai';
 
 import { atomWithToggle } from './atomWithToggle';
 
-describe(atomWithToggle.name, () => {
+describe(atomWithToggle, () => {
   it('should return an atom with the initial value', () => {
     const atom = atomWithToggle(true);
     const store = createStore();
