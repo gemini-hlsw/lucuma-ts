@@ -18,6 +18,8 @@ export const vitest = defineConfig({
   rules: {
     ...vitestPlugin.configs.recommended.rules,
     'vitest/prefer-describe-function-title': 'error',
+    // Consider beforeEach a test block.
+    'vitest/no-standalone-expect': ['error', { additionalTestBlockFunctions: ['beforeEach'] }],
   },
 });
 
