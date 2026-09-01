@@ -27,10 +27,7 @@ describe(observingNightInterval, () => {
   });
 });
 
-/**
- * The "tonight" resolver: a URL with no night means the night this instant
- * belongs to, so the 14:00 rollover is the app's front door.
- */
+/** A URL with no night means the night this instant belongs to, so 14:00 is the front door. */
 describe(observingNightOf, () => {
   it('rolls the label over at exactly 14:00 local', () => {
     // Gemini North is UTC-10, so 14:00 local on the 12th is 00:00Z on the 13th.
@@ -47,8 +44,7 @@ describe(observingNightOf, () => {
   });
 
   it('holds across the Gemini South spring-forward, where the night is 23 hours', () => {
-    // Chile springs forward inside the night labelled 2026-09-06, so a fixed
-    // offset would misfile one of its ends.
+    // Chile springs forward inside the night labelled 2026-09-06, so a fixed offset misfiles an end.
     const short = observingNightInterval('GS', '2026-09-06');
 
     expect(short.end - short.start).toBe(23 * 3_600_000);
@@ -57,11 +53,7 @@ describe(observingNightOf, () => {
   });
 });
 
-/**
- * How a run's extent is named. Both ends are the evening the night begins, which
- * is what the published sheet heads its columns with - so the two must be derived
- * the same way, and neither by arithmetic on the exclusive end instant.
- */
+/** Both ends are the evening the night begins, so neither may come from the exclusive end instant. */
 describe('naming the evenings an interval covers', () => {
   const spanning = (site: 'GN' | 'GS', first: string, last: string) => ({
     start: observingNightInterval(site, first).start,
@@ -73,9 +65,7 @@ describe('naming the evenings an interval covers', () => {
   });
 
   it('names the last evening as the night before the last label, not the label', () => {
-    // The regression: the end instant sits at 14:00 on 2026-08-14, so reading the
-    // calendar date an hour earlier gives 2026-08-14 - the label, a day late. The
-    // sheet heads that column 13.
+    // Reading the calendar date an hour before the end gives the label, a day late; the sheet heads it 13.
     expect(lastEveningDate('GS', spanning('GS', '2026-08-08', '2026-08-14'))).toBe('2026-08-13');
   });
 
@@ -86,8 +76,7 @@ describe('naming the evenings an interval covers', () => {
   });
 
   it('is exact across a Gemini South DST change, where a night is 23 or 25 hours', () => {
-    // Chile springs forward in September, so any fixed hour offset is wrong on one
-    // side of this span. Resolving the night first is not.
+    // Chile springs forward in September, so a fixed hour offset is wrong on one side of this span.
     const across = spanning('GS', '2026-09-05', '2026-09-08');
     expect(firstEveningDate('GS', across)).toBe('2026-09-04');
     expect(lastEveningDate('GS', across)).toBe('2026-09-07');
@@ -100,11 +89,7 @@ describe('naming the evenings an interval covers', () => {
   });
 });
 
-/**
- * The finders print this beside every span, so a run list can be read for its
- * lengths. Counted over evening dates for the same reason the evenings are
- * resolved rather than arithmetic'd: a night is not a fixed number of hours.
- */
+/** Counted over evening dates, because a night is not a fixed number of hours. */
 describe('counting the nights an interval covers', () => {
   const spanning = (site: 'GN' | 'GS', first: string, last: string) => ({
     start: observingNightInterval(site, first).start,
@@ -120,8 +105,7 @@ describe('counting the nights an interval covers', () => {
   });
 
   it('is exact across a Gemini South DST change, where dividing by 24 hours is not', () => {
-    // Four nights, one of them 23 hours: the elapsed span is 95 hours, which
-    // floors to 3 and rounds to 4 only by luck. Evening dates just count.
+    // Four nights, one of them 23 hours: 95 elapsed hours floors to 3 and rounds to 4 only by luck.
     expect(nightCount('GS', spanning('GS', '2026-09-05', '2026-09-08'))).toBe(4);
   });
 

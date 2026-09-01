@@ -1,75 +1,24 @@
-/**
- * The synthetic instrument-component layer - the mock's stand-in for the ICTD
- * catalog, until Bryan supplies real data.
- *
- * **This module is the quarantine boundary**. Nothing
- * else in the mock knows the data is synthetic; swap this one file when the real
- * catalog arrives. The other two rules it lives under:
- *
- * - **Deterministic.** No PRNG and no wall clock anywhere. Identity comes from a
- *   hand-written catalog; behaviour comes from a `pattern` declared per piece;
- *   every instant is derived from the imported schedules. The same fixtures
- *   always produce byte-identical blocks.
- * - **Anchored to real data.** A piece that rides with its instrument is
- *   INSTALLED exactly across the intervals the published sheet mounts that
- *   instrument, and in the summit lab otherwise. GMOS components move when the
- *   sheet says GMOS moved.
- *
- * ## Identity follows the ODB design (v1-domain-model.md §5.2)
- *
- * `code` is the lucuma-core enum tag where one exists (GmosSouthGrating,
- * GmosSouthFilter, Flamingos2Filter, GnirsDisperser, …); a MOS mask has no
- * enum value, so its barcode doubles as its code; aliases are plain strings
- * resolved within the owning instrument. Pieces without a lucuma-core enum -
- * GHOST's IFUs and cameras, the speckle EMCCDs, Altair's optics - carry
- * hand-written codes in the same spirit, taken from the public instrument
- * pages. Codes stay unique within a site (the id is `k-<site>-<code>`), which
- * is why the GNIRS slits are curated to widths GMOS does not share.
- *
- * The catalog covers the `[REQ]` v1 set - GMOS FPUs, gratings, filters,
- * OIWFS; F2 FPUs, filters, OIWFS - and gives every instrument the published
- * schedules mount at least a few honest pieces, so browsing GHOST or Altair
- * does not come up empty.
- *
- * ## A piece's place is INSTALLED or a storage location, never a port
- *
- * Copying the instrument's `InstrumentLocation` onto components would let a
- * filter claim PORT 3 while GMOS itself says LAB. `INSTALLED` means "wherever
- * its instrument is", resolved by joining the instrument's own records, so the
- * two cannot disagree by construction.
- */
 import type { ImportedBlock, ImportedSchedule, ImportSite, Instrument } from './records.ts';
 
 export type ComponentType = 'FILTER' | 'DISPERSER' | 'FPU' | 'WFS' | 'OTHER';
 export type ComponentLocation = 'INSTALLED' | 'FLOOR' | 'LAB' | 'BASE' | 'UNKNOWN';
 export type ComponentUsage = 'SCIENCE' | 'ENGINEERING' | 'UNAVAILABLE';
 
-/**
- * How a piece behaves over a semester. Declared per piece rather than derived
- * from a hash, so the working set reads as a catalog and a given piece is the
- * same kind of example in every conversation about it.
- */
+/** Declared per piece rather than derived from a hash, so a piece is the same example every time. */
 export type ComponentPattern =
-  /** Installed while its instrument is mounted; summit lab otherwise. */
   | 'RIDES_WITH_INSTRUMENT'
-  /** Never leaves the summit lab - a spare. */
   | 'SPARE_IN_LAB'
-  /** Stored at the base facility. */
   | 'STORED_AT_BASE'
-  /** Installed for a mid-semester campaign (40%-70% of the first mounting). */
+  /** Installed for a campaign partway through the first mounting. */
   | 'MASK_CAMPAIGN'
-  /** Fails 60% through the first mounting and comes off for repair. */
+  /** Fails partway through the first mounting and comes off for repair. */
   | 'FAILS_MID_SEMESTER';
 
 export interface CatalogComponent {
   /** Stable id, `k-<site>-<code>`, unique because codes are unique per site set. */
   readonly id: string;
   readonly instrument: Instrument;
-  /**
-   * Which site's working set holds the piece. Mock-only: the API's identity
-   * record carries no site - site is time-bounded data on the blocks - but the
-   * generator needs to know which site's schedule to anchor to.
-   */
+  /** Mock-only: the API's identity record carries no site, but the generator needs one to anchor to. */
   readonly site: ImportSite;
   readonly componentType: ComponentType;
   readonly code: string;
@@ -106,19 +55,13 @@ const catalog = (site: ImportSite, entries: readonly Entry[]): readonly CatalogC
     existence: entry.existence ?? 'PRESENT',
   }));
 
-/**
- * Gemini South. GMOS-S and Flamingos-2 carry the `[REQ]` v1 depth; GHOST,
- * Cal/ZORRO, GSAOI, Canopus and IQUEYE - everything a GS sheet or the demo
- * mounts - each hold their real handful of pieces.
- */
+/** GMOS-S and F2 carry the [REQ] v1 depth; the rest hold a real handful each. */
 const GS_CATALOG = catalog('GS', [
-  // GMOS-S gratings (GmosSouthGrating). B600_G5323 is the retired grating the
-  // B480 replaced - still on the books, boxed at the base facility.
+  // B600_G5323 is the retired grating the B480 replaced, boxed at the base facility.
   { instrument: 'GMOS', componentType: 'DISPERSER', code: 'B1200_G5321', name: 'B1200' },
   { instrument: 'GMOS', componentType: 'DISPERSER', code: 'R831_G5322', name: 'R831', pattern: 'SPARE_IN_LAB' },
   { instrument: 'GMOS', componentType: 'DISPERSER', code: 'R600_G5324', name: 'R600', pattern: 'SPARE_IN_LAB' },
-  // A retired mask, soft-deleted: the catalog remembers it, the finder does
-  // not offer it, and the synthetic layer gives it no current records.
+  // Soft-deleted: the catalog remembers it, the finder does not offer it.
   {
     instrument: 'GMOS',
     componentType: 'FPU',
@@ -154,8 +97,7 @@ const GS_CATALOG = catalog('GS', [
   { instrument: 'GMOS', componentType: 'FILTER', code: 'SII_G0335', name: 'SII' },
   { instrument: 'GMOS', componentType: 'FILTER', code: 'OIII_G0338', name: 'OIII' },
   { instrument: 'GMOS', componentType: 'FILTER', code: 'HeII_G0340', name: 'HeII', pattern: 'SPARE_IN_LAB' },
-  // GMOS-S FPUs (GmosSouthFpu): longslits, the nod-and-shuffle slit, the IFU
-  // trio, and MOS masks whose barcode is their identity.
+  // GMOS-S FPUs (GmosSouthFpu): longslits, the nod-and-shuffle slit, the IFU trio, and MOS masks.
   { instrument: 'GMOS', componentType: 'FPU', code: 'LongSlit_0_25', name: '0.25" longslit' },
   { instrument: 'GMOS', componentType: 'FPU', code: 'LongSlit_0_50', name: '0.5" longslit' },
   { instrument: 'GMOS', componentType: 'FPU', code: 'LongSlit_0_75', name: '0.75" longslit' },
@@ -193,8 +135,7 @@ const GS_CATALOG = catalog('GS', [
     pattern: 'SPARE_IN_LAB',
   },
   { instrument: 'GMOS', componentType: 'WFS', code: 'GMOS_S_OIWFS', name: 'GMOS-S OIWFS' },
-  // Flamingos-2: grisms (Flamingos2Disperser), filters (Flamingos2Filter),
-  // pixel-width longslits (Flamingos2Fpu), and the f/16 Lyot stop.
+  // Flamingos-2: grisms, filters, pixel-width longslits, and the f/16 Lyot stop.
   { instrument: 'F2', componentType: 'DISPERSER', code: 'R1200JH', name: 'R1200 JH grism' },
   { instrument: 'F2', componentType: 'DISPERSER', code: 'R1200HK', name: 'R1200 HK grism' },
   { instrument: 'F2', componentType: 'DISPERSER', code: 'R3000', name: 'R3000 grism', pattern: 'SPARE_IN_LAB' },
@@ -216,8 +157,7 @@ const GS_CATALOG = catalog('GS', [
   { instrument: 'F2', componentType: 'FPU', code: 'Pinhole', name: 'Pinhole grid', pattern: 'SPARE_IN_LAB' },
   { instrument: 'F2', componentType: 'OTHER', code: 'F2_LYOT_F16', name: 'f/16 Lyot stop' },
   { instrument: 'F2', componentType: 'WFS', code: 'F2_OIWFS', name: 'F2 OIWFS' },
-  // GHOST: fibre-fed, so its swappable pieces are the two IFU positioners at
-  // the focal station and the spectrograph hardware in the pier lab.
+  // GHOST is fibre-fed: the IFU positioners at the focal station, the spectrograph in the pier lab.
   { instrument: 'GHOST', componentType: 'FPU', code: 'GHOST_IFU1', name: 'Standard-resolution IFU (IFU-1)' },
   { instrument: 'GHOST', componentType: 'FPU', code: 'GHOST_IFU2', name: 'High-resolution IFU (IFU-2)' },
   { instrument: 'GHOST', componentType: 'OTHER', code: 'GHOST_CAM_BLUE', name: 'Blue spectrograph camera' },
@@ -234,8 +174,7 @@ const GS_CATALOG = catalog('GS', [
   { instrument: 'CAL_ZORRO', componentType: 'OTHER', code: 'ZORRO_EMCCD_B', name: 'Blue EMCCD camera (562 nm)' },
   { instrument: 'CAL_ZORRO', componentType: 'OTHER', code: 'ZORRO_EMCCD_R', name: 'Red EMCCD camera (832 nm)' },
   { instrument: 'CAL_ZORRO', componentType: 'OTHER', code: 'ZORRO_DICHROIC', name: 'Dichroic beamsplitter' },
-  // GSAOI, Canopus and IQUEYE mount only in the demo semester; until then
-  // their pieces sit honestly in storage.
+  // GSAOI and IQUEYE are mounted by no sheet; Canopus rides Port 4.
   { instrument: 'GSAOI', componentType: 'FILTER', code: 'Z_G1101', name: 'Z' },
   { instrument: 'GSAOI', componentType: 'FILTER', code: 'J_G1102', name: 'J' },
   { instrument: 'GSAOI', componentType: 'FILTER', code: 'H_G1103', name: 'H' },
@@ -247,11 +186,7 @@ const GS_CATALOG = catalog('GS', [
   { instrument: 'IQUEYE', componentType: 'OTHER', code: 'IQUEYE_HEAD', name: 'Photon-counting detector head' },
 ]);
 
-/**
- * Gemini North. GMOS-N mirrors the south set with its own G-numbers
- * (GmosNorthGrating/Filter/Fpu); GNIRS carries its gratings, prisms, cameras,
- * filters and slits; Altair, IGRINS-2 and the visitors each hold theirs.
- */
+/** GMOS-N mirrors the south set with its own G-numbers. */
 const GN_CATALOG = catalog('GN', [
   // GMOS-N gratings (GmosNorthGrating).
   { instrument: 'GMOS', componentType: 'DISPERSER', code: 'B1200_G5301', name: 'B1200' },
@@ -316,9 +251,7 @@ const GN_CATALOG = catalog('GN', [
     pattern: 'SPARE_IN_LAB',
   },
   { instrument: 'GMOS', componentType: 'WFS', code: 'GMOS_N_OIWFS', name: 'GMOS-N OIWFS' },
-  // GNIRS: gratings (GnirsDisperser), cross-dispersing prisms (GnirsPrism),
-  // cameras (GnirsCamera), filters (GnirsFilter) and slits (GnirsFpuSlit) -
-  // slit widths curated to ones GMOS does not share, so codes stay unique.
+  // GNIRS slit widths are curated to ones GMOS does not share, so codes stay unique per site.
   { instrument: 'GNIRS', componentType: 'DISPERSER', code: 'D10', name: '10 l/mm grating' },
   { instrument: 'GNIRS', componentType: 'DISPERSER', code: 'D32', name: '32 l/mm grating' },
   { instrument: 'GNIRS', componentType: 'DISPERSER', code: 'D111', name: '111 l/mm grating', pattern: 'SPARE_IN_LAB' },
@@ -373,8 +306,7 @@ interface Span {
 
 const iso = (millis: number): string => new Date(millis).toISOString();
 
-/** An instant `fraction` of the way through a span, rounded to the hour so the
- *  synthetic boundaries read as times someone could have written down. */
+/** Rounded to the hour, so a synthetic boundary reads as a time someone could have written down. */
 const within = (span: Span, fraction: number): number =>
   Math.round((span.start + (span.end - span.start) * fraction) / 3_600_000) * 3_600_000;
 
@@ -455,9 +387,7 @@ const piecesFor = (component: CatalogComponent, semester: Span, mountings: reado
       ];
     }
     default: {
-      // Rides with its instrument: installed across every mounting, in the lab
-      // across every gap. This is the anchoring rule - the piece moves exactly
-      // when the published sheet moves the instrument.
+      // The anchoring rule: the piece moves exactly when the published sheet moves the instrument.
       const pieces: Piece[] = [];
       let cursor = semester.start;
       for (const mounting of mountings) {
@@ -475,21 +405,14 @@ const piecesFor = (component: CatalogComponent, semester: Span, mountings: reado
   }
 };
 
-/**
- * Every component block, derived from the imported schedules.
- *
- * Adjacent equal blocks are merged across semester boundaries - consecutive
- * semesters abut exactly (one ends at 14:00 local on the day the next begins),
- * so a spare that sits in the lab for two years is one block, not four.
- */
+/** Adjacent equal blocks merge across semester boundaries, so a two-year spare is one block. */
 export const synthesizeComponentBlocks = (
   schedules: readonly ImportedSchedule[],
 ): readonly SynthesizedComponentBlock[] => {
   const blocks: SynthesizedComponentBlock[] = [];
 
   for (const component of COMPONENT_CATALOG) {
-    // The real ICTD keeps a retired piece's history; the synthetic layer has
-    // nothing historical to say about one, so it synthesizes nothing.
+    // The synthetic layer has nothing historical to say about a retired piece.
     if (component.existence === 'DELETED') {
       continue;
     }

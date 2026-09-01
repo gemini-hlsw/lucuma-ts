@@ -1,16 +1,4 @@
-/**
- * What the app says when the live server does not answer.
- *
- * The pages already show their own "could not load" banners, but their text is
- * whatever the transport said. This one explains the situation in words a
- * tester can act on: the live service does not serve the v1 API yet, which is
- * the expected state until the Scala backend ships.
- *
- * It carried a "Use demo data" button until 2026-08-14, back when the app could
- * be pointed at the in-browser mock. There is one backend now, so the banner
- * states the situation and stops - an action that only ever led somewhere else
- * to read is not an action.
- */
+/** One backend, so the banner states the situation and offers no action: nowhere else to send them. */
 import type { JSX } from 'react';
 
 import { useLiveFailure } from '@/gql/liveStatus';

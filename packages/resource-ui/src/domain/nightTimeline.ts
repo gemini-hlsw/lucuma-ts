@@ -1,17 +1,3 @@
-/**
- * One night's records -> the rows the night view draws.
- *
- * The night is the smallest window and the only one where the model's central
- * claim is visible. A block that changes partway through the night is drawn
- * where it changes, because nothing here ever rounded it to a whole night in the
- * first place (the partial-night non-negotiable). The semester and week can only say "mixed"; this
- * view says when.
- *
- * It is also where "not recorded" is stated out loud. Every other view infers an
- * empty row, which is honest but silent; here the API's `dataAvailable` answers
- * directly, so an un-entered night reads as un-entered rather than as a
- * telescope with nothing on it.
- */
 import { observingNightInterval } from './siteTime';
 import { type NightSunTimes, nightSunTimes } from './sun';
 import {
@@ -33,14 +19,7 @@ export interface NightTimeline extends TimelineLegend {
   readonly rows: readonly TimelineRow[];
   readonly bands: readonly TimelineBand[];
   readonly sun: NightSunTimes;
-  /**
-   * Every instant inside the night where any row changes, in order.
-   *
-   * Empty when the night is uniform, which every published night currently is -
-   * the sheets are whole-night granular. It is populated the moment a partial
-   * night is recorded, and the view says so rather than leaving the reader to
-   * spot two abutting bars.
-   */
+  /** Empty while the sheets stay whole-night granular; populated the moment a partial night lands. */
   readonly transitions: readonly number[];
 }
 
@@ -72,7 +51,6 @@ const transitionsIn = (rows: readonly TimelineRow[], night: Interval): readonly 
   return [...inside].sort((a, b) => a - b);
 };
 
-/** Builds the single-night timeline the night view draws. */
 export const buildNightTimeline = ({
   site,
   observingNight,

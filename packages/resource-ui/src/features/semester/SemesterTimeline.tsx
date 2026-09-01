@@ -1,15 +1,3 @@
-/**
- * The published semester schedule, drawn as one xrange chart per month.
- *
- * Small multiples rather than one continuous axis, because the sheet's month
- * rhythm is where its readability comes from and matching it keeps the
- * cell-for-cell comparison honest. Each month is its own chart, so each one fills
- * the width it is given: the charts sit in an auto-fitting grid that shows one
- * month per row on a narrow window and two side by side on a wide one, and
- * Highcharts reflows each chart to its container. The old table could not do this
- * at all - its columns were a fixed 1.5rem, so the grid was the same size on a
- * phone and on a 4K display.
- */
 import type { JSX } from 'react';
 
 import { useOpenNight } from '@/app/useOpenNight';
@@ -25,8 +13,7 @@ export { TimelineLegendBar as SemesterTimelineLegend } from '@/features/timeline
 function MonthChart({ month, site, now }: { month: TimelineMonth; site: Site; now: number | null }): JSX.Element {
   const options = buildSemesterMonthOptions({ month, site, now });
 
-  // A click anywhere on the month - a bar or the space around it - opens the
-  // night under the cursor, the same jump the calendar squares make.
+  // A click anywhere on the month opens the night under the cursor, as a calendar square does.
   const openNight = useOpenNight();
   const openNightAt = (instant: number): void => {
     const night = nightAt(month.nights, instant);
@@ -61,8 +48,7 @@ export function SemesterTimeline({
   return (
     <div
       data-testid="semester-timeline"
-      // auto-fit rather than a breakpoint: the shell's sidebar takes width the
-      // viewport query cannot see, so the grid reacts to the space it actually has.
+      // auto-fit, not a breakpoint: the sidebar takes width a viewport query cannot see.
       className="grid [grid-template-columns:repeat(auto-fit,minmax(min(30rem,100%),1fr))] gap-x-8 gap-y-5"
     >
       {timeline.months.map((month) => (

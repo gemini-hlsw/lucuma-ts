@@ -1,7 +1,3 @@
-/**
- * The words every component table shares. Split from the cells because the
- * react-refresh rule wants component files exporting only components.
- */
 import type { RecordStatus } from '@/components/ui/StatusTag';
 import type { WhereReading } from '@/components/ui/WhereCell';
 import type { ComponentWhere, FinderRow } from '@/domain/componentFinder';
@@ -37,13 +33,7 @@ export const whereLabel = (where: ComponentWhere): string => {
   }
 };
 
-/**
- * One row's Where cell, for the shared `WhereCell`.
- *
- * `changesTag` is the caller's because the words differ with the window: a
- * browser row says only that the piece changes tonight, while the night view
- * can name the clock time it changes at.
- */
+/** `changesTag` is the caller's: a browser row says it changes, the night view names when. */
 export const componentWhere = (row: FinderRow, changesTag = 'changes tonight'): WhereReading => ({
   presence:
     row.where.kind === 'INSTALLED' ? 'ON_TELESCOPE' : row.where.kind === 'STORED' ? 'OFF_TELESCOPE' : 'NOT_RECORDED',
@@ -51,20 +41,7 @@ export const componentWhere = (row: FinderRow, changesTag = 'changes tonight'): 
   changes: row.changesTonight ? changesTag : null,
 });
 
-/**
- * The status vocabulary, derived from the record rather than echoing the enum.
- *
- * `ResourceUsage` says what a record means for the schedule, but a browser
- * reader asks a different question - is this piece working? A stored piece is
- * `UNAVAILABLE` for science by definition, and printing that in red made every
- * lab spare look broken. So: a stored piece with nothing wrong is a "Spare";
- * red is kept for a piece that is actually out of service, and the record's
- * note - "Failed; removed for repair" - rides beside the tag, because a status
- * that cannot say why is not a status.
- *
- * One function for the browser row, the night table and the row's own history,
- * so the three cannot answer the same record differently.
- */
+/** A stored piece is UNAVAILABLE by definition, so red is kept for one actually out of service. */
 export const componentStatus = (
   usage: ResourceUsage | null,
   stored: boolean,

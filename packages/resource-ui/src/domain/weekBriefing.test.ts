@@ -4,7 +4,7 @@ import type { ComponentBlock, ComponentRecord, Mounting } from './types';
 import { buildWeekChanges, buildWeekNightFacts, summarizeWeek } from './weekBriefing';
 import { buildWeekTimeline } from './weekTimeline';
 
-/** The week the synthetic R400 failure falls in, all seven nights recorded. */
+/** `nightsWithData: undefined` leaves every night of the week recorded. */
 const week = buildWeekTimeline({
   site: 'GS',
   firstNight: '2026-11-22',
@@ -26,8 +26,7 @@ describe('the nightly facts', () => {
       '2026-11-27',
       '2026-11-28',
     ]);
-    // A November night at Cerro Pachon has real astronomical dark, but summer
-    // is closing in - somewhere in single digits.
+    // A November night at Cerro Pachon has real dark, but summer is closing in.
     for (const fact of facts) {
       expect(fact.darkHours).toBeGreaterThan(4);
       expect(fact.darkHours).toBeLessThan(12);
@@ -168,8 +167,7 @@ describe('the changes list', () => {
       components: [r400],
     });
 
-    // One change, not two: the record that ends is not phrased, the state that
-    // begins is - "nothing recorded" is never a state to announce (I4).
+    // One change, not two: "nothing recorded" is never a state to announce (I4).
     expect(changes).toHaveLength(1);
     expect(changes[0]).toMatchObject({
       kind: 'COMPONENT',

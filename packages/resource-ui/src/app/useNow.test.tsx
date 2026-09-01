@@ -1,11 +1,4 @@
-/**
- * `useNow`, the clock behind the timeline's NOW marker.
- *
- * Two things worth pinning. The clock has to actually advance, or the marker
- * freezes where the page opened. And it has to stop advancing when the
- * component goes: an interval left running after unmount sets state on nothing
- * and keeps a timer alive for the life of the tab.
- */
+/** The clock has to advance, and has to stop advancing when the component goes. */
 import { describe, expect, it, vi } from 'vitest';
 import { render } from 'vitest-browser-react';
 
@@ -33,8 +26,7 @@ describe(useNow, () => {
   });
 
   it('stops when the component does, so no timer outlives what it was updating', async () => {
-    // Fake timers only here, and only for the negative assertion - the timer
-    // must *never* fire again. React's own scheduler stays on real timers.
+    // Fake timers only here, and only for the negative assertion; React's scheduler stays real.
     vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
     try {
       const screen = await render(<Clock intervalMs={20} />);

@@ -1,6 +1,3 @@
-/**
- * The week chart's axis.
- */
 import type { XAxisOptions } from 'highcharts';
 import { describe, expect, it } from 'vitest';
 
@@ -37,8 +34,7 @@ describe('night headings', () => {
   it('heads a night by the weekday and day it begins on', () => {
     const week = build();
 
-    // The first night is labelled 2026-11-14 and begins on the evening of the
-    // 13th, a Friday - which is the column heading the published sheet uses.
+    // The night labelled 2026-11-14 begins on Friday the 13th, the sheet's column heading.
     expect(nightLabel(week.nights[0]!, 'GS')).toBe('Fri 13');
     expect(nightLabel(week.nights.at(-1)!, 'GS')).toBe('Thu 19');
   });
@@ -74,7 +70,6 @@ describe('nights with nothing recorded', () => {
     const bands = buildWeekBands(build(new Set(['2026-11-14'])), 'GS');
     const missing = bands.filter((band) => band.className === 'week-no-data');
 
-    // Six of the seven nights have no data in this fixture.
     expect(missing).toHaveLength(6);
     expect(missing[0]?.label?.text).toBe('not recorded');
   });

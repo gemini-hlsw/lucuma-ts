@@ -22,7 +22,7 @@ describe('the catalog', () => {
     }
   });
 
-  it('covers the [REQ] v1 set at Gemini South, plus every instrument the sheets mount', () => {
+  it('pins the catalogued Gemini South instruments, across every component type', () => {
     const gs = COMPONENT_CATALOG.filter((component) => component.site === 'GS');
     expect(new Set(gs.map((component) => component.instrument))).toEqual(
       new Set(['GMOS', 'F2', 'GHOST', 'CAL_ZORRO', 'GSAOI', 'CANOPUS', 'IQUEYE']),
@@ -46,10 +46,7 @@ describe('the synthetic blocks', () => {
   });
 
   it('anchors a riding piece to its instrument: installed exactly while mounted', () => {
-    // The g filter rides with GMOS-S, so every INSTALLED span must be covered by
-    // the union of GMOS mountings from the published sheets - the anchoring
-    // rule. The union, not any single mounting: consecutive semesters abut, so
-    // an unbroken mounting across the boundary merges into one installed span.
+    // Every INSTALLED span must be covered by the union of GMOS mountings - the anchoring rule.
     const spans = schedules
       .filter((schedule) => schedule.site === 'GS')
       .flatMap((schedule) =>
@@ -78,9 +75,7 @@ describe('the synthetic blocks', () => {
   });
 
   it('keeps a spare in the lab as one merged block, not one per semester', () => {
-    // Consecutive semesters abut - one ends at 14:00 local on the day the next
-    // begins - so an unmoving spare is a single span across all four GS
-    // semesters, not four abutting blocks.
+    // Consecutive semesters abut, so an unmoving spare is one span across all four GS semesters.
     const spare = blocksOf('k-gs-R831_G5322');
     expect(spare).toHaveLength(1);
     expect(spare[0]).toMatchObject({ location: 'LAB', usage: 'UNAVAILABLE' });
@@ -91,8 +86,7 @@ describe('the synthetic blocks', () => {
     const failed = r400.find((block) => block.note === 'Failed; removed for repair');
 
     expect(failed).toMatchObject({ location: 'LAB', usage: 'UNAVAILABLE' });
-    // The failure lands inside a mounting, so the boundary is a mid-run instant
-    // - which is what gives the partial-night capability synthetic data.
+    // The failure lands inside a mounting, which gives the partial-night capability synthetic data.
     const installedBefore = r400.find((block) => block.location === 'INSTALLED' && block.end === failed?.start);
     expect(installedBefore).toBeDefined();
   });
@@ -111,8 +105,7 @@ describe('the synthetic blocks', () => {
     for (const component of COMPONENT_CATALOG) {
       const spans = blocksOf(component.id);
       for (let index = 1; index < spans.length; index += 1) {
-        // Sorted; each next block starts at or after the previous ends,
-        // and within one semester exactly at it.
+        // Sorted; each next block starts at or after the previous ends, and within a semester exactly at it.
         expect(spans[index]!.start >= spans[index - 1]!.end).toBe(true);
       }
     }

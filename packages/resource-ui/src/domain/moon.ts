@@ -1,10 +1,3 @@
-/**
- * Moon phase from the mean synodic month - enough for planning-calendar display
- * (which nights are bright or dark), not an ephemeris. The mean-cycle approximation
- * stays within about half a day of the true phase, well under a calendar tile's
- * resolution. Sunrise/sunset/twilight are deliberately out of scope.
- */
-
 /** Mean synodic month, days. */
 export const SYNODIC_DAYS = 29.530588853;
 
@@ -22,7 +15,7 @@ export interface MoonPhase {
   readonly waxing: boolean;
 }
 
-/** The moon phase at an instant (epoch milliseconds). */
+/** Mean-synodic, within about half a day: a display aid, not an ephemeris. */
 export const moonPhaseAt = (epochMillis: number): MoonPhase => {
   const days = (epochMillis - NEW_MOON_EPOCH_MS) / MS_PER_DAY;
   const age = ((days % SYNODIC_DAYS) + SYNODIC_DAYS) % SYNODIC_DAYS;

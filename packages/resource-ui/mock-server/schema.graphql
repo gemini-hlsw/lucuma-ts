@@ -1,55 +1,8 @@
 #import BigDecimal, Date, Long, NonEmptyString, Partner, PosInt, ProgramReferenceLabel, Semester, Site, TimeSpan, Timestamp, TimestampInterval from "@gemini-hlsw/lucuma-odb-schemas/odb"
-#
-# The import has to be the first thing in the file: @graphql-tools' file loader
-# only looks for imports when the SDL *starts* with one, so a header comment
-# above it silently turns every type below into an unknown type. What is
-# imported and why is explained under "Types shared with the ODB".
+# Must be first: the loader only looks for imports when the SDL starts with one.
 
-# Resource v1 - preview schema
-#
-# The queryable record of what the observatory can do, at each site, over any
-# interval of time. Not a scheduler, and not a tool for building a schedule.
-#
-# FOR REVIEW (Bryan, Andrew). This is the API design, deliberately circulated as
-# SDL before any resolver exists - it is cheaper to change here than in code.
-# Questions still open with operations are recorded in CLAUDE.md, not here.
-#
-# Two consumers: the scheduler (telescopeNights, pull-only) and the Resource
-# frontend (the same query, regrouped per view).
-#
-# Design rules this schema is held to:
-#   - Intervals, never dates. Every fact carries [start, end), start inclusive and
-#     end exclusive, so a fact that covers part of a night needs no special case.
-#   - A gap means "not recorded", never "unavailable". Absence is never a state.
-#   - Two records for the same subject never overlap.
-#   - No type here without a requirement behind it: a row in the published sheet,
-#     a line in the scheduler contract, or a request from operations.
-
-# ---------------------------------------------------------------------------
-# Types shared with the ODB
-#
-# Taken from the published ODB schema rather than restated, the way
-# `packages/configs/src/graphql/schema/*.graphql` take theirs. A scalar the ODB
-# renames or reshapes therefore breaks this file instead of quietly diverging
-# from the payload the Scala service will send.
-#
-# The `#import` at the top of this file is not GraphQL - it is
-# @graphql-tools/import, which inlines the named types and whatever they depend
-# on (about 2kB of the ODB's 500kB). Codegen and @graphql-eslint each resolve it
-# through their own loader; nothing resolves it at runtime. Codegen writes its
-# expansion back out as `src/gql/gen/schema.graphql`, and that generated file
-# is the SDL all four consumers read - the :4000 server, the resolver tests, the
-# cache test and the browser-test Apollo client - so none of them can build a
-# schema the client types were not generated from. It is only as fresh as the
-# last `codegen` run.
-#
-# Imported: BigDecimal, Date, Long, NonEmptyString, Partner, PosInt,
-# ProgramReferenceLabel, Semester, Site, TimeSpan, Timestamp,
-# TimestampInterval.
-#
-# `Instrument` is deliberately *not* imported: the schedules mount things the
-# ODB's enum does not name, and reconciling the two is open with operations.
-# ---------------------------------------------------------------------------
+# Imported rather than restated, so an ODB rename breaks this file instead of diverging quietly.
+# `Instrument` is not imported: the schedules mount things the ODB's enum does not name.
 
 """
 The single operational-state value for anything the observatory can use.
@@ -187,8 +140,8 @@ so a record whose `place` is `PORT` draws on that port's row and every other
 place draws nowhere.
 
 One type with a total `place`, rather than a `PortLocation | OffPortLocation`
-union (2026-08-17, reversing the union of 2026-08-14). `place` is the
-discriminator and it always has an answer, so one query says where everything is
+union. `place` is the discriminator and it always has an answer, so one query
+says where everything is
 and a client reads a field instead of writing two inline fragments.
 
 **The pairing is a server guarantee rather than a schema constraint**, which is
@@ -211,12 +164,12 @@ type InstrumentLocation {
 """
 Fields every interval record carries.
 
-**No `id`, deliberately.** Every query clips its records to the interval that
-was asked for, so two responses can carry the same underlying record with
-different intervals. An `id` on that is not an identity - a client that
-normalized by it would let one window's answer overwrite another's, which is
-exactly the bug this frontend shipped and then had to disable id-normalization
-to fix. Nothing about a block is addressable on its own; a client that needs a
+**No `id`, deliberately.** The same block type comes back clipped from the night
+projection and unclipped from the range queries, so a block is a projection of a
+record onto a window rather than the record itself, and two responses can carry
+the same underlying record with different intervals. An `id` on that is not an
+identity - a client that normalized by it would let one window's answer overwrite
+another's. Nothing about a block is addressable on its own; a client that needs a
 key for a rendered row makes one from the response it drew.
 `InstrumentComponent` keeps its `id`, because a piece of hardware *is* an
 entity - identity only, no window-dependent fields.
@@ -305,8 +258,8 @@ type TelescopeAvailabilityBlock implements ScheduleBlock {
   """
   The port this applies to, or null when it applies to the whole telescope.
 
-  A port shuts down on its own - Gemini South's Port 4 carried nothing for all of
-  2026B - so a closure is scoped. When every port is shut at once, a second
+  A port shuts down on its own, so a closure is scoped. The workbook states
+  none, and an empty port stays a gap. When every port is shut at once, a second
   record with `port: null` states that the telescope itself was closed.
   """
   port: PosInt
@@ -320,7 +273,7 @@ The ToO support level over an interval.
 Its own record kind, deliberately: ToO support is independent of what is mounted
 and of whether the telescope is open, so it never rides on another block. The
 workbook's ToOs column is blank on every night of the current export, so the
-demo serves the observatory default - Standard support, wearing the assumption
+import serves the observatory default - Standard support, wearing the assumption
 as the record's note; a written level is a fact and supersedes it.
 """
 type TooSupportBlock implements ScheduleBlock {
@@ -389,21 +342,20 @@ type PublishedSemester {
   "The sheet's own version stamp, e.g. \"Jun 15, 2026\". Null when it carries none."
   version: NonEmptyString
   """
-  True for a synthetic schedule that was never published. The workbook import
-  serves none today; the flag stays because a consumer must be able to keep
-  invented records apart from the published ones, and a picker must say which
-  is which.
+  True for a synthetic schedule that was never published. The published records
+  set none; the flag exists because a consumer must be able to keep invented
+  records apart from the published ones, and a picker must say which is which.
   """
   demo: Boolean!
   """
   The semester's observing nights, half-open like every other interval here.
 
-  Not a `firstNight`/`lastNight` pair, which is what this carried until
-  2026-08-14: a *last* night is inclusive while `DateIntervalInput.end` is
-  exclusive, so `telescopeNights({ start: firstNight, end: lastNight })` came
-  back one night short and nothing in the response said so. Half-open both
-  sides means this value goes straight into `telescopeNights` and covers
-  exactly the semester.
+  Not a `firstNight`/`lastNight` pair: a *last* night is inclusive while
+  `DateIntervalInput.end` is exclusive, so
+  `telescopeNights({ start: firstNight, end: lastNight })` would come back one
+  night short with nothing in the response saying so. Half-open both sides means
+  this value goes straight into `telescopeNights` and covers exactly the
+  semester.
   """
   nights: DateInterval!
 
@@ -464,10 +416,9 @@ Where a piece is when it is not installed in its instrument.
 Deliberately not `InstrumentLocation`: a component saying PORT 3 while its
 instrument says LAB would be a contradiction the schema permitted. INSTALLED
 means "wherever its instrument is", resolved by joining the instrument's own
-records, so the two cannot disagree by construction. That reasoning got stronger
-when `InstrumentLocation` flattened into one type: it now carries `PORT` as an
-ordinary `place`, so sharing it here would make the contradiction easier to
-express, not harder.
+records, so the two cannot disagree by construction. `InstrumentLocation` is one
+type carrying `PORT` as an ordinary `place`, so sharing it here would make that
+contradiction easier to express, not harder.
 """
 enum ComponentLocation {
   INSTALLED

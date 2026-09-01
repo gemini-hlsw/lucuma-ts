@@ -1,8 +1,4 @@
-/*
- * FontAwesome Pro (regular) icons wrapped as components, following
- * packages/ui's Icons.tsx - one named export per icon so call sites read as
- * `<ChevronLeft />` and the icon set stays consistent across the GPP apps.
- */
+/* One named export per icon, following packages/ui's Icons.tsx. */
 import type { IconDefinition } from '@fortawesome/pro-regular-svg-icons';
 import { faChevronLeft, faChevronRight } from '@fortawesome/pro-regular-svg-icons';
 import type { FontAwesomeIconProps } from '@fortawesome/react-fontawesome';

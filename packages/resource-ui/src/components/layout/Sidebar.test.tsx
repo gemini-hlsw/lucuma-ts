@@ -7,8 +7,7 @@ import { SIDEBAR_MENU_SECTIONS } from './SidebarMenu';
 
 const ALL_ITEMS = SIDEBAR_MENU_SECTIONS.flatMap((section) => section.items);
 
-// Driven by the menu rather than a hard-coded list, so a new destination can be
-// added without rewriting these behavioural guards.
+// Driven by the menu, so a new destination needs no rewrite of these guards.
 describe(Sidebar, () => {
   it('offers every destination as a real link in a named landmark', async () => {
     const screen = await renderApp({ element: <Sidebar />, route: '/semester?site=GN&semester=2026B' });
@@ -32,8 +31,7 @@ describe(Sidebar, () => {
   });
 
   it('gates nothing - every view stays reachable on a semester with no schedule', async () => {
-    // Gating navigation on whether a schedule exists strands the reader on one
-    // view; each page states plainly when nothing is recorded instead.
+    // Gating navigation on whether a schedule exists strands the reader on one view.
     const screen = await renderApp({ element: <Sidebar />, route: '/semester?site=GN&semester=2029A' });
 
     for (const item of ALL_ITEMS) {

@@ -1,12 +1,3 @@
-/**
- * Observing-night interval helper for the mock.
- *
- * An observing night ending on local date D runs from 14:00 local on D-1 to 14:00
- * local on D (the lucuma-core LocalObservingNight convention). The real backend
- * uses lucuma-core; the mock computes the site-local 14:00 boundary via Intl so it
- * is correct across DST at Gemini South.
- */
-
 const SITE_TIME_ZONES = {
   GN: 'Pacific/Honolulu',
   GS: 'America/Santiago',

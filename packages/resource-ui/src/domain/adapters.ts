@@ -1,13 +1,3 @@
-/**
- * GraphQL responses -> UI domain models.
- *
- * The only place that touches generated fragment shapes. All null handling and
- * timestamp parsing lives here, so components never see either.
- *
- * The block adapters take the generated *fragment* types rather than a query
- * type, so the semester, week and night queries all feed the same two functions
- * and a schema change surfaces here once.
- */
 import type {
   ClosureFieldsFragment,
   ComponentBrowserQuery,
@@ -42,22 +32,7 @@ const toInterval = (interval: ApiInterval): { start: number; end: number } => ({
   end: Date.parse(interval.end),
 });
 
-/**
- * A row key for a block, made here because the API gives blocks no identity.
- *
- * Every query clips its records to the window asked for, so a block is a
- * projection rather than an entity and `ScheduleBlock` carries no `id` (the
- * SDL says why at length). A rendered row and a chart point still need a key,
- * and position within the response is one: stable for as long as the response
- * is, unique across kinds because each kind takes its own prefix, and
- * obviously not an identity - which is the point.
- *
- * The prefixes have to stay unique per *combined rendering context*, not merely
- * per function: `'k'` is deliberately shared by `toNightComponents` and
- * `toComponentBlocks` because those two feed disjoint lists (`src/gql/hooks.ts`).
- * A new kind whose rows could ever be rendered in one list alongside an existing
- * kind's needs its own letter.
- */
+/** Position in the response, not an identity; a prefix must be unique per combined rendering context. */
 const rowKey = (kind: string, index: number): string => `${kind}${String(index)}`;
 
 export const toPublishedSemesters = (data: PublishedSemestersQuery): readonly PublishedSemester[] =>
@@ -67,49 +42,17 @@ export const toPublishedSemesters = (data: PublishedSemestersQuery): readonly Pu
     title: entry.title,
     version: entry.version ?? null,
     demo: entry.demo,
-    // The API states a semester's nights half-open; the domain reads them
-    // inclusively, because every comparison in the app asks "is this night in
-    // the semester". This one line is where the two meet.
+    // The API states a semester's nights half-open; the domain reads them inclusively.
     firstNight: entry.nights.start,
     lastNight: addDays(entry.nights.end, -1),
     holidays: entry.holidays,
     moonEvents: entry.moonEvents.map((event) => ({ date: event.date, phase: event.phase })),
   }));
 
-/**
- * Instruments `toLocation` has already warned about, so the dev warning is one
- * line per broken instrument rather than one per record.
- *
- * Never cleared, deliberately: a session that fixes the server and refetches
- * then gets silence, which is the wanted direction. The warning's job is to be
- * noticed once, and a clearing set would repeat it on every refetch for as long
- * as the server stayed broken - the flood it exists to prevent.
- */
+/** Never cleared: a session that fixes the server and refetches gets silence, the wanted direction. */
 const warnedInstruments = new Set<string>();
 
-/**
- * The API's `InstrumentLocation` -> the exclusive pair the domain reads.
- *
- * The wire type states `place` and `port` separately and promises they agree -
- * `port` non-null exactly when `place` is `PORT`. This is the one place the app
- * checks that promise rather than trusting it, and the one place a record that
- * breaks it is given a reading.
- *
- * A `PORT` with no port number reads as off-port with place UNKNOWN. UNKNOWN is
- * borrowed for it: this package defines UNKNOWN as a recorded fact rather than
- * an error (the SDL's `InstrumentPlace`, and `PLACE_LABEL` in
- * `instrumentFinder.ts`, which prints it as the plain "not on a port"), and
- * `InstrumentWhere.NOT_RECORDED` is the closer meaning but is a *kind* rather
- * than a place, which `Mounting` cannot carry without a reshape that an error
- * path does not earn. UNKNOWN is simply the only representable answer, so the
- * warning below is what separates a server bug from an ordinary observation.
- * Never a thrown error: one contradictory record must not empty a night.
- *
- * The warning names each instrument once, over the first interval it was seen
- * wrong on. A degraded server answering a semester prints one line per record
- * otherwise, per render and per refetch, which buries the console the warning
- * exists to be read in.
- */
+/** The one place the port/place promise is checked; a contradictory record reads UNKNOWN, never throws. */
 const toLocation = (
   location: InstrumentBlockFieldsFragment['location'],
   publishedName: string,
@@ -191,17 +134,14 @@ export const toComponents = (data: ComponentBrowserQuery): readonly ComponentRec
     aliases: component.aliases,
   }));
 
-/** The night projection's component blocks, with each piece's identity nested. */
+/** The night projection's component blocks, with the identity of each piece lifted out beside them. */
 export interface NightComponents {
   /** The pieces recorded tonight, deduplicated, in catalog order. */
   readonly components: readonly ComponentRecord[];
   readonly blocks: readonly ComponentBlock[];
 }
 
-/**
- * `TelescopeNight.components` -> the same two models the browser uses, so the
- * night view feeds the one finder rather than growing its own row shape.
- */
+/** The night view feeds the one finder rather than growing its own row shape. */
 export const toNightComponents = (blocks: readonly NightComponentFieldsFragment[]): NightComponents => {
   const byId = new Map<string, ComponentRecord>();
   for (const block of blocks) {

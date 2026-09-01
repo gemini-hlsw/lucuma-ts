@@ -1,13 +1,4 @@
-/**
- * Rendering behaviour that only a real browser can show: whether the charts
- * actually resize with their container.
- *
- * Highcharts redraws itself when its render target resizes, but a grid item
- * defaults to `min-width: auto` and will not shrink below its content - so the
- * column wedges open at whatever width the chart first rendered at, the chart is
- * never asked to narrow, and the layout silently stops being responsive. A
- * screenshot at one width cannot show that, which is why it is pinned here.
- */
+/** A grid item defaults to `min-width: auto`, so the column wedges open at the first width. */
 import type { ReactElement } from 'react';
 import { MemoryRouter } from 'react-router';
 import { describe, expect, it } from 'vitest';
@@ -19,8 +10,7 @@ import type { Mounting } from '@/domain/types';
 
 import { SemesterTimeline } from './SemesterTimeline';
 
-// A router, because every chart is also a click-through into its nights. The
-// resize behaviour under test needs nothing from it.
+// A router, because every chart is also a click-through into its nights.
 const render = async (element: ReactElement) => renderBare(<MemoryRouter>{element}</MemoryRouter>);
 
 const night = (label: string) => observingNightInterval('GS', label);
@@ -61,8 +51,7 @@ describe(SemesterTimeline, () => {
 
     host.style.width = '400px';
 
-    // No window resize is fired on purpose: only the container changes, which is
-    // all that happens when the grid drops from two columns to one.
+    // No window resize on purpose: only the container changes, as when the grid drops a column.
     await expect.poll(() => chartWidth(host)).toBeLessThan(450);
   });
 

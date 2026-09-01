@@ -1,21 +1,3 @@
-/**
- * The chart frame the semester, week and night views share.
- *
- * All three draw the same thing over a different window: rows of instrument
- * runs on a real-time axis, with a band where the telescope was shut. What
- * differs is only the axis - day numbers over a month, weekday names over a
- * week, clock times over a night - so each view supplies its own `xAxis` and
- * its own way of describing a span, and everything else is settled here.
- *
- * Kept free of React so it can be unit-tested directly: every label, colour and
- * tooltip string is prepared here, never computed inside a chart callback.
- *
- * ## The axis is real time, in the site's clock
- *
- * Blocks carry instants, so the axis carries instants. That is what lets a block
- * changing mid-night be drawn where it actually changes rather than rounded to a
- * whole column, and it is the reason the night view can exist at all.
- */
 import type {
   AxisLabelsFormatterContextObject,
   Options,
@@ -43,16 +25,7 @@ import {
 export { USAGE_LABEL } from '@/domain/timeline';
 import type { Closure, Instrument, ModeBlock, Site, TelescopeModeType, TooBlock, TooSupport } from '@/domain/types';
 
-/**
- * One colour per instrument. Keyed by the enum, not by position, so colour
- * follows the instrument: a window with fewer of them does not repaint the ones
- * that remain.
- *
- * `satisfies Record<Instrument, string>` is the point of writing it this way -
- * a new instrument in the schema fails to compile until it has a colour, rather
- * than falling through to a default and reading as some other instrument. The
- * measurement behind these values is in global.css.
- */
+/** Keyed by the enum, so a new instrument fails to compile until it has a colour. */
 const INSTRUMENT_COLOR = {
   ACQ_CAM: 'var(--instrument-acq-cam)',
   ALOPEKE: 'var(--instrument-alopeke)',
@@ -77,19 +50,10 @@ const INSTRUMENT_COLOR = {
 
 const INSTRUMENT_INK_LIGHT = 'var(--instrument-ink-light)';
 
-/**
- * The dark ink. Light ink reads on every dark chrome fill as well, but dark ink
- * is legible only on the bright instrument fill it was chosen for.
- */
+/** Legible only on the bright instrument fill it was chosen for; light ink reads on every chrome fill. */
 const INSTRUMENT_INK_DARK = 'var(--instrument-ink-dark)';
 
-/**
- * Whichever of light or dark ink clears 4.5:1 on that instrument's fill.
- *
- * Measured, not guessed: white manages only 1.30:1 on GSAOI's lime and 1.33:1 on
- * 'Alopeke's yellow, so most of these take dark text. The three that take white
- * are the deepest fills - Altair, Canopus and Maroon-X.
- */
+/** Whichever ink clears 4.5:1 on that fill, measured. Re-measure an entry when its hex moves. */
 const INSTRUMENT_INK = {
   ACQ_CAM: INSTRUMENT_INK_DARK,
   ALOPEKE: INSTRUMENT_INK_DARK,
@@ -102,8 +66,6 @@ const INSTRUMENT_INK = {
   GHOST: INSTRUMENT_INK_DARK,
   GMOS: INSTRUMENT_INK_DARK,
   GNIRS: INSTRUMENT_INK_DARK,
-  // Measured 2026-08-12: dark ink clears 4.5:1 on all four of the browser-only
-  // hues (7.3-8.8:1), where white would sit at 2.3-2.7:1.
   GPI: INSTRUMENT_INK_DARK,
   GSAOI: INSTRUMENT_INK_DARK,
   IGRINS2: INSTRUMENT_INK_DARK,
@@ -139,72 +101,37 @@ export const INSTRUMENT_LABEL = {
 
 export const instrumentColor = (instrument: Instrument): string => INSTRUMENT_COLOR[instrument];
 
-/** The ink that clears 4.5:1 on that instrument's fill - see INSTRUMENT_INK. */
 export const instrumentInk = (instrument: Instrument): string => INSTRUMENT_INK[instrument];
 
-/** What an absence is called, wherever it is named. */
+/** The one name an absence has, everywhere. */
 export const UNSCHEDULED_LABEL = 'No instrument scheduled';
-/**
- * The one name a telescope closure has, everywhere: the Telescope row's red
- * block, the band's legend key, the calendar's bar. The reason rides on the
- * record and its tooltip, never on the key.
- */
+/** The one name a closure has everywhere; the reason rides on the record, never on the key. */
 export const CLOSURE_LABEL = 'Closed';
 
-/**
- * The telescope-state rows, monochrome on purpose: hue on these charts means
- * instrument identity and nothing else (the decision and the measurements are
- * on the tokens in global.css). The ordinary state reads as the quiet neutral;
- * a notable one - the classification is the domain's, `NOTABLE_MODE` and
- * `NOTABLE_TOO` in `domain/timeline.ts` - is the same neutral turned bright.
- * The value is printed on every block and the tooltip repeats it, so the fill
- * only ever says "ordinary" or "look". A recorded fact is always a filled
- * block, never the hollow "not recorded" treatment (I4).
- */
+/** Hue means instrument identity and nothing else, so the state rows are two neutrals: quiet and bright. */
 export const stateFill = (notable: boolean): string => (notable ? 'var(--state-notable)' : 'var(--state-routine)');
 
 /** The bright neutral takes dark text, the quiet one white (global.css). */
 export const stateFillInk = (notable: boolean): string => (notable ? INSTRUMENT_INK_DARK : INSTRUMENT_INK_LIGHT);
 
-/** The Mode row's fill for a recorded mode - the legend's swatch source. */
 const modeColor = (mode: TelescopeModeType): string => stateFill(NOTABLE_MODE[mode]);
 
-/** The ToO row's fill for a recorded support level - the legend's swatch source. */
 const tooColor = (too: TooSupport): string => stateFill(NOTABLE_TOO[too]);
 
-/**
- * A key a view adds to the legend's shared ones.
- *
- * The section helpers below phrase what a window actually holds - the state
- * rows' values, the sky and calendar chrome - and pass them through here
- * rather than letting any view grow a second legend that drifts from the
- * shared one.
- */
+/** A key a view adds to the shared legend, rather than growing a second one that drifts from it. */
 export interface LegendExtra {
   readonly key: string;
   readonly label: string;
   readonly swatch: CSSProperties;
 }
 
-/*
- * The state rows' legend keys: the values the window actually holds, in the
- * words the blocks print, each with the fill it draws in - so a reader can
- * find "Queue" or "Open" in the legend exactly as it appears on the chart, and
- * the neutrals never read as instruments. Distinct values only, in the order
- * the window records them. One helper per legend section.
- */
-
-/**
- * The Telescope row's keys. Open only: a Closed span draws in the closure red,
- * and the "Closed" key already names that red - a second red entry would key
- * one fact twice.
- */
+/** Open only: a Closed span draws in the closure red, which the "Closed" key already names. */
 export const telescopeLegendExtras = (closures: readonly Closure[]): LegendExtra[] =>
   closures.some((closure) => closure.port === null && closure.availability === 'OPEN')
     ? [{ key: 'telescope-open', label: 'Open', swatch: { backgroundColor: stateFill(false) } }]
     : [];
 
-/** The Mode row's keys - they join the Telescope legend section. */
+/** Joins the Telescope legend section. */
 export const modeLegendExtras = (modeBlocks: readonly ModeBlock[]): LegendExtra[] =>
   [...new Set(modeBlocks.map((block) => block.mode))].map((mode) => ({
     key: `mode-${mode}`,
@@ -212,7 +139,6 @@ export const modeLegendExtras = (modeBlocks: readonly ModeBlock[]): LegendExtra[
     swatch: { backgroundColor: modeColor(mode) },
   }));
 
-/** The ToO row's keys - the ToO legend section. */
 export const tooLegendExtras = (tooBlocks: readonly TooBlock[]): LegendExtra[] =>
   [...new Set(tooBlocks.map((block) => block.tooSupport))].map((too) => ({
     key: `too-${too}`,
@@ -220,12 +146,7 @@ export const tooLegendExtras = (tooBlocks: readonly TooBlock[]): LegendExtra[] =
     swatch: { backgroundColor: tooColor(too) },
   }));
 
-/**
- * The sky keys - the washes a reader sees before any bar.
- *
- * Daylight and twilight are the largest painted areas on a night or week
- * chart; naming them is what stops a reader reading them as schedule facts.
- */
+/** Naming the washes is what stops a reader taking the largest painted areas for schedule facts. */
 export const skyLegendExtras = (): LegendExtra[] => [
   { key: 'daylight', label: 'Daylight', swatch: { backgroundColor: 'var(--night-daylight-wash)' } },
   { key: 'twilight', label: 'Twilight', swatch: { backgroundColor: 'var(--night-twilight-wash)' } },
@@ -261,18 +182,9 @@ export const calendarLegendExtras = (options: {
     : []),
 ];
 
-/*
- * No subsystem legend section, deliberately: every subsystem span draws in the
- * one quiet neutral (`isNotableState`) and prints its state in words, so a
- * colour key there would key no distinction. The gutter label names the row.
- */
+// No subsystem section: every span there draws in the one quiet neutral, so a key would key no distinction.
 
-/**
- * The engineering-use treatment: the instrument's own hue, hatched with its
- * measured ink - identity stays on the hue, the stripes say "reserved". The
- * pattern-fill module renders it (loaded by the chart components); the ink
- * guarantees the stripes separate on every fill.
- */
+/** The instrument's own hue hatched with its measured ink: identity on the hue, stripes say reserved. */
 const engineeringPattern = (instrument: Instrument): PatternObject => ({
   pattern: {
     path: { d: 'M 0 8 L 8 0', strokeWidth: 2.5 },
@@ -283,16 +195,10 @@ const engineeringPattern = (instrument: Instrument): PatternObject => ({
   },
 });
 
-/**
- * A block's fill. A string for every plain fill; the engineering hatch is a
- * pattern object. An unavailable instrument goes hollow - transparent, with
- * its own hue on the outline (`blockBorder`) - so "mounted but unusable" never
- * reads as either a plain run or the grey "nothing scheduled" ghost.
- */
+/** An unavailable instrument goes hollow, so it reads as neither a plain run nor the grey ghost. */
 const blockColor = (block: TimelineBlock): string | PatternObject => {
   if (block.state === 'TELESCOPE') {
-    // Open is the ordinary state and reads quiet; Closed takes the reserved
-    // closure red - the one meaning red ever has on these charts.
+    // Closed takes the reserved closure red, the one meaning red ever has on these charts.
     return block.variant === 'CLOSED' ? 'var(--schedule-closed)' : stateFill(false);
   }
   if (block.state === 'TOO' || block.state === 'MODE' || block.state === 'SUBSYSTEM') {
@@ -347,8 +253,7 @@ export interface TimelinePointCustom {
 
 export interface TimelinePoint extends XrangePointOptionsObject {
   readonly custom: TimelinePointCustom;
-  /** Per-point outline - the unavailable treatment's hue. The xrange series
-   * honours it, though the shipped typings only declare the series option. */
+  /** The xrange series honours a per-point outline, though the typings only declare the series option. */
   readonly borderColor?: string;
   readonly borderWidth?: number;
 }
@@ -362,31 +267,15 @@ const LABEL_PADDING = 4;
 /** The same advance normalised per rem, for labels set at other sizes. */
 const LABEL_CHAR_WIDTH_PER_REM = LABEL_CHAR_WIDTH / 0.68;
 
-/**
- * The label, or `''` when it will not fit the space it has.
- *
- * A label wider than its shape is dropped rather than truncated: the DOM grid
- * this superseded printed "I…" and "Eng…", which tell a reader nothing the
- * tooltip would not tell them better. Highcharts has no fit test of its own
- * for xrange data labels, so every view measures - and this is the one place
- * the measurement lives, so two views cannot answer the same label
- * differently. Callers subtract `LABEL_PADDING * 2` from the rendered width
- * to get `availablePx`.
- */
+/** Dropped rather than truncated: a clipped label costs the row its identity and says nothing. */
 const labelIfItFits = (label: string, availablePx: number): string =>
   label.length * LABEL_CHAR_WIDTH <= availablePx ? label : '';
 
-/**
- * The pieces a wrapped band label breaks into. Highcharts wraps a plot-band
- * label to the band's width, breaking at spaces and at hyphens (the hyphen
- * stays with its line) - which is how "In-Situ Wash" over a one-night closure
- * came out as a clipped "In-".
- */
+/** Highcharts wraps a band label at spaces and hyphens, so "In-Situ Wash" can clip to "In-". */
 const longestUnbreakable = (text: string): number =>
   Math.max(0, ...text.split(/\s+/u).flatMap((word) => word.split(/(?<=-)/u).map((part) => part.length)));
 
-/** The slice of a rendered chart the band-label fit pass reads. Structural,
- * because Highcharts does not type `Axis.plotLinesAndBands`. */
+/** Structural, because Highcharts does not type `Axis.plotLinesAndBands`. */
 export interface BandFitChart {
   readonly xAxis: readonly {
     toPixels(value: number, paneCoordinates: boolean): number;
@@ -401,19 +290,7 @@ export interface BandFitChart {
   }[];
 }
 
-/**
- * Hides a band label its band cannot hold, on render and again on every resize.
- *
- * Wrapping serves the wide closures - "Telescope Shutdown A&G Maintenance"
- * reads well over six nights - but once the band is narrower than the label's
- * longest unbreakable piece the wrap degenerates into clipped syllables, which
- * name nothing. The whole label is dropped instead, the same choice every
- * block label makes: the legend's "Closed" key still says what the band is,
- * and the reason stays on the Telescope row's block and its tooltip.
- *
- * A render-time pass because only the rendered chart knows the band's pixel
- * width; wired through `chart.events.render` by every options builder.
- */
+/** Drops a label its band cannot hold; only the rendered chart knows the band pixel width. */
 export const fitBandLabels = (chart: BandFitChart): void => {
   for (const axis of chart.xAxis) {
     for (const band of axis.plotLinesAndBands ?? []) {
@@ -433,24 +310,12 @@ export const fitBandLabels = (chart: BandFitChart): void => {
   }
 };
 
-/**
- * What a formatter needs off the rendered point: the per-point payload every
- * view carries through Highcharts, and - for the data-label formatters - the
- * rendered width to measure a label against.
- */
 interface FormatterPoint<C> {
   readonly custom?: C;
   readonly shapeArgs?: { readonly width?: number };
 }
 
-/**
- * The point a Highcharts formatter is called for.
- *
- * Highcharts does not type `point.custom`, and a formatter's `this` is untyped
- * besides, so reaching either needs a cast. This is the one place that cast
- * happens, so no formatter can describe the payload differently from the type
- * the points were built with.
- */
+/** The one place `point.custom` is cast, so no formatter can describe the payload differently. */
 export const formatterPoint = <C>(context: unknown): FormatterPoint<C> | undefined =>
   (context as { point?: FormatterPoint<C> }).point;
 
@@ -460,18 +325,7 @@ export interface BlockDescriber {
   readonly length: (block: TimelineBlock) => string;
 }
 
-/**
- * Published dates and whole nights - the units the sheet is read in. The
- * semester and week both phrase a span this way; only the night view needs its
- * own describer, because a night is read in clock times.
- *
- * Both ends are the evening the night begins, which is what the sheet heads its
- * columns with. The end needs `lastEveningDate` rather than arithmetic on the
- * instant: an interval's end is exclusive and sits at 14:00 on the last night's
- * *label* date, so naming the date an hour earlier reports the label and is a
- * day late - a run ending on the "31" column read as "1 Feb". Nor can a fixed
- * offset fix it: a night is 23 or 25 hours across a DST change at Gemini South.
- */
+/** Both ends are the evening the night begins; `lastEveningDate` because an interval end is exclusive. */
 export const eveningDescriber = (site: Site): BlockDescriber => ({
   range: (block: TimelineBlock) => {
     // "7 Aug", no year: a chart window never spans one, and the axis says it.
@@ -489,9 +343,7 @@ const toPoint = (block: TimelineBlock, rowIndex: number, describe: BlockDescribe
     x2: block.interval.end,
     y: rowIndex,
     color: blockColor(block),
-    // The hollow treatment is a stroke, which the ghost's stylesheet class
-    // supplies; an unavailable instrument's outline instead keeps its own hue,
-    // set per point.
+    // The ghost stroke comes from its stylesheet class; an unavailable outline is per point instead.
     ...(block.state === 'UNSCHEDULED' ? { className: 'schedule-ghost' } : {}),
     ...(border === null ? {} : { borderColor: border, borderWidth: 1.5 }),
     dataLabels: { style: { color: blockInk(block) } },
@@ -510,7 +362,7 @@ const toPoint = (block: TimelineBlock, rowIndex: number, describe: BlockDescribe
   };
 };
 
-/** The flat point list for a window's xrange series. Exported for testing. */
+/** Exported so the unit tests can read a window's point list directly. */
 export const buildTimelinePoints = (rows: readonly TimelineRow[], describe: BlockDescriber): readonly TimelinePoint[] =>
   rows.flatMap((row, rowIndex) => row.blocks.map((block) => toPoint(block, rowIndex, describe)));
 
@@ -525,16 +377,10 @@ interface TimelineChartModel {
   readonly bottomMargin: number;
   readonly responsive?: Options['responsive'];
   readonly seriesName: string;
-  /**
-   * The masthead's clock choice. It reaches Highcharts as `time.timezone`, so
-   * only labels Highcharts itself formats move with it - the night axis's
-   * `%H:%M`. The week and semester axes print dates through their own
-   * formatters and stay put, so those views need not pass it.
-   */
+  /** Reaches Highcharts as `time.timezone`, so only labels Highcharts itself formats move with it. */
   readonly timeDisplay?: TimeDisplay;
 }
 
-/** Room above the plot area. */
 const TOP_MARGIN = 8;
 
 /** How much of a row's height its bar leaves free. */
@@ -542,7 +388,6 @@ const BAR_INSET = 8;
 
 /** How the y axis lays grouped rows out: heading rows over each group. */
 interface GroupedRowLayout {
-  /** The category list, headings included. */
   readonly categories: readonly string[];
   /** Category indices that are headings, for the label formatter. */
   readonly headingPositions: ReadonlySet<number>;
@@ -550,35 +395,14 @@ interface GroupedRowLayout {
   readonly offsetFor: (rowIndex: number) => number;
 }
 
-/**
- * Lays the rows out under group headings: "Telescope" over the state rows,
- * "Instruments" over the subjects (Dan, 2026-08-11) - so each group is named
- * above its bars, and the heading row doubles as the band's breathing room. A
- * window with no state rows gets no headings: one group needs no name.
- */
-/**
- * Where the heading-row mask sits in the band stack, and what must clear it.
- *
- * Below it: the sun and weekend washes, the axis grid, the night boundaries -
- * everything whose job is to shade the *data*. Above it: any band or line that
- * must still be seen or that hangs a label in the top row.
- */
+/** Above the washes and the grid, below anything that must still be seen or hangs a label in the top row. */
 const HEADING_MASK_Z = 6;
 /** A band whose label lives in the heading row, so it draws over the mask. */
 export const LABELLED_BAND_Z = 8;
 /** A marker line that must stay visible the whole chart height. */
 export const MARKER_LINE_Z = 9;
 
-/**
- * Lays the rows out under group headings: "Telescope" over the state rows,
- * "Instruments" over the subjects, so each group is named above its bars and
- * the heading row doubles as the band's breathing room. A window with no state
- * rows gets no headings: one group needs no name.
- *
- * Heading rows rather than an axis break: a break inflates the adjacent
- * category's slot and drops its gutter label half a row out of line with its
- * bar.
- */
+/** Not an axis break: a break inflates the adjacent slot and drops its gutter label out of line. */
 const groupedRowLayout = (labels: readonly string[], headerRows: number): GroupedRowLayout => {
   if (headerRows === 0) {
     return { categories: [...labels], headingPositions: new Set(), offsetFor: (rowIndex) => rowIndex };
@@ -590,8 +414,7 @@ const groupedRowLayout = (labels: readonly string[], headerRows: number): Groupe
   };
 };
 
-/** A heading category's gutter label: small caps, muted, tracked out. Sized
- * so "INSTRUMENTS" fits the narrowest gutter (the 92px semester charts). */
+/** Sized so "INSTRUMENTS" fits the narrowest gutter, `LABEL_GUTTER`. */
 const headingLabelHtml = (value: string): string =>
   `<span style="color: var(--timeline-muted-text); font-size: 0.55rem; font-weight: 700; letter-spacing: 1px;">${value.toUpperCase()}</span>`;
 
@@ -608,9 +431,7 @@ export const buildTimelineChart = ({
   seriesName,
   timeDisplay = 'site',
 }: TimelineChartModel): Options => {
-  // Everything derived from the rows, never passed alongside them: a category
-  // list or header count that could disagree with the data is a mismatch
-  // waiting for a window whose state rows differ.
+  // Derived from the rows, never passed alongside them, so a category list cannot disagree with the data.
   const headerRows = stateRowCount(rows);
   const { categories, headingPositions, offsetFor } = groupedRowLayout(
     rows.map((row) => row.label),
@@ -637,29 +458,18 @@ export const buildTimelineChart = ({
       spacing: [0, 0, 0, 0],
       style: { fontFamily: 'inherit' },
     },
-    // Times are the site's (or UT, when the masthead says so) - never the
-    // browser's: a night at Gemini South spans two UTC dates, so the viewer's
-    // zone would shift every label.
+    // Never the browser zone: a GS night spans two UTC dates, so the viewer zone would shift every label.
     time: { timezone: displayTimeZone(site, timeDisplay) },
     title: { text: undefined },
     credits: { enabled: false },
     legend: { enabled: false },
-    // The table view carries the accessible reading of this data, and the chart is
-    // reachable from it; Highcharts' own a11y module would announce every point.
+    // The table view carries the accessible reading; the a11y module would announce every point.
     accessibility: { enabled: false },
     xAxis,
     yAxis: {
       categories: [...categories],
       reversed: true,
-      /*
-       * The group-heading rows are gutter labels, not data - so the washes must
-       * stop at them. An xAxis plot band spans the whole plot height, which
-       * painted the daylight, twilight and weekend shading straight through the
-       * "Telescope" and "Instruments" heading rows and made each read as a
-       * filled row (Dan, 2026-08-12). One opaque strip per heading row, above
-       * the washes (zIndex 5) and below the bands that hang a label in the top
-       * row - the closure's reason and the week's "not recorded".
-       */
+      // One opaque strip per heading row: an xAxis band spans the full plot height and painted through them.
       plotBands: [...headingPositions].map((position) => ({
         from: position - 0.5,
         to: position + 0.5,
@@ -667,8 +477,7 @@ export const buildTimelineChart = ({
         zIndex: HEADING_MASK_Z,
         className: 'timeline-heading-mask',
       })),
-      // Pinned to the row count: Highcharts otherwise derives the extremes from
-      // the data and drops a row with nothing on it, stretching the rest.
+      // Pinned to the row count, or Highcharts drops a row with nothing on it and stretches the rest.
       min: 0,
       max: categories.length - 1,
       title: { text: undefined },
@@ -677,8 +486,7 @@ export const buildTimelineChart = ({
       tickLength: 0,
       labels: {
         style: { color: 'var(--timeline-text)', fontSize: '0.72rem', fontWeight: '600' },
-        // Group headings read as headings; every data row - state and subject
-        // alike - keeps the full-strength label (Dan, 2026-08-11).
+        // Headings read as headings; every data row keeps the full-strength label.
         formatter(this: AxisLabelsFormatterContextObject) {
           return headingPositions.has(this.pos) ? headingLabelHtml(String(this.value)) : String(this.value);
         },
@@ -712,9 +520,7 @@ export const buildTimelineChart = ({
           enabled: true,
           overflow: 'allow',
           crop: false,
-          // A label wider than its block is dropped rather than truncated
-          // (`labelIfItFits`); Highcharts has no fit test of its own for
-          // xrange, so measure against the rendered width.
+          // Highcharts has no fit test for xrange labels, so measure against the rendered width.
           formatter() {
             const point = formatterPoint<TimelinePointCustom>(this);
             const custom = point?.custom;
@@ -728,10 +534,7 @@ export const buildTimelineChart = ({
             fontSize: '0.68rem',
             fontWeight: '600',
             textOutline: 'none',
-            // A label is decoration and must not take the pointer: it sits over
-            // the middle of its own bar, so without this anything aimed at the
-            // block - hover, or a future interaction - lands on the <text>
-            // instead.
+            // A label must not take the pointer: it sits over its own bar and would swallow the hover.
             pointerEvents: 'none',
           },
         },
@@ -746,13 +549,7 @@ const escapeHtml = (value: string): string =>
     (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character] ?? character,
   );
 
-/**
- * The tooltip.
- *
- * Values lead and labels follow: the reader already knows which bar they are
- * pointing at and wants the dates. Names come from the published sheet, so they
- * are escaped rather than interpolated raw.
- */
+/** Values lead and labels follow; sheet names are escaped rather than interpolated raw. */
 export const tooltipHtml = (custom: TimelinePointCustom, continuesLabel: string): string => {
   const rows = [
     `<div style="font-weight:600">${escapeHtml(custom.label)}</div>`,

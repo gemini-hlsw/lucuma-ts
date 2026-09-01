@@ -1,9 +1,4 @@
-/**
- * The About dialog's copy control - the one interaction the dialog owns.
- *
- * The clipboard itself is spied: browser test permissions for the real one are
- * flaky, and what the page owes us is the intent and the on-screen answer.
- */
+/** The clipboard is spied: real browser-test permissions for it are flaky. */
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { page } from 'vitest/browser';
 import { render } from 'vitest-browser-react';
@@ -30,8 +25,6 @@ describe(AboutResource, () => {
 
     await button.click();
 
-    // The press must answer on screen - the icon flips to the check - and the
-    // clipboard must hold the version the dialog prints.
     await expect.poll(() => button.element().querySelector('svg')?.getAttribute('data-icon')).toBe('check');
     expect(written).toHaveLength(1);
     expect(written[0]).toMatch(/-DEV$/);

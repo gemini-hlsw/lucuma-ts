@@ -1,11 +1,4 @@
-/**
- * The subtitle's way back up: the published title as a link to its semester
- * page - the reverse of the calendar's click-through into a night.
- *
- * Site and semester are set on the current query string rather than a fresh
- * one, so the rest of the selection (the night itself) survives the jump the
- * same way it survives the jump down into a night (`useOpenNight`).
- */
+/** Set on the current query string, so the rest of the selection survives the jump. */
 import type { JSX } from 'react';
 import { Link, useSearchParams } from 'react-router';
 

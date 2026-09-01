@@ -1,9 +1,4 @@
-/**
- * The live-failure banner: what a tester sees when the server does not answer.
- *
- * The failure store is real here - it is a module-level store, not React state,
- * because the Apollo link that reports failures is built before React renders.
- */
+/** The failure store is real here: it is module-level, built before React renders. */
 import { beforeEach, describe, expect, it } from 'vitest';
 import { render } from 'vitest-browser-react';
 
@@ -17,8 +12,7 @@ describe(LiveFailureBanner, () => {
   });
 
   it('says what went wrong, in the words the link phrased it in', async () => {
-    // The failure lands before the banner mounts - the page-load case; the
-    // store's reactivity is pinned in liveStatus.test.ts.
+    // The failure lands before the banner mounts - the page-load case.
     reportLiveFailure('The live server could not be reached (Failed to fetch).');
     const screen = await render(<LiveFailureBanner />);
 

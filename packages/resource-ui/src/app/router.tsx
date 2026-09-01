@@ -7,14 +7,7 @@ import NightPage from './pages/NightPage';
 import SemesterPage from './pages/SemesterPage';
 import WeekPage from './pages/WeekPage';
 
-/**
- * The application's routing structure.
- *
- * Tonight is the front door: landing on the app answers "what is on the
- * telescope right now" (no `night` in the URL means the night in progress).
- * The semester remains the readable reproduction of what Gemini publishes,
- * one click away in the sidebar.
- */
+/** Tonight is the front door: no `night` in the URL means the night in progress. */
 const routes: RouteObject[] = [
   {
     path: '/',

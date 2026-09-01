@@ -1,19 +1,3 @@
-/**
- * The date toolbar the night and week views share: back to tonight, step, or
- * type a date.
- *
- * The two pages had the same control twice over, differing only in how far a
- * step goes and what the date means. That is the kind of pair that drifts
- * quietly on the parts nobody looks at - the aria labels, the empty-input
- * guard, whether Tonight disables itself - and a reader moving between the two
- * views should not find the same three buttons behaving differently.
- *
- * The stepper owns the chrome and the wiring; the page owns the date
- * vocabulary. The week view shows the evening its first night begins and the
- * night view shows the night's own label, so `value` is whatever the page
- * prints and `onChange` receives exactly that back - the conversion, if any, is
- * the page's, because only the page knows which of the two it is speaking.
- */
 import { Button } from 'primereact/button';
 import { type JSX, useId } from 'react';
 
@@ -50,11 +34,8 @@ export function NightStepper({
   const dateInputId = useId();
 
   return (
-    // FontAwesome, not PrimeReact's `icon="pi pi-…"`: this app never loads
-    // PrimeIcons, so a "pi pi-…" button renders as an empty box.
+    // FontAwesome, not `pi pi-x`: this app never loads PrimeIcons, so those render as empty boxes.
     <div className="xp-toolbar">
-      {/* From a deep link, back to the night in progress without typing a
-          date. */}
       <Button size="small" severity="secondary" disabled={isTonight} onClick={onTonight} className="mr-1">
         Tonight
       </Button>
@@ -69,17 +50,14 @@ export function NightStepper({
         <ChevronLeft />
       </Button>
       <input
-        // The toolbar prints no caption, so `aria-label` is the name - but the
-        // field still needs an id, or the browser cannot associate it with
-        // anything (and warns about exactly that in the console).
+        // `aria-label` is the name, but the field still needs an id or the browser warns.
         id={dateInputId}
         type="date"
         value={value}
         aria-label={dateLabel}
         className="rounded border border-subtle bg-surface px-2 py-1 text-xs text-foreground"
         onChange={(event) => {
-          // A cleared input is not a date - the browser reports "" mid-edit,
-          // and moving the view to it would lose the reader's place.
+          // A cleared input is not a date: the browser reports "" mid-edit.
           if (event.target.value !== '') {
             onChange(event.target.value);
           }

@@ -1,10 +1,3 @@
-/**
- * The synthetic stored-instrument layer, and the rules that keep it quarantined.
- *
- * What matters here is not the invented spans themselves but that they cannot
- * leak into the schedule: never a port, never outside the site's own recorded
- * window, and never the same instrument at two sites.
- */
 import { describe, expect, it } from 'vitest';
 
 import { buildSeedState } from './seed.ts';
@@ -19,18 +12,14 @@ describe(synthesizeStoredInstruments, () => {
   });
 
   it('never puts a stored instrument on a port - that is what keeps it off the charts', () => {
-    // A schedule view's rows are the telescope's ports and a record's row is
-    // its port, so a record with no port is structurally unable to reach one.
-    // That `place` is never PORT is now the type's job (`OffPortPlace`); what
-    // is left to assert is the values these records actually serve.
+    // `OffPortPlace` makes `place` structurally unable to be PORT; this asserts what is actually served.
     for (const block of blocks) {
       expect(['FLOOR', 'LAB', 'BASE', 'UNKNOWN']).toContain(block.place);
     }
   });
 
   it('fixes each instrument to one site - instruments do not move between telescopes', () => {
-    // AcqCam is the deliberate exception in shape, not in fact: each telescope
-    // has its own acquisition camera, sharing one enum tag the way GMOS does.
+    // AcqCam is the exception in shape, not in fact: one enum tag per telescope, the way GMOS is.
     const sites = new Map<string, Set<string>>();
     for (const block of blocks) {
       sites.set(block.instrument, (sites.get(block.instrument) ?? new Set()).add(block.site));
@@ -52,8 +41,7 @@ describe(synthesizeStoredInstruments, () => {
   });
 
   it('stays inside the site window, so no night gets a location the schedule knows nothing about', () => {
-    // The site's whole recorded span - mountings and closures alike, since GS
-    // opens 2024B shut and that shutdown is as much a record as a run.
+    // Mountings and closures alike: GS opens 2024B shut, and that shutdown is as much a record as a run.
     const span = (site: string) => {
       const edges = schedules
         .filter((schedule) => schedule.site === site)

@@ -1,14 +1,4 @@
-/**
- * An instrument's identity outside a chart: its colour, then its name.
- *
- * Colour follows the instrument and nothing else (CLAUDE.md), which only holds
- * if every place that draws one reads the same map. The charts get theirs from
- * the point builder and the legend from `TimelineChart`; every other swatch in
- * the app is this one, beside the palette it reads.
- *
- * `aria-hidden` on the swatch, always: identity never rides on colour alone, so
- * the name beside it is the identity and the square is decoration.
- */
+/** `aria-hidden` always: the name beside it is the identity and the square is decoration. */
 import { cn } from '@gemini-hlsw/lucuma-common-ui';
 import type { JSX } from 'react';
 
@@ -18,11 +8,7 @@ import { INSTRUMENT_LABEL, instrumentColor } from './timelineOptions';
 
 interface InstrumentSwatchProps {
   readonly instrument: Instrument;
-  /**
-   * The name the schedule printed, when it differs from the instrument's own.
-   * Shown small beside it, so "GMOS GMOS-N" reads as one instrument with two
-   * names rather than two rows.
-   */
+  /** Shown small beside it, so "GMOS GMOS-N" reads as one instrument with two names. */
   readonly publishedName?: string;
   /** Anything the page adds after the name - a count, a summary. */
   readonly children?: JSX.Element | string | false;

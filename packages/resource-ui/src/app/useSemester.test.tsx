@@ -1,15 +1,4 @@
-/**
- * `useSemester` - the one resolution of "which semester", shared by the
- * masthead control and every page that reads one.
- *
- * The URL carries a *request*; only the data can turn it into a semester. This
- * hook is where that happens, and it exists because the last private fallback
- * (`?? semesters[0]`) had the masthead blank on a stale name while the page
- * quietly drew the oldest semester in the list. `resolveSemester`'s own rules
- * are unit-tested in `domain/coverage.test.ts`; what is checked here is that
- * the hook feeds it the URL's site and night, and that the options it hands
- * the control are that site's, in date order.
- */
+/** `resolveSemester`'s own rules are unit-tested in `domain/coverage.test.ts`. */
 import { describe, expect, it } from 'vitest';
 
 import { Probe } from '@/test/probe';
@@ -45,7 +34,6 @@ describe(useSemester, () => {
   });
 
   it('resolves a name the data does not hold, rather than leaving the control blank', async () => {
-    // A stale link, or a semester dropped from the export. The night decides.
     const screen = await openSemester('/night?site=GS&semester=2099B&night=2025-11-14');
 
     await expect.element(screen.getByTestId('probe-semester')).toHaveTextContent('2025B');

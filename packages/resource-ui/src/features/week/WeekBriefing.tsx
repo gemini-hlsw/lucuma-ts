@@ -1,12 +1,4 @@
-/**
- * The week briefing: the facts strip and the changes list under the chart.
- *
- * The chart shows the runs; these two show what makes this week different from
- * any other - the sky per night, and every boundary that falls inside the
- * window. Plain cards and a plain DataTable, per the standing preference for
- * simple standard UI. Each card is also the way into its night: every
- * night-shaped thing opens the night view, as the calendar squares do.
- */
+/** Each card is also the way into its night, as the calendar squares are. */
 import { cn, when } from '@gemini-hlsw/lucuma-common-ui';
 import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
@@ -53,8 +45,7 @@ export function WeekNightStrip({ facts }: { facts: readonly WeekNightFacts[] }):
             }}
           >
             <div className="flex items-center justify-between gap-2">
-              {/* "Sat 21 Nov" - a card is found by its weekday, and the seven
-                  of them are all one month or two, so the year says nothing. */}
+              {/* A card is found by its weekday, and seven of them span one month or two. */}
               <span className={cn('font-semibold', fact.isHoliday ? 'text-amber-400' : 'text-foreground')}>
                 {eveningLabel(fact.eveningDate, 'weekdayDayMonth')}
               </span>

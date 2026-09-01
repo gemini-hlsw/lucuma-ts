@@ -1,12 +1,4 @@
-/**
- * The cache's contextual-block list, against the schema it is a list of.
- *
- * Every `ScheduleBlock` implementor comes back clipped to the window that was
- * asked for, so every one of them has to be stored per query result rather
- * than by id. Three were missing when this test was written, which is exactly
- * the failure mode: the list is invisible from the type that needs to be on
- * it, and nothing said so.
- */
+/** The list is invisible from the type that needs to be on it, so a new implementor goes missing. */
 import { buildSchema, isObjectType } from 'graphql';
 import { describe, expect, it } from 'vitest';
 

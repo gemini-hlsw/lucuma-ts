@@ -1,7 +1,4 @@
-// The one stylesheet a test loads, and only because the rule in it is
-// behaviour rather than appearance: a Highcharts overlay that catches the
-// pointer swallows the hover under it. The rest of `src/styles/` is
-// appearance and these tests run without it (see `vite.config.ts`).
+// The one stylesheet a test loads: a Highcharts overlay that catches the pointer swallows the hover.
 import '@/styles/chartOverlays.css';
 
 import { ApolloLink } from '@apollo/client';
@@ -21,16 +18,7 @@ import SemesterPage from './SemesterPage';
 const openNight = async (route: string) =>
   renderApp({ element: <NightPage />, route, extraRoutes: [{ path: '/semester', element: <SemesterPage /> }] });
 
-/**
- * A backend where the night query alone fails, and every other operation
- * resolves as usual.
- *
- * The failure is at the transport because that is the deterministic way to
- * reach the state the page has to answer for: the query errors, no
- * `errorPolicy` is set anywhere in `src/` so Apollo's default `none` leaves no
- * data, and `dataAvailable` arrives as `undefined` once loading ends. The
- * mock's resolvers answer for every night, so no argument to them produces it.
- */
+/** The failure is at the transport, the deterministic way to reach an undefined dataAvailable. */
 const nightQueryCannotBeReached = () =>
   createMockApollo(
     new ApolloLink((operation, forward) =>
@@ -44,10 +32,7 @@ const nightQueryCannotBeReached = () =>
 
 describe('NightPage - the telescope-state rows the workbook records', () => {
   it('draws the workbook shutdown as a band and a closed Telescope row, with no mode row', async () => {
-    // GS's August 2024 shutdown: the closure band carries the reason, the
-    // Telescope row states the recorded "Closed", and the Mode row is absent -
-    // the telescope is not being operated in any mode during a shutdown. The
-    // assumed Standard ToO support is a semester-wide default and spans it.
+    // GS's August 2024 shutdown: no Mode row, since the telescope is operated in no mode during one.
     const screen = await openNight('/night?site=GS&night=2024-08-05');
 
     await expect.element(screen.getByText('Shutdown').first()).toBeVisible();
@@ -57,22 +42,17 @@ describe('NightPage - the telescope-state rows the workbook records', () => {
   });
 
   it('heads a visitor night with the Telescope and Mode rows, their values keyed in sections', async () => {
-    // GN, inside the August 2026 MAROON-X visitor run. The legend's Telescope
-    // section keys the recorded values in the words the blocks print, and the
-    // ToO section carries the assumed Standard default.
+    // The legend keys the recorded values in the words the blocks print.
     const screen = await openNight('/night?site=GN&night=2026-08-27');
 
     await expect.element(screen.getByText('Priority visitor').first()).toBeVisible();
-    // One legend section per state row, so a grey repeated across rows is
-    // keyed under the row it belongs to.
+    // One legend section per state row, so a grey repeated across rows is keyed under its own row.
     await expect.element(screen.getByRole('group', { name: 'Telescope' }).getByText('Open')).toBeVisible();
     await expect.element(screen.getByRole('group', { name: 'Mode' }).getByText('Priority visitor')).toBeVisible();
     await expect.element(screen.getByRole('group', { name: 'ToO' }).getByText('Standard ToOs')).toBeVisible();
   });
 
   it('reads an unknown clock parameter as the site clock, never as UT or blank', async () => {
-    // A mistyped `clock` value degrades to the reading the site works in
-    // (useSelection): only the explicit 'utc' switches the display.
     const screen = await openNight('/night?site=GS&night=2025-11-14&clock=zulu');
 
     await expect.element(screen.getByText('14:00 to 14:00 site time', { exact: false })).toBeVisible();
@@ -116,32 +96,22 @@ describe(NightPage, () => {
     await expect.element(screen.getByTestId('night-timeline')).toBeVisible();
   });
 
-  // The other absence - a night inside a semester that the workbook never
-  // filled in - is not reachable from its data: every night carries at least
-  // the ToOs column. `dataAvailable: false` is pinned at the API instead, in
-  // mock-server/resolvers.test.ts.
+  // A night the workbook never filled in is unreachable from its data; pinned at the API instead.
 
   it('draws no timeline when the night query fails, rather than an empty one beside the alert', async () => {
-    // The semesters resolve and the night does not, which is the state the
-    // three answers exist for: the page knows 2025B holds this night while
-    // knowing nothing at all about the night. Drawing the chart here asserts
-    // "this night is scheduled and nothing is on it" - the very claim the
-    // "Nothing is recorded" branch exists to keep distinct from an absence
-    // of knowledge.
+    // The page knows 2025B holds this night while knowing nothing about the night itself.
     const screen = await renderApp({
       element: <NightPage />,
       route: '/night?site=GS&night=2025-11-14',
       mock: nightQueryCannotBeReached(),
     });
 
-    // Settle on the failure first, so the absences below are read after the
-    // query resolved rather than before it started.
+    // Settle on the failure first, so the absences below are read after the query resolved.
     await expect.element(screen.getByRole('alert')).toHaveTextContent('the Resource service did not answer');
     await expect.element(screen.getByText('Gemini South Semester 2025B', { exact: false })).toBeVisible();
 
     await expect.element(screen.getByTestId('night-timeline')).not.toBeInTheDocument();
-    // Nor the other answer: a query that never arrived is not a recorded
-    // absence, and must not be reported as one.
+    // A query that never arrived is not a recorded absence, and must not be reported as one.
     await expect
       .element(screen.getByText('Nothing is recorded for this night', { exact: false }))
       .not.toBeInTheDocument();
@@ -161,8 +131,7 @@ describe(NightPage, () => {
 
     await screen.getByRole('button', { name: 'Tonight' }).click();
 
-    // Derived with the page's own function, not a fixture date: Tonight is the
-    // one control that must follow the wall clock.
+    // Derived with the page's own function: Tonight is the one control that must follow the wall clock.
     const tonight = observingNightOf('GS', Date.now());
     await expect.element(screen.getByText(`Night of ${tonight}`)).toBeVisible();
     await expect.element(screen.getByRole('button', { name: 'Tonight' })).toBeDisabled();
@@ -190,11 +159,7 @@ describe(NightPage, () => {
   });
 
   it('keeps a revisited night intact - one window must not poison another', async () => {
-    // Every availability query clips its blocks to the night asked for, under
-    // stable block ids. Normalized by id, night B's response overwrote night
-    // A's intervals, so revisiting A from the cache drew an empty chart
-    // (found via Tonight after stepping, 2026-08-10). Pinned here through
-    // prev/next, which is the same cache-hit path.
+    // Blocks carry no id and every range query asks clip: false, so one night cannot overwrite another.
     const screen = await openNight('/night?site=GS&night=2025-11-14');
     const points = () => document.querySelectorAll('[data-testid="night-timeline"] .highcharts-point').length;
     await expect.poll(points).toBeGreaterThan(0);
@@ -214,11 +179,7 @@ describe(NightPage, () => {
   });
 
   it('moves the chart clock to UT with the masthead toggle', async () => {
-    // The dual of the semester chart's stability test: there nothing may
-    // move when the clock does; here everything must. The toggle keeps the
-    // axis window, so no remount - the axis labels prove the in-place
-    // Highcharts update actually took the new zone rather than silently
-    // keeping the old one.
+    // The toggle keeps the axis window, so the labels prove the in-place update took the new zone.
     const screen = await renderApp({
       element: <Layout />,
       route: '/night?site=GS&night=2025-11-14',
@@ -234,9 +195,7 @@ describe(NightPage, () => {
 
     await screen.getByRole('button', { name: 'Coordinated Universal Time' }).click();
 
-    // The header is the already-pinned reading; the chart must follow it.
-    // Non-empty first: a blanked chart (the Highcharts empty-series failure)
-    // must not slip through as merely "different".
+    // Non-empty first: a blanked chart must not slip through as merely "different".
     await expect.element(screen.getByText('17:00 to 17:00 UTC', { exact: false })).toBeVisible();
     await expect.poll(() => labels().length).toBeGreaterThan(0);
     await expect.poll(labels).not.toBe(siteLabels);
@@ -247,17 +206,13 @@ describe(NightPage, () => {
 
     await expect.element(screen.getByText('PWFS1').first()).toBeVisible();
     await expect.element(screen.getByText('PWFS2').first()).toBeVisible();
-    // GS has no laser: the LGS row states Not available - a recorded fact,
-    // printed in words rather than shouted in the bright neutral, which would
-    // otherwise fire on every GS night forever.
+    // GS has no laser: printed in words rather than shouted in the bright neutral on every GS night.
     await expect.element(screen.getByText('LGS').first()).toBeVisible();
     await expect.element(screen.getByText('Not available').first()).toBeVisible();
   });
 
   it('reads the laser per site: available at Gemini North, not at Gemini South', async () => {
-    // The workbook's LGS column, in the subsystem's own words. GN prints
-    // "Yes" and GS "No" on every night of this export, so the two sites must
-    // not read alike.
+    // GN prints "Yes" and GS "No" on every night of this export, so the two sites must not read alike.
     const north = await openNight('/night?site=GN&night=2026-08-27');
     const chart = north.getByTestId('night-timeline');
     await expect.element(chart).toBeVisible();
@@ -266,9 +221,7 @@ describe(NightPage, () => {
   });
 
   it('keeps an off-port run off the chart - the schedule is the ports picture', async () => {
-    // GN, inside the late-September 2026 `Alopeke visitor run: the API serves
-    // it, and resolvers.test.ts pins that, but the chart draws the five ports
-    // and nothing else. The instrument browser is where it shows.
+    // The API serves the port-less visitor run, but the chart draws the five ports and nothing else.
     const screen = await openNight('/night?site=GN&night=2026-09-26');
 
     const chart = screen.getByTestId('night-timeline');
@@ -289,11 +242,7 @@ describe(NightPage, () => {
     await expect.element(screen.getByTestId('night-timeline')).toBeVisible();
     await expect.poll(() => document.querySelector('[data-testid="night-timeline"] .highcharts-point')).not.toBeNull();
 
-    // Near the bar's left edge the cursor is deep in the daylight wash, which
-    // is deliberately drawn over the bars. Hover resolves to the element under
-    // the cursor, so an overlay that catches the pointer swallows the tooltip -
-    // the wash must be pointer-transparent (`styles/chartOverlays.css`,
-    // imported above).
+    // The daylight wash is drawn over the bars, so it must be pointer-transparent or it eats the tooltip.
     const bar = document.querySelector('[data-testid="night-timeline"] .highcharts-point');
     await page.elementLocator(bar!).hover({ position: { x: 6, y: 8 } });
 
@@ -304,10 +253,7 @@ describe(NightPage, () => {
 
 describe('the night window the client computes', () => {
   it('is the one the API resolves, so the blocks asked for are the night drawn', async () => {
-    // siteTime.ts deliberately mirrors mock-server/time.ts, and the page uses
-    // its own result to ask for blocks while showing the API's dataAvailable
-    // for the same night. If the two ever drift, the view would draw one night's
-    // records against another night's axis.
+    // siteTime.ts mirrors mock-server/time.ts; a drift would draw one night's records on another's axis.
     const { client } = createMockApollo();
     const ours = observingNightInterval('GS', '2026-11-14');
 

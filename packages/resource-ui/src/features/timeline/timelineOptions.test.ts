@@ -29,8 +29,7 @@ const chartOf = (...bands: ReturnType<typeof band>[]): BandFitChart => ({
 
 describe(fitBandLabels, () => {
   it('keeps the label of a closure wide enough to wrap it', () => {
-    // Six nights of the semester chart hold "Maintenance" per wrapped line,
-    // which is the treatment the wide closures rely on.
+    // Six nights hold "Maintenance" per wrapped line, the treatment the wide closures rely on.
     const wide = band(0, 200, 'Telescope Shutdown A&G Maintenance');
 
     fitBandLabels(chartOf(wide));
@@ -39,9 +38,7 @@ describe(fitBandLabels, () => {
   });
 
   it('drops the label of a closure narrower than its longest piece', () => {
-    // The one-night "In-Situ Wash" closure: the wrap breaks at the hyphen and
-    // renders a clipped "In-", which names nothing. The legend's shut-down key
-    // and the cell tooltips carry it instead.
+    // "In-Situ Wash" over one night wraps at the hyphen and clips to "In-", which names nothing.
     const narrow = band(0, 17, 'In-Situ Wash');
 
     fitBandLabels(chartOf(narrow));
@@ -50,8 +47,7 @@ describe(fitBandLabels, () => {
   });
 
   it('judges by the wrap pieces, breaking at spaces and hyphens alike', () => {
-    // 30px holds none of the whole words but every hyphen-split piece, which
-    // is exactly what Highcharts renders - so the label stays.
+    // 30px holds no whole word but every hyphen-split piece, which is what Highcharts renders.
     const hyphenated = band(0, 30, 'In-Situ Wash');
 
     fitBandLabels(chartOf(hyphenated));
@@ -60,8 +56,7 @@ describe(fitBandLabels, () => {
   });
 
   it('scales the advance to the label font, so a smaller-set label judges at its own size', () => {
-    // "Wash" needs ~25px at the xrange's 0.68rem but only ~23px at 0.62rem;
-    // 23px of band holds only the smaller.
+    // "Wash" needs ~25px at 0.68rem but ~23px at 0.62rem; 23px of band holds only the smaller.
     const atChartSize = band(0, 23, 'Wash', '0.68rem');
     const atSmallSize = band(0, 23, 'Wash', '0.62rem');
 

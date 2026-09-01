@@ -1,39 +1,3 @@
-/**
- * Records over an interval -> the rows a timeline chart draws.
- *
- * The semester, the week and the night are the same picture over three window
- * sizes: rows of instrument runs, a band where the telescope was shut, and the
- * nights underneath for context. Only the window and the axis differ, so the
- * part that turns records into rows lives here once.
- *
- * ## Intervals stay intervals
- *
- * The published sheet is a grid of nights, and the first version of the semester
- * view reproduced it literally: one cell per night, then a second pass to work
- * out where the runs were so a label could be placed. GS 2026B is sixteen facts
- * drawn as nine hundred cells, and everything awkward about that view came from
- * the round trip - labels sized to a reconstructed span, columns pinned to a
- * fixed width, and partial nights impossible to draw at all, which is the one
- * thing the partial-night non-negotiable (CLAUDE.md) says must never become
- * impossible.
- *
- * Here a block stays a block: clipped to the window, drawn once, at whatever
- * boundaries it actually has. A block that changes mid-night is two blocks with
- * a boundary between them, and the night view shows exactly that.
- *
- * ## Closures at Gemini South are spelled across the rows
- *
- * The sheet writes "Telescope Shutdown A&G Maintenance" vertically down the port
- * rows during a shutdown, one word per row, and the records carry
- * each word as that port's closure reason. Rendered per row it reads as though
- * Port 2 were called "Telescope".
- *
- * There is a telescope-wide record too, with the whole phrase. So
- * the wide closure becomes a band across every row, and each port closure has
- * the band's span subtracted. What survives is the part genuinely about that port
- * alone - A&G on Port 4, F2 on Port 5 in 2026A - and the fragments disappear,
- * because they had no span of their own to begin with.
- */
 import { portRowLabel, portRows } from './ports';
 import type {
   Closure,
@@ -51,36 +15,13 @@ import type {
   TooSupport,
 } from './types';
 
-/**
- * What a block is, which decides how it is drawn.
- *
- * A block on a subject row either names an instrument (coloured by which, so a
- * reader picks GMOS out of a semester without reading every label) or it does
- * not, and an unnamed span is an absence drawn as one. Every view also heads
- * itself with telescope-state rows whose blocks are neither: whether the
- * telescope is open, its operating mode, and the ToO support level, each with
- * the value printed on the block (`variant` says which).
- *
- * A telescope-wide closure is not only in here: besides the Telescope row's
- * Closed block, it is a band across every row.
- */
 export type BlockState =
-  /** An instrument on this row over this span. Coloured by which instrument. */
   | 'MOUNTED'
-  /**
-   * The sheet marks the span but names no instrument. "A&G" on Gemini South's
-   * Port 4 is the standing example, and what it means for availability is still
-   * open with operations, so it is drawn as an absence rather
-   * than assumed to be a six-month failure.
-   */
+  /** The sheet marks the span but names no instrument. Drawn as an absence, never assumed to be a failure. */
   | 'UNSCHEDULED'
-  /** Whether the telescope is open over this span, on the Telescope row. */
   | 'TELESCOPE'
-  /** The ToO support level over this span, on the ToO row. */
   | 'TOO'
-  /** The telescope's operating mode over this span, on the Mode row. */
   | 'MODE'
-  /** A subsystem's operational state over this span, on the subsystem's row. */
   | 'SUBSYSTEM';
 
 export interface TimelineBlock {
@@ -96,14 +37,14 @@ export interface TimelineBlock {
   readonly variant: TelescopeAvailability | TooSupport | TelescopeModeType | null;
   /** Clipped to the window being drawn. */
   readonly interval: Interval;
-  /** The block's own span, for the tooltip - it may reach outside the window. */
+  /** The block's own span, which may reach outside the window. */
   readonly fullInterval: Interval;
-  /** Observing nights the whole block covers, for the tooltip. */
+  /** Nights the whole block covers, not the clipped part. */
   readonly nights: number;
   /** True when the block reaches past this window's edge, so the bar is cut. */
   readonly continuesBefore: boolean;
   readonly continuesAfter: boolean;
-  /** The note or closure reason, verbatim. Null when the sheet carried none. */
+  /** The note or closure reason, verbatim. */
   readonly detail: string | null;
 }
 
@@ -120,7 +61,6 @@ export interface TimelineBand {
   readonly label: string;
 }
 
-/** One observing night, for day labels, weekend shading and night boundaries. */
 export interface TimelineNight {
   /** The night's own label, the date it ends on. */
   readonly observingNight: string;
@@ -128,32 +68,16 @@ export interface TimelineNight {
   readonly eveningDate: string;
   readonly interval: Interval;
   readonly isWeekend: boolean;
-  /**
-   * False when Resource holds nothing at all for this night.
-   *
-   * Never inferred from an empty row: a gap means "not recorded", and only the
-   * API can say which it is (`telescopeNights.dataAvailable`). Defaults true so
-   * a window that never asked is not drawn as a hole.
-   */
+  /** From the API only, never inferred from an empty row. Defaults true so an unasked window is not a hole. */
   readonly dataAvailable: boolean;
 }
 
-/** What every timeline view carries besides its rows, for the legend. */
 export interface TimelineLegend {
-  /**
-   * The instruments actually drawn, alphabetically.
-   *
-   * Only what appears: a legend carrying all thirteen would mostly be keys to
-   * colours that are not on the page.
-   */
+  /** Only those actually drawn: keys to colours that are not on the page are noise. */
   readonly instruments: readonly Instrument[];
-  /** Whether any telescope-wide closure is drawn, so the legend can say so. */
   readonly hasClosure: boolean;
-  /** Whether any row shows a span with no instrument named. */
   readonly hasUnscheduled: boolean;
-  /** Whether any mounted span is restricted to engineering use. */
   readonly hasEngineeringUse: boolean;
-  /** Whether any mounted span is recorded as not available. */
   readonly hasUnavailable: boolean;
 }
 
@@ -164,12 +88,7 @@ export const clip = (interval: Interval, bounds: Interval): Interval | null => {
   return start < end ? { start, end } : null;
 };
 
-/**
- * `interval` with every hole removed, left to right.
- *
- * This is what turns a port closure that merely coincides with a telescope-wide
- * shutdown into nothing, while keeping the part of one that outlasts it.
- */
+/** `interval` with every hole removed, so a port closure inside a wide shutdown becomes nothing. */
 export const subtract = (interval: Interval, holes: readonly Interval[]): readonly Interval[] => {
   let pieces: Interval[] = [interval];
   for (const hole of holes) {
@@ -191,29 +110,15 @@ export const subtract = (interval: Interval, holes: readonly Interval[]): readon
   return pieces;
 };
 
-/**
- * Whole nights an interval spans, rounded.
- *
- * Rounded rather than floored because a night is 23 or 25 hours either side of a
- * DST change at Gemini South, and a run of thirty nights must still read as
- * thirty. A span shorter than a night reports zero, and the caller says "part of
- * a night" instead.
- */
+/** Rounded, not floored: a night is 23 or 25 hours across a GS DST change, and thirty must read as thirty. */
 export const nightsIn = (interval: Interval): number => Math.round((interval.end - interval.start) / 86_400_000);
 
-/**
- * The night an instant falls in, or null outside the window.
- *
- * How a click on a chart resolves to a night: the axis is real time, so a click
- * lands on an instant, and nights abut exactly, so at most one contains it.
- */
 export const nightAt = (nights: readonly TimelineNight[], instant: number): TimelineNight | null =>
   nights.find((night) => night.interval.start <= instant && instant < night.interval.end) ?? null;
 
 /** A block before any window has been chosen: it still has its own full span. */
 export type UnplacedBlock = Omit<TimelineBlock, 'interval' | 'continuesBefore' | 'continuesAfter'>;
 
-/** Operational spellings of the ToO levels, printed on the ToO row's blocks. */
 export const TOO_SUPPORT_LABEL = {
   STANDARD: 'Standard ToOs',
   INTERRUPT: 'Interrupt ToOs',
@@ -221,7 +126,6 @@ export const TOO_SUPPORT_LABEL = {
   NONE: 'No ToOs',
 } satisfies Record<TooSupport, string>;
 
-/** Operational spellings of the telescope modes, printed on the Mode row's blocks. */
 export const TELESCOPE_MODE_LABEL = {
   QUEUE: 'Queue',
   CLASSICAL: 'Classical',
@@ -232,7 +136,6 @@ export const TELESCOPE_MODE_LABEL = {
   BLOCK_SCHEDULING: 'Block scheduling',
 } satisfies Record<TelescopeModeType, string>;
 
-/** A partner tag phrased for a block-scheduling span's detail. */
 const PARTNER_LABEL = {
   AR: 'Argentina',
   BR: 'Brazil',
@@ -243,7 +146,6 @@ const PARTNER_LABEL = {
   US: 'United States',
 } satisfies Record<Partner, string>;
 
-/** The mode block's tooltip detail: programs, the block partner, the note. */
 const modeDetail = (block: ModeBlock): string | null => {
   const parts = [
     ...(block.programReferences.length === 0 ? [] : [block.programReferences.join(', ')]),
@@ -253,39 +155,29 @@ const modeDetail = (block: ModeBlock): string | null => {
   return parts.length === 0 ? null : parts.join(' - ');
 };
 
-/** How a mounted span's usage is phrased, wherever usage is stated. */
 export const USAGE_LABEL = {
   SCIENCE: 'Science',
   ENGINEERING: 'Engineering use',
   UNAVAILABLE: 'Not available',
 } satisfies Record<ResourceUsage, string>;
 
-/** What the Telescope row's blocks print, per recorded availability. */
 export const TELESCOPE_AVAILABILITY_LABEL = {
   OPEN: 'Open',
   CLOSED: 'Closed',
 } satisfies Record<TelescopeAvailability, string>;
 
-/** The telescope-state rows' labels, in the order they head every chart. */
+// In the order they head every chart.
 export const TELESCOPE_ROW_LABEL = 'Telescope';
 export const MODE_ROW_LABEL = 'Mode';
 export const TOO_ROW_LABEL = 'ToO';
 
-/**
- * How a subsystem's state is phrased.
- *
- * Not the instruments' words: a subsystem is not "doing science", it is
- * available for it - and for the laser the workbook's own column is Yes/No,
- * which "Available" / "Not available" reproduces exactly where "Science" would
- * read as a claim about the observing programme.
- */
+/** Not the instruments' words: a subsystem is available for science, it is not doing science. */
 export const SUBSYSTEM_USAGE_LABEL = {
   SCIENCE: 'Available',
   ENGINEERING: 'Engineering use',
   UNAVAILABLE: 'Not available',
 } satisfies Record<ResourceUsage, string>;
 
-/** A subsystem row's gutter label. */
 export const SUBSYSTEM_ROW_LABEL = {
   PWFS1: 'PWFS1',
   PWFS2: 'PWFS2',
@@ -297,19 +189,10 @@ export const SUBSYSTEM_ROW_LABEL = {
   DOME_VENT_GATES: 'Dome vents',
 } satisfies Record<TelescopeSubsystem, string>;
 
-/** The subsystem rows' order: the requirement's enum order, sensors first. */
+/** The requirement's enum order, sensors first. */
 const SUBSYSTEM_ORDER = Object.keys(SUBSYSTEM_ROW_LABEL) as readonly TelescopeSubsystem[];
 
-/**
- * Which recorded states are worth noticing - the one semantic decision behind
- * the state rows' two monochrome fills (the fills themselves live in
- * `features/timeline/timelineOptions.ts`; the measurement is on the tokens in
- * global.css). The ordinary night is queue operation with standard ToO
- * support, so those read quiet; any other mode, and any departure from
- * standard ToOs - a night they cannot fire at all, or one that admits an
- * interrupt - should catch the eye. Exhaustive maps, so a new enum member must
- * choose rather than default.
- */
+/** The ordinary night is queue operation with standard ToO support; anything else is worth noticing. */
 export const NOTABLE_MODE = {
   QUEUE: false,
   CLASSICAL: true,
@@ -330,20 +213,9 @@ export const NOTABLE_TOO = {
 const isTooSupport = (variant: string): variant is TooSupport => variant in NOTABLE_TOO;
 const isModeType = (variant: string): variant is TelescopeModeType => variant in NOTABLE_MODE;
 
-/**
- * Whether a TOO or MODE block records a notable state. False on every other
- * kind - a TELESCOPE block is never "notable" in the monochrome sense: Open is
- * the ordinary state and Closed takes the reserved closure red, not the bright
- * neutral.
- */
+/** A TELESCOPE block is never notable: Closed takes the reserved closure red, not the bright neutral. */
 export const isNotableState = (block: Pick<TimelineBlock, 'state' | 'variant' | 'usage'>): boolean => {
-  // Subsystems are never notable, deliberately - they say their state in words
-  // instead. Mode and ToO departures are rare and event-like, so brightness
-  // there is signal; subsystem availability is recorded every night and is
-  // dominated by standing facts - Gemini South has no laser at all, so a bright
-  // "Not available" would shout on every GS night forever and out-shout the
-  // instrument runs the page is actually about. Revisit if real ICTD data shows
-  // subsystem outages are rare enough to be news.
+  // Subsystem state is recorded nightly and dominated by standing facts, so brightness there is noise.
   if (block.state === 'SUBSYSTEM') {
     return false;
   }
@@ -359,23 +231,14 @@ export const isNotableState = (block: Pick<TimelineBlock, 'state' | 'variant' | 
   return false;
 };
 
-/**
- * The telescope-state rows, ahead of the subject rows: whether the telescope
- * is open, then its mode, then ToO support.
- *
- * These are facts about the telescope, independent of what any port carries,
- * so they head every chart rather than joining the port rows. A window with no
- * such records simply has no rows here - the gap stays a gap (I4) instead of
- * permanently empty rows. The Telescope row reads the whole-telescope
- * availability records (`port: null`), Open and Closed alike: the workbook
- * records both explicitly.
- */
+/** A window with no state records gets no state rows: the gap stays a gap (I4). */
 export const collectStateRows = (
   closures: readonly Closure[],
   tooBlocks: readonly TooBlock[],
   modeBlocks: readonly ModeBlock[],
   subsystemBlocks: readonly SubsystemBlock[] = [],
 ): readonly { readonly label: string; readonly blocks: readonly UnplacedBlock[] }[] => {
+  // Open and Closed alike, unlike the CLOSED-only band below: the Telescope row states both.
   const telescope = closures.filter((closure) => closure.port === null);
   return [
     ...(telescope.length === 0
@@ -412,8 +275,6 @@ export const collectStateRows = (
               variant: block.mode,
               fullInterval: block.interval,
               nights: nightsIn(block.interval),
-              // The programs (or the block partner) are the interesting fact
-              // about a non-queue span; the note rides along when recorded.
               detail: modeDetail(block),
             })),
           },
@@ -437,9 +298,7 @@ export const collectStateRows = (
             })),
           },
         ]),
-    // One row per subsystem with records, in the requirement's order. The bar
-    // prints the usage in the same words a mounted span uses; hue stays the
-    // instruments' alone, so these draw in the state neutrals.
+    // Hue stays the instruments' alone, so these draw in the state neutrals.
     ...SUBSYSTEM_ORDER.flatMap((subsystem) => {
       const records = subsystemBlocks.filter((block) => block.subsystem === subsystem);
       return records.length === 0
@@ -465,7 +324,6 @@ export const collectStateRows = (
   ];
 };
 
-/** The subsystem block's tooltip detail: the power source, then the note. */
 const subsystemDetail = (block: SubsystemBlock): string | null => {
   const parts = [
     ...(block.powerSource === null ? [] : [block.powerSource === 'GENERATOR' ? 'Generator power' : 'Commercial power']),
@@ -474,13 +332,7 @@ const subsystemDetail = (block: SubsystemBlock): string | null => {
   return parts.length === 0 ? null : parts.join(' - ');
 };
 
-/**
- * Whether a row is one of the telescope-state rows. By label: the labels are
- * this module's own constants, so a subject row cannot collide with them
- * without colliding on screen too. (An off-port instrument row could share a
- * subsystem's name - "Canopus" - which is why the count below reads only the
- * *leading* rows: state rows always precede the subjects.)
- */
+/** By label, since the labels are this module's own constants. */
 const STATE_ROW_LABELS = new Set<string>([
   TELESCOPE_ROW_LABEL,
   MODE_ROW_LABEL,
@@ -488,7 +340,7 @@ const STATE_ROW_LABELS = new Set<string>([
   ...Object.values(SUBSYSTEM_ROW_LABEL),
 ]);
 
-/** How many leading rows are telescope-state rows - a chart's header band. */
+/** Leading rows only: state rows always precede the subjects. */
 export const stateRowCount = (rows: readonly { readonly label: string }[]): number => {
   let count = 0;
   while (count < rows.length && STATE_ROW_LABELS.has(rows[count]?.label ?? '')) {
@@ -502,22 +354,12 @@ export interface TimelineSource {
   readonly closures: readonly Closure[];
 }
 
-/**
- * Every block on every row, with the telescope-wide spans already subtracted
- * from the port closures. Window-independent, so a semester can place the same
- * blocks in six months without rebuilding them.
- *
- * The rows are the telescope's ports (`portRows`), which is the whole of the
- * subject axis: a record's port says which row it belongs to, and one with no
- * port - an instrument between mounts, or one in the summit lab - belongs to
- * none and is the instrument browser's subject instead.
- */
+/** Window-independent, so a semester places the same blocks in six months without rebuilding them. */
 export const collectBlocks = ({
   mountings,
   closures,
 }: TimelineSource): readonly { readonly label: string; readonly blocks: readonly UnplacedBlock[] }[] => {
-  // CLOSED only: the availability records also carry the explicit Open spans,
-  // which the Telescope state row draws and nothing here may treat as shut.
+  // CLOSED only: the Open spans are the Telescope row's, and nothing here may treat them as shut.
   const wideSpans = closures
     .filter((closure) => closure.port === null && closure.availability === 'CLOSED')
     .map((closure) => closure.interval);
@@ -525,11 +367,7 @@ export const collectBlocks = ({
   return portRows([...mountings, ...closures].map((record) => record.port)).map((port) => {
     const rowLabel = portRowLabel(port);
     const onRow = mountings.filter((mounting) => mounting.port === port);
-    // A source can put an unidentified (UNKNOWN) band over the same port and
-    // span as a named run - Gemini North's sheets did it with their two
-    // "Visiting" rows. One row per port, so the identified run wins the shared
-    // span and the unknown keeps what is genuinely its own - the same rule the
-    // wide closure spans apply to port closures below.
+    // One row per port, so an identified run wins a span an UNKNOWN band also covers.
     const identifiedSpans = onRow
       .filter((mounting) => mounting.instrument !== 'UNKNOWN')
       .map((mounting) => mounting.interval);
@@ -607,7 +445,7 @@ export const placeBands = (closures: readonly Closure[], bounds: Interval): read
       return visible === null ? [] : [{ id: closure.id, interval: visible, label: closure.reason ?? 'Closed' }];
     });
 
-/** What the legend should key, derived from what was actually placed. */
+/** Derived from what was actually placed, never from the schema. */
 export const legendFor = (rows: readonly TimelineRow[], bands: readonly TimelineBand[]): TimelineLegend => {
   const instruments = new Set<Instrument>();
   let hasUnscheduled = false;
@@ -615,9 +453,7 @@ export const legendFor = (rows: readonly TimelineRow[], bands: readonly Timeline
   let hasUnavailable = false;
   for (const row of rows) {
     for (const block of row.blocks) {
-      // By state, not by a null instrument: the ToO and mode blocks name no
-      // instrument either, but they are recorded state, not the absence the
-      // unscheduled key describes.
+      // By state, not by a null instrument: ToO and mode blocks name none either.
       if (block.state === 'UNSCHEDULED') {
         hasUnscheduled = true;
       } else if (block.instrument !== null) {
@@ -628,8 +464,7 @@ export const legendFor = (rows: readonly TimelineRow[], bands: readonly Timeline
     }
   }
   return {
-    // Alphabetical, so the key's order is stable across windows rather than
-    // following whichever row happens to come first.
+    // Alphabetical, so the key's order is stable across windows.
     instruments: [...instruments].sort(),
     hasClosure: bands.length > 0,
     hasUnscheduled,

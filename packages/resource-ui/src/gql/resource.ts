@@ -1,10 +1,3 @@
-/**
- * Typed GraphQL operations for the Resource API.
- *
- * The block selections are fragments, so the semester, week and night queries
- * ask for the same fields and the adapters take one generated type rather than
- * one per operation.
- */
 import { graphql } from './gen';
 
 export const INSTRUMENT_BLOCK_FIELDS = graphql(`
@@ -60,11 +53,6 @@ export const MODE_BLOCK_FIELDS = graphql(`
   }
 `);
 
-/**
- * A component block as the night projection carries it: clipped to the night,
- * with the piece's full identity nested so the night view needs no second
- * round trip to the catalog.
- */
 export const SUBSYSTEM_BLOCK_FIELDS = graphql(`
   fragment SubsystemBlockFields on TelescopeSubsystemAvailabilityBlock {
     subsystem
@@ -78,6 +66,7 @@ export const SUBSYSTEM_BLOCK_FIELDS = graphql(`
   }
 `);
 
+/** The piece's identity is nested, so a view listing what changed needs no second round trip. */
 export const NIGHT_COMPONENT_FIELDS = graphql(`
   fragment NightComponentFields on InstrumentComponentAvailabilityBlock {
     usage
@@ -120,12 +109,7 @@ export const PUBLISHED_SEMESTERS_QUERY = graphql(`
   }
 `);
 
-/**
- * Everything a semester view draws, in one response.
- *
- * Unclipped: a mounting that starts before the window still comes back with its
- * real interval, so the view can show that it was already there.
- */
+/** Unclipped, so the view can show a mounting was already there before the window. */
 export const SEMESTER_SCHEDULE_QUERY = graphql(`
   query SemesterSchedule($site: Site!, $interval: TimestampIntervalInput!) {
     instrumentAvailability(site: $site, interval: $interval, clip: false) {
@@ -143,20 +127,7 @@ export const SEMESTER_SCHEDULE_QUERY = graphql(`
   }
 `);
 
-/**
- * One night, and the runs that reach it.
- *
- * `telescopeNight` is the projection the scheduler consumes, and it is asked for
- * here to carry the fact a range query cannot: `dataAvailable`, which separates
- * "nothing is recorded for this night" from "nothing is available". The
- * instrument, closure, ToO and mode blocks come unclipped, so the view can say a
- * run continues beyond tonight rather than implying it ends at 14:00.
- *
- * The projection's `components` are deliberately **not** selected: the night
- * view does not draw them (Dan, 2026-08-12), and an operation should not fetch
- * what nothing reads. The field stays in the schema - it is the scheduler's, and
- * the component browser is where a reader meets a piece.
- */
+/** `telescopeNight` carries `dataAvailable`, which no range query can; `components` is unselected. */
 export const NIGHT_SCHEDULE_QUERY = graphql(`
   query NightSchedule($site: Site!, $night: Date!, $interval: TimestampIntervalInput!) {
     telescopeNight(site: $site, observingNight: $night) {
@@ -185,15 +156,7 @@ export const NIGHT_SCHEDULE_QUERY = graphql(`
   }
 `);
 
-/**
- * A week of nights, and the runs that cross them.
- *
- * `telescopeNights` is the scheduler's own query, asked here only for each
- * night's `dataAvailable` - the blocks come unclipped from the range queries so
- * a run spanning the week draws as one bar rather than seven abutting ones.
- * Component records ride along for the briefing's "changes this week" list: a
- * piece failing or a mask going in is exactly the kind of thing a week is for.
- */
+/** `telescopeNights` is asked only for `dataAvailable`; the blocks come unclipped from the ranges. */
 export const WEEK_SCHEDULE_QUERY = graphql(`
   query WeekSchedule($site: Site!, $nights: DateIntervalInput!, $interval: TimestampIntervalInput!) {
     telescopeNights(site: $site, nights: $nights) {
@@ -218,11 +181,7 @@ export const WEEK_SCHEDULE_QUERY = graphql(`
   }
 `);
 
-/**
- * Everything the component browser needs, in one response: the catalog, every
- * piece's records over the window, and the instrument mountings the "where is
- * it" join resolves INSTALLED against.
- */
+/** The catalog, every piece's records, and the mountings the INSTALLED join resolves against. */
 export const COMPONENT_BROWSER_QUERY = graphql(`
   query ComponentBrowser($site: Site!, $interval: TimestampIntervalInput!) {
     components(site: $site) {

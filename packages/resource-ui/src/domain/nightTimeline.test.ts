@@ -1,12 +1,4 @@
-/**
- * The night timeline model.
- *
- * The published sheets are whole-night granular, so every night the mock serves
- * is uniform. The partial-night cases here are synthetic on purpose: the
- * partial-night non-negotiable (CLAUDE.md) says the model must never assume night alignment, and this is the only
- * view that can show whether that is still true. If these break, the capability
- * has been lost regardless of what the published data happens to contain.
- */
+/** The partial-night cases are synthetic on purpose: only this view can show the capability holds. */
 import { describe, expect, it } from 'vitest';
 
 import { buildNightTimeline } from './nightTimeline';
@@ -89,9 +81,7 @@ describe('the night window', () => {
 });
 
 describe('partial nights', () => {
-  // The load-bearing constraint (the partial-night non-negotiable): nothing in the model ever
-  // assumed a block covers a whole night, so a mid-night change needs no
-  // special case - it is simply two blocks with a boundary between them.
+  // Nothing ever assumed a block covers a whole night, so a mid-night change needs no special case.
   const CHANGEOVER = interval.start + 9 * HOUR;
   const SPLIT_NIGHT: readonly Mounting[] = [
     mounting({
@@ -158,8 +148,7 @@ describe('the telescope-state rows', () => {
   });
 
   it('shows no state rows when the night carries no records, so a gap stays a gap', () => {
-    // I4: two permanently empty rows on every published night would read as
-    // "nothing recorded" chrome nobody entered.
+    // I4: two permanently empty rows would read as chrome nobody entered.
     expect(build().rows.map((row) => row.key)).toEqual(ROWS);
   });
 
@@ -183,8 +172,7 @@ describe('the telescope-state rows', () => {
   });
 
   it('draws a mid-night ToO change as two blocks and names the instant', () => {
-    // The independence the blocks were split out for: ToO support changes at
-    // an instant no port row changes at, and the row shows exactly where.
+    // ToO support changes at an instant no port row changes at, and the row shows where.
     const change = interval.start + 7 * HOUR;
     const night = build({
       tooBlocks: [
@@ -226,11 +214,9 @@ describe('the telescope-state rows', () => {
       ],
     });
 
-    // Requirement order, after Telescope - and leading, so the header band
-    // counts them (`stateRowCount` reads only leading rows).
+    // Requirement order, and leading, so `stateRowCount` counts them into the header band.
     expect(night.rows.map((row) => row.label)).toEqual(['Telescope', 'PWFS1', 'LGS', ...ROWS]);
-    // A subsystem's own vocabulary: available for science, not "doing" it -
-    // which is also the laser column's Yes/No, said in words.
+    // A subsystem is available for science, not "doing" it - the laser column's Yes/No in words.
     expect(night.rows.find((row) => row.label === 'PWFS1')?.blocks[0]?.label).toBe('Available');
     const lgs = night.rows.find((row) => row.label === 'LGS')?.blocks[0];
     expect(lgs?.label).toBe('Not available');
@@ -252,7 +238,6 @@ describe('the sun', () => {
   it('finds the night dark between dusk and dawn', () => {
     const { sun } = build();
 
-    // Cerro Pachon in November: the sun sets late and rises early.
     expect(sun.sunset).not.toBeNull();
     expect(sun.sunrise).not.toBeNull();
     expect(sun.duskAstronomical).toBeGreaterThan(sun.sunset ?? 0);

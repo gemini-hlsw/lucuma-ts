@@ -1,15 +1,3 @@
-/**
- * Resolvers for the mock schema.
- *
- * One executable schema serves both the dev server (mock-server/server.ts) and
- * the browser tests (src/test/mockClient.ts via Apollo SchemaLink), so a test
- * and a manual click-through exercise the same code. Keep that property.
- *
- * Everything is derived from the imported schedules; nothing is stored per
- * night. A night is a projection - clip every record to the night's interval and
- * report what is left - which is what keeps partial nights working without a
- * special case (the partial-night non-negotiable).
- */
 import { GraphQLError, GraphQLScalarType } from 'graphql';
 
 import type { CatalogComponent, SynthesizedComponentBlock } from './components.ts';
@@ -28,23 +16,7 @@ import { clipInterval, intervalsOverlap, type MockInterval, observingNightInterv
 /** Above a semester, below an accidental decade (v1-scheduler-integration.md §4). */
 const MAX_NIGHTS = 400;
 
-/**
- * Refuses an interval a range query cannot honestly answer: one whose bounds do
- * not parse, and one whose `end` precedes its `start`.
- *
- * Every range query here filters on overlap, so both answer `[]` - which is
- * exactly what a well-formed query over an unrecorded span answers. That makes
- * a caller's mistake indistinguishable from "nothing is recorded here", the one
- * distinction this API exists to keep (I4). An unparseable bound gets there by
- * a different route than a reversed one: neither the `Timestamp` scalar nor
- * `Date` validates its input, so "garbage" reaches the comparisons as `NaN` and
- * every one of them is false.
- *
- * Two messages, because they are two different mistakes and the message is the
- * whole point of throwing a `GraphQLError` here: graphql-yoga masks anything
- * else as "Unexpected error.", which would hide the mistake from the consumer
- * who made it. An empty interval (`start === end`) is well-formed and passes.
- */
+/** Both would otherwise answer [] like an unrecorded span, which is the one distinction I4 keeps. */
 const assertWellFormedInterval = (interval: { start: string; end: string }, argName: string): void => {
   const start = Date.parse(interval.start);
   if (Number.isNaN(start)) {
@@ -59,13 +31,7 @@ const assertWellFormedInterval = (interval: { start: string; end: string }, argN
   }
 };
 
-/**
- * The ODB `Timestamp` scalar is ISO-8601 in the form "2011-12-03T10:15:30Z"
- * (OdbSchema.graphql). `Date.prototype.toISOString` always prints a millisecond
- * fraction and the imported fixtures carry one too, so a zero fraction is
- * trimmed here rather than left to drift from what the real service sends. A
- * genuine fraction is kept.
- */
+/** A zero millisecond fraction is trimmed, so this matches what the real service sends. */
 const Timestamp = new GraphQLScalarType<string, string>({
   name: 'Timestamp',
   description: 'Timestamp of time in ISO-8601 representation, e.g. "2026-08-07T18:00:00Z".',
@@ -99,13 +65,7 @@ const intervalOf = (record: { start: string; end: string }): MockInterval => ({
 
 const MICROS_PER = { hour: 3_600_000_000, minute: 60_000_000, second: 1_000_000, milli: 1_000 } as const;
 
-/**
- * ISO-8601 duration, the form `java.time.Duration` prints and lucuma-core's
- * `TimeSpan.iso` carries: PT24H, PT1H30M, PT0.5S, PT0S.
- *
- * Intervals are half-open with `end` after `start` by construction, so no
- * negative case arises.
- */
+/** ISO-8601 duration, the form `java.time.Duration` prints: PT24H, PT1H30M, PT0.5S, PT0S. */
 const isoDuration = (microseconds: number): string => {
   const hours = Math.floor(microseconds / MICROS_PER.hour);
   const minutes = Math.floor((microseconds % MICROS_PER.hour) / MICROS_PER.minute);
@@ -118,22 +78,7 @@ const isoDuration = (microseconds: number): string => {
   return parts === '' ? 'PT0S' : `PT${parts}`;
 };
 
-/**
- * The one place an `InstrumentLocation` is built.
- *
- * The SDL no longer enforces its own pairing - `port` is non-null exactly when
- * `place` is `PORT`, and that is now a promise the server keeps rather than a
- * shape the type system holds. Two call sites building the object literal is
- * precisely how such a promise drifts, so both go through here. `port` is
- * written explicitly as `null` off a port, which is what the SDL documents.
- *
- * `place` has no default. It is ignored on a port, but off one it is the whole
- * answer, and a caller that never states it is a caller that has not decided:
- * the schedules' own off-port case is UNKNOWN - usable between mounts, with the
- * sheet never saying where it physically sat - while a stored instrument knows
- * its shelf. A future record that is off a port for some third reason has to
- * say which, rather than inheriting a default written for a different case.
- */
+/** The one place an InstrumentLocation is built: the SDL does not enforce the port/place pairing. */
 const instrumentLocation = (
   port: number | null,
   place: OffPortPlace,
@@ -143,26 +88,16 @@ const instrumentBlock = (block: StoredBlock, interval: MockInterval): unknown =>
   site: block.site,
   interval,
   note: block.note,
-  // An UNKNOWN block is a run the schedule names that the instrument list does
-  // not. Its printed text, when it has any, is in `note`.
+  // An UNKNOWN block is a run the schedule names that the instrument list does not.
   instrument: block.instrument ?? 'UNKNOWN',
   publishedName: block.publishedName ?? block.note ?? 'Unknown',
-  // UNKNOWN off a port: the workbook records an instrument usable between
-  // mounts without recording where it sat.
+  // UNKNOWN off a port: the workbook records an instrument usable between mounts, never where it sat.
   location: instrumentLocation(block.port, 'UNKNOWN'),
-  // The workbook's per-instrument usability column, where it recorded one;
-  // SCIENCE otherwise - the sources never record a mounted instrument as
-  // anything else without saying so.
+  // SCIENCE unless the workbook's usability column recorded otherwise.
   usage: block.usage ?? 'SCIENCE',
 });
 
-/**
- * A stored instrument, in the same shape a mounting answers in.
- *
- * Its `location.place` is a storage place and never `PORT`, which is what tells
- * a consumer this is an instrument in storage rather than one on the telescope -
- * and, the ports being a schedule view's rows, what keeps it off every chart.
- */
+/** A storage place, never PORT, which is what keeps a stored instrument off every schedule row. */
 const storedInstrumentBlock = (block: SynthesizedInstrumentBlock, interval: MockInterval): unknown => ({
   site: block.site,
   interval,
@@ -273,14 +208,10 @@ const nightProjection = (store: MockStore, site: ImportSite, observingNight: str
     site,
     observingNight,
     interval,
-    // False means nothing has been recorded for this night - never "everything is
-    // unavailable". A consumer must be able to tell those apart. The synthetic
-    // component layer never decides this: it is derived from the schedules, so
-    // counting it would let fake data turn an unrecorded night into a recorded one.
+    // False means nothing is recorded, never "everything is unavailable"; synthetic data never decides it.
     dataAvailable:
       mountings.length > 0 || closures.length > 0 || tooSupport.length > 0 || modes.length > 0 || subsystems.length > 0,
-    // The schedule's mountings, then the stored instruments - which never
-    // count towards `dataAvailable` above, being synthetic.
+    // Stored instruments never count towards dataAvailable, being synthetic.
     instrumentAvailability: [
       ...mountings.map(({ record, interval: clipped }) => instrumentBlock(record, clipped)),
       ...stored.map(({ record, interval: clipped }) => storedInstrumentBlock(record, clipped)),
@@ -296,8 +227,7 @@ const nightProjection = (store: MockStore, site: ImportSite, observingNight: str
 export const buildResolvers = (store: MockStore) => ({
   Timestamp,
 
-  // `duration` is derived, never stored, so resolvers hand intervals around as
-  // plain { start, end } and only pay for the unit conversions a query selects.
+  // `duration` is derived, never stored, so resolvers pay only for the conversions a query selects.
   TimestampInterval: {
     duration: (interval: MockInterval): { microseconds: number } => ({
       microseconds: (Date.parse(interval.end) - Date.parse(interval.start)) * MICROS_PER.milli,
@@ -321,9 +251,7 @@ export const buildResolvers = (store: MockStore) => ({
         title: schedule.title,
         version: schedule.version,
         demo: schedule.demo === true,
-        // Derived once in the store's constructor, which is also where the
-        // "a schedule covers at least one night" invariant is enforced - this
-        // field is a `DateInterval!` and cannot answer with nulls.
+        // Derived in the store's constructor, which enforces "a schedule covers at least one night".
         nights: schedule.nights,
         holidays: schedule.holidays,
         moonEvents: schedule.moonEvents,
@@ -334,9 +262,7 @@ export const buildResolvers = (store: MockStore) => ({
 
     telescopeNights: (_: unknown, args: { site: ImportSite; nights: { start: string; end: string } }): unknown => {
       assertWellFormedInterval(args.nights, 'nights');
-      // A GraphQLError rather than an Error: graphql-yoga masks anything else as
-      // "Unexpected error.", which would hide the bound from the very consumer
-      // that has to stay under it.
+      // A GraphQLError, because graphql-yoga masks anything else as "Unexpected error.".
       const requested = nightCount(args.nights.start, args.nights.end);
       if (requested > MAX_NIGHTS) {
         throw new GraphQLError(
@@ -356,8 +282,7 @@ export const buildResolvers = (store: MockStore) => ({
       const touching = overlapping(store.mountingsFor(args.site));
       const stored = overlapping(store.storedInstrumentsFor(args.site));
 
-      // clip: false returns stored intervals, so a view can draw a mounting that
-      // runs past the edge of what it asked for.
+      // clip: false returns stored intervals, so a view can draw a mounting that runs past its window.
       return args.clip
         ? [
             ...clipAll(touching, args.interval).map(({ record, interval }) => instrumentBlock(record, interval)),

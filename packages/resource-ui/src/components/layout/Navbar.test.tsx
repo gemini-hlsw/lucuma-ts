@@ -8,8 +8,7 @@ import { renderApp } from '@/test/renderApp';
 import Layout from './Layout';
 import Navbar from './Navbar';
 
-// The navbar carries the global selection, so it reads the mock API (the
-// published semesters) - renderApp provides the Apollo client and the router.
+// The navbar carries the global selection, so it reads the mock API through renderApp.
 const renderNavbar = async (route = '/') => renderApp({ element: <Navbar />, route });
 
 describe(Navbar, () => {
@@ -20,9 +19,7 @@ describe(Navbar, () => {
   });
 
   it('links the wordmark to tonight, dropping the deep-linked night', async () => {
-    // From a deep link into a specific night, the brand goes home: /night with
-    // no night parameter means the night in progress. The site survives;
-    // page state does not.
+    // The brand goes home: /night with no night parameter. The site survives; page state does not.
     const screen = await renderNavbar('/semester?site=GS&night=2026-11-14&view=calendar');
 
     const brand = screen.getByRole('link', { name: 'Resource', exact: false });
@@ -45,8 +42,7 @@ describe(Navbar, () => {
   });
 
   it('never blanks on a stale semester name - it resolves to the night instead', async () => {
-    // A link minted before the data moved on (a removed demo, another site's
-    // semester) must still land somewhere real.
+    // A link minted before the data moved on must still land somewhere real.
     const screen = await renderNavbar('/night?site=GS&semester=2099B&night=2025-11-14');
 
     const wrapper = screen.getByLabelText('Semester', { exact: true }).element().closest('.p-dropdown');
@@ -54,9 +50,7 @@ describe(Navbar, () => {
   });
 
   it('shows the nearest semester when the night is beyond every one - Tonight past the edge', async () => {
-    // What Tonight does once the workbook's data ends: the night walks past
-    // 2026A at GS, and the control keeps offering the closest real semester
-    // rather than going blank over a night with no data.
+    // Past the workbook's edge the control keeps offering the closest real semester.
     const screen = await renderNavbar('/night?site=GS&night=2030-01-01');
 
     const wrapper = screen.getByLabelText('Semester', { exact: true }).element().closest('.p-dropdown');
@@ -64,9 +58,7 @@ describe(Navbar, () => {
   });
 
   it('offers no way to choose a backend - there is one, and it is not a setting', async () => {
-    // The masthead carried a Demo | Live control until 2026-08-14. The demo
-    // put server-side code in the bundle and went with it; a control over one
-    // backend would be chrome pretending to be a choice.
+    // One backend, so a Demo | Live control would be chrome pretending to be a choice.
     const screen = await renderNavbar();
 
     await expect.element(screen.getByLabelText('Site', { exact: true })).toBeInTheDocument();
@@ -74,9 +66,7 @@ describe(Navbar, () => {
   });
 
   it('moves the night into a chosen semester the current night is outside', async () => {
-    // The semester control must mean "take me to that semester" on the night
-    // view, never a silent no-op: choosing 2025A from a 2026B night lands on
-    // 2025A's first night.
+    // The semester control must mean "take me there", never a silent no-op.
     const screen = await renderApp({
       element: <Layout />,
       route: '/night?site=GS&night=2026-11-14',
@@ -111,14 +101,12 @@ describe(Navbar, () => {
 
     await screen.getByRole('button', { name: 'Coordinated Universal Time' }).click();
 
-    // Chile runs UTC-3 in November: the same night boundary, read off the
-    // other clock - and named as UTC, so nobody mistakes which one they see.
+    // Chile runs UTC-3 in November: the same boundary, named as UTC so nobody mistakes it.
     await expect.element(screen.getByText('17:00 to 17:00 UTC', { exact: false })).toBeVisible();
   });
 
   it('keeps the clock choice on the way home, like the site', async () => {
-    // The clock is chrome, not page state, so the brand link carries it the
-    // way it carries the site - a reader who chose UT stays in UT.
+    // The clock is chrome, so the brand link carries it the way it carries the site.
     const screen = await renderNavbar('/semester?site=GS&night=2026-11-14&clock=utc');
 
     const brand = screen.getByRole('link', { name: 'Resource', exact: false });
@@ -135,16 +123,14 @@ describe(Navbar, () => {
     const screen = await renderNavbar('/night?site=GS');
 
     await screen.getByRole('button', { name: 'Menu' }).click();
-    // The popup menu renders into document.body, outside the render container;
-    // wait for it before clicking so the click never races the popup mount.
+    // The popup renders into document.body; wait for it so the click never races the mount.
     const about = page.getByText('About Resource');
     await expect.element(about).toBeVisible();
     await about.click();
 
     const dialog = page.getByTestId('about-resource');
     await expect.element(dialog).toBeVisible();
-    // The build version in Explore's DATE-COMMIT-ENV form, and the endpoint
-    // this running Resource is actually reading.
+    // Explore's VERSION+DATE.COMMIT-ENV form, and the endpoint this serving actually reads.
     await expect.element(dialog.getByText(/Version: .+-DEV/)).toBeVisible();
     await expect.element(dialog.getByText('/resource/graphql', { exact: false })).toBeVisible();
   });

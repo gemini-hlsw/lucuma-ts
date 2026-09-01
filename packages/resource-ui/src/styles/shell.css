@@ -1,49 +1,19 @@
-/*
- * Shared "explore/admin-look" theme for Resource.
- *
- * Two jobs, mirroring admin-ui's styles/shell.css:
- *
- *   1. Map Resource's dark palette + the shared GPP green onto the lucuma-ui-css
- *      variables that PrimeReact components already read. This is what makes
- *      PrimeReact controls (buttons, dialogs, dropdowns, tables) and the custom
- *      Tailwind chrome speak ONE color vocabulary, so the whole UI matches
- *      admin-ui instead of running two disconnected palettes.
- *
- *   2. Provide the masthead classes (.xp-*) so the top bar looks like admin-ui's.
- *
- * The palette tokens themselves live in styles/global.css (Tailwind @theme);
- * this file only wires them into the shared variables. When this look is
- * extracted to a shared package, this file goes away.
- */
-
-/* Shared GPP green, matching admin-ui's --xp-green. Kept in sync with
-   --color-gpp in global.css. */
+/* Kept in sync with --color-gpp in global.css. */
 :root {
   --xp-green: hsl(122deg 39% 49%);
   --xp-green-hover: hsl(122deg 39% 55%);
   --xp-masthead-height: 2.5rem;
 
-  /* The workspace context strip. Fixed, so nothing in the strip - lifecycle
-     state, viewing source, permissions, save state - can move the sidebar or
-     the page content when the route changes. */
+  /* Fixed, so nothing in the strip can move the sidebar or the content when the route changes. */
   --xp-context-height: 2.15rem;
 }
 
-/*
- * Density: match gpp-explore's compact sizing.
- *
- * The whole app (Tailwind spacing/text AND the PrimeReact theme) is sized in
- * rem, so shrinking the root font size uniformly tightens font sizes, padding,
- * and margins together - without changing any layout (all proportions hold).
- * explore's base type is ~13px vs the browser's 16px default; 13px lands us
- * there. Bump this one number to trade density for roominess.
- */
+/* Everything is sized in rem, so this one number trades density for roominess. */
 html {
   font-size: 13px;
 }
 
-/* Map Resource's surfaces/text/accent onto the lucuma-ui-css PrimeReact
-   variables (same set admin-ui remaps), so PrimeReact is themed end to end. */
+/* Map onto the lucuma-ui-css variables PrimeReact reads, so it is themed end to end. */
 body {
   --surface-ground: var(--color-canvas);
 
@@ -60,9 +30,7 @@ body {
   --highlight-text-color: var(--color-foreground);
 }
 
-/* ---- Masthead ----
- * Spacing is in rem (not px) so the banner tightens together with the rest of
- * the app when the density root font size changes. */
+/* Spacing in rem, so the bar tightens with the density root font size. */
 .xp-masthead {
   display: flex;
   align-items: center;
@@ -86,10 +54,7 @@ body {
   padding-right: 0.3rem;
 }
 
-/* Stretched so the badge can hang flush from the top edge, as Explore's does.
-   It is also the one part of the bar that gives way when the window is too
-   narrow for all of it - by clipping the badge, never by squeezing the
-   controls to its right (see the width budget below). */
+/* Stretched so the badge hangs flush from the top edge, and it is what gives way when narrow. */
 .xp-masthead-center {
   flex: 1;
   display: flex;
@@ -101,11 +66,7 @@ body {
   overflow: hidden;
 }
 
-/* Environment badge, exactly Explore's DEVELOPMENT block: the brand light
-   green, heavy white uppercase, hung from the top of the chrome. Loud on
-   purpose - a build that is not production should say so louder than
-   anything else, and saying it the same way as the flagship app is the
-   point (Dan, 2026-08-10; this reverses the earlier quiet-marker call). */
+/* Loud on purpose: a build that is not production should say so louder than anything else. */
 .xp-env-marker {
   display: inline-flex;
   align-items: center;
@@ -118,34 +79,7 @@ body {
   white-space: nowrap;
 }
 
-/* ---- The masthead's width budget ----
- *
- * Measured in Chromium at the 13px root above, and the arithmetic is here so
- * the next person adding an item to the bar can check it by adding rather than
- * by bisecting widths in a browser:
- *
- *   133.7 wordmark + 137.2 badge + 503.1 right group + 31.2 gaps + 26 padding
- *   = 831px, the width below which the bar stops fitting.
- *
- * Nothing wraps or overflows there - the flex algorithm squeezes the items
- * instead, and their *contents* break: the clock's UTC segment dropped onto a
- * second line 5.6px below the fixed-height bar, and "Guest User" broke in two.
- * `flex: none` on the right group is what stops that at its source, by pinning
- * the cluster at its natural width; the centre then yields by clipping the
- * badge rather than by squeezing its neighbours.
- *
- * Hiding the three captions below 53rem (848px - a media query's rem is the
- * initial 16px, not the 13px root above) saves 112.3px and takes the bar to
- * ~719. The 17px of margin over the 831px cliff is deliberate: these are macOS
- * metrics and a wider system font pushes the natural width up. That hide is
- * `max-[53rem]:sr-only` on the captions themselves in Navbar.tsx, not a rule
- * here - visually hidden rather than `display: none`, since a caption is its
- * control's only accessible name.
- *
- * The floor is ~693px, where the menu button starts clipping - the shell is
- * `overflow-x: hidden`, so there is no scrollbar to reach it with. Below about
- * 640px the selection controls would have to move into the hamburger menu.
- * That is a feature nobody has asked for, and deliberately not built here. */
+/* `flex: none` pins the cluster at its natural width, so the centre yields by clipping the badge. */
 .xp-masthead-right {
   display: flex;
   align-items: center;
@@ -165,8 +99,7 @@ body {
   padding-block: 0.2rem;
   font-size: 0.78rem;
 
-  /* The control sits inside its uppercase tiny label; the value itself must
-     not inherit that dress - "Demo data" was rendering as "DEMO …". */
+  /* The value must not inherit the label's uppercase dress. */
   text-transform: none;
   letter-spacing: normal;
 }
@@ -194,17 +127,7 @@ body {
   background: var(--color-surface-raised);
 }
 
-/* ---- Buttons ----
- *
- * One uniform compact size for every button, explore-style - so `size="small"`
- * vs the default, primary vs secondary, etc. all render at the same height and
- * line up with the dropdowns/segments in a toolbar.
- *
- * Scoped under `.dark` on purpose: lucuma-ui-css sizes `.p-button-sm`/`-lg` with
- * `.dark .p-button.p-button-sm` (specificity 0,3,0), which beats an unscoped
- * `.p-button.p-button-sm`. Matching the `.dark` prefix here (equal specificity,
- * later in the cascade) makes this win for every variant. The `size` prop is
- * now irrelevant to sizing - this is the single knob. */
+/* Scoped under .dark to match lucuma-ui-css's own specificity; the size prop does not affect sizing. */
 .dark .p-button,
 .dark .p-button.p-button-sm,
 .dark .p-button.p-button-lg {
@@ -217,12 +140,7 @@ body {
   padding: 0.3rem;
 }
 
-/* ---- Toolbar rows: one height for every control ----
- *
- * A page-header control row mixes PrimeReact buttons, icon-only text buttons
- * and native date inputs; left alone each computes its own height (a 34px
- * outlined button beside a 22px date field). The row pins every control to
- * one 2rem line, which is also the masthead controls' height. */
+/* One 2rem line for every control, or each computes its own height. */
 .xp-toolbar {
   display: flex;
   align-items: center;
@@ -234,8 +152,7 @@ body {
   height: 2rem;
 }
 
-/* Explore's secondary slate, for the theme's secondary buttons - the
- * lucuma-ui-css default paints them a blue that belongs to no palette here. */
+/* The lucuma-ui-css default paints these a blue that belongs to no palette here. */
 .dark .p-button.p-button-secondary:not(.p-button-text, .p-button-outlined) {
   background: var(--color-action-secondary);
   border-color: var(--color-action-secondary);
@@ -247,38 +164,18 @@ body {
   border-color: color-mix(in srgb, var(--color-action-secondary) 85%, white);
 }
 
-/* Green primary (explore/admin palette). The lucuma-ui-css PrimeReact theme
- * paints the default (primary) button blue; --primary-color alone doesn't
- * change it, so override the background like admin-ui. Text / outlined /
- * secondary / danger / success keep their own looks. */
+/* --primary-color alone does not repaint the default button, so override the background. */
 .p-button:not(.p-button-text, .p-button-outlined, .p-button-secondary, .p-button-danger, .p-button-success) {
   background: var(--xp-green);
   border-color: var(--xp-green);
 }
 
-/* ---- DataTable row expansion ----
- *
- * An expansion is the row that opened it, continued - not a panel laid over the
- * table. The theme fills every expansion with the plain row surface, so under a
- * striped row it came out a visibly lighter band and read as a second card
- * (Dan, 2026-08-12). The expansion always follows its own row in the DOM, so the
- * stripe is simply carried across.
- *
- * The literal mirrors the lucuma-ui theme's own stripe, which is compiled SCSS
- * and exposes no variable to read it from - if that tone ever changes, this
- * moves with it. */
+/* An expansion is its row continued; the literal mirrors the theme's compiled stripe, which has no variable. */
 .p-datatable-tbody > tr.p-row-odd + tr.p-datatable-row-expansion {
   background: rgb(255 255 255 / 1%);
 }
 
-/* ---- SelectButton: dense segmented control ----
- *
- * Powers the segmented choices (GN/GS, Night/Week/Semester, Site/UTC, ...) via
- * the SegmentedControl adapter. These base rules come after the green-primary
- * fill at equal specificity and win - so unselected segments stay neutral
- * instead of inheriting the green primary fill. Selected segment reads as a soft
- * green wash, matching explore's segmented toggles. (Segments are role="button"
- * divs, not <button>, so the green :enabled:hover rule below never targets them.) */
+/* After the green-primary fill at equal specificity, so unselected segments stay neutral. */
 .p-selectbutton .p-button {
   background: var(--color-surface);
   border-color: var(--color-subtle);
@@ -309,15 +206,7 @@ body {
   color: var(--color-foreground);
 }
 
-/*
- * Selected segment: a neutral raised surface with a weighted label and an
- * accent underline - never a green fill.
- *
- * Choosing which view you are looking at is navigation, not a success state.
- * A green-tinted segment on every switcher (site, presentation, dimension,
- * plan source, tab) put four or five "greens" on a page and left the one
- * action that actually does something with no way to stand out.
- */
+/* Choosing a view is navigation, not a success state: a green fill would compete with the real action. */
 .p-selectbutton .p-button.p-highlight,
 .p-selectbutton .p-button.p-highlight:hover {
   background: var(--color-surface-raised);
@@ -327,27 +216,13 @@ body {
   box-shadow: inset 0 -2px 0 0 var(--xp-green);
 }
 
-/* The modal scrim. On this near-black canvas a darker black says nothing -
-   the page behind a dialog looked exactly as it did before it opened - so the
-   blur is what states that a modal is up. Global, not scoped to one dialog:
-   every modal in the app has the same canvas behind it.
-
-   The `body` is load-bearing, not decoration. Measured in the running app: the
-   plain `.p-dialog-mask.p-component-overlay` rule did not take effect - the
-   scrim stayed at the theme's own 40% and only the blur landed - and the
-   `body`-prefixed rule does. The mechanism was not established, so no claim
-   about it here; the extra element selector simply outranks the theme's
-   `.dark`/`.light .p-component-overlay` whatever the load order and whichever
-   theme wrapper is active. Setting `background-color`, not the `background`
-   shorthand: one property, one place to look. */
+/* The blur, not a darker scrim, states a modal is up; unprefixed, the scrim keeps the theme's own. */
 body .p-dialog-mask.p-component-overlay {
   background-color: rgb(0 0 0 / 60%);
   backdrop-filter: blur(2px);
 }
 
-/* The About dialog (masthead hamburger -> About Resource): Explore's green
-   rule under the wordmark header. The identity accent, not the action green -
-   the dialog names the app, it does not act on it. */
+/* The identity accent, not the action green: the dialog names the app, it does not act on it. */
 .xp-about-dialog .p-dialog-header {
   border-bottom: 2px solid var(--color-gpp-accent);
 }

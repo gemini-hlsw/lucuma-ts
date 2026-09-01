@@ -1,23 +1,11 @@
-/**
- * The adapters, at the one place they do more than rename a field.
- *
- * `InstrumentLocation` states `place` and `port` separately and promises they
- * agree (`mock-server/schema.graphql`), so the wire can express a pairing the
- * domain's `Mounting` cannot hold. `toMountings` is where that promise is
- * checked, and these are its three outcomes.
- */
+/** `toMountings` is where the wire's port/place promise is checked; these are its three outcomes. */
 import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
 
 import { toMountings } from './adapters';
 
 type Block = Parameters<typeof toMountings>[0][number];
 
-/**
- * `publishedName` is a parameter because the dev warning is deduplicated on it
- * in a module-level set that nothing clears (`adapters.ts` says why). A test
- * asserting the warning must therefore use a name no earlier test has spent, or
- * it sees silence for a reason that has nothing to do with what it is testing.
- */
+/** The warning dedupes on `publishedName` in a set nothing clears, so each test needs a fresh name. */
 const block = (location: Block['location'], publishedName = 'GMOS-S'): Block => ({
   __typename: 'InstrumentAvailabilityBlock',
   instrument: 'GMOS',
@@ -54,10 +42,7 @@ describe(toMountings, () => {
   });
 
   it('reads a PORT record with no port number as off-port, and says so', () => {
-    // The contradiction the schema can express and the domain cannot hold. It
-    // must not throw - one bad record would empty a night's chart - and it must
-    // not pass silently, because "Not on a port" on a scheduled night is
-    // indistinguishable from a legitimate off-port run.
+    // It must not throw - one bad record would empty a night - and must not pass silently.
     const [mounting] = toMountings([block({ __typename: 'InstrumentLocation', place: 'PORT', port: null })]);
 
     expect(mounting).toMatchObject({ port: null, place: 'UNKNOWN' });
@@ -66,9 +51,7 @@ describe(toMountings, () => {
   });
 
   it('says it once per instrument, however many of its records are wrong', () => {
-    // A degraded server answering a semester sends hundreds of these. One line
-    // per broken instrument is a warning; one per record buries the console the
-    // warning is meant to be read in.
+    // One line per broken instrument is a warning; one per record buries the console.
     const wrong = { __typename: 'InstrumentLocation', place: 'PORT', port: null } as const;
     const mountings = toMountings([block(wrong, 'GNIRS'), block(wrong, 'GNIRS'), block(wrong, 'NIFS')]);
 

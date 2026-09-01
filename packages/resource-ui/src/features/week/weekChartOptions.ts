@@ -1,14 +1,3 @@
-/**
- * The axis for a week of nights. The rest of the chart is
- * `features/timeline/timelineOptions.ts`, shared with the semester and night.
- *
- * A week is seven nights on one continuous axis - observing nights abut exactly,
- * 14:00 to 14:00, so there is no gap to draw. Each night gets about a seventh of
- * the width, which is enough room for the sun to shade the hours nobody can
- * observe in. That is the week's whole reason for existing between the other
- * two: the semester cannot show a night's shape, and the night view only shows
- * one of them.
- */
 import type { Options, XAxisPlotBandsOptions, XAxisPlotLinesOptions } from 'highcharts';
 
 import { midpoint } from '@/domain/interval';
@@ -37,14 +26,7 @@ export const nightLabel = (night: TimelineNight, site: Site): string =>
 /** Labels sit at each night's midpoint; the boundaries are the plot lines. */
 export const weekTickPositions = (week: WeekTimeline): number[] => week.nights.map((night) => midpoint(night.interval));
 
-/**
- * Weekend shading, the sun's wash over each night, un-entered nights, and the
- * telescope-wide closures.
- *
- * The sun wash goes over the bars for the same reason it does on the night view:
- * an instrument mounted at noon is still mounted, so a band behind its bar would
- * never be seen.
- */
+/** The sun wash goes over the bars: a band behind a bar spanning the night would never be seen. */
 export const buildWeekBands = (week: WeekTimeline, site: Site): XAxisPlotBandsOptions[] => [
   ...week.nights
     .filter((night) => night.isWeekend)
@@ -65,8 +47,7 @@ export const buildWeekBands = (week: WeekTimeline, site: Site): XAxisPlotBandsOp
       ...wash(sun.sunrise, night.interval.end, 'var(--night-daylight-wash)', 'night-daylight'),
     ];
   }),
-  // I4 made visible: a night Resource holds nothing for is hatched, so it reads
-  // as un-entered rather than as a telescope with nothing on it.
+  // I4 made visible: a night with nothing recorded is hatched, not drawn as an empty telescope.
   ...week.nights
     .filter((night) => !night.dataAvailable)
     .map((night) => ({

@@ -1,10 +1,4 @@
-/**
- * Sunset, sunrise, and astronomical-twilight times for an observing night -
- * display context for the night chart (when darkness actually starts and ends),
- * not an ephemeris. NOAA-style solar-position approximation, good to a couple
- * of minutes; crossings are found by a minute-step scan over the night, which
- * is robust at every latitude the observatory cares about.
- */
+/** NOAA-style approximation, good to a couple of minutes: display context, not an ephemeris. */
 import type { Interval, Site } from './types';
 
 const SITE_COORDINATES: Record<Site, { latDeg: number; lonDeg: number }> = {

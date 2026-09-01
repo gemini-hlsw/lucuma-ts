@@ -1,9 +1,3 @@
-/**
- * Hooks that return **domain models**, never raw fragments.
- *
- * Components consume these; nothing outside `src/gql` and `src/domain/adapters`
- * sees a generated shape.
- */
 import { useQuery } from '@apollo/client/react';
 
 import {
@@ -76,12 +70,7 @@ export const toApiInterval = (interval: Interval): ApiInterval => ({
 
 const EMPTY_INTERVAL: ApiInterval = { start: '', end: '' };
 
-/**
- * Every record a semester view draws, in one response.
- *
- * `skip` covers the first render, before the picker has resolved which semester
- * is being shown.
- */
+/** `skip` covers the first render, before the picker has resolved which semester is shown. */
 export const useSemesterSchedule = (site: Site, bounds: ApiInterval | null): ScheduleResult => {
   const { data, loading, error } = useQuery(SEMESTER_SCHEDULE_QUERY, {
     variables: { site, interval: bounds ?? EMPTY_INTERVAL },
@@ -96,12 +85,7 @@ export const useSemesterSchedule = (site: Site, bounds: ApiInterval | null): Sch
 };
 
 export interface NightScheduleResult extends ScheduleResult {
-  /**
-   * False when Resource holds nothing at all for this night.
-   *
-   * Undefined until the answer arrives, so a loading night is never drawn as an
-   * empty one. Only the API can tell "not entered" from "nothing available".
-   */
+  /** Undefined until the answer arrives, so a loading night is never drawn as an empty one. */
   readonly dataAvailable: boolean | undefined;
   /** The night's interval as the API resolved it, for checking against ours. */
   readonly apiInterval: ApiInterval | undefined;
@@ -184,10 +168,7 @@ export interface ComponentBrowserResult {
   readonly error: Error | undefined;
 }
 
-/**
- * The component browser's one round trip: catalog, records over the window, and
- * the mountings that resolve INSTALLED to a physical place.
- */
+/** One round trip: catalog, records over the window, and the mountings INSTALLED resolves against. */
 export const useComponentBrowser = (site: Site, interval: ApiInterval | null): ComponentBrowserResult => {
   const { data, loading, error } = useQuery(COMPONENT_BROWSER_QUERY, {
     variables: { site, interval: interval ?? EMPTY_INTERVAL },

@@ -1,15 +1,3 @@
-/**
- * Every way into a night lands on the same URL.
- *
- * The calendar square, the week's facts card and a chart bar all navigate to
- * `/night` through this one hook, which keeps every other URL parameter - site,
- * semester, clock - so the selection survives the jump.
- *
- * The returned function is one stable identity, reading the current location
- * through a ref at call time. It is embedded in chart options, and a fresh
- * identity per URL change means a Highcharts `update()` on every masthead
- * clock toggle. A chart's options must only change when what it draws changes.
- */
 import { useCallback, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 

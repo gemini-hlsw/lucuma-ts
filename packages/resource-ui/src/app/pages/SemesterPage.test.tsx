@@ -39,8 +39,7 @@ describe('SemesterPage - the chart', () => {
 
     await expect.element(legend.getByText('GMOS')).toBeVisible();
     await expect.element(legend.getByText('Altair')).toBeVisible();
-    // GHOST is a Gemini South instrument; its key does not belong here. The
-    // late-October weather closure does, and gets the one closure key.
+    // GHOST is a Gemini South instrument; the late-October weather closure gets the one closure key.
     await expect.element(legend.getByText('GHOST')).not.toBeInTheDocument();
     await expect.element(legend.getByText('Closed')).toBeVisible();
   });
@@ -49,21 +48,15 @@ describe('SemesterPage - the chart', () => {
     const screen = await openSemester('/semester?site=GS&semester=2025B');
     await expect.element(screen.getByRole('region', { name: 'September 2025' })).toBeVisible();
 
-    // The token, not the computed colour: renderApp does not load the app
-    // stylesheet, so `var(--instrument-…)` never resolves in a test. What the
-    // page owes us here is that each instrument reached the DOM with its own
-    // token; that the tokens are far enough apart is the validator's job.
+    // The token, not the computed colour: renderApp loads no stylesheet, so var(--instrument-x) is inert.
     const marks = screen
       .getByRole('region', { name: 'September 2025' })
       .element()
-      // path, not the wrapping <g>: Highcharts puts the class on both and only
-      // the path carries the fill.
+      // path, not the wrapping <g>: Highcharts puts the class on both and only the path carries the fill.
       .querySelectorAll('path.highcharts-point:not(.schedule-ghost)');
     const fills = new Set([...marks].map((mark) => mark.getAttribute('fill')));
 
-    // The workbook mounts all five GS ports through 2025B, and the state rows
-    // head the chart in the routine neutral - the workbook's Queue / No ToOs -
-    // never an instrument hue.
+    // The state rows head the chart in the routine neutral, never an instrument hue.
     expect(fills).toEqual(
       new Set([
         'var(--instrument-ghost)',
@@ -99,8 +92,7 @@ describe('SemesterPage - the chart', () => {
   });
 
   it('survives the masthead clock toggle without redrawing a single bar', async () => {
-    // The chart speaks dates, never clock times, so the toggle's re-render
-    // must leave every bar - geometry and paint alike - exactly where it was.
+    // The chart speaks dates, so the toggle's re-render must leave every bar exactly where it was.
     const screen = await renderApp({
       element: <Layout />,
       route: '/semester?site=GN&semester=2026B',
@@ -133,9 +125,7 @@ describe('SemesterPage - the chart', () => {
     const august = '[data-testid="semester-month-August 2025"]';
     await expect.poll(() => document.querySelector(`${august} .highcharts-point`)).not.toBeNull();
 
-    // Clicking a bar opens the night under the cursor - which night that is
-    // depends on where the bar's centre lands, so the assertion is the jump
-    // itself; `nightAt` pins the instant-to-night mapping.
+    // Which night a bar's centre lands on is what nightAt pins; the assertion is the jump itself.
     const bar = document.querySelector(`${august} .highcharts-point`);
     const { page } = await import('vitest/browser');
     await page.elementLocator(bar!).click();
@@ -154,15 +144,11 @@ describe('SemesterPage - the calendar', () => {
     const screen = await openSemester('/semester?site=GS&semester=2025B');
     await showCalendar(screen);
 
-    // GS 2025B's first night is labelled 2025-08-02, which begins the evening of
-    // 1 August - so the calendar lands on August whatever the wall clock says.
-    // The night squares are the assertion: the printed title also exists as a
-    // hidden native <option> inside the month picker, so text alone is ambiguous.
+    // The night squares are the assertion: the printed title also exists as a hidden native <option>.
     await expect.element(screen.getByRole('button', { name: 'Open night beginning 2025-08-14' })).toBeVisible();
   });
 
   it('is a sendable link: view and month come from the URL', async () => {
-    // No clicks: the URL alone lands on the calendar, open to November.
     const screen = await openSemester('/semester?site=GS&semester=2025B&view=calendar&month=2025-11');
 
     await expect.element(screen.getByTestId('semester-calendar')).toBeVisible();
@@ -177,14 +163,12 @@ describe('SemesterPage - the calendar', () => {
     await expect.element(screen.getByTestId('semester-timeline')).toBeVisible();
     await screen.getByRole('button', { name: 'Calendar' }).click();
 
-    // November is forgotten, not resurrected: the chart link had no month to
-    // carry, so returning starts from the semester's first month.
+    // The chart link had no month to carry, so returning starts from the semester's first month.
     await expect.element(screen.getByRole('button', { name: 'Open night beginning 2025-08-14' })).toBeVisible();
   });
 
   it('drops the month when the semester changes - it named a page of the old one', async () => {
-    // The semester control moved to the masthead, so the shell mounts around
-    // the page - the way the application always renders it.
+    // The semester control lives in the masthead, so the test mounts the shell around the page.
     const screen = await renderApp({
       element: <Layout />,
       route: '/semester?site=GS&semester=2025B&view=calendar&month=2025-11',
@@ -196,15 +180,13 @@ describe('SemesterPage - the calendar', () => {
     await selectDropdownOption(screen, 'Semester', '2025A');
     await expect.element(screen.getByRole('button', { name: 'Open night beginning 2025-02-14' })).toBeVisible();
 
-    // Coming back, 2025B opens on its first month - November belonged to the
-    // link that named it, not to the semester control.
+    // November belonged to the link that named it, not to the semester control.
     await selectDropdownOption(screen, 'Semester', '2025B');
     await expect.element(screen.getByRole('button', { name: 'Open night beginning 2025-08-14' })).toBeVisible();
   });
 
   it('reads an unknown month parameter as the first month, never an empty grid', async () => {
-    // A stale month carried over from another semester must not strand the
-    // reader outside the semester (I4: an empty grid reads as closed).
+    // A stale month from another semester must not strand the reader outside it (I4).
     const screen = await openSemester('/semester?site=GS&semester=2025B&view=calendar&month=1999-01');
 
     await expect.element(screen.getByRole('button', { name: 'Open night beginning 2025-08-14' })).toBeVisible();
@@ -224,17 +206,13 @@ describe('SemesterPage - the calendar', () => {
     const screen = await openSemester('/semester?site=GS&semester=2025B');
     await showCalendar(screen);
 
-    // The reason the calendar exists next to two run views: per-night facts.
-    // The moon is computed - the workbook prints no moon dates or holidays.
+    // Per-night facts are why the calendar exists beside two run views; the moon is computed.
     await expect.element(screen.getByTestId('moon-disc').first()).toBeVisible();
     await expect.element(screen.getByText(/^\d+\.\d h$/).first()).toBeVisible();
   });
 
   it('draws the news as single-evening chips, never the steady run bars', async () => {
-    // GN 2026B, August: the Port 1 swap is one chip naming both instruments
-    // on the evening it happens; Altair and GMOS-N run the whole semester and
-    // are furniture - the chart states them, and drawing them here
-    // buried the facts only the calendar carries (Dan, 2026-08-11).
+    // Altair and GMOS-N run the whole semester and are furniture; drawing them here would bury the news.
     const screen = await openSemester('/semester?site=GN&semester=2026B&view=calendar');
     const calendar = screen.getByTestId('semester-calendar');
 
@@ -244,8 +222,7 @@ describe('SemesterPage - the calendar', () => {
   });
 
   it('chips a usability change by the new usage - the restriction is the news', async () => {
-    // GNIRS is recorded Not Available 6-17 August 2026: one chip when it
-    // fails, one when it returns to science.
+    // GNIRS is recorded Not Available 6-17 August 2026: one chip when it fails, one when it returns.
     const screen = await openSemester('/semester?site=GN&semester=2026B&view=calendar');
     const calendar = screen.getByTestId('semester-calendar');
 
@@ -254,9 +231,7 @@ describe('SemesterPage - the calendar', () => {
   });
 
   it('chips the telescope closing and reopening, with the closed squares washed', async () => {
-    // GN 2026B's late-October weather closure sits strictly inside the
-    // semester, so both of its edges are news; the closed span itself is the
-    // squares' wash, not a bar.
+    // The closure sits strictly inside the semester, so both edges are news; the span itself is wash.
     const screen = await openSemester('/semester?site=GN&semester=2026B&view=calendar&month=2026-10');
     const calendar = screen.getByTestId('semester-calendar');
 
@@ -277,9 +252,7 @@ describe('SemesterPage - the calendar', () => {
     const screen = await openSemester('/semester?site=GS&semester=2024B&view=calendar');
     await expect.element(screen.getByRole('button', { name: 'Open night beginning 2024-08-02' })).toBeVisible();
 
-    // A closed square is mostly wash; hovering anywhere on it must still
-    // surface the reason. The bars and the date header carry
-    // their own titles; this pins the background's.
+    // A closed square is mostly wash, so hovering anywhere on it must still surface the reason.
     const closed = [...document.querySelectorAll('.rbc-day-bg.night-closed')];
     expect(closed.length).toBeGreaterThan(0);
     for (const square of closed) {
@@ -295,8 +268,7 @@ describe('SemesterPage - the calendar', () => {
     });
     await showCalendar(screen);
 
-    // The evening of 14 August begins the observing night labelled the 15th -
-    // the whole square is the link, the date header is its accessible name.
+    // The whole square is the link; the date header is its accessible name.
     await screen.getByRole('button', { name: 'Open night beginning 2025-08-14' }).click();
 
     await expect.element(screen.getByText('Night of 2025-08-15')).toBeVisible();
@@ -317,18 +289,14 @@ describe('SemesterPage - the calendar', () => {
   });
 });
 
-/**
- * The reading for someone who cannot see either picture. It is not a
- * view, so it must be present whichever one is drawn.
- */
+/** Not a view, so it must be present whichever picture is drawn. */
 describe('SemesterPage - the block table', () => {
   it('states a run once, with its extent, rather than once per night', async () => {
     const screen = await openSemester('/semester?site=GS&semester=2025B');
 
     const table = screen.getByTestId('semester-block-table');
     await expect.element(table).toBeInTheDocument();
-    // GHOST is one block from August to January, so it is one row - the whole
-    // point of a block table over a cell grid.
+    // GHOST is one block from August to January, so it is one row: the point of a block table.
     await expect.element(table.getByRole('row', { name: /Port 1 GHOST 1 Aug 2025/ })).toBeInTheDocument();
   });
 
@@ -341,12 +309,7 @@ describe('SemesterPage - the block table', () => {
   });
 });
 
-/**
- * The chart and the calendar are two readings of one dataset, so anything both
- * of them draw has to be drawn in the same place. The week boundary is the one
- * they each derive for themselves - the chart from the evening date's weekday,
- * the calendar from its `en-US` localizer - and they sat a night apart.
- */
+/** Chart and calendar each derive the week boundary themselves, so a one-night drift is possible. */
 describe('SemesterPage - the week boundary both views draw', () => {
   const EVENING_PREFIX = 'Open night beginning ';
 
@@ -359,9 +322,7 @@ describe('SemesterPage - the week boundary both views draw', () => {
     const screen = await openSemester('/semester?site=GS&semester=2025B&view=calendar&month=2025-11');
     await expect.element(screen.getByRole('button', { name: 'Open night beginning 2025-11-14' })).toBeVisible();
 
-    // The month on screen, built the way the page builds it. Only the evening
-    // dates matter here, so it needs no records: the nights labelled 2 Nov to
-    // 1 Dec are the ones whose evenings fall in November.
+    // Only the evening dates matter here, so it needs no records.
     const november = buildSemesterTimeline({
       site: 'GS',
       firstNight: '2025-11-02',
@@ -380,11 +341,7 @@ describe('SemesterPage - the week boundary both views draw', () => {
         .map((night) => night.eveningDate),
     );
 
-    // react-big-calendar lays a month out seven squares to a row, so a square's
-    // column is its index modulo seven and column zero is where the localizer
-    // starts the week. The grid reaches into the neighbouring months, whose
-    // nights the semester also holds and whose squares therefore also carry a
-    // label - hence the restriction to the evenings this month's chart drew.
+    // The grid reaches into neighbouring months, hence the restriction to the evenings this chart drew.
     const cells = [...document.querySelectorAll('.rbc-date-cell')];
     expect(cells.length % 7).toBe(0);
     const calendarWeekStarts = new Set(
@@ -416,12 +373,7 @@ describe('SemesterPage - the window it asks for', () => {
     });
     await expect.element(screen.getByRole('region', { name: 'August 2025' })).toBeVisible();
 
-    // GS 2025B holds the nights labelled 2025-08-02 to 2026-02-01. The first
-    // opens at 14:00 Santiago the afternoon *before* its label - 18:00Z, Chile
-    // being on UTC-4 in August - and the last closes at 14:00 on its own label
-    // date, 17:00Z, Chile being on UTC-3 in February. A calendar-day window is
-    // wrong at both ends, and no fixed offset repairs it: the two ends sit in
-    // different offsets, four hours from the first night and three at the last.
+    // The two ends sit in different offsets, so a calendar-day window is wrong at both and no offset fixes it.
     const semester = sent.find((operation) => operation.name === 'SemesterSchedule');
     expect(semester?.variables.interval).toEqual({
       start: '2025-08-01T18:00:00.000Z',

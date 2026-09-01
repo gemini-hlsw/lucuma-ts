@@ -1,13 +1,3 @@
-/**
- * The axis for one observing night. The rest of the chart is
- * `features/timeline/timelineOptions.ts`, shared with the semester and week.
- *
- * A night runs 14:00 local to 14:00 local, and most of that is daylight - the
- * telescope can only work between dusk and dawn. Drawn flat, half the width
- * would be time nobody can observe in, so the sun shades it: daylight is washed
- * out, twilight is dimmer, and the dark hours are the plain background. That is
- * the whole reason this axis differs from the others.
- */
 import type { Options, XAxisPlotBandsOptions, XAxisPlotLinesOptions } from 'highcharts';
 
 import type { NightTimeline } from '@/domain/nightTimeline';
@@ -44,13 +34,7 @@ export const durationLabel = (millis: number): string => {
   return rest === 0 ? `${hours} h` : `${hours} h ${rest} m`;
 };
 
-/**
- * A night describes a block in clock times, not dates - the units you read a
- * night in - and against the night rather than the block's whole run.
- *
- * `all night` rather than "24 h": the point of the phrase is that nothing
- * changes, and a night is 23 or 25 hours either side of a DST change anyway.
- */
+/** Clock times, not dates, and against the night rather than the block's whole run. */
 export const nightDescriber = (site: Site, night: NightTimeline['interval'], display: TimeDisplay): BlockDescriber => ({
   range: (block: TimelineBlock) =>
     block.interval.start <= night.start && block.interval.end >= night.end
@@ -59,19 +43,7 @@ export const nightDescriber = (site: Site, night: NightTimeline['interval'], dis
   length: (block: TimelineBlock) => durationLabel(block.interval.end - block.interval.start),
 });
 
-/**
- * Daylight and twilight, so "when can science actually happen" is legible.
- *
- * Drawn *over* the bars, not behind them. An instrument mounted at noon is still
- * mounted, so its bar spans the whole night - which means a band behind it is
- * invisible, which is exactly how the first version of this chart came out. A
- * wash on top dims the hours nobody can observe in and leaves the dark hours at
- * full strength, which is the reading that matters.
- *
- * Built from the night's edges inward, so a missing crossing (a latitude where
- * the sun does not set, which the observatory does not have) simply leaves that
- * band out rather than shading the whole night.
- */
+/** Drawn over the bars: a bar spans the whole night, so a band behind it would be invisible. */
 export const buildSunBands = (interval: NightTimeline['interval'], sun: NightSunTimes): XAxisPlotBandsOptions[] => {
   const bands: XAxisPlotBandsOptions[] = [];
   const wash = (from: number, to: number, color: string, className: string): void => {
@@ -103,8 +75,7 @@ const sunLine = (value: number, text: string): XAxisPlotLinesOptions => ({
   className: 'night-sun-line',
   label: {
     text,
-    // Highcharts rotates a plot-line label 90 degrees by default, which put
-    // "sunset" on its side in a 2px column and made it unreadable.
+    // Highcharts rotates a plot-line label 90 degrees by default, which turns "sunset" on its side.
     rotation: 0,
     align: 'left',
     x: 4,
@@ -119,12 +90,7 @@ const buildSunLines = (sun: NightSunTimes): XAxisPlotLinesOptions[] => [
   ...(sun.sunrise === null ? [] : [sunLine(sun.sunrise, 'sunrise')]),
 ];
 
-/**
- * Every instant where a row changes, marked.
- *
- * A partial night is two abutting bars, which is easy to miss; the line says a
- * change happened here without the reader having to spot a seam.
- */
+/** A partial night is two abutting bars, which is easy to miss; the line names the seam. */
 export const buildTransitionLines = (transitions: readonly number[]): XAxisPlotLinesOptions[] =>
   transitions.map((value) => ({
     value,
@@ -162,8 +128,7 @@ export const buildNightChartOptions = ({ night, site, now, timeDisplay }: NightC
       max: night.interval.end,
       startOnTick: false,
       endOnTick: false,
-      // Two-hourly, which lands on even hours from the 14:00 boundary and gives
-      // twelve labels across a night - enough to read a time off the chart.
+      // Two-hourly, which lands on even hours from the 14:00 boundary and gives twelve labels.
       tickInterval: 2 * HOUR_MS,
       tickLength: 4,
       tickColor: 'var(--timeline-grid)',
@@ -171,9 +136,7 @@ export const buildNightChartOptions = ({ night, site, now, timeDisplay }: NightC
       gridLineColor: 'var(--schedule-night-line)',
       lineColor: 'var(--timeline-grid)',
       labels: {
-        // Highcharts formats in `time.timezone`, which the shared frame sets
-        // from the masthead's clock choice - the site's clock or UT, never the
-        // reader's.
+        // Highcharts formats in `time.timezone`, which the shared frame sets from the masthead.
         format: '{value:%H:%M}',
         style: { color: 'var(--timeline-muted-text)', fontSize: '0.68rem' },
         y: 18,

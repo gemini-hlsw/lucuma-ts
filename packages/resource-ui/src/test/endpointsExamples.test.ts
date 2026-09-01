@@ -1,12 +1,4 @@
-/**
- * Executes every GraphQL example in ENDPOINTS.md against the schema the mock
- * serves, through graphql() - which validates, unlike SchemaLink - so a
- * documented example cannot silently drift from the API it documents.
- *
- * The response values printed beside the examples are illustrative and move
- * with the workbook; what this pins is that every documented query stays a
- * valid, answerable request.
- */
+/** Through graphql(), which validates unlike SchemaLink, so a documented example cannot drift. */
 import { graphql } from 'graphql';
 import { describe, expect, it } from 'vitest';
 

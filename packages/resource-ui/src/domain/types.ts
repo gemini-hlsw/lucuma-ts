@@ -1,9 +1,3 @@
-/**
- * UI domain models.
- *
- * Derived from the generated GraphQL types rather than re-declared, so a schema
- * change surfaces as a compile error instead of drifting silently.
- */
 import type {
   ComponentLocation,
   Instrument,
@@ -19,9 +13,7 @@ import type {
   TooSupport,
 } from '@gql/gen/graphql';
 
-// ComponentLocation: INSTALLED means "wherever the instrument is" and resolves
-// through the instrument's own records (domain/componentFinder.ts), so a piece
-// can never claim a port its instrument is not on.
+// INSTALLED resolves through the instrument's own records, so a piece cannot claim a port it is not on.
 export type {
   ComponentLocation,
   Instrument,
@@ -36,30 +28,10 @@ export type {
   TooSupport,
 };
 
-/**
- * Where an instrument sits when it is on no port: every `InstrumentPlace`
- * except the one that carries a port number.
- *
- * The wire type states `place` and `port` separately and promises they agree.
- * The domain holds that promise as a type instead: `Mounting.port` and
- * `Mounting.place` are exclusive, so nothing past the adapter can carry both,
- * and a phantom `PORT` place is unrepresentable off a port.
- *
- * `mock-server/records.ts` declares the same `Exclude` for the server side, and
- * says there why the two cannot share one declaration.
- */
+/** Exclusive with `Mounting.port`, so a phantom PORT place is unrepresentable off a port. */
 export type OffPortPlace = Exclude<InstrumentPlace, 'PORT'>;
 
-/**
- * The observatory's two sites, in the order the masthead offers them.
- *
- * A fact about Gemini, not about the data - the same reasoning as
- * `TELESCOPE_PORTS`. Deriving the site list from what the schedules happen to
- * hold left the masthead's Site control **blank** whenever the server answered
- * with nothing, which since the demo source went (2026-08-14) is the app's
- * whole state until the backend serves v1. `satisfies` keeps it honest: a site
- * added to the schema fails to compile until it is listed.
- */
+/** A fact about Gemini, not about the data: deriving it from the schedules left the control blank. */
 export const SITES = ['GN', 'GS'] as const satisfies readonly Site[];
 
 /** A half-open interval, start inclusive and end exclusive, as epoch milliseconds. */
@@ -68,14 +40,7 @@ export interface Interval {
   readonly end: number;
 }
 
-/**
- * An instrument on a port, or recorded usable off one, over an interval.
- *
- * `id` is the adapter's own row key, not the API's: a block is a projection
- * onto the window that was asked for, so the API gives it no identity
- * (`ScheduleBlock` in the SDL says why). Unique within one response, which is
- * all a rendered row or a chart point needs.
- */
+/** `id` is the adapter's row key, not the API's: a block is a projection, so it carries no identity. */
 export interface Mounting {
   readonly id: string;
   readonly instrument: Instrument;
@@ -83,30 +48,19 @@ export interface Mounting {
   readonly publishedName: string;
   /** What the mounted instrument can be used for over this span. */
   readonly usage: ResourceUsage;
-  /**
-   * Port number, or null when the run is not on a port. This alone says which
-   * schedule row the run draws on (`domain/ports.ts`); a null port draws on
-   * none, and the instrument browser is where such a run is legible.
-   */
+  /** Null when not on a port. This alone says which schedule row the run draws on (domain/ports.ts). */
   readonly port: number | null;
-  /**
-   * Where an off-port run physically sits - non-null **exactly** when `port` is
-   * null. The API states place and port separately and promises they agree;
-   * `toMountings` is where that promise is checked and turned into this
-   * exclusive pair. Usually UNKNOWN: the workbook records an instrument usable
-   * between mounts without saying where it was.
-   */
+  /** Non-null exactly when `port` is null. Usually UNKNOWN: the workbook records no place. */
   readonly place: OffPortPlace | null;
   readonly interval: Interval;
   readonly note: string | null;
 }
 
-/** The telescope's (or one port's) recorded availability over a span - the
- * workbook records "Open" as explicitly as "Closed", so both are facts. */
+/** The workbook records "Open" as explicitly as "Closed", so both are facts. */
 export interface Closure {
   readonly id: string;
   readonly availability: TelescopeAvailability;
-  /** The port that closed, or null when the whole telescope did. */
+  /** The port this record is about, or null when it is the whole telescope. */
   readonly port: number | null;
   readonly interval: Interval;
   readonly reason: string | null;
@@ -120,7 +74,6 @@ export interface TooBlock {
   readonly note: string | null;
 }
 
-/** The telescope's operating mode over a span. */
 export interface ModeBlock {
   readonly id: string;
   readonly mode: TelescopeModeType;
@@ -132,7 +85,6 @@ export interface ModeBlock {
   readonly note: string | null;
 }
 
-/** A telescope subsystem's operational state over a span. */
 export interface SubsystemBlock {
   readonly id: string;
   readonly subsystem: TelescopeSubsystem;
@@ -151,25 +103,15 @@ export interface PublishedSemester {
   readonly version: string | null;
   /** True for a synthetic schedule that was never published - the pickers must say so. */
   readonly demo: boolean;
-  /**
-   * The semester's nights, **both ends inclusive** - the reading every date
-   * comparison in this app uses (`firstNight <= night && night <= lastNight`).
-   *
-   * The API states the same range half-open, as `DateInterval`; `toPublishedSemesters`
-   * is the one place the conversion happens.
-   */
+  /** Both ends inclusive; the API states the range half-open and `toPublishedSemesters` converts. */
   readonly firstNight: string;
   readonly lastNight: string;
-  /**
-   * Public holidays the sheet marks, ISO dates. Empty at Gemini North, which
-   * publishes none - a site convention rather than missing data.
-   */
+  /** An empty list is a source that marks none, not missing data. */
   readonly holidays: readonly string[];
   /** New and full moons as the sheet prints them, not as we compute them. */
   readonly moonEvents: readonly MoonEvent[];
 }
 
-/** A new or full moon, printed on the published sheet. */
 export interface MoonEvent {
   readonly date: string;
   readonly phase: 'NEW' | 'FULL';

@@ -1,11 +1,3 @@
-/**
- * In-memory store behind the mock schema.
- *
- * Read-only so far: Resource reproduces schedules that already exist, so there
- * is nothing to mutate until editing lands (descoped from v1). The store still
- * takes a seed function and is built fresh per consumer, so the dev server and
- * each browser test hold independent state once writes do arrive.
- */
 import {
   type CatalogComponent,
   COMPONENT_CATALOG,
@@ -25,16 +17,7 @@ import { buildSeedState, type MockState } from './seed.ts';
 import { type SynthesizedInstrumentBlock, synthesizeStoredInstruments } from './storedInstruments.ts';
 import { addDaysIso } from './time.ts';
 
-/**
- * A record with the semester it came from, which is the only thing the store
- * adds to what the schedules hold.
- *
- * Deliberately **no id**. These records carried a positional one until
- * 2026-08-14, when `ScheduleBlock.id` left the API: every query clips its
- * records to the window asked for, so the thing that comes back is a
- * projection and an identifier on it invites a client to cache it as an
- * entity. The published sheets carry no identifiers of their own either.
- */
+/** No id, matching `ScheduleBlock`: a stored record is a projection, not an entity to cache. */
 export interface StoredBlock extends ImportedBlock {
   readonly semester: string;
 }
@@ -55,17 +38,7 @@ export interface StoredSubsystem extends ImportedSubsystem {
   readonly semester: string;
 }
 
-/**
- * A schedule with the nights it actually covers, derived once here.
- *
- * `nights` cannot live on `ImportedSchedule` - that is the shape of the JSON on
- * disk, and this is a fact about the records inside it. Half-open like every
- * other interval this API serves: `end` is the night *after* the semester's
- * last, so the value goes straight back into `telescopeNights` and covers the
- * semester exactly. Deriving it in the constructor also makes it total -
- * `PublishedSemester.nights` is a `DateInterval!` with two non-null `Date`
- * fields, which a schedule holding no records could not answer.
- */
+/** Derived here, not on `ImportedSchedule`, and total, since `nights` is a `DateInterval!`. */
 export interface StoredSchedule extends ImportedSchedule {
   readonly nights: { readonly start: string; readonly end: string };
 }
@@ -86,7 +59,6 @@ export class MockStore {
   readonly tooSupport: readonly StoredTooSupport[];
   readonly modes: readonly StoredTelescopeMode[];
   readonly subsystems: readonly StoredSubsystem[];
-  /** The synthetic stored-instrument layer - see storedInstruments.ts. */
   readonly storedInstruments: readonly SynthesizedInstrumentBlock[];
   /** The synthetic ICTD layer - see components.ts for its three rules. */
   readonly components: readonly CatalogComponent[];
@@ -99,8 +71,7 @@ export class MockStore {
       const first = nights[0];
       const last = nights.at(-1);
       if (first === undefined || last === undefined) {
-        // Loud at construction rather than serving a `DateInterval!` with null
-        // fields, which is what this did until the invariant moved here.
+        // Loud at construction: a schedule covering no night can answer no range query.
         throw new Error(
           `Schedule ${schedule.site} ${schedule.semester} covers no observing nights: it holds no blocks and no closures.`,
         );
@@ -154,13 +125,7 @@ export class MockStore {
     return this.components.find((component) => component.id === id);
   }
 
-  /**
-   * MOUNTED blocks name an instrument; UNKNOWN blocks are runs the schedule
-   * names that the instrument list does not, served as `Instrument.UNKNOWN` so
-   * every recorded run is drawn rather than silently missing. ANNOTATION blocks are
-   * text over unpainted cells - they mark nothing as available, so they stay
-   * unserved until operations say what they mean.
-   */
+  /** ANNOTATION blocks mark nothing as available, so they stay unserved until operations say more. */
   mountingsFor(site: ImportSite): readonly StoredBlock[] {
     return this.blocks.filter((block) => block.site === site && block.kind !== 'ANNOTATION');
   }
@@ -181,10 +146,7 @@ export class MockStore {
     return this.subsystems.filter((record) => record.site === site);
   }
 
-  /**
-   * The site's stored instruments - never on a port, so they never reach a
-   * schedule view, and never counted towards `dataAvailable`.
-   */
+  /** Never on a port, so they never reach a schedule view, and never counted towards dataAvailable. */
   storedInstrumentsFor(site: ImportSite): readonly SynthesizedInstrumentBlock[] {
     return this.storedInstruments.filter((block) => block.site === site);
   }

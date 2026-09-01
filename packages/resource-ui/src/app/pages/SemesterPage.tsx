@@ -20,21 +20,7 @@ import {
 } from '@/features/timeline/timelineOptions';
 import { toApiInterval, useSemesterSchedule } from '@/gql/hooks';
 
-/**
- * Two readings of one semester.
- *
- * They are not fallbacks for each other, which is why this is a control rather
- * than a breakpoint. Each answers a question the other answers badly:
- *
- * - **Chart** - how long does a run last? Blocks keep their true intervals, so a
- *   night that changes partway through is drawn where it changes.
- * - **Calendar** - what can I do on a given night? The week structure and the
- *   moon, which a linear axis hides.
- *
- * Both project from the same placed blocks (`domain/timeline.ts`). The DOM grid
- * an earlier revision carried built its own cells from the raw records and
- * drifted away from the chart on closures, on A&G and on colour, silently.
- */
+/** Not fallbacks for each other: both project from the same placed blocks, so neither can drift. */
 type View = 'chart' | 'calendar';
 
 const VIEW_OPTIONS = [
@@ -45,22 +31,11 @@ const VIEW_OPTIONS = [
 /** The semester runs for months, so the "today" marker needs no fine tick. */
 const NOW_TICK_MS = 5 * 60_000;
 
-/**
- * The semester schedule - the readable reproduction of what Gemini publishes.
- *
- * Site and semester live in the URL, so a view is linkable and reloads where it
- * was. The interval asked for spans the whole semester in one request: the view
- * draws all of it, so paging it would only mean drawing it twice.
- */
+/** The whole semester in one request: the view draws all of it, so paging would draw it twice. */
 export default function SemesterPage(): JSX.Element {
   const { site } = useSelection();
-  // The resolved semester - the same reading the masthead shows, so the page
-  // and the control can never disagree (app/useSemester.ts).
   const { semester: selected, loading: loadingSets, error: setsError } = useSemester();
-  // In the URL, so "look at the calendar" is a sendable link, not a set of
-  // clicks to describe. An unrecognised value reads as the default chart. The
-  // month goes with it when the view changes: a chart link carries just the
-  // semester, and only a calendar link names one of its months.
+  // In the URL, so "look at the calendar" is a sendable link.
   const [viewParam, setView] = useUrlParam('view', 'chart', { clears: ['month'] });
   const view: View = viewParam === 'calendar' ? viewParam : 'chart';
   const now = useNow(NOW_TICK_MS);
@@ -69,9 +44,7 @@ export default function SemesterPage(): JSX.Element {
     selected === null
       ? null
       : {
-          // The observing-night interval, not the calendar day: a night runs
-          // 14:00 local to 14:00 local, so the window opens the afternoon
-          // before the first night's label and closes on the last night's own.
+          // The observing-night interval, not the calendar day: a night runs 14:00 local to 14:00 local.
           start: toApiInterval(observingNightInterval(selected.site, selected.firstNight)).start,
           end: toApiInterval(observingNightInterval(selected.site, selected.lastNight)).end,
         };
@@ -81,9 +54,6 @@ export default function SemesterPage(): JSX.Element {
     bounds,
   );
 
-  // One timeline for every view: the chart draws its blocks, the calendar
-  // projects them onto nights. Building it once is what makes disagreeing
-  // impossible.
   const timeline =
     selected === null
       ? null
@@ -97,13 +67,11 @@ export default function SemesterPage(): JSX.Element {
           modeBlocks,
         });
 
-  // The state values on the legend, in the words the blocks print. The
-  // calendar keys only the notable ones - the only ones it draws as bars.
+  // The state values on the chart's legend, in the words the blocks print.
   const telescopeExtras = telescopeLegendExtras(closures);
   const modeExtras = modeLegendExtras(modeBlocks);
   const tooExtras = tooLegendExtras(tooBlocks);
-  // The chart shades weekends and marks today; the calendar draws its own
-  // chrome and keys only hues, so it takes none of this.
+  // The calendar draws its own chrome and keys only hues, so it takes none of this.
   const semesterNights = timeline?.months.flatMap((month) => month.nights) ?? [];
   const calendarExtras = calendarLegendExtras({
     weekend: true,
@@ -143,16 +111,8 @@ export default function SemesterPage(): JSX.Element {
 
       {timeline !== null && selected !== null && !loading && (
         <>
-          {/*
-            Every view is a picture, so the text reading rides alongside all of
-            them rather than being one of them. One row per block, which is the
-            fact - not one per night, which is the drawing.
-          */}
-          {/*
-            The caption names the schedule without repeating the heading: the
-            heading already carries the published title, and a caption echoing it
-            verbatim gives a screen reader the same sentence twice.
-          */}
+          {/* One row per block, which is the fact, not one per night, which is the drawing. */}
+          {/* The heading already carries the published title; a caption echoing it says it twice. */}
           <SemesterBlockTable
             timeline={timeline}
             site={selected.site}
@@ -174,9 +134,7 @@ export default function SemesterPage(): JSX.Element {
 
           {view === 'calendar' && (
             <>
-              {/* Chips carry their words, so the calendar keys only the hues
-                  and the closure - never treatment keys for bars it no longer
-                  draws. */}
+              {/* Chips carry their words, so the calendar keys only the hues and the closure. */}
               <SemesterCalendarLegend
                 legend={{ ...timeline, hasUnscheduled: false, hasEngineeringUse: false, hasUnavailable: false }}
               />

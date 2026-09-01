@@ -131,14 +131,14 @@ inside the shared builders - no view passes categories or header counts alongsid
 
 **The palette was measured per site, not chosen.** No chart shows all fourteen hues, so the assignment is
 optimised over the pairs that can actually share a chart (six subjects at GS, seven at GN). Re-run **the
-two site sets, not all fourteen at once**, before changing any of them. The numbers, the commands, and why
-the validator's lightness-band check deliberately fails all live in `src/styles/global.css`.
+two site sets, not all fourteen at once**, before changing any of them. The tokens themselves are in
+`src/styles/global.css`.
 
 ## Shared pixels, page-owned words
 
 A thing drawn in two places is drawn from one module, taking a presentation shape rather than either page's
-domain row. This is the rule the whole of `components/ui/` follows; `componentCells.tsx` exists because a second copy
-of `whereLabel` had already let two views disagree about closures.
+domain row. This is the rule the whole of `components/ui/` follows; `componentCells.tsx` holds the one copy of each
+component cell, so no two views can disagree about a closure.
 
 | Module                                   | What it owns                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -155,10 +155,11 @@ of `whereLabel` had already let two views disagree about closures.
 
 Both fixed structurally - do not undo them.
 
-- **Availability blocks are contextual values, never cache entities.** Every query clips its blocks to the
-  asked interval, so a block is a projection onto a window. Blocks once carried a stable `id` on which
-  Apollo normalized, letting one night's response overwrite another's intervals (empty chart, "no components
-  tonight" on a scheduled night). `ScheduleBlock` has no `id`; `domain/adapters.ts` makes row keys from
+- **Availability blocks are contextual values, never cache entities.** The same block type comes back
+  clipped from the night projection and unclipped from the range queries (`clip: false` on every one), so a
+  block is a projection onto a window rather than a record. A stable `id` lets Apollo normalize one window's
+  answer onto another's and empty a scheduled night (empty chart, "no components tonight"). `ScheduleBlock`
+  has no `id`; `domain/adapters.ts` makes row keys from
   response position; `src/gql/cache.ts` sets `keyFields: false` on every implementor as the second lock, and
   `cache.test.ts` reads the SDL so a new implementor cannot quietly miss the list. `InstrumentComponent`
   keeps its id and stays normalized, being identity-only.
@@ -270,7 +271,7 @@ click-through cannot disagree.
 - **After changing any operation or the schema, run `codegen`.** `prebuild` does it on build.
 - The client preset only emits types an operation selects. If a type is missing from `gen/`, the fix is an
   operation that selects it, not a hand-written duplicate.
-- When the backend ships, point `tasks/codegen.ts` at `@gemini-hlsw/lucuma-schemas/resource`.
+- When the backend ships, point `tasks/codegen.ts` at `@gemini-hlsw/lucuma-odb-schemas/resource`.
 - `@graphql-eslint` operation linting runs in `eslint.config.js` against `mock-server/schema.graphql`. `require-selections` asks for
   an `id` wherever a type has one, which is why `InstrumentComponent` selections carry it and blocks - which
   have none - are unaffected. That config globs `./src/gql/**/*.graphql`, which also contains the generated
@@ -370,8 +371,7 @@ keyframes, third-party overrides).
 **Density is one number.** The root font size is 13px (`shell.css`), matched against Explore at both widths;
 everything is sized in rem. Settled - re-measure against Explore before changing it.
 
-**The masthead has a measured width budget**, its arithmetic in `shell.css` beside `.xp-masthead-right`. Check
-there before adding an item to the bar:
+**The masthead has a measured width budget.** Check it before adding an item to the bar:
 
 | Width             | What happens                                                                                                                                        |
 | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |

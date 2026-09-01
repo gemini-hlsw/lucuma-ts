@@ -52,8 +52,7 @@ describe(buildBlockRows, () => {
   });
 
   it('keeps a run that crosses a month boundary as one row', () => {
-    // The records merge GHOST across the sheet's month blocks, and the table
-    // has to preserve that or a reader gets six rows for one fact.
+    // The records merge GHOST across month blocks, or a reader gets six rows for one fact.
     const rows = build({
       firstNight: '2026-08-08',
       lastNight: '2026-10-14',

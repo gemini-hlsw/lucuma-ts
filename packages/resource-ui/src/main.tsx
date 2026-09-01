@@ -8,10 +8,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import App from './app/App';
 import { client } from './gql/ApolloConfigs';
 
-// Resource is a dark-only operational tool. The lucuma-ui PrimeReact theme is scoped
-// under `.dark`; applying it to the document root styles every PrimeReact control -
-// including dialogs, which portal to <body> - while the custom Tailwind heat-map keeps
-// its own Resource identity.
+// The lucuma-ui PrimeReact theme is scoped under `.dark`, and dialogs portal to <body>.
 document.documentElement.classList.add('dark');
 
 const rootElement: HTMLElement | null = document.getElementById('root');

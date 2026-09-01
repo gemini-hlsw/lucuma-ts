@@ -1,6 +1,3 @@
-/**
- * The calendar's news projection: critical events, one chip per evening.
- */
 import { describe, expect, it } from 'vitest';
 
 import { buildCalendarNews } from './calendarNews';

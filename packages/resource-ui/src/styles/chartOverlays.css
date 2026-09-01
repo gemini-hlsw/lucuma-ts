@@ -1,21 +1,4 @@
-/*
- * Highcharts overlays must never catch the pointer.
- *
- * Plot bands and plot lines are annotations drawn *over* the data - the sun
- * wash, the closure band, the "now" line. An instrument mounted at noon is
- * still mounted, so its bar covers the whole night and an overlay behind it
- * would be invisible; drawn on top, it swallows the hover instead, because
- * xrange hover resolves to the element under the cursor and the tooltip then
- * never appears. Same rule the chart's data labels already follow
- * (`pointerEvents: 'none'` in `features/timeline/timelineOptions.ts`), applied
- * to every overlay in every chart at once.
- *
- * Its own file, and not part of `global.css`, because it is **behaviour**
- * rather than appearance: it is the only stylesheet a test has any business
- * loading, and `NightPage.test.tsx` loads exactly this to prove a bar under
- * the sun wash still answers a hover. Everything else in `src/styles/` is
- * appearance and the browser tests run without it.
- */
+/* An overlay that catches the pointer swallows the hover under it. */
 .highcharts-plot-band,
 .highcharts-plot-line,
 .highcharts-plot-band-label,

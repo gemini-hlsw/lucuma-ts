@@ -28,7 +28,6 @@ import { toApiInterval, useNightSchedule, usePublishedSemesters } from '@/gql/ho
 /** A night is short enough that the marker should keep up with the clock. */
 const NOW_TICK_MS = 60_000;
 
-/** The published semester whose nights contain this one, if any holds it. */
 const semesterHolding = (
   semesters: readonly PublishedSemester[],
   site: Site,
@@ -38,14 +37,7 @@ const semesterHolding = (
     (entry) => entry.site === site && entry.firstNight <= observingNight && observingNight <= entry.lastNight,
   );
 
-/**
- * One observing night, 14:00 local to 14:00 local.
- *
- * This is the view the rest of the model exists for. A run that changes partway
- * through the night is drawn where it changes rather than rounded to a whole
- * night (the partial-night non-negotiable), the sun shades the hours nobody can observe in, and an
- * un-entered night says so instead of looking like an idle telescope.
- */
+/** The view the rest of the model exists for: a run changing mid-night is drawn where it changes. */
 export default function NightPage(): JSX.Element {
   const { site, observingNight, tonight, timeDisplay, setObservingNight, clearObservingNight } = useSelection();
   const { semesters, loading: loadingSets, error: setsError } = usePublishedSemesters();
@@ -83,8 +75,6 @@ export default function NightPage(): JSX.Element {
         title={`Night of ${observingNight}`}
         demo={held?.demo === true}
         actions={
-          // The night's own date vocabulary: the label the URL carries, stepped
-          // one night at a time.
           <NightStepper
             value={observingNight}
             onChange={setObservingNight}
@@ -116,8 +106,6 @@ export default function NightPage(): JSX.Element {
       {busy && <Loading what="the night" />}
 
       {!busy && held === undefined && (
-        // Not a dead end: say what is covered and offer the nearest covered
-        // night, instead of leaving the reader to type dates until one lands.
         <EmptyPanel>
           <p>
             No published schedule covers this night at {site}.
@@ -142,17 +130,11 @@ export default function NightPage(): JSX.Element {
       )}
 
       {!busy && held !== undefined && dataAvailable === false && (
-        // I4: absence is "not recorded", never "unavailable". Saying so plainly
-        // is the whole reason this view asks telescopeNight for the flag.
+        // I4: absence is "not recorded", never "unavailable", which is why the flag is asked for.
         <EmptyPanel>Nothing is recorded for this night. That is not the same as nothing being available.</EmptyPanel>
       )}
 
-      {/*
-        Three answers, not two: `true` draws, `false` says "not recorded", and
-        `undefined` - the query errored, so Apollo's default `none` policy left
-        no data - draws neither and leaves the alert above to speak. Testing
-        `!== false` here drew a full empty timeline beside the error.
-      */}
+      {/* Three answers, not two: `undefined` is the errored query, so `!== false` would draw an empty chart. */}
       {!busy && held !== undefined && dataAvailable === true && (
         <>
           <TimelineLegendBar

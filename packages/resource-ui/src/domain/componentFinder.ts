@@ -1,23 +1,3 @@
-/**
- * The component finder: what one row of the browser says about one piece, on
- * one night.
- *
- * ## Where "where" comes from
- *
- * A piece's block says INSTALLED or names a storage place. INSTALLED is
- * deliberately not a port: the piece is wherever its instrument is, so the
- * physical place is resolved here by joining the instrument's own mounting
- * records at the same night. The two sources cannot disagree, because one is
- * derived from the other.
- *
- * ## A night, not an instant
- *
- * The finder answers for an observing night - the URL's `night` selection, the
- * same one the night view reads - because that is the unit operations think in
- * and the unit the tests can pin without touching the wall clock. A night whose
- * records change partway through is reported as changing, with the state the
- * night *ends* in, since "where is it" usually means "where did it end up".
- */
 import type {
   ComponentBlock,
   ComponentLocation,
@@ -48,27 +28,16 @@ export interface FinderRow {
   readonly note: string | null;
   /** True when the piece's state changes during this night. */
   readonly changesTonight: boolean;
-  /**
-   * The instants (epoch ms) the piece's record changes during the night, in
-   * order. A gap between two records contributes both of its edges - the record
-   * ending and the next beginning are each a change worth naming.
-   */
+  /** A gap contributes both edges: the record ending and the next beginning are each a change. */
   readonly transitions: readonly number[];
 }
 
 const overlaps = (a: Interval, b: Interval): boolean => a.start < b.end && b.start < a.end;
 
-/**
- * The block that decides the night's answer: the latest one touching it, so a
- * piece that comes off mid-night reports where it ended up.
- */
+/** The latest block touching the night, so a piece that comes off mid-night reports where it ended up. */
 const deciding = (blocks: readonly ComponentBlock[]): ComponentBlock | undefined => blocks.at(-1);
 
-/**
- * Where consecutive blocks meet, or the edges of the gap between them. Both
- * blocks overlap the night and I3 keeps them disjoint, so every instant here
- * falls strictly inside the night without any clipping.
- */
+/** Both blocks overlap the night and the API serves them disjoint, so no clipping is needed. */
 const transitionsOf = (blocks: readonly ComponentBlock[]): readonly number[] =>
   blocks.slice(1).flatMap((block, index) => {
     const previous = blocks[index];
@@ -77,16 +46,7 @@ const transitionsOf = (blocks: readonly ComponentBlock[]): readonly number[] =>
       : [block.interval.start];
   });
 
-/**
- * Where a block puts its piece, over a span.
- *
- * The span is the night for a browser row and the block's own extent for a
- * history line - the same derivation either way, which is what keeps "Installed"
- * from meaning one place in the row and another in the record under it. A block
- * long enough to outlast its instrument's mounting reports the first mounting it
- * overlaps; the schedule is the finer record, so the history line names where the
- * run began.
- */
+/** The same derivation for a row and a history line, so "Installed" cannot mean two places. */
 export const whereOf = (
   instrument: Instrument,
   block: ComponentBlock,

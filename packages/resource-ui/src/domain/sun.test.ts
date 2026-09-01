@@ -17,7 +17,6 @@ describe(nightSunTimes, () => {
     expect(sun.duskAstronomical).not.toBeNull();
     expect(sun.dawnAstronomical).not.toBeNull();
     expect(sun.sunrise).not.toBeNull();
-    // Strictly ordered within the night.
     expect(sun.sunset!).toBeLessThan(sun.duskAstronomical!);
     expect(sun.duskAstronomical!).toBeLessThan(sun.dawnAstronomical!);
     expect(sun.dawnAstronomical!).toBeLessThan(sun.sunrise!);

@@ -1,12 +1,4 @@
-/**
- * The amber flag a synthetic schedule wears on the page itself.
- *
- * The pickers already say "(demo)" and the title says "synthetic demo", but a
- * screenshot carries neither reliably: the tag sits in the page header beside
- * the title, so a capture of a demo semester can never pass as a published
- * schedule. Shown wherever the data on the page comes from a schedule the API
- * marks `demo: true`.
- */
+/** The picker's "(demo)" does not survive a screenshot; this sits beside the title. */
 import { Tag } from 'primereact/tag';
 import type { JSX } from 'react';
 

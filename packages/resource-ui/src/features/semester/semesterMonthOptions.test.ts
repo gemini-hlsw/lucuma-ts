@@ -1,9 +1,4 @@
-/**
- * The month chart's options.
- *
- * Tested through the builder rather than through a rendered chart, which is what
- * keeps the label, colour and tooltip decisions checkable without a browser.
- */
+/** Through the builder, so label, colour and tooltip decisions are checkable without a browser. */
 import { describe, expect, it } from 'vitest';
 
 import { portRowLabel, TELESCOPE_PORTS } from '@/domain/ports';
@@ -68,22 +63,14 @@ describe('points', () => {
   it('names the published span and its length in nights, for the tooltip', () => {
     const point = buildMonthPoints(august, 'GS').find((entry) => entry.custom.label === 'GHOST');
 
-    // The evening dates the sheet would head the first and last columns with.
-    //
-    // "31 Jan", not "1 Feb". The block's last observing night is labelled 1 Feb,
-    // but a night is named by the morning it ends on and the sheet heads its
-    // column with the evening it began - so the last column of GS 2026B reads 31.
-    // This asserted "1 Feb" until the end was derived through the night rather
-    // than by stepping back an hour from the exclusive end instant, which lands
-    // on the label date.
+    // "31 Jan", not "1 Feb": the end has to be derived through the night, not the exclusive instant.
     expect(point?.custom.rangeLabel).toBe('7 Aug to 31 Jan');
     expect(point?.custom.lengthLabel).toBe('178 nights');
     expect(point?.custom.clipped).toBe(true);
   });
 
   it('draws an absence as a hollow block rather than a fourth fill', () => {
-    // Every recessive fill tried against the nominal measured below the
-    // normal-vision separation floor; fill against no fill needs no hue at all.
+    // No recessive fill clears the normal-vision separation floor against the nominal.
     const point = buildMonthPoints(august, 'GS').find((entry) => entry.custom.label === 'A&G');
 
     expect(point?.className).toBe('schedule-ghost');
@@ -95,8 +82,7 @@ describe('points', () => {
     const ghost = points.find((entry) => entry.custom.label === 'GHOST');
 
     expect(ghost?.color).toBe('var(--instrument-ghost)');
-    // GHOST's teal is light enough that white manages only 3.67:1 on it, so its
-    // blocks take dark ink. Only the three deepest fills take white.
+    // GHOST's teal leaves white at 3.67:1, so its blocks take dark ink.
     expect(ghost?.dataLabels).toEqual({ style: { color: 'var(--instrument-ink-dark)' } });
   });
 
@@ -196,8 +182,7 @@ describe('axis', () => {
   it('reads day numbers in the site clock, not the browser one', () => {
     const options = buildSemesterMonthOptions({ month: august, site: 'GS', now: null });
 
-    // A night at Gemini South spans two UTC dates; the viewer's zone would shift
-    // every column.
+    // A GS night spans two UTC dates; the viewer's zone would shift every column.
     expect(options.time).toEqual({ timezone: 'America/Santiago' });
   });
 

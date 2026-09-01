@@ -1,9 +1,7 @@
 @import url('./lucuma-ui.scss');
 @import url('./shell.css');
 
-/* Last, so it overrides Highcharts' own rules. Its own file because it is
-   behaviour rather than appearance, and the one test that asserts it imports
-   it directly - the browser tests load no app stylesheet. */
+/* Last, so it overrides Highcharts' own rules. */
 @import url('./chartOverlays.css');
 
 html,

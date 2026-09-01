@@ -1,7 +1,3 @@
-/**
- * Test render helper: mounts UI inside a mock-backed Apollo provider and a memory
- * router, so browser tests exercise the real resolvers over a fresh in-memory store.
- */
 import { ApolloProvider } from '@apollo/client/react';
 import type { ReactElement } from 'react';
 import { createMemoryRouter, RouterProvider } from 'react-router';
@@ -9,12 +5,7 @@ import { render } from 'vitest-browser-react';
 
 import { createMockApollo, type MockApollo } from './mockClient';
 
-/**
- * The rendered app, plus the two things a test drives it through: the mock
- * store behind Apollo, and the router itself - which is how a test steps back
- * through history, since a memory router keeps its own and `window.history`
- * would navigate the test page away.
- */
+/** The router comes back too: a memory router keeps its own history, and window.history would not. */
 export type RenderedApp = Awaited<ReturnType<typeof render>> & {
   mock: MockApollo;
   router: ReturnType<typeof createMemoryRouter>;
@@ -25,25 +16,15 @@ interface RenderOptions {
   element: ReactElement;
   /** Initial URL including query string, e.g. "/night?site=GN&night=2026-08-01". */
   route: string;
-  /**
-   * The route *pattern* to register, when it differs from the URL - the public
-   * pages take their selection from path parameters, so they need e.g.
-   * "/schedule/:site/:semester" registered for the URL "/schedule/GN/2026B".
-   * Defaults to the URL's path, which is right for query-string pages.
-   */
+  /** The route pattern, when it differs from the URL. Defaults to the URL's path. */
   path?: string;
   /** Extra routes to register so navigation targets resolve. */
   extraRoutes?: readonly { path: string; element: ReactElement }[];
-  /**
-   * Child routes rendered inside `element`'s `<Outlet />`. Use this to mount the
-   * real shell (Layout) around pages, so a test can navigate it the way the
-   * application does rather than asserting on one page in isolation.
-   */
+  /** Child routes for `element`'s `<Outlet />`, to mount the real shell around a page. */
   childRoutes?: readonly { path: string; element: ReactElement }[];
   mock?: MockApollo;
 }
 
-/** Renders a page with the mock Apollo client and a router seeded at `route`. */
 export async function renderApp({
   element,
   route,

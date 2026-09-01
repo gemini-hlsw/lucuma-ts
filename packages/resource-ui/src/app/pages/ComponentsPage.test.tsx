@@ -6,11 +6,7 @@ import { renderApp } from '@/test/renderApp';
 
 import ComponentsPage from './ComponentsPage';
 
-/**
- * The night is pinned in the route, never taken from the wall clock: the R400
- * failure lands ~60% through GMOS-S's 2025B mounting (late November), so
- * mid-October is before it and mid-December after.
- */
+/** The night is pinned in the route: the R400 fails in late November 2025. */
 const open = async (route: string) => renderApp({ element: <ComponentsPage />, route });
 
 describe('ComponentsPage - the finder', () => {
@@ -46,7 +42,6 @@ describe('ComponentsPage - the finder', () => {
   });
 
   it('is a sendable link: the filters come from the URL', async () => {
-    // No typing: the URL alone reproduces a filtered finder.
     const screen = await open('/components?site=GS&semester=2025B&night=2025-10-15&q=the+long+mask&instrument=GMOS');
 
     await expect.element(screen.getByText('Mask GS2026B-012')).toBeVisible();
@@ -55,19 +50,7 @@ describe('ComponentsPage - the finder', () => {
     await expect.element(screen.getByLabelText('Search')).toHaveValue('the long mask');
   });
 
-  /*
-   * A sendable link is also a typeable one, and the label maps are plain
-   * objects: `in` answers true for every key `Object.prototype` carries, so
-   * these URLs used to pass the guard, filter to a value no piece holds, and
-   * leave an empty table under a Dropdown still reading "All" - a filter
-   * claiming to show everything over nothing. `toString` and `constructor`
-   * stand for the whole set (`valueOf`, `hasOwnProperty`, `__proto__` are the
-   * same key by another name).
-   *
-   * Two instruments' pieces are the assertion, because that is what "All"
-   * promises: `Mask GS2026B-011` is GMOS's, `K-short` is carried by F2 and
-   * GSAOI. One render per test, per the note above.
-   */
+  /* `in` answers true for every `Object.prototype` key, so an unguarded lookup would show All over nothing. */
   it('reads instrument=toString as no filter at all, not as a filter matching nothing', async () => {
     const screen = await open('/components?site=GS&semester=2025B&night=2025-10-15&instrument=toString');
 
@@ -90,8 +73,7 @@ describe('ComponentsPage - the finder', () => {
     await expect.element(screen.getByText('B1200').first()).toBeVisible();
   });
 
-  // One render per test: a second render in the same test overlaps act() calls
-  // and corrupts the container bookkeeping for every test after it.
+  // One render per test: a second overlaps act() calls and corrupts the container bookkeeping.
   it('shows the failing piece installed before its failure', async () => {
     const screen = await open('/components?site=GS&semester=2025B&night=2025-09-01');
     await screen.getByLabelText('Search').fill('R400');
@@ -104,8 +86,7 @@ describe('ComponentsPage - the finder', () => {
     await screen.getByLabelText('Search').fill('R400');
 
     await expect.element(screen.getByText('Summit lab')).toBeVisible();
-    // Red is reserved for a piece actually out of service, and the record's own
-    // words say why - a status that cannot say why is not a status.
+    // Red is reserved for a piece actually out of service, and the record's own words say why.
     await expect.element(screen.getByText('Unavailable')).toBeVisible();
     await expect.element(screen.getByText('Failed; removed for repair')).toBeVisible();
   });
@@ -118,8 +99,7 @@ describe('ComponentsPage - the finder', () => {
     await expect.element(table.getByRole('columnheader', { name: 'Note' })).toBeVisible();
     await expect.element(table.getByText('Failed; removed for repair')).toBeVisible();
 
-    // Under the badge the note began at a different x on every row and no
-    // heading said what it was. Its own cell is what makes it scannable.
+    // Its own cell is what makes the note scannable, under a heading of its own.
     const status = table.getByText('Unavailable').element().closest('td');
     const note = table.getByText('Failed; removed for repair').element().closest('td');
     expect(note).not.toBe(status);
@@ -137,8 +117,7 @@ describe('ComponentsPage - the finder', () => {
   it('groups the catalog by instrument instead of repeating an Instrument column', async () => {
     const screen = await open('/components?site=GS&semester=2025B&night=2025-10-15');
 
-    // Each group leads with its one-line answer: piece count and how many are
-    // riding tonight. The old Instrument column printed "GMOS" two dozen times.
+    // Each group leads with its one-line answer, so no Instrument column repeats "GMOS".
     await expect.element(screen.getByText('pieces', { exact: false }).first()).toBeVisible();
     await expect.element(screen.getByText('on telescope', { exact: false }).first()).toBeVisible();
     await expect.element(screen.getByRole('columnheader', { name: 'Instrument' })).not.toBeInTheDocument();
@@ -161,9 +140,7 @@ describe('ComponentsPage - the finder', () => {
     await screen.getByLabelText('Search').fill('R400');
     await screen.getByRole('button', { name: /expand k-gs-R400_G5325/i }).click();
 
-    // The R400 fails periodically across the site's whole record. Scoped to
-    // 2025B the history showed one window and said nothing about the cut;
-    // a piece's story does not restart in February.
+    // Scoped to 2025B the history would say nothing about the cut; a piece's story spans the record.
     const history = screen.getByTestId('component-history');
     await expect.element(history.getByText(/23 Aug 2024/).first()).toBeVisible();
     await expect.element(history.getByText(/31 Jul 2026/).first()).toBeVisible();
@@ -185,9 +162,7 @@ describe('ComponentsPage - the finder', () => {
     await screen.getByLabelText('Search').fill('R400');
     await screen.getByRole('button', { name: /expand k-gs-R400_G5325/i }).click();
 
-    // The block only says INSTALLED; the port and the instrument's published
-    // name come from the mountings already in hand, so the history and the row
-    // name the same place.
+    // The block only says INSTALLED; the port comes from the mountings already in hand.
     const history = screen.getByTestId('component-history');
     await expect.element(history.getByText('Port 3 · GMOS-S').first()).toBeVisible();
     await expect.element(history.getByText('Installed')).not.toBeInTheDocument();
@@ -208,8 +183,7 @@ describe('ComponentsPage - the finder', () => {
     await screen.getByLabelText('Search').fill('R400');
     await screen.getByRole('button', { name: /expand k-gs-R400_G5325/i }).click();
 
-    // The piece is in the lab under a failure note, so its record is
-    // "Unavailable" - the same word the row above it wears, not UNAVAILABLE.
+    // "Unavailable" is the word the row above wears, not the enum's UNAVAILABLE.
     const history = screen.getByTestId('component-history');
     await expect.element(history.getByText('Unavailable').first()).toBeVisible();
     await expect.element(history.getByText('Science').first()).toBeVisible();
@@ -244,7 +218,6 @@ describe('ComponentsPage - the finder', () => {
 
     await openDropdown(screen, 'Instrument');
 
-    // Alphabetical, and every option says what choosing it buys.
     await expect.element(page.getByRole('option', { name: /^GHOST \(\d+\)$/ })).toBeVisible();
     const options = [...document.querySelectorAll('[role="option"]')].map((option) => option.textContent ?? '');
     expect(options).toEqual([...options].sort((a, b) => a.localeCompare(b)));

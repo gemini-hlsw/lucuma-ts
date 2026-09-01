@@ -1,31 +1,9 @@
-/**
- * One page-scoped URL query parameter as state, so every view is linkable.
- *
- * `useSelection` carries the selection every page shares - site, semester,
- * night. This is for the parameters only one page understands:
- * the semester page's view and calendar month, the component finder's filters.
- * Same contract as the shared ones: the URL is the state, so a link reproduces
- * exactly what the sender was looking at, and navigation preserves it.
- *
- * A value equal to the fallback (or empty) is *deleted* from the URL rather
- * than written, so default states keep clean, shareable URLs.
- */
 import { useSearchParams } from 'react-router';
 
 interface UrlParamOptions {
-  /**
-   * Replace the history entry instead of pushing one. For states that change
-   * on every keystroke - a search box - where stepping back through each
-   * character would make the back button useless.
-   */
+  /** For states that change on every keystroke, where back through each character is useless. */
   readonly replace?: boolean;
-  /**
-   * Parameters deleted whenever this one changes: state subordinate to this
-   * one, which a new value makes meaningless. The calendar month under the
-   * semester view is the standing example - a chart link must carry
-   * just the semester, never a month naming a calendar page nobody is on.
-   * One update, so the URL never holds the half-changed state.
-   */
+  /** Subordinate state a new value makes meaningless, cleared in the same update. */
   readonly clears?: readonly string[];
 }
 

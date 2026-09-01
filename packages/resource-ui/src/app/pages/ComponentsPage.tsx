@@ -1,24 +1,3 @@
-/**
- * The component browser - where is every instrument piece, tonight.
- *
- * Resource is the ICTD replacement, and this is the ICTD half: the semester
- * views answer "what is on the telescope"; this answers "where is the R400
- * grating". One plain DataTable, one row per piece, because the working set is
- * under a hundred rows and a finder's job is search, not presentation.
- *
- * ## The night, not the wall clock
- *
- * "Where is it" is answered for the URL's observing night - defaulting to
- * tonight - through the same selection the night view reads. That keeps the
- * page linkable, keeps "now" out of the domain layer, and keeps the tests
- * anchored to fixture dates.
- *
- * ## Search is client-side
- *
- * The whole catalog is already in hand (one unpaged response, by design), so
- * filtering here saves a round trip per keystroke. The API's own `search`
- * argument exists for consumers that do not hold the catalog.
- */
 import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
 import { Dropdown } from 'primereact/dropdown';
@@ -45,20 +24,7 @@ import { InstrumentSwatch } from '@/features/timeline/InstrumentSwatch';
 import { INSTRUMENT_LABEL } from '@/features/timeline/timelineOptions';
 import { useComponentBrowser } from '@/gql/hooks';
 
-/**
- * The expansion: the piece's records over the site's whole span, oldest first,
- * phrased in the evening dates the published sheet is read in.
- *
- * Two things the record alone cannot say, both already in hand from the one
- * browser query, so neither costs a round trip:
- *
- * - **Where "Installed" was.** A block says INSTALLED, never a port, so the
- *   history used to print the bare word while the row above it said "Port 3 ·
- *   GMOS-S". `whereOf` resolves it against the same mountings the row uses,
- *   over the block's own span rather than the night.
- * - **How long the span is.** "19 Nov – 31 Jan" is a date range; "74" is the
- *   answer to how long the piece was out of service.
- */
+/** The piece's records over the site's whole span, with "Installed" resolved to where it was. */
 function History({
   blocks,
   mountings,
@@ -95,19 +61,12 @@ function History({
 
 export default function ComponentsPage(): JSX.Element {
   const { site, observingNight } = useSelection();
-  // The resolved semester - the same reading the masthead shows
-  // (app/useSemester.ts).
   const { semester: selected, loading: loadingSets, error: setsError } = useSemester();
-  // The filters live in the URL, so "the R400 gratings at GS" is a sendable
-  // link. Replace-mode: a keystroke must not become a history entry. An
-  // unrecognised instrument or type reads as "All" rather than erroring.
+  // The filters live in the URL, so "the R400 gratings at GS" is a sendable link.
   const [search, setSearch] = useUrlParam('q', '', { replace: true });
   const [instrumentParam, setInstrumentParam] = useUrlParam('instrument', '', { replace: true });
   const [typeParam, setTypeParam] = useUrlParam('type', '', { replace: true });
-  // `Object.hasOwn`, not `in`: both maps are plain objects, so `in` also
-  // answers true for `toString`, `constructor` and `__proto__` - values that
-  // match no row and leave the Dropdown on its "All" placeholder, a filter
-  // reading All over an empty table.
+  // `Object.hasOwn`, not `in`: `in` answers true for `toString` and `__proto__`, leaving All over an empty table.
   const instrument = Object.hasOwn(INSTRUMENT_LABEL, instrumentParam) ? (instrumentParam as Instrument) : null;
   const componentType = Object.hasOwn(TYPE_LABEL, typeParam) ? (typeParam as ComponentType) : null;
   // Which rows are open stays local: it is reading posture, not a finding.
@@ -115,8 +74,7 @@ export default function ComponentsPage(): JSX.Element {
 
   const activeSite = selected?.site ?? site;
 
-  // The site's whole recorded span, not the selected semester - see
-  // `app/useSiteSpan.ts`. A piece's story does not restart in February.
+  // The site's whole recorded span, not the semester: a piece's story does not restart in February.
   const bounds = useSiteSpan();
 
   const { components, componentBlocks, mountings, loading, error } = useComponentBrowser(activeSite, bounds);
@@ -132,9 +90,7 @@ export default function ComponentsPage(): JSX.Element {
       (componentType === null || row.component.componentType === componentType),
   );
 
-  // The filter dropdowns say what choosing them buys: options are sorted by
-  // label and carry the piece count the catalog holds for them, and a type
-  // nothing in the catalog has is not offered at all.
+  // Every option carries its catalog count, and a type nothing has is not offered at all.
   const instrumentCounts = new Map<Instrument, number>();
   for (const component of components) {
     instrumentCounts.set(component.instrument, (instrumentCounts.get(component.instrument) ?? 0) + 1);
@@ -151,9 +107,6 @@ export default function ComponentsPage(): JSX.Element {
     .filter((value) => typeCounts.has(value))
     .map((value) => countedOption(value, TYPE_LABEL[value], typeCounts.get(value) ?? 0));
 
-  // What each group's subheader says: how many pieces, and how many of them
-  // are on the telescope tonight - the browser's one-line answer per
-  // instrument before any row is read.
   const groupSummaries = new Map<Instrument, { total: number; installed: number }>();
   for (const row of visible) {
     const entry = groupSummaries.get(row.component.instrument) ?? { total: 0, installed: 0 };
@@ -238,12 +191,7 @@ export default function ComponentsPage(): JSX.Element {
       {(loadingSets || loading) && <Loading what="the catalog" />}
 
       {!loading && !loadingSets && (
-        // Grouped by instrument rather than one flat list with a repeating
-        // Instrument column: the catalog is contiguous per instrument, so the
-        // subheader replaces a column that printed "GMOS" two dozen times, and
-        // each group leads with its one-line answer. Column sorting is
-        // deliberately absent - it would tear the groups apart, and the
-        // search and filters are how a finder narrows.
+        // Grouped by instrument, so the subheader replaces a column printing "GMOS" two dozen times.
         <DataTable
           value={[...visible]}
           dataKey="component.id"

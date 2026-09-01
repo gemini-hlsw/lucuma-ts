@@ -68,9 +68,10 @@ Every interval record implements `ScheduleBlock` - `site`, `interval`, `note` -
 and adds a subject and a state. Six kinds, plus two identity types and the night
 projection.
 
-`ScheduleBlock` carries **no `id`**: every query clips its records to the
-interval asked for, so a block is a projection onto a window rather than an
-addressable thing, and an id on it would invite a client to cache it as one.
+`ScheduleBlock` carries **no `id`**: the same record comes back clipped from the
+night projection and unclipped from the range queries, so a block is a projection
+onto a window rather than an addressable thing, and an id on it would invite a
+client to cache it as one.
 `InstrumentComponent` keeps its id, being a real piece of hardware.
 
 | Type                                   | Subject                       | State it carries                                                   |
@@ -777,7 +778,7 @@ The real service is expected to import these from the shared ODB schema, and **s
 the preview SDL** - `mock-server/schema.graphql` opens with an `#import … from
 "@gemini-hlsw/lucuma-odb-schemas/odb"` rather than restating them, so the two cannot
 have drifted and no frontend operation changes when the schemas swap
-(`tasks/codegen.ts` moves to `@gemini-hlsw/lucuma-schemas/resource`).
+(`tasks/codegen.ts` moves to `@gemini-hlsw/lucuma-odb-schemas/resource`).
 
 For orientation on what "swap" means: the published
 `@gemini-hlsw/lucuma-odb-schemas/resource` is still the proof-of-concept schema - 60

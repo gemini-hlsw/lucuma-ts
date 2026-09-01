@@ -29,7 +29,7 @@ describe('SIDEBAR_MENU_SECTIONS', () => {
     }
   });
 
-  it('ensures item labels are never empty (the portfolio section is deliberately untitled)', () => {
+  it('ensures item labels are never empty', () => {
     expect(items.every((item) => item.label.trim() !== '')).toBe(true);
   });
 

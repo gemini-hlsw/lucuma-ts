@@ -23,8 +23,7 @@ describe(WeekPage, () => {
   it('draws seven nights from the one asked for', async () => {
     const screen = await openWeek('/week?site=GS&night=2025-11-14');
 
-    // The URL carries the observing-night label; the page speaks the evening
-    // each night begins, one vocabulary with its axis and cards, and says so.
+    // The URL carries the night label; the page speaks the evening each night begins, and says so.
     await expect.element(screen.getByText('Nights beginning 2025-11-13 to 2025-11-19')).toBeVisible();
     await expect.element(screen.getByText('headed by the date each night begins', { exact: false })).toBeVisible();
     await expect.element(screen.getByTestId('week-timeline')).toBeVisible();
@@ -41,9 +40,7 @@ describe(WeekPage, () => {
   it('heads the chart with the telescope-state rows, their values keyed in sections', async () => {
     const screen = await openWeek('/week?site=GS&night=2025-11-14');
 
-    // The workbook records Open and Queue across these nights, and the demo
-    // assumes Standard ToO support; the state rows head the chart and each
-    // legend section keys its own values in the blocks' words.
+    // Each legend section keys its own recorded values in the words the blocks print.
     await expect.element(screen.getByRole('group', { name: 'Telescope' }).getByText('Open')).toBeVisible();
     await expect.element(screen.getByRole('group', { name: 'Mode' }).getByText('Queue')).toBeVisible();
     await expect.element(screen.getByRole('group', { name: 'ToO' }).getByText('Standard ToOs')).toBeVisible();
@@ -73,8 +70,7 @@ describe(WeekPage, () => {
 
     await screen.getByRole('button', { name: 'Tonight' }).click();
 
-    // Derived with the page's own functions, not a fixture date: Tonight is
-    // the one control that must follow the wall clock.
+    // Derived with the page's own functions: Tonight is the one control that follows the wall clock.
     const tonight = observingNightOf('GS', Date.now());
     await expect
       .element(screen.getByText(`Nights beginning ${addDays(tonight, -1)} to ${addDays(tonight, 5)}`))
@@ -85,8 +81,6 @@ describe(WeekPage, () => {
   it('picks the week by the evening it begins, in the same vocabulary as the heading', async () => {
     const screen = await openWeek('/week?site=GS&night=2025-11-14');
 
-    // The input shows the first evening; choosing one asks for the week whose
-    // first night begins that evening.
     const input = screen.getByLabelText('First evening');
     await expect.element(input).toHaveValue('2025-11-13');
 
@@ -98,17 +92,14 @@ describe(WeekPage, () => {
   it('briefs each night: dark hours, moon, and the week’s totals', async () => {
     const screen = await openWeek('/week?site=GS&night=2025-11-14');
 
-    // One facts card per night, phrased in the calendar's honesty rules.
     await expect.poll(() => document.querySelectorAll('[data-testid="week-night-facts"]').length).toBe(7);
     await expect.element(screen.getByText('h dark', { exact: false }).first()).toBeVisible();
     await expect.element(screen.getByText('% moon', { exact: false }).first()).toBeVisible();
-    // The header's one-glance numbers.
     await expect.element(screen.getByText('h of astronomical dark', { exact: false })).toBeVisible();
   });
 
   it('lists what changes this week, with the clock time of a mid-night change', async () => {
-    // The synthetic R400 grating fails at midnight site time inside the night
-    // labelled 2025-11-20 - a boundary strictly inside this window.
+    // The R400 fails at midnight site time inside the night labelled 2025-11-20, strictly inside the week.
     const screen = await openWeek('/week?site=GS&night=2025-11-20');
 
     const changes = screen.getByTestId('week-changes');
@@ -152,8 +143,7 @@ describe(WeekPage, () => {
   it('opens the night view from a facts card', async () => {
     const screen = await openWeek('/week?site=GS&night=2025-11-14');
 
-    // The card headed "Fri 13" is the night labelled the 14th - the whole card
-    // is the link, like a calendar square.
+    // The card headed "Thu 13" is the night labelled the 14th; the whole card is the link.
     await screen.getByRole('button', { name: 'Open night beginning 2025-11-13' }).click();
 
     await expect.element(screen.getByText('Night of 2025-11-14')).toBeVisible();
@@ -164,9 +154,7 @@ describe(WeekPage, () => {
     await expect.element(screen.getByTestId('week-timeline')).toBeVisible();
     await expect.poll(() => document.querySelector('[data-testid="week-timeline"] .highcharts-point')).not.toBeNull();
 
-    // Clicking a bar opens the night under the cursor - which night that is
-    // depends on where the bar's centre lands, so the assertion is the jump
-    // itself; `nightAt` pins the instant-to-night mapping.
+    // Which night a bar's centre lands on is what `nightAt` pins; the assertion is the jump itself.
     const bar = document.querySelector('[data-testid="week-timeline"] .highcharts-point');
     await page.elementLocator(bar!).click();
 

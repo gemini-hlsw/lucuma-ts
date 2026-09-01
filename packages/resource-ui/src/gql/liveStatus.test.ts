@@ -1,10 +1,4 @@
-/**
- * The live-failure store, and the link that keeps it honest.
- *
- * There is one backend, so what this pins is what the banner is allowed to
- * say: the last failure while one is standing, and nothing once the server
- * answers again.
- */
+/** What the banner is allowed to say: the last failure while one stands, nothing once it answers. */
 import { ApolloClient, ApolloLink, gql } from '@apollo/client';
 import { CombinedGraphQLErrors } from '@apollo/client/errors';
 import { Observable } from '@apollo/client/utilities';
@@ -44,19 +38,9 @@ describe('the live-failure store', () => {
   });
 });
 
-/**
- * `clearOnSuccessLink`, composed over a stub link the way `liveLink` composes
- * it over HTTP.
- *
- * Without it one transient failure - a restarting deployment, a dropped
- * connection - pinned the amber banner for the rest of the session while every
- * query behind it succeeded, which is a banner reporting the worst moment of
- * the session rather than the situation.
- */
+/** Without it one transient failure pins the banner for the session while every query succeeds. */
 describe(clearOnSuccessLink, () => {
-  // A real operation, because @graphql-eslint validates documents in this
-  // package against the schema. It never reaches a server: the stub below
-  // answers it.
+  // A real operation, because @graphql-eslint validates documents against the schema.
   const QUERY = gql`
     query LiveFailureProbe {
       publishedSemesters {
@@ -102,8 +86,7 @@ describe(clearOnSuccessLink, () => {
   });
 
   it('leaves a failure standing when the answer carries GraphQL errors', async () => {
-    // `ErrorLink` is the one that speaks for those, and it is about to report
-    // this very result - clearing here would race it and blank the banner.
+    // `ErrorLink` speaks for those and is about to report this result; clearing here would race it.
     const hook = await renderHook(() => useLiveFailure());
     await hook.act(() => {
       reportLiveFailure('the server does not serve this API');

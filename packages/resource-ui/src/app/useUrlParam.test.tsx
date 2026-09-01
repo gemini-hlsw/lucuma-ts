@@ -1,12 +1,3 @@
-/**
- * `useUrlParam`, driven through the URL it exists to own.
- *
- * The contract has three halves and each one had a bug behind it: a default is
- * *deleted* rather than written, so a link carries only what was actually
- * chosen; a subordinate parameter is dropped in the *same* update, so the URL
- * never holds a half-changed state; and `replace` keeps a per-keystroke control
- * out of the back button's way.
- */
 import { describe, expect, it } from 'vitest';
 
 import { Probe, PROBE_URL_TESTID } from '@/test/probe';
@@ -56,8 +47,7 @@ describe(useUrlParam, () => {
 
     await screen.getByRole('button', { name: 'chart' }).click();
 
-    // Not `?view=chart`: a default in the URL is noise, and two URLs for one
-    // state make a link say more than the sender chose.
+    // Not `?view=chart`: two URLs for one state make a link say more than the sender chose.
     await expect.element(screen.getByTestId(PROBE_URL_TESTID)).toHaveTextContent('/semester');
     await expect.element(screen.getByTestId(PROBE_URL_TESTID)).not.toHaveTextContent('view');
   });
@@ -71,9 +61,6 @@ describe(useUrlParam, () => {
   });
 
   it('clears its subordinate parameters in the same update, never leaving a half-changed URL', async () => {
-    // The standing example: `month` names a page of the calendar, so a link to
-    // the chart must not carry one. One update, so no render sees the pair
-    // disagreeing.
     const screen = await openView('/semester?view=calendar&month=2026-11', { clears: ['month'] });
 
     await screen.getByRole('button', { name: 'chart' }).click();
@@ -88,8 +75,7 @@ describe(useUrlParam, () => {
     await screen.getByRole('button', { name: 'calendar' }).click();
     await expect.element(screen.getByTestId(PROBE_URL_TESTID)).toHaveTextContent('view=calendar');
 
-    // The memory router's own history - `window.history.back()` would navigate
-    // the test page itself.
+    // The memory router's own history; `window.history.back()` would navigate the test page.
     await screen.router.navigate(-1);
 
     await expect.element(screen.getByTestId(PROBE_URL_TESTID)).not.toHaveTextContent('view');
@@ -103,8 +89,7 @@ describe(useUrlParam, () => {
 
     await screen.router.navigate(-1);
 
-    // The entry was replaced, so back leaves the parameter where it is rather
-    // than stepping through every intermediate value.
+    // The write replaces the history entry, so back does not step through every value.
     await expect.element(screen.getByTestId(PROBE_URL_TESTID)).toHaveTextContent('view=calendar');
   });
 });

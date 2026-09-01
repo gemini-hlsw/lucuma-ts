@@ -1,13 +1,3 @@
-/**
- * The About dialog - the masthead hamburger's "About Resource", mirroring
- * Explore's: the wordmark over the green rule, then the build version with a
- * copy button so a bug report can name the exact build.
- *
- * What it says is about the *running* Resource, locally and hosted alike: the
- * version is baked in at build time (vite.config.ts - git locally, the GitHub
- * ref in CI) and suffixed with the environment the page is actually served
- * from, and the endpoint row names the service this serving talks to.
- */
 import { faCheck, faCopy } from '@fortawesome/pro-regular-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Dialog } from 'primereact/dialog';
@@ -15,11 +5,7 @@ import { type JSX, useState } from 'react';
 
 import { liveGraphqlEndpoint } from '@/gql/ApolloConfigs';
 
-/**
- * Hostname -> the version-string suffix, matching Explore's scheme. The same
- * hostnames ApolloConfigs maps to endpoints; anything unrecognised - including
- * localhost - is a development serving.
- */
+/** Anything unrecognised, localhost included, is a development serving. */
 const ENV_SUFFIX = {
   'resource-dev.lucuma.xyz': 'DEV',
   'resource-staging.lucuma.xyz': 'STAGING',
@@ -40,8 +26,7 @@ export function AboutResource({ visible, onHide }: { visible: boolean; onHide: (
         setCopied(false);
       }, 2000);
     } catch {
-      // Clipboard can be unavailable (permissions, insecure origins); the
-      // version stays selectable text either way.
+      // Clipboard can be unavailable; the version stays selectable text either way.
     }
   };
 

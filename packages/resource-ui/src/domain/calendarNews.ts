@@ -1,18 +1,3 @@
-/**
- * The critical events a semester's records hold, one item per evening - what
- * the calendar draws instead of run bars (Dan, 2026-08-11).
- *
- * The calendar's job is the month's night facts - moon, dark hours, the week
- * rhythm - with the *happenings* on top: an instrument changing, the telescope
- * shutting or reopening. A run bar spanning weeks said nothing per square; a
- * chip on the evening something changes says exactly what a month page is for.
- * More kinds of news are expected to join this projection over time (component
- * failures are the obvious next one, once the semester query carries them).
- *
- * An instant is news only when it falls strictly inside the semester window:
- * a run or availability record reaching the window's own edge was there
- * before the page and after it, which is furniture, not news.
- */
 import { portRowLabel } from './ports';
 import type { TimelineNight } from './timeline';
 import { nightAt, USAGE_LABEL } from './timeline';
@@ -48,11 +33,7 @@ interface RowBoundary {
   beginning?: Mounting;
 }
 
-/**
- * How one row's change is phrased, from what sits on either side of the
- * boundary: a swap names both instruments, a usability change names the new
- * usage, and a one-sided boundary says in or out.
- */
+/** A swap names both instruments, a usability change the new usage, a one-sided boundary in or out. */
 const phrase = ({ ending, beginning }: RowBoundary): string => {
   if (ending !== undefined && beginning !== undefined) {
     return ending.publishedName === beginning.publishedName
@@ -65,7 +46,6 @@ const phrase = ({ ending, beginning }: RowBoundary): string => {
   return `${ending?.publishedName ?? ''} out`;
 };
 
-/** Builds the calendar's news items from a window's records. */
 export const buildCalendarNews = ({
   nights,
   mountings,
@@ -82,9 +62,7 @@ export const buildCalendarNews = ({
 
   const items: CalendarNewsItem[] = [];
 
-  // One boundary per row and instant, so a swap (or a usability change, which
-  // the records carry as two abutting mountings) is one chip, not an "out"
-  // and an "in" saying the same thing twice.
+  // One boundary per row and instant, so a swap is one chip rather than an "out" and an "in".
   const boundaries = new Map<string, RowBoundary>();
   const boundaryAt = (port: number, instant: number): RowBoundary => {
     const key = `${String(port)}@${String(instant)}`;
@@ -92,9 +70,7 @@ export const buildCalendarNews = ({
     boundaries.set(key, existing);
     return existing;
   };
-  // Ports only: the calendar's news is the schedule's news, and an instrument
-  // in the summit lab moving to the dome floor is inventory, not a night's
-  // headline (Dan, 2026-08-12).
+  // Ports only: an instrument moving between storage places is inventory, not a night's headline.
   for (const mounting of mountings) {
     if (mounting.port === null) {
       continue;
@@ -122,9 +98,7 @@ export const buildCalendarNews = ({
     });
   }
 
-  // The telescope's own news: it closes, and it reopens. The closed nights
-  // themselves are the squares' wash (calendarNights); the chips mark the
-  // instants. Port-scoped records are not the telescope closing.
+  // The closed nights are the squares' wash; these chips mark the instants.
   for (const closure of closures) {
     if (closure.port !== null || closure.availability !== 'CLOSED') {
       continue;

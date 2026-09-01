@@ -1,10 +1,3 @@
-/**
- * The instrument browser, against the served workbook data.
- *
- * The night is pinned in the route, never taken from the wall clock: the GN
- * `Alopeke visitor run of late September 2026 is the one served span with no
- * port, which is the case this page exists for.
- */
 import { describe, expect, it } from 'vitest';
 
 import { openDropdown, selectDropdownOption } from '@/test/helpers';
@@ -23,8 +16,7 @@ describe(InstrumentsPage, () => {
   });
 
   it('gives the record its own Note column rather than tucking it under the status', async () => {
-    // GS's stored GPI carries "Stored at the base facility" - a note the row
-    // used to print under its badge, at a different x on every row.
+    // Under the badge a note starts at a different x on every row, under no heading of its own.
     const screen = await open('/instruments?site=GS&semester=2025B&night=2025-12-15&q=GPI');
 
     const table = screen.getByTestId('instrument-table');
@@ -38,8 +30,7 @@ describe(InstrumentsPage, () => {
   });
 
   it('shows an off-port run as on no port, never inventing a place for it', async () => {
-    // The whole reason this page exists: the schedule views draw ports only,
-    // so a visitor between mounts is invisible there.
+    // The whole reason this page exists: the schedule views draw ports only.
     const screen = await open('/instruments?site=GN&semester=2026B&night=2026-09-26');
 
     await expect.element(screen.getByText("'Alopeke").first()).toBeVisible();
@@ -47,8 +38,7 @@ describe(InstrumentsPage, () => {
   });
 
   it('says nothing is recorded rather than reading an absence as unavailable', async () => {
-    // IGRINS-2 is off Port 1 in late September 2026 - MAROON-X has it - so
-    // the night holds no record for it at all.
+    // IGRINS-2 is off Port 1 in late September 2026, so the night holds no record for it.
     const screen = await open('/instruments?site=GN&semester=2026B&night=2026-09-26');
 
     await expect.element(screen.getByText('Not recorded')).toBeVisible();
@@ -61,8 +51,7 @@ describe(InstrumentsPage, () => {
 
     const runs = screen.getByTestId('instrument-runs');
     await expect.element(runs).toBeVisible();
-    // The workbook records GNIRS Not Available 6-17 August 2026; the run split
-    // is exactly what the browser is for.
+    // The workbook records GNIRS Not Available 6-17 August 2026; the run split is the point.
     await expect.element(runs.getByText('Not available')).toBeVisible();
   });
 
@@ -70,8 +59,7 @@ describe(InstrumentsPage, () => {
     const screen = await open('/instruments?site=GN&semester=2026B&night=2026-09-26&q=gnirs');
     await screen.getByRole('button', { name: /expand GNIRS/i }).click();
 
-    // GNIRS's runs carry no notes, and the Note column is there anyway: two
-    // expansions on one page must not disagree about what a column means.
+    // Two expansions on one page must not disagree about what a column means.
     const runs = screen.getByTestId('instrument-runs');
     for (const column of ['Dates', 'Nights', 'Where', 'Status', 'Note']) {
       await expect.element(runs.getByRole('columnheader', { name: column })).toBeVisible();
@@ -105,9 +93,7 @@ describe(InstrumentsPage, () => {
   });
 
   it('holds every instrument the site has recorded, not just this semester', async () => {
-    // Zorro sits out GS 2025B entirely but is a Gemini South instrument - a
-    // browser scoped to the semester would answer "where is Zorro" with
-    // silence.
+    // Zorro sits out GS 2025B but is a GS instrument: a semester-scoped browser would say nothing.
     const screen = await open('/instruments?site=GS&semester=2025B&night=2025-11-20');
 
     await expect.element(screen.getByText('Zorro').first()).toBeVisible();
@@ -130,8 +116,7 @@ describe(InstrumentsPage, () => {
 
     await openDropdown(screen, 'Location');
 
-    // Ports, then the places an instrument is stored, then the two plain
-    // facts - AcqCam and NIRI are both shelved at GN on this night.
+    // AcqCam and NIRI are both shelved at GN on this night.
     const options = [...document.querySelectorAll('[role="option"]')].map((option) => option.textContent ?? '');
     expect(options).toEqual([
       'Port 1 (1)',
@@ -146,9 +131,7 @@ describe(InstrumentsPage, () => {
   });
 
   it('holds the instruments GPP knows that the schedule never mounts', async () => {
-    // lucuma-core enumerates instruments the workbook never schedules; without
-    // them the browser would answer "where is NIRI" with silence. They carry a
-    // storage place, never a port, which is what keeps them off the charts.
+    // The stored layer carries a storage place, never a port, which keeps it off the charts.
     const screen = await open('/instruments?site=GN&semester=2026B&night=2026-09-26');
 
     await expect.element(screen.getByText('NIRI')).toBeVisible();
@@ -176,7 +159,6 @@ describe(InstrumentsPage, () => {
     const screen = await open('/instruments?site=GS&semester=2025B&night=2025-11-20');
 
     await expect.element(screen.getByText('GHOST')).toBeVisible();
-    // A Gemini North instrument has no business in the South's browser.
     await expect.element(screen.getByText('GNIRS')).not.toBeInTheDocument();
   });
 });

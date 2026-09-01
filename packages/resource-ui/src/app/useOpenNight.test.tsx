@@ -1,14 +1,3 @@
-/**
- * `useOpenNight` - the one way into a night view.
- *
- * Two things it has to do, and the second is the reason it is a hook rather
- * than a line of code at each call site. It must carry the rest of the
- * selection across the jump, so a click from a UTC-clocked GS calendar does
- * not land on a GN night in site time. And it must be **one stable identity**
- * for the life of the component: the function is embedded in Highcharts
- * options, and a fresh identity per URL change triggers `update()` on every
- * masthead clock toggle - a needless redraw of any chart holding it.
- */
 import type { JSX } from 'react';
 import { useLocation } from 'react-router';
 import { describe, expect, it } from 'vitest';
@@ -19,14 +8,7 @@ import { renderApp } from '@/test/renderApp';
 import { useOpenNight } from './useOpenNight';
 import { useSelection } from './useSelection';
 
-/**
- * The night view's stand-in, as its own component rather than a second
- * `Probe`.
- *
- * Two routes rendering the same component type at the same position let React
- * reuse the fiber across the navigation, and these two call different numbers
- * of hooks - which is a hook-order violation, not a test artefact.
- */
+/** Its own component, not a second `Probe`: two routes at one position would reuse the fiber. */
 function NightProbe(): JSX.Element {
   const { observingNight } = useSelection();
   const location = useLocation();
@@ -39,13 +21,7 @@ function NightProbe(): JSX.Element {
   );
 }
 
-/**
- * The identity of the returned function, as a printable value.
- *
- * A per-value counter rather than a render count: what a chart cares about is
- * whether the *same function* comes back after a re-render, and a changed
- * number here is exactly the `update()` that redraws the chart.
- */
+/** A per-value counter: a changed number is exactly the `update()` that redraws the chart. */
 const identities = new Map<unknown, number>();
 const identityOf = (value: unknown): string => {
   const seen = identities.get(value);
@@ -107,7 +83,6 @@ describe(useOpenNight, () => {
     const screen = await openProbe('/semester?site=GS&semester=2025B');
     const before = screen.getByTestId('probe-identity').element().textContent;
 
-    // The masthead clock toggle: a URL change that must not reach the chart.
     await screen.getByRole('button', { name: 'to UTC' }).click();
     await expect.element(screen.getByTestId(PROBE_URL_TESTID)).toHaveTextContent('clock=utc');
 
@@ -115,9 +90,7 @@ describe(useOpenNight, () => {
   });
 
   it('opens the night the current URL asks for, not the one it was created under', async () => {
-    // The identity is stable, so the callback reads the location through a ref
-    // rather than a closure. That is the trap: a stale closure would carry the
-    // clock the component first rendered with.
+    // The callback reads the location through a ref; a stale closure would carry the first clock.
     const screen = await openProbe('/semester?site=GS&semester=2025B');
 
     await screen.getByRole('button', { name: 'to UTC' }).click();

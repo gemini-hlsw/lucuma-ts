@@ -1,17 +1,4 @@
-/**
- * The block every destination opens with: what this page is, and its own
- * controls.
- *
- * Five pages had their own copy of the same four decisions - the title's
- * weight, where the synthetic flag sits, the muted line under it, and that the
- * controls are pushed right and bottom-aligned with the title. Five copies is
- * five chances for one page to drift a size, which reads to a user as landing
- * somewhere else in the app.
- *
- * The subtitle is `children` rather than a string because every page's is a
- * sentence with something live in it - a link back to the semester, a moon
- * fraction, a count.
- */
+/** Five destinations share four decisions; a copy per page is five chances for one to drift. */
 import type { JSX, ReactNode } from 'react';
 
 import { SyntheticDataTag } from './SyntheticDataTag';

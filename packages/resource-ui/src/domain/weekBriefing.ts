@@ -1,17 +1,3 @@
-/**
- * What to expect this week - the facts the seven-night chart cannot carry.
- *
- * The published schedule is whole-night granular and changes maybe twice a
- * month, so seven nights of it are usually seven identical columns. What makes
- * one week different from the next is the sky and the changes, and both are
- * already in hand: the sun and moon are derived, holidays and the printed moon
- * dates are imported, and every change is a block boundary falling inside the
- * window.
- *
- * The same honesty rules as the calendar (calendarNights.ts): dark hours are
- * astronomical night, not moonless time, and brightness is phase-only from the
- * mean-synodic approximation. Reading aids, not scheduling inputs.
- */
 import { brightnessOf, darkHoursOf, type LunarBrightness } from './calendarNights';
 import { type MoonPhase, moonPhaseAt } from './moon';
 import { portRowLabel } from './ports';
@@ -62,8 +48,7 @@ export const buildWeekNightFacts = ({
   const publishedMoon = new Map(moonEvents.map((event) => [event.date, event.phase]));
 
   return nights.map((night) => {
-    // Sampled mid-night, same as the calendar, so the phase belongs to the
-    // night the column names.
+    // Sampled mid-night, same as the calendar, so the phase belongs to the night the column names.
     const moon = moonPhaseAt((night.interval.start + night.interval.end) / 2);
     return {
       observingNight: night.observingNight,
@@ -100,10 +85,7 @@ export const summarizeWeek = (facts: readonly WeekNightFacts[]): WeekSummary | n
   };
 };
 
-/**
- * Something becoming true partway through the week. A boundary exactly at the
- * window's edge is not a change - a run that began last week merely continues.
- */
+/** A boundary exactly at the window's edge is not a change: a run from last week merely continues. */
 export type WeekChange =
   | {
       readonly kind: 'RUN_BEGINS' | 'RUN_ENDS';
@@ -139,13 +121,7 @@ export interface BuildWeekChangesOptions {
   readonly components: readonly ComponentRecord[];
 }
 
-/**
- * Every boundary strictly inside the week, oldest first.
- *
- * A component's record ending with nothing after it is deliberately not
- * phrased: "nothing recorded" is not a state a change can announce (I4). The
- * change that is announced is always the state something enters.
- */
+/** "Nothing recorded" is not a state a change can announce (I4), so only entered states are listed. */
 export const buildWeekChanges = ({
   interval,
   mountings,
@@ -156,8 +132,7 @@ export const buildWeekChanges = ({
   const inside = (instant: number): boolean => instant > interval.start && instant < interval.end;
   const changes: WeekChange[] = [];
 
-  // Ports only, as the calendar's news is: a stored instrument changing shelf
-  // is not a change to the week's observing.
+  // Ports only: a stored instrument changing shelf is not a change to the week's observing.
   for (const mounting of mountings) {
     if (mounting.port === null) {
       continue;
@@ -184,8 +159,7 @@ export const buildWeekChanges = ({
   }
 
   for (const closure of closures) {
-    // The availability records also carry the explicit Open spans; only a
-    // closure beginning or ending is a change worth listing.
+    // Only a closure beginning or ending is a change; the records carry explicit Open spans too.
     if (closure.availability !== 'CLOSED') {
       continue;
     }

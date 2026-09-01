@@ -1,7 +1,4 @@
-/**
- * Drives the timeline's NOW marker; a minute of drift is invisible at night scale,
- * so the default tick is 60 s.
- */
+/** A minute of drift is invisible at night scale, so the default tick is 60 s. */
 import { useEffect, useState } from 'react';
 
 export function useNow(intervalMs = 60_000): number {

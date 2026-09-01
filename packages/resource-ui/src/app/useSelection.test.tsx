@@ -1,13 +1,3 @@
-/**
- * `useSelection`, the shared site/semester/night/clock reading of the URL.
- *
- * Every one of these is a rule the app depends on somewhere visible: a bare
- * URL opens on the night in progress rather than a fixed date; a mistyped
- * clock degrades to the site's own rather than blanking; a semester jump drops
- * the calendar month it invalidates, and does it in one update so the URL is
- * never half-changed; and the default clock is deleted from the URL, not
- * written.
- */
 import { describe, expect, it } from 'vitest';
 
 import { observingNightOf } from '@/domain/siteTime';
@@ -55,8 +45,7 @@ describe(useSelection, () => {
   it('opens on the night in progress when the URL names none, never a fixed date', async () => {
     const screen = await openSelection('/night?site=GS');
 
-    // Derived with the function the page uses, so this cannot decay the way a
-    // hardcoded date would.
+    // Derived with the function the page uses, so this cannot decay the way a hardcoded date would.
     const inProgress = observingNightOf('GS', Date.now());
     await expect.element(screen.getByTestId('probe-night')).toHaveTextContent(inProgress);
   });
@@ -102,9 +91,7 @@ describe(useSelection, () => {
 
     await screen.getByRole('button', { name: 'jump to 2025A' }).click();
 
-    // One URL: the semester, the night inside it, and no month naming a page
-    // of the semester just left. Two updates would let a render see the night
-    // outside the semester.
+    // One URL: two updates would let a render see the night outside the semester.
     await expect.element(screen.getByTestId('probe-semester')).toHaveTextContent('2025A');
     await expect.element(screen.getByTestId('probe-night')).toHaveTextContent('2025-03-01');
     await expect.element(screen.getByTestId(PROBE_URL_TESTID)).not.toHaveTextContent('month');

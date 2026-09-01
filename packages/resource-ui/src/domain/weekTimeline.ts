@@ -1,17 +1,3 @@
-/**
- * A week of nights -> the rows the week view draws.
- *
- * The week sits between the semester and the night: wide enough to plan
- * against, narrow enough that each night gets real width, so a run that changes
- * partway through one is still drawn where it changes rather than rounded.
- *
- * Seven observing nights **starting at the night asked for**, not a calendar
- * week. An observing night is labelled by the morning it ends on, so a
- * Monday-to-Sunday week would have to pick which of those two dates it meant and
- * would be wrong for half its readers either way. "The next seven nights from
- * here" needs no such rule and is what stepping through a semester actually
- * looks like.
- */
 import { addDays } from './semester';
 import { observingNightInterval } from './siteTime';
 import {
@@ -44,16 +30,10 @@ export interface BuildWeekTimelineOptions {
   readonly firstNight: string;
   readonly mountings: readonly Mounting[];
   readonly closures: readonly Closure[];
-  /** ToO support and telescope mode records reaching the week; the state rows
-   * head the chart only when some do, like the night view. */
+  /** The state rows head the chart only when some records exist, like the night view. */
   readonly tooBlocks?: readonly TooBlock[];
   readonly modeBlocks?: readonly ModeBlock[];
-  /**
-   * Which nights Resource holds anything for, from `telescopeNights`.
-   *
-   * Undefined while the answer is in flight, which is not the same as empty: an
-   * empty set would grey out the whole week for as long as the query takes.
-   */
+  /** Undefined while in flight, which is not empty: an empty set would grey out the whole week. */
   readonly nightsWithData: ReadonlySet<string> | undefined;
 }
 
@@ -66,7 +46,6 @@ const isWeekendDate = (isoDate: string): boolean => {
   return day === 0 || day === 6;
 };
 
-/** Builds the seven-night timeline the week view draws. */
 export const buildWeekTimeline = ({
   site,
   firstNight,

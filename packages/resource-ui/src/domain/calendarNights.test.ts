@@ -60,8 +60,7 @@ const build = ({
 
 describe('a night is headed by the evening it begins', () => {
   it('pairs each observing night with the evening the sheet heads it by', () => {
-    // The same convention as the chart's day numbers. If these disagree the same
-    // run appears to move by a day between two views of one page.
+    // The same convention as the chart's day numbers, or a run moves a day between views.
     expect(build()[0]).toMatchObject({ eveningDate: '2026-08-07', observingNight: '2026-08-08' });
   });
 });

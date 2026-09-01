@@ -33,9 +33,7 @@ describe(SegmentedControl, () => {
   });
 
   it('selects the focused segment with the keyboard', async () => {
-    // The control is keyboard-operable: focus a segment and press Space to
-    // choose it (SelectButton's toolbar pattern - arrows move focus, Space
-    // selects). We assert the observable outcome: onChange fires with its value.
+    // SelectButton's toolbar pattern: arrows move focus, Space selects.
     const onChange = vi.fn<(v: View) => void>();
     const screen = await render(
       <SegmentedControl ariaLabel="View" value="week" options={OPTIONS} onChange={onChange} />,

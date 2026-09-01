@@ -1,9 +1,4 @@
-/**
- * The instrument finder: one row per instrument, answered for a night.
- *
- * The cases that matter are the ones the schedule views cannot show - an
- * instrument on no port, and an instrument with nothing recorded tonight.
- */
+/** The cases the schedule views cannot show: no port, and nothing recorded tonight. */
 import { describe, expect, it } from 'vitest';
 
 import { buildInstrumentRows, locationOptions, matchesInstrument, runsOf } from './instrumentFinder';
@@ -42,8 +37,7 @@ describe(buildInstrumentRows, () => {
   });
 
   it('says an instrument is on no port rather than inventing a place for it', () => {
-    // The workbook's usable-with-no-port run: it never says where the
-    // instrument physically sits, so the row must not claim one.
+    // The workbook never says where a port-less instrument sits, so the row must not claim one.
     const [row] = buildInstrumentRows({
       mountings: [mounting({ instrument: 'CAL_ZORRO', port: null, place: 'UNKNOWN' })],
       night,
@@ -80,8 +74,7 @@ describe(buildInstrumentRows, () => {
   });
 
   it('lists the instruments the records name, not the whole enum', () => {
-    // A site's browser holds what that site's schedule holds; nine permanently
-    // blank rows would bury the ones that mean something.
+    // Nine permanently blank rows would bury the ones that mean something.
     const rows = buildInstrumentRows({
       mountings: [mounting({ instrument: 'GHOST' }), mounting({ instrument: 'F2' })],
       night,

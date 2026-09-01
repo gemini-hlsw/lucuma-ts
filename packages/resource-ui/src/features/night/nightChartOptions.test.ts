@@ -1,9 +1,3 @@
-/**
- * The night chart's axis.
- *
- * Tested through the builder rather than a rendered chart, which keeps the sun
- * shading, the clock labels and the tooltip phrasing checkable without a browser.
- */
 import type { AxisLabelsFormatterContextObject, XAxisOptions, XAxisPlotLinesOptions, YAxisOptions } from 'highcharts';
 import { describe, expect, it } from 'vitest';
 
@@ -55,9 +49,7 @@ describe('clock and duration labels', () => {
   });
 
   it('is not a fixed offset from the site clock: DST shifts mid-night', () => {
-    // Chile springs forward inside the night labelled 2026-09-06, so the same
-    // night opens at UTC-4 and closes at UTC-3 - 18:00 UT in, 17:00 UT out,
-    // while the site clock reads 14:00 at both ends.
+    // Chile springs forward inside the night labelled 2026-09-06: 18:00 UT in, 17:00 UT out.
     const dst = observingNightInterval('GS', '2026-09-06');
 
     expect(clockLabel(dst.start, 'GS', 'site')).toBe('14:00');
@@ -79,8 +71,7 @@ describe('describing a block', () => {
   it('says "all night" rather than a span, when nothing changes', () => {
     const block = build([mounting({ id: 'a', port: 3, interval })]).rows[2]?.blocks[0];
 
-    // A night is 23 or 25 hours either side of a DST change, so a duration here
-    // would be both noisy and beside the point.
+    // A night is 23 or 25 hours either side of a DST change, so a duration would be noise.
     expect(describe_.range(block!)).toBe('all night');
   });
 
@@ -114,9 +105,6 @@ describe('the sun wash', () => {
   it('paints over the bars, not behind them', () => {
     const bands = buildSunBands(interval, build().sun);
 
-    // An instrument mounted at noon is still mounted, so its bar covers the
-    // whole night; a band behind it would be invisible. zIndex above the series
-    // is what makes the daylight hours read as unusable.
     expect(bands.length).toBeGreaterThan(0);
     for (const band of bands) {
       expect(band.zIndex).toBe(5);
@@ -183,8 +171,7 @@ describe('the chart', () => {
   it('prints sunset and sunrise upright', () => {
     const sunLines = plotLines().filter((line) => line.className === 'night-sun-line');
 
-    // Highcharts rotates a plot-line label 90 degrees by default, which put
-    // "sunset" on its side in a 2px column.
+    // Rotation 0: Highcharts turns a plot-line label on its side by default.
     expect(sunLines).toHaveLength(2);
     for (const line of sunLines) {
       expect(line.label?.rotation).toBe(0);
@@ -219,13 +206,8 @@ describe('the telescope-state header band', () => {
   const data = (options.series?.[0] as { data: TimelinePoint[] }).data;
 
   it('names each group above its bars, at full bar size', () => {
-    // A heading row over the state rows and one over the subjects (Dan,
-    // 2026-08-11) - the "Instruments" heading doubles as the band's breathing
-    // room, and the state bars keep the instrument size. (Not an axis break:
-    // a break inflates the adjacent category's slot and drops its gutter
-    // label out of line with its bar.)
+    // A heading row over the state rows and one over the subjects, not an axis break.
     expect(yAxis.categories).toEqual(['Telescope', 'Mode', 'ToO', 'Instruments', ...ROWS]);
-    // Data rows sit past their headings; nothing is ever drawn on a heading.
     // The fixture's one mounting is on Port 2 - category index 5 here.
     expect(data.some((bar) => bar.y === 0 || bar.y === 3)).toBe(false);
     expect(data.some((bar) => bar.y === 5)).toBe(true);
@@ -236,8 +218,7 @@ describe('the telescope-state header band', () => {
   it('draws the state rows monochrome - bright only when the state is notable', () => {
     const fillOf = (label: string) => data.find((point) => point.custom.label === label)?.color;
 
-    // A visitor run is worth noticing; standard ToO support is the ordinary
-    // state and stays quiet. Neither spends a hue - hue means instrument.
+    // A visitor run is worth noticing; standard ToO support stays quiet. Neither spends a hue.
     expect(fillOf('Priority visitor')).toBe('var(--state-notable)');
     expect(fillOf('Standard ToOs')).toBe('var(--state-routine)');
   });
@@ -268,8 +249,7 @@ describe('instrument usability treatments', () => {
   it('hatches an engineering-use block in its own hue and measured ink', () => {
     const point = pointFor('ENGINEERING');
 
-    // Identity stays on the hue; the stripes say "reserved". The ink stripes
-    // are the same pair measured for the labels, so they separate everywhere.
+    // The ink stripes are the same pair measured for the labels, so they separate everywhere.
     expect(point?.color).toMatchObject({
       pattern: { backgroundColor: 'var(--instrument-gmos)', color: 'var(--instrument-ink-dark)' },
     });
@@ -304,9 +284,7 @@ describe('a port closure on the night', () => {
   };
 
   it('draws as the hollow absence every view gives it - the Telescope row owns the red', () => {
-    // The consistent shutdown treatment (Dan, 2026-08-11): a port-scoped span
-    // is not the telescope closing, and painting it red said otherwise. The
-    // reason still rides the block and its tooltip.
+    // A port-scoped span is not the telescope closing, and painting it red says otherwise.
     const half = closure({
       id: 'c1',
       reason: 'Baffle inspection',

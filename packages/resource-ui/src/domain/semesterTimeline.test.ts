@@ -1,10 +1,3 @@
-/**
- * The semester timeline model.
- *
- * Anchored on the real Gemini South shape: one telescope-wide closure carrying
- * the whole phrase, port closures carrying a word of it each, and A&G running
- * the length of the semester on Port 4.
- */
 import { describe, expect, it } from 'vitest';
 
 import { portRowLabel, TELESCOPE_PORTS } from './ports';
@@ -72,9 +65,7 @@ describe('interval helpers', () => {
 });
 
 describe('closures at Gemini South', () => {
-  // The published shape: the sheet spells "Telescope Shutdown A&G Maintenance"
-  // down the port rows one word at a time, and the records carry both the
-  // fragments and the telescope-wide record that carries the whole phrase.
+  // The sheet spells the phrase down the port rows one word at a time, plus a telescope-wide record.
   const SHUTDOWN = span('2026-08-02', '2026-08-07');
   const PUBLISHED_CLOSURES = [
     closure({ id: 'wide', port: null, interval: SHUTDOWN, reason: 'Telescope Shutdown A&G Maintenance' }),
@@ -94,8 +85,7 @@ describe('closures at Gemini South', () => {
   it('drops the per-port fragments the sheet spells down the rows', () => {
     const timeline = build({ closures: PUBLISHED_CLOSURES });
 
-    // Port 2 said "Telescope" and Port 3 said "Shutdown". Rendered per row that
-    // reads as though the ports were named that, which is the bug this fixes.
+    // Port 2 says "Telescope" and Port 3 "Shutdown": per row that reads as though they were named so.
     for (const row of ROWS) {
       expect(rowIn(timeline, 'August 2026', row)?.blocks).toEqual([]);
     }
@@ -128,10 +118,7 @@ describe('closures at Gemini South', () => {
 
 describe('unknown bands', () => {
   it('lets an identified run win the span it shares with an unknown band', () => {
-    // A source can put an unidentified (UNKNOWN) band over the same port and
-    // span as a named run - 'Alopeke inside the light-orange MIQ band in GN
-    // 2026B. One row per port, so the named run keeps its whole span and the
-    // unknown keeps only what is its own.
+    // One row per port, so the named run keeps its whole span and the unknown keeps only its own.
     const timeline = build({
       mountings: [
         mounting({
@@ -174,8 +161,7 @@ describe('months', () => {
   it('files a night under the month its evening falls in, as the sheet does', () => {
     const timeline = build();
 
-    // The night labelled 2026-09-01 begins on the evening of August 31, so the
-    // sheet prints it in the August block.
+    // The night labelled 2026-09-01 begins on the evening of August 31, so August prints it.
     expect(timeline.months.map((month) => month.label)).toEqual([
       'August 2026',
       'September 2026',
@@ -195,8 +181,7 @@ describe('months', () => {
 
     expect(august?.continuesBefore).toBe(false);
     expect(august?.continuesAfter).toBe(true);
-    // A middle month is cut at both ends, and both cuts are reported so the
-    // tooltip can say the run continues rather than implying it stops here.
+    // Both cuts are reported, so the tooltip can say the run continues rather than stops here.
     expect(october?.continuesBefore).toBe(true);
     expect(october?.continuesAfter).toBe(true);
   });
@@ -229,9 +214,7 @@ describe('the legend', () => {
       ],
     });
 
-    // Alphabetical rather than whichever port comes first, so the key does not
-    // reshuffle between semesters. Ten instruments the sheet never mentions would
-    // be keys to colours that are not on the page.
+    // Alphabetical, so the key does not reshuffle between semesters.
     expect(timeline.instruments).toEqual(['GHOST', 'GMOS']);
     expect(timeline.hasClosure).toBe(false);
     expect(timeline.hasUnscheduled).toBe(false);

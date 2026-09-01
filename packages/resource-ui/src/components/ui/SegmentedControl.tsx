@@ -1,17 +1,3 @@
-/**
- * Compact segmented control for a single mutually-exclusive choice (GN/GS,
- * Night/Week/Semester, Site/UTC, Full/Partial night, conflict behavior, tile
- * coloring, ...).
- *
- * A thin adapter over PrimeReact `SelectButton`: PrimeReact owns the rendering,
- * selection, keyboard focus roving, and ARIA (role="group" + per-item
- * role="button"/aria-pressed), and the shared theme (styles/shell.css) gives it
- * the dense green look - so there's no custom widget to maintain. The public API
- * is unchanged from the previous hand-rolled control, so call sites don't move.
- *
- * Keyboard: arrow keys move focus between segments; Enter/Space selects the
- * focused one (the standard toolbar pattern SelectButton implements).
- */
 import { SelectButton, type SelectButtonChangeEvent } from 'primereact/selectbutton';
 import type { JSX } from 'react';
 
@@ -32,9 +18,7 @@ interface SegmentedControlProps<T extends string> {
   readonly testId?: string;
 }
 
-/** SelectButton item shape: `aria` drives the accessible name (via optionLabel),
- *  while the visible text comes from `label` through the item template - so an
- *  abbreviated label ("GN") can still announce its full name ("Gemini North"). */
+/** `aria` drives the accessible name, so "GN" can still announce "Gemini North". */
 interface SegmentedItem<T extends string> {
   readonly label: string;
   readonly value: T;
@@ -65,8 +49,7 @@ export function SegmentedControl<T extends string>({
       // Single, mandatory choice: clicking the selected segment must not clear it.
       allowEmpty={false}
       onChange={(event: SelectButtonChangeEvent) => {
-        // allowEmpty={false} keeps a selection, but guard against a null/undefined
-        // value defensively rather than forwarding it as a bogus choice.
+        // allowEmpty={false} keeps a selection; guard anyway rather than forward a bogus choice.
         if (event.value !== null && event.value !== undefined) {
           onChange(event.value as T);
         }

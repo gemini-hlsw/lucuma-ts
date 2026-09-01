@@ -1,8 +1,3 @@
-/**
- * Reads and writes the shared view selection (site, semester, night) from the
- * URL query string, so views are linkable and navigation preserves context.
- * Every view reads the published record; v1 has no other document to select.
- */
 import { useSearchParams } from 'react-router';
 
 import { useNow } from '@/app/useNow';
@@ -11,15 +6,7 @@ import type { Site } from '@/domain/types';
 
 interface Selection {
   readonly site: Site;
-  /**
-   * The semester the URL explicitly asks for, or null when it names none.
-   *
-   * Raw on purpose - the URL cannot know what the data holds. Consumers read
-   * the *resolved* semester through `useSemester`, which turns a stale name,
-   * an absent parameter or a site switch into a real semester instead of a
-   * blank control. A hardcoded default lived here once and went stale the
-   * moment the data moved past it.
-   */
+  /** Raw on purpose: the URL cannot know what the data holds. `useSemester` resolves it. */
   readonly semester: string | null;
   readonly observingNight: string;
   readonly timeDisplay: TimeDisplay;
@@ -32,13 +19,7 @@ interface SelectionControls extends Selection {
   tonight: string;
   setSite: (site: Site) => void;
   setSemester: (semester: string) => void;
-  /**
-   * The masthead's semester jump: the semester, and - when the caller found
-   * the current night outside it - the night moved along, in one URL update.
-   * That is what keeps the semester control meaningful on the night and week
-   * views: choosing a semester lands inside it rather than keeping a night it
-   * does not cover.
-   */
+  /** The semester, and the night moved along with it, in one URL update. */
   setSemesterSelection: (semester: string, observingNight: string | null) => void;
   setObservingNight: (observingNight: string) => void;
   clearObservingNight: () => void;
@@ -56,12 +37,9 @@ export function useSelection(): SelectionControls {
   const selection: Selection = {
     site,
     semester: params.get('semester'),
-    // No night in the URL means "the night in progress" - what Tonight asks
-    // for, and the only sensible landing point for an operational view. A
-    // fixed default date would silently open some unrelated night.
+    // A fixed default date would silently open some unrelated night.
     observingNight: params.get('night') ?? observingNightOf(site, now),
-    // Anything but the explicit 'utc' is the default site clock, so a
-    // mistyped value degrades to the reading the site works in.
+    // Anything but the explicit 'utc' degrades to the reading the site works in.
     timeDisplay: params.get('clock') === 'utc' ? 'utc' : 'site',
   };
 
@@ -87,10 +65,7 @@ export function useSelection(): SelectionControls {
     ...selection,
     tonight: observingNightOf(selection.site, now),
     setSite: (site: Site) => update('site', site),
-    // The month names a page of one semester's calendar (semester page,
-    // ?month=...), so it cannot survive a semester change - it would identify
-    // the old semester's page under the new one's URL. A site change keeps it:
-    // both sites cover the same months in a semester.
+    // The month names a page of one semester's calendar, so it cannot survive a semester change.
     setSemester: (semester: string) => update('semester', semester, ['month']),
     setSemesterSelection: (semester: string, observingNight: string | null) => {
       setParams(

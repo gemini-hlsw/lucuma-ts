@@ -1,13 +1,3 @@
-/**
- * Site-local time math for the frontend.
- *
- * An observing night ending on local date D runs 14:00 local on D-1 to 14:00 local
- * on D (the lucuma-core LocalObservingNight convention). This module resolves night
- * intervals, night labels and evening dates from that boundary, correct across DST
- * at Gemini South. It uses `Intl` for the offset; the real backend uses lucuma-core.
- * It mirrors `mock-server/time.ts` deliberately, so a night the UI derives and a
- * night the mock derives share the same 14:00 boundary.
- */
 import type { Interval, Site } from './types';
 
 /** Each site's IANA zone - the one map every zone-aware formatter reads. */
@@ -16,25 +6,14 @@ export const SITE_TIME_ZONES = {
   GS: 'America/Santiago',
 } satisfies Record<Site, string>;
 
-/**
- * Which clock the UI renders instants in: the site's own wall clock, or UT.
- * A masthead choice (the `clock` URL parameter), read by every clock-time
- * formatter. Display only - observing-night labels and evening dates are the
- * site's calendar and never move with it.
- */
+/** Display only: observing-night labels and evening dates are the site's calendar and never move. */
 export type TimeDisplay = 'site' | 'utc';
 
 /** The IANA zone `display` names at `site` - what every clock formatter renders in. */
 export const displayTimeZone = (site: Site, display: TimeDisplay): string =>
   display === 'utc' ? 'UTC' : SITE_TIME_ZONES[site];
 
-/**
- * One `Intl.DateTimeFormat` per zone for a fixed locale and options.
- *
- * Construction is expensive and the label formatters run per block and per
- * tooltip, so each call site holds one cached formatter per zone - and only
- * three zones ever occur: the two sites' and UTC.
- */
+/** Construction is expensive and the label formatters run per block, so cache one per zone. */
 export const zoneFormatters = (
   locale: string,
   options: Intl.DateTimeFormatOptions,
@@ -112,11 +91,7 @@ const nightParts = zoneFormatters('en-CA', {
   hour: '2-digit',
 });
 
-/**
- * The observing night containing the instant, as its ISO label: the site-local
- * date at that instant, advanced one day at or after 14:00 local (the night that
- * evening opens is labelled by the morning it ends on).
- */
+/** The site-local date at that instant, advanced one day at or after 14:00 local. */
 export const observingNightOf = (site: Site, epochMillis: number): string => {
   const parts = nightParts(SITE_TIME_ZONES[site]).formatToParts(new Date(epochMillis));
   const field = (type: string): string => parts.find((part) => part.type === type)?.value ?? '';
@@ -124,49 +99,24 @@ export const observingNightOf = (site: Site, epochMillis: number): string => {
   return Number(field('hour')) % 24 >= 14 ? addDaysIso(localDate, 1) : localDate;
 };
 
-/**
- * The evening date of the **first** observing night an interval covers, which is
- * how the published sheet heads that night's column.
- */
+/** How the published sheet heads that night's column. */
 export const firstEveningDate = (site: Site, interval: Interval): string =>
   addDaysIso(observingNightOf(site, interval.start), -1);
 
-/**
- * The evening date of the **last** observing night an interval covers.
- *
- * Not symmetric with the start, and that asymmetry is the trap. An interval's end
- * is exclusive and lands at 14:00 on the last night's *label* date, so naming the
- * calendar date at `end - 1 hour` reports the label rather than the evening and is
- * a day late - which is how a run ending on the sheet's "31" column came out as
- * "1 Feb".
- *
- * Nor can a fixed offset fix it: a night is 23 or 25 hours across a DST change at
- * Gemini South, so any constant is wrong twice a year. The night is resolved
- * first, then its evening derived, which is exact at every boundary.
- */
+/** Not symmetric with the start: an interval's end is exclusive and lands on the label date, a day late. */
 export const lastEveningDate = (site: Site, interval: Interval): string =>
   addDaysIso(observingNightOf(site, interval.end - 1), -1);
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-/**
- * How many observing nights an interval covers, both ends included.
- *
- * Counted over the evening dates rather than the elapsed hours, because a night
- * is 23 or 25 hours across a DST change at Gemini South - dividing the interval
- * by a day would drop or invent a night twice a year. Evening dates are plain
- * calendar dates, so differencing them at UTC midnight is exact.
- */
+/** Counted over evening dates, not elapsed hours: a night is 23 or 25 hours across a GS DST change. */
 export const nightCount = (site: Site, interval: Interval): number => {
   const first = Date.parse(`${firstEveningDate(site, interval)}T00:00:00Z`);
   const last = Date.parse(`${lastEveningDate(site, interval)}T00:00:00Z`);
   return Math.round((last - first) / DAY_MS) + 1;
 };
 
-/**
- * How an evening date is printed. Three shapes, and the choice is about what the
- * page around it already says, never about what the date means.
- */
+/** The choice is about what the page around it already says, never about what the date means. */
 export type EveningStyle =
   /** "7 Aug" - a chart tooltip, where the year is the window's own. */
   | 'dayMonth'
@@ -183,15 +133,7 @@ const EVENING_OPTIONS = {
 
 const eveningFormatters = new Map<EveningStyle, Intl.DateTimeFormat>();
 
-/**
- * An evening date as the published sheet heads its columns - the one formatter,
- * so no two views can print the same night differently.
- *
- * Formatted at midday UTC, in UTC: an evening date is a plain calendar date
- * rather than an instant, so it must not slide a day under anybody's zone -
- * neither the reader's nor the site's. That is also why this takes no `Site`:
- * the site has already been read, by `firstEveningDate`/`lastEveningDate`.
- */
+/** Formatted at midday UTC, in UTC, so a plain calendar date cannot slide a day under anybody's zone. */
 export const eveningLabel = (eveningDate: string, style: EveningStyle = 'dayMonthYear'): string => {
   let formatter = eveningFormatters.get(style);
   if (formatter === undefined) {
@@ -201,11 +143,6 @@ export const eveningLabel = (eveningDate: string, style: EveningStyle = 'dayMont
   return formatter.format(new Date(`${eveningDate}T12:00:00Z`));
 };
 
-/**
- * The evening dates an interval spans, as one string: "7 Aug 2026 – 13 Oct 2026".
- *
- * An en dash with spaces, which is what a date range is, and the same one in
- * every table that prints a record's extent.
- */
+/** An en dash with spaces, the same one in every table that prints a record's extent. */
 export const eveningRange = (site: Site, interval: Interval, style: EveningStyle = 'dayMonthYear'): string =>
   `${eveningLabel(firstEveningDate(site, interval), style)} – ${eveningLabel(lastEveningDate(site, interval), style)}`;

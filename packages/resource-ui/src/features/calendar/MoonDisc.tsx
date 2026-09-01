@@ -1,10 +1,4 @@
-/**
- * A small SVG moon-phase disc: the illuminated part of the moon for a night.
- *
- * Convention (per the agreed design): a waxing moon is lit on the right, a waning
- * moon on the left. The disc is the dark base; the lit region is a half-disc closed
- * by a semi-ellipse whose horizontal radius follows the illuminated fraction.
- */
+/** Waxing is lit on the right, waning on the left; the terminator is a semi-ellipse. */
 import type { JSX } from 'react';
 
 import { type MoonPhase, moonPhaseLabel } from '@/domain/moon';
@@ -21,8 +15,7 @@ export function MoonDisc({ phase, size = 12, className }: MoonDiscProps): JSX.El
   const c = 8;
   // Terminator semi-ellipse: full radius at new/full, zero at the quarters.
   const rx = Math.abs(Math.cos(Math.PI * phase.fraction)) * r;
-  // The lit half-disc sits on the lit side; the terminator bows toward or away
-  // from it depending on whether the phase is crescent or gibbous.
+  // The terminator bows toward or away from the lit side depending on crescent or gibbous.
   const litRight = phase.waxing;
   const halfSweep = litRight ? 1 : 0;
   const bulge = phase.fraction < 0.5 ? halfSweep : 1 - halfSweep;

@@ -1,23 +1,10 @@
-/**
- * The semester as rows of text: one per block, not one per night.
- *
- * Pure, and separate from the component that renders it, so it can be tested
- * without a browser - and because a run's extent phrased in the sheet's own
- * dates is exactly the kind of thing that should be pinned by a test rather than
- * eyeballed in a screen reader.
- */
 import type { SemesterTimeline } from '@/domain/semesterTimeline';
 import { eveningLabel, firstEveningDate, lastEveningDate } from '@/domain/siteTime';
 import { nightsIn } from '@/domain/timeline';
 import type { Interval, Site } from '@/domain/types';
 import { UNSCHEDULED_LABEL } from '@/features/timeline/timelineOptions';
 
-/**
- * A block's extent as two cells, in the evening dates the published sheet heads
- * its columns with, so a reader checking this against the sheet compares like
- * with like. Two columns rather than one range string: the table sorts and
- * scans by them.
- */
+/** Two columns rather than one range string: the table sorts and scans by them. */
 const extent = (interval: Interval, site: Site): { from: string; to: string } => ({
   from: eveningLabel(firstEveningDate(site, interval)),
   to: eveningLabel(lastEveningDate(site, interval)),
@@ -47,9 +34,7 @@ export const buildBlockRows = (timeline: SemesterTimeline, site: Site): readonly
       nights: nightCount(block.nights),
     })),
   ),
-  // Bands last and under no row. Spelling a telescope-wide phrase one word per
-  // port is exactly what the superseded grid did, and why Port 2 read as though
-  // it were named "Telescope".
+  // Bands last and under no row: a word per port makes Port 2 read as "Telescope".
   ...timeline.bands.map((band) => ({
     key: band.id,
     rowLabel: WHOLE_TELESCOPE,

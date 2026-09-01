@@ -1,25 +1,3 @@
-/**
- * The generated SDL, against the source it is generated from.
- *
- * `schema.graphql` takes its ODB types through `#import`, which is
- * @graphql-tools' convention rather than GraphQL's - to GraphQL it is a comment,
- * so the file on its own builds a schema whose `Timestamp` is undefined. Codegen
- * resolves it and writes `src/gql/gen/schema.graphql`, and that one file is what
- * the :4000 server, the resolver tests, the cache test and the browser-test
- * Apollo client all read.
- *
- * Three properties of that expansion, each of which has cost real debugging:
- *
- * - **The imported types arrive.** The loader only looks for imports when the
- *   SDL *starts* with one, so a header comment above the `#import` line silently
- *   turns every type below into an unknown type.
- * - **The root `Query` is emitted once.** An import resolver hands back the root
- *   type once whole and once per field, which printed straight out is eleven
- *   `type Query` blocks and a schema that will not build.
- * - **The docstrings survive.** They are the API documentation a reader of
- *   GraphiQL sees; the `#` design notes are for a reader of the file and are
- *   deliberately not expected to survive.
- */
 import { buildSchema, isTypeDefinitionNode, parse } from 'graphql';
 import { describe, expect, it } from 'vitest';
 

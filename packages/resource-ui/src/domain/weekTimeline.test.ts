@@ -1,6 +1,3 @@
-/**
- * The week timeline model: seven observing nights on one continuous axis.
- */
 import { describe, expect, it } from 'vitest';
 
 import { portRowLabel, TELESCOPE_PORTS } from './ports';
@@ -54,8 +51,7 @@ describe('the week window', () => {
   it('is continuous, because observing nights abut exactly', () => {
     const week = build();
 
-    // 14:00 to 14:00 means one night's end is the next one's start; there is no
-    // daytime gap between them to draw.
+    // 14:00 to 14:00 means one night's end is the next one's start; no daytime gap to draw.
     for (const [index, night] of week.nights.slice(1).entries()) {
       expect(night.interval.start).toBe(week.nights[index]?.interval.end);
     }
@@ -75,8 +71,7 @@ describe('the week window', () => {
 
     expect(nightAt(week.nights, third?.interval.start ?? NaN)?.observingNight).toBe('2026-11-16');
     expect(nightAt(week.nights, (third?.interval.end ?? NaN) - 1)?.observingNight).toBe('2026-11-16');
-    // Ends are exclusive - a boundary instant belongs to the night it opens -
-    // and an instant outside the window belongs to no night at all.
+    // Ends are exclusive, and an instant outside the window belongs to no night at all.
     expect(nightAt(week.nights, third?.interval.end ?? NaN)?.observingNight).toBe('2026-11-17');
     expect(nightAt(week.nights, week.interval.end)).toBeNull();
     expect(nightAt(week.nights, week.interval.start - 1)).toBeNull();
@@ -85,8 +80,7 @@ describe('the week window', () => {
 
 describe('runs across the week', () => {
   it('draws a run spanning the week as one block, not seven', () => {
-    // The blocks come unclipped from the range query for exactly this reason; a
-    // per-night projection would return seven abutting bars with seams between.
+    // The blocks come unclipped for this reason: a per-night projection returns seven seams.
     const week = build({
       mountings: [
         mounting({
@@ -148,8 +142,7 @@ describe('nights with nothing recorded', () => {
   });
 
   it('assumes data until the answer arrives, rather than greying out the week', () => {
-    // An empty set and "not asked yet" are different things; treating the second
-    // as the first would flash "not recorded" across every night on every load.
+    // An empty set and "not asked yet" differ: treating one as the other flashes "not recorded" everywhere.
     const week = build({ nightsWithData: undefined });
 
     expect(week.nights.every((night) => night.dataAvailable)).toBe(true);

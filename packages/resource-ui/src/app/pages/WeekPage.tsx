@@ -28,7 +28,7 @@ import { toApiInterval, usePublishedSemesters, useWeekSchedule } from '@/gql/hoo
 /** A week is long enough that the marker needs no fine tick. */
 const NOW_TICK_MS = 5 * 60_000;
 
-/** Any published semester overlapping the week, for the row labels and title. */
+/** Any published semester overlapping the week: the title link, the demo tag, holidays and moons. */
 const semesterOverlapping = (
   semesters: readonly PublishedSemester[],
   site: Site,
@@ -38,14 +38,7 @@ const semesterOverlapping = (
     (entry) => entry.site === site && nights.some((night) => entry.firstNight <= night && night <= entry.lastNight),
   );
 
-/**
- * Seven observing nights.
- *
- * The window between the two other views: wide enough to plan against, narrow
- * enough that each night keeps its shape - the sun shades every night, so you
- * can see the usable hours across a week rather than just which instrument is
- * mounted.
- */
+/** Wide enough to plan against, narrow enough that each night keeps its shape under the sun wash. */
 export default function WeekPage(): JSX.Element {
   const { site, observingNight, tonight, timeDisplay, setObservingNight, clearObservingNight } = useSelection();
   const { semesters, loading: loadingSets, error: setsError } = usePublishedSemesters();
@@ -54,14 +47,11 @@ export default function WeekPage(): JSX.Element {
   const nightLabels = weekNightLabels(observingNight);
   const held = semesterOverlapping(semesters, site, nightLabels);
 
-  // The page speaks evening dates - the date each night begins, which is how
-  // the published columns, the chart axis and the cards are all headed. The
-  // observing-night labels stay in the URL, shared with the night view.
+  // The page speaks evening dates; the observing-night labels stay in the URL.
   const firstEvening = addDays(observingNight, -1);
   const lastEvening = addDays(observingNight, WEEK_NIGHTS - 2);
 
-  // The scheduler's own query takes a half-open date range, so the end is the
-  // night after the last one shown.
+  // The scheduler's query takes a half-open date range, so the end is the night after the last shown.
   const nights = { start: observingNight, end: addDays(observingNight, WEEK_NIGHTS) };
 
   const draft = buildWeekTimeline({
@@ -129,9 +119,6 @@ export default function WeekPage(): JSX.Element {
         title={`Nights beginning ${firstEvening} to ${lastEvening}`}
         demo={held?.demo === true}
         actions={
-          // The week speaks evening dates - the date each night begins, as the
-          // columns are headed - so the input shows the first evening and the
-          // page converts it back to the night label the URL carries.
           <NightStepper
             value={firstEvening}
             onChange={(evening) => {

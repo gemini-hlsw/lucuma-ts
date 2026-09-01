@@ -1,16 +1,3 @@
-/**
- * A semester's records -> the month-by-month timeline the semester view draws.
- *
- * The work of turning records into rows is in `timeline.ts`, shared with the
- * week and night views. What is specific to a semester is the split into months
- * and why a night belongs to one:
- *
- * A column headed 7 is the night that *begins* on the 7th, which is the
- * observing night labelled by the 8th. The published sheet groups columns by the
- * evening date's month, so a night is filed under the month its evening falls
- * in - not the month it ends in. That is the only reason this module knows about
- * calendar months at all.
- */
 import { addDays } from './semester';
 import { observingNightInterval } from './siteTime';
 import {
@@ -40,14 +27,7 @@ export interface TimelineMonth {
 
 export interface SemesterTimeline extends TimelineLegend {
   readonly months: readonly TimelineMonth[];
-  /**
-   * The same blocks placed over the whole semester rather than per month, so a
-   * run that crosses a month boundary is one row rather than six.
-   *
-   * This is what the block table reads. A semester is sixteen or so facts, and
-   * that is the number a reader who is not looking at the picture should be
-   * given - not the nine hundred cells the drawing needs.
-   */
+  /** Placed over the whole semester, so a run crossing a month boundary is one row rather than six. */
   readonly rows: readonly TimelineRow[];
   readonly bands: readonly TimelineBand[];
 }
@@ -87,13 +67,11 @@ export interface BuildSemesterTimelineOptions {
   readonly lastNight: string;
   readonly mountings: readonly Mounting[];
   readonly closures: readonly Closure[];
-  /** ToO support and telescope mode records over the semester; the state rows
-   * head every month only when some exist, like the night view. */
+  /** The state rows head every month only when some records exist, like the night view. */
   readonly tooBlocks?: readonly TooBlock[];
   readonly modeBlocks?: readonly ModeBlock[];
 }
 
-/** Builds the month-by-month timeline the semester view draws. */
 export const buildSemesterTimeline = ({
   site,
   firstNight,
@@ -110,19 +88,15 @@ export const buildSemesterTimeline = ({
       eveningDate,
       interval: observingNightInterval(site, observingNight),
       isWeekend: isWeekendDate(eveningDate),
-      // A semester spans hundreds of nights and asks for its records in one
-      // range query, which carries no per-night flag. The night view is where
-      // "not recorded" is stated.
+      // One range query carries no per-night flag; the night view is where "not recorded" is stated.
       dataAvailable: true,
     };
   });
 
-  // The state rows join once, here, so every month and the whole-semester rows
-  // (the block table's reading) carry the same head.
+  // The state rows join once, so every month and the block table's rows carry the same head.
   const collected = [...collectStateRows(closures, tooBlocks, modeBlocks), ...collectBlocks({ mountings, closures })];
 
-  // Group by the evening date's month, so a column sits under the month the
-  // sheet prints it under.
+  // Group by the evening date's month, so a column sits under the month the sheet prints it under.
   const byMonth = new Map<string, TimelineNight[]>();
   for (const night of nights) {
     const key = night.eveningDate.slice(0, 7);
@@ -147,8 +121,7 @@ export const buildSemesterTimeline = ({
     };
   });
 
-  // Keyed off the whole semester rather than any one month, so the legend does
-  // not change as you read down the page.
+  // Keyed off the whole semester, so the legend does not change as you read down the page.
   const wholeSemester: Interval = {
     start: nights[0]?.interval.start ?? 0,
     end: nights.at(-1)?.interval.end ?? 0,

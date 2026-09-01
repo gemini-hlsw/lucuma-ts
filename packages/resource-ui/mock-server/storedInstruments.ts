@@ -1,49 +1,10 @@
-/**
- * The synthetic stored-instrument layer - instruments GPP knows about that the
- * workbook never schedules, and where they sit when they are not on a port.
- *
- * **This module is a quarantine boundary**, the same one `components.ts` draws:
- * nothing else in the mock knows these records are invented. Swap this one file
- * when operations record real instrument whereabouts.
- *
- * The rules it lives under, matching the component layer:
- *
- * - **Deterministic.** No PRNG and no wall clock. Each instrument declares a
- *   pattern; the spans are derived from the site's own schedule span, so a
- *   re-import moves them with the data rather than decaying against it.
- * - **Never on a port.** These records carry `port: null`, so no schedule view
- *   draws them - a view's rows are the ports - and the ports' picture stays
- *   exactly what the workbook says.
- * - **Never decides `dataAvailable`.** Invented records must not turn an
- *   un-entered night into a recorded one (resolvers.ts).
- *
- * ## Why these instruments
- *
- * `lucuma-core`'s `Instrument` enumerates fourteen; the workbook schedules a
- * subset. The four here - the acquisition cameras, GPI, NIRI and SCORPIO - are
- * real GPP instruments with no run in this export, so without them the browser
- * would answer "where is NIRI" with silence.
- *
- * **Site is fixed per instrument**: an instrument does not move between
- * telescopes, so each entry names its site and every record it produces carries
- * it. NIRI is Gemini North's, GPI and SCORPIO Gemini South's; the acquisition
- * camera is a facility instrument each telescope has one of, so it appears at
- * both under the one enum tag - exactly as GMOS does for GMOS-N and GMOS-S.
- * **Location is not fixed**: that is the point of these records - a stored
- * instrument moves between the summit lab, the dome floor and the base.
- */
 import type { ImportedSchedule, ImportedUsage, ImportSite, Instrument, OffPortPlace } from './records.ts';
 
 export type { OffPortPlace };
 
 export type StoredInstrumentUsage = ImportedUsage;
 
-/**
- * How a stored instrument's whereabouts move over a site's recorded span.
- *
- * Declared per instrument rather than derived from a hash, so a given
- * instrument is the same example in every conversation about it.
- */
+/** Declared per instrument rather than derived from a hash, so one is the same example every time. */
 export type StoredPattern =
   /** In the summit lab throughout - shelved, not being worked on. */
   | 'IN_LAB'
@@ -61,12 +22,7 @@ interface Entry {
   readonly pattern: StoredPattern;
 }
 
-/**
- * The stored instruments, per site.
- *
- * `publishedName` is the name operations would print, which is what the browser
- * shows beside the enum label.
- */
+/** `publishedName` is the name operations would print, shown beside the enum label. */
 const CATALOG: readonly Entry[] = [
   // Each telescope has an acquisition camera; one enum tag, two instruments.
   { instrument: 'ACQ_CAM', site: 'GN', publishedName: 'AcqCam', pattern: 'IN_LAB' },
@@ -81,8 +37,7 @@ export interface SynthesizedInstrumentBlock {
   readonly site: ImportSite;
   readonly instrument: Instrument;
   readonly publishedName: string;
-  /** Off the charts by construction: `OffPortPlace` cannot be `PORT`, and a
-   *  schedule view's rows are the ports. */
+  /** Off the charts by construction: OffPortPlace cannot be PORT, and a view's rows are the ports. */
   readonly place: OffPortPlace;
   readonly usage: StoredInstrumentUsage;
   readonly start: string;
@@ -104,8 +59,7 @@ interface Stay {
 
 const iso = (millis: number): string => new Date(millis).toISOString();
 
-/** An instant `fraction` through a span, rounded to the hour so the boundaries
- *  read as times someone could have written down. */
+/** Rounded to the hour, so a boundary reads as a time someone could have written down. */
 const within = (span: Span, fraction: number): number =>
   Math.round((span.start + (span.end - span.start) * fraction) / 3_600_000) * 3_600_000;
 
@@ -156,13 +110,7 @@ const staysFor = (pattern: StoredPattern, span: Span): readonly Stay[] => {
   }
 };
 
-/**
- * Every stored-instrument record, derived from the imported schedules.
- *
- * Anchored to each site's own recorded span, so these records cover exactly the
- * window the schedules do and no consumer sees a location for a night the
- * schedule knows nothing about.
- */
+/** Anchored to each site's recorded span, so no consumer sees a location for an unknown night. */
 export const synthesizeStoredInstruments = (
   schedules: readonly ImportedSchedule[],
 ): readonly SynthesizedInstrumentBlock[] =>

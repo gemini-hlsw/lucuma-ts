@@ -1,16 +1,3 @@
-/**
- * The axis for one month of the semester timeline. The rest of the chart is
- * `timelineOptions.ts`, shared with the week and night views.
- *
- * ## Day numbers sit in the middle of their night
- *
- * An observing night runs 14:00 local to 14:00 local, so a tick at the boundary
- * sits at the *edge* of the night it opens and a number placed there reads as
- * though it belonged to the night before. The labels are therefore placed at
- * each night's midpoint and the boundaries drawn separately as plot lines - the
- * numbers land in the middle of the span they name, which is where the sheet
- * puts them.
- */
 import type { Options, XAxisPlotBandsOptions, XAxisPlotLinesOptions } from 'highcharts';
 
 import { midpoint } from '@/domain/interval';
@@ -29,41 +16,18 @@ const ROW_HEIGHT = 26;
 /** Room below the plot area, where the day numbers sit. */
 const BOTTOM_MARGIN = 26;
 
-/**
- * Width of the left gutter the row labels are drawn in. Load-bearing beyond
- * layout: the group heading type is sized to fit it, so re-check the headings
- * before narrowing it.
- */
+/** Load-bearing: the group heading type is sized to fit it, so re-check the headings before narrowing. */
 const LABEL_GUTTER = 92;
 
-/**
- * Room a two-digit day number needs, and the widths a month therefore needs to
- * number every night or every other one. Derived from the night count rather
- * than fixed, because a 28-night February fits numbers a 31-night August cannot.
- */
+/** Derived from the night count, because a 28-night February fits numbers a 31-night August cannot. */
 const PX_PER_LABEL = 15;
 const PX_PER_LABEL_TIGHT = 8;
 
+// The night and week charts keep their own geometry; no page reads both.
 export const widthForEveryNight = (nightCount: number): number => nightCount * PX_PER_LABEL;
 const widthForEveryOtherNight = (nightCount: number): number => nightCount * PX_PER_LABEL_TIGHT;
 
-/**
- * The night and week charts keep their own geometry (`nightChartOptions.ts`,
- * `weekChartOptions.ts`): different windows, different label lengths, and no
- * page reads both, so their agreement with these numbers is coincidence.
- */
-
-/**
- * Day-number positions, every `step` nights.
- *
- * The thinning is done by choosing the ticks rather than by `labels.step`, which
- * had no observable effect here, and certainly not by leaving it to Highcharts:
- * left alone it drops labels one at a time as they collide, which produced a
- * month numbered 1 to 9 and then blank for the rest. Choosing them keeps the
- * count deterministic, and testable without a browser.
- *
- * The first night is always numbered, so a month always starts from a known day.
- */
+/** Chosen rather than left to Highcharts, which drops colliding labels one at a time. */
 export const dayTickPositions = (month: TimelineMonth, step: number): number[] =>
   month.nights.filter((_, index) => index % step === 0).map((night) => midpoint(night.interval));
 
@@ -96,13 +60,7 @@ export const buildMonthBands = (month: TimelineMonth): XAxisPlotBandsOptions[] =
   })),
 ];
 
-/**
- * Night boundaries as a faint texture, with the week's first night stronger.
- *
- * The week starts on Sunday, matching the calendar's `en-US` localizer and the
- * published grids it follows - the two views read the same dataset, so their
- * week boundaries cannot sit a night apart.
- */
+/** The week starts on Sunday, so the chart and the calendar cannot sit a night apart. */
 export const buildMonthLines = (month: TimelineMonth): XAxisPlotLinesOptions[] =>
   month.nights.map((night) => {
     const startsWeek = new Date(`${night.eveningDate}T00:00:00Z`).getUTCDay() === 0;
@@ -144,10 +102,7 @@ export const buildSemesterMonthOptions = ({ month, site, now }: SemesterMonthMod
       gridLineWidth: 0,
       lineColor: 'var(--timeline-grid)',
       labels: {
-        // Zero padding, because Highcharts reserves it per label and then blanks
-        // any label whose reserved box overlaps its neighbour. With the default
-        // 5px a two-digit day never fits a ~16px night, so a month rendered days
-        // 1 to 9 and then nothing at all.
+        // Highcharts reserves padding per label and blanks any whose box overlaps, so a two-digit day vanished.
         padding: 0,
         formatter() {
           const night = month.nights.find((candidate) => midpoint(candidate.interval) === Number(this.value));
@@ -172,10 +127,7 @@ export const buildSemesterMonthOptions = ({ month, site, now }: SemesterMonthMod
           : []),
       ],
     },
-    // The grid puts two months side by side on a wide window and one on a narrow
-    // one, so a chart's width is not the viewport's and a CSS media query cannot
-    // see it. Highcharts measures its own container, which is the only thing that
-    // knows how much room a day number actually has.
+    // A chart's width is not the viewport's, and only Highcharts measures its own container.
     responsive: {
       rules: [
         {

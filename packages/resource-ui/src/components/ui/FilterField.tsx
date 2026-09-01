@@ -1,10 +1,4 @@
-/**
- * One labelled control in a finder's filter bar: the caption above its field.
- *
- * The binding between the two is `LabelledControl`, which the masthead uses as
- * well - this is the filter bar's layout over it, so the two places cannot
- * label a dropdown differently while looking different.
- */
+/** The filter bar's layout over `LabelledControl`, which the masthead uses too. */
 import type { JSX, ReactNode } from 'react';
 
 import { LabelledControl } from './LabelledControl';
