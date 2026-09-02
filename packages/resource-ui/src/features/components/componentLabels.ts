@@ -1,6 +1,7 @@
 import type { RecordStatus } from '@/components/ui/StatusTag';
 import type { WhereReading } from '@/components/ui/WhereCell';
 import type { ComponentWhere, FinderRow } from '@/domain/componentFinder';
+import { STORAGE_PLACE_LABEL } from '@/domain/places';
 import { portRowLabel } from '@/domain/ports';
 import type { ComponentType, ResourceUsage } from '@/domain/types';
 
@@ -13,9 +14,7 @@ export const TYPE_LABEL: Record<ComponentType, string> = {
 };
 
 export const LOCATION_LABEL = {
-  FLOOR: 'Dome floor',
-  LAB: 'Summit lab',
-  BASE: 'Base facility',
+  ...STORAGE_PLACE_LABEL,
   UNKNOWN: 'Unknown',
 } as const;
 

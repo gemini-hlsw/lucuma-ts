@@ -1,3 +1,4 @@
+import { STORAGE_PLACE_LABEL } from './places';
 import { portRowLabel } from './ports';
 import type { Instrument, Interval, Mounting, OffPortPlace, ResourceUsage } from './types';
 
@@ -93,9 +94,7 @@ export const NOT_RECORDED_LABEL = 'Not recorded';
 
 /** UNKNOWN reads as the plain fact rather than naming somewhere the record never named. */
 export const PLACE_LABEL = {
-  FLOOR: 'Dome floor',
-  LAB: 'Summit lab',
-  BASE: 'Base facility',
+  ...STORAGE_PLACE_LABEL,
   UNKNOWN: OFF_PORT_LABEL,
 } satisfies Record<OffPortPlace, string>;
 
