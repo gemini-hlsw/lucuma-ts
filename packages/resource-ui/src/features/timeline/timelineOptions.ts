@@ -3,6 +3,7 @@ import type {
   Options,
   PatternObject,
   XAxisOptions,
+  XAxisPlotBandsOptions,
   XrangePointOptionsObject,
 } from 'highcharts';
 import type { CSSProperties } from 'react';
@@ -15,6 +16,7 @@ import {
   NOTABLE_TOO,
   stateRowCount,
   TELESCOPE_MODE_LABEL,
+  type TimelineBand,
   type TimelineBlock,
   type TimelineRow,
   TOO_SUPPORT_LABEL,
@@ -394,6 +396,25 @@ interface GroupedRowLayout {
   /** The category index a data row lands on, past the headings. */
   readonly offsetFor: (rowIndex: number) => number;
 }
+
+/** The closure band all three views draw; `labelY` is the one thing they legitimately differ on. */
+export const closureBandPlotBand = (band: TimelineBand, labelY: number): XAxisPlotBandsOptions => ({
+  from: band.interval.start,
+  to: band.interval.end,
+  color: 'var(--schedule-band)',
+  borderColor: 'var(--schedule-band-edge)',
+  borderWidth: 1,
+  zIndex: LABELLED_BAND_Z,
+  className: 'schedule-closure-band',
+  label: {
+    text: band.label,
+    style: { color: 'var(--timeline-text)', fontSize: '0.68rem', fontWeight: '600' },
+    rotation: 0,
+    align: 'center' as const,
+    verticalAlign: 'top' as const,
+    y: labelY,
+  },
+});
 
 /** Above the washes and the grid, below anything that must still be seen or hangs a label in the top row. */
 const HEADING_MASK_Z = 6;

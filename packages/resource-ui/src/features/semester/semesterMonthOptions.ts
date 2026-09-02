@@ -5,8 +5,8 @@ import type { TimelineMonth } from '@/domain/semesterTimeline';
 import type { Site } from '@/domain/types';
 import {
   buildTimelineChart,
+  closureBandPlotBand,
   eveningDescriber,
-  LABELLED_BAND_Z,
   MARKER_LINE_Z,
 } from '@/features/timeline/timelineOptions';
 
@@ -41,23 +41,7 @@ export const buildMonthBands = (month: TimelineMonth): XAxisPlotBandsOptions[] =
       color: 'var(--schedule-weekend)',
       className: 'schedule-weekend',
     })),
-  ...month.bands.map((band) => ({
-    from: band.interval.start,
-    to: band.interval.end,
-    color: 'var(--schedule-band)',
-    borderColor: 'var(--schedule-band-edge)',
-    borderWidth: 1,
-    zIndex: LABELLED_BAND_Z,
-    className: 'schedule-closure-band',
-    label: {
-      text: band.label,
-      style: { color: 'var(--timeline-text)', fontSize: '0.68rem', fontWeight: '600' },
-      rotation: 0,
-      align: 'center' as const,
-      verticalAlign: 'top' as const,
-      y: 12,
-    },
-  })),
+  ...month.bands.map((band) => closureBandPlotBand(band, 12)),
 ];
 
 /** The week starts on Sunday, so the chart and the calendar cannot sit a night apart. */

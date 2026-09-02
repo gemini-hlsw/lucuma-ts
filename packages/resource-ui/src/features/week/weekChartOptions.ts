@@ -8,6 +8,7 @@ import type { Site } from '@/domain/types';
 import type { WeekTimeline } from '@/domain/weekTimeline';
 import {
   buildTimelineChart,
+  closureBandPlotBand,
   eveningDescriber,
   LABELLED_BAND_Z,
   MARKER_LINE_Z,
@@ -65,23 +66,7 @@ export const buildWeekBands = (week: WeekTimeline, site: Site): XAxisPlotBandsOp
         y: 12,
       },
     })),
-  ...week.bands.map((band) => ({
-    from: band.interval.start,
-    to: band.interval.end,
-    color: 'var(--schedule-band)',
-    borderColor: 'var(--schedule-band-edge)',
-    borderWidth: 1,
-    zIndex: LABELLED_BAND_Z,
-    className: 'schedule-closure-band',
-    label: {
-      text: band.label,
-      style: { color: 'var(--timeline-text)', fontSize: '0.68rem', fontWeight: '600' },
-      rotation: 0,
-      align: 'center' as const,
-      verticalAlign: 'top' as const,
-      y: 14,
-    },
-  })),
+  ...week.bands.map((band) => closureBandPlotBand(band, 14)),
 ];
 
 /** One line per night boundary, so the seven nights are countable. */
