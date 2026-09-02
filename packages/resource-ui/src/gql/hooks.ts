@@ -39,6 +39,23 @@ export interface PublishedSemestersResult {
   readonly error: Error | undefined;
 }
 
+/** The four lists every schedule query selects. Typed off the adapters, so a signature change lands here. */
+const toScheduleBlocks = (
+  data:
+    | {
+        readonly instrumentAvailability?: Parameters<typeof toMountings>[0];
+        readonly telescopeAvailability?: Parameters<typeof toClosures>[0];
+        readonly tooSupport?: Parameters<typeof toTooBlocks>[0];
+        readonly telescopeMode?: Parameters<typeof toModeBlocks>[0];
+      }
+    | undefined,
+): Pick<ScheduleResult, 'mountings' | 'closures' | 'tooBlocks' | 'modeBlocks'> => ({
+  mountings: toMountings(data?.instrumentAvailability ?? []),
+  closures: toClosures(data?.telescopeAvailability ?? []),
+  tooBlocks: toTooBlocks(data?.tooSupport ?? []),
+  modeBlocks: toModeBlocks(data?.telescopeMode ?? []),
+});
+
 /** Every site + semester Resource holds, for the picker. */
 export const usePublishedSemesters = (): PublishedSemestersResult => {
   const { data, loading, error } = useQuery(PUBLISHED_SEMESTERS_QUERY);
@@ -77,10 +94,7 @@ export const useSemesterSchedule = (site: Site, bounds: ApiInterval | null): Sch
     skip: bounds === null,
   });
 
-  const mountings = toMountings(data?.instrumentAvailability ?? []);
-  const closures = toClosures(data?.telescopeAvailability ?? []);
-  const tooBlocks = toTooBlocks(data?.tooSupport ?? []);
-  const modeBlocks = toModeBlocks(data?.telescopeMode ?? []);
+  const { mountings, closures, tooBlocks, modeBlocks } = toScheduleBlocks(data);
   return { mountings, closures, tooBlocks, modeBlocks, loading, error };
 };
 
@@ -101,10 +115,7 @@ export const useNightSchedule = (site: Site, observingNight: string, bounds: Api
     variables: { site, night: observingNight, interval: bounds },
   });
 
-  const mountings = toMountings(data?.instrumentAvailability ?? []);
-  const closures = toClosures(data?.telescopeAvailability ?? []);
-  const tooBlocks = toTooBlocks(data?.tooSupport ?? []);
-  const modeBlocks = toModeBlocks(data?.telescopeMode ?? []);
+  const { mountings, closures, tooBlocks, modeBlocks } = toScheduleBlocks(data);
   const subsystemBlocks = toSubsystemBlocks(data?.telescopeSubsystemAvailability ?? []);
   return {
     mountings,
@@ -138,10 +149,7 @@ export const useWeekSchedule = (
     variables: { site, nights, interval: bounds },
   });
 
-  const mountings = toMountings(data?.instrumentAvailability ?? []);
-  const closures = toClosures(data?.telescopeAvailability ?? []);
-  const tooBlocks = toTooBlocks(data?.tooSupport ?? []);
-  const modeBlocks = toModeBlocks(data?.telescopeMode ?? []);
+  const { mountings, closures, tooBlocks, modeBlocks } = toScheduleBlocks(data);
   const nightsWithData = new Set(
     (data?.telescopeNights ?? []).filter((night) => night.dataAvailable).map((night) => night.observingNight),
   );
