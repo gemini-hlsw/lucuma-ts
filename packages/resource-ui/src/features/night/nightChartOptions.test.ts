@@ -303,3 +303,32 @@ describe('a port closure on the night', () => {
     expect(pointsFor([bare])[0]?.custom.label).toBe('No instrument scheduled');
   });
 });
+
+describe('a telescope-wide closure on the night', () => {
+  const shutdown: Closure = {
+    id: 'wide',
+    availability: 'CLOSED',
+    port: null,
+    reason: 'Telescope Shutdown A&G Maintenance',
+    // Several nights long, as the published shutdowns are: this night sees the middle of it.
+    interval: { start: interval.start - 2 * 24 * HOUR, end: interval.end + 2 * 24 * HOUR },
+  };
+
+  const closureBand = () => {
+    const night = buildNightTimeline({ site: 'GS', observingNight: NIGHT, mountings: [], closures: [shutdown] });
+    const { xAxis } = buildNightChartOptions({ night, site: 'GS', now: null, timeDisplay: 'site' });
+    if (xAxis === undefined || Array.isArray(xAxis)) {
+      throw new Error('expected a single x axis');
+    }
+    return (xAxis.plotBands ?? []).find((band) => band.className === 'schedule-closure-band');
+  };
+
+  it('washes the night from edge to edge, clipped to the window', () => {
+    expect(closureBand()?.from).toBe(interval.start);
+    expect(closureBand()?.to).toBe(interval.end);
+  });
+
+  it('hangs its label at the height the night chart leaves for it', () => {
+    expect(closureBand()?.label?.y).toBe(14);
+  });
+});

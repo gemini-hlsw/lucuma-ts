@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import { type BandFitChart, fitBandLabels } from './timelineOptions';
+import type { TimelineBand } from '@/domain/timeline';
+
+import { type BandFitChart, closureBandPlotBand, fitBandLabels } from './timelineOptions';
 
 /** A rendered band the fit pass can read, recording show/hide calls. */
 const band = (from: number, to: number, text: string, fontSize = '0.68rem') => {
@@ -82,5 +84,42 @@ describe(fitBandLabels, () => {
     expect(() => {
       fitBandLabels({ xAxis: [{ toPixels: (value: number) => value, plotLinesAndBands: [weekend] }] });
     }).not.toThrow();
+  });
+});
+
+describe(closureBandPlotBand, () => {
+  const shutdown: TimelineBand = {
+    id: 'wide',
+    interval: { start: 1_800_000_000_000, end: 1_800_432_000_000 },
+    label: 'Telescope Shutdown A&G Maintenance',
+  };
+
+  it('spans the closure, opening instant to closing instant', () => {
+    const plotBand = closureBandPlotBand(shutdown, 14);
+
+    expect(plotBand.from).toBe(shutdown.interval.start);
+    expect(plotBand.to).toBe(shutdown.interval.end);
+  });
+
+  it('washes the closure in the band fill, edged so its ends are readable', () => {
+    expect(closureBandPlotBand(shutdown, 14)).toMatchObject({
+      className: 'schedule-closure-band',
+      color: 'var(--schedule-band)',
+      borderColor: 'var(--schedule-band-edge)',
+      borderWidth: 1,
+      // Over the mask that hides the heading row, or the label it hangs there is covered.
+      zIndex: 8,
+    });
+  });
+
+  it('hangs the label upright in the heading row, at the height the view asks for', () => {
+    expect(closureBandPlotBand(shutdown, 14).label).toMatchObject({
+      text: shutdown.label,
+      y: 14,
+      rotation: 0,
+      align: 'center',
+      verticalAlign: 'top',
+    });
+    expect(closureBandPlotBand(shutdown, 12).label?.y).toBe(12);
   });
 });

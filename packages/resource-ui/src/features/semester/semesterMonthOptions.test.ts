@@ -213,3 +213,32 @@ describe('axis', () => {
     expect(marker(outside)).toHaveLength(0);
   });
 });
+
+describe('the telescope-wide closure band', () => {
+  const shutdown: Closure = {
+    id: 'wide',
+    availability: 'CLOSED',
+    port: null,
+    reason: 'Telescope Shutdown A&G Maintenance',
+    interval: span('2026-08-03', '2026-08-06'),
+  };
+  const month = buildSemesterTimeline({
+    site: 'GS',
+    firstNight: '2026-08-02',
+    lastNight: '2027-02-01',
+    mountings: [],
+    closures: [shutdown],
+  }).months[0]!;
+
+  const closureBand = () => buildMonthBands(month).find((band) => band.className === 'schedule-closure-band');
+
+  it('spans only the nights it closes, not the month', () => {
+    expect(closureBand()?.from).toBe(shutdown.interval.start);
+    expect(closureBand()?.to).toBe(shutdown.interval.end);
+  });
+
+  it('hangs its label at the height the month chart leaves for it', () => {
+    // The month's rows are shorter than the night and week rows, so its heading row sits higher.
+    expect(closureBand()?.label?.y).toBe(12);
+  });
+});

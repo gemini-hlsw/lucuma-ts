@@ -1,6 +1,8 @@
 import type { XAxisOptions } from 'highcharts';
 import { describe, expect, it } from 'vitest';
 
+import { observingNightInterval } from '@/domain/siteTime';
+import type { Closure } from '@/domain/types';
 import { buildWeekTimeline } from '@/domain/weekTimeline';
 
 import {
@@ -87,5 +89,41 @@ describe('the chart', () => {
 
     expect(axisOf().min).toBe(week.interval.start);
     expect(axisOf().max).toBe(week.interval.end);
+  });
+});
+
+describe('a telescope-wide closure across the week', () => {
+  // Two nights of the seven, so a band drawn over the whole week would not pass as this one.
+  const closed = {
+    start: observingNightInterval('GS', '2026-11-16').start,
+    end: observingNightInterval('GS', '2026-11-17').end,
+  };
+  const shutdown: Closure = {
+    id: 'wide',
+    availability: 'CLOSED',
+    port: null,
+    reason: 'Telescope Shutdown A&G Maintenance',
+    interval: closed,
+  };
+
+  const closureBand = () =>
+    buildWeekBands(
+      buildWeekTimeline({
+        site: 'GS',
+        firstNight: FIRST,
+        mountings: [],
+        closures: [shutdown],
+        nightsWithData: undefined,
+      }),
+      'GS',
+    ).find((band) => band.className === 'schedule-closure-band');
+
+  it('spans only the nights it closes', () => {
+    expect(closureBand()?.from).toBe(closed.start);
+    expect(closureBand()?.to).toBe(closed.end);
+  });
+
+  it('hangs its label at the height the week chart leaves for it', () => {
+    expect(closureBand()?.label?.y).toBe(14);
   });
 });
