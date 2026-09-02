@@ -148,8 +148,8 @@ the mock.
 - **Unpaged, deliberately** - and the interval queries are far smaller than the shape
   suggests, because a record is a span, not a row per night. Counted against this export:
   a whole GS 2025B schedule (`instrumentAvailability` + `telescopeAvailability` +
-  `tooSupport` + `telescopeMode`) is **14 blocks**; a site's whole component history is
-  **188 blocks**; a site's catalog is **60-75 pieces**. The one large response is the
+  `tooSupport` + `telescopeMode`) is **14 blocks**; a whole component history is
+  **188 blocks at GS and 272 at GN**; a site's catalog is **60-75 pieces**. The one large response is the
   scheduler's simulation-mode range, where the projection repeats every block on every
   night it touches: GS 2025B is 184 nights and **16,384 blocks** over all six lists,
   which runs to megabytes and varies several-fold with what is selected. **Size the SQL
