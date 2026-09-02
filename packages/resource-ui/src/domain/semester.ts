@@ -7,13 +7,13 @@ const toIsoDate = (date: Date): string =>
 /** Parses an ISO calendar date (YYYY-MM-DD) as a UTC Date. */
 const fromIsoDate = (iso: string): Date => new Date(`${iso}T00:00:00Z`);
 
-/** Adds a whole number of days to an ISO calendar date. */
 /** Saturday or Sunday, read at UTC so a calendar date cannot slide under a zone. */
 export const isWeekendDate = (isoDate: string): boolean => {
   const day = new Date(`${isoDate}T00:00:00Z`).getUTCDay();
   return day === 0 || day === 6;
 };
 
+/** Adds a whole number of days to an ISO calendar date. */
 export const addDays = (iso: string, days: number): string => {
   const date = fromIsoDate(iso);
   date.setUTCDate(date.getUTCDate() + days);
