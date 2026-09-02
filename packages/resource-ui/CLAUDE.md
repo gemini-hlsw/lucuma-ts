@@ -8,7 +8,7 @@ constraints, not history. When something is removed, it leaves this file with it
 
 The v1 read surface is complete and waiting on its backend. Five destinations draw the one
 record: `/night`, `/week` (seven nights on one continuous axis), `/semester`, `/instruments`
-and `/components`. The sidebar names the endpoint on every page.
+and `/components`. The About dialog names the endpoint this serving reads.
 
 **The app reads one backend: the live Resource service** at `/resource/graphql`. It does not
 serve the v1 API yet, so every view is empty behind an amber banner naming the situation

@@ -68,15 +68,6 @@ export default function Sidebar(): JSX.Element {
           </div>
         ))}
       </nav>
-      {/* Names the endpoint rather than claiming a provenance the app cannot see. */}
-      <p
-        className="px-4 pt-6 pb-2 text-[11px] leading-4 text-foreground-muted max-md:hidden"
-        data-testid="data-source-note"
-      >
-        Reading the live server at
-        <br />
-        <span className="font-mono">/resource/graphql</span>
-      </p>
     </aside>
   );
 }

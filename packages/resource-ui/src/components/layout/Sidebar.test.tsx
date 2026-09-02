@@ -55,13 +55,3 @@ describe(Sidebar, () => {
     }
   });
 });
-
-describe('the data-source note', () => {
-  it('names the live endpoint, so no page reads without knowing where it came from', async () => {
-    const screen = await renderApp({ element: <Sidebar />, route: '/night' });
-
-    const note = screen.getByTestId('data-source-note');
-    await expect.element(note).toBeVisible();
-    await expect.element(note.getByText('/resource/graphql')).toBeVisible();
-  });
-});
