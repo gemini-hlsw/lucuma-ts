@@ -1,40 +1,6 @@
-const SITE_TIME_ZONES = {
-  GN: 'Pacific/Honolulu',
-  GS: 'America/Santiago',
-} as const;
+import { localDateTimeToUtc, SITE_TIME_ZONES } from '../src/domain/localTime.ts';
 
 type MockSite = keyof typeof SITE_TIME_ZONES;
-
-/** Minutes that `timeZone` is offset from UTC at the given instant. */
-const offsetMinutes = (instant: Date, timeZone: string): number => {
-  const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone,
-    hour12: false,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  }).formatToParts(instant);
-  const field = (type: string): number => Number(parts.find((part) => part.type === type)?.value);
-  const asUtc = Date.UTC(
-    field('year'),
-    field('month') - 1,
-    field('day'),
-    field('hour') % 24,
-    field('minute'),
-    field('second'),
-  );
-  return Math.round((asUtc - instant.getTime()) / 60_000);
-};
-
-/** The UTC instant of `hour:00` local time on the given ISO date, as epoch millis. */
-const localHourToUtc = (isoDate: string, hour: number, timeZone: string): number => {
-  const guess = Date.parse(`${isoDate}T${hour.toString().padStart(2, '0')}:00:00Z`);
-  const offset = offsetMinutes(new Date(guess), timeZone);
-  return guess - offset * 60_000;
-};
 
 /** `isoDate` moved by whole days, staying on the calendar. */
 export const addDaysIso = (isoDate: string, days: number): string => {
@@ -52,8 +18,8 @@ export interface MockInterval {
 export const observingNightInterval = (site: MockSite, isoDate: string): MockInterval => {
   const timeZone = SITE_TIME_ZONES[site];
   return {
-    start: new Date(localHourToUtc(addDaysIso(isoDate, -1), 14, timeZone)).toISOString(),
-    end: new Date(localHourToUtc(isoDate, 14, timeZone)).toISOString(),
+    start: new Date(localDateTimeToUtc(addDaysIso(isoDate, -1), 14, 0, timeZone)).toISOString(),
+    end: new Date(localDateTimeToUtc(isoDate, 14, 0, timeZone)).toISOString(),
   };
 };
 

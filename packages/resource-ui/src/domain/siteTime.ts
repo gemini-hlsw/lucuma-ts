@@ -1,11 +1,11 @@
+import { localDateTimeToUtc, SITE_TIME_ZONES as ZONES, zoneFormatters } from './localTime';
 import { addDays } from './semester';
 import type { Interval, Site } from './types';
 
-/** Each site's IANA zone - the one map every zone-aware formatter reads. */
-export const SITE_TIME_ZONES = {
-  GN: 'Pacific/Honolulu',
-  GS: 'America/Santiago',
-} satisfies Record<Site, string>;
+export { zoneFormatters };
+
+/** `satisfies` keeps it honest: a site added to the schema fails to compile until it has a zone. */
+export const SITE_TIME_ZONES = ZONES satisfies Record<Site, string>;
 
 /** Display only: observing-night labels and evening dates are the site's calendar and never move. */
 export type TimeDisplay = 'site' | 'utc';
@@ -14,68 +14,11 @@ export type TimeDisplay = 'site' | 'utc';
 export const displayTimeZone = (site: Site, display: TimeDisplay): string =>
   display === 'utc' ? 'UTC' : SITE_TIME_ZONES[site];
 
-/** Construction is expensive and the label formatters run per block, so cache one per zone. */
-export const zoneFormatters = (
-  locale: string,
-  options: Intl.DateTimeFormatOptions,
-): ((timeZone: string) => Intl.DateTimeFormat) => {
-  const cache = new Map<string, Intl.DateTimeFormat>();
-  return (timeZone) => {
-    let formatter = cache.get(timeZone);
-    if (formatter === undefined) {
-      formatter = new Intl.DateTimeFormat(locale, { ...options, timeZone });
-      cache.set(timeZone, formatter);
-    }
-    return formatter;
-  };
-};
-
-const pad = (value: number): string => value.toString().padStart(2, '0');
-
-const offsetParts = zoneFormatters('en-US', {
-  hour12: false,
-  year: 'numeric',
-  month: '2-digit',
-  day: '2-digit',
-  hour: '2-digit',
-  minute: '2-digit',
-  second: '2-digit',
-});
-
-/** Minutes that `timeZone` is offset from UTC at the given instant. */
-const offsetMinutes = (instant: Date, timeZone: string): number => {
-  const parts = offsetParts(timeZone).formatToParts(instant);
-  const field = (type: string): number => Number(parts.find((part) => part.type === type)?.value);
-  const asUtc = Date.UTC(
-    field('year'),
-    field('month') - 1,
-    field('day'),
-    field('hour') % 24,
-    field('minute'),
-    field('second'),
-  );
-  return Math.round((asUtc - instant.getTime()) / 60_000);
-};
-
 /** The UTC epoch-millis instant of `hour:minute` local time on the given ISO date. */
-const localDateTimeToUtc = (isoDate: string, hour: number, minute: number, site: Site): number => {
-  const timeZone = SITE_TIME_ZONES[site];
-  const guess = Date.parse(`${isoDate}T${pad(hour)}:${pad(minute)}:00Z`);
-  let instant = guess;
-  for (let attempt = 0; attempt < 3; attempt += 1) {
-    const adjusted = guess - offsetMinutes(new Date(instant), timeZone) * 60_000;
-    if (adjusted === instant) {
-      return instant;
-    }
-    instant = adjusted;
-  }
-  return instant;
-};
-
 /** The [start, end) UTC interval (epoch millis) of the observing night ending on `isoDate`. */
 export const observingNightInterval = (site: Site, isoDate: string): Interval => ({
-  start: localDateTimeToUtc(addDays(isoDate, -1), 14, 0, site),
-  end: localDateTimeToUtc(isoDate, 14, 0, site),
+  start: localDateTimeToUtc(addDays(isoDate, -1), 14, 0, SITE_TIME_ZONES[site]),
+  end: localDateTimeToUtc(isoDate, 14, 0, SITE_TIME_ZONES[site]),
 });
 
 const nightParts = zoneFormatters('en-CA', {
