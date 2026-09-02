@@ -1,3 +1,4 @@
+import { addDays } from './semester';
 import type { Interval, Site } from './types';
 
 /** Each site's IANA zone - the one map every zone-aware formatter reads. */
@@ -30,12 +31,6 @@ export const zoneFormatters = (
 };
 
 const pad = (value: number): string => value.toString().padStart(2, '0');
-
-const addDaysIso = (isoDate: string, days: number): string => {
-  const date = new Date(`${isoDate}T00:00:00Z`);
-  date.setUTCDate(date.getUTCDate() + days);
-  return date.toISOString().slice(0, 10);
-};
 
 const offsetParts = zoneFormatters('en-US', {
   hour12: false,
@@ -79,7 +74,7 @@ const localDateTimeToUtc = (isoDate: string, hour: number, minute: number, site:
 
 /** The [start, end) UTC interval (epoch millis) of the observing night ending on `isoDate`. */
 export const observingNightInterval = (site: Site, isoDate: string): Interval => ({
-  start: localDateTimeToUtc(addDaysIso(isoDate, -1), 14, 0, site),
+  start: localDateTimeToUtc(addDays(isoDate, -1), 14, 0, site),
   end: localDateTimeToUtc(isoDate, 14, 0, site),
 });
 
@@ -96,16 +91,16 @@ export const observingNightOf = (site: Site, epochMillis: number): string => {
   const parts = nightParts(SITE_TIME_ZONES[site]).formatToParts(new Date(epochMillis));
   const field = (type: string): string => parts.find((part) => part.type === type)?.value ?? '';
   const localDate = `${field('year')}-${field('month')}-${field('day')}`;
-  return Number(field('hour')) % 24 >= 14 ? addDaysIso(localDate, 1) : localDate;
+  return Number(field('hour')) % 24 >= 14 ? addDays(localDate, 1) : localDate;
 };
 
 /** How the published sheet heads that night's column. */
 export const firstEveningDate = (site: Site, interval: Interval): string =>
-  addDaysIso(observingNightOf(site, interval.start), -1);
+  addDays(observingNightOf(site, interval.start), -1);
 
 /** Not symmetric with the start: an interval's end is exclusive and lands on the label date, a day late. */
 export const lastEveningDate = (site: Site, interval: Interval): string =>
-  addDaysIso(observingNightOf(site, interval.end - 1), -1);
+  addDays(observingNightOf(site, interval.end - 1), -1);
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 

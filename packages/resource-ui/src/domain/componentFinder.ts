@@ -1,3 +1,4 @@
+import { overlaps, transitionsOf } from './interval';
 import type {
   ComponentBlock,
   ComponentLocation,
@@ -32,19 +33,8 @@ export interface FinderRow {
   readonly transitions: readonly number[];
 }
 
-const overlaps = (a: Interval, b: Interval): boolean => a.start < b.end && b.start < a.end;
-
 /** The latest block touching the night, so a piece that comes off mid-night reports where it ended up. */
 const deciding = (blocks: readonly ComponentBlock[]): ComponentBlock | undefined => blocks.at(-1);
-
-/** Both blocks overlap the night and the API serves them disjoint, so no clipping is needed. */
-const transitionsOf = (blocks: readonly ComponentBlock[]): readonly number[] =>
-  blocks.slice(1).flatMap((block, index) => {
-    const previous = blocks[index];
-    return previous !== undefined && previous.interval.end < block.interval.start
-      ? [previous.interval.end, block.interval.start]
-      : [block.interval.start];
-  });
 
 /** The same derivation for a row and a history line, so "Installed" cannot mean two places. */
 export const whereOf = (

@@ -11,7 +11,7 @@ import type {
   StoredTooSupport,
 } from './store.ts';
 import type { SynthesizedInstrumentBlock } from './storedInstruments.ts';
-import { clipInterval, intervalsOverlap, type MockInterval, observingNightInterval } from './time.ts';
+import { addDaysIso, clipInterval, intervalsOverlap, type MockInterval, observingNightInterval } from './time.ts';
 
 /** Above a semester, below an accidental decade (v1-scheduler-integration.md §4). */
 const MAX_NIGHTS = 400;
@@ -39,16 +39,10 @@ const Timestamp = new GraphQLScalarType<string, string>({
   parseValue: (value) => String(value),
 });
 
-const addDays = (date: string, days: number): string => {
-  const shifted = new Date(`${date}T00:00:00Z`);
-  shifted.setUTCDate(shifted.getUTCDate() + days);
-  return shifted.toISOString().slice(0, 10);
-};
-
 /** Observing nights from `start` inclusive to `end` exclusive. */
 const nightsBetween = (start: string, end: string): readonly string[] => {
   const nights: string[] = [];
-  for (let night = start; night < end; night = addDays(night, 1)) {
+  for (let night = start; night < end; night = addDaysIso(night, 1)) {
     nights.push(night);
   }
   return nights;

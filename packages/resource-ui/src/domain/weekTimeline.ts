@@ -1,4 +1,4 @@
-import { addDays } from './semester';
+import { addDays, isWeekendDate } from './semester';
 import { observingNightInterval } from './siteTime';
 import {
   collectBlocks,
@@ -40,11 +40,6 @@ export interface BuildWeekTimelineOptions {
 /** The seven observing-night labels a week window covers. */
 export const weekNightLabels = (firstNight: string): readonly string[] =>
   Array.from({ length: WEEK_NIGHTS }, (_, index) => addDays(firstNight, index));
-
-const isWeekendDate = (isoDate: string): boolean => {
-  const day = new Date(`${isoDate}T00:00:00Z`).getUTCDay();
-  return day === 0 || day === 6;
-};
 
 export const buildWeekTimeline = ({
   site,

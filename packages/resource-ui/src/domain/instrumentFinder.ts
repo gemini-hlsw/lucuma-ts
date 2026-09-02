@@ -1,3 +1,4 @@
+import { overlaps, transitionsOf } from './interval';
 import { STORAGE_PLACE_LABEL } from './places';
 import { portRowLabel } from './ports';
 import type { Instrument, Interval, Mounting, OffPortPlace, ResourceUsage } from './types';
@@ -25,17 +26,6 @@ export interface InstrumentRow {
   /** The instants the record changes during the night, in order. */
   readonly transitions: readonly number[];
 }
-
-const overlaps = (a: Interval, b: Interval): boolean => a.start < b.end && b.start < a.end;
-
-/** Where consecutive runs meet, or the edges of the gap between them. */
-const transitionsOf = (runs: readonly Mounting[]): readonly number[] =>
-  runs.slice(1).flatMap((run, index) => {
-    const previous = runs[index];
-    return previous !== undefined && previous.interval.end < run.interval.start
-      ? [previous.interval.end, run.interval.start]
-      : [run.interval.start];
-  });
 
 // Unreachable: `Mounting` types `place` and `port` independently, so the compiler cannot see they are exclusive.
 const whereOf = (mounting: Mounting): InstrumentWhere =>

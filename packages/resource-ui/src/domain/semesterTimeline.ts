@@ -1,4 +1,4 @@
-import { addDays } from './semester';
+import { addDays, isWeekendDate } from './semester';
 import { observingNightInterval } from './siteTime';
 import {
   collectBlocks,
@@ -54,11 +54,6 @@ const nightsFrom = (first: string, last: string): readonly string[] => {
     nights.push(night);
   }
   return nights;
-};
-
-const isWeekendDate = (isoDate: string): boolean => {
-  const day = new Date(`${isoDate}T00:00:00Z`).getUTCDay();
-  return day === 0 || day === 6;
 };
 
 export interface BuildSemesterTimelineOptions {
