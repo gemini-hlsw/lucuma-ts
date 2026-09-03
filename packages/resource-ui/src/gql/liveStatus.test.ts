@@ -1,13 +1,42 @@
 /** What the banner is allowed to say: the last failure while one stands, nothing once it answers. */
 import { ApolloClient, ApolloLink, gql } from '@apollo/client';
 import { CombinedGraphQLErrors } from '@apollo/client/errors';
+import { ErrorLink } from '@apollo/client/link/error';
 import { Observable } from '@apollo/client/utilities';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderHook } from 'vitest-browser-react';
 
 import { clearOnSuccessLink, liveFailureMessage } from './ApolloConfigs';
 import { buildCache } from './cache';
 import { clearLiveFailure, reportLiveFailure, useLiveFailure } from './liveStatus';
+
+// A real operation, because @graphql-eslint validates documents against the schema.
+const QUERY = gql`
+  query LiveFailureProbe {
+    publishedSemesters {
+      site
+    }
+  }
+`;
+
+/** Runs one operation through `links`, over a stub terminal that answers `result`. */
+const answerThrough = async (links: readonly ApolloLink[], result: ApolloLink.Result): Promise<void> => {
+  const stub = new ApolloLink(
+    () =>
+      new Observable<ApolloLink.Result>((observer) => {
+        observer.next(result);
+        observer.complete();
+      }),
+  );
+  const client = new ApolloClient({ link: ApolloLink.empty(), cache: buildCache() });
+
+  await new Promise<void>((resolve, reject) => {
+    ApolloLink.execute(ApolloLink.from([...links, stub]), { query: QUERY }, { client }).subscribe({
+      complete: resolve,
+      error: reject,
+    });
+  });
+};
 
 describe('the live-failure store', () => {
   beforeEach(() => {
@@ -40,34 +69,6 @@ describe('the live-failure store', () => {
 
 /** Without it one transient failure pins the banner for the session while every query succeeds. */
 describe(clearOnSuccessLink, () => {
-  // A real operation, because @graphql-eslint validates documents against the schema.
-  const QUERY = gql`
-    query LiveFailureProbe {
-      publishedSemesters {
-        site
-      }
-    }
-  `;
-
-  /** Runs one operation through the link, over a stub that answers `result`. */
-  const answerWith = async (result: ApolloLink.Result): Promise<void> => {
-    const stub = new ApolloLink(
-      () =>
-        new Observable<ApolloLink.Result>((observer) => {
-          observer.next(result);
-          observer.complete();
-        }),
-    );
-    const client = new ApolloClient({ link: ApolloLink.empty(), cache: buildCache() });
-
-    await new Promise<void>((resolve, reject) => {
-      ApolloLink.execute(ApolloLink.from([clearOnSuccessLink(), stub]), { query: QUERY }, { client }).subscribe({
-        complete: resolve,
-        error: reject,
-      });
-    });
-  };
-
   beforeEach(() => {
     clearLiveFailure();
   });
@@ -79,7 +80,7 @@ describe(clearOnSuccessLink, () => {
     });
 
     await hook.act(async () => {
-      await answerWith({ data: { publishedSemesters: [] } });
+      await answerThrough([clearOnSuccessLink()], { data: { publishedSemesters: [] } });
     });
 
     expect(hook.result.current).toBeNull();
@@ -93,10 +94,65 @@ describe(clearOnSuccessLink, () => {
     });
 
     await hook.act(async () => {
-      await answerWith({ data: null, errors: [{ message: 'Cannot query field "publishedSemesters"' }] });
+      await answerThrough([clearOnSuccessLink()], {
+        data: null,
+        errors: [{ message: 'Cannot query field "publishedSemesters"' }],
+      });
     });
 
     expect(hook.result.current).toBe('the server does not serve this API');
+  });
+});
+
+/** The pair wired together, which the lone-link suite never exercises: one answer moves exactly one of them. */
+describe('clearOnSuccessLink composed with the ErrorLink', () => {
+  const noApiMessage = 'The live server answered, but it does not serve this version of the Resource API yet.';
+
+  /**
+   * `liveLink` in ApolloConfigs.ts owns this composition; it is not exported, and its terminal
+   * HttpLink would hit the network, so the pair is rebuilt here.
+   * `report` stands where `reportLiveFailure` stands in the real ErrorLink callback.
+   */
+  const composedLinks = (report: (message: string) => void): readonly ApolloLink[] => [
+    clearOnSuccessLink(),
+    new ErrorLink(({ error }) => {
+      report(liveFailureMessage(error));
+    }),
+  ];
+
+  beforeEach(() => {
+    clearLiveFailure();
+  });
+
+  it('clears a standing failure on an error-free answer without reporting a new one', async () => {
+    const report = vi.fn(reportLiveFailure);
+    const hook = await renderHook(() => useLiveFailure());
+    await hook.act(() => {
+      reportLiveFailure('the server went away');
+    });
+
+    await hook.act(async () => {
+      await answerThrough(composedLinks(report), { data: { publishedSemesters: [] } });
+    });
+
+    expect(hook.result.current).toBeNull();
+    expect(report).not.toHaveBeenCalled();
+  });
+
+  it('ends a GraphQL-error answer with the failure reported and standing, never cleared', async () => {
+    const report = vi.fn(reportLiveFailure);
+    const hook = await renderHook(() => useLiveFailure());
+
+    await hook.act(async () => {
+      await answerThrough(composedLinks(report), {
+        data: null,
+        errors: [{ message: 'Cannot query field "publishedSemesters"' }],
+      });
+    });
+
+    expect(report).toHaveBeenCalledTimes(1);
+    expect(report).toHaveBeenCalledWith(noApiMessage);
+    expect(hook.result.current).toBe(noApiMessage);
   });
 });
 
