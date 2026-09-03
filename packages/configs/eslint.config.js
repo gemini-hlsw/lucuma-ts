@@ -19,7 +19,6 @@ export default defineConfig(
       },
     },
     plugins: {
-      // @ts-expect-error - incorrect type
       '@graphql-eslint': graphqlPlugin,
     },
     rules: {

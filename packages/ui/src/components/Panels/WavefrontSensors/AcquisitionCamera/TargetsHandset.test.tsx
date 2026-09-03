@@ -136,7 +136,7 @@ describe(TargetsHandset, () => {
     ],
   ])('inputs for Az/El %s matches %s', async (testId, label, expectedInput) => {
     await selectAlignment('Az/El');
-    await testDirectionButtonClick<typeof ADJUST_TARGET_MUTATION>(testId, label, adjustTargetMutationMock, {
+    await expectDirectionButtonClick<typeof ADJUST_TARGET_MUTATION>(testId, label, adjustTargetMutationMock, {
       target: 'OIWFS',
       offset: { horizontalAdjustment: expectedInput },
       openLoops: true,
@@ -178,7 +178,7 @@ describe(TargetsHandset, () => {
     ],
   ])('inputs for AC %s matches %s', async (testId, label, expectedInput) => {
     await userEvent.click(sut.getByLabelText('Open loops'));
-    await testDirectionButtonClick<typeof ADJUST_TARGET_MUTATION>(testId, label, adjustTargetMutationMock, {
+    await expectDirectionButtonClick<typeof ADJUST_TARGET_MUTATION>(testId, label, adjustTargetMutationMock, {
       target: 'OIWFS',
       openLoops: false,
       offset: { focalPlaneAdjustment: expectedInput },
@@ -220,7 +220,7 @@ describe(TargetsHandset, () => {
     ],
   ])('inputs for Instrument %s matches %s', async (testId, label, expectedInput) => {
     await selectAlignment('Instrument');
-    await testDirectionButtonClick<typeof ADJUST_TARGET_MUTATION>(testId, label, adjustTargetMutationMock, {
+    await expectDirectionButtonClick<typeof ADJUST_TARGET_MUTATION>(testId, label, adjustTargetMutationMock, {
       target: 'OIWFS',
       offset: { instrumentAdjustment: expectedInput },
       openLoops: true,
@@ -262,7 +262,7 @@ describe(TargetsHandset, () => {
     ],
   ])('inputs for RA/Dec %s matches %s', async (testId, label, expectedInput) => {
     await selectAlignment('RA/Dec');
-    await testDirectionButtonClick<typeof ADJUST_TARGET_MUTATION>(testId, label, adjustTargetMutationMock, {
+    await expectDirectionButtonClick<typeof ADJUST_TARGET_MUTATION>(testId, label, adjustTargetMutationMock, {
       target: 'OIWFS',
       offset: { equatorialAdjustment: expectedInput },
       openLoops: true,
@@ -308,7 +308,7 @@ describe(TargetsHandset, () => {
     });
     await sut.rerender(<TargetsHandset canEdit={true} />);
     await selectAlignment('PWFS2');
-    await testDirectionButtonClick<typeof ADJUST_TARGET_MUTATION>(testId, undefined, adjustTargetMutationMock, {
+    await expectDirectionButtonClick<typeof ADJUST_TARGET_MUTATION>(testId, undefined, adjustTargetMutationMock, {
       target: 'OIWFS',
       openLoops: true,
       offset: { probeFrameAdjustment: { ...expectedInput, probeFrame: 'PWFS2' } },
@@ -323,7 +323,7 @@ describe(TargetsHandset, () => {
     await selectDropdownOption(sut, 'Select target', target);
   }
 
-  async function testDirectionButtonClick<T extends DocumentNode>(
+  async function expectDirectionButtonClick<T extends DocumentNode>(
     testId: string,
     label: string | undefined,
     mock: MockedResponseOf<T>,

@@ -12,29 +12,35 @@ describe(Configuration, () => {
   describe('m2ComaNotAllowed — M2 Coma checkbox disabled state', () => {
     it.each([
       // source is 'OIWFS' -> always disabled
-      ['GMOS_OIWFS', 'GN', true],
-      ['FLAMINGOS2_OIWFS', 'GS', true],
-      ['GMOS_OIWFS,PWFS1', 'GN', true],
+      ['GMOS_OIWFS', 'GN'],
+      ['FLAMINGOS2_OIWFS', 'GS'],
+      ['GMOS_OIWFS,PWFS1', 'GN'],
       // exactly 'PWFS2' -> always disabled
-      ['PWFS2', 'GN', true],
-      ['PWFS2', 'GS', true],
-      // exactly 'PWFS1' at GN -> disabled; at GS -> allowed
-      ['PWFS1', 'GN', true],
-      ['PWFS1', 'GS', false],
+      ['PWFS2', 'GN'],
+      ['PWFS2', 'GS'],
+      // exactly 'PWFS1' at GN -> disabled
+      ['PWFS1', 'GN'],
       // multiple non-OIWFS sources -> one of them PWFS1 at GN -> not allowed
-      ['PWFS1,PWFS2', 'GN', true],
-    ] as const)('source=%s site=%s -> disabled=%s', async (source, site, shouldBeDisabled) => {
+      ['PWFS1,PWFS2', 'GN'],
+    ] as const)('source=%s site=%s -> disabled', async (source, site) => {
       const sut = await renderWithContext(<Configuration />, {
         mocks: [guideLoopMock(source), configurationMock],
         serverConfig: { site },
       });
 
-      const checkbox = sut.getByRole('checkbox', { name: 'M2 Coma' });
-      if (shouldBeDisabled) {
-        await expect.element(checkbox).toBeDisabled();
-      } else {
-        await expect.element(checkbox).toBeEnabled();
-      }
+      await expect.element(sut.getByRole('checkbox', { name: 'M2 Coma' })).toBeDisabled();
+    });
+
+    it.each([
+      // exactly 'PWFS1' at GS -> allowed
+      ['PWFS1', 'GS'],
+    ] as const)('source=%s site=%s -> enabled', async (source, site) => {
+      const sut = await renderWithContext(<Configuration />, {
+        mocks: [guideLoopMock(source), configurationMock],
+        serverConfig: { site },
+      });
+
+      await expect.element(sut.getByRole('checkbox', { name: 'M2 Coma' })).toBeEnabled();
     });
   });
 
