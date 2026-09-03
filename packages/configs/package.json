@@ -15,8 +15,7 @@
     "./db": "./dist/prisma/db.js"
   },
   "scripts": {
-    "test": "pnpm test:integration",
-    "test:integration": "node --test --enable-source-maps --test-timeout 20000 'src/integration/**/*.test.ts'",
+    "test": "vitest run",
     "generate": "prisma generate",
     "prebuild": "pnpm generate && pnpm codegen",
     "build": "tsc -b",
@@ -51,9 +50,11 @@
     "eslint-import-resolver-typescript": "4.4.5",
     "eslint-plugin-simple-import-sort": "14.0.0",
     "globals": "17.11.0",
+    "@vitest/eslint-plugin": "1.6.27",
     "@typescript/native": "npm:typescript@7.0.2",
     "typescript": "npm:@typescript/typescript6@6.0.2",
-    "typescript-eslint": "8.68.0"
+    "typescript-eslint": "8.68.0",
+    "vitest": "4.1.11"
   },
   "files": [
     "dist",

@@ -1,85 +1,73 @@
-import assert from 'node:assert';
-import fs from 'node:fs/promises';
-import { after, afterEach, before, beforeEach } from 'node:test';
+import { randomUUID } from 'node:crypto';
 
 import { PrismaPg } from '@prisma/adapter-pg';
-import type { StartedPostgreSqlContainer } from '@testcontainers/postgresql';
-import { PostgreSqlContainer } from '@testcontainers/postgresql';
 import type { ExecutionResult } from 'graphql';
-import type { YogaServerInstance } from 'graphql-yoga';
 import { createLogger } from 'graphql-yoga';
+import { expect, inject, test as baseTest } from 'vitest';
 
 import type { PrismaClient as Prisma } from '../prisma/db.ts';
 import { extendPrisma } from '../prisma/extend.ts';
 import { PrismaClient } from '../prisma/gen/client.ts';
-import { populateDb } from '../prisma/queries/main.ts';
-import { type GraphQLContext, makeYogaServer } from '../server.ts';
+import { makeYogaServer } from '../server.ts';
 
 const noopLogger = createLogger('silent');
 
-interface ServerFixture {
-  /**
-   * Execute a graphql operation and return the result.
-   */
-  executeGraphql: <
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
-    TVariables extends Record<string, unknown>,
-    TData extends Record<string, unknown> = Record<string, unknown>,
-  >(options: {
-    query: string;
-    variables: TVariables;
-  }) => Promise<ExecutionResult<TData>>;
-  prisma: Prisma;
-  yoga: YogaServerInstance<GraphQLContext, object>;
-}
+/**
+ * Execute a graphql operation and return the result.
+ */
+type ExecuteGraphql = <
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
+  TVariables extends Record<string, unknown>,
+  TData extends Record<string, unknown> = Record<string, unknown>,
+>(options: {
+  query: string;
+  variables: TVariables;
+}) => Promise<ExecutionResult<TData>>;
 
 /**
- * Initialize a fixture for the tests. This will create a postgres container, migrate and seed the database, and setup the prisma client.
- * Also provides a helper function to execute a single graphql operation.
+ * Test API with server fixtures
  *
- * Fixture is created in a before hook and torn down in an after hook.
+ * ```ts
+ * test('updates a target', async ({ executeGraphql, prisma }) => { ... });
+ * ```
  */
-export function initializeServerFixture() {
-  // Mutable fixture object that holds the database connection and other useful objects
-  const fixture: ServerFixture = {} as ServerFixture;
+export const test = baseTest
+  // Connection to the `postgres` maintenance database. It creates and drops the database of
+  // each test. It must never connect to the template database.
+  // eslint-disable-next-line no-empty-pattern -- Vitest requires a destructuring pattern here.
+  .extend('maintenance', { scope: 'file' }, ({}, { onCleanup }) => {
+    const client = new PrismaClient({
+      adapter: new PrismaPg({ connectionString: `${inject('postgresBaseUri')}/postgres` }),
+    });
+    onCleanup(() => client.$disconnect());
 
-  let container: StartedPostgreSqlContainer;
+    return client;
+  })
+  // Prisma client for the current test, on a private copy of the seeded template database.
+  .extend('prisma', async ({ maintenance }, { onCleanup }): Promise<Prisma> => {
+    const database = `test_${randomUUID().replace(/-/g, '')}`;
+    await forkTemplateDatabase(maintenance, database);
 
-  let isFirstRun = true;
-
-  // Register setup to create the fixture
-  before(async () => {
-    // Create a postgres container for the tests
-    container = await new PostgreSqlContainer('postgres:alpine').start();
-
-    // Migrate and seed the database
-    const client = extendPrisma(
-      new PrismaClient({ adapter: new PrismaPg({ connectionString: container.getConnectionUri() }) }),
-    );
-    await migrateAndPopulateDb(client);
-    await client.$disconnect();
-
-    // Save starting snapshot of the database
-    await container.snapshot();
-  });
-
-  beforeEach(async (ctx) => {
-    if (!isFirstRun) {
-      // Restore the database to a clean state before each test (except the first)
-      await container.restoreSnapshot();
-    } else {
-      isFirstRun = false;
-    }
-
-    // Setup Prisma client with the test container connection
     const prisma = extendPrisma(
-      new PrismaClient({ adapter: new PrismaPg({ connectionString: container.getConnectionUri() }) }),
+      new PrismaClient({
+        adapter: new PrismaPg({ connectionString: `${inject('postgresBaseUri')}/${database}` }),
+      }),
     );
+    onCleanup(async () => {
+      await prisma.$disconnect();
+      await maintenance.$executeRawUnsafe(`DROP DATABASE "${database}" WITH (FORCE)`);
+    });
 
+    return prisma;
+  })
+  .extend('yoga', ({ prisma }, { onCleanup }) => {
     const yoga = makeYogaServer({ prisma, log: noopLogger });
-    fixture.yoga = yoga;
+    onCleanup(() => yoga.dispose());
 
-    const executeGraphql: ServerFixture['executeGraphql'] = async <TData extends Record<string, unknown>>({
+    return yoga;
+  })
+  .extend('executeGraphql', ({ yoga, signal }): ExecuteGraphql => {
+    return async <TData extends Record<string, unknown>>({
       query,
       variables,
     }: {
@@ -96,43 +84,25 @@ export function initializeServerFixture() {
           query: query,
           variables: variables ?? undefined,
         }),
-        signal: ctx.signal,
+        signal,
       });
 
-      if (!res.ok) assert.fail(`Graphql request failed: ${res.status} ${res.statusText} - ${await res.text()}`);
+      if (!res.ok) expect.fail(`Graphql request failed: ${res.status} ${res.statusText} - ${await res.text()}`);
 
       const body = (await res.json()) as ExecutionResult<TData>;
 
-      assert.ifError(body.errors);
+      expect(body.errors).toBeUndefined();
 
       return body;
     };
-
-    fixture.executeGraphql = executeGraphql;
-    fixture.prisma = prisma;
   });
-
-  afterEach(async () => {
-    await fixture.yoga.dispose();
-    await fixture.prisma?.$disconnect();
-  });
-
-  // Register teardown
-  after(async () => {
-    await container.stop({ timeout: 10_000 });
-  });
-
-  return fixture;
-}
 
 /**
- * Apply all migrations, quicker than using prisma migrate deploy
+ * Copy the seeded template database into a database of its own.
  */
-async function migrateAndPopulateDb(client: Prisma) {
-  const migrationDirs = (await fs.readdir('./prisma/migrations')).sort().filter((f) => !f.includes('.'));
-  for (const dir of migrationDirs) {
-    const migrationSqlContent = await fs.readFile(`./prisma/migrations/${dir}/migration.sql`, 'utf-8');
-    await client.$executeRawUnsafe(migrationSqlContent);
-  }
-  await populateDb(client, noopLogger);
+async function forkTemplateDatabase(maintenance: PrismaClient, database: string) {
+  const template = inject('templateDatabase');
+
+  await maintenance.$executeRawUnsafe(`CREATE DATABASE "${database}" TEMPLATE "${template}"`);
+  return;
 }

@@ -1,14 +1,9 @@
-import assert from 'node:assert';
-import { describe, it } from 'node:test';
-
 import type { InstrumentConfig, QueryinstrumentsArgs } from '../graphql/gen/types.generated.ts';
-import { initializeServerFixture } from './setup.ts';
+import { test } from './setup.ts';
 
-await describe('Instruments', async () => {
-  const fixture = initializeServerFixture();
-
-  await it('gets instruments', async () => {
-    const response = await fixture.executeGraphql<QueryinstrumentsArgs, { instruments: InstrumentConfig[] }>({
+describe('Instruments', () => {
+  test('gets instruments', async ({ executeGraphql }) => {
+    const response = await executeGraphql<QueryinstrumentsArgs, { instruments: InstrumentConfig[] }>({
       query: `#graphql
         query instruments($name: Instrument, $issPort: Int, $wfs: WfsType) {
           instruments(name: $name, issPort: $issPort, wfs: $wfs) {
@@ -24,7 +19,7 @@ await describe('Instruments', async () => {
       },
     });
 
-    assert.deepEqual(response.data?.instruments, [
+    expect(response.data?.instruments).toStrictEqual([
       {
         issPort: 3,
         name: 'GMOS_SOUTH',
@@ -38,8 +33,8 @@ await describe('Instruments', async () => {
     ]);
   });
 
-  await it('gets instruments with extraParams', async () => {
-    const response = await fixture.executeGraphql<QueryinstrumentsArgs, { instruments: InstrumentConfig[] }>({
+  test('gets instruments with extraParams', async ({ executeGraphql }) => {
+    const response = await executeGraphql<QueryinstrumentsArgs, { instruments: InstrumentConfig[] }>({
       query: `#graphql
         query instruments($name: Instrument, $issPort: Int, $wfs: WfsType, $extraParams: JSON) {
           instruments(name: $name, issPort: $issPort, wfs: $wfs, extraParams: $extraParams) {
@@ -57,7 +52,7 @@ await describe('Instruments', async () => {
       },
     });
 
-    assert.deepStrictEqual(response.data?.instruments, [
+    expect(response.data?.instruments).toStrictEqual([
       {
         issPort: 3,
         name: 'GMOS_SOUTH',

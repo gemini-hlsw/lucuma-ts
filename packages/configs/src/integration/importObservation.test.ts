@@ -1,12 +1,7 @@
-import assert from 'node:assert';
-import { describe, it } from 'node:test';
-
 import type { ImportObservationInput } from '../graphql/gen/types.generated.ts';
-import { initializeServerFixture } from './setup.ts';
+import { test } from './setup.ts';
 
-await describe('importObservation', async () => {
-  const fixture = initializeServerFixture();
-
+describe('importObservation', () => {
   const query = `#graphql
     mutation doImportObservation($input: ImportObservationInput!) {
       importObservation(input: $input) {
@@ -19,8 +14,8 @@ await describe('importObservation', async () => {
       }
     }`;
 
-  await it('imports rotator and configuration data', async () => {
-    const response = await fixture.executeGraphql({
+  test('imports rotator and configuration data', async ({ executeGraphql, prisma }) => {
+    const response = await executeGraphql({
       query,
       variables: {
         input: {
@@ -44,12 +39,12 @@ await describe('importObservation', async () => {
       },
     });
 
-    assert.deepEqual(await fixture.prisma.rotator.findUnique({ where: { pk: 1 } }), {
+    expect(await prisma.rotator.findUnique({ where: { pk: 1 } })).toStrictEqual({
       pk: 1,
       tracking: 'TRACKING',
       angle: 1.1,
     });
-    assert.deepEqual(await fixture.prisma.configuration.findUnique({ where: { pk: 1 } }), {
+    expect(await prisma.configuration.findUnique({ where: { pk: 1 } })).toStrictEqual({
       pk: 1,
       baffleMode: 'AUTO',
       centralBaffle: null,
@@ -69,7 +64,7 @@ await describe('importObservation', async () => {
       selectedTarget: null,
       fpu: null,
     });
-    assert.deepStrictEqual(response.data, {
+    expect(response.data).toStrictEqual({
       importObservation: {
         configuration: { pk: 1 },
         rotator: { pk: 1 },
@@ -77,8 +72,8 @@ await describe('importObservation', async () => {
     });
   });
 
-  await it('imports targets', async () => {
-    const response = await fixture.executeGraphql({
+  test('imports targets', async ({ executeGraphql, prisma }) => {
+    const response = await executeGraphql({
       query,
       variables: {
         input: {
@@ -131,8 +126,8 @@ await describe('importObservation', async () => {
       },
     });
 
-    assert.deepEqual(
-      await fixture.prisma.target.findMany({
+    expect(
+      await prisma.target.findMany({
         select: {
           id: true,
           name: true,
@@ -141,19 +136,18 @@ await describe('importObservation', async () => {
           nonsidereal: { select: { des: true, keyType: true } },
         },
       }),
-      [
-        { id: 't-1', name: 'Base Target', type: 'SCIENCE', sidereal: { coord1: 10, coord2: 20 }, nonsidereal: null },
-        {
-          id: 't-2',
-          name: 'Base Nonsidereal Target',
-          type: 'BLINDOFFSET',
-          sidereal: null,
-          nonsidereal: { des: '2024 AB', keyType: 'MAJOR_BODY' },
-        },
-        { id: 't-3', name: 'OIWFS Target', type: 'OIWFS', sidereal: { coord1: 30, coord2: 40 }, nonsidereal: null },
-      ],
-    );
-    assert.deepEqual(await fixture.prisma.configuration.findUnique({ where: { pk: 1 } }), {
+    ).toStrictEqual([
+      { id: 't-1', name: 'Base Target', type: 'SCIENCE', sidereal: { coord1: 10, coord2: 20 }, nonsidereal: null },
+      {
+        id: 't-2',
+        name: 'Base Nonsidereal Target',
+        type: 'BLINDOFFSET',
+        sidereal: null,
+        nonsidereal: { des: '2024 AB', keyType: 'MAJOR_BODY' },
+      },
+      { id: 't-3', name: 'OIWFS Target', type: 'OIWFS', sidereal: { coord1: 30, coord2: 40 }, nonsidereal: null },
+    ]);
+    expect(await prisma.configuration.findUnique({ where: { pk: 1 } })).toStrictEqual({
       pk: 1,
       baffleMode: 'AUTO',
       centralBaffle: null,
@@ -173,7 +167,7 @@ await describe('importObservation', async () => {
       selectedTarget: 1,
       fpu: null,
     });
-    assert.deepEqual(await fixture.prisma.guideLoop.findUnique({ where: { pk: 1 } }), {
+    expect(await prisma.guideLoop.findUnique({ where: { pk: 1 } })).toStrictEqual({
       pk: 1,
       m2TipTiltEnable: true,
       m2TipTiltSource: 'OIWFS',
@@ -188,7 +182,7 @@ await describe('importObservation', async () => {
       probeTracking: 'NONE',
       lightPath: 'Sky ➡ AO ➡ AC',
     });
-    assert.deepStrictEqual(response.data, {
+    expect(response.data).toStrictEqual({
       importObservation: {
         configuration: { pk: 1 },
         rotator: { pk: 1 },
@@ -196,8 +190,8 @@ await describe('importObservation', async () => {
     });
   });
 
-  await it('sets guide correction source from selected PWFS guider', async () => {
-    await fixture.executeGraphql({
+  test('sets guide correction source from selected PWFS guider', async ({ executeGraphql, prisma }) => {
+    await executeGraphql({
       query,
       variables: {
         input: {
@@ -230,7 +224,7 @@ await describe('importObservation', async () => {
       },
     });
 
-    assert.deepEqual(await fixture.prisma.guideLoop.findUnique({ where: { pk: 1 } }), {
+    expect(await prisma.guideLoop.findUnique({ where: { pk: 1 } })).toStrictEqual({
       pk: 1,
       m2TipTiltEnable: true,
       m2TipTiltSource: 'PWFS1',
@@ -247,8 +241,8 @@ await describe('importObservation', async () => {
     });
   });
 
-  await it('disables guide corrections when no guider targets are selected', async () => {
-    await fixture.executeGraphql({
+  test('disables guide corrections when no guider targets are selected', async ({ executeGraphql, prisma }) => {
+    await executeGraphql({
       query,
       variables: {
         input: {
@@ -282,7 +276,7 @@ await describe('importObservation', async () => {
       },
     });
 
-    assert.deepEqual(await fixture.prisma.guideLoop.findUnique({ where: { pk: 1 } }), {
+    expect(await prisma.guideLoop.findUnique({ where: { pk: 1 } })).toStrictEqual({
       pk: 1,
       m2TipTiltEnable: false,
       m2TipTiltSource: '',
@@ -299,8 +293,8 @@ await describe('importObservation', async () => {
     });
   });
 
-  await it('disables guide corrections when multiple guider types are selected', async () => {
-    await fixture.executeGraphql({
+  test('disables guide corrections when multiple guider types are selected', async ({ executeGraphql, prisma }) => {
+    await executeGraphql({
       query,
       variables: {
         input: {
@@ -342,7 +336,7 @@ await describe('importObservation', async () => {
       },
     });
 
-    assert.deepEqual(await fixture.prisma.guideLoop.findUnique({ where: { pk: 1 } }), {
+    expect(await prisma.guideLoop.findUnique({ where: { pk: 1 } })).toStrictEqual({
       pk: 1,
       m2TipTiltEnable: false,
       m2TipTiltSource: '',
@@ -359,8 +353,8 @@ await describe('importObservation', async () => {
     });
   });
 
-  await it('sets guide correction source to PWFS2 when selected', async () => {
-    await fixture.executeGraphql({
+  test('sets guide correction source to PWFS2 when selected', async ({ executeGraphql, prisma }) => {
+    await executeGraphql({
       query,
       variables: {
         input: {
@@ -393,7 +387,7 @@ await describe('importObservation', async () => {
       },
     });
 
-    assert.deepEqual(await fixture.prisma.guideLoop.findUnique({ where: { pk: 1 } }), {
+    expect(await prisma.guideLoop.findUnique({ where: { pk: 1 } })).toStrictEqual({
       pk: 1,
       m2TipTiltEnable: true,
       m2TipTiltSource: 'PWFS2',
@@ -410,8 +404,8 @@ await describe('importObservation', async () => {
     });
   });
 
-  await it('deletes temporary instruments', async () => {
-    await fixture.prisma.instrument.create({
+  test('deletes temporary instruments', async ({ executeGraphql, prisma }) => {
+    await prisma.instrument.create({
       data: {
         name: 'GMOS_NORTH',
         isTemporary: true,
@@ -420,7 +414,7 @@ await describe('importObservation', async () => {
       },
     });
 
-    await fixture.executeGraphql({
+    await executeGraphql({
       query,
       variables: {
         input: {
@@ -444,7 +438,7 @@ await describe('importObservation', async () => {
       },
     });
 
-    const instruments = await fixture.prisma.instrument.findMany({ where: { isTemporary: true } });
-    assert.strictEqual(instruments.length, 0);
+    const instruments = await prisma.instrument.findMany({ where: { isTemporary: true } });
+    expect(instruments).toHaveLength(0);
   });
 });

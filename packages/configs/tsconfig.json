@@ -6,7 +6,7 @@
     "sourceMap": true,
     "declaration": true,
     "declarationMap": true,
-    "types": ["node"],
+    "types": ["node", "vitest/globals", "vitest"],
     "resolveJsonModule": true,
     "forceConsistentCasingInFileNames": true,
     "exactOptionalPropertyTypes": false,

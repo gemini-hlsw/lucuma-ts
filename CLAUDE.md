@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 `lucuma-ts` (`@gemini-hlsw/lucuma-ts`) is a pnpm monorepo (`pnpm`, Node + corepack) of TypeScript apps and libs supporting GPP. Individual package names mix `navigate-*`, `lucuma-*`, and `resource-*` prefixes — don't assume a package's name from its folder.
 
-TypeScript runs **directly under Node** (native type stripping) in dev and tests — there's no ts-node and no build step before running. `configs` dev/tests execute `.ts`/`.test.ts` files as-is (`node --watch ./src/index.ts`, `node --test 'src/**/*.test.ts'`).
+TypeScript runs **directly under Node** (native type stripping) in dev — there's no ts-node and no build step before running. `configs` dev executes `.ts` files as-is (`node --watch ./src/index.ts`). All packages run their tests with Vitest.
 
 Packages (under `packages/*`):
 
@@ -35,7 +35,7 @@ pnpm ui test                 # vitest — runs in a real browser (Playwright/chr
 pnpm configs generate        # prisma generate
 pnpm configs codegen         # graphql-codegen
 pnpm configs dev             # node --watch with .env
-pnpm configs test            # node:test integration tests (spins up a Postgres testcontainer)
+pnpm configs test            # vitest integration tests in Node (spins up a Postgres testcontainer)
 
 # resource-ui
 pnpm resource-ui dev
@@ -55,7 +55,7 @@ pnpm e2e test:e2e            # playwright test
 Run a single test:
 
 - UI/resource-ui (vitest): `pnpm ui test <path-or-name>` or `pnpm ui exec vitest run -t "<test name>" --brower.headless`. Prefer to use `--browser.headless` when running tests.
-- configs (node:test): `pnpm configs exec node --test --enable-source-maps src/integration/<file>.test.ts` (Docker must be running for the Postgres testcontainer).
+- configs (vitest, Node environment — no browser): `pnpm configs exec vitest run src/integration/<file>.test.ts` (Docker must be running for the Postgres testcontainer).
 
 ## Architecture
 
