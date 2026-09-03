@@ -4,10 +4,17 @@ import graphqlPlugin from '@graphql-eslint/eslint-plugin';
 import { defineConfig } from 'eslint/config';
 import globals from 'globals';
 
-import shared from '../../eslint.config.shared.js';
+import shared, { vitest } from '../../eslint.config.shared.js';
 
 export default defineConfig(
   ...shared,
+  ...vitest,
+  {
+    files: ['src/integration/**/*.test.ts'],
+    rules: {
+      'vitest/no-standalone-expect': ['error', { additionalTestBlockFunctions: ['test'] }],
+    },
+  },
   {
     files: ['src/**/*.graphql'],
     languageOptions: {

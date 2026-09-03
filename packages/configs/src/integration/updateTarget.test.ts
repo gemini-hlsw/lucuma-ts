@@ -1,14 +1,9 @@
-import assert from 'node:assert';
-import { describe, it } from 'node:test';
-
 import type { SiderealTargetUpdateInput, Target } from '../graphql/gen/types.generated.ts';
-import { initializeServerFixture } from './setup.ts';
+import { test } from './setup.ts';
 
-await describe('updateTarget', async () => {
-  const fixture = initializeServerFixture();
-
-  await it('updates a target', async () => {
-    const target = await fixture.prisma.target.create({
+describe('updateTarget', () => {
+  test('updates a target', async ({ executeGraphql, prisma }) => {
+    const target = await prisma.target.create({
       data: {
         id: 't-1',
         name: 'Initial Target',
@@ -24,7 +19,7 @@ await describe('updateTarget', async () => {
         }
       }`;
 
-    const response = await fixture.executeGraphql<Partial<Target>, { updateTarget: Target }>({
+    const response = await executeGraphql<Partial<Target>, { updateTarget: Target }>({
       query,
       variables: {
         pk: target.pk,
@@ -32,14 +27,13 @@ await describe('updateTarget', async () => {
       },
     });
 
-    assert.equal(response.data?.updateTarget.pk, target.pk);
-    assert.equal(response.data?.updateTarget.name, 'Updated Target');
-    const updatedTarget = await fixture.prisma.target.findUnique({ where: { pk: target.pk } });
-    assert.equal(updatedTarget?.name, 'Updated Target');
+    expect(response.data?.updateTarget).toMatchObject({ pk: target.pk, name: 'Updated Target' });
+    const updatedTarget = await prisma.target.findUnique({ where: { pk: target.pk } });
+    expect(updatedTarget).toMatchObject({ name: 'Updated Target' });
   });
 
-  await it('also updates sidereal data', async () => {
-    const target = await fixture.prisma.target.create({
+  test('also updates sidereal data', async ({ executeGraphql, prisma }) => {
+    const target = await prisma.target.create({
       data: {
         id: 't-2',
         name: 'Sidereal Target',
@@ -65,7 +59,7 @@ await describe('updateTarget', async () => {
         }
       }`;
 
-    const response = await fixture.executeGraphql<Record<string, unknown>, { updateTarget: Target }>({
+    const response = await executeGraphql<Record<string, unknown>, { updateTarget: Target }>({
       query,
       variables: {
         pk: target.pk,
@@ -75,17 +69,16 @@ await describe('updateTarget', async () => {
       },
     });
 
-    assert.equal(response.data?.updateTarget.pk, target.pk);
-    assert.equal(response.data?.updateTarget.sidereal?.epoch, 'J2001');
-    const updatedTarget = await fixture.prisma.target.findUnique({
+    expect(response.data?.updateTarget).toMatchObject({ pk: target.pk, sidereal: { epoch: 'J2001' } });
+    const updatedTarget = await prisma.target.findUnique({
       where: { pk: target.pk },
       include: { sidereal: true },
     });
-    assert.equal(updatedTarget?.sidereal?.epoch, 'J2001');
+    expect(updatedTarget).toMatchObject({ sidereal: { epoch: 'J2001' } });
   });
 
-  await it('also updates nonsidereal data', async () => {
-    const target = await fixture.prisma.target.create({
+  test('also updates nonsidereal data', async ({ executeGraphql, prisma }) => {
+    const target = await prisma.target.create({
       data: {
         id: 't-3',
         name: 'Nonsidereal Target',
@@ -110,7 +103,7 @@ await describe('updateTarget', async () => {
         }
       }`;
 
-    const response = await fixture.executeGraphql<Record<string, unknown>, { updateTarget: Target }>({
+    const response = await executeGraphql<Record<string, unknown>, { updateTarget: Target }>({
       query,
       variables: {
         pk: target.pk,
@@ -120,12 +113,11 @@ await describe('updateTarget', async () => {
       },
     });
 
-    assert.equal(response.data?.updateTarget.pk, target.pk);
-    assert.equal(response.data?.updateTarget.nonsidereal?.des, '2024 AC');
-    const updatedTarget = await fixture.prisma.target.findUnique({
+    expect(response.data?.updateTarget).toMatchObject({ pk: target.pk, nonsidereal: { des: '2024 AC' } });
+    const updatedTarget = await prisma.target.findUnique({
       where: { pk: target.pk },
       include: { nonsidereal: true },
     });
-    assert.equal(updatedTarget?.nonsidereal?.des, '2024 AC');
+    expect(updatedTarget).toMatchObject({ nonsidereal: { des: '2024 AC' } });
   });
 });

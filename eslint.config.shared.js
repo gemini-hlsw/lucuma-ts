@@ -10,7 +10,7 @@ import { configs } from 'typescript-eslint';
 
 export const vitest = defineConfig({
   name: 'lucuma/vitest',
-  files: ['**/*.{spec,test}.{ts,tsx}'],
+  files: ['{src,test}/**/*.{spec,test}.{ts,tsx}'],
   plugins: { vitest: vitestPlugin },
   // Title rules need type information to avoid rewriting imported string
   // constants as non-function identifiers.
