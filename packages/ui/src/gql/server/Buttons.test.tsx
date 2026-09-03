@@ -29,7 +29,7 @@ import { OIWFS_FOLLOW_MUTATION } from './follow';
 import { GET_INSTRUMENT_PORT } from './Instrument';
 import { SLEW_MUTATION } from './Slew';
 
-describe(Slew.name, () => {
+describe(Slew, () => {
   it('should call slew mutation when pressed', async () => {
     const sut = await renderWithContext(<Slew label="Slew Telescope" />, {
       mocks: [
@@ -144,7 +144,7 @@ describe(Slew.name, () => {
   });
 });
 
-describe(OIWFS.name, () => {
+describe(OIWFS, () => {
   it('should render OIWFS follow state', async () => {
     const sut = await renderWithContext(
       <OIWFS state={{ __typename: 'MechSystemState', follow: 'FOLLOWING', parked: 'NOT_PARKED' }} inUse={true} />,
@@ -187,7 +187,7 @@ describe(OIWFS.name, () => {
   });
 });
 
-describe(EcsDome.name, () => {
+describe(EcsDome, () => {
   it('turns the dome off while it is on', async () => {
     const sut = await renderWithContext(<EcsDome label="Dome" enclosure={createEnclosureState()} />, {
       mocks: [disableDomeMock],
@@ -208,7 +208,7 @@ describe(EcsDome.name, () => {
   });
 });
 
-describe(EcsShutters.name, () => {
+describe(EcsShutters, () => {
   it('turns the shutters off while they are on', async () => {
     const sut = await renderWithContext(<EcsShutters label="Shutters" enclosure={createEnclosureState()} />, {
       mocks: [disableShuttersMock],

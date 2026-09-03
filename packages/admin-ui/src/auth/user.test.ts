@@ -6,7 +6,7 @@ import { canAccessAdmin, type User } from './user';
 
 const guest: User = { type: 'guest', id: 'g-1' };
 
-describe(canAccessAdmin.name, () => {
+describe(canAccessAdmin, () => {
   it('admits staff and admin, rejects pi/ngo/guest', () => {
     expect(canAccessAdmin(standardUser('staff'))).toBe(true);
     expect(canAccessAdmin(standardUser('admin'))).toBe(true);

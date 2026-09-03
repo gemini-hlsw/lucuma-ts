@@ -13,7 +13,7 @@ import type { InstrumentConfig } from '@/types';
 
 import { InstrumentPanel } from './InstrumentPanel';
 
-describe(InstrumentPanel.name, () => {
+describe(InstrumentPanel, () => {
   let sut: RenderResultWithStore;
   beforeEach(async () => {
     sut = await renderWithContext(<InstrumentPanel canEdit={true} />, {
@@ -46,12 +46,12 @@ describe(InstrumentPanel.name, () => {
   });
 
   it('opens the instrument modal when the import button is clicked', async () => {
-    expect(sut.store.get(importInstrumentAtom)).false;
+    expect(sut.store.get(importInstrumentAtom)).toBe(false);
     const importInstrumentButton = sut.getByLabelText('Import instrument');
 
     await userEvent.click(importInstrumentButton);
 
-    expect(sut.store.get(importInstrumentAtom)).true;
+    expect(sut.store.get(importInstrumentAtom)).toBe(true);
   });
 
   it('should call updateInstrument when save button is clicked', async () => {

@@ -1,6 +1,6 @@
 import { fetchDeployedUiVersion, parseUiVersion } from './version';
 
-describe(parseUiVersion.name, () => {
+describe(parseUiVersion, () => {
   it('returns the version from a well-formed payload', () => {
     expect(parseUiVersion({ version: 'v0.1.0+20260625.eb4d348' })).toBe('v0.1.0+20260625.eb4d348');
   });
@@ -30,7 +30,7 @@ describe(parseUiVersion.name, () => {
   });
 });
 
-describe(fetchDeployedUiVersion.name, () => {
+describe(fetchDeployedUiVersion, () => {
   it('requests version.json without using the HTTP cache', async () => {
     const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ version: 'v0.2.0' }), { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);

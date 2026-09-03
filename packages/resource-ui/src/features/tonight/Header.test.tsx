@@ -18,7 +18,7 @@ const renderHeader = async (timeDisplay: TimelineTimeDisplay = 'site', onTimeDis
   };
 };
 
-describe(Header.name, () => {
+describe(Header, () => {
   it('renders the observing night', async () => {
     const { getByRole, timeline } = await renderHeader();
 

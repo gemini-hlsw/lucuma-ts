@@ -21,7 +21,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe(refreshToken.name, () => {
+describe(refreshToken, () => {
   it('returns the trimmed token on success', async () => {
     mockFetch({ ok: true, body: '  a.b.c\n' });
     expect(await refreshToken(SSO)).toBe('a.b.c');
@@ -41,7 +41,7 @@ describe(refreshToken.name, () => {
   });
 });
 
-describe(guestLogin.name, () => {
+describe(guestLogin, () => {
   it('returns the token on success, null otherwise', async () => {
     mockFetch({ ok: true, body: 'guest.jwt' });
     expect(await guestLogin(SSO)).toBe('guest.jwt');
@@ -50,7 +50,7 @@ describe(guestLogin.name, () => {
   });
 });
 
-describe(signInUrl.name, () => {
+describe(signInUrl, () => {
   it('builds the stage1 URL with the state parameter', () => {
     const url = new URL(signInUrl(SSO, 'https://app.example.test/page'));
     expect(url.pathname).toBe('/auth/v1/stage1');
@@ -58,7 +58,7 @@ describe(signInUrl.name, () => {
   });
 });
 
-describe(setActiveRole.name, () => {
+describe(setActiveRole, () => {
   it('resolves when SSO accepts the switch', async () => {
     mockFetch({ ok: true });
     await expect(setActiveRole(SSO, 'r-1')).resolves.toBeUndefined();
@@ -77,7 +77,7 @@ describe(setActiveRole.name, () => {
   });
 });
 
-describe(setRole.name, () => {
+describe(setRole, () => {
   it('returns the refreshed token after a successful switch', async () => {
     // First call: set-role (ok); second call: refresh-token (ok, returns token).
     mockFetch({ ok: true }, { ok: true, body: 'fresh.jwt' });
@@ -90,7 +90,7 @@ describe(setRole.name, () => {
   });
 });
 
-describe(logout.name, () => {
+describe(logout, () => {
   it('resolves on success and throws on failure', async () => {
     mockFetch({ ok: true });
     await expect(logout(SSO)).resolves.toBeUndefined();

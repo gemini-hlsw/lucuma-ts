@@ -13,7 +13,7 @@ import type { GuideAlarm } from '@/types';
 
 import { Alarms } from './Alarms';
 
-describe(Alarms.name, () => {
+describe(Alarms, () => {
   let store: Store;
   beforeEach(async () => {
     store = (await renderWithContext(<Alarms />, { mocks })).store;

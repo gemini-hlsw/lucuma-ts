@@ -6,7 +6,7 @@ import { renderWithContext } from '@/test/render';
 
 import Layout from './Layout';
 
-describe('Layout', () => {
+describe(Layout, () => {
   it('shows the wordmark, environment pill, and signed-in user', async () => {
     const screen = await renderWithContext(<Layout />, { token: fakeJwt(standardUser('staff')) });
     await expect.element(screen.getByText('ADMIN')).toBeInTheDocument();

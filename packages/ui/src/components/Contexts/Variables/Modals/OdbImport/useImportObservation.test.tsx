@@ -14,7 +14,7 @@ import type { OdbObservation } from '@/types';
 
 import { useImportObservation } from './useImportObservation';
 
-describe(useImportObservation.name, () => {
+describe(useImportObservation, () => {
   let sut: RenderHookResult<ReturnType<typeof useImportObservation>, unknown>;
   let callback: Mock;
   beforeEach(async () => {

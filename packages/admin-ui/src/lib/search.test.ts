@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { matchesQuery } from './search';
 
-describe('matchesQuery', () => {
+describe(matchesQuery, () => {
   const fields = ['G-2027B-0123-Q', 'Ada Lovelace', 'Globular clusters'];
 
   it('matches a case-insensitive substring in any field', () => {

@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import Sidebar from './Sidebar';
 import { SIDEBAR_MENU_SECTIONS } from './SidebarMenu';
 
-describe(Sidebar.name, () => {
+describe(Sidebar, () => {
   it('renders all sidebar section titles', async () => {
     const { getByText } = await renderWithContext(<Sidebar />);
 

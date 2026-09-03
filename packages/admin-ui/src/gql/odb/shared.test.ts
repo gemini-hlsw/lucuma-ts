@@ -38,7 +38,7 @@ function observation(overrides: Partial<ObservationItemFragment>): ObservationIt
   };
 }
 
-describe('mapObservationRow', () => {
+describe(mapObservationRow, () => {
   it('states the instrument once, with the observing mode as a short suffix', () => {
     expect(mapObservationRow(observation({})).config).toBe('GMOS-S, LongSlit');
   });
@@ -85,7 +85,7 @@ describe('mapObservationRow', () => {
   });
 });
 
-describe('telluricGroupHours', () => {
+describe(telluricGroupHours, () => {
   const groupElement = (
     id: string,
     system: boolean,
@@ -123,7 +123,7 @@ describe('telluricGroupHours', () => {
   });
 });
 
-describe('formatConditions', () => {
+describe(formatConditions, () => {
   it('renders each condition from its preset map', () => {
     expect(
       formatConditions({
@@ -151,7 +151,7 @@ describe('formatConditions', () => {
   });
 });
 
-describe('isScienceObservation', () => {
+describe(isScienceObservation, () => {
   it('accepts science observations (no calibration role) and rejects calibrations', () => {
     expect(isScienceObservation({ calibrationRole: null })).toBe(true);
     expect(isScienceObservation({ calibrationRole: 'TWILIGHT' })).toBe(false);

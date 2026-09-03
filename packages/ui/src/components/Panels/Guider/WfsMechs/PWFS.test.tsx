@@ -16,11 +16,7 @@ import { renderWithContext } from '@/test/render';
 
 import { PWFS1, PWFS2 } from './PWFS';
 
-describe(PWFS1.name, () => {
-  it('should render', async () => {
-    await renderWithContext(<PWFS1 disabled={false} />, { mocks });
-  });
-
+describe(PWFS1, () => {
   it('should render disabled', async () => {
     const sut = await renderWithContext(<PWFS1 disabled={true} />, { mocks });
     await expect.element(sut.getByLabelText('Filter', { exact: true })).toBeDisabled();
@@ -44,11 +40,7 @@ describe(PWFS1.name, () => {
   });
 });
 
-describe(PWFS2.name, () => {
-  it('should render', async () => {
-    await renderWithContext(<PWFS2 disabled={false} />, { mocks });
-  });
-
+describe(PWFS2, () => {
   it('should render disabled', async () => {
     const sut = await renderWithContext(<PWFS2 disabled={true} />, { mocks });
     await expect.element(sut.getByLabelText('Filter', { exact: true })).toBeDisabled();

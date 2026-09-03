@@ -8,7 +8,7 @@ import type { Configuration } from '@/types';
 
 import { M2Baffles } from './M2Baffles';
 
-describe(M2Baffles.name, () => {
+describe(M2Baffles, () => {
   let sut: RenderResultWithStore;
   beforeEach(async () => {
     sut = await renderWithContext(<M2Baffles canEdit={true} />, {

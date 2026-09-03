@@ -32,7 +32,7 @@ function LongPressHarness({
   );
 }
 
-describe(useLongPress.name, () => {
+describe(useLongPress, () => {
   let onLongPress: Mock;
   let onClick: Mock;
 

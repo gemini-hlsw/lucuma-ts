@@ -60,7 +60,7 @@ const result = (matches: RawCfp[]): AdminCfpsResult => ({
   callsForProposals: { __typename: 'CallsForProposalsSelectResult', matches },
 });
 
-describe('mapCfps', () => {
+describe(mapCfps, () => {
   it('returns an empty array on no matches', () => {
     expect(mapCfps(result([]))).toEqual([]);
   });
@@ -127,7 +127,7 @@ describe('mapCfps', () => {
   });
 });
 
-describe('cfpPropertiesInput', () => {
+describe(cfpPropertiesInput, () => {
   it('serializes an edited call, Gemini properties under `gemini`', () => {
     const input = cfpPropertiesInput({
       id: 'c-101',
@@ -193,7 +193,7 @@ describe('cfpPropertiesInput', () => {
   });
 });
 
-describe('currentSemester', () => {
+describe(currentSemester, () => {
   it('assigns Feb-Jul to A and Aug-Dec to B', () => {
     expect(currentSemester(new Date('2027-02-01T00:00:00Z'))).toBe('2027A');
     expect(currentSemester(new Date('2027-07-31T23:59:59Z'))).toBe('2027A');
@@ -206,7 +206,7 @@ describe('currentSemester', () => {
   });
 });
 
-describe('semesterDates', () => {
+describe(semesterDates, () => {
   it('spans Feb-Aug for A and Aug-Feb (of the next year) for B', () => {
     expect(semesterDates('2027A')).toEqual({ activeStart: '2027-02-01', activeEnd: '2027-08-01' });
     expect(semesterDates('2027B')).toEqual({ activeStart: '2027-08-01', activeEnd: '2028-02-01' });

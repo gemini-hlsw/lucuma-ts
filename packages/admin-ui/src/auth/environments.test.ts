@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { environmentFor } from './environments';
 
-describe(environmentFor.name, () => {
+describe(environmentFor, () => {
   it('resolves each deployed admin host to its own services', () => {
     const dev = environmentFor('admin-dev.lucuma.xyz');
     expect(dev.name).toBe('development');

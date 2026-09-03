@@ -4,7 +4,7 @@ import { createTelescopeNightTimeline, timelineFactory } from '@/test/factories'
 
 import { toTimelineRows } from './adapters';
 
-describe(toTimelineRows.name, () => {
+describe(toTimelineRows, () => {
   it('creates the mode row', () => {
     const timeline = createTelescopeNightTimeline({
       modes: [timelineFactory.modeStatus('QUEUE', '2026-08-01T19:00:00-10:00', '2026-08-01T21:00:00-10:00')],

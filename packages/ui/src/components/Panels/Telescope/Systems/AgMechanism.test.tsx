@@ -12,7 +12,7 @@ import { type RenderResultWithStore, renderWithContext } from '@/test/render';
 
 import { AgMechanism } from './AgMechanism';
 
-describe(AgMechanism.name, () => {
+describe(AgMechanism, () => {
   let sut: RenderResultWithStore;
   beforeEach(async () => {
     sut = await renderWithContext(<AgMechanism canEdit={true} />, {

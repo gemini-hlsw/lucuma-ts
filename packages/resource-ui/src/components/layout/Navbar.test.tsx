@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import Navbar from './Navbar';
 
-describe(Navbar.name, () => {
+describe(Navbar, () => {
   it('renders the Resource brand label', async () => {
     const { getByText } = await renderWithContext(<Navbar />);
 

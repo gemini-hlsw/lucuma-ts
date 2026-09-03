@@ -9,7 +9,7 @@ import { createGuideAlarm, createGuideQuality } from '@/test/create';
 
 import { Alarm } from './Alarm';
 
-describe(Alarm.name, () => {
+describe(Alarm, () => {
   let sut: RenderResult;
   let onUpdateAlarm: MockedFunction<ComponentProps<typeof Alarm>['onUpdateAlarm']>;
 

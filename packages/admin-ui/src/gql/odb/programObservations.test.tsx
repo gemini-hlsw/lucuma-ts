@@ -51,7 +51,7 @@ function Harness() {
   );
 }
 
-describe('useProgramObservations', () => {
+describe(useProgramObservations, () => {
   it('follows hasMore across pages and accumulates every observation', async () => {
     const screen = await renderWithContext(<Harness />, {
       token: STAFF_TOKEN,

@@ -66,7 +66,7 @@ const result = (matches: RawRequest[]): AdminChangeRequestsResult => ({
   configurationRequests: { __typename: 'ConfigurationRequestSelectResult', matches, hasMore: false },
 });
 
-describe('mapChangeRequests', () => {
+describe(mapChangeRequests, () => {
   it('projects coordinates, instrument/site, and a percentile-based conditions string', () => {
     const [c] = mapChangeRequests(result([request({})]));
     expect(c?.programId).toBe('p-172');
@@ -113,7 +113,7 @@ describe('mapChangeRequests PI fallback', () => {
   });
 });
 
-describe('observationsByIdFrom', () => {
+describe(observationsByIdFrom, () => {
   it('keys observation rows by id, with coordinates, config, and conditions', () => {
     const matches: AdminProgramObservationsResult['observations']['matches'] = [
       {
@@ -164,7 +164,7 @@ describe('observationsByIdFrom', () => {
   });
 });
 
-describe('groupChangeRequestsByProgram', () => {
+describe(groupChangeRequestsByProgram, () => {
   const cr = (id: string, programId: string, status: ChangeRequest['status']): ChangeRequest => ({
     id,
     programId,

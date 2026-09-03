@@ -12,7 +12,7 @@ import type { Fpu, GuideLoop } from '@/types';
 
 import { LightPath } from './LightPath';
 
-describe(LightPath.name, () => {
+describe(LightPath, () => {
   it('should render', async () => {
     const sut = await renderWithContext(<LightPath />, {
       mocks: [getGuideLoopMock, getConfigurationMock('GMOS_NORTH', null)],

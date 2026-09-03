@@ -2,7 +2,7 @@ import { renderHook } from 'vitest-browser-react';
 
 import { useSyncedState } from './hooks.ts';
 
-describe(useSyncedState.name, () => {
+describe(useSyncedState, () => {
   const renderSut = (initialIncoming?: number | null) =>
     renderHook((incoming?: number | null) => useSyncedState(incoming, 1), { initialProps: initialIncoming });
 

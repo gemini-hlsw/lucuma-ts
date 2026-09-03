@@ -70,14 +70,14 @@ describe('auth atoms', () => {
       const { token } = createStandardUserToken(Date.now() / 1000 + 60);
 
       store.set(odbTokenAtom, token);
-      expect(store.get(isLoggedInAtom)).true;
+      expect(store.get(isLoggedInAtom)).toBe(true);
     });
 
     it('is false if the user is logged in and the token is expired', () => {
       const { token } = createStandardUserToken(Date.now() / 1000 - 60);
 
       store.set(odbTokenAtom, token);
-      expect(store.get(isLoggedInAtom)).false;
+      expect(store.get(isLoggedInAtom)).toBe(false);
     });
 
     it('is false if the token carries a user but no expiry', () => {
@@ -86,12 +86,12 @@ describe('auth atoms', () => {
       const base64 = (o: unknown) => btoa(JSON.stringify(o));
       const token = `${base64({ typ: 'JWT' })}.${base64({ 'lucuma-user': { type: 'guest', id: '1' } })}.sig`;
       store.set(odbTokenAtom, token);
-      expect(store.get(isLoggedInAtom)).false;
+      expect(store.get(isLoggedInAtom)).toBe(false);
     });
 
     it('is false if the user is not logged in', () => {
       store.set(odbTokenAtom, null);
-      expect(store.get(isLoggedInAtom)).false;
+      expect(store.get(isLoggedInAtom)).toBe(false);
     });
   });
 });

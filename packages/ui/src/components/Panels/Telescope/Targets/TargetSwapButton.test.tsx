@@ -27,7 +27,7 @@ import type { Fpu } from '@/types';
 
 import { TargetSwapButton } from './TargetSwapButton';
 
-describe(TargetSwapButton.name, () => {
+describe(TargetSwapButton, () => {
   let sut: RenderResult;
 
   describe('onSwappedTarget is false', () => {

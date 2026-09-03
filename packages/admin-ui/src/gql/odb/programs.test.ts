@@ -71,7 +71,7 @@ const result = (matches: RawProgram[]): AdminProgramsResult => ({
   programs: { __typename: 'ProgramSelectResult', matches },
 });
 
-describe('mapPrograms', () => {
+describe(mapPrograms, () => {
   it('returns an empty array when there are no matches', () => {
     expect(mapPrograms(result([]))).toEqual([]);
   });
@@ -182,7 +182,7 @@ describe('mapPrograms', () => {
   });
 });
 
-describe('proposalTypeInput', () => {
+describe(proposalTypeInput, () => {
   const base: Program = {
     id: 'p-1',
     reference: 'R',
@@ -217,7 +217,7 @@ describe('proposalTypeInput', () => {
   });
 });
 
-describe('allocationsInput', () => {
+describe(allocationsInput, () => {
   it('sends only positive awards, keeping zero cells as grid-only editing state', () => {
     // Regression: a zeroed cell keeps the category's row visible in the grid;
     // it must not become a zero-duration allocation in the mutation. A
@@ -235,7 +235,7 @@ describe('allocationsInput', () => {
   });
 });
 
-describe('programPropertiesInput', () => {
+describe(programPropertiesInput, () => {
   const base: Program = {
     id: 'p-1',
     reference: 'R',

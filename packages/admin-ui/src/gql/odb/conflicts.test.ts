@@ -10,7 +10,7 @@ import {
 import type { TooActivation } from './gen/graphql';
 import { formatModeType } from './shared';
 
-describe('similarModeTypes', () => {
+describe(similarModeTypes, () => {
   it('pairs the sc-9243 similar instruments, same configuration style', () => {
     expect(similarModeTypes('GMOS_NORTH_LONG_SLIT')).toEqual(['GMOS_NORTH_LONG_SLIT', 'GMOS_SOUTH_LONG_SLIT']);
     expect(similarModeTypes('GNIRS_LONG_SLIT')).toEqual(['GNIRS_LONG_SLIT', 'FLAMINGOS_2_LONG_SLIT']);
@@ -26,7 +26,7 @@ describe('similarModeTypes', () => {
   });
 });
 
-describe('formatModeType', () => {
+describe(formatModeType, () => {
   it('renders instrument + configuration style', () => {
     expect(formatModeType('GMOS_SOUTH_LONG_SLIT')).toBe('GMOS-S LongSlit');
     expect(formatModeType('FLAMINGOS_2_IMAGING')).toBe('Flamingos-2 Imaging');
@@ -59,7 +59,7 @@ function tooObservation(
   };
 }
 
-describe('mapConflictCandidates', () => {
+describe(mapConflictCandidates, () => {
   it('merges both pools, keeping only ToO-program observations from the second', () => {
     const candidates = mapConflictCandidates({
       configurationRequests: {
@@ -155,7 +155,7 @@ function candidate(overrides: Partial<ConflictCandidate>): ConflictCandidate {
   };
 }
 
-describe('matchConflicts', () => {
+describe(matchConflicts, () => {
   const source = { id: 'x-125', programId: 'p-1', raDeg: 30, decDeg: -30, modeType: 'GMOS_SOUTH_LONG_SLIT' };
 
   it('matches a similar mode within the field-of-view distance', () => {

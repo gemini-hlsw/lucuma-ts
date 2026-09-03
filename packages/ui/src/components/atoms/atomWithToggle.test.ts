@@ -2,12 +2,12 @@ import { createStore } from 'jotai';
 
 import { atomWithToggle } from './atomWithToggle';
 
-describe(atomWithToggle.name, () => {
+describe(atomWithToggle, () => {
   it('should return an atom with the initial value', () => {
     const atom = atomWithToggle(true);
     const store = createStore();
 
-    expect(store.get(atom)).true;
+    expect(store.get(atom)).toBe(true);
   });
 
   it('should toggle the value', () => {
@@ -15,10 +15,10 @@ describe(atomWithToggle.name, () => {
     const store = createStore();
 
     store.set(atom);
-    expect(store.get(atom)).false;
+    expect(store.get(atom)).toBe(false);
 
     store.set(atom);
-    expect(store.get(atom)).true;
+    expect(store.get(atom)).toBe(true);
   });
 
   it('should set the value', () => {
@@ -26,6 +26,6 @@ describe(atomWithToggle.name, () => {
     const store = createStore();
 
     store.set(atom, true);
-    expect(store.get(atom)).true;
+    expect(store.get(atom)).toBe(true);
   });
 });

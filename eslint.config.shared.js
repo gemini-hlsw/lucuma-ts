@@ -1,11 +1,28 @@
 // @ts-check
 
 import eslint from '@eslint/js';
+import vitestPlugin from '@vitest/eslint-plugin';
 import { importX } from 'eslint-plugin-import-x';
 import simpleImportSort from 'eslint-plugin-simple-import-sort';
 import { defineConfig, globalIgnores } from 'eslint/config';
 import globals from 'globals';
 import { configs } from 'typescript-eslint';
+
+export const vitest = defineConfig({
+  name: 'lucuma/vitest',
+  files: ['**/*.{spec,test}.{ts,tsx}'],
+  plugins: { vitest: vitestPlugin },
+  // Title rules need type information to avoid rewriting imported string
+  // constants as non-function identifiers.
+  settings: { vitest: { typecheck: true } },
+  rules: {
+    ...vitestPlugin.configs.recommended.rules,
+    'vitest/prefer-describe-function-title': 'error',
+    // Consider beforeEach a test block.
+    'vitest/no-standalone-expect': ['error', { additionalTestBlockFunctions: ['beforeEach'] }],
+    'vitest/expect-expect': ['error', { assertFunctionNames: ['expect*', 'assert*'] }],
+  },
+});
 
 export default defineConfig(
   eslint.configs.recommended,
