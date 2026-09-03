@@ -1,7 +1,6 @@
-/** `toMountings` is where the wire's port/place promise is checked; these are its three outcomes. */
 import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
 
-import { toMountings } from './adapters';
+import { toMountings, toPublishedSemesters } from './adapters';
 
 type Block = Parameters<typeof toMountings>[0][number];
 
@@ -16,6 +15,7 @@ const block = (location: Block['location'], publishedName = 'GMOS-S'): Block => 
   location,
 });
 
+/** `toMountings` is where the wire's port/place promise is checked; these are its three outcomes. */
 describe(toMountings, () => {
   let warn: MockInstance<typeof console.warn>;
 
@@ -59,5 +59,31 @@ describe(toMountings, () => {
     expect(warn).toHaveBeenCalledTimes(2);
     expect(String(warn.mock.calls[0]?.[0])).toContain('GNIRS');
     expect(String(warn.mock.calls[1]?.[0])).toContain('NIFS');
+  });
+});
+
+type SemesterEntry = Parameters<typeof toPublishedSemesters>[0]['publishedSemesters'][number];
+
+const semesterEntry = (nights: SemesterEntry['nights']): SemesterEntry => ({
+  __typename: 'PublishedSemester',
+  site: 'GS',
+  semester: '2025B',
+  title: 'GS 2025B Schedule',
+  version: null,
+  demo: false,
+  nights,
+  holidays: [],
+  moonEvents: [],
+});
+
+/** The one place the API's half-open `nights` becomes the domain's inclusive first/last night. */
+describe(toPublishedSemesters, () => {
+  it('reads the exclusive nights end as the last night before it', () => {
+    // The exclusive end names the first uncovered date; passing it through adds a night that was never scheduled.
+    const [semester] = toPublishedSemesters({
+      publishedSemesters: [semesterEntry({ __typename: 'DateInterval', start: '2025-08-01', end: '2026-02-01' })],
+    });
+
+    expect(semester).toMatchObject({ firstNight: '2025-08-01', lastNight: '2026-01-31' });
   });
 });
