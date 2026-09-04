@@ -1,4 +1,4 @@
-import { isNotNullish } from '@gemini-hlsw/lucuma-common-ui';
+import { isNotNullish, NumberInput } from '@gemini-hlsw/lucuma-common-ui';
 import { useAltairInstrument, useUpdateAltairInstrument } from '@gql/configs/AltairInstrument';
 import { useGemsInstrument, useUpdateGemsInstrument } from '@gql/configs/GemsInstrument';
 import type {
@@ -7,7 +7,6 @@ import type {
 } from '@gql/configs/gen/graphql';
 import { Checkbox } from 'primereact/checkbox';
 import { Dropdown } from 'primereact/dropdown';
-import { InputNumber } from 'primereact/inputnumber';
 
 import type { AltairInstrument, GemsInstrument } from '@/types';
 
@@ -106,7 +105,7 @@ export function Altair({ canEdit }: { canEdit: boolean }) {
         <label htmlFor="star-mag" className="label">
           Star Mag
         </label>
-        <InputNumber
+        <NumberInput
           inputId="star-mag"
           disabled={!canEdit || loading}
           value={state.startMagnitude}
@@ -124,7 +123,7 @@ export function Altair({ canEdit }: { canEdit: boolean }) {
         <label htmlFor="seeing" className="label">
           Seeing r0
         </label>
-        <InputNumber
+        <NumberInput
           inputId="seeing"
           disabled={!canEdit || loading}
           value={state.seeing}
@@ -142,7 +141,7 @@ export function Altair({ canEdit }: { canEdit: boolean }) {
         <label htmlFor="wind-speed" className="label">
           Wind speed
         </label>
-        <InputNumber
+        <NumberInput
           inputId="wind-speed"
           disabled={!canEdit || loading}
           value={state.windSpeed}

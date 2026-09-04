@@ -1,7 +1,6 @@
-import type { Labelled } from '@gemini-hlsw/lucuma-common-ui';
+import { type Labelled, NumberInput } from '@gemini-hlsw/lucuma-common-ui';
 import { Chips } from 'primereact/chips';
 import { Dropdown } from 'primereact/dropdown';
-import { InputNumber } from 'primereact/inputnumber';
 import { InputText } from 'primereact/inputtext';
 import { type JSX, useMemo, useState } from 'react';
 
@@ -277,7 +276,7 @@ function AwardForm({
           </label>
         </dt>
         <dd>
-          <InputNumber
+          <NumberInput
             inputId="award-prop"
             value={award.proprietaryMonths}
             min={0}

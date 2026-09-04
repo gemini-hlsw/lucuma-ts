@@ -1,10 +1,9 @@
-import { formatToSignedArcseconds, isNotNullish } from '@gemini-hlsw/lucuma-common-ui';
+import { formatToSignedArcseconds, isNotNullish, NumberInput } from '@gemini-hlsw/lucuma-common-ui';
 import { useConfiguration } from '@gql/configs/Configuration';
 import type { WfsType } from '@gql/configs/gen/graphql';
 import { Button } from 'primereact/button';
 import { Divider } from 'primereact/divider';
 import { Dropdown } from 'primereact/dropdown';
-import { InputNumber } from 'primereact/inputnumber';
 import { InputSwitch } from 'primereact/inputswitch';
 import { Slider } from 'primereact/slider';
 import type React from 'react';
@@ -143,7 +142,7 @@ function CoordinatesInput({
       <div className="coordinates-stepsize">
         <div className="control-row">
           <label htmlFor={`step-stepsize-${id}`}>Step</label>
-          <InputNumber
+          <NumberInput
             disabled={loading || !canEdit}
             inputId={`step-stepsize-${id}`}
             min={0}
@@ -189,7 +188,7 @@ function ManualInput({
   return (
     <div className="manual-input">
       <label htmlFor={`manual-input-horizontal-${id}`}>{strategy.horizontal}</label>
-      <InputNumber
+      <NumberInput
         inputId={`manual-input-horizontal-${id}`}
         disabled={loading || !canEdit}
         value={auxCoords.horizontal}
@@ -197,7 +196,7 @@ function ManualInput({
         onValueChange={(e) => setAuxCoords((prev) => ({ ...prev, horizontal: e.value! }))}
       />
       <label htmlFor={`manual-input-vertical-${id}`}>{strategy.vertical}</label>
-      <InputNumber
+      <NumberInput
         inputId={`manual-input-vertical-${id}`}
         disabled={loading || !canEdit}
         value={auxCoords.vertical}
@@ -345,7 +344,7 @@ export function AlignAngleInput({
   return (
     <>
       <label htmlFor={`alignment-angle-${id}`}>Align Angle</label>
-      <InputNumber
+      <NumberInput
         inputId={`alignment-angle-${id}`}
         suffix="°"
         disabled={disabled}

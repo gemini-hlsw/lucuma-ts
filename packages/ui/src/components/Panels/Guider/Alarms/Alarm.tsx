@@ -1,8 +1,7 @@
-import { cn, isNotNullish, round } from '@gemini-hlsw/lucuma-common-ui';
+import { cn, isNotNullish, NumberInput, round } from '@gemini-hlsw/lucuma-common-ui';
 import type { UpdateGuideAlarmMutationVariables, WfsType } from '@gql/configs/gen/graphql';
 import { Title } from '@Shared/Title/Title';
 import type { InputNumberValueChangeEvent } from 'primereact/inputnumber';
-import { InputNumber } from 'primereact/inputnumber';
 import type { ToggleButtonChangeEvent } from 'primereact/togglebutton';
 import { ToggleButton } from 'primereact/togglebutton';
 import { useId } from 'react';
@@ -67,7 +66,7 @@ export function Alarm({
         <label htmlFor={`limit-${id}`} className="label">
           Limit
         </label>
-        <InputNumber
+        <NumberInput
           inputId={`limit-${id}`}
           min={0}
           disabled={disabledOrNoData}

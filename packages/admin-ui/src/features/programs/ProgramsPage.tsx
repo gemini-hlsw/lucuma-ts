@@ -1,12 +1,12 @@
 import './ProgramsPage.css';
 
+import { NumberInput } from '@gemini-hlsw/lucuma-common-ui';
 import { AutoComplete } from 'primereact/autocomplete';
 import { Button } from 'primereact/button';
 import { Checkbox } from 'primereact/checkbox';
 import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
 import { Dropdown } from 'primereact/dropdown';
-import { InputNumber } from 'primereact/inputnumber';
 import { InputText } from 'primereact/inputtext';
 import { InputTextarea } from 'primereact/inputtextarea';
 import { type JSX, useMemo, useState } from 'react';
@@ -356,7 +356,7 @@ function ProgramEditor({
               Proprietary Period
             </label>
             <div className="suffixed">
-              <InputNumber
+              <NumberInput
                 inputId="prop"
                 value={draft.proprietaryMonths}
                 min={0}
@@ -386,7 +386,7 @@ function ProgramEditor({
               Minimum Time
             </label>
             <div className="suffixed">
-              <InputNumber
+              <NumberInput
                 inputId="minpct"
                 value={draft.minPercentTime}
                 min={0}

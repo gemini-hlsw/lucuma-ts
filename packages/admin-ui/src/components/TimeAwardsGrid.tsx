@@ -1,8 +1,8 @@
 import './TimeAwardsGrid.css';
 
+import { NumberInput } from '@gemini-hlsw/lucuma-common-ui';
 import { Button } from 'primereact/button';
 import { Dropdown } from 'primereact/dropdown';
-import { InputNumber } from 'primereact/inputnumber';
 import { type JSX, useMemo, useState } from 'react';
 
 import { CirclePlus, CircleXMark, Plus } from '@/components/Icons';
@@ -89,7 +89,7 @@ export function TimeAwardsGrid({ allocations, onChange }: TimeAwardsGridProps): 
               </td>
               {BANDS.map((b) => (
                 <td key={b}>
-                  <InputNumber
+                  <NumberInput
                     value={hoursFor(category, b)}
                     min={0}
                     minFractionDigits={1}
