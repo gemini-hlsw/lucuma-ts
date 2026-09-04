@@ -1,10 +1,10 @@
-import { cn, isNotNullish, useSyncedState, when } from '@gemini-hlsw/lucuma-common-ui';
+import { cn, isNotNullish, NumberInput, useSyncedState, when } from '@gemini-hlsw/lucuma-common-ui';
 import { useCalParams, useCalParamsHistory, useCreateCalParams } from '@gql/configs/CalParams';
 import type { CalParamsCreateInput } from '@gql/configs/gen/graphql';
 import { useServerConfigValue } from '@gql/server/ServerConfiguration';
 import { CommentConfirmButton } from '@Shared/CommentConfirmButton';
 import { Button } from 'primereact/button';
-import { InputNumber, type InputNumberProps } from 'primereact/inputnumber';
+import type { InputNumberProps } from 'primereact/inputnumber';
 import { Tooltip } from 'primereact/tooltip';
 import { useId, useMemo } from 'react';
 
@@ -317,7 +317,7 @@ function CalParamInput({
   return (
     <>
       <label htmlFor={id}>{label}</label>
-      <InputNumber
+      <NumberInput
         {...props}
         className={cn('cal-param-input', filled && 'cal-param-input-filled', props.className)}
         inputId={id}

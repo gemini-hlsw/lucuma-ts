@@ -1,9 +1,8 @@
-import { isNotNullish, parseNumber, when } from '@gemini-hlsw/lucuma-common-ui';
+import { isNotNullish, NumberInput, parseNumber, when } from '@gemini-hlsw/lucuma-common-ui';
 import { dms2deg, hms2deg, toAngle, toDeclination, toRightAscension } from '@gemini-hlsw/lucuma-core';
 import type { EphemerisKeyType } from '@gql/odb/gen/graphql';
 import { isBaseTarget } from '@gql/util';
 import { Dropdown } from 'primereact/dropdown';
-import { InputNumber } from 'primereact/inputnumber';
 import { InputText } from 'primereact/inputtext';
 import type { CSSProperties, Dispatch, SetStateAction } from 'react';
 import { startTransition, useEffect, useState } from 'react';
@@ -161,7 +160,7 @@ function SiderealInput({
       <label htmlFor="raAzDegrees" style={{ gridArea: 't1' }} className="label">
         {coordsType === 'celestial' ? 'RA' : 'Az'}
       </label>
-      <InputNumber
+      <NumberInput
         inputId="raAzDegrees"
         disabled={disabled || loading}
         style={{ gridArea: 'c11' }}
@@ -215,7 +214,7 @@ function SiderealInput({
       <label htmlFor="decElDegrees" style={{ gridArea: 't2' }} className="label">
         {coordsType === 'celestial' ? 'Dec' : 'El'}
       </label>
-      <InputNumber
+      <NumberInput
         inputId="decElDegrees"
         disabled={disabled || loading}
         style={{ gridArea: 'c21' }}

@@ -292,6 +292,9 @@ importers:
       playwright:
         specifier: 1.62.1
         version: 1.62.1
+      primereact:
+        specifier: 10.9.9
+        version: 10.9.9(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       react:
         specifier: 19.2.8
         version: 19.2.8

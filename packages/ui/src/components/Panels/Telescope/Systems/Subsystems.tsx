@@ -3,6 +3,7 @@ import {
   isNotNullish,
   isNullish,
   type Labelled,
+  NumberInput,
   parseNumber,
   useSyncedState,
   when,
@@ -31,7 +32,6 @@ import type { DomeMode, ShutterControlMode } from '@gql/server/gen/graphql';
 import { useTelescopeState } from '@gql/server/TelescopeState';
 import { Button } from 'primereact/button';
 import { Dropdown } from 'primereact/dropdown';
-import { InputNumber } from 'primereact/inputnumber';
 import { Slider } from 'primereact/slider';
 
 import { TriangleExclamation } from '@/components/Icons';
@@ -187,7 +187,7 @@ export function BotSubsystems({ canEdit }: { canEdit: boolean }) {
       >
         Aperture
       </label>
-      <InputNumber
+      <NumberInput
         inputId="aperture"
         disabled={!canEdit}
         style={{ gridArea: 'g55' }}
@@ -217,7 +217,7 @@ export function BotSubsystems({ canEdit }: { canEdit: boolean }) {
         className={cn(BTN_CLASSES[state.wVGateClose])}
         data-testid="close-west-vent-gate"
       />
-      <InputNumber
+      <NumberInput
         inputId="west-vent-gate"
         aria-label="West vent gate"
         disabled={!canEdit}
@@ -253,7 +253,7 @@ export function BotSubsystems({ canEdit }: { canEdit: boolean }) {
         className={cn(BTN_CLASSES[state.eVGateClose])}
         data-testid="close-east-vent-gate"
       />
-      <InputNumber
+      <NumberInput
         inputId="east-vent-gate"
         aria-label="East vent gate"
         disabled={!canEdit}

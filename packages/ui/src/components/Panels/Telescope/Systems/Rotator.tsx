@@ -1,9 +1,8 @@
-import { isNotNullish } from '@gemini-hlsw/lucuma-common-ui';
+import { isNotNullish, NumberInput } from '@gemini-hlsw/lucuma-common-ui';
 import type { RotatorTrackingMode } from '@gql/configs/gen/graphql';
 import { useRotator, useUpdateRotator } from '@gql/configs/Rotator';
 import { Title } from '@Shared/Title/Title';
 import { Dropdown } from 'primereact/dropdown';
-import { InputNumber } from 'primereact/inputnumber';
 
 export function Rotator({ canEdit }: { canEdit: boolean }) {
   const { data: rotatorData, loading: rotatorLoading } = useRotator();
@@ -34,7 +33,7 @@ export function Rotator({ canEdit }: { canEdit: boolean }) {
         <label htmlFor="rotator-pa" className="label">
           Position Angle
         </label>
-        <InputNumber
+        <NumberInput
           inputId="rotator-pa"
           disabled={!canEdit || loading}
           value={rotator?.angle ?? null}

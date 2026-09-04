@@ -1,10 +1,10 @@
+import { NumberInput } from '@gemini-hlsw/lucuma-common-ui';
 import type { SetTemporaryInstrumentMutationVariables } from '@gql/configs/gen/graphql';
 import { useConfiguredInstrument, useSetTemporaryInstrument, useUpdateInstrument } from '@gql/configs/Instrument';
 import { CommentConfirmButton } from '@Shared/CommentConfirmButton';
 import { Title } from '@Shared/Title/Title';
 import { Button } from 'primereact/button';
 import type { InputNumberProps } from 'primereact/inputnumber';
-import { InputNumber } from 'primereact/inputnumber';
 import { InputText } from 'primereact/inputtext';
 import { useId } from 'react';
 
@@ -109,7 +109,7 @@ function InstrumentInputNumber({ label, ...props }: { label: string } & InputNum
       <label className="label" htmlFor={id}>
         {label}
       </label>
-      <InputNumber inputId={id} minFractionDigits={2} maxFractionDigits={5} mode="decimal" {...props} />
+      <NumberInput inputId={id} minFractionDigits={2} maxFractionDigits={5} mode="decimal" {...props} />
     </>
   );
 }

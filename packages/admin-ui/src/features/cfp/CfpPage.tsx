@@ -1,11 +1,11 @@
 import './CfpPage.css';
 
+import { NumberInput } from '@gemini-hlsw/lucuma-common-ui';
 import { Button } from 'primereact/button';
 import { Checkbox } from 'primereact/checkbox';
 import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
 import { Dropdown } from 'primereact/dropdown';
-import { InputNumber } from 'primereact/inputnumber';
 import { InputText } from 'primereact/inputtext';
 import { type JSX, useMemo, useState } from 'react';
 
@@ -350,7 +350,7 @@ function CfpEditor({
               Proprietary Period
             </label>
             <div className="cfp-suffixed">
-              <InputNumber
+              <NumberInput
                 inputId="cfp-prop"
                 value={draft.proprietaryMonths}
                 min={0}
@@ -387,7 +387,7 @@ function CfpEditor({
                     Gemini {site === 'north' ? 'North' : 'South'}
                   </td>
                   <td>
-                    <InputNumber
+                    <NumberInput
                       value={draft[site].raStart}
                       suffix=" h"
                       maxFractionDigits={1}
@@ -397,7 +397,7 @@ function CfpEditor({
                   </td>
                   <td className="cfp-le">≤ RA ≤</td>
                   <td>
-                    <InputNumber
+                    <NumberInput
                       value={draft[site].raEnd}
                       suffix=" h"
                       maxFractionDigits={1}
@@ -406,7 +406,7 @@ function CfpEditor({
                     />
                   </td>
                   <td>
-                    <InputNumber
+                    <NumberInput
                       value={draft[site].decStart}
                       suffix="°"
                       onValueChange={(e) => setLimit(site, 'decStart', e.value ?? 0)}
@@ -415,7 +415,7 @@ function CfpEditor({
                   </td>
                   <td className="cfp-le">≤ Dec ≤</td>
                   <td>
-                    <InputNumber
+                    <NumberInput
                       value={draft[site].decEnd}
                       suffix="°"
                       onValueChange={(e) => setLimit(site, 'decEnd', e.value ?? 0)}
