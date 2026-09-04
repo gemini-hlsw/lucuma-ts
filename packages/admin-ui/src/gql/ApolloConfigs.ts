@@ -41,4 +41,19 @@ export const client = new ApolloClient({
   },
   link: authLink.concat(endpointLink),
   cache: new InMemoryCache(),
+  // Render the data the ODB did return, even when the response also carries
+  // GraphQL errors. The admin lists select each observation's execution digest,
+  // which the ODB computes per observation and reports as a partial-success
+  // *warning* (null value + an entry in `errors`) when a single observation
+  // can't be costed — e.g. a GHOST high-resolution target with no sky position,
+  // or an observation missing an observing mode. Under Apollo's default
+  // `errorPolicy: 'none'` one such warning discards the *entire* result, blanking
+  // the whole tab (sc-10153); `'all'` keeps the good rows and lets the affected
+  // ones fall back to "—". Applied to reads only — `mutate` keeps the default
+  // `'none'` so failed mutations still reject and the views' try/catch handling
+  // (and "…failed" toasts) keep working.
+  defaultOptions: {
+    watchQuery: { errorPolicy: 'all' },
+    query: { errorPolicy: 'all' },
+  },
 });
