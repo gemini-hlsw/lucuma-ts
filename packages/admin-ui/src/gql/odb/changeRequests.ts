@@ -208,7 +208,12 @@ export function useProgramObservations(programId: string | null): {
 } {
   const result = useQuery(
     PROGRAM_OBSERVATIONS_QUERY,
-    programId === null ? skipToken : { variables: { programId, offset: null }, notifyOnNetworkStatusChange: true },
+    // errorPolicy 'all': the ObservationItem digest is computed per observation
+    // and a single un-costable one returns null plus an entry in `errors`; the
+    // default 'none' would discard the whole page over one warning (sc-10153).
+    programId === null
+      ? skipToken
+      : { variables: { programId, offset: null }, notifyOnNetworkStatusChange: true, errorPolicy: 'all' },
   );
 
   const { data, fetchMore } = result;

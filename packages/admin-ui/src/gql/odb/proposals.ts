@@ -102,6 +102,12 @@ export function useProposals() {
     variables: { offset: null },
     fetchPolicy: 'cache-and-network',
     notifyOnNetworkStatusChange: true,
+    // The ObservationItem digest is computed per observation; one that can't be
+    // costed (a GHOST high-res target with no sky position, an observation with
+    // no observing mode) comes back null with an entry in the response's
+    // `errors`. Under the default policy 'none' that one warning discards the
+    // whole result and blanks the tab (sc-10153); 'all' keeps the good rows.
+    errorPolicy: 'all',
   });
 
   const { data, fetchMore } = result;
