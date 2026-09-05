@@ -49,7 +49,7 @@
     "eslint": "10.9.1",
     "eslint-import-resolver-typescript": "4.4.5",
     "eslint-plugin-simple-import-sort": "14.0.0",
-    "globals": "17.11.0",
+    "globals": "17.12.0",
     "@vitest/eslint-plugin": "1.6.27",
     "@typescript/native": "npm:typescript@7.0.2",
     "typescript": "npm:@typescript/typescript6@6.0.2",
