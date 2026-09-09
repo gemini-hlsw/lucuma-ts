@@ -3,7 +3,17 @@ import { describe, expect, it } from 'vitest';
 import { executionDigest } from '@/test/factories';
 
 import type { GroupElementItemFragment, ObservationItemFragment } from './gen/graphql';
-import { formatConditions, isScienceObservation, mapObservationRow, telluricGroupHours } from './shared';
+import {
+  DEC_DECIMALS,
+  formatConditions,
+  isScienceObservation,
+  joinTargetNames,
+  mapObservationRow,
+  NO_TARGET,
+  RA_DECIMALS,
+  telluricGroupHours,
+  trimSexagesimal,
+} from './shared';
 
 function observation(overrides: Partial<ObservationItemFragment>): ObservationItemFragment {
   return {
@@ -52,6 +62,31 @@ describe(mapObservationRow, () => {
       observingMode: { __typename: 'ObservingMode', mode: 'FLAMINGOS_2_LONG_SLIT' },
     });
     expect(mapObservationRow(f2).config).toBe('Flamingos-2, LongSlit');
+  });
+
+  it('shows the target coordinates at the display precision, not the ODB\u2019s six decimals', () => {
+    // The Observations table sits directly under the trimmed coordinate columns
+    // on the Change Requests page, so it must not show a finer value (sc-10159
+    // item 7).
+    const row = mapObservationRow(
+      observation({
+        targetEnvironment: {
+          __typename: 'TargetEnvironment',
+          firstScienceTarget: {
+            __typename: 'Target',
+            id: 't-3',
+            name: 'NGC 300',
+            sidereal: {
+              __typename: 'Sidereal',
+              ra: { __typename: 'RightAscension', hms: '00:54:53.123456', degrees: 13.723 },
+              dec: { __typename: 'Declination', dms: '-37:41:04.987654', degrees: -37.684 },
+            },
+          },
+        },
+      }),
+    );
+    expect(row.ra).toBe('00:54:53.12');
+    expect(row.dec).toBe('-37:41:04.9');
   });
 
   it('shows non-sidereal targets without coordinates', () => {
@@ -194,5 +229,51 @@ describe(isScienceObservation, () => {
     expect(isScienceObservation({ calibrationRole: null })).toBe(true);
     expect(isScienceObservation({ calibrationRole: 'TWILIGHT' })).toBe(false);
     expect(isScienceObservation({ calibrationRole: 'SPECTROPHOTOMETRIC' })).toBe(false);
+  });
+});
+
+describe(joinTargetNames, () => {
+  it('lists distinct names in order, comma-separated', () => {
+    expect(joinTargetNames(['M31', 'M32'])).toBe('M31, M32');
+  });
+
+  it('collapses repeats of the same target to one entry', () => {
+    expect(joinTargetNames(['NGC 300', 'NGC 300'])).toBe('NGC 300');
+  });
+
+  it.each([
+    ['an observation that resolved to nothing', [undefined]],
+    ['an observation whose target has no name', [NO_TARGET]],
+    ['nothing at all', []],
+  ])('reads as a dash when every entry is %s', (_case, names) => {
+    expect(joinTargetNames(names)).toBe('—');
+  });
+
+  it('keeps the real names alongside unusable entries rather than listing those', () => {
+    // The placeholder and the unresolved id must not appear as if they were
+    // targets — this is the whole reason NO_TARGET is exported.
+    expect(joinTargetNames(['M31', NO_TARGET, undefined, 'M32'])).toBe('M31, M32');
+  });
+});
+
+describe(trimSexagesimal, () => {
+  it('shows RA to hundredths and Dec to tenths of a second (sc-10159 item 7)', () => {
+    expect(trimSexagesimal('01:01:45.034320', RA_DECIMALS)).toBe('01:01:45.03');
+    expect(trimSexagesimal('+20:55:43.744800', DEC_DECIMALS)).toBe('+20:55:43.7');
+  });
+
+  it('truncates rather than rounds, so seconds can never reach 60', () => {
+    // Rounding the seconds field alone cannot carry into the minutes, so
+    // "+20:55:59.999" would become the invalid "+20:55:60.0".
+    expect(trimSexagesimal('+20:55:59.999000', DEC_DECIMALS)).toBe('+20:55:59.9');
+  });
+
+  it('leaves a value with no fractional part, and a placeholder, alone', () => {
+    expect(trimSexagesimal('02:00:00', RA_DECIMALS)).toBe('02:00:00');
+    expect(trimSexagesimal('—', RA_DECIMALS)).toBe('—');
+  });
+
+  it('keeps the sign of a southern declination', () => {
+    expect(trimSexagesimal('-07:57:07.397999', DEC_DECIMALS)).toBe('-07:57:07.3');
   });
 });
