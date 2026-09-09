@@ -6,7 +6,8 @@ import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
 import { Dropdown } from 'primereact/dropdown';
 import { InputTextarea } from 'primereact/inputtextarea';
-import { type JSX, useMemo, useState } from 'react';
+import { OverlayPanel } from 'primereact/overlaypanel';
+import { type JSX, useMemo, useRef, useState } from 'react';
 
 import { ConflictsTable } from '@/components/ConflictsTable';
 import { DataSourceBadge } from '@/components/DataSourceBadge';
@@ -23,7 +24,14 @@ import {
   useProgramObservations,
   useUpdateConfigurationRequests,
 } from '@/gql/odb/changeRequests';
-import type { ChangeRequest, ConfigurationRequestStatus, ObservationRow, ProgramCrStatus, Site } from '@/gql/types';
+import type {
+  ChangeRequest,
+  ConfigurationRequestStatus,
+  ObservationRow,
+  ProgramCrStatus,
+  Site,
+  TimingWindowRow,
+} from '@/gql/types';
 
 const EMPTY: ChangeRequest[] = [];
 
@@ -105,7 +113,7 @@ export default function ChangeRequestsPage(): JSX.Element {
   // N+1 nor a giant id-list query.
   const { matches: programObservations } = useProgramObservations(selectedProgram?.programId ?? null);
   const observationsById = useMemo(() => observationsByIdFrom(programObservations), [programObservations]);
-  const visibleRequests = useMemo(
+  const visibleRequests = useMemo<VisibleRequest[]>(
     () =>
       programRequests.map((r) => ({
         ...r,
@@ -120,6 +128,12 @@ export default function ChangeRequestsPage(): JSX.Element {
   // repainted its checkmark — memoized cells; Andy's "checkmark never appears").
   const [selectedIds, setSelectedIds] = useState<ReadonlySet<string>>(new Set());
   const selectedRequests = visibleRequests.filter((r) => selectedIds.has(r.id));
+
+  // Scheduling windows for one request are shown on demand in an overlay,
+  // grouped by the observation they belong to (sc-9621). A single panel is
+  // reused; the click target sets which request's windows it shows.
+  const windowsPanel = useRef<OverlayPanel>(null);
+  const [windowsOf, setWindowsOf] = useState<readonly WindowGroup[]>([]);
 
   const [response, setResponse] = useState('');
   const [decision, setDecision] = useState<Decision | null>(null);
@@ -301,6 +315,27 @@ export default function ChangeRequestsPage(): JSX.Element {
               body={(r: ChangeRequest) => r.observationIds.join(', ') || '—'}
             />
             <Column
+              header="Windows"
+              style={{ width: '6rem' }}
+              headerTooltip="Scheduling windows across this request's observations. Click the count to see each window."
+              body={(r: VisibleRequest) => {
+                const groups = windowGroups(r.observations);
+                const total = groups.reduce((n, g) => n + g.windows.length, 0);
+                if (total === 0) return <span className="cr-untracked">none</span>;
+                return (
+                  <Button
+                    link
+                    className="cr-windows-link"
+                    label={String(total)}
+                    onClick={(e) => {
+                      setWindowsOf(groups);
+                      windowsPanel.current?.toggle(e);
+                    }}
+                  />
+                );
+              }}
+            />
+            <Column
               header="Justification"
               body={(r: ChangeRequest) => truncate(r.justification, 60)}
               headerTooltip="The PI's justification for the change."
@@ -389,8 +424,40 @@ export default function ChangeRequestsPage(): JSX.Element {
           </div>
         </Tile>
       )}
+
+      <OverlayPanel ref={windowsPanel} className="cr-windows-panel">
+        {windowsOf.length === 0 ? (
+          <p className="cr-untracked">No scheduling windows.</p>
+        ) : (
+          windowsOf.map((g) => (
+            <div key={g.observationId} className="cr-windows-group">
+              <span className="cr-windows-obs">{g.observationId}</span>
+              <ul className="cr-windows-list">
+                {g.windows.map((w, i) => (
+                  <li key={i} className={w.inclusion === 'EXCLUDE' ? 'cr-window-exclude' : undefined}>
+                    {w.label}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))
+        )}
+      </OverlayPanel>
     </>
   );
+}
+
+interface WindowGroup {
+  readonly observationId: string;
+  readonly windows: readonly TimingWindowRow[];
+}
+
+type VisibleRequest = ChangeRequest & { readonly observations: readonly ObservationRow[] };
+
+/** Group a request's resolved observations by id, keeping only those that
+ *  actually have scheduling windows (sc-9621). */
+function windowGroups(observations: readonly ObservationRow[]): readonly WindowGroup[] {
+  return observations.filter((o) => o.windows.length > 0).map((o) => ({ observationId: o.id, windows: o.windows }));
 }
 
 function truncate(s: string, n: number): string {
