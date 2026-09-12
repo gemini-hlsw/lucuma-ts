@@ -68,7 +68,7 @@
     "graphql-scalars": "1.26.0",
     "graphql-ws": "6.2.1",
     "graphql-yoga": "5.22.0",
-    "playwright": "1.62.1",
+    "playwright": "1.63.0",
     "sass": "1.104.0",
     "tailwindcss": "4.3.3",
     "typescript": "npm:@typescript/typescript6@6.0.2",
