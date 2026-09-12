@@ -57,7 +57,7 @@
     "graphql": "16.14.2",
     "graphql-ws": "6.2.1",
     "jotai": "2.20.3",
-    "playwright": "1.62.1",
+    "playwright": "1.63.0",
     "primereact": "10.9.9",
     "react": "19.2.8",
     "react-dom": "19.2.8",
