@@ -3,8 +3,9 @@
  * program → request master-detail — see ChangeRequestsPage.
  */
 import { skipToken, useMutation, useQuery } from '@apollo/client/react';
-import { parseNumber } from '@gemini-hlsw/lucuma-common-ui';
-import { useCallback, useEffect } from 'react';
+import { isNullish, parseNumber } from '@gemini-hlsw/lucuma-common-ui';
+import type { DocumentNode } from 'graphql';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import type {
   ChangeRequest,
@@ -19,6 +20,61 @@ import { graphql } from './gen';
 import type { Instrument } from './gen/graphql';
 import { formatConditions, formatDec, formatRa, isScienceObservation, mapObservationRow } from './shared';
 
+/** One ConfigurationRequest as both review views render it — the Change
+ *  Requests tab (sc-9094) and the Proposals tab's per-CR approve/deny (sc-9595).
+ *  A named fragment so `mapChangeRequests` maps requests whether they arrive via
+ *  the top-level `configurationRequests` query or a program's own
+ *  `configurationRequests` field. */
+export const CONFIGURATION_REQUEST_FRAGMENT = graphql(`
+  fragment ConfigurationRequestItem on ConfigurationRequest {
+    id
+    status
+    justification
+    feedback
+    createdAt
+    applicableObservations
+    program {
+      id
+      name
+      reference {
+        label
+      }
+      pi {
+        id
+        user {
+          id
+          profile {
+            givenName
+            familyName
+          }
+        }
+      }
+    }
+    configuration {
+      target {
+        coordinates {
+          ra {
+            degrees
+          }
+          dec {
+            degrees
+          }
+        }
+      }
+      observingMode {
+        instrument
+        mode
+      }
+      conditions {
+        imageQuality
+        cloudExtinction
+        skyBackground
+        waterVapor
+      }
+    }
+  }
+`);
+
 export const CHANGE_REQUESTS_QUERY = graphql(`
   query AdminChangeRequests($offset: ConfigurationRequestId) {
     # Only requests on accepted programs (sc-9601) — a change request against a
@@ -29,51 +85,7 @@ export const CHANGE_REQUESTS_QUERY = graphql(`
     # useChangeRequests follows hasMore to the end.
     configurationRequests(WHERE: { program: { proposalStatus: { EQ: ACCEPTED } } }, OFFSET: $offset) {
       matches {
-        id
-        status
-        justification
-        feedback
-        createdAt
-        applicableObservations
-        program {
-          id
-          name
-          reference {
-            label
-          }
-          pi {
-            id
-            user {
-              id
-              profile {
-                givenName
-                familyName
-              }
-            }
-          }
-        }
-        configuration {
-          target {
-            coordinates {
-              ra {
-                degrees
-              }
-              dec {
-                degrees
-              }
-            }
-          }
-          observingMode {
-            instrument
-            mode
-          }
-          conditions {
-            imageQuality
-            cloudExtinction
-            skyBackground
-            waterVapor
-          }
-        }
+        ...ConfigurationRequestItem
       }
       hasMore
     }
@@ -81,6 +93,7 @@ export const CHANGE_REQUESTS_QUERY = graphql(`
 `);
 
 export type AdminChangeRequestsResult = DocumentType<typeof CHANGE_REQUESTS_QUERY>;
+type ConfigurationRequestItem = DocumentType<typeof CONFIGURATION_REQUEST_FRAGMENT>;
 
 /** Gemini instrument enum → display label + site. Instruments not listed here
  *  (e.g. visiting instruments) default to North, since that's unverifiable
@@ -93,8 +106,18 @@ const INSTRUMENT_SITE: Partial<Record<Instrument, { label: string; site: Site }>
   IGRINS2: { label: 'IGRINS-2', site: 'NORTH' },
 };
 
+/** Map the Change Requests query result — the top-level configurationRequests
+ *  list — onto the view shape. */
 export function mapChangeRequests(raw: AdminChangeRequestsResult): ChangeRequest[] {
-  return raw.configurationRequests.matches.map((c): ChangeRequest => {
+  return mapConfigurationRequests(raw.configurationRequests.matches);
+}
+
+/** Map raw ConfigurationRequest rows onto the view shape, from either source
+ *  (the CR query or one program's requests). `observations` is left empty here —
+ *  a request carries only observation ids; the review panel fills the rows from
+ *  the program's observations (see useProgramObservations). */
+export function mapConfigurationRequests(matches: readonly ConfigurationRequestItem[]): ChangeRequest[] {
+  return matches.map((c): ChangeRequest => {
     const prof = c.program.pi?.user?.profile;
     const coords = c.configuration.target?.coordinates;
     const instrument = c.configuration.observingMode?.instrument;
@@ -125,9 +148,6 @@ export function mapChangeRequests(raw: AdminChangeRequestsResult): ChangeRequest
       instrument: site.label,
       conditions: formatConditions(c.configuration.conditions),
       observationIds: c.applicableObservations,
-      // Filled in by the page from the program's observations (see
-      // useProgramObservations) — ConfigurationRequest carries only observation
-      // IDs, not the observation rows themselves.
       observations: [],
     };
   });
@@ -172,6 +192,68 @@ export function useChangeRequests() {
   };
 }
 
+/** One program's configuration requests, for the Proposals detail (sc-9595),
+ *  where the proposal is decided before it is accepted and so is not in the
+ *  accepted-programs list above. Loaded for the selected proposal only, rather
+ *  than under every program of the Proposals query, which already walks them all. */
+export const PROGRAM_CONFIGURATION_REQUESTS_QUERY = graphql(`
+  query AdminProgramConfigurationRequests($programId: ProgramId!, $offset: ConfigurationRequestId) {
+    configurationRequests(WHERE: { program: { id: { EQ: $programId } } }, OFFSET: $offset) {
+      matches {
+        ...ConfigurationRequestItem
+      }
+      hasMore
+    }
+  }
+`);
+
+/** The selected program's requests, following `hasMore` to the last page like
+ *  the other walks here, so none is dropped by a page limit. `loading` stays
+ *  true until every page is in. Skipped when no program is selected. */
+export function useProgramConfigurationRequests(programId: string | null) {
+  const result = useQuery(
+    PROGRAM_CONFIGURATION_REQUESTS_QUERY,
+    isNullish(programId)
+      ? skipToken
+      : // cache-and-network, like the other request walks: a proposal reopened
+        // later must not show requests that were resolved in the meantime.
+        { variables: { programId, offset: null }, fetchPolicy: 'cache-and-network', notifyOnNetworkStatusChange: true },
+  );
+  const { data, fetchMore } = result;
+  // A later page that fails to load is reported like the first: left alone, the
+  // list would stay truncated with nothing to say so. Tagged with the pages it
+  // failed on, so it lapses when a fresh load replaces them (a reload after a
+  // resolve, another program, a return to this one) and the walk is tried again.
+  const [walkFailure, setWalkFailure] = useState<{ data: typeof data; error: Error } | null>(null);
+
+  useEffect(() => {
+    if (!data?.configurationRequests.hasMore || fetchMore === undefined) return;
+    const matches = data.configurationRequests.matches;
+    const cursor = matches[matches.length - 1]?.id;
+    if (isNullish(cursor)) return;
+    fetchMore({
+      variables: { offset: cursor },
+      updateQuery: (prev, { fetchMoreResult }) => ({
+        configurationRequests: {
+          ...fetchMoreResult.configurationRequests,
+          matches: [...prev.configurationRequests.matches, ...fetchMoreResult.configurationRequests.matches],
+        },
+      }),
+    }).catch((err: unknown) => {
+      setWalkFailure({ data, error: err instanceof Error ? err : new Error(String(err)) });
+    });
+  }, [data, fetchMore]);
+
+  const requests = useMemo(() => (data ? mapConfigurationRequests(data.configurationRequests.matches) : []), [data]);
+  return {
+    requests,
+    error: result.error ?? (walkFailure?.data === data ? walkFailure?.error : undefined),
+    /** More pages are still to come: what is in `requests` is not yet the whole set. */
+    partial: data?.configurationRequests.hasMore ?? false,
+    loading: result.loading || (data?.configurationRequests.hasMore ?? false),
+  };
+}
+
 /*
  * A ConfigurationRequest carries only observation ids (applicableObservations),
  * so the page resolves them to rows. We fetch the selected program's
@@ -208,6 +290,7 @@ export function observationsByIdFrom(matches: readonly ObservationMatch[]): Read
  *  program is selected. */
 export function useProgramObservations(programId: string | null): {
   matches: readonly ObservationMatch[];
+  error: Error | undefined;
   loading: boolean;
 } {
   const result = useQuery(
@@ -243,6 +326,7 @@ export function useProgramObservations(programId: string | null): {
 
   return {
     matches: data?.observations.matches ?? [],
+    error: result.error,
     // Not settled until every page is in, so callers don't render a partial set.
     loading: result.loading || (data?.observations.hasMore ?? false),
   };
@@ -325,16 +409,18 @@ export function groupChangeRequestsByProgram(requests: readonly ChangeRequest[])
   });
 }
 
-const RESOLVE_OPTIONS = { refetchQueries: [CHANGE_REQUESTS_QUERY], awaitRefetchQueries: true };
-
-/** Resolve the selected requests, writing `response` as the staff feedback.
+/** Resolve the requests, writing `response` as the staff feedback.
  *
  *  A null `response` means the reviewer left no response, which keeps whatever
  *  is stored rather than erasing it — the two cases need different documents,
- *  since a nulled variable clears the field. */
-export function useResolveChangeRequests() {
-  const [withFeedback, withState] = useMutation(RESOLVE_WITH_FEEDBACK_MUTATION, RESOLVE_OPTIONS);
-  const [keepingFeedback, keepState] = useMutation(RESOLVE_KEEPING_FEEDBACK_MUTATION, RESOLVE_OPTIONS);
+ *  since a nulled variable clears the field. `refetchQuery` is the list the
+ *  calling view reads from, so the resolved statuses reload in place — the Change
+ *  Requests query for that tab, or one program's own requests query for the
+ *  per-request approval in the Proposals detail (sc-9595). */
+export function useResolveChangeRequests(refetchQuery: DocumentNode = CHANGE_REQUESTS_QUERY) {
+  const options = useMemo(() => ({ refetchQueries: [refetchQuery], awaitRefetchQueries: true }), [refetchQuery]);
+  const [withFeedback, withState] = useMutation(RESOLVE_WITH_FEEDBACK_MUTATION, options);
+  const [keepingFeedback, keepState] = useMutation(RESOLVE_KEEPING_FEEDBACK_MUTATION, options);
   const resolve = useCallback(
     (ids: readonly string[], status: ConfigurationRequestStatus, response: string | null) =>
       response === null

@@ -170,5 +170,7 @@ describe(ChangeRequestsPage, () => {
     await userEvent.fill(box, note);
     await userEvent.click(screen.getByRole('button', { name: /Confirm/ }));
     await expect.element(screen.getByText(/Change requests denied/)).toBeInTheDocument();
+    // The outcome names the program by its reference, though the tiles carry its id.
+    await expect.element(screen.getByText('1 request in G-2027B-0172-Q')).toBeInTheDocument();
   });
 });
