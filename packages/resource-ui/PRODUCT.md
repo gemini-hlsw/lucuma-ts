@@ -27,9 +27,11 @@ vocabulary: ports, instruments, observing nights, semesters, Gemini North and Ge
 Today they are checking a record; composing one is coming (see Capabilities), and the same
 audiences will do the composing.
 
-There is no authenticated user yet - every visitor is a guest, and the app says so - but
-**authentication is coming soon**, arriving with the write capabilities. Treat a signed-in
-user as a near-term state to design room for, not a hypothetical.
+A returning user with an SSO session is signed in silently, and every request to Resource
+carries their token - but nothing in the interface shows or asks for it, and the masthead
+still names every visitor a guest. **Showing that identity is coming soon**, and the write
+capabilities follow it. Treat a signed-in user as a near-term state to design room for,
+not a hypothetical.
 
 ## Product Purpose
 
