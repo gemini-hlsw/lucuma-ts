@@ -26,10 +26,13 @@ allowed to decide `dataAvailable`.
 One path everywhere a client sees: **`/resource/graphql`**. The deployed frontend maps
 its own hostname to a service host and appends that path
 (`https://lucuma-resource-dev.lucuma.xyz/resource/graphql`, `…-staging…`), and the dev
-proxy carries the same path, so the real service must serve it too. No authentication in
-v1 - the mock allows everything and the frontend sends no credentials; aligning the
-PoC's per-field auth with that intent is backend work. No subscriptions, no mutations:
-v1 is read-only, and consumers re-query.
+proxy carries the same path, so the real service must serve it too. No authentication is
+required in v1 - the mock allows everything, and aligning the PoC's per-field auth with
+that intent is backend work. The frontend nonetheless sends the signed-in user's token as
+`Authorization: Bearer <jwt>` on every request, and no header at all when nobody is
+signed in. The v1 service may ignore it; sending it now means the frontend needs no
+change when the service starts reading it. No subscriptions, no mutations: v1 is
+read-only, and consumers re-query.
 
 ## The queries
 

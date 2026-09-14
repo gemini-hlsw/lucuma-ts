@@ -1,8 +1,12 @@
 import { ApolloClient, ApolloLink, HttpLink } from '@apollo/client';
 import { CombinedGraphQLErrors } from '@apollo/client/errors';
+import { SetContextLink } from '@apollo/client/link/context';
 import { ErrorLink } from '@apollo/client/link/error';
 import { Observable } from '@apollo/client/utilities';
 import { withAbsoluteUri } from '@gemini-hlsw/lucuma-common-ui';
+
+import { odbTokenAtom } from '@/components/atoms/auth';
+import { store } from '@/components/atoms/store';
 
 import { buildCache } from './cache';
 import { clearLiveFailure, reportLiveFailure } from './liveStatus';
@@ -50,8 +54,26 @@ export const clearOnSuccessLink = (): ApolloLink =>
       ),
   );
 
+/**
+ * The signed-in user's token, on every request. v1 requires no authentication, so this is
+ * forward-looking: when the service starts reading the header, no frontend change is
+ * needed. Signed out, the header is omitted rather than sent empty, and nothing is
+ * reported - an anonymous request is a normal request here.
+ */
+export const authLink = (): ApolloLink =>
+  // Read per request from the shared store, so a sign-in takes effect without a reload.
+  new SetContextLink((prevContext) => {
+    const token = store.get(odbTokenAtom);
+    // Apollo types operation context values as `any`; pin the headers shape.
+    const prevHeaders = (prevContext.headers ?? {}) as Record<string, string>;
+    return {
+      headers: token ? { ...prevHeaders, Authorization: `Bearer ${token}` } : prevHeaders,
+    };
+  });
+
 const liveLink = (): ApolloLink =>
   ApolloLink.from([
+    authLink(),
     clearOnSuccessLink(),
     new ErrorLink(({ error }) => {
       reportLiveFailure(liveFailureMessage(error));
