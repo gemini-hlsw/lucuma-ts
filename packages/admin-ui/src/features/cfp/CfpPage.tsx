@@ -548,56 +548,58 @@ function CoordinateLimits({
         ];
 
   return (
-    <table
-      className="cfp-coords"
-      title="RA/Dec windows that bound where targets may lie under this call (CoordinateLimits)."
-    >
-      <tbody>
-        {sites.map(({ label, limits, update }) => (
-          <tr key={label}>
-            <td className="cfp-site" title={`RA (hours) and Dec (degrees) limits for ${label}.`}>
-              {label}
-            </td>
-            <td>
-              <NumberInput
-                value={limits.raStart}
-                suffix=" h"
-                maxFractionDigits={1}
-                onValueChange={(e) => update({ ...limits, raStart: e.value ?? 0 })}
-                inputClassName="cfp-coord-input"
-              />
-            </td>
-            <td className="cfp-le">≤ RA ≤</td>
-            <td>
-              <NumberInput
-                value={limits.raEnd}
-                suffix=" h"
-                maxFractionDigits={1}
-                onValueChange={(e) => update({ ...limits, raEnd: e.value ?? 0 })}
-                inputClassName="cfp-coord-input"
-              />
-            </td>
-            <td>
-              <NumberInput
-                value={limits.decStart}
-                suffix="°"
-                onValueChange={(e) => update({ ...limits, decStart: e.value ?? 0 })}
-                inputClassName="cfp-coord-input"
-              />
-            </td>
-            <td className="cfp-le">≤ Dec ≤</td>
-            <td>
-              <NumberInput
-                value={limits.decEnd}
-                suffix="°"
-                onValueChange={(e) => update({ ...limits, decEnd: e.value ?? 0 })}
-                inputClassName="cfp-coord-input"
-              />
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
+    <div className="cfp-coords-scroll">
+      <table
+        className="cfp-coords"
+        title="RA/Dec windows that bound where targets may lie under this call (CoordinateLimits)."
+      >
+        <tbody>
+          {sites.map(({ label, limits, update }) => (
+            <tr key={label}>
+              <td className="cfp-site" title={`RA (hours) and Dec (degrees) limits for ${label}.`}>
+                {label}
+              </td>
+              <td>
+                <NumberInput
+                  value={limits.raStart}
+                  suffix=" h"
+                  maxFractionDigits={1}
+                  onValueChange={(e) => update({ ...limits, raStart: e.value ?? 0 })}
+                  inputClassName="cfp-coord-input"
+                />
+              </td>
+              <td className="cfp-le">≤ RA ≤</td>
+              <td>
+                <NumberInput
+                  value={limits.raEnd}
+                  suffix=" h"
+                  maxFractionDigits={1}
+                  onValueChange={(e) => update({ ...limits, raEnd: e.value ?? 0 })}
+                  inputClassName="cfp-coord-input"
+                />
+              </td>
+              <td>
+                <NumberInput
+                  value={limits.decStart}
+                  suffix="°"
+                  onValueChange={(e) => update({ ...limits, decStart: e.value ?? 0 })}
+                  inputClassName="cfp-coord-input"
+                />
+              </td>
+              <td className="cfp-le">≤ Dec ≤</td>
+              <td>
+                <NumberInput
+                  value={limits.decEnd}
+                  suffix="°"
+                  onValueChange={(e) => update({ ...limits, decEnd: e.value ?? 0 })}
+                  inputClassName="cfp-coord-input"
+                />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
 
