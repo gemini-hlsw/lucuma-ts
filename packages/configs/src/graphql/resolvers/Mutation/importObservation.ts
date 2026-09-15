@@ -82,13 +82,18 @@ export const importObservation: NonNullable<MutationResolvers['importObservation
       selectedP2Target,
     });
     const hasSelectedGuideSource = selectedGuideSource !== undefined;
+    // Should keep the existing guide loop settings if possible
+    const currentGuideLoop = await prisma.guideLoop.findUnique({
+      where: { pk: guideLoopPk },
+    });
+
     const guideLoopData: GuideLoopUpdateInput = {
-      m2TipTiltEnable: hasSelectedGuideSource,
+      m2TipTiltEnable: hasSelectedGuideSource ? (currentGuideLoop?.m2TipTiltEnable ?? false) : false,
       m2TipTiltSource: selectedGuideSource ?? '',
-      m2FocusEnable: hasSelectedGuideSource,
+      m2FocusEnable: hasSelectedGuideSource ? (currentGuideLoop?.m2FocusEnable ?? false) : false,
       m2FocusSource: selectedGuideSource ?? '',
       m2ComaEnable: selectedGuideSource === 'PWFS1' || selectedGuideSource === 'PWFS2',
-      m1CorrectionsEnable: hasSelectedGuideSource,
+      m1CorrectionsEnable: hasSelectedGuideSource ? (currentGuideLoop?.m1CorrectionsEnable ?? false) : false,
       m2ComaM1CorrectionsSource: selectedGuideSource ?? '',
     };
 
