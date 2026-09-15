@@ -1,5 +1,5 @@
 import { type Labelled, NumberInput } from '@gemini-hlsw/lucuma-common-ui';
-import { Chips } from 'primereact/chips';
+import { AutoComplete } from 'primereact/autocomplete';
 import { Dropdown } from 'primereact/dropdown';
 import { InputText } from 'primereact/inputtext';
 import { type JSX, useMemo, useState } from 'react';
@@ -10,10 +10,18 @@ import { TimeAwardsGrid } from '@/components/TimeAwardsGrid';
 import { useToast } from '@/components/toastContext';
 import { friendlyError } from '@/gql/errors';
 import type { ProgramPropertiesInput } from '@/gql/odb/gen/graphql';
-import { allocationsInput, useSetAllocations, useUpdateProgram } from '@/gql/odb/programs';
+import {
+  allocationsInput,
+  useAddProgramUser,
+  useLinkUser,
+  useSetAllocations,
+  useUpdateProgram,
+} from '@/gql/odb/programs';
 import { mapProposals, useProposals, useSetProposalStatus } from '@/gql/odb/proposals';
+import { mapRosterUsers, useUsers } from '@/gql/sso/roster';
 import {
   type Allocation,
+  type ContactScientist,
   type Proposal,
   type ProposalStatus,
   SPECIAL_PROPOSAL_TYPE_LABEL,
@@ -57,7 +65,7 @@ interface AwardDraft {
   activeStart: string;
   activeEnd: string;
   proprietaryMonths: number;
-  contactScientists: readonly string[];
+  contactScientists: readonly ContactScientist[];
 }
 
 const BLANK_AWARD: AwardDraft = {
@@ -82,7 +90,9 @@ export default function ProposalsPage(): JSX.Element {
   const [setProposalStatus, { loading: settingStatus }] = useSetProposalStatus();
   const [setAllocations, { loading: settingAllocations }] = useSetAllocations();
   const [updateProgram, { loading: updatingProgram }] = useUpdateProgram();
-  const resolving = settingStatus || settingAllocations || updatingProgram;
+  const [addProgramUser, { loading: addingUser }] = useAddProgramUser();
+  const [linkUser, { loading: linkingUser }] = useLinkUser();
+  const resolving = settingStatus || settingAllocations || updatingProgram || addingUser || linkingUser;
 
   const [statusFilter, setStatusFilter] = useState<ProposalStatus | typeof ALL>(ALL);
   const [typeFilter, setTypeFilter] = useState<SpecialProposalType | typeof ALL>(ALL);
@@ -137,6 +147,14 @@ export default function ProposalsPage(): JSX.Element {
           await setAllocations({ variables: { programId: p.id, allocations } });
         }
         await updateProgram({ variables: { programId: p.id, set } });
+        // Assign the drafted contact scientists: one SUPPORT ProgramUser per
+        // roster pick, linked to its user (the same add+link flow the Programs
+        // view uses). Only additions are made here — this is a fresh award.
+        for (const contact of award.contactScientists.filter((c) => c.userId)) {
+          const res = await addProgramUser({ variables: { programId: p.id } });
+          const programUserId = res.data?.addProgramUser.programUser.id;
+          if (programUserId) await linkUser({ variables: { programUserId, userId: contact.userId ?? '' } });
+        }
         toast.success('Proposal accepted', p.reference);
       } else {
         await setProposalStatus({ variables: { programId: p.id, status: 'NOT_ACCEPTED' } });
@@ -242,6 +260,22 @@ function AwardForm({
 
   const awarded = award.allocations.reduce((s, a) => s + a.hours, 0);
 
+  // Contact-scientist type-ahead from the SSO roster — the same flow as the
+  // Programs view. A roster failure just leaves suggestions empty.
+  const { data: rosterData } = useUsers();
+  const roster = useMemo(() => (rosterData ? mapRosterUsers(rosterData) : []), [rosterData]);
+  const [contactSuggestions, setContactSuggestions] = useState<ContactScientist[]>([]);
+  function suggestContacts(query: string): void {
+    const chosen = new Set(award.contactScientists.map((c) => c.userId));
+    setContactSuggestions(
+      roster
+        .filter((u) => !chosen.has(u.id))
+        .filter((u) => matchesQuery([`${u.givenName} ${u.familyName}`, u.email], query))
+        .slice(0, 8)
+        .map((u) => ({ name: `${u.givenName} ${u.familyName}`, userId: u.id })),
+    );
+  }
+
   return (
     <section className="decision-panel">
       <h3 className="review-obs-title">Time Awards</h3>
@@ -288,17 +322,21 @@ function AwardForm({
         <dt>
           <label
             htmlFor="award-contacts"
-            title="Contact scientists to assign. Assignment isn't sent yet — the ODB models contacts as ProgramUser rows needing a user id, which this list doesn't carry; see the Programs view."
+            title="Gemini staff assigned as contact scientists when the proposal is accepted (SUPPORT ProgramUser roles). Type a name or email for suggestions from the SSO roster."
           >
             Contact Scientists
           </label>
         </dt>
         <dd>
-          <Chips
+          <AutoComplete
             inputId="award-contacts"
+            multiple
             value={[...award.contactScientists]}
+            suggestions={contactSuggestions}
+            completeMethod={(e) => suggestContacts(e.query)}
+            field="name"
             onChange={(e) => update({ contactScientists: e.value ?? [] })}
-            placeholder="Add a contact…"
+            placeholder={award.contactScientists.length === 0 ? 'Add a contact…' : undefined}
           />
         </dd>
       </dl>
