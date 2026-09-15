@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { CallForProposals } from '../types';
-import { type AdminCfpsResult, cfpPropertiesInput, mapCfps, newCallInput, semesterDates } from './cfp';
+import { type AdminCfpsResult, blankCall, cfpPropertiesInput, createCfpInput, mapCfps, semesterDates } from './cfp';
 
 type RawCfp = AdminCfpsResult['callsForProposals']['matches'][number];
 type RawLimits = NonNullable<RawCfp['keck']>['coordinateLimits'];
@@ -99,7 +99,7 @@ function subaruCall(overrides: Partial<RawCfp> = {}): RawCfp {
 }
 
 const result = (matches: RawCfp[]): AdminCfpsResult => ({
-  callsForProposals: { __typename: 'CallsForProposalsSelectResult', matches },
+  callsForProposals: { __typename: 'CallsForProposalsSelectResult', matches, hasMore: false },
 });
 
 describe(mapCfps, () => {
@@ -312,27 +312,72 @@ describe(cfpPropertiesInput, () => {
   });
 });
 
-describe(newCallInput, () => {
-  it('seeds exactly one observatory block, with a Gemini call type and no others', () => {
-    const gemini = newCallInput('GEMINI');
-    expect(gemini.gemini).toEqual({ type: 'REGULAR_SEMESTER' });
-    expect(gemini.keck).toBeUndefined();
-    expect(gemini.subaru).toBeUndefined();
-
-    const keck = newCallInput('KECK');
-    expect(keck.keck).toEqual({});
-    expect(keck.gemini).toBeUndefined();
-
-    const subaru = newCallInput('SUBARU');
-    expect(subaru.subaru).toEqual({});
-    expect(subaru.gemini).toBeUndefined();
+describe(blankCall, () => {
+  it('is a blank, unsaved draft seeded with the current semester and its dates (sc-10136)', () => {
+    const c = blankCall('GEMINI');
+    expect(c.id).toBe('');
+    expect(c.title).toBe('');
+    expect(c.partners).toEqual([]);
+    expect(c.semester).toMatch(/^\d{4}[AB]$/);
+    expect(c.activeStart).not.toBe('');
+    expect(c.activeEnd).not.toBe('');
   });
 
-  it('sets the create-required semester and active dates', () => {
-    const input = newCallInput('KECK');
+  it('carries the right observatory block, blank instruments/limits, and a seeded type', () => {
+    expect(blankCall('GEMINI').details).toMatchObject({
+      observatory: 'GEMINI',
+      type: 'REGULAR_SEMESTER',
+      instruments: [],
+    });
+    expect(blankCall('KECK').details).toMatchObject({ observatory: 'KECK', instruments: [] });
+    expect(blankCall('SUBARU').details).toMatchObject({ observatory: 'SUBARU', type: 'NORMAL', instruments: [] });
+  });
+});
+
+describe(createCfpInput, () => {
+  it('omits blanks so the ODB defaults them, keeping only the create-required fields (sc-10136)', () => {
+    const input = createCfpInput(blankCall('GEMINI'));
     expect(input.semester).toMatch(/^\d{4}[AB]$/);
     expect(input.activeStart).toBeDefined();
     expect(input.activeEnd).toBeDefined();
+    // Title, partners, and coordinate limits are left to the ODB defaults.
+    expect(input.title).toBeUndefined();
+    expect(input.partners).toBeUndefined();
+    expect(input.gemini).toEqual({ type: 'REGULAR_SEMESTER' }); // no instruments/limits/proprietary
+    expect(input.keck).toBeUndefined();
+    expect(input.subaru).toBeUndefined();
+  });
+
+  it('includes fields the user set (title, instruments, partners)', () => {
+    const draft: CallForProposals = {
+      ...blankCall('KECK'),
+      title: 'My Keck call',
+      partners: [{ partner: 'US' }],
+      details: {
+        observatory: 'KECK',
+        instruments: ['HIRES'],
+        limits: { raStart: 0, raEnd: 0, decStart: 0, decEnd: 0 },
+      },
+    };
+    const input = createCfpInput(draft);
+    expect(input.title).toBe('My Keck call');
+    expect(input.partners).toEqual([{ geminiPartner: 'US' }]);
+    expect(input.keck).toEqual({ instruments: ['HIRES'] }); // limits still blank → omitted
+  });
+
+  it('sends coordinate limits once the user enters non-zero bounds', () => {
+    const draft: CallForProposals = {
+      ...blankCall('KECK'),
+      details: { observatory: 'KECK', instruments: [], limits: { raStart: 1, raEnd: 20, decStart: -30, decEnd: 60 } },
+    };
+    expect(createCfpInput(draft).keck).toMatchObject({
+      coordinateLimits: {
+        raStart: { hours: 1 },
+        raEnd: { hours: 20 },
+        decStart: { degrees: -30 },
+        decEnd: { degrees: 60 },
+      },
+    });
   });
 });
 

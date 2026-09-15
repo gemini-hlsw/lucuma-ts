@@ -15,7 +15,15 @@ import { CircleCheck, CircleXMark, Copy, Plus, Upload, XMark } from '@/component
 import { Tile } from '@/components/Tile';
 import { useToast } from '@/components/toastContext';
 import { friendlyError } from '@/gql/errors';
-import { cfpPropertiesInput, mapCfps, newCallInput, useCfps, useCreateCfp, useUpdateCfp } from '@/gql/odb/cfp';
+import {
+  blankCall,
+  cfpPropertiesInput,
+  createCfpInput,
+  mapCfps,
+  useCfps,
+  useCreateCfp,
+  useUpdateCfp,
+} from '@/gql/odb/cfp';
 import type { CallForProposalsPropertiesInput } from '@/gql/odb/gen/graphql';
 import { type Partner, PARTNER_NAME, PARTNERS } from '@/gql/sso/roster';
 import {
@@ -97,6 +105,11 @@ export default function CfpPage(): JSX.Element {
   const activeId = selectedId ?? cfps[0]?.id ?? '';
   const original = useMemo(() => cfps.find((c) => c.id === activeId) ?? cfps[0], [cfps, activeId]);
 
+  // A brand-new call being drafted before it's created (sc-10136). While set,
+  // the editor shows this blank draft with a Create button instead of the
+  // selected ODB-backed call; creating clears it and selects the real call.
+  const [draftCall, setDraftCall] = useState<CallForProposals | null>(null);
+
   async function save(draft: CallForProposals): Promise<void> {
     try {
       await updateCfp({ variables: { id: draft.id, set: cfpPropertiesInput(draft) } });
@@ -106,13 +119,17 @@ export default function CfpPage(): JSX.Element {
     }
   }
 
-  /** Create a call and select it. `set` is a fresh minimal call for New, or the
-   *  selected call's full properties for Copy. */
+  /** Persist a call and select it. `set` is the serialized create input; `verb`
+   *  is the toast wording. Copy passes the selected call's full properties; the
+   *  New flow passes a drafted blank call's createCfpInput (sc-10136). */
   async function create(set: CallForProposalsPropertiesInput, verb: string): Promise<void> {
     try {
       const res = await createCfp({ variables: { set } });
       const newId = res.data?.createCallForProposals.callForProposals?.id;
-      if (newId) setSelectedId(newId);
+      if (newId) {
+        setDraftCall(null);
+        setSelectedId(newId);
+      }
       toast.success(`Call ${verb}`, newId ?? '');
     } catch (err) {
       toast.error(`${verb === 'created' ? 'Create' : 'Copy'} failed`, friendlyError(err));
@@ -163,14 +180,15 @@ export default function CfpPage(): JSX.Element {
               label="New"
               icon={<Plus />}
               disabled={saving}
-              // The default click creates a Gemini call; the menu creates a call
-              // for a specific observatory (each seeds its own properties block).
-              onClick={() => void create(newCallInput('GEMINI'), 'created')}
+              // Open a blank draft in the editor (sc-10136) — nothing is created
+              // until the user fills the fields they want and clicks Create. The
+              // default click drafts a Gemini call; the menu picks an observatory.
+              onClick={() => setDraftCall(blankCall('GEMINI'))}
               model={OBSERVATORIES.map((o) => ({
                 label: `${OBSERVATORY_LABEL[o]} call`,
-                command: () => void create(newCallInput(o), 'created'),
+                command: () => setDraftCall(blankCall(o)),
               }))}
-              tooltip="Create a brand-new Call for Proposals — click for a Gemini call, or pick an observatory."
+              tooltip="Start a brand-new Call for Proposals — opens a blank editor; click for a Gemini call, or pick an observatory."
               tooltipOptions={{ position: 'bottom' }}
             />
           </>
@@ -264,22 +282,43 @@ export default function CfpPage(): JSX.Element {
         </DataTable>
       </Tile>
 
-      {original && <CfpEditor key={original.id} original={original} saving={saving} onSave={save} />}
+      {draftCall ? (
+        <CfpEditor
+          // Keyed by observatory so picking a different one from the New menu
+          // remounts the editor with that observatory's blank draft.
+          key={`new-${draftCall.details.observatory}`}
+          original={draftCall}
+          mode="create"
+          saving={saving}
+          onSave={(d) => create(createCfpInput(d), 'created')}
+          onCancel={() => setDraftCall(null)}
+        />
+      ) : (
+        original && <CfpEditor key={original.id} original={original} mode="edit" saving={saving} onSave={save} />
+      )}
     </>
   );
 }
 
 /** The Selected Call editor. Keyed by call id from the parent, so switching
- *  calls remounts it with a fresh draft — no reset-during-render bookkeeping. */
+ *  calls remounts it with a fresh draft — no reset-during-render bookkeeping.
+ *  In `create` mode the draft is a brand-new call not yet in the ODB (sc-10136):
+ *  the primary action is Create (always available, since a blank draft is a
+ *  valid create) and Cancel discards the whole draft. */
 function CfpEditor({
   original,
+  mode,
   saving,
   onSave,
+  onCancel,
 }: {
   readonly original: CallForProposals;
+  readonly mode: 'edit' | 'create';
   readonly saving: boolean;
   readonly onSave: (draft: CallForProposals) => Promise<void>;
+  readonly onCancel?: () => void;
 }): JSX.Element {
+  const creating = mode === 'create';
   const [draft, setDraft] = useState<CallForProposals>(original);
   const dirty = JSON.stringify(draft) !== JSON.stringify(original);
   const details = draft.details;
@@ -310,13 +349,19 @@ function CfpEditor({
   }
 
   return (
-    <Tile title={`Selected Call · ${draft.id} · ${OBSERVATORY_LABEL[details.observatory]}`}>
+    <Tile
+      title={
+        creating
+          ? `New Call · ${OBSERVATORY_LABEL[details.observatory]}`
+          : `Selected Call · ${draft.id} · ${OBSERVATORY_LABEL[details.observatory]}`
+      }
+    >
       <div className="cfp-editor">
         {/* Left column — parameters + coordinate limits */}
         <div className="cfp-col">
           <div className="cfp-form">
             <label title="The call's ODB identifier — assigned by the system and not editable.">Id</label>
-            <span className="cfp-readonly">{draft.id}</span>
+            <span className="cfp-readonly">{creating ? '(assigned on create)' : draft.id}</span>
 
             <label title="Which observatory the call solicits time for — set when the call is created and not editable afterward.">
               Observatory
@@ -495,28 +540,47 @@ function CfpEditor({
 
       <div className="cfp-actions">
         {/* title-spans so the hint shows even while disabled. */}
-        <span
-          title={
-            dirty ? 'Discard unsaved edits to this call and revert to the loaded values.' : 'No changes to discard.'
-          }
-        >
-          <Button text label="Cancel" icon={<XMark />} disabled={!dirty} onClick={() => setDraft(original)} />
-        </span>
-        <span
-          title={
-            dirty
-              ? 'Save the call via updateCallsForProposals, then reload it from the ODB.'
-              : 'Nothing to save — edit a field first.'
-          }
-        >
-          <Button
-            label="Save"
-            icon={<Upload />}
-            disabled={!dirty || saving}
-            loading={saving}
-            onClick={() => void onSave(draft)}
-          />
-        </span>
+        {creating ? (
+          <>
+            <span title="Discard this new call without creating it.">
+              <Button text label="Cancel" icon={<XMark />} disabled={saving} onClick={() => onCancel?.()} />
+            </span>
+            <span title="Create the call via createCallForProposals — the ODB fills in any parameters left blank.">
+              <Button
+                label="Create"
+                icon={<Plus />}
+                disabled={saving}
+                loading={saving}
+                onClick={() => void onSave(draft)}
+              />
+            </span>
+          </>
+        ) : (
+          <>
+            <span
+              title={
+                dirty ? 'Discard unsaved edits to this call and revert to the loaded values.' : 'No changes to discard.'
+              }
+            >
+              <Button text label="Cancel" icon={<XMark />} disabled={!dirty} onClick={() => setDraft(original)} />
+            </span>
+            <span
+              title={
+                dirty
+                  ? 'Save the call via updateCallsForProposals, then reload it from the ODB.'
+                  : 'Nothing to save — edit a field first.'
+              }
+            >
+              <Button
+                label="Save"
+                icon={<Upload />}
+                disabled={!dirty || saving}
+                loading={saving}
+                onClick={() => void onSave(draft)}
+              />
+            </span>
+          </>
+        )}
       </div>
     </Tile>
   );

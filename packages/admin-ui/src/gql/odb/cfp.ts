@@ -9,6 +9,7 @@
  */
 import { useMutation, useQuery } from '@apollo/client/react';
 import { parseNumber } from '@gemini-hlsw/lucuma-common-ui';
+import { useEffect } from 'react';
 
 import { currentSemester } from '@/lib/semester';
 
@@ -89,21 +90,54 @@ export const SITE_LIMIT_FRAGMENT = graphql(`
 `);
 
 export const CFPS_QUERY = graphql(`
-  query AdminCfps {
+  query AdminCfps($offset: CallForProposalsId) {
     # includeDeleted so DELETED (invisible) calls are fetchable — the
     # "Invisible" facet (sc-9612) needs them; visibility is filtered client-side
     # from each call's existence (WhereCallForProposals has no existence field).
-    callsForProposals(LIMIT: 50, includeDeleted: true) {
+    # Paged via the OFFSET cursor: a single fixed LIMIT would hide calls past it
+    # — including a newly-created one, which then couldn't be selected after
+    # New → Create (sc-10136). useCfps follows hasMore to the last page.
+    callsForProposals(OFFSET: $offset, includeDeleted: true) {
       matches {
         ...CallForProposalsItem
       }
+      hasMore
     }
   }
 `);
 
-/** The calls list — cached rows render immediately, refreshed in background. */
+/** The calls list — cached rows render immediately, refreshed in background.
+ *  Follows the ODB's `hasMore` cursor to the last page so no call is dropped by
+ *  a page limit; the returned `data` grows as pages arrive and `loading` stays
+ *  true until the final page is in (mirrors useProposals / useChangeRequests). */
 export function useCfps() {
-  return useQuery(CFPS_QUERY, { fetchPolicy: 'cache-and-network' });
+  const result = useQuery(CFPS_QUERY, { variables: { offset: null }, fetchPolicy: 'cache-and-network' });
+  const { data, fetchMore } = result;
+
+  // Walk the remaining pages: each fetchMore appends the next page's matches
+  // (merged via updateQuery, since the cache has no field policy for this list),
+  // using the last loaded id as the cursor, until the ODB reports no more.
+  useEffect(() => {
+    if (!data?.callsForProposals.hasMore || fetchMore === undefined) return;
+    const matches = data.callsForProposals.matches;
+    const cursor = matches[matches.length - 1]?.id;
+    if (cursor === undefined) return;
+    void fetchMore({
+      variables: { offset: cursor },
+      updateQuery: (prev, { fetchMoreResult }) => ({
+        callsForProposals: {
+          ...fetchMoreResult.callsForProposals,
+          matches: [...prev.callsForProposals.matches, ...fetchMoreResult.callsForProposals.matches],
+        },
+      }),
+    });
+  }, [data, fetchMore]);
+
+  return {
+    ...result,
+    // Not settled until every page is in, so callers don't render a partial set.
+    loading: result.loading || (data?.callsForProposals.hasMore ?? false),
+  };
 }
 
 export type AdminCfpsResult = DocumentType<typeof CFPS_QUERY>;
@@ -280,20 +314,111 @@ export function semesterDates(semester: string): { activeStart: string; activeEn
     : { activeStart: `${String(year)}-08-01`, activeEnd: `${String(year + 1)}-02-01` };
 }
 
-/** The minimal create input for a brand-new call at the given observatory
- *  (sc-9608). Only the create-required fields are set — semester, active dates,
- *  and the one observatory block; the ODB fills in the rest (coordinate limits
- *  from the active period, all instruments, default proprietary period, and
- *  Subaru type NORMAL). Gemini's call type has no default, so it's seeded. */
-export function newCallInput(observatory: Observatory): CallForProposalsPropertiesInput {
+/** Zeroed coordinate limits for a brand-new call (sc-10136). A create with all
+ *  four at zero is treated as "unset" and omitted so the ODB derives them from
+ *  the active period; the user can still enter real values before creating. */
+const BLANK_LIMITS: SiteCoordinateLimits = { raStart: 0, raEnd: 0, decStart: 0, decEnd: 0 };
+
+/** The observatory-specific `details` for a brand-new, unsaved call (sc-10136):
+ *  empty instrument checklist and blank coordinate limits, so the ODB fills in
+ *  its defaults unless the user sets them. Gemini's call type has no default,
+ *  so it starts at REGULAR_SEMESTER; Subaru's defaults to NORMAL. */
+function blankDetails(observatory: Observatory): CfpDetails {
+  switch (observatory) {
+    case 'GEMINI':
+      return {
+        observatory: 'GEMINI',
+        type: 'REGULAR_SEMESTER',
+        proprietaryMonths: 0,
+        allowsNonPartnerPi: false,
+        instruments: [],
+        north: BLANK_LIMITS,
+        south: BLANK_LIMITS,
+      };
+    case 'KECK':
+      return { observatory: 'KECK', instruments: [], limits: BLANK_LIMITS };
+    case 'SUBARU':
+      return { observatory: 'SUBARU', type: 'NORMAL', instruments: [], limits: BLANK_LIMITS };
+  }
+}
+
+/** A brand-new, not-yet-created call for the given observatory (sc-10136), as
+ *  the editor's draft. Seeded with the current semester and its active dates
+ *  (both required on create) and an otherwise-blank observatory block; the id is
+ *  empty until the ODB assigns one. `createCfpInput` turns this into the create
+ *  mutation input, omitting the blanks so the ODB applies its defaults. */
+export function blankCall(observatory: Observatory): CallForProposals {
   const semester = currentSemester();
-  const block: Pick<CallForProposalsPropertiesInput, 'gemini' | 'keck' | 'subaru'> =
-    observatory === 'GEMINI'
-      ? { gemini: { type: 'REGULAR_SEMESTER' } }
-      : observatory === 'KECK'
-        ? { keck: {} }
-        : { subaru: {} };
-  return { semester, ...semesterDates(semester), ...block };
+  const { activeStart, activeEnd } = semesterDates(semester);
+  return {
+    id: '',
+    visible: true,
+    title: '',
+    semester,
+    activeStart,
+    activeEnd,
+    active: false,
+    defaultDeadline: '',
+    partners: [],
+    details: blankDetails(observatory),
+  };
+}
+
+/** Serialize a brand-new call's draft into the create mutation input (sc-10136).
+ *  Unlike `cfpPropertiesInput` (which sends every field for an edit), this omits
+ *  what the user left blank — empty title, partners, instruments, and zeroed
+ *  coordinate limits — so the ODB applies its defaults (all partners, all
+ *  instruments, limits derived from the active period). Only the create-required
+ *  fields (semester, active dates, the observatory block + its type) are always
+ *  present. */
+export function createCfpInput(draft: CallForProposals): CallForProposalsPropertiesInput {
+  const d = draft.details;
+  // Omit an empty instrument list so the ODB defaults to all; generic so each
+  // observatory keeps its own instrument enum (Instrument / Keck / Subaru).
+  const instruments = <T>(list: readonly T[]) => (list.length > 0 ? { instruments: [...list] } : {});
+  const observatoryBlock: Pick<CallForProposalsPropertiesInput, 'gemini' | 'keck' | 'subaru'> =
+    d.observatory === 'GEMINI'
+      ? {
+          gemini: {
+            type: d.type,
+            ...(d.proprietaryMonths > 0 ? { proprietaryMonths: d.proprietaryMonths } : {}),
+            ...instruments(d.instruments),
+            ...(isBlankLimits(d.north) && isBlankLimits(d.south)
+              ? {}
+              : { coordinateLimits: { north: coordinateLimitsInput(d.north), south: coordinateLimitsInput(d.south) } }),
+          },
+        }
+      : d.observatory === 'KECK'
+        ? { keck: { ...instruments(d.instruments), ...siteLimitsPatch(d.limits) } }
+        : { subaru: { type: d.type, ...instruments(d.instruments), ...siteLimitsPatch(d.limits) } };
+  return {
+    semester: draft.semester,
+    activeStart: draft.activeStart,
+    activeEnd: draft.activeEnd,
+    ...(draft.title.trim() === '' ? {} : { title: draft.title.trim() }),
+    ...(draft.defaultDeadline.trim() === '' ? {} : { submissionDeadlineDefault: draft.defaultDeadline.trim() }),
+    ...(draft.partners.length > 0
+      ? {
+          partners: draft.partners.map((p) => ({
+            geminiPartner: p.partner,
+            ...(p.deadlineOverride ? { submissionDeadlineOverride: p.deadlineOverride } : {}),
+          })),
+        }
+      : {}),
+    ...observatoryBlock,
+  };
+}
+
+/** A single-site `coordinateLimits` patch (Keck/Subaru): omitted when the user
+ *  left the limits blank (all-zero) so the ODB derives them. */
+function siteLimitsPatch(limits: SiteCoordinateLimits) {
+  return isBlankLimits(limits) ? {} : { coordinateLimits: coordinateLimitsInput(limits) };
+}
+
+/** All-zero coordinate bounds mean "unset" on a new call — the sentinel that
+ *  tells createCfpInput to omit the limits so the ODB derives them. */
+function isBlankLimits(l: SiteCoordinateLimits): boolean {
+  return l.raStart === 0 && l.raEnd === 0 && l.decStart === 0 && l.decEnd === 0;
 }
 
 /** A call is open while today is on or before the latest of its deadlines —
