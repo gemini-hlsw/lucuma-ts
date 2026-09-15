@@ -6,6 +6,7 @@ import { type AdminCfpsResult, cfpPropertiesInput, mapCfps, newCallInput, semest
 type RawCfp = AdminCfpsResult['callsForProposals']['matches'][number];
 type RawLimits = NonNullable<RawCfp['keck']>['coordinateLimits'];
 type RawPartner = RawCfp['partners'][number];
+type RawExchangePartner = NonNullable<RawCfp['gemini']>['exchangePartners'][number];
 
 function limits(raStart: number, raEnd: number, decStart: number, decEnd: number): RawLimits {
   return {
@@ -25,6 +26,19 @@ function partner(
   return {
     __typename: 'CallForProposalsPartner',
     geminiPartner,
+    submissionDeadline: deadline,
+    submissionDeadlineOverride: override,
+  };
+}
+
+function exchangePartner(
+  who: RawExchangePartner['exchangePartner'],
+  deadline: string | null,
+  override: string | null,
+): RawExchangePartner {
+  return {
+    __typename: 'CallForProposalsExchangePartner',
+    exchangePartner: who,
     submissionDeadline: deadline,
     submissionDeadlineOverride: override,
   };
@@ -57,6 +71,7 @@ function geminiCall(overrides: Partial<RawCfp> = {}, gemini: Partial<NonNullable
       nonPartnerDeadline: null,
       proprietaryMonths: 12,
       instruments: [],
+      exchangePartners: [],
       coordinateLimits: {
         __typename: 'SiteCoordinateLimits',
         north: limits(0, 24, -37, 90),
@@ -121,6 +136,10 @@ describe(mapCfps, () => {
             allowsNonPartnerPi: true,
             nonPartnerDeadline: '2099-01-01T00:00:00Z',
             instruments: ['GMOS_NORTH', 'GMOS_SOUTH', 'FLAMINGOS2', 'GNIRS'],
+            exchangePartners: [
+              exchangePartner('KECK', '2099-01-01T00:00:00Z', '2099-01-01T00:00:00Z'),
+              exchangePartner('SUBARU', '2099-01-01T00:00:00Z', null),
+            ],
             coordinateLimits: {
               __typename: 'SiteCoordinateLimits',
               north: limits(4, 1, 323, 90),
@@ -143,6 +162,11 @@ describe(mapCfps, () => {
     expect(c.partners).toEqual([
       { partner: 'US', deadlineOverride: '2099-01-01T00:00:00Z' },
       { partner: 'CA', deadlineOverride: undefined },
+    ]);
+    // Exchange partners map the same way (sc-9610), keyed by ExchangePartner.
+    expect(c.details.exchangePartners).toEqual([
+      { partner: 'KECK', deadlineOverride: '2099-01-01T00:00:00Z' },
+      { partner: 'SUBARU', deadlineOverride: undefined },
     ]);
   });
 
@@ -189,6 +213,16 @@ describe(mapCfps, () => {
     expect(closed?.active).toBe(false);
     expect(untracked?.active).toBe(false); // no deadlines at all → not yet open
   });
+
+  it('stays open on an exchange-partner deadline alone (sc-9610)', () => {
+    const [c] = mapCfps(
+      result([
+        geminiCall({ id: 'c-exch' }, { exchangePartners: [exchangePartner('KECK', '2099-01-01T00:00:00Z', null)] }),
+      ]),
+    );
+    // No regular partners, but Keck's window is open — the call is open.
+    expect(c?.active).toBe(true);
+  });
 });
 
 /** A view-model call with the common fields filled and the given observatory
@@ -219,6 +253,10 @@ describe(cfpPropertiesInput, () => {
           allowsNonPartnerPi: true,
           proprietaryMonths: 12,
           instruments: ['GMOS_NORTH'],
+          exchangePartners: [
+            { partner: 'KECK', deadlineOverride: '2024-10-04 23:59:59' },
+            { partner: 'SUBARU', deadlineOverride: undefined },
+          ],
           north: { raStart: 4, raEnd: 1, decStart: -37, decEnd: 90 },
           south: { raStart: 5, raEnd: 2, decStart: -90, decEnd: 28 },
         },
@@ -248,6 +286,10 @@ describe(cfpPropertiesInput, () => {
           south: { raStart: { hours: 5 }, raEnd: { hours: 2 }, decStart: { degrees: -90 }, decEnd: { degrees: 28 } },
         },
         instruments: ['GMOS_NORTH'],
+        exchangePartners: [
+          { exchangePartner: 'KECK', submissionDeadlineOverride: '2024-10-04 23:59:59' },
+          { exchangePartner: 'SUBARU' },
+        ],
       },
     });
     // allowsNonPartnerPi is ODB-derived and must never be sent; only one

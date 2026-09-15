@@ -8,6 +8,7 @@ import type { Partner } from '@/gql/sso/roster';
 
 import type {
   ConfigurationRequestStatus,
+  ExchangePartner,
   GeminiCallForProposalsType,
   Instrument,
   KeckInstrument,
@@ -25,6 +26,7 @@ import type {
 // import them alongside the view-model types they appear in.
 export type {
   ConfigurationRequestStatus,
+  ExchangePartner,
   Instrument,
   KeckInstrument,
   Observatory,
@@ -36,6 +38,16 @@ export type {
   TimeAccountingCategory,
   TooActivation,
 };
+
+/** ExchangePartner → display label. Exchange partners (Keck, Subaru) may apply
+ *  for Gemini time on a Gemini call (sc-9610); they participate alongside the
+ *  regular partner countries. `satisfies` makes a new value a compile error. */
+export const EXCHANGE_PARTNER_LABEL = {
+  KECK: 'Keck',
+  SUBARU: 'Subaru',
+} as const satisfies Record<ExchangePartner, string>;
+
+export const EXCHANGE_PARTNERS = Object.keys(EXCHANGE_PARTNER_LABEL) as readonly ExchangePartner[];
 
 /** Which Gemini telescope a request's instrument belongs to. A UI-derived
  *  notion (from the instrument, in odb/changeRequests.ts), not the schema's
@@ -108,6 +120,13 @@ export interface CfpPartner {
   readonly deadlineOverride?: string; // ISO date; falls back to the CfP default
 }
 
+/** An exchange partner's participation in a Gemini call (sc-9610). Mirrors
+ *  `CfpPartner`, keyed by the ExchangePartner enum (Keck/Subaru). */
+export interface CfpExchangePartner {
+  readonly partner: ExchangePartner;
+  readonly deadlineOverride?: string; // ISO date; falls back to the CfP default
+}
+
 /** Observatory-specific properties of a call. Exactly one variant applies,
  *  matching the ODB's guarantee that exactly one of `gemini`/`keck`/`subaru`
  *  is non-null (sc-9608). The `observatory` tag discriminates the union. */
@@ -118,6 +137,9 @@ export type CfpDetails =
       readonly proprietaryMonths: number;
       readonly allowsNonPartnerPi: boolean;
       readonly instruments: readonly Instrument[];
+      /** Exchange partners (Keck/Subaru) that may apply for Gemini time on this
+       *  call (sc-9610). Gemini-only; the other observatories have no analogue. */
+      readonly exchangePartners: readonly CfpExchangePartner[];
       /** Gemini uses per-site (north/south) coordinate limits. */
       readonly north: SiteCoordinateLimits;
       readonly south: SiteCoordinateLimits;
