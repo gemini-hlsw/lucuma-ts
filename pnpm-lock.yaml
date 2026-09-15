@@ -241,7 +241,7 @@ importers:
     devDependencies:
       '@apollo/client':
         specifier: 4.3.0
-        version: 4.3.0(graphql-ws@6.2.1(graphql@16.14.2))(graphql@16.14.2)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(rxjs@7.8.2)
+        version: 4.3.0(graphql-ws@6.2.1(graphql@16.14.2)(ws@8.21.3))(graphql@16.14.2)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(rxjs@7.8.2)
       '@eslint/js':
         specifier: 10.0.1
         version: 10.0.1(eslint@10.10.0(jiti@2.7.0)(supports-color@10.2.2))
@@ -256,7 +256,7 @@ importers:
         version: 3.5.0(@fortawesome/fontawesome-svg-core@7.3.1)(react@19.3.0)
       '@gemini-hlsw/lucuma-common-ui':
         specifier: workspace:*
-        version: file:packages/common-ui(jotai@2.20.3(@babel/core@7.29.7(supports-color@10.2.2))(@babel/template@7.29.7)(@types/react@19.3.0)(react@19.3.0))(primereact@10.9.9(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))
+        version: link:../common-ui
       '@gemini-hlsw/lucuma-core':
         specifier: 0.247.3
         version: 0.247.3
@@ -484,8 +484,8 @@ importers:
   packages/configs:
     dependencies:
       '@gemini-hlsw/lucuma-apps-schemas':
-        specifier: 0.177.2-20260813-fa975554
-        version: 0.177.2-20260813-fa975554
+        specifier: 0.177.2-20260914-5fa11570
+        version: 0.177.2-20260914-5fa11570
       '@gemini-hlsw/lucuma-core':
         specifier: 0.247.3
         version: 0.247.3
@@ -606,7 +606,7 @@ importers:
     dependencies:
       '@apollo/client':
         specifier: 4.3.0
-        version: 4.3.0(graphql-ws@6.2.1(graphql@16.14.2))(graphql@16.14.2)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(rxjs@7.8.2)
+        version: 4.3.0(graphql-ws@6.2.1(graphql@16.14.2)(ws@8.21.3))(graphql@16.14.2)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(rxjs@7.8.2)
       '@fortawesome/fontawesome-svg-core':
         specifier: 7.3.1
         version: 7.3.1
@@ -618,7 +618,7 @@ importers:
         version: 3.5.0(@fortawesome/fontawesome-svg-core@7.3.1)(react@19.3.0)
       '@gemini-hlsw/lucuma-common-ui':
         specifier: workspace:*
-        version: file:packages/common-ui(jotai@2.20.3(@babel/core@7.29.7(supports-color@10.2.2))(@babel/template@7.29.7)(@types/react@19.3.0)(react@19.3.0))(primereact@10.9.9(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))
+        version: link:../common-ui
       '@gemini-hlsw/lucuma-ui-css':
         specifier: 0.176.0
         version: 0.176.0
@@ -763,7 +763,7 @@ importers:
     devDependencies:
       '@apollo/client':
         specifier: 4.3.0
-        version: 4.3.0(graphql-ws@6.2.1(graphql@16.14.2))(graphql@16.14.2)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(rxjs@7.8.2)
+        version: 4.3.0(graphql-ws@6.2.1(graphql@16.14.2)(ws@8.21.3))(graphql@16.14.2)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(rxjs@7.8.2)
       '@eslint/js':
         specifier: 10.0.1
         version: 10.0.1(eslint@10.10.0(jiti@2.7.0)(supports-color@10.2.2))
@@ -777,8 +777,8 @@ importers:
         specifier: 3.5.0
         version: 3.5.0(@fortawesome/fontawesome-svg-core@7.3.1)(react@19.3.0)
       '@gemini-hlsw/lucuma-apps-schemas':
-        specifier: 0.177.2-20260813-fa975554
-        version: 0.177.2-20260813-fa975554
+        specifier: 0.177.2-20260914-5fa11570
+        version: 0.177.2-20260914-5fa11570
       '@gemini-hlsw/lucuma-common-ui':
         specifier: workspace:*
         version: link:../common-ui
@@ -1187,14 +1187,8 @@ packages:
       '@fortawesome/fontawesome-svg-core': ~6 || ~7
       react: ^18.0.0 || ^19.0.0
 
-  '@gemini-hlsw/lucuma-apps-schemas@0.177.2-20260813-fa975554':
-    resolution: {integrity: sha512-95yst407BjVObdtgUIvEGqUT+//6+pqTnkxszwdrzAncuJDgRWfwRfQ/+9bPwxxYmvacFblt0QoccLpmcUk2GQ==}
-
-  '@gemini-hlsw/lucuma-common-ui@file:packages/common-ui':
-    resolution: {directory: packages/common-ui, type: directory}
-    peerDependencies:
-      jotai: 2.20.3
-      primereact: 10.9.9
+  '@gemini-hlsw/lucuma-apps-schemas@0.177.2-20260914-5fa11570':
+    resolution: {integrity: sha512-Xg69DAplndjMdACjvtRHxOMWdcqrQGyWzUGiBEJA4voP8jJSd1ffSsp6oTMIVeHO3MpOL9z4ckvH9pRRNpvLUA==}
 
   '@gemini-hlsw/lucuma-core@0.247.3':
     resolution: {integrity: sha512-fTlMMWtwnWlSsc4xXz1nhX3PUoPPbV58OGDuh6mQMa8zAjQi/zi301s3DcOrj/Wscd8KAZHdbyIaLyWY2p9Jrw==}
@@ -5834,7 +5828,7 @@ packages:
 
 snapshots:
 
-  '@apollo/client@4.3.0(graphql-ws@6.2.1(graphql@16.14.2))(graphql@16.14.2)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(rxjs@7.8.2)':
+  '@apollo/client@4.3.0(graphql-ws@6.2.1(graphql@16.14.2)(ws@8.21.3))(graphql@16.14.2)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(rxjs@7.8.2)':
     dependencies:
       '@graphql-typed-document-node/core': 3.2.0(graphql@16.14.2)
       '@wry/caches': 1.0.1
@@ -5847,6 +5841,22 @@ snapshots:
       tslib: 2.8.1
     optionalDependencies:
       graphql-ws: 6.2.1(graphql@16.14.2)(ws@8.21.3)
+      react: 19.3.0
+      react-dom: 19.3.0(react@19.3.0)
+
+  '@apollo/client@4.3.0(graphql-ws@6.2.1(graphql@16.14.2))(graphql@16.14.2)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(rxjs@7.8.2)':
+    dependencies:
+      '@graphql-typed-document-node/core': 3.2.0(graphql@16.14.2)
+      '@wry/caches': 1.0.1
+      '@wry/equality': 0.5.7
+      '@wry/trie': 0.5.0
+      graphql: 16.14.2
+      graphql-tag: 2.12.7(graphql@16.14.2)
+      optimism: 0.18.1
+      rxjs: 7.8.2
+      tslib: 2.8.1
+    optionalDependencies:
+      graphql-ws: 6.2.1(graphql@16.14.2)
       react: 19.3.0
       react-dom: 19.3.0(react@19.3.0)
 
@@ -6138,15 +6148,7 @@ snapshots:
       '@fortawesome/fontawesome-svg-core': 7.3.1
       react: 19.3.0
 
-  '@gemini-hlsw/lucuma-apps-schemas@0.177.2-20260813-fa975554': {}
-
-  '@gemini-hlsw/lucuma-common-ui@file:packages/common-ui(jotai@2.20.3(@babel/core@7.29.7(supports-color@10.2.2))(@babel/template@7.29.7)(@types/react@19.3.0)(react@19.3.0))(primereact@10.9.9(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))':
-    dependencies:
-      '@gemini-hlsw/lucuma-core': 0.247.3
-      date-fns: 4.4.0
-      jotai: 2.20.3(@babel/core@7.29.7(supports-color@10.2.2))(@babel/template@7.29.7)(@types/react@19.3.0)(react@19.3.0)
-      primereact: 10.9.9(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
-      tailwind-merge: 3.6.0
+  '@gemini-hlsw/lucuma-apps-schemas@0.177.2-20260914-5fa11570': {}
 
   '@gemini-hlsw/lucuma-core@0.247.3': {}
 
@@ -9524,6 +9526,11 @@ snapshots:
     dependencies:
       graphql: 17.0.2
       tslib: 2.8.1
+
+  graphql-ws@6.2.1(graphql@16.14.2):
+    dependencies:
+      graphql: 16.14.2
+    optional: true
 
   graphql-ws@6.2.1(graphql@16.14.2)(ws@8.21.3):
     dependencies:
