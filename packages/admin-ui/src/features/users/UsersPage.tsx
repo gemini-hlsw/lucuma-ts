@@ -167,8 +167,6 @@ export default function UsersPage(): JSX.Element {
       <DataTable
         value={visibleUsers}
         dataKey="id"
-        scrollable
-        scrollHeight="calc(100vh - 240px)"
         emptyMessage={
           loading
             ? 'Loading users…'
