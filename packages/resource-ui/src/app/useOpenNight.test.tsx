@@ -42,7 +42,7 @@ const openProbe = async (route: string) =>
         readout={({ openNight }) => ({ identity: identityOf(openNight) })}
         actions={({ openNight, selection }) => [
           { label: 'open 2025-12-24', run: () => openNight('2025-12-24') },
-          { label: 'to UTC', run: () => selection.setTimeDisplay('utc') },
+          { label: 'to GN', run: () => selection.setSite('GN') },
         ]}
       />
     ),
@@ -59,15 +59,13 @@ describe(useOpenNight, () => {
     await expect.element(screen.getByTestId('probe-night')).toHaveTextContent('2025-12-24');
   });
 
-  it('carries the rest of the selection over, so the jump does not change the site or the clock', async () => {
-    const screen = await openProbe('/semester?site=GS&semester=2025B&clock=utc&view=calendar');
+  it('carries the site over and leaves the page it came from behind', async () => {
+    const screen = await openProbe('/semester?site=GS&semester=2025B&view=calendar');
 
     await screen.getByRole('button', { name: 'open 2025-12-24' }).click();
 
-    const url = screen.getByTestId(PROBE_URL_TESTID);
-    await expect.element(url).toMatchTextContent('site=GS');
-    await expect.element(url).toMatchTextContent('semester=2025B');
-    await expect.element(url).toMatchTextContent('clock=utc');
+    // Exact, not partial: an appended `&semester=` or `&view=` must fail this.
+    await expect.element(screen.getByTestId(PROBE_URL_TESTID)).toHaveTextContent('/night?site=GS&night=2025-12-24');
   });
 
   it('replaces a night already in the URL rather than appending a second one', async () => {
@@ -83,22 +81,22 @@ describe(useOpenNight, () => {
     const screen = await openProbe('/semester?site=GS&semester=2025B');
     const before = screen.getByTestId('probe-identity').element().textContent;
 
-    await screen.getByRole('button', { name: 'to UTC' }).click();
-    await expect.element(screen.getByTestId(PROBE_URL_TESTID)).toMatchTextContent('clock=utc');
+    await screen.getByRole('button', { name: 'to GN' }).click();
+    await expect.element(screen.getByTestId(PROBE_URL_TESTID)).toMatchTextContent('site=GN');
 
     await expect.element(screen.getByTestId('probe-identity')).toHaveTextContent(before ?? '');
   });
 
   it('opens the night the current URL asks for, not the one it was created under', async () => {
-    // The callback reads the location through a ref; a stale closure would carry the first clock.
+    // The callback reads the location through a ref; a stale closure would carry the first site.
     const screen = await openProbe('/semester?site=GS&semester=2025B');
 
-    await screen.getByRole('button', { name: 'to UTC' }).click();
-    await expect.element(screen.getByTestId(PROBE_URL_TESTID)).toMatchTextContent('clock=utc');
+    await screen.getByRole('button', { name: 'to GN' }).click();
+    await expect.element(screen.getByTestId(PROBE_URL_TESTID)).toMatchTextContent('site=GN');
 
     await screen.getByRole('button', { name: 'open 2025-12-24' }).click();
 
-    await expect.element(screen.getByTestId(PROBE_URL_TESTID)).toMatchTextContent('clock=utc');
+    await expect.element(screen.getByTestId(PROBE_URL_TESTID)).toMatchTextContent('site=GN');
     await expect.element(screen.getByTestId('probe-night')).toHaveTextContent('2025-12-24');
   });
 });

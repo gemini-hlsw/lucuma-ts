@@ -1,6 +1,7 @@
 import { when } from '@gemini-hlsw/lucuma-common-ui';
 import type { JSX } from 'react';
 
+import { useClockPreference } from '@/app/useClockPreference';
 import { useNow } from '@/app/useNow';
 import { useOpenNight } from '@/app/useOpenNight';
 import { useSelection } from '@/app/useSelection';
@@ -40,7 +41,8 @@ const semesterOverlapping = (
 
 /** Wide enough to plan against, narrow enough that each night keeps its shape under the sun wash. */
 export default function WeekPage(): JSX.Element {
-  const { site, observingNight, tonight, timeDisplay, setObservingNight, clearObservingNight } = useSelection();
+  const { site, observingNight, tonight, setObservingNight, clearObservingNight } = useSelection();
+  const timeDisplay = useClockPreference();
   const { semesters, loading: loadingSets, error: setsError } = usePublishedSemesters();
   const now = useNow(NOW_TICK_MS);
 

@@ -36,14 +36,37 @@ serves. The app is not a consumer of it.
 The interaction rules for selection (masthead vs page controls, Tonight as the front door,
 the clock toggle, finder scoping) are DESIGN.md's. The mechanics:
 
-- Site, semester and clock (`clock=utc`) ride the URL through `app/useSelection.ts`;
-  `displayTimeZone` in `domain/siteTime.ts` is the one zone resolver, threaded as a required
-  parameter so no formatter can silently stay site-local.
+- **Three selections, three mechanisms.** Which belongs where is DESIGN.md's rule; these are
+  the parts:
+  - **Site** rides the URL through `app/useSelection.ts`, and its absence resolves to
+    `app/useLastSite.ts` rather than a hard-coded GN. `setSite` writes both. It is also the one
+    parameter written back when absent (a replace, so Back is unaffected) - DESIGN.md says why
+    a remembered default cannot be left implicit the way every other default is.
+  - **Semester** is `app/useSemester.ts`, which owns the page-scoped `semester` param through
+    `useUrlParam` (clearing `month`) and resolves it with `domain/coverage.ts`'s
+    `resolveSemester`. Only /semester may call it. Pages needing the night's own semester -
+    the demo flag above all - use `semesterHolding`, which returns null outside coverage
+    rather than reaching for the nearest.
+  - **Clock** is `app/useClockPreference.ts`, built on `app/preference.ts`: a
+    `useSyncExternalStore` over `localStorage`, so every reader re-renders on a write from any
+    tree. It is not in the URL. `displayTimeZone` in `domain/siteTime.ts` is still the one zone
+    resolver, threaded as a required parameter so no formatter can silently stay site-local.
+- **`app/preference.ts` is the one way to persist a reader's habit.** Add a preference by
+  calling `createPreference`, not by reaching for `localStorage`: it validates what it reads
+  back, notifies every subscriber, and holds the session's own choice in a closure so a denied
+  write costs the choice its persistence rather than its effect. Tests start with no habit -
+  `src/test/setup.ts` clears storage and fires the storage event that invalidates that closure.
 - **Every night-shaped thing opens its night view through `app/useOpenNight.ts`** - calendar
   squares, week cards, chart bars all route through the one hook.
 - **Page-scoped parameters go through `app/useUrlParam.ts`.** Defaults are deleted from the
   URL, not written, and subordinate parameters drop in the same update: the calendar's month
   belongs to the calendar alone, so switching view or semester drops it.
+- **A navigation carries `site` and `night` and nothing else**, through
+  `app/carriedSelection.ts` - the one answer to what survives a link. Every other parameter
+  (`semester`, `month`, `view`, `q`, `instrument`, `type`, `location`) is one page's, and is
+  dropped at the boundary rather than following the reader into a view that never reads it.
+  This is react-router's own default for `to`; carrying more would be the hand-written
+  override, so a new link needs no convention, only the helper where it wants site and night.
 - Site scoping for the finder pages comes from `app/useSiteSpan.ts`.
 
 ## The views
@@ -266,9 +289,11 @@ mount against the mock via `src/test/renderApp.tsx` and drive real interactions 
   unreachable from `renderApp` locators. Drive dropdowns through `src/test/helpers.ts` (`openDropdown` /
   `selectDropdownOption`), which reaches the panel via `page`, scoped through `getByRole('listbox')` so the
   hidden native `<select>` mirror does not also match.
-- **The tests load no app stylesheet**: a test that needs styling to pass is testing the stylesheet. The one
-  exception is `styles/chartOverlays.css`, which is behaviour rather than appearance - a Highcharts overlay that
-  catches the pointer swallows the hover under it - and the single test asserting that imports it itself.
+- **The tests load no app stylesheet**: a test that needs styling to pass is testing the stylesheet. Two
+  exceptions, both behaviour rather than appearance, each importing what it needs itself: `styles/chartOverlays.css`
+  (a Highcharts overlay that catches the pointer swallows the hover under it), and `Layout.test.tsx`, which loads
+  the app's whole styling (`global.css` + `main.css`) because which navigation answers at a width, whether the
+  masthead fits the viewport, and what the focus ring measures against are all the stylesheet's to decide.
 - **The URL hooks in `src/app/` are driven through the URL**, not through `renderHook`: `test/probe.tsx` renders
   a hook inside the real router, prints what a test asserts on and offers buttons standing in for the app's
   controls. One `Probe` per route, though - two routes rendering it at the same position let React reuse the

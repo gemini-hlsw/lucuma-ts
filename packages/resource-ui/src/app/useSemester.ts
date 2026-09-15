@@ -1,27 +1,33 @@
 import { useSelection } from '@/app/useSelection';
-import { resolveSemester } from '@/domain/coverage';
+import { useUrlParam } from '@/app/useUrlParam';
+import { resolveSemester, semestersAtSite } from '@/domain/coverage';
 import type { PublishedSemester } from '@/domain/types';
 import { usePublishedSemesters } from '@/gql/hooks';
 
-interface ResolvedSemester {
+interface SemesterSelection {
   /** The semester to show. Null only while the list is loading or empty. */
   readonly semester: PublishedSemester | null;
   readonly semestersForSite: readonly PublishedSemester[];
+  readonly setSemester: (semester: string) => void;
   readonly loading: boolean;
   readonly error: Error | undefined;
 }
 
-export function useSemester(): ResolvedSemester {
-  const { site, semester: requested, observingNight } = useSelection();
+/**
+ * The semester page's own selection: navigation drops the param at the boundary
+ * (`app/carriedSelection.ts`), and a pasted `?semester=` elsewhere is simply unread. Nothing
+ * outside /semester may call this.
+ */
+export function useSemester(): SemesterSelection {
+  const { site, observingNight } = useSelection();
+  // The month names a page of one semester's calendar, so it cannot survive a semester change.
+  const [requested, setSemester] = useUrlParam('semester', '', { clears: ['month'] });
   const { semesters, loading, error } = usePublishedSemesters();
 
-  const semestersForSite = semesters
-    .filter((entry) => entry.site === site)
-    .sort((a, b) => a.firstNight.localeCompare(b.firstNight));
-
   return {
-    semester: resolveSemester(semesters, site, requested, observingNight),
-    semestersForSite,
+    semester: resolveSemester(semesters, site, requested === '' ? null : requested, observingNight),
+    semestersForSite: semestersAtSite(semesters, site),
+    setSemester,
     loading,
     error,
   };

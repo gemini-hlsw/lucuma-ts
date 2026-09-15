@@ -34,6 +34,12 @@ export type OffPortPlace = Exclude<InstrumentPlace, 'PORT'>;
 /** A fact about Gemini, not about the data: deriving it from the schedules left the control blank. */
 export const SITES = ['GN', 'GS'] as const satisfies readonly Site[];
 
+/** The published names the codes stand for, so a control showing "GN" can still announce the telescope. */
+export const SITE_NAMES = {
+  GN: 'Gemini North',
+  GS: 'Gemini South',
+} as const satisfies Record<Site, string>;
+
 /** A half-open interval, start inclusive and end exclusive, as epoch milliseconds. */
 export interface Interval {
   readonly start: number;

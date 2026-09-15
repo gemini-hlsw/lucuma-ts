@@ -1,9 +1,11 @@
+import { Dropdown } from 'primereact/dropdown';
 import type { JSX } from 'react';
 
 import { useNow } from '@/app/useNow';
 import { useSelection } from '@/app/useSelection';
 import { useSemester } from '@/app/useSemester';
 import { useUrlParam } from '@/app/useUrlParam';
+import { LabelledControl } from '@/components/ui/LabelledControl';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { ErrorAlert, Loading } from '@/components/ui/PageStatus';
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
@@ -34,7 +36,7 @@ const NOW_TICK_MS = 5 * 60_000;
 /** The whole semester in one request: the view draws all of it, so paging would draw it twice. */
 export default function SemesterPage(): JSX.Element {
   const { site } = useSelection();
-  const { semester: selected, loading: loadingSets, error: setsError } = useSemester();
+  const { semester: selected, semestersForSite, setSemester, loading: loadingSets, error: setsError } = useSemester();
   const [viewParam, setView] = useUrlParam('view', 'chart', { clears: ['month'] });
   const view: View = viewParam === 'calendar' ? viewParam : 'chart';
   const now = useNow(NOW_TICK_MS);
@@ -87,14 +89,50 @@ export default function SemesterPage(): JSX.Element {
         title={selected?.title ?? 'Semester schedule'}
         demo={selected?.demo === true}
         actions={
-          <SegmentedControl
-            value={view}
-            options={VIEW_OPTIONS}
-            onChange={setView}
-            ariaLabel="View"
-            size="sm"
-            testId="semester-view"
-          />
+          <>
+            <LabelledControl
+              label="Semester"
+              className="flex flex-col gap-1"
+              labelClassName="text-[0.65rem] tracking-wide text-foreground uppercase"
+            >
+              {(id) => (
+                <Dropdown
+                  inputId={id}
+                  name="semester"
+                  value={selected?.semester ?? null}
+                  // Says why it is empty rather than looking broken.
+                  placeholder="None"
+                  // The demo flag stays on the option: synthetic records must never pass for real ones.
+                  options={semestersForSite.map((entry) => ({
+                    label: entry.demo ? `${entry.semester} (demo)` : entry.semester,
+                    value: entry.semester,
+                  }))}
+                  onChange={(event) => {
+                    setSemester(event.value as string);
+                  }}
+                  className="xp-page-select w-32"
+                  pt={{
+                    // The native select mirrors the combobox for form submission; unnamed in the
+                    // accessibility tree it is a second, anonymous control saying the same thing.
+                    // On the select itself, not its wrapper: PrimeReact gives that wrapper's key to
+                    // the readonly input too, and hiding that would erase the only keyboard stop.
+                    select: { 'aria-hidden': true },
+                    // Stock PrimeReact points this at `dropdownItem_-1` whenever the un-roled root is
+                    // focused with no option active - an id that never exists, on an element with no role.
+                    root: { 'aria-activedescendant': undefined },
+                  }}
+                />
+              )}
+            </LabelledControl>
+            <SegmentedControl
+              value={view}
+              options={VIEW_OPTIONS}
+              onChange={setView}
+              ariaLabel="View"
+              size="sm"
+              testId="semester-view"
+            />
+          </>
         }
       >
         {selected === null

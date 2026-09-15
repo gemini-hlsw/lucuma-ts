@@ -1,5 +1,5 @@
 import { SelectButton, type SelectButtonChangeEvent } from 'primereact/selectbutton';
-import type { JSX } from 'react';
+import type { JSX, KeyboardEvent } from 'react';
 
 export interface SegmentedOption<T extends string> {
   readonly label: string;
@@ -53,6 +53,17 @@ export function SegmentedControl<T extends string>({
         if (event.value !== null && event.value !== undefined) {
           onChange(event.value as T);
         }
+      }}
+      pt={{
+        root: {
+          onKeyDown: (event: KeyboardEvent<HTMLElement>) => {
+            // `role="button"` answers to Enter as well as Space; SelectButton handles only Space.
+            if (event.key === 'Enter') {
+              event.preventDefault();
+              (event.target as HTMLElement).click();
+            }
+          },
+        },
       }}
       aria-label={ariaLabel}
       data-testid={testId}

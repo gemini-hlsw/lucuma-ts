@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { coverageRanges, nearestCoveredNight, resolveSemester } from './coverage';
+import { coverageRanges, nearestCoveredNight, resolveSemester, semesterHolding } from './coverage';
 import type { PublishedSemester } from './types';
 
 const semester = (
@@ -21,6 +21,28 @@ const GS = [
   semester({ semester: '2026B', firstNight: '2026-08-02', lastNight: '2027-02-01' }),
   semester({ semester: '2099B', firstNight: '2099-08-02', lastNight: '2100-02-01', demo: true }),
 ];
+
+describe(semesterHolding, () => {
+  it('names the semester whose nights contain this one', () => {
+    expect(semesterHolding(GS, 'GS', '2025-11-14')?.semester).toBe('2025B');
+  });
+
+  it('carries the demo flag, which is what a page reporting on that night wears', () => {
+    expect(semesterHolding(GS, 'GS', '2099-11-14')?.demo).toBe(true);
+  });
+
+  it('holds nothing in the gap between semesters, rather than reaching for the nearest', () => {
+    // The distinction from `resolveSemester`: a night no semester covers borrows no other's flag.
+    expect(semesterHolding(GS, 'GS', '2026-05-01')).toBeNull();
+    expect(resolveSemester(GS, 'GS', null, '2026-05-01')?.semester).toBe('2025B');
+  });
+
+  it('reads one site only, so a night covered at GN is uncovered at GS', () => {
+    const northern = [semester({ semester: '2025B', firstNight: '2025-08-02', lastNight: '2026-02-01', site: 'GN' })];
+    expect(semesterHolding(northern, 'GS', '2025-11-14')).toBeNull();
+    expect(semesterHolding(northern, 'GN', '2025-11-14')?.semester).toBe('2025B');
+  });
+});
 
 describe(coverageRanges, () => {
   it('merges adjacent semesters into one unbroken run of nights', () => {

@@ -3,7 +3,13 @@
   --xp-green: hsl(122deg 39% 49%);
   --xp-green-hover: hsl(122deg 39% 55%);
   --xp-masthead-height: 2.5rem;
-  --xp-context-height: 2.15rem;
+  --xp-bottomnav-height: 3.5rem;
+  --xp-banner-height: 1.4rem;
+
+  /* A finger is a finger: neither floor rides the root font size. 24px is WCAG 2.5.8's minimum,
+     44px the comfortable reach a bar sized for thumbs gets. */
+  --xp-target-floor: 24px;
+  --xp-touch-target: 44px;
 }
 
 /* Everything is sized in rem, so this one number trades density for roominess; re-measure against Explore before changing it. */
@@ -11,11 +17,8 @@ html {
   font-size: 13px;
 }
 
-/* Map onto the lucuma-ui-css variables PrimeReact reads, so it is themed end to end. */
 body {
   --surface-ground: var(--color-canvas);
-
-  /* Cards and sections sit on Explore's tile-body step, one above the chrome. */
   --surface-card: var(--color-panel);
   --surface-section: var(--color-panel);
   --surface-border: var(--color-subtle);
@@ -28,10 +31,24 @@ body {
   --highlight-text-color: var(--color-foreground);
 }
 
+/* A phone's browser toolbar eats into `100vh`, hiding the bottom bar under it; `dvh` is the height
+   actually on screen. The `vh` line is the fallback for engines without `dvh` - lightningcss drops it
+   while no older browser target is declared, and keeps it the moment one is. */
+.xp-shell {
+  height: 100vh;
+  height: 100dvh;
+}
+
+@media print {
+  .xp-shell {
+    height: auto;
+  }
+}
+
 .xp-masthead {
   display: flex;
   align-items: center;
-  gap: 1.2rem;
+  gap: 0.9rem;
   height: var(--xp-masthead-height);
   padding: 0 1rem;
   background: var(--color-surface);
@@ -51,32 +68,24 @@ body {
   padding-right: 0.3rem;
 }
 
-/* Stretched so the badge hangs flush from the top edge, and it is what gives way when narrow. */
 .xp-masthead-center {
   flex: 1;
-  display: flex;
-  justify-content: center;
-  align-self: stretch;
-  align-items: stretch;
-  gap: 0.75rem;
   min-width: 0;
-  overflow: hidden;
 }
 
-/* Loud on purpose: a build that is not production should say so louder than anything else. */
-.xp-env-marker {
-  display: inline-flex;
+.xp-env-banner {
+  display: flex;
   align-items: center;
-  padding: 0 14px;
+  justify-content: center;
+  height: var(--xp-banner-height);
   background: var(--color-gpp-accent);
-  color: #fff;
-  font-size: 14px;
-  font-weight: 900;
+  color: var(--color-canvas);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
-  white-space: nowrap;
 }
 
-/* `flex: none` pins the cluster at its natural width, so the centre yields by clipping the badge. */
 .xp-masthead-right {
   display: flex;
   align-items: center;
@@ -86,19 +95,14 @@ body {
   flex: none;
 }
 
-/* The masthead's selection controls, compacted to fit the 2.5rem bar. */
-.xp-masthead .xp-masthead-select.p-dropdown {
-  height: 1.8rem;
+.xp-page-select.p-dropdown {
+  height: 2rem;
   align-items: center;
 }
 
-.xp-masthead .xp-masthead-select .p-dropdown-label {
-  padding-block: 0.2rem;
-  font-size: 0.78rem;
-
-  /* The value must not inherit the label's uppercase dress. */
-  text-transform: none;
-  letter-spacing: normal;
+.xp-page-select .p-dropdown-label {
+  padding-block: 0.25rem;
+  font-size: 0.82rem;
 }
 
 .xp-icon-btn {
@@ -124,6 +128,65 @@ body {
   background: var(--color-surface-raised);
 }
 
+.xp-bottomnav {
+  display: none;
+}
+
+/* Below Tailwind's `md`. A media query's rem is the initial 16px, not the app's 13px root. */
+@media (width < 48rem) {
+  .xp-masthead {
+    padding-inline: 0.6rem;
+    gap: 0.6rem;
+  }
+
+  .xp-wordmark {
+    letter-spacing: 0.25em;
+  }
+
+  .xp-masthead-right .xp-icon-btn {
+    width: var(--xp-touch-target);
+    height: var(--xp-masthead-height);
+  }
+
+  .xp-bottomnav {
+    display: flex;
+    align-items: stretch;
+    min-height: var(--xp-bottomnav-height);
+    background: var(--color-surface);
+    border-top: 1px solid var(--color-subtle);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .xp-bottomnav-item {
+    flex: 1 1 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.15rem;
+    min-width: 0;
+    min-height: var(--xp-touch-target);
+    padding: 0 0.15rem;
+    font-size: 0.65rem;
+    color: var(--color-foreground);
+  }
+
+  .xp-bottomnav-item[aria-current='page'] {
+    background: color-mix(in oklab, var(--xp-green) 40%, transparent);
+  }
+
+  .xp-bottomnav-item[aria-disabled='true'] {
+    color: var(--color-foreground-muted);
+  }
+
+  .xp-bottomnav-item > span {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    line-height: 1.15;
+    text-align: center;
+  }
+}
+
 /* Scoped under .dark to match lucuma-ui-css's own specificity; the size prop does not affect sizing. */
 .dark .p-button,
 .dark .p-button.p-button-sm,
@@ -137,7 +200,6 @@ body {
   padding: 0.3rem;
 }
 
-/* One 2rem line for every control, or each computes its own height. */
 .xp-toolbar {
   display: flex;
   align-items: center;
@@ -160,23 +222,26 @@ body {
   border-color: color-mix(in srgb, var(--color-action-secondary) 85%, white);
 }
 
-/* --primary-color alone does not repaint the default button, so override the background. */
 .p-button:not(.p-button-text, .p-button-outlined, .p-button-secondary, .p-button-danger, .p-button-success) {
   background: var(--xp-green);
   border-color: var(--xp-green);
 }
 
-/* An expansion is its row continued; the literal mirrors the theme's compiled stripe, which has no variable. */
 .p-datatable-tbody > tr.p-row-odd + tr.p-datatable-row-expansion {
   background: rgb(255 255 255 / 1%);
 }
 
-/* After the green-primary fill at equal specificity, so unselected segments stay neutral. */
 .p-selectbutton .p-button {
+  min-height: var(--xp-target-floor);
   background: var(--color-surface);
   border-color: var(--color-subtle);
   color: var(--color-foreground-secondary);
   font-weight: 500;
+}
+
+.p-selectbutton .p-button:focus-visible {
+  outline: 2px solid var(--color-gpp-light);
+  outline-offset: -2px;
 }
 
 .p-selectbutton.seg-sm .p-button {
@@ -201,7 +266,6 @@ body {
   color: var(--color-foreground);
 }
 
-/* Choosing a view is navigation, not a success state: a green fill would compete with the real action. */
 .p-selectbutton .p-button.p-highlight,
 .p-selectbutton .p-button.p-highlight:hover {
   background: var(--color-surface-raised);
@@ -211,13 +275,11 @@ body {
   box-shadow: inset 0 -2px 0 0 var(--xp-green);
 }
 
-/* The blur plus a darker scrim (60% vs the theme's own 40%) together state a modal is up. */
 body .p-dialog-mask.p-component-overlay {
   background-color: rgb(0 0 0 / 60%);
   backdrop-filter: blur(2px);
 }
 
-/* The identity accent, not the action green: the dialog names the app, it does not act on it. */
 .xp-about-dialog .p-dialog-header {
   border-bottom: 2px solid var(--color-gpp-accent);
 }

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { page } from 'vitest/browser';
 
+import { setClockPreference } from '@/app/useClockPreference';
 import { addDays } from '@/domain/semester';
 import { observingNightOf } from '@/domain/siteTime';
 import { renderApp } from '@/test/renderApp';
@@ -128,9 +129,10 @@ describe(WeekPage, () => {
     await expect.element(changes.getByText('00:00', { exact: false })).toBeVisible();
   });
 
-  it('phrases the change instants in UT when the masthead clock says so', async () => {
+  it('phrases the change instants in UT when the reader keeps the UT clock', async () => {
     // The same R400 failure: 00:00 at the site is 03:00 UT in November (UTC-3).
-    const screen = await openWeek('/week?site=GS&night=2025-11-20&clock=utc');
+    setClockPreference('utc');
+    const screen = await openWeek('/week?site=GS&night=2025-11-20');
 
     const changes = screen.getByTestId('week-changes');
     await expect.element(changes.getByText('03:00', { exact: false })).toBeVisible();

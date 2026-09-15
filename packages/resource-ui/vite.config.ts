@@ -68,6 +68,7 @@ export default defineConfig({
     setupFiles: [
       '@gemini-hlsw/lucuma-common-ui/test/setup.ts',
       '@gemini-hlsw/lucuma-common-ui/test/disable-animations.css',
+      './src/test/setup.ts',
     ],
     browser: {
       enabled: true,
