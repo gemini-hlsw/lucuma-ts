@@ -1,19 +1,22 @@
 import type { JSX } from 'react';
 import { Outlet } from 'react-router';
 
+import BottomNav from './BottomNav';
+import { EnvBanner } from './EnvBanner';
 import { LiveFailureBanner } from './LiveFailureBanner';
 import Navbar from './Navbar';
 import Sidebar from './Sidebar';
 
 export default function Layout(): JSX.Element {
   return (
-    <div className="grid h-screen grid-rows-[auto_1fr] overflow-hidden print:block print:h-auto print:overflow-visible">
+    <div className="xp-shell grid grid-rows-[auto_1fr_auto] overflow-hidden print:block print:overflow-visible">
       {/* A real block, not `contents`, so the row heights to both and the body geometry never moves. */}
       <div className="print:hidden">
+        <EnvBanner />
         <Navbar />
         <LiveFailureBanner />
       </div>
-      <div className="row-start-2 grid min-h-0 grid-cols-[14rem_1fr] overflow-hidden max-md:grid-cols-1 max-md:grid-rows-[auto_1fr] print:row-start-auto print:block print:overflow-visible">
+      <div className="row-start-2 grid min-h-0 grid-cols-[14rem_1fr] overflow-hidden max-md:grid-cols-1 print:row-start-auto print:block print:overflow-visible">
         <div className="contents print:hidden">
           <Sidebar />
         </div>
@@ -21,6 +24,8 @@ export default function Layout(): JSX.Element {
           <Outlet />
         </main>
       </div>
+      {/* The third row is the phone's; at `md` and up the bar is `display: none` and the row measures 0. */}
+      <BottomNav />
     </div>
   );
 }

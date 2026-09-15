@@ -1,12 +1,15 @@
-import { useSemester } from '@/app/useSemester';
+import { useSelection } from '@/app/useSelection';
+import { semestersAtSite } from '@/domain/coverage';
 import { observingNightInterval } from '@/domain/siteTime';
-import { type ApiInterval, toApiInterval } from '@/gql/hooks';
+import { type ApiInterval, toApiInterval, usePublishedSemesters } from '@/gql/hooks';
 
 export const useSiteSpan = (): ApiInterval | null => {
+  const { site } = useSelection();
+  const { semesters } = usePublishedSemesters();
   // Already in date order and contiguous, so the ends of the list are the ends of the record.
-  const { semestersForSite } = useSemester();
-  const first = semestersForSite[0];
-  const last = semestersForSite.at(-1);
+  const forSite = semestersAtSite(semesters, site);
+  const first = forSite[0];
+  const last = forSite.at(-1);
 
   return first === undefined || last === undefined
     ? null

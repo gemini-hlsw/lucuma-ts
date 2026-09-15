@@ -5,7 +5,6 @@ import { InputText } from 'primereact/inputtext';
 import { type JSX, useState } from 'react';
 
 import { useSelection } from '@/app/useSelection';
-import { useSemester } from '@/app/useSemester';
 import { useSiteSpan } from '@/app/useSiteSpan';
 import { useUrlParam } from '@/app/useUrlParam';
 import { FilterField } from '@/components/ui/FilterField';
@@ -16,13 +15,14 @@ import { ErrorAlert, Loading } from '@/components/ui/PageStatus';
 import { RecordHistoryTable } from '@/components/ui/RecordHistoryTable';
 import { WhereCell } from '@/components/ui/WhereCell';
 import { buildFinderRows, type FinderRow, historyOf, matchesComponent, whereOf } from '@/domain/componentFinder';
+import { semesterHolding } from '@/domain/coverage';
 import { eveningLabel, eveningRange, firstEveningDate, nightCount, observingNightInterval } from '@/domain/siteTime';
 import type { ComponentBlock, ComponentType, Instrument, Mounting, Site } from '@/domain/types';
 import { ComponentIdentityCell, StatusCell } from '@/features/components/componentCells';
 import { componentStatus, componentWhere, TYPE_LABEL, whereLabel } from '@/features/components/componentLabels';
 import { InstrumentSwatch } from '@/features/timeline/InstrumentSwatch';
 import { INSTRUMENT_LABEL } from '@/features/timeline/timelineOptions';
-import { useComponentBrowser } from '@/gql/hooks';
+import { useComponentBrowser, usePublishedSemesters } from '@/gql/hooks';
 
 /** The piece's records over the site's whole span, with "Installed" resolved to where it was. */
 function History({
@@ -61,7 +61,7 @@ function History({
 
 export default function ComponentsPage(): JSX.Element {
   const { site, observingNight } = useSelection();
-  const { semester: selected, loading: loadingSets, error: setsError } = useSemester();
+  const { semesters, loading: loadingSets, error: setsError } = usePublishedSemesters();
   // The filters live in the URL, so "the R400 gratings at GS" is a sendable link.
   const [search, setSearch] = useUrlParam('q', '', { replace: true });
   const [instrumentParam, setInstrumentParam] = useUrlParam('instrument', '', { replace: true });
@@ -72,14 +72,13 @@ export default function ComponentsPage(): JSX.Element {
   // Which rows are open stays local: it is reading posture, not a finding.
   const [expanded, setExpanded] = useState<FinderRow[]>([]);
 
-  const activeSite = selected?.site ?? site;
-
   // The site's whole recorded span, not the semester: a piece's story does not restart in February.
+  const held = semesterHolding(semesters, site, observingNight);
   const bounds = useSiteSpan();
 
-  const { components, componentBlocks, mountings, loading, error } = useComponentBrowser(activeSite, bounds);
+  const { components, componentBlocks, mountings, loading, error } = useComponentBrowser(site, bounds);
 
-  const night = observingNightInterval(activeSite, observingNight);
+  const night = observingNightInterval(site, observingNight);
 
   const rows = buildFinderRows({ components, blocks: componentBlocks, mountings, night });
 
@@ -135,9 +134,9 @@ export default function ComponentsPage(): JSX.Element {
 
   return (
     <div className="min-w-0">
-      <PageHeader title="Components" demo={selected?.demo === true}>
-        Where every instrument piece is on the night of {eveningLabel(firstEveningDate(activeSite, night))}. Open a row
-        for its history.
+      <PageHeader title="Components" demo={held?.demo === true}>
+        Where every instrument piece is on the night of {eveningLabel(firstEveningDate(site, night))}. Open a row for
+        its history.
       </PageHeader>
 
       {failure !== undefined && <ErrorAlert what="the components" error={failure} />}
@@ -206,7 +205,7 @@ export default function ComponentsPage(): JSX.Element {
               blocks={historyOf(row.component.id, componentBlocks)}
               mountings={mountings}
               instrument={row.component.instrument}
-              site={activeSite}
+              site={site}
             />
           )}
           size="small"

@@ -1,33 +1,31 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { cn } from '@gemini-hlsw/lucuma-common-ui';
 import type { JSX } from 'react';
-import { NavLink, useLocation } from 'react-router';
+import { NavLink, useSearchParams } from 'react-router';
+
+import { carrySelection, searchString } from '@/app/carriedSelection';
 
 import type { SidebarMenuItem } from './SidebarMenu';
 import { SIDEBAR_MENU_SECTIONS } from './SidebarMenu';
 
-const ITEM_BASE =
-  'flex items-center gap-2 border-l-2 px-4 py-2 text-sm max-md:border-l-0 max-md:border-b-2 max-md:whitespace-nowrap';
+const ITEM_BASE = 'flex items-center gap-2 border-l-2 px-4 py-2 text-sm';
 
 function itemClassName(isActive: boolean, isDisabled: boolean): string {
   if (isDisabled) {
-    return cn(ITEM_BASE, 'border-l-transparent text-foreground-muted max-md:border-b-transparent');
+    return cn(ITEM_BASE, 'border-l-transparent text-foreground-muted');
   }
 
   if (isActive) {
-    return cn(ITEM_BASE, 'border-l-gpp bg-gpp/40 text-white max-md:border-b-gpp');
+    return cn(ITEM_BASE, 'border-l-gpp bg-gpp/40 text-white');
   }
 
-  return cn(
-    ITEM_BASE,
-    'border-l-transparent text-foreground-secondary hover:bg-surface-raised hover:text-foreground max-md:border-b-transparent',
-  );
+  return cn(ITEM_BASE, 'border-l-transparent text-foreground-secondary hover:bg-surface-raised hover:text-foreground');
 }
 
 /** Real `NavLink`s, so React Router recomputes `isActive` and the highlight cannot go stale. */
 function SidebarItem({ item }: { item: SidebarMenuItem }): JSX.Element {
-  // Carry the query string across views: switching views must never reset the selection.
-  const { search } = useLocation();
+  const [params] = useSearchParams();
+  const search = searchString(carrySelection(params));
   const icon =
     item.icon === undefined ? null : <FontAwesomeIcon icon={item.icon} className="h-4 w-4" aria-hidden="true" />;
 
@@ -51,14 +49,14 @@ function SidebarItem({ item }: { item: SidebarMenuItem }): JSX.Element {
 export default function Sidebar(): JSX.Element {
   const sections = SIDEBAR_MENU_SECTIONS;
 
-  // A horizontally scrollable tab row at narrow widths, so navigation survives them.
+  // Desktop only: below `md` the phone's own bar (`BottomNav`) is the one navigation.
   return (
-    <aside className="overflow-y-auto border-r border-subtle bg-surface py-2 max-md:overflow-x-auto max-md:border-r-0 max-md:border-b max-md:py-0">
-      <nav aria-label="Primary navigation" className="max-md:flex max-md:w-max max-md:flex-row">
+    <aside className="overflow-y-auto border-r border-subtle bg-surface py-2 max-md:hidden">
+      <nav aria-label="Primary navigation">
         {sections.map((section, index) => (
-          <div key={section.label || index} className="max-md:flex max-md:flex-row max-md:items-center">
+          <div key={section.label || index}>
             {section.label !== '' && (
-              <div className="px-4 pt-4 pb-2 max-md:hidden">
+              <div className="px-4 pt-4 pb-2">
                 <div className="font-mono text-xs tracking-widest text-foreground-muted uppercase">{section.label}</div>
               </div>
             )}

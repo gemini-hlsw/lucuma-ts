@@ -1,12 +1,59 @@
+import { ApolloLink } from '@apollo/client';
+import { Observable } from '@apollo/client/utilities';
+import type { PublishedSemestersQuery } from '@gql/gen/graphql';
 import { describe, expect, it } from 'vitest';
 import { page } from 'vitest/browser';
 
 import { openDropdown, selectDropdownOption } from '@/test/helpers';
+import { createMockApollo } from '@/test/mockClient';
 import { renderApp } from '@/test/renderApp';
 
 import ComponentsPage from './ComponentsPage';
 
 const open = async (route: string) => renderApp({ element: <ComponentsPage />, route });
+
+/**
+ * A real GS semester and a demo one a gap away from it, so a night in the gap has a "nearest"
+ * semester (the demo one) that must not lend it a flag `semesterHolding` says the night is not in.
+ */
+const GS_SEMESTER_WITH_DISTANT_DEMO: PublishedSemestersQuery = {
+  publishedSemesters: [
+    {
+      __typename: 'PublishedSemester',
+      site: 'GS',
+      semester: '2025B',
+      title: 'Gemini South Semester 2025B',
+      version: null,
+      demo: false,
+      holidays: [],
+      nights: { __typename: 'DateInterval', start: '2025-08-02', end: '2026-02-02' },
+      moonEvents: [],
+    },
+    {
+      __typename: 'PublishedSemester',
+      site: 'GS',
+      semester: '2026B',
+      title: 'Gemini South Semester 2026B',
+      version: null,
+      demo: true,
+      holidays: [],
+      nights: { __typename: 'DateInterval', start: '2026-08-02', end: '2027-02-02' },
+      moonEvents: [],
+    },
+  ],
+};
+
+const withDistantDemoSemester = () =>
+  createMockApollo(
+    new ApolloLink((operation, forward) =>
+      operation.operationName === 'PublishedSemesters'
+        ? new Observable((observer) => {
+            observer.next({ data: GS_SEMESTER_WITH_DISTANT_DEMO });
+            observer.complete();
+          })
+        : forward(operation),
+    ),
+  );
 
 describe('ComponentsPage - the finder', () => {
   it('lists the site catalog with identity, one row per piece', async () => {
@@ -219,5 +266,30 @@ describe('ComponentsPage - the finder', () => {
     await expect.element(page.getByRole('option', { name: /^GHOST \(\d+\)$/ })).toBeVisible();
     const options = [...document.querySelectorAll('[role="option"]')].map((option) => option.textContent ?? '');
     expect(options).toEqual([...options].sort((a, b) => a.localeCompare(b)));
+  });
+
+  it('does not wear a distant demo semester’s flag for a night the gap between semesters leaves uncovered', async () => {
+    // 2026-07-01 sits in the gap, 32 nights from the demo semester and 150 from the real one - closer
+    // to the demo semester, which is exactly where a "nearest published semester" fallback would
+    // wrongly borrow its flag instead of reporting that nothing holds this night.
+    const screen = await renderApp({
+      element: <ComponentsPage />,
+      route: '/components?site=GS&night=2026-07-01',
+      mock: withDistantDemoSemester(),
+    });
+
+    await expect.element(screen.getByTestId('component-table')).toBeVisible();
+    await expect.element(screen.getByTestId('synthetic-data-tag')).not.toBeInTheDocument();
+  });
+
+  it('flags a night the demo semester actually holds', async () => {
+    const screen = await renderApp({
+      element: <ComponentsPage />,
+      route: '/components?site=GS&night=2026-09-01',
+      mock: withDistantDemoSemester(),
+    });
+
+    await expect.element(screen.getByTestId('component-table')).toBeVisible();
+    await expect.element(screen.getByTestId('synthetic-data-tag')).toBeVisible();
   });
 });

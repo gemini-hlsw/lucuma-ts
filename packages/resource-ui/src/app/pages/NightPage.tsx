@@ -2,18 +2,18 @@ import { when } from '@gemini-hlsw/lucuma-common-ui';
 import { Button } from 'primereact/button';
 import type { JSX } from 'react';
 
+import { useClockPreference } from '@/app/useClockPreference';
 import { useNow } from '@/app/useNow';
 import { useSelection } from '@/app/useSelection';
 import { NightStepper } from '@/components/ui/NightStepper';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { EmptyPanel, ErrorAlert, Loading } from '@/components/ui/PageStatus';
 import { SemesterTitleLink } from '@/components/ui/SemesterTitleLink';
-import { coverageRanges, nearestCoveredNight } from '@/domain/coverage';
+import { coverageRanges, nearestCoveredNight, semesterHolding } from '@/domain/coverage';
 import { moonPhaseAt, moonPhaseLabel } from '@/domain/moon';
 import { buildNightTimeline } from '@/domain/nightTimeline';
 import { addDays } from '@/domain/semester';
 import { observingNightInterval } from '@/domain/siteTime';
-import type { PublishedSemester, Site } from '@/domain/types';
 import { buildNightChartOptions, clockLabel } from '@/features/night/nightChartOptions';
 import { TimelineChart, TimelineLegendBar } from '@/features/timeline/TimelineChart';
 import {
@@ -28,18 +28,10 @@ import { toApiInterval, useNightSchedule, usePublishedSemesters } from '@/gql/ho
 /** A night is short enough that the marker should keep up with the clock. */
 const NOW_TICK_MS = 60_000;
 
-const semesterHolding = (
-  semesters: readonly PublishedSemester[],
-  site: Site,
-  observingNight: string,
-): PublishedSemester | undefined =>
-  semesters.find(
-    (entry) => entry.site === site && entry.firstNight <= observingNight && observingNight <= entry.lastNight,
-  );
-
 /** The view the rest of the model exists for: a run changing mid-night is drawn where it changes. */
 export default function NightPage(): JSX.Element {
-  const { site, observingNight, tonight, timeDisplay, setObservingNight, clearObservingNight } = useSelection();
+  const { site, observingNight, tonight, setObservingNight, clearObservingNight } = useSelection();
+  const timeDisplay = useClockPreference();
   const { semesters, loading: loadingSets, error: setsError } = usePublishedSemesters();
   const now = useNow(NOW_TICK_MS);
 
@@ -105,7 +97,7 @@ export default function NightPage(): JSX.Element {
 
       {busy && <Loading what="the night" />}
 
-      {!busy && held === undefined && (
+      {!busy && held === null && (
         <EmptyPanel>
           <p>
             No published schedule covers this night at {site}.
@@ -129,13 +121,13 @@ export default function NightPage(): JSX.Element {
         </EmptyPanel>
       )}
 
-      {!busy && held !== undefined && dataAvailable === false && (
+      {!busy && held !== null && dataAvailable === false && (
         // I4: absence is "not recorded", never "unavailable", which is why the flag is asked for.
         <EmptyPanel>Nothing is recorded for this night. That is not the same as nothing being available.</EmptyPanel>
       )}
 
       {/* Three answers, not two: `undefined` is the errored query, so `!== false` would draw an empty chart. */}
-      {!busy && held !== undefined && dataAvailable === true && (
+      {!busy && held !== null && dataAvailable === true && (
         <>
           <TimelineLegendBar
             legend={night}

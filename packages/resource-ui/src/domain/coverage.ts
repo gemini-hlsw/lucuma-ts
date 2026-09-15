@@ -7,12 +7,28 @@ export interface CoverageRange {
   readonly demo: boolean;
 }
 
+/** The site's semesters in date order - the one filter every reader of this list needs. */
+export const semestersAtSite = (semesters: readonly PublishedSemester[], site: Site): readonly PublishedSemester[] =>
+  semesters.filter((entry) => entry.site === site).sort((a, b) => a.firstNight.localeCompare(b.firstNight));
+
+/** The semester whose nights contain this one, or null. Never the nearest: a night outside every
+ *  semester is held by none, and a page reporting on it must not borrow another's demo flag. */
+export const semesterHolding = (
+  semesters: readonly PublishedSemester[],
+  site: Site,
+  observingNight: string,
+): PublishedSemester | null =>
+  semestersAtSite(semesters, site).find(
+    (entry) => entry.firstNight <= observingNight && observingNight <= entry.lastNight,
+  ) ?? null;
+
 /** The site's published nights as merged ranges, in date order. */
 export const coverageRanges = (semesters: readonly PublishedSemester[], site: Site): readonly CoverageRange[] => {
-  const sorted = semesters
-    .filter((entry) => entry.site === site)
-    .map(({ firstNight, lastNight, demo }) => ({ firstNight, lastNight, demo }))
-    .sort((a, b) => a.firstNight.localeCompare(b.firstNight));
+  const sorted = semestersAtSite(semesters, site).map(({ firstNight, lastNight, demo }) => ({
+    firstNight,
+    lastNight,
+    demo,
+  }));
 
   const ranges: CoverageRange[] = [];
   for (const range of sorted) {
@@ -52,17 +68,15 @@ export const resolveSemester = (
   requested: string | null,
   observingNight: string,
 ): PublishedSemester | null => {
-  const forSite = semesters
-    .filter((entry) => entry.site === site)
-    .sort((a, b) => a.firstNight.localeCompare(b.firstNight));
+  const forSite = semestersAtSite(semesters, site);
 
   const byName = forSite.find((entry) => entry.semester === requested);
   if (byName !== undefined) {
     return byName;
   }
 
-  const holding = forSite.find((entry) => entry.firstNight <= observingNight && observingNight <= entry.lastNight);
-  if (holding !== undefined) {
+  const holding = semesterHolding(semesters, site, observingNight);
+  if (holding !== null) {
     return holding;
   }
 

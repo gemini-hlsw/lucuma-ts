@@ -47,8 +47,10 @@ rounded:
 spacing:
   root: '14px'
   masthead: '2.5rem'
-  context-bar: '2.15rem'
+  env-banner: '1.4rem'
   control-line: '2rem'
+  bottom-nav: '3.5rem'
+  touch-target: '44px'
 components:
   button-primary:
     backgroundColor: '{colors.gpp-green}'
@@ -125,7 +127,7 @@ A black-to-grey tonal ladder carries the chrome; nearly all hue is reserved for 
   referencing the lucuma-ui variable where it is available at the point of use rather than
   restating the value. Hover: `--color-gpp-light`; pressed/dark: `--color-gpp-dark`.
 - **Brand Light Green** (`rgb(144 238 144 / 80%)`, `--color-gpp-accent`): identity only -
-  the DEVELOPMENT badge, the About dialog's rule. It marks _what this is_, never _what to
+  the environment banner, the About dialog's rule. It marks _what this is_, never _what to
   do_. It is never a button, never a link, never a state.
 
 ### Secondary
@@ -226,9 +228,9 @@ naming; data sits at body size in sentence case.
 - **Title** (600, 1.125rem): one page title per destination, in `PageHeader`.
 - **Body** (400, 1rem/1.5): table cells, controls, prose. The default; most of the interface
   is body text.
-- **Label** (400-600, 0.65-0.78rem, +0.025em to +0.05em tracking, uppercase): masthead
-  captions (SITE, SEMESTER,
-  CLOCK), legend section names, chart gutter group headings (small-caps "Telescope" /
+- **Label** (400-600, 0.65-0.78rem, +0.025em to +0.05em tracking, uppercase): the environment
+  banner, page-header control captions (SEMESTER), legend section names, chart gutter group
+  headings (small-caps "Telescope" /
   "Instruments", sized to fit the narrowest 92px gutter).
 - **Data-small** (400, 0.75rem): chart annotations, calendar chips (down to 0.64rem), night
   card metadata. Reserved for dense data surfaces where the same fact is available at body
@@ -263,7 +265,7 @@ extending or fixing, rather than trusting any prose list to stay complete:
   success and danger fills; the info tag ships dark ink and passes).
 - **Sub-0.75rem informative text below the foreground tone**, declared four ways: in
   Tailwind classes (find them with `text-\[0\.[0-7]` near
-  `foreground-muted`/`foreground-secondary` - masthead captions, table headers, cell and
+  `foreground-muted`/`foreground-secondary` - table headers, cell and
   date-cell metadata); in CSS files the class grep cannot see (the calendar's `.rbc-header`
   column names); in chart options declaring `font-size:` in JS (the Highcharts gutter
   headings and inline labels on `--timeline-muted-text` - the gutter headings also ship
@@ -279,9 +281,11 @@ here is ever complete.
 
 ## Layout
 
-**Masthead, sidebar, workspace.** A 2.5rem masthead (surface, 1px subtle bottom border)
-carries: wordmark (home link), centred DEVELOPMENT badge, and the right cluster of
-selection controls (Site, Semester, Clock Site|UTC), user, and menu. A fixed-width
+**Banner, masthead, sidebar, workspace.** A thin full-width strip (`--xp-env-banner`) sits
+above everything and names the environment; production renders none. Under it, a 2.5rem
+masthead (surface, 1px subtle bottom border) carries four things and no more: the wordmark
+(home link), the GN|GS site control beside it, a flexible gap, and the right cluster of
+account name and menu. A fixed-width
 (14rem) sidebar groups navigation under uppercase section labels (SCHEDULE: Semester, Week,
 Night; INVENTORY: Instruments, Components). The remaining viewport is the workspace: one
 scroll container, `PageHeader` (title, subtitle, right-hand controls slot), then content at
@@ -289,37 +293,89 @@ full width. This structure is the starting point, not a law - if a future workfl
 scheduler builder above all) needs a different frame, change the frame rather than forcing
 the workflow into it, but keep masthead selections global and page controls local.
 
-- **Selection is chrome, not page state.** Site, semester and clock live in the masthead and
-  the URL; a change never silently no-ops: choosing a semester whose nights do not hold the
-  current one also moves the night to that semester's first night. Page-scoped parameters
-  live in the URL per page, defaults deleted rather than written.
+- **The chrome carries identity and context only; every other control lives where it acts.**
+  Three selections, three homes, and no control in the chrome may be a no-op on the view
+  behind it:
+  - **Site is chrome.** It is identity - the bar reads "Resource at GN" - so it sits beside
+    the wordmark and every view answers to it. It rides the URL, and it is also remembered:
+    a visit with no `site` opens the site last left, never a fixed GN. A link naming one wins.
+    **It is the one default this app writes into the URL rather than deleting**, because an
+    absent site means "whichever this reader last used" - not a value a link can carry.
+    Deleted, Back off a site change would pop the parameter and the memory would put the same
+    site straight back, and a copied URL would open at the recipient's site, not the sender's.
+  - **Semester is the semester page's.** Only /semester reads a semester, so its picker lives
+    in that page's header beside Chart|Calendar, page-scoped through the URL with `month`
+    dropping alongside. Night, week and the finders derive what they need from the night they
+    report on. A stale `?semester=` elsewhere is unread, not scrubbed.
+  - **Clock is the reader's.** Site time or UTC is a reading habit, not part of a shared link,
+    so it lives in the menu under SETTINGS and persists per browser rather than in the URL.
+    Page-scoped parameters live in the URL per page, defaults deleted rather than written.
 - **Tonight is the front door.** The index route lands on `/night`; no night in the URL means
   the night in progress; the wordmark links home to it, and the night and week pages carry a
   Tonight button.
 - **The finder pages are site-scoped, never semester-scoped.** "Where is Zorro" is not a
-  semester question, and a piece's history does not restart in February. The masthead's
-  semester control moves the night those pages report for; it does not decide what they can
-  see.
-- **The clock choice belongs to the reader.** Site time and UTC are both real working zones;
-  the Clock toggle picks the zone every clock time renders in, while observing-night labels
-  and evening dates stay on the site's own calendar.
+  semester question, and a piece's history does not restart in February. They report on the
+  night in the URL, over the site's whole recorded span; no semester decides what they can see.
+- **The clock choice belongs to the reader, literally.** Site time and UTC are both real
+  working zones; the choice picks the zone every clock time renders in, while observing-night
+  labels and evening dates stay on the site's own calendar. It is a per-browser preference:
+  a link sent to a colleague opens in _their_ habit, not the sender's.
 - **Density before whitespace.** Vertical rhythm comes from the 2rem control line (every
   toolbar control is 2rem tall) and compact table rows (~2.8rem). Charts and tables stretch
   to the workspace width; there is no max-width column.
-- **The masthead has a measured width budget** (taken at the shipped 13px root; every
-  rem-sized figure below moves when the root reaches its 14px standard - re-measure then).
-  Check it before adding an item: at 831px the
-  bar stops fitting (133.7px wordmark + 137.2px badge + 503.1px right group + 31.2px gaps +
-  26px padding) and item contents break rather than wrap; at 848px (53rem) the three control
-  captions are visually hidden, buying 112.3px back; ~693px is the floor, where the menu
-  button starts clipping (the shell is `overflow-x: hidden`, so nothing past it is
-  reachable).
+- **The masthead has a measured width budget, and the overhaul made it slack.** The figures are
+  taken at the shipped 13px root; every one moves when the root reaches its 14px standard -
+  re-measure then. The bar holds four things at every width: 133.7px wordmark, 61.6px GN|GS,
+  the flexible gap, and a 109.1px right cluster (67.1px below `md`, where the account name goes
+  `sr-only`). With 35.1px of gaps and 26px of padding that is 365.5px of fixed content, against
+  768px at the narrowest desktop width - the gap absorbs the rest. Below `md` the same bar
+  measures 286.6px inside a 320px viewport, 33.5px to spare. Nothing clips between 320px and
+  1400px. Check the budget before adding an item, and remember what the old bar taught: the
+  flexible column is what gives way first, so whatever sits in it is what disappears.
 - **Desktop-first, phone-supported.** Optimise for wide screens beside the other GPP tools;
   the phone is a supported secondary scene (PRODUCT.md): every destination stays reachable,
   legible and operable at phone widths, touch targets on the 24px floor, layout adapting
-  rather than breaking. Queued deviation: the shipped shell bottoms out near 693px - the
-  masthead clips and `overflow-x: hidden` hides what remains - so phone-width support is
-  its own change, and the masthead width budget re-measure rides with it.
+  rather than breaking.
+
+### The phone shell
+
+`md` (768px) is the shell's one breakpoint. Below it the frame changes; at and above it the
+desktop shell above is untouched. A media query's rem is the initial 16px, not the app root,
+so the breakpoint is 48rem in `shell.css` and `md:` in Tailwind - the same 768px.
+
+| Surface                                | Below `md`                                            | At `md` and up          |
+| -------------------------------------- | ----------------------------------------------------- | ----------------------- |
+| Environment banner (`--xp-env-banner`) | the same strip                                        | the same strip          |
+| Masthead (`--xp-masthead-height`)      | wordmark, GN\|GS, gap, account icon, menu             | the same, plus the name |
+| Navigation                             | bottom bar (`--xp-bottomnav-height`), icon over label | the 14rem sidebar       |
+
+- **One navigation at a width, never two.** The sidebar is the desktop's and the bottom bar is
+  the phone's; each is `display: none` where the other answers, so only one is ever in the
+  accessibility tree and they share one name. Both render the same configuration
+  (`SIDEBAR_MENU_SECTIONS`) - the bar flattens the sections, having no room to name them.
+- **One masthead row at every width.** The bar holds only identity and the menu, so it never
+  needed a second row; what used to sit there moved to where it acts. The single thing that
+  yields below `md` is the account name, which goes `sr-only` and is read from the menu header
+  instead - its words stay in the accessibility tree at every width.
+- **Nothing may force a width above the viewport at 320px.** The shell is `overflow-hidden`,
+  so a bar wider than the screen is not scrolled to, it is lost. No shell element holds a
+  natural width it cannot give up: the wordmark tightens its tracking, the account name goes
+  `sr-only`, and the flexible gap absorbs whatever is left.
+- **Touch targets are px, not rem** (`--xp-target-floor` 24px, `--xp-touch-target` 44px): a
+  finger is the one size that must not ride the density root, so the WCAG floor and the
+  comfortable reach are both absolute. Every segmented control carries the 24px floor even at
+  its compact size. **One exception, and it is the bar's height, not a choice:** the menu button
+  gets the full 44px across but only the masthead's own height (32.5px at the 13px root),
+  because a 44px-tall target in a 32.5px bar reaches past it and takes taps from whatever the
+  page puts under the chrome. It clears the 24px floor the Do list states; a full 44 square
+  needs a taller bar.
+- **A bottom-bar label wraps, never truncates.** The bar is sized by `min-height`, so a label
+  that needs two lines gets them and the bar grows: a reader's own text spacing (WCAG 1.4.12)
+  must not cost a destination its name.
+- **The shell is `dvh`, not `vh`.** A phone browser's toolbar is inside `100vh` but outside the
+  visible viewport, so a `vh` shell hides its own bottom bar under the toolbar on first load.
+- **The bottom bar pads itself against `env(safe-area-inset-bottom)`**, and `index.html` asks
+  for `viewport-fit=cover` so that inset is real rather than zero.
 
 ## Elevation & Depth
 
@@ -374,12 +430,20 @@ surface, brightens the text to foreground, and carries a 2px inset action-green 
 Choosing a view is navigation, not a success state: a green fill would compete with the real
 action. Compact variant (`seg-sm`) for chart-corner toggles.
 
-### Masthead selects
+### Page-header selects
 
-Compact PrimeReact Dropdowns on the 1.8rem line, captioned by uppercase micro-labels; the
-value never inherits the label's uppercase dress. The caption is bound to the control by id
-(`LabelledControl`) and is the control's only accessible name - no call site repeats it as
-an `aria-label`.
+The masthead carries no select at all: site is a segmented control, and the semester picker
+belongs to /semester. A page's own Dropdown sits on the 2rem control line, captioned by an
+uppercase micro-label above it; the value never inherits the label's uppercase dress. The
+caption is bound to the control by id (`LabelledControl`) and is the control's only
+accessible name - no call site repeats it as an `aria-label`.
+
+### The environment banner
+
+A full-width strip above the masthead naming the build that is not production, in the
+identity accent with dark ink (measured 9.34:1; the badge it replaces read 2.09:1 with white
+on the same fill). It spans the viewport, so no width can clip it and nothing in the bar has
+to yield to make room. Production renders nothing.
 
 ### Tables
 
@@ -442,16 +506,26 @@ phrasing of a span, nothing else.
   bars route onto `/night`. The rule: every interactive element shows a visible
   action-green focus indicator, using one of the two shared treatments - the calendar
   events' 2px outline offset 1px, or `FOCUS_RING` (a 2px inset ring,
-  `components/ui/styles.ts`). Shipped shortfalls, queued like the type deviations: week
+  `components/ui/styles.ts`). The ring is the green's **light** step: the base green measures
+  2.91:1 against the translucent green an active nav item fills with, under 1.4.11's 3:1 floor
+  for a UI part, where the light step measures 3.35:1 and gains contrast everywhere else too.
+  A segmented control takes that same light green as an **outline** rather than a ring: its
+  selected segment spends its box-shadow on the underline, so a focus shadow would simply be
+  replaced by it and the selected segment - the one a keyboard lands on first - would show no
+  focus at all.
+  Shipped shortfalls, queued like the type deviations: week
   cards ride the browser-default ring, chart bars are mouse-only with no keyboard path to a
   bar's open-night action (nights stay reachable through the date controls until bars get a
-  focusable treatment), and `FOCUS_RING` is worn only by the masthead today.
+  focusable treatment), and `FOCUS_RING` is worn only by the masthead and the phone bar today.
 
-### Navigation (sidebar)
+### Navigation (sidebar and phone bar)
 
 Uppercase section labels over icon+text items; the active item fills with a translucent
 green and `aria-current="page"`. Sections are driven by configuration
-(`SIDEBAR_MENU_SECTIONS`), not hard-coded lists.
+(`SIDEBAR_MENU_SECTIONS`), not hard-coded lists. The phone's bottom bar draws the same
+destinations icon-over-label with the same fill, reading the `aria-current` the router sets
+so the highlight cannot drift from the announced state; which of the two is shown is the
+Layout section's phone shell.
 
 ## Do's and Don'ts
 

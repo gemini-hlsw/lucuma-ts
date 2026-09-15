@@ -5,7 +5,6 @@ import { InputText } from 'primereact/inputtext';
 import { type JSX, useState } from 'react';
 
 import { useSelection } from '@/app/useSelection';
-import { useSemester } from '@/app/useSemester';
 import { useSiteSpan } from '@/app/useSiteSpan';
 import { useUrlParam } from '@/app/useUrlParam';
 import { FilterField } from '@/components/ui/FilterField';
@@ -16,6 +15,7 @@ import { ErrorAlert, Loading } from '@/components/ui/PageStatus';
 import { RecordHistoryTable } from '@/components/ui/RecordHistoryTable';
 import { type RecordStatus, StatusTag } from '@/components/ui/StatusTag';
 import { WhereCell, type WhereReading } from '@/components/ui/WhereCell';
+import { semesterHolding } from '@/domain/coverage';
 import {
   buildInstrumentRows,
   type InstrumentRow,
@@ -30,7 +30,7 @@ import { USAGE_LABEL } from '@/domain/timeline';
 import type { Mounting, ResourceUsage, Site } from '@/domain/types';
 import { InstrumentSwatch } from '@/features/timeline/InstrumentSwatch';
 import { INSTRUMENT_LABEL } from '@/features/timeline/timelineOptions';
-import { useSemesterSchedule } from '@/gql/hooks';
+import { usePublishedSemesters, useSemesterSchedule } from '@/gql/hooks';
 
 /** One function, so a run cannot wear one status in the table and another under it. */
 const usageStatus = (usage: ResourceUsage): RecordStatus => ({
@@ -71,19 +71,18 @@ function Runs({ runs, site }: { runs: readonly Mounting[]; site: Site }): JSX.El
 
 export default function InstrumentsPage(): JSX.Element {
   const { site, observingNight } = useSelection();
-  const { semester: selected, loading: loadingSets, error: setsError } = useSemester();
+  const { semesters, loading: loadingSets, error: setsError } = usePublishedSemesters();
   const [search, setSearch] = useUrlParam('q', '', { replace: true });
   const [location, setLocation] = useUrlParam('location', '', { replace: true });
   const [expanded, setExpanded] = useState<InstrumentRow[]>([]);
 
-  const activeSite = selected?.site ?? site;
-
   // The site's whole recorded span: its instruments are the ones its records have ever named.
+  const held = semesterHolding(semesters, site, observingNight);
   const bounds = useSiteSpan();
 
-  const { mountings, loading, error } = useSemesterSchedule(activeSite, bounds);
+  const { mountings, loading, error } = useSemesterSchedule(site, bounds);
 
-  const night = observingNightInterval(activeSite, observingNight);
+  const night = observingNightInterval(site, observingNight);
   const rows = buildInstrumentRows({ mountings, night });
   const locations = locationOptions(rows);
   // Sorted by the name on screen: a list alphabetised by an unseen enum tag looks unsorted.
@@ -96,10 +95,10 @@ export default function InstrumentsPage(): JSX.Element {
 
   return (
     <div className="min-w-0">
-      <PageHeader title="Instruments" demo={selected?.demo === true}>
-        Every instrument {activeSite} has ever recorded, and where it is on the night of{' '}
-        {eveningLabel(firstEveningDate(activeSite, night))}. {onTelescope} of {rows.length} on the telescope. Open a row
-        for its runs.
+      <PageHeader title="Instruments" demo={held?.demo === true}>
+        Every instrument {site} has ever recorded, and where it is on the night of{' '}
+        {eveningLabel(firstEveningDate(site, night))}. {onTelescope} of {rows.length} on the telescope. Open a row for
+        its runs.
       </PageHeader>
 
       {failure !== undefined && <ErrorAlert what="the instruments" error={failure} />}
@@ -145,9 +144,7 @@ export default function InstrumentsPage(): JSX.Element {
           onRowToggle={(event) => {
             setExpanded(event.data as InstrumentRow[]);
           }}
-          rowExpansionTemplate={(row: InstrumentRow) => (
-            <Runs runs={runsOf(row.instrument, mountings)} site={activeSite} />
-          )}
+          rowExpansionTemplate={(row: InstrumentRow) => <Runs runs={runsOf(row.instrument, mountings)} site={site} />}
           size="small"
           stripedRows
           data-testid="instrument-table"
@@ -171,7 +168,7 @@ export default function InstrumentsPage(): JSX.Element {
             body={(row: InstrumentRow) =>
               row.run === null ? null : (
                 <span className="text-xs whitespace-nowrap text-foreground-secondary tabular-nums">
-                  {eveningRange(activeSite, row.run)}
+                  {eveningRange(site, row.run)}
                 </span>
               )
             }

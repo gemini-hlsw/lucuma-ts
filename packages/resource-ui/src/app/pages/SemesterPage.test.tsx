@@ -1,11 +1,13 @@
 import { ApolloLink } from '@apollo/client';
+import { Observable } from '@apollo/client/utilities';
 import { isNotNullish } from '@gemini-hlsw/lucuma-common-ui';
+import type { PublishedSemestersQuery } from '@gql/gen/graphql';
 import { describe, expect, it } from 'vitest';
 
 import Layout from '@/components/layout/Layout';
 import { buildSemesterTimeline } from '@/domain/semesterTimeline';
 import { buildMonthLines } from '@/features/semester/semesterMonthOptions';
-import { selectDropdownOption } from '@/test/helpers';
+import { chooseClock, chooseSite, openDropdown, selectDropdownOption } from '@/test/helpers';
 import { createMockApollo } from '@/test/mockClient';
 import { renderApp } from '@/test/renderApp';
 
@@ -13,6 +15,46 @@ import NightPage from './NightPage';
 import SemesterPage from './SemesterPage';
 
 const openSemester = async (route: string) => renderApp({ element: <SemesterPage />, route });
+
+/** One real GS semester and one synthetic, so the picker's "(demo)" suffix has something to prove. */
+const GS_SEMESTERS_ONE_DEMO: PublishedSemestersQuery = {
+  publishedSemesters: [
+    {
+      __typename: 'PublishedSemester',
+      site: 'GS',
+      semester: '2025B',
+      title: 'Gemini South Semester 2025B',
+      version: null,
+      demo: false,
+      holidays: [],
+      nights: { __typename: 'DateInterval', start: '2025-08-02', end: '2026-02-02' },
+      moonEvents: [],
+    },
+    {
+      __typename: 'PublishedSemester',
+      site: 'GS',
+      semester: '2026B',
+      title: 'Gemini South Semester 2026B',
+      version: null,
+      demo: true,
+      holidays: [],
+      nights: { __typename: 'DateInterval', start: '2026-08-02', end: '2027-02-02' },
+      moonEvents: [],
+    },
+  ],
+};
+
+const withOneDemoSemester = () =>
+  createMockApollo(
+    new ApolloLink((operation, forward) =>
+      operation.operationName === 'PublishedSemesters'
+        ? new Observable((observer) => {
+            observer.next({ data: GS_SEMESTERS_ONE_DEMO });
+            observer.complete();
+          })
+        : forward(operation),
+    ),
+  );
 
 describe('SemesterPage - the chart', () => {
   it('opens on the chart, one block per month', async () => {
@@ -91,7 +133,7 @@ describe('SemesterPage - the chart', () => {
     await expect.element(screen.getByRole('region', { name: 'August 2026' })).toBeVisible();
   });
 
-  it('survives the masthead clock toggle without redrawing a single bar', async () => {
+  it('survives a clock change without redrawing a single bar', async () => {
     // The chart speaks dates, so the toggle's re-render must leave every bar exactly where it was.
     const screen = await renderApp({
       element: <Layout />,
@@ -107,22 +149,14 @@ describe('SemesterPage - the chart', () => {
     await expect.poll(() => shapes().length).toBeGreaterThan(0);
     const before = shapes();
 
-    await screen.getByRole('button', { name: 'Coordinated Universal Time' }).click();
+    await chooseClock(screen, 'UTC');
 
-    await expect
-      .element(screen.getByRole('button', { name: 'Coordinated Universal Time' }))
-      .toHaveAttribute('aria-pressed', 'true');
     await expect.poll(shapes).toBe(before);
   });
 
-  it('moves the chart to the semester picked in the masthead, every month drawn', async () => {
+  it('moves the chart to the semester picked on the page, every month drawn', async () => {
     // The largest window swing the app has, and the only one driven through the control.
-    const screen = await renderApp({
-      element: <Layout />,
-      route: '/semester?site=GS&semester=2025B',
-      path: '/',
-      childRoutes: [{ path: 'semester', element: <SemesterPage /> }],
-    });
+    const screen = await openSemester('/semester?site=GS&semester=2025B');
     await expect.element(screen.getByRole('region', { name: 'August 2025' })).toBeVisible();
     const bars = () => document.querySelectorAll('[data-testid^="semester-month-"] path.highcharts-point').length;
     await expect.poll(bars).toBeGreaterThan(0);
@@ -135,6 +169,32 @@ describe('SemesterPage - the chart', () => {
     await selectDropdownOption(screen, 'Semester', '2025B');
     await expect.element(screen.getByRole('region', { name: 'August 2025' })).toBeVisible();
     await expect.poll(bars).toBeGreaterThan(0);
+  });
+
+  it('keeps its keyboard stop out of the hidden half, mirror and all', async () => {
+    const screen = await openSemester('/semester?site=GS&semester=2025B');
+
+    const picker = screen.container.querySelector('.xp-page-select')!;
+    // PrimeReact wraps the native mirror and the real keyboard stop in the same class, so hiding
+    // by wrapper erases the stop: the mirror alone carries `aria-hidden`.
+    expect(picker.querySelector('select')?.getAttribute('aria-hidden')).toBe('true');
+
+    const stop = picker.querySelector<HTMLElement>('input')!;
+    stop.focus();
+    expect(document.activeElement).toBe(stop);
+    expect(stop.closest('[aria-hidden="true"]')).toBeNull();
+  });
+
+  it('picks a semester without leaving the view it was picked from', async () => {
+    const screen = await openSemester('/semester?site=GS&semester=2025B&view=calendar');
+    await expect.element(screen.getByTestId('semester-calendar')).toBeVisible();
+
+    await selectDropdownOption(screen, 'Semester', '2025A');
+
+    // What must change, and what must not: the window moves, the chosen view stays chosen.
+    await expect.element(screen.getByRole('button', { name: 'Open night beginning 2025-02-14' })).toBeVisible();
+    await expect.element(screen.getByTestId('semester-calendar')).toBeVisible();
+    await expect.element(screen.getByTestId('semester-timeline')).not.toBeInTheDocument();
   });
 
   it('redraws the cached semester when the site switches back, never an empty chart', async () => {
@@ -153,13 +213,13 @@ describe('SemesterPage - the chart', () => {
     await expect.poll(() => bars().length).toBeGreaterThan(0);
     const southBars = bars();
 
-    await selectDropdownOption(screen, 'Site', 'GN');
+    await chooseSite(screen, 'GN');
     await expect.element(screen.getByText('Gemini North Semester 2025B', { exact: false })).toBeVisible();
     // Changed before non-empty: a blank chart also passes "changed".
     await expect.poll(bars).not.toBe(southBars);
     await expect.poll(() => bars().length).toBeGreaterThan(0);
 
-    await selectDropdownOption(screen, 'Site', 'GS');
+    await chooseSite(screen, 'GS');
     await expect.element(screen.getByText('Gemini South Semester 2025B', { exact: false })).toBeVisible();
     await expect.poll(bars).toBe(southBars);
   });
@@ -216,13 +276,7 @@ describe('SemesterPage - the calendar', () => {
   });
 
   it('drops the month when the semester changes - it named a page of the old one', async () => {
-    // The semester control lives in the masthead, so the test mounts the shell around the page.
-    const screen = await renderApp({
-      element: <Layout />,
-      route: '/semester?site=GS&semester=2025B&view=calendar&month=2025-11',
-      path: '/',
-      childRoutes: [{ path: 'semester', element: <SemesterPage /> }],
-    });
+    const screen = await openSemester('/semester?site=GS&semester=2025B&view=calendar&month=2025-11');
     await expect.element(screen.getByRole('button', { name: 'Open night beginning 2025-11-14' })).toBeVisible();
 
     await selectDropdownOption(screen, 'Semester', '2025A');
@@ -433,5 +487,36 @@ describe('SemesterPage - every published semester', () => {
     const screen = await openSemester('/semester?site=GS&semester=2025A');
 
     await expect.element(screen.getByText('Gemini South Semester 2025A', { exact: false })).toBeVisible();
+  });
+});
+
+describe('SemesterPage - the demo suffix', () => {
+  it('flags a synthetic option in the picker without marking the real one beside it', async () => {
+    const screen = await renderApp({
+      element: <SemesterPage />,
+      route: '/semester?site=GS&semester=2025B',
+      mock: withOneDemoSemester(),
+    });
+    await expect.element(screen.getByText('Gemini South Semester 2025B', { exact: false })).toBeVisible();
+
+    await openDropdown(screen, 'Semester');
+
+    const options = [...document.querySelectorAll('[role="option"]')].map((option) => option.textContent ?? '');
+    expect(options).toEqual(['2025B', '2026B (demo)']);
+  });
+
+  it('carries the demo tag through once picked', async () => {
+    const screen = await renderApp({
+      element: <SemesterPage />,
+      route: '/semester?site=GS&semester=2025B',
+      mock: withOneDemoSemester(),
+    });
+    await expect.element(screen.getByText('Gemini South Semester 2025B', { exact: false })).toBeVisible();
+    await expect.element(screen.getByTestId('synthetic-data-tag')).not.toBeInTheDocument();
+
+    await selectDropdownOption(screen, 'Semester', '2026B (demo)');
+
+    await expect.element(screen.getByText('Gemini South Semester 2026B', { exact: false })).toBeVisible();
+    await expect.element(screen.getByTestId('synthetic-data-tag')).toBeVisible();
   });
 });

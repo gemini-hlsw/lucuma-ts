@@ -9,6 +9,7 @@ import { page } from 'vitest/browser';
 import Layout from '@/components/layout/Layout';
 import { observingNightInterval, observingNightOf } from '@/domain/siteTime';
 import { NIGHT_SCHEDULE_QUERY } from '@/gql/resource';
+import { chooseClock } from '@/test/helpers';
 import { createMockApollo } from '@/test/mockClient';
 import { renderApp } from '@/test/renderApp';
 
@@ -51,8 +52,10 @@ describe('NightPage - the telescope-state rows the workbook records', () => {
     await expect.element(screen.getByRole('group', { name: 'ToO' }).getByText('Standard ToOs')).toBeVisible();
   });
 
-  it('reads an unknown clock parameter as the site clock, never as UT or blank', async () => {
-    const screen = await openNight('/night?site=GS&night=2025-11-14&clock=zulu');
+  it('reads an unknown stored clock as the site clock, never as UT or blank', async () => {
+    // Storage is shared with whatever wrote it last, including an older build of this app.
+    localStorage.setItem('resource.clock', 'zulu');
+    const screen = await openNight('/night?site=GS&night=2025-11-14');
 
     await expect.element(screen.getByText('14:00 to 14:00 site time', { exact: false })).toBeVisible();
   });
@@ -80,6 +83,10 @@ describe(NightPage, () => {
 
     await expect.element(screen.getByText('No published schedule covers this night', { exact: false })).toBeVisible();
     await expect.element(screen.getByTestId('night-timeline')).not.toBeInTheDocument();
+    // One answer, not two: the not-recorded panel says something else entirely about the same night.
+    await expect
+      .element(screen.getByText('Nothing is recorded for this night', { exact: false }))
+      .not.toBeInTheDocument();
   });
 
   it('says what is covered instead of dead-ending, and offers the nearest covered night', async () => {
@@ -196,8 +203,8 @@ describe(NightPage, () => {
     await expect.element(screen.getByText('Gemini North Semester 2026B', { exact: false })).toBeVisible();
   });
 
-  it('moves the chart clock to UT with the masthead toggle', async () => {
-    // The toggle keeps the axis window, so the labels prove the in-place update took the new zone.
+  it('moves the chart clock to UT from the menu', async () => {
+    // The choice keeps the axis window, so the labels prove the in-place update took the new zone.
     const screen = await renderApp({
       element: <Layout />,
       route: '/night?site=GS&night=2025-11-14',
@@ -211,7 +218,7 @@ describe(NightPage, () => {
     await expect.poll(() => labels().length).toBeGreaterThan(0);
     const siteLabels = labels();
 
-    await screen.getByRole('button', { name: 'Coordinated Universal Time' }).click();
+    await chooseClock(screen, 'UTC');
 
     // Non-empty first: a blanked chart must not slip through as merely "different".
     await expect.element(screen.getByText('17:00 to 17:00 UTC', { exact: false })).toBeVisible();
