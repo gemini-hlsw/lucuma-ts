@@ -49,6 +49,9 @@ function program(overrides: Partial<RawProgram>): RawProgram {
       },
     },
     active: { __typename: 'DateInterval', start: '1901-01-01', end: '2099-12-31' },
+    status: 'INACTIVE',
+    explicitStatus: null,
+    defaultStatus: 'INACTIVE',
     allocations: [],
     goa: { __typename: 'GoaProperties', proprietaryMonths: 6, privateHeader: true },
     proposal: {
@@ -125,10 +128,20 @@ describe(mapPrograms, () => {
     expect(p?.privateNoteId).toBe('n-1');
     expect(p?.proprietaryMonths).toBe(6);
     expect(p?.privateHeader).toBe(true);
+    // No override → effective status is the derived one, explicitStatus null (sc-10277).
+    expect(p?.status).toBe('INACTIVE');
+    expect(p?.explicitStatus).toBeNull();
+    expect(p?.defaultStatus).toBe('INACTIVE');
     expect(p?.allocations).toEqual([
       { category: 'US', scienceBand: 'BAND1', hours: 12.5 },
       { category: 'CAL', scienceBand: 'BAND2', hours: 4 },
     ]);
+  });
+
+  it('carries a staff status override (sc-10277)', () => {
+    const [p] = mapPrograms(result([program({ status: 'COMPLETE', explicitStatus: 'COMPLETE' })]));
+    expect(p?.status).toBe('COMPLETE');
+    expect(p?.explicitStatus).toBe('COMPLETE');
   });
 
   it('treats Classical proposals as CLASSICAL with no ToO/Band-3 (those are Queue-only)', () => {
@@ -194,6 +207,9 @@ describe(proposalTypeInput, () => {
     contactScientists: [],
     activeStart: '',
     activeEnd: '',
+    status: 'INACTIVE',
+    explicitStatus: null,
+    defaultStatus: 'INACTIVE',
     proprietaryMonths: 6,
     considerForBand3: true,
     minPercentTime: 75,
@@ -247,6 +263,9 @@ describe(programPropertiesInput, () => {
     contactScientists: [],
     activeStart: '2027-08-01',
     activeEnd: '2028-02-01',
+    status: 'INACTIVE',
+    explicitStatus: null,
+    defaultStatus: 'INACTIVE',
     proprietaryMonths: 12,
     considerForBand3: false,
     minPercentTime: 100,
@@ -257,17 +276,25 @@ describe(programPropertiesInput, () => {
     privateNoteId: null,
   };
 
-  it('carries the GOA properties and active period', () => {
+  it('carries the GOA properties, active period, and status override', () => {
     expect(programPropertiesInput(base)).toEqual({
       goa: { proprietaryMonths: 12, privateHeader: true },
       activeStart: '2027-08-01',
       activeEnd: '2028-02-01',
+      explicitStatus: null, // no override → clear it back to the derived status
     });
   });
 
   it('omits blank active dates rather than sending empty strings', () => {
     expect(programPropertiesInput({ ...base, activeStart: '', activeEnd: '' })).toEqual({
       goa: { proprietaryMonths: 12, privateHeader: true },
+      explicitStatus: null,
+    });
+  });
+
+  it('sends an explicit status override when one is set (sc-10277)', () => {
+    expect(programPropertiesInput({ ...base, explicitStatus: 'COMPLETE' })).toMatchObject({
+      explicitStatus: 'COMPLETE',
     });
   });
 });

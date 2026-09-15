@@ -12,6 +12,7 @@ import type {
   Instrument,
   KeckInstrument,
   Observatory,
+  ProgramStatus,
   ProposalStatus,
   ScienceBand,
   ScienceSubtype,
@@ -28,6 +29,7 @@ export type {
   Instrument,
   KeckInstrument,
   Observatory,
+  ProgramStatus,
   ProposalStatus,
   ScienceBand,
   ScienceSubtype,
@@ -203,6 +205,17 @@ export type ProgramClass = Extract<ScienceSubtype, 'QUEUE' | 'CLASSICAL'>;
 export const PROGRAM_CLASSES: readonly ProgramClass[] = ['QUEUE', 'CLASSICAL'];
 export const PROGRAM_CLASS_LABEL: Record<ProgramClass, string> = { QUEUE: 'Queue', CLASSICAL: 'Classical' };
 
+/** ProgramStatus → display label (sc-10277). The complete enum (satisfies
+ *  Record) so a new status is a compile error here, not a blank menu item. */
+export const PROGRAM_STATUS_LABEL = {
+  ACTIVE: 'Active',
+  INACTIVE: 'Inactive',
+  COMPLETE: 'Complete',
+  INCOMPLETE: 'Incomplete',
+} as const satisfies Record<ProgramStatus, string>;
+
+export const PROGRAM_STATUSES = Object.keys(PROGRAM_STATUS_LABEL) as readonly ProgramStatus[];
+
 /** Every proposal ScienceSubtype → its display label, for the Programs and
  *  Proposals tables' "Type" column (sc-9581). The complete enum (satisfies
  *  Record) so a new subtype is a compile error here, not a blank cell. */
@@ -311,6 +324,15 @@ export interface Program {
    *  1901/2099 sentinels are shown blank), always editable as dates. */
   readonly activeStart: string;
   readonly activeEnd: string;
+  /** Effective program status — `explicitStatus` if set, else `defaultStatus`
+   *  (sc-10277). This is the value the dropdown shows when no override is set. */
+  readonly status: ProgramStatus;
+  /** Staff override of the status; null means "Automatic" (use the derived
+   *  status). Editing this is the whole of sc-10277. */
+  readonly explicitStatus: ProgramStatus | null;
+  /** Date-derived status (ACTIVE within the active period, else INACTIVE),
+   *  shown as the "Automatic (…)" hint so clearing the override is legible. */
+  readonly defaultStatus: ProgramStatus;
   readonly proprietaryMonths: number;
   /** Queue proposals only — ConsiderForBand3 is CONSIDER/DO_NOT_CONSIDER/UNSET
    *  in the ODB. True = CONSIDER, false = DO_NOT_CONSIDER or UNSET. */

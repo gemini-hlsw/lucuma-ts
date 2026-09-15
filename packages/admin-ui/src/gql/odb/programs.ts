@@ -38,6 +38,12 @@ export const PROGRAM_ITEM_FRAGMENT = graphql(`
       start
       end
     }
+    # Program status (sc-10277). explicitStatus is the staff override (null =
+    # use the date-derived defaultStatus); status is the effective value the
+    # dropdown shows when no override is set.
+    status
+    explicitStatus
+    defaultStatus
     allocations {
       category
       scienceBand
@@ -108,6 +114,9 @@ export function programPropertiesInput(draft: Program): ProgramPropertiesInput {
     goa: { proprietaryMonths: draft.proprietaryMonths, privateHeader: draft.privateHeader },
     ...(draft.activeStart ? { activeStart: draft.activeStart } : {}),
     ...(draft.activeEnd ? { activeEnd: draft.activeEnd } : {}),
+    // sc-10277: send the status override; null clears it back to the derived
+    // status (per the schema's explicitStatus contract).
+    explicitStatus: draft.explicitStatus,
   };
 }
 
@@ -297,6 +306,9 @@ export function mapPrograms(raw: AdminProgramsResult): Program[] {
       contactScientists,
       activeStart,
       activeEnd,
+      status: p.status,
+      explicitStatus: p.explicitStatus ?? null,
+      defaultStatus: p.defaultStatus,
       proprietaryMonths: p.goa?.proprietaryMonths ?? 0,
       considerForBand3: queue?.considerForBand3 === 'CONSIDER',
       minPercentTime: queue?.minPercentTime ?? classical?.minPercentTime ?? 100,

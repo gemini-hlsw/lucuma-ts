@@ -39,7 +39,10 @@ import {
   type Program,
   PROGRAM_CLASS_LABEL,
   PROGRAM_CLASSES,
+  PROGRAM_STATUS_LABEL,
+  PROGRAM_STATUSES,
   type ProgramClass,
+  type ProgramStatus,
   SCIENCE_SUBTYPE_LABEL,
   type ScienceSubtype,
   TOO_LABEL,
@@ -51,6 +54,10 @@ import { matchesQuery } from '@/lib/search';
 /** "Show everything" sentinel for the Class facet (PrimeReact mishandles null
  *  option values). */
 const ALL = 'ALL';
+
+/** Status-dropdown sentinel for "no override" — a real string, since PrimeReact
+ *  mishandles a null option value (see ALL). Maps to explicitStatus: null. */
+const AUTO_STATUS = 'AUTO';
 
 const EMPTY_PROGRAMS: Program[] = [];
 
@@ -348,6 +355,24 @@ function ProgramEditor({
                 className="ap-date-input"
               />
             </div>
+
+            <label
+              htmlFor="status"
+              title="Program status (sc-10277). Normally derived from the Active Period — Active while today is within it, Inactive otherwise. Staff can override it (including Complete / Incomplete, which the automatic rule never sets); choose Automatic to clear the override and follow the dates again."
+            >
+              Status
+            </label>
+            <Dropdown
+              inputId="status"
+              value={draft.explicitStatus ?? AUTO_STATUS}
+              options={[
+                // Automatic clears the override (explicitStatus: null); the hint
+                // shows the date-derived status it would fall back to.
+                { label: `Automatic (${PROGRAM_STATUS_LABEL[draft.defaultStatus]})`, value: AUTO_STATUS },
+                ...PROGRAM_STATUSES.map((s) => ({ label: PROGRAM_STATUS_LABEL[s], value: s })),
+              ]}
+              onChange={(e) => set('explicitStatus', e.value === AUTO_STATUS ? null : (e.value as ProgramStatus))}
+            />
 
             <label
               htmlFor="prop"
