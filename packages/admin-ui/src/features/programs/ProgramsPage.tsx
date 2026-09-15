@@ -47,9 +47,10 @@ import {
   type TooActivation,
 } from '@/gql/types';
 import { matchesQuery } from '@/lib/search';
+import { currentSemester, NO_SEMESTER, semesterOf } from '@/lib/semester';
 
-/** "Show everything" sentinel for the Class facet (PrimeReact mishandles null
- *  option values). */
+/** "Show everything" sentinel for the facet dropdowns (PrimeReact mishandles
+ *  null option values). */
 const ALL = 'ALL';
 
 const EMPTY_PROGRAMS: Program[] = [];
@@ -118,15 +119,20 @@ export default function ProgramsPage(): JSX.Element {
     }
   }
 
+  // Defaults to the current semester per sc-9582; the user can widen to "All".
+  // Lazy initializer so it's read once on mount, not on every render.
+  const [semesterFilter, setSemesterFilter] = useState<string>(() => currentSemester());
   const [typeFilter, setTypeFilter] = useState<ScienceSubtype | typeof ALL>(ALL);
   const [search, setSearch] = useState('');
   const filteredPrograms = useMemo(
     () =>
       programs.filter(
         (p) =>
-          (typeFilter === ALL || p.programType === typeFilter) && matchesQuery([p.reference, p.name, p.pi], search),
+          (semesterFilter === ALL || semesterOf(p.reference) === semesterFilter) &&
+          (typeFilter === ALL || p.programType === typeFilter) &&
+          matchesQuery([p.reference, p.name, p.pi], search),
       ),
-    [programs, typeFilter, search],
+    [programs, semesterFilter, typeFilter, search],
   );
 
   // Only the proposal types actually present, so the facet never offers an
@@ -135,6 +141,17 @@ export default function ProgramsPage(): JSX.Element {
     () =>
       Array.from(new Set(programs.map((p) => p.programType).filter((t): t is ScienceSubtype => t !== null))).sort(
         (a, b) => SCIENCE_SUBTYPE_LABEL[a].localeCompare(SCIENCE_SUBTYPE_LABEL[b]),
+      ),
+    [programs],
+  );
+
+  // The semesters actually present in the loaded programs (newest first), so the
+  // facet never offers an empty option. The current-semester default may not be
+  // among them, in which case the table starts empty until the user widens it.
+  const presentSemesters = useMemo(
+    () =>
+      Array.from(new Set(programs.map((p) => semesterOf(p.reference)).filter((s) => s !== NO_SEMESTER))).sort((a, b) =>
+        b.localeCompare(a),
       ),
     [programs],
   );
@@ -148,6 +165,12 @@ export default function ProgramsPage(): JSX.Element {
   const tileControls = (
     <>
       <DataSourceBadge loading={loading} error={error && friendlyError(error)} empty={programs.length === 0} />
+      <Dropdown
+        value={semesterFilter}
+        options={[{ label: 'All semesters', value: ALL }, ...presentSemesters.map((s) => ({ label: s, value: s }))]}
+        onChange={(e) => setSemesterFilter(e.value as string)}
+        title="Facet the table by semester, parsed from the program reference. Defaults to the current semester."
+      />
       <Dropdown
         value={typeFilter}
         options={[
