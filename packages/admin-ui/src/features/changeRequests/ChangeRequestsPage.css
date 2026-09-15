@@ -63,6 +63,34 @@
   font-size: 0.84rem;
 }
 
+.cr-windows-link {
+  padding: 0;
+  font-weight: 600;
+}
+
+.cr-windows-panel {
+  max-width: 28rem;
+}
+
+.cr-windows-group + .cr-windows-group {
+  margin-top: 10px;
+}
+
+.cr-windows-obs {
+  font-weight: 600;
+  font-size: 0.84rem;
+}
+
+.cr-windows-list {
+  margin: 4px 0 0;
+  padding-left: 1.1rem;
+  font-size: 0.84rem;
+}
+
+.cr-window-exclude {
+  color: var(--red-400, #e57373);
+}
+
 .cr-selected-ids {
   margin: 0 0 10px;
   font-weight: 600;

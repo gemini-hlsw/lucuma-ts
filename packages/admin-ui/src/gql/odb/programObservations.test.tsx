@@ -26,6 +26,7 @@ const obs = (id: string): ObservationMatch => ({
     skyBackground: 'GRAY',
     waterVapor: 'WET',
   },
+  schedulingConstraints: { __typename: 'SchedulingConstraints', timingWindows: [] },
   targetEnvironment: { __typename: 'TargetEnvironment', firstScienceTarget: null },
 });
 

@@ -21,6 +21,7 @@ function observation(overrides: Partial<ObservationItemFragment>): ObservationIt
       skyBackground: 'GRAY',
       waterVapor: 'WET',
     },
+    schedulingConstraints: { __typename: 'SchedulingConstraints', timingWindows: [] },
     targetEnvironment: {
       __typename: 'TargetEnvironment',
       firstScienceTarget: {
@@ -72,6 +73,43 @@ describe(mapObservationRow, () => {
 
   it('shows 0 hours when the digest is unavailable (calculation pending or failed) (sc-9598)', () => {
     expect(mapObservationRow(observation({ execution: executionDigest(null) })).hours).toBe(0);
+  });
+
+  it('renders each scheduling window as an inclusion verb, start, and end (sc-9621)', () => {
+    const row = mapObservationRow(
+      observation({
+        schedulingConstraints: {
+          __typename: 'SchedulingConstraints',
+          timingWindows: [
+            {
+              __typename: 'TimingWindow',
+              inclusion: 'INCLUDE',
+              startUtc: '2024-01-30T14:55:00Z',
+              end: null,
+            },
+            {
+              __typename: 'TimingWindow',
+              inclusion: 'EXCLUDE',
+              startUtc: '2024-01-31T14:31:27.866Z',
+              end: { __typename: 'TimingWindowEndAt', atUtc: '2024-01-31T15:31:27.866Z' },
+            },
+            {
+              __typename: 'TimingWindow',
+              inclusion: 'INCLUDE',
+              startUtc: '2024-01-31T14:31:53.643Z',
+              end: { __typename: 'TimingWindowEndAfter', after: { __typename: 'TimeSpan', hours: 48 } },
+            },
+          ],
+        },
+      }),
+    );
+    // Windows are rendered in UTC to the minute (never the viewer's local zone).
+    expect(row.windows.map((w) => w.label)).toEqual([
+      'Include 2024-01-30 14:55 UTC forever',
+      'Exclude 2024-01-31 14:31 UTC through 2024-01-31 15:31 UTC',
+      'Include 2024-01-31 14:31 UTC for 48 h',
+    ]);
+    expect(row.windows.map((w) => w.inclusion)).toEqual(['INCLUDE', 'EXCLUDE', 'INCLUDE']);
   });
 
   it('uses the telluric group total for an observation in a system telluric group (sc-9598)', () => {

@@ -1,7 +1,7 @@
 /** Selections and mapping helpers shared by more than one view. */
 import { parseNumber } from '@gemini-hlsw/lucuma-common-ui';
 
-import { type Instrument, INSTRUMENT_LABEL, type ObservationRow } from '../types';
+import { type Instrument, INSTRUMENT_LABEL, type ObservationRow, type TimingWindowRow } from '../types';
 import { graphql } from './gen';
 import type {
   CloudExtinctionPreset,
@@ -171,6 +171,26 @@ export const OBSERVATION_ROW_FRAGMENT = graphql(`
       skyBackground
       waterVapor
     }
+    # Scheduling windows during which the observation may execute (sc-9621).
+    # Empty = no timing constraints. The end is a union: an absolute close time
+    # (At), a duration (After), or null (the window never closes).
+    schedulingConstraints {
+      timingWindows {
+        inclusion
+        startUtc
+        end {
+          __typename
+          ... on TimingWindowEndAt {
+            atUtc
+          }
+          ... on TimingWindowEndAfter {
+            after {
+              hours
+            }
+          }
+        }
+      }
+    }
     targetEnvironment {
       firstScienceTarget {
         id
@@ -206,6 +226,39 @@ export function observationDigestHours(o: ObservationItemFragment): number | nul
   return parseNumber(hours) ?? null;
 }
 
+/** Render an ODB Timestamp (canonical ISO-8601, always "…Z") to minute
+ *  precision in UTC, e.g. "2024-01-30 14:55 UTC". Scheduling windows are
+ *  inherently UTC (Explore shows them "… UTC"); the browser-local
+ *  formatDateTime would silently shift them by the viewer's offset. Slicing
+ *  the canonical form is exact and avoids a Date round-trip. */
+function formatUtcMinute(iso: string): string {
+  return `${iso.slice(0, 10)} ${iso.slice(11, 16)} UTC`;
+}
+
+/** Format an observation's scheduling windows for display (sc-9621), mirroring
+ *  Explore's wording: "Include <start> through <end>" (absolute end), "… for N h"
+ *  (a duration), or "… forever" (no end). Times are UTC. */
+function mapTimingWindows(
+  windows: ObservationItemFragment['schedulingConstraints']['timingWindows'],
+): TimingWindowRow[] {
+  return windows.map((w) => {
+    const verb = w.inclusion === 'INCLUDE' ? 'Include' : 'Exclude';
+    const start = formatUtcMinute(w.startUtc);
+    let end: string;
+    if (w.end === null) {
+      end = 'forever';
+    } else if (w.end.__typename === 'TimingWindowEndAt') {
+      end = `through ${formatUtcMinute(w.end.atUtc)}`;
+    } else {
+      // TimeSpan.hours is a schema-non-null number (string|number scalar);
+      // normalize it, but fall back to the raw value rather than a misleading
+      // "0 h" in the can't-happen case where it doesn't parse.
+      end = `for ${parseNumber(w.end.after.hours) ?? w.end.after.hours} h`;
+    }
+    return { inclusion: w.inclusion, label: `${verb} ${start} ${end}` };
+  });
+}
+
 /** Map one observation (selected via ObservationItem) to the shared table row.
  *  Non-sidereal targets have no fixed RA/Dec — shown as "—". `telluricHoursByGroup`
  *  (from telluricGroupHours) maps a group id to its combined science+telluric
@@ -233,6 +286,7 @@ export function mapObservationRow(
     config: modeSuffix ? `${instrument}, ${modeSuffix}` : instrument,
     conditions: formatConditions(o.constraintSet),
     hours: Math.round(hours * 10) / 10,
+    windows: mapTimingWindows(o.schedulingConstraints.timingWindows),
   };
 }
 
