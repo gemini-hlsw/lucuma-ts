@@ -44,6 +44,11 @@ export const CFP_ITEM_FRAGMENT = graphql(`
       nonPartnerDeadline
       proprietaryMonths
       instruments
+      exchangePartners {
+        exchangePartner
+        submissionDeadline
+        submissionDeadlineOverride
+      }
       coordinateLimits {
         north {
           ...SiteLimit
@@ -147,6 +152,12 @@ function mapDetails(c: RawCall): CfpDetails {
       // Enum values, not display labels — the editor checklist compares these
       // against the schema enum (labels are render-time only).
       instruments: [...c.gemini.instruments],
+      // Exchange partners participating in this Gemini call (sc-9610), mapped
+      // like the regular partners above.
+      exchangePartners: c.gemini.exchangePartners.map((p) => ({
+        partner: p.exchangePartner,
+        deadlineOverride: p.submissionDeadlineOverride ?? undefined,
+      })),
       north: mapLimits(c.gemini.coordinateLimits.north),
       south: mapLimits(c.gemini.coordinateLimits.south),
     };
@@ -169,8 +180,12 @@ function mapDetails(c: RawCall): CfpDetails {
  *  Gemini non-partner-PI deadline when that call allows non-partner PIs. */
 function callDeadlines(c: RawCall): string[] {
   const partnerDeadlines = c.partners.map((p) => p.submissionDeadline).filter((d): d is string => d !== null);
+  // Exchange partners (Keck/Subaru) participate in Gemini calls too (sc-9610),
+  // so their windows keep the call open just like the regular partners'.
+  const exchangeDeadlines =
+    c.gemini?.exchangePartners.map((p) => p.submissionDeadline).filter((d): d is string => d !== null) ?? [];
   const nonPartner = c.gemini?.allowsNonPartnerPi && c.gemini.nonPartnerDeadline ? [c.gemini.nonPartnerDeadline] : [];
-  return [...partnerDeadlines, ...nonPartner];
+  return [...partnerDeadlines, ...exchangeDeadlines, ...nonPartner];
 }
 
 function mapLimits(limits: RawLimits): SiteCoordinateLimits {
@@ -247,6 +262,10 @@ function observatoryInput(d: CfpDetails): Pick<CallForProposalsPropertiesInput, 
           proprietaryMonths: d.proprietaryMonths,
           coordinateLimits: { north: coordinateLimitsInput(d.north), south: coordinateLimitsInput(d.south) },
           instruments: [...d.instruments],
+          exchangePartners: d.exchangePartners.map((p) => ({
+            exchangePartner: p.partner,
+            ...(p.deadlineOverride ? { submissionDeadlineOverride: p.deadlineOverride } : {}),
+          })),
         },
       };
     case 'KECK':

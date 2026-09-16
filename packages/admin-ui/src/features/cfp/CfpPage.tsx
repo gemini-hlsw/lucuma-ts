@@ -24,6 +24,9 @@ import {
   type CfpDetails,
   type CfpType,
   cfpTypeLabel,
+  EXCHANGE_PARTNER_LABEL,
+  EXCHANGE_PARTNERS,
+  type ExchangePartner,
   INSTRUMENT_LABEL,
   INSTRUMENTS,
   KECK_INSTRUMENT_LABEL,
@@ -41,6 +44,10 @@ const CFP_TYPES = Object.keys(CFP_TYPE_LABEL) as CfpType[];
 const SUBARU_CFP_TYPES = Object.keys(SUBARU_CFP_TYPE_LABEL) as SubaruCallForProposalsType[];
 const OBSERVATORIES = Object.keys(OBSERVATORY_LABEL) as Observatory[];
 const EMPTY_CFPS: CallForProposals[] = [];
+
+/** The Gemini variant of the details union — the only observatory with exchange
+ *  partners (sc-9610). Narrowed once via the `observatory` tag. */
+type GeminiDetails = Extract<CfpDetails, { observatory: 'GEMINI' }>;
 
 /** Facet options: All / Open / Closed show visible calls; Invisible shows the
  *  soft-deleted ones (sc-9612), which the first three hide. */
@@ -308,6 +315,24 @@ function CfpEditor({
       partners: d.partners.map((x) => (x.partner === p ? { ...x, deadlineOverride: value } : x)),
     }));
   }
+  // Exchange partners (Keck/Subaru) live on the Gemini details block (sc-9610),
+  // so these handlers narrow to the GEMINI variant before patching it. The
+  // Partners table that calls them only renders for Gemini calls.
+  function exchangeEnabled(g: GeminiDetails, p: ExchangePartner): boolean {
+    return g.exchangePartners.some((x) => x.partner === p);
+  }
+  function toggleExchange(g: GeminiDetails, p: ExchangePartner): void {
+    setDetails(g, {
+      exchangePartners: exchangeEnabled(g, p)
+        ? g.exchangePartners.filter((x) => x.partner !== p)
+        : [...g.exchangePartners, { partner: p }],
+    });
+  }
+  function setExchangeDeadline(g: GeminiDetails, p: ExchangePartner, value: string): void {
+    setDetails(g, {
+      exchangePartners: g.exchangePartners.map((x) => (x.partner === p ? { ...x, deadlineOverride: value } : x)),
+    });
+  }
 
   return (
     <Tile title={`Selected Call · ${draft.id} · ${OBSERVATORY_LABEL[details.observatory]}`}>
@@ -477,6 +502,43 @@ function CfpEditor({
                   </tr>
                 );
               })}
+              {/* Exchange partners (Keck/Subaru) — Gemini calls only (sc-9610),
+                  same checkbox + custom-deadline treatment as the partners above. */}
+              {details.observatory === 'GEMINI' && (
+                <>
+                  <tr>
+                    <th
+                      colSpan={2}
+                      className="cfp-partners-group"
+                      title="Exchange partners (Keck, Subaru) that may apply for Gemini time on this call."
+                    >
+                      Exchange
+                    </th>
+                  </tr>
+                  {EXCHANGE_PARTNERS.map((p) => {
+                    const enabled = exchangeEnabled(details, p);
+                    const row = details.exchangePartners.find((x) => x.partner === p);
+                    return (
+                      <tr key={p}>
+                        <td className="cfp-partner-cell" title={`Include ${EXCHANGE_PARTNER_LABEL[p]} in this call.`}>
+                          <Checkbox checked={enabled} onChange={() => toggleExchange(details, p)} />
+                          <span>{EXCHANGE_PARTNER_LABEL[p]}</span>
+                        </td>
+                        <td>
+                          <InputText
+                            value={row?.deadlineOverride ?? ''}
+                            placeholder="default"
+                            disabled={!enabled}
+                            title={`Override ${EXCHANGE_PARTNER_LABEL[p]}'s deadline (blank = use the default).`}
+                            onChange={(e) => setExchangeDeadline(details, p, e.target.value)}
+                            className="cfp-deadline-input"
+                          />
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </>
+              )}
             </tbody>
           </table>
         </div>

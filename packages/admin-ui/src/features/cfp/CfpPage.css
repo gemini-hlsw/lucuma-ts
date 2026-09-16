@@ -127,6 +127,18 @@
   padding: 5px 6px;
 }
 
+/* Section label within the partners table (e.g. "Exchange", sc-9610) —
+   groups the exchange-partner rows under the regular partners. */
+.cfp-partners-group {
+  text-align: left;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.72rem;
+  color: var(--text-color-secondary, #9a9aa2);
+  padding: 12px 6px 4px;
+  border-bottom: 1px solid var(--surface-border, #2a2a2e);
+}
+
 .cfp-partner-cell {
   display: flex;
   align-items: center;
