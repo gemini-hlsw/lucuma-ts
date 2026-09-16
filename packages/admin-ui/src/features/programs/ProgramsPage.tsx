@@ -22,6 +22,7 @@ import {
   allocationsInput,
   mapPrograms,
   programPropertiesInput,
+  proposalTypeChanged,
   proposalTypeInput,
   useAssignContactScientists,
   useCreateProgramNote,
@@ -97,7 +98,9 @@ export default function ProgramsPage(): JSX.Element {
   async function saveProgram(original: Program, draft: Program): Promise<void> {
     await updateProgram({ variables: { programId: draft.id, set: programPropertiesInput(draft) } });
 
-    await updateProposalType({ variables: { programId: draft.id, gemini: proposalTypeInput(draft) } });
+    if (proposalTypeChanged(original, draft)) {
+      await updateProposalType({ variables: { programId: draft.id, gemini: proposalTypeInput(draft) } });
+    }
 
     if (JSON.stringify(draft.allocations) !== JSON.stringify(original.allocations)) {
       await setAllocations({ variables: { programId: draft.id, allocations: allocationsInput(draft.allocations) } });

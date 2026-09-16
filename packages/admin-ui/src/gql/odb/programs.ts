@@ -175,6 +175,21 @@ export function useUpdateProposalType() {
   return useMutation(UPDATE_PROPOSAL_TYPE_MUTATION);
 }
 
+/** Whether an edit touched anything `proposalTypeInput` sends. The proposal
+ *  type is a `oneOf`, so there is no "leave it as it is" value: sending the
+ *  block at all rewrites the proposal's type. Since the editor collapses every
+ *  subtype to Queue or Classical, sending it on an untouched Director's Time
+ *  (or Poor Weather, Large Program, …) proposal would rewrite it as a Queue one
+ *  and the ODB rejects that against a Director's Time call (sc-10439). */
+export function proposalTypeChanged(original: Program, draft: Program): boolean {
+  return (
+    original.programClass !== draft.programClass ||
+    original.tooStatus !== draft.tooStatus ||
+    original.minPercentTime !== draft.minPercentTime ||
+    original.considerForBand3 !== draft.considerForBand3
+  );
+}
+
 /** ToO / minPercentTime / band-3 edits → `GeminiProposalTypeInput` (a oneOf),
  *  keyed by the program's class. Only Queue proposals carry ToO and band-3.
  *  The ODB derives `tooActivationCeiling` from the explicit ceiling when one is
