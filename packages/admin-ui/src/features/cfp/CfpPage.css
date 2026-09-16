@@ -70,31 +70,11 @@
   font-size: 0.88rem;
 }
 
-/* The site labels and limits now fit their column at every width (sc-9098), so
- * this scroller is only a backstop for a narrow column or a large text size.
- * The scrollbar is themed to match the dark UI (Explore styles it globally; we
- * scope it to this one scroller) using the admin surface tokens. */
+/* The site labels and limits fit their column at every width (sc-9098), so this
+ * scroller is only a backstop for a narrow column or a large text size. The
+ * scrollbar itself is themed app-wide in styles/main.css. */
 .cfp-coords-scroll {
   overflow-x: auto;
-  scrollbar-width: thin;
-  scrollbar-color: var(--surface-border, #2a2a2e) transparent;
-}
-
-.cfp-coords-scroll::-webkit-scrollbar {
-  height: 8px;
-}
-
-.cfp-coords-scroll::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.cfp-coords-scroll::-webkit-scrollbar-thumb {
-  background: var(--surface-border, #2a2a2e);
-  border-radius: 4px;
-}
-
-.cfp-coords-scroll::-webkit-scrollbar-thumb:hover {
-  background: var(--text-color-secondary, #9a9aa2);
 }
 
 .cfp-coords {
