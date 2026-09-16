@@ -70,6 +70,35 @@
   font-size: 0.88rem;
 }
 
+/* The coordinate-limits table has fixed-width numeric inputs, so it can't
+ * shrink with its grid column. Let it scroll within the column instead of
+ * overflowing into the Partners column at narrower widths (sc-9098) — the row
+ * stays self-contained the way the Time Awards grid does in the Programs view.
+ * The scrollbar is themed to match the dark UI (Explore styles it globally; we
+ * scope it to this one scroller) using the admin surface tokens. */
+.cfp-coords-scroll {
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--surface-border, #2a2a2e) transparent;
+}
+
+.cfp-coords-scroll::-webkit-scrollbar {
+  height: 8px;
+}
+
+.cfp-coords-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.cfp-coords-scroll::-webkit-scrollbar-thumb {
+  background: var(--surface-border, #2a2a2e);
+  border-radius: 4px;
+}
+
+.cfp-coords-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--text-color-secondary, #9a9aa2);
+}
+
 .cfp-coords {
   border-collapse: collapse;
   font-size: 0.84rem;
