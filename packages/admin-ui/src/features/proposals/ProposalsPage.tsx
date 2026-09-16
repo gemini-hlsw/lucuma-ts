@@ -1,4 +1,4 @@
-import { type Labelled, NumberInput } from '@gemini-hlsw/lucuma-common-ui';
+import { isNotNullish, type Labelled, NumberInput } from '@gemini-hlsw/lucuma-common-ui';
 import { AutoComplete } from 'primereact/autocomplete';
 import { Dropdown } from 'primereact/dropdown';
 import { InputText } from 'primereact/inputtext';
@@ -10,13 +10,7 @@ import { TimeAwardsGrid } from '@/components/TimeAwardsGrid';
 import { useToast } from '@/components/toastContext';
 import { friendlyError } from '@/gql/errors';
 import type { ProgramPropertiesInput } from '@/gql/odb/gen/graphql';
-import {
-  allocationsInput,
-  useAddProgramUser,
-  useLinkUser,
-  useSetAllocations,
-  useUpdateProgram,
-} from '@/gql/odb/programs';
+import { allocationsInput, useAssignContactScientists, useSetAllocations, useUpdateProgram } from '@/gql/odb/programs';
 import { mapProposals, useProposals, useSetProposalStatus } from '@/gql/odb/proposals';
 import { mapRosterUsers, useUsers } from '@/gql/sso/roster';
 import {
@@ -90,9 +84,8 @@ export default function ProposalsPage(): JSX.Element {
   const [setProposalStatus, { loading: settingStatus }] = useSetProposalStatus();
   const [setAllocations, { loading: settingAllocations }] = useSetAllocations();
   const [updateProgram, { loading: updatingProgram }] = useUpdateProgram();
-  const [addProgramUser, { loading: addingUser }] = useAddProgramUser();
-  const [linkUser, { loading: linkingUser }] = useLinkUser();
-  const resolving = settingStatus || settingAllocations || updatingProgram || addingUser || linkingUser;
+  const { assign: assignContactScientists, loading: assigningContacts } = useAssignContactScientists();
+  const resolving = settingStatus || settingAllocations || updatingProgram || assigningContacts;
 
   const [statusFilter, setStatusFilter] = useState<ProposalStatus | typeof ALL>(ALL);
   const [typeFilter, setTypeFilter] = useState<SpecialProposalType | typeof ALL>(ALL);
@@ -147,14 +140,9 @@ export default function ProposalsPage(): JSX.Element {
           await setAllocations({ variables: { programId: p.id, allocations } });
         }
         await updateProgram({ variables: { programId: p.id, set } });
-        // Assign the drafted contact scientists: one SUPPORT ProgramUser per
-        // roster pick, linked to its user (the same add+link flow the Programs
-        // view uses). Only additions are made here — this is a fresh award.
-        for (const contact of award.contactScientists.filter((c) => c.userId)) {
-          const res = await addProgramUser({ variables: { programId: p.id } });
-          const programUserId = res.data?.addProgramUser.programUser.id;
-          if (programUserId) await linkUser({ variables: { programUserId, userId: contact.userId ?? '' } });
-        }
+        // Assign the drafted contact scientists. Only additions are made here —
+        // this is a fresh award, so there is nothing to remove.
+        await assignContactScientists(p.id, award.contactScientists.map((c) => c.userId).filter(isNotNullish));
         toast.success('Proposal accepted', p.reference);
       } else {
         await setProposalStatus({ variables: { programId: p.id, status: 'NOT_ACCEPTED' } });
