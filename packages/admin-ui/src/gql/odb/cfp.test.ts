@@ -407,6 +407,52 @@ describe(createCfpInput, () => {
     expect(input.keck).toEqual({ instruments: ['HIRES'] }); // limits still blank → omitted
   });
 
+  it('omits a blank Gemini site on its own, so the ODB still derives it', () => {
+    // The ODB derives a site it isn't given, but stores an all-zero one
+    // literally — sending both would pin the untouched site to RA 0–0 / Dec
+    // 0°–0°, a site that accepts nothing.
+    const northOnly: CallForProposals = {
+      ...blankCall('GEMINI'),
+      details: {
+        observatory: 'GEMINI',
+        type: 'REGULAR_SEMESTER',
+        proprietaryMonths: 0,
+        allowsNonPartnerPi: false,
+        instruments: [],
+        exchangePartners: [],
+        north: { raStart: 4, raEnd: 10, decStart: -10, decEnd: 70 },
+        south: { raStart: 0, raEnd: 0, decStart: 0, decEnd: 0 },
+      },
+    };
+    const limits = createCfpInput(northOnly).gemini?.coordinateLimits;
+    expect(limits?.north).toEqual({
+      raStart: { hours: 4 },
+      raEnd: { hours: 10 },
+      decStart: { degrees: -10 },
+      decEnd: { degrees: 70 },
+    });
+    expect(limits?.south).toBeUndefined();
+  });
+
+  it('sends both Gemini sites once both are filled in', () => {
+    const bothSites: CallForProposals = {
+      ...blankCall('GEMINI'),
+      details: {
+        observatory: 'GEMINI',
+        type: 'REGULAR_SEMESTER',
+        proprietaryMonths: 0,
+        allowsNonPartnerPi: false,
+        instruments: [],
+        exchangePartners: [],
+        north: { raStart: 4, raEnd: 10, decStart: -10, decEnd: 70 },
+        south: { raStart: 15, raEnd: 12, decStart: -90, decEnd: 28 },
+      },
+    };
+    const limits = createCfpInput(bothSites).gemini?.coordinateLimits;
+    expect(limits?.north).toMatchObject({ raStart: { hours: 4 } });
+    expect(limits?.south).toMatchObject({ raStart: { hours: 15 }, decEnd: { degrees: 28 } });
+  });
+
   it('sends coordinate limits once the user enters non-zero bounds', () => {
     const draft: CallForProposals = {
       ...blankCall('KECK'),

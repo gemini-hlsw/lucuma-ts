@@ -351,6 +351,7 @@ function blankDetails(observatory: Observatory): CfpDetails {
         proprietaryMonths: 0,
         allowsNonPartnerPi: false,
         instruments: [],
+        exchangePartners: [],
         north: BLANK_LIMITS,
         south: BLANK_LIMITS,
       };
@@ -402,9 +403,7 @@ export function createCfpInput(draft: CallForProposals): CallForProposalsPropert
             type: d.type,
             ...(d.proprietaryMonths > 0 ? { proprietaryMonths: d.proprietaryMonths } : {}),
             ...instruments(d.instruments),
-            ...(isBlankLimits(d.north) && isBlankLimits(d.south)
-              ? {}
-              : { coordinateLimits: { north: coordinateLimitsInput(d.north), south: coordinateLimitsInput(d.south) } }),
+            ...geminiLimitsPatch(d.north, d.south),
           },
         }
       : d.observatory === 'KECK'
@@ -432,6 +431,19 @@ export function createCfpInput(draft: CallForProposals): CallForProposalsPropert
  *  left the limits blank (all-zero) so the ODB derives them. */
 function siteLimitsPatch(limits: SiteCoordinateLimits) {
   return isBlankLimits(limits) ? {} : { coordinateLimits: coordinateLimitsInput(limits) };
+}
+
+/** Gemini's two-site `coordinateLimits` patch. Each site is omitted on its own
+ *  when left blank, since the ODB derives a missing site from the active period
+ *  but stores an all-zero one literally — sending both would pin the untouched
+ *  site to RA 0–0 / Dec 0°–0°, a site that accepts nothing. Omitted entirely
+ *  when neither site was filled in. */
+function geminiLimitsPatch(north: SiteCoordinateLimits, south: SiteCoordinateLimits) {
+  const coordinateLimits = {
+    ...(isBlankLimits(north) ? {} : { north: coordinateLimitsInput(north) }),
+    ...(isBlankLimits(south) ? {} : { south: coordinateLimitsInput(south) }),
+  };
+  return 'north' in coordinateLimits || 'south' in coordinateLimits ? { coordinateLimits } : {};
 }
 
 /** All-zero coordinate bounds mean "unset" on a new call — the sentinel that

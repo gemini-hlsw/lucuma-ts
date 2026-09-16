@@ -28,6 +28,7 @@ const cfp = (id: string): RawCfp => ({
     nonPartnerDeadline: null,
     proprietaryMonths: 12,
     instruments: [],
+    exchangePartners: [],
     coordinateLimits: {
       __typename: 'SiteCoordinateLimits',
       north: {

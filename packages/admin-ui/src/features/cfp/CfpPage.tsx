@@ -115,7 +115,14 @@ export default function CfpPage(): JSX.Element {
   // A brand-new call being drafted before it's created (sc-10136). While set,
   // the editor shows this blank draft with a Create button instead of the
   // selected ODB-backed call; creating clears it and selects the real call.
-  const [draftCall, setDraftCall] = useState<CallForProposals | null>(null);
+  // `seq` rises with every New click and keys the editor, so each click remounts
+  // it on a fresh draft — keying by observatory alone let an abandoned draft
+  // reappear when New was clicked twice for the same observatory.
+  const [newDraft, setNewDraft] = useState<{ seq: number; call: CallForProposals } | null>(null);
+
+  function startNewDraft(observatory: Observatory): void {
+    setNewDraft((prev) => ({ seq: (prev?.seq ?? 0) + 1, call: blankCall(observatory) }));
+  }
 
   async function save(draft: CallForProposals): Promise<void> {
     try {
@@ -134,7 +141,7 @@ export default function CfpPage(): JSX.Element {
       const res = await createCfp({ variables: { set } });
       const newId = res.data?.createCallForProposals.callForProposals?.id;
       if (newId) {
-        setDraftCall(null);
+        setNewDraft(null);
         setSelectedId(newId);
       }
       toast.success(`Call ${verb}`, newId ?? '');
@@ -190,10 +197,10 @@ export default function CfpPage(): JSX.Element {
               // Open a blank draft in the editor (sc-10136) — nothing is created
               // until the user fills the fields they want and clicks Create. The
               // default click drafts a Gemini call; the menu picks an observatory.
-              onClick={() => setDraftCall(blankCall('GEMINI'))}
+              onClick={() => startNewDraft('GEMINI')}
               model={OBSERVATORIES.map((o) => ({
                 label: `${OBSERVATORY_LABEL[o]} call`,
-                command: () => setDraftCall(blankCall(o)),
+                command: () => startNewDraft(o),
               }))}
               tooltip="Start a brand-new Call for Proposals — opens a blank editor; click for a Gemini call, or pick an observatory."
               tooltipOptions={{ position: 'bottom' }}
@@ -289,16 +296,16 @@ export default function CfpPage(): JSX.Element {
         </DataTable>
       </Tile>
 
-      {draftCall ? (
+      {newDraft ? (
         <CfpEditor
-          // Keyed by observatory so picking a different one from the New menu
-          // remounts the editor with that observatory's blank draft.
-          key={`new-${draftCall.details.observatory}`}
-          original={draftCall}
+          // Keyed by the draft's sequence, so every New click — same observatory
+          // or not — remounts the editor on that click's blank draft.
+          key={`new-${String(newDraft.seq)}`}
+          original={newDraft.call}
           mode="create"
           saving={saving}
           onSave={(d) => create(createCfpInput(d), 'created')}
-          onCancel={() => setDraftCall(null)}
+          onCancel={() => setNewDraft(null)}
         />
       ) : (
         original && <CfpEditor key={original.id} original={original} mode="edit" saving={saving} onSave={save} />
