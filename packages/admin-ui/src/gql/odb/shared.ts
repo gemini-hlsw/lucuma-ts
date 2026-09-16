@@ -226,13 +226,31 @@ export function observationDigestHours(o: ObservationItemFragment): number | nul
   return parseNumber(hours) ?? null;
 }
 
-/** Render an ODB Timestamp (canonical ISO-8601, always "…Z") to minute
- *  precision in UTC, e.g. "2024-01-30 14:55 UTC". Scheduling windows are
- *  inherently UTC (Explore shows them "… UTC"); the browser-local
- *  formatDateTime would silently shift them by the viewer's offset. Slicing
- *  the canonical form is exact and avoids a Date round-trip. */
+/** Built once and reused: constructing an Intl.DateTimeFormat is expensive
+ *  relative to formatting, and this runs per timing window per observation.
+ *  Read through formatToParts rather than format, so the "yyyy-MM-dd HH:mm"
+ *  layout is ours rather than a locale's incidental ordering. */
+const UTC_MINUTE_FORMAT = new Intl.DateTimeFormat('en-US', {
+  timeZone: 'UTC',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  hour12: false,
+});
+
+/** Render an ODB Timestamp to minute precision in UTC, e.g.
+ *  "2024-01-30 14:55 UTC". Scheduling windows are inherently UTC (Explore shows
+ *  them "… UTC"); common-ui's formatDateTime renders in the browser's zone and
+ *  would silently shift every window by the viewer's offset — the same instant
+ *  reads 04:55 in Hawaii and 23:55 in Tokyo. */
 function formatUtcMinute(iso: string): string {
-  return `${iso.slice(0, 10)} ${iso.slice(11, 16)} UTC`;
+  const parts = new Map(UTC_MINUTE_FORMAT.formatToParts(new Date(iso)).map((p) => [p.type, p.value]));
+  // Every part requested above is always emitted; the "" can only be reached if
+  // that option list and these lookups disagree.
+  const at = (type: Intl.DateTimeFormatPartTypes): string => parts.get(type) ?? '';
+  return `${at('year')}-${at('month')}-${at('day')} ${at('hour')}:${at('minute')} UTC`;
 }
 
 /** Format an observation's scheduling windows for display (sc-9621), mirroring
@@ -250,6 +268,9 @@ function mapTimingWindows(
     } else if (w.end.__typename === 'TimingWindowEndAt') {
       end = `through ${formatUtcMinute(w.end.atUtc)}`;
     } else {
+      // Written out rather than via Intl.NumberFormat's `unit: 'hour'`, which
+      // renders "3 hr"/"3 hours"; Explore writes durations "N h" and these
+      // windows are read alongside it.
       // TimeSpan.hours is a schema-non-null number (string|number scalar);
       // normalize it, but fall back to the raw value rather than a misleading
       // "0 h" in the can't-happen case where it doesn't parse.
