@@ -84,6 +84,44 @@ describe('Instrument', () => {
       expect(response.data?.instrument?.extraParams).toStrictEqual({ ifu: true });
     });
 
+    test('defaults to an empty extraParams match when extraParams is not given', async ({ executeGraphql, prisma }) => {
+      // Insert a more-recent row with non-empty extraParams for the same name/issPort/wfs, so
+      // an unfiltered `findFirst` (ordered by createdAt desc) would pick it over the base config.
+      await prisma.instrument.create({
+        data: {
+          name: 'GMOS_SOUTH',
+          issPort: 3,
+          wfs: 'OIWFS',
+          isTemporary: false,
+          extraParams: { foo: 'bar' },
+          ao: false,
+          originX: 0.0,
+          originY: 0.0,
+          focusOffset: 0.0,
+          iaa: 0.0,
+        },
+      });
+
+      const response = await executeGraphql<QueryinstrumentArgs, { instrument: InstrumentConfig }>({
+        query: `#graphql
+          query instrument($name: Instrument!, $issPort: Int!, $wfs: WfsType!) {
+            instrument(name: $name, issPort: $issPort, wfs: $wfs) {
+              name
+              issPort
+              wfs
+              extraParams
+            }
+          }`,
+        variables: { wfs: 'OIWFS', name: 'GMOS_SOUTH', issPort: 3 },
+      });
+      expect(response.data?.instrument).toStrictEqual({
+        name: 'GMOS_SOUTH',
+        issPort: 3,
+        wfs: 'OIWFS',
+        extraParams: {},
+      });
+    });
+
     test('gets instruments without extraParams', async ({ executeGraphql }) => {
       const response = await executeGraphql<QueryinstrumentArgs, { instrument: InstrumentConfig }>({
         query: `#graphql
