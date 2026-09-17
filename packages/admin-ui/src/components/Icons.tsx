@@ -19,6 +19,7 @@ import {
   faPlus,
   faRightFromBracket,
   faRightToBracket,
+  faRotate,
   faSpinnerThird,
   faTriangleExclamation,
   faUpload,
@@ -53,6 +54,7 @@ export const Copy = iconFactory(faCopy);
 export const Lock = iconFactory(faLock);
 export const PaperPlane = iconFactory(faPaperPlane);
 export const Plus = iconFactory(faPlus);
+export const Rotate = iconFactory(faRotate);
 export const Search = iconFactory(faMagnifyingGlass);
 export const SignIn = iconFactory(faRightToBracket);
 export const SignOut = iconFactory(faRightFromBracket);
