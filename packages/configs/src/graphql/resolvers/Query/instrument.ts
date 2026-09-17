@@ -9,7 +9,7 @@ export const instrument: NonNullable<QueryResolvers['instrument']> = async (_par
 
   const baseWhereArgs = {
     ...args,
-    extraParams: createExtraParamsFilter(args.extraParams),
+    extraParams: createExtraParamsFilter(args.extraParams ?? {}),
   } satisfies InstrumentWhereInput;
 
   let instrument = await prisma.instrument.findFirst({
@@ -75,8 +75,8 @@ export const instrument: NonNullable<QueryResolvers['instrument']> = async (_par
 };
 
 export function createExtraParamsFilter(args: unknown): JsonFilter<'Instrument'> | undefined {
-  return Object.entries(args ?? {}).map(([key, value]) => ({
-    path: [key],
-    equals: value as InputJsonValue,
-  }))[0];
+  if (args === null || args === undefined) {
+    return undefined;
+  }
+  return { equals: args as InputJsonValue };
 }
