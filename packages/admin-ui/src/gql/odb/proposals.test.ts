@@ -23,6 +23,7 @@ function observation(id: string, targetName: string, hours: number | null): Obse
       skyBackground: 'GRAY',
       waterVapor: 'WET',
     },
+    schedulingConstraints: { __typename: 'SchedulingConstraints', timingWindows: [] },
     targetEnvironment: {
       __typename: 'TargetEnvironment',
       firstScienceTarget: { __typename: 'Target', id: `t-${id}`, name: targetName, sidereal: null },

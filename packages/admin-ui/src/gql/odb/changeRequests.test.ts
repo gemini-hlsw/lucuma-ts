@@ -131,6 +131,7 @@ describe(observationsByIdFrom, () => {
           skyBackground: 'GRAY',
           waterVapor: 'WET',
         },
+        schedulingConstraints: { __typename: 'SchedulingConstraints', timingWindows: [] },
         targetEnvironment: {
           __typename: 'TargetEnvironment',
           firstScienceTarget: {
@@ -159,6 +160,7 @@ describe(observationsByIdFrom, () => {
       config: 'GMOS-N, LongSlit',
       conditions: 'IQ<0.8″ / CC70 / SB80 / WV100',
       hours: 0,
+      windows: [],
     });
     expect(out.get('missing')).toBeUndefined();
   });
