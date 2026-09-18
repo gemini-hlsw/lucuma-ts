@@ -41,18 +41,22 @@
   --spacing: 3.5px;
 
   /* DESIGN.md's whole type scale, in rem so it scales with the reader's own browser setting. The
-     reset drops Tailwind's other steps, so these four are the only font sizes in the system, and
+     reset drops Tailwind's other steps, so these six are the only font sizes in the system, and
      each carries the line height Tailwind pairs with it. */
   /* stylelint-disable custom-property-pattern */
   --text-*: initial;
-  --text-2xs: 0.625rem; /* 10px - numeric axis ticks alone; see DESIGN.md before reaching for it */
-  --text-2xs--line-height: 0.875rem; /* 14px */
-  --text-xs: 0.75rem; /* 12px - dense surfaces, and the floor for informative text */
-  --text-xs--line-height: 1rem; /* 16px */
-  --text-sm: 0.875rem; /* 14px - table cells, controls, prose */
-  --text-sm--line-height: 1.25rem; /* 20px */
-  --text-base: 1rem; /* 16px - one page title per destination */
-  --text-base--line-height: 1.5rem; /* 24px */
+  --text-2xs: 0.625rem;
+  --text-2xs--line-height: 0.875rem;
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1rem;
+  --text-sm: 0.875rem;
+  --text-sm--line-height: 1.25rem;
+  --text-base: 1rem;
+  --text-base--line-height: 1.5rem;
+  --text-lg: 1.125rem;
+  --text-lg--line-height: 1.625rem;
+  --text-2xl: 1.5rem;
+  --text-2xl--line-height: 2rem;
   /* stylelint-enable custom-property-pattern */
 }
 

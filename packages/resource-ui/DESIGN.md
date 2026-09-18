@@ -35,6 +35,14 @@ typography:
     fontSize: '0.875rem'
     fontWeight: 400
     lineHeight: '1.25rem'
+  display:
+    fontSize: '1.5rem'
+    fontWeight: 600
+    lineHeight: '2rem'
+  section:
+    fontSize: '1.125rem'
+    fontWeight: 600
+    lineHeight: '1.625rem'
   title:
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"'
     fontSize: '1rem'
@@ -45,6 +53,7 @@ typography:
     lineHeight: '1rem'
   tick:
     fontSize: '0.625rem'
+    fontWeight: 400
     lineHeight: '0.875rem'
   wordmark:
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"'
@@ -238,13 +247,20 @@ naming; data sits at body size in sentence case.
 
 ### The scale
 
-Four steps, on the browser's own 16px root, where every one lands on a whole pixel:
-16 / 14 / 12 / 10px, under Tailwind's t-shirt names. Tailwind's remaining steps are switched off in
-`@theme`, which is what keeps a fifth size from arriving as `text-lg`. Every role below body size
-is a token, so a call site says the role:
+Six steps, on the browser's own 16px root, where every one lands on a whole pixel:
+24 / 18 / 16 / 14 / 12 / 10px, under Tailwind's t-shirt names. The reading ladder is arithmetic at
++2px - 10, 12, 14, 16 - and `lg` at 18px continues it exactly; `2xl` at 24px breaks the arithmetic
+on purpose, because a size read from a step back has to separate itself from the sizes read at the
+keyboard rather than extend them. `text-xl` (20px) is deliberately absent - nothing sits between
+Section and Display, so 20px would be a step with no role. Line heights tighten as the size grows -
+1.5 at Title, 1.44 at Section, 1.33 at Display - and every one lands on a whole even pixel.
+Tailwind's remaining steps are switched off in `@theme`, which is what keeps a seventh size from
+arriving as `text-xl`. Every role below body size is a token, so a call site says the role:
 
 | Token                       | Size            | Role, and the rule for using it                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | --------------------------- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `--text-2xl` / `text-2xl`   | 1.5rem (24px)   | **Display** (600). The single glanceable fact a destination exists to answer, at most one per page, read from a step back rather than at the keyboard. A destination with no such fact does not reach for it.                                                                                                                                                                                                                                                                              |
+| `--text-lg` / `text-lg`     | 1.125rem (18px) | **Section** (600). Head a section within a destination, where a page has more than one and the reader has to find the right one. Never a substitute for Title, which names the destination itself.                                                                                                                                                                                                                                                                                         |
 | `--text-base` / `text-base` | 1rem (16px)     | **Title** (600). Name the destination the reader is on, once per page, in `PageHeader`, and nothing else. Exactly one element on a page may carry it.                                                                                                                                                                                                                                                                                                                                      |
 | `--text-sm` / `text-sm`     | 0.875rem (14px) | **Body** (400). Set anything a reader reads as words - table cells, controls, prose, messages, empty states - at this, and reach for it by default. It is set once on `body`, so an unclassed surface inherits it rather than the root.                                                                                                                                                                                                                                                    |
 | `--text-xs` / `text-xs`     | 0.75rem (12px)  | **Dense** (400-700). The chrome's own size and every dense data surface - buttons, page selects, the masthead right cluster, sidebar links, segmented controls, chart annotations, table captions, night card metadata. Pack a surface tighter than Body only where the reader is scanning rather than reading, and never go smaller. The weight is the call site's, since a chart label and a button want different emphasis at the one size. **This is the floor for informative text.** |
@@ -256,10 +272,20 @@ sits on. A bar label carries instrument identity and a gutter label carries a po
 unique facts and both stay at Dense. Dense as the floor matches Primer, Carbon, Atlassian, Fluent
 and Grafana, and the Fermilab ACORN control-room guide's 12 CSS px seated.
 
-There is no fifth token, and `text-lg` and above do not exist - `--text-*: initial` in `@theme`
-removes the rest of Tailwind's scale so the four above are the whole system. A new role is added
-in `@theme` alone, and only under a t-shirt name: `src/test/textTokens.test.ts` compiles the
-stylesheet and fails if a declared role is one `tailwind-merge` would read as a colour.
+No size enters the scale without a role this document names and a surface that draws it. Four steps
+hold both halves. Display and Section hold the role and not yet the surface: declared ahead of
+demand, each earns its second half at its first call site, and neither is precedent for a seventh,
+which needs both up front. The gate is what holds - a count would only tell whoever needs a seventh
+to break the rule or reach for an arbitrary value instead.
+
+`text-xl` and `text-3xl` upward do not exist: `--text-*: initial` in `@theme` removes every Tailwind
+step these six do not reinstate, so those classes compile to nothing and the text quietly renders at
+whatever it inherits. Nothing catches that - no build error, no lint, no visible break - so the six
+steps are the only guard. An arbitrary size like `text-[20px]` is unchecked in the same way and does
+compile, which makes it the quieter mistake: a size only its own component knows, off the scale
+every other surface reads from. `src/test/textTokens.test.ts` asserts that tailwind-merge reads
+every `@theme` text role as a size, and fails on one it would take for a colour - which a merge
+drops with nothing to show for it.
 
 `DENSE` and `TICK` in `features/timeline/timelineOptions.ts` mirror `--text-xs` and `--text-2xs`
 for the chart options, which need the number rather than the `var()` - a label measuring NaN

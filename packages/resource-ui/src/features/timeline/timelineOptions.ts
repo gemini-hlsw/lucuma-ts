@@ -55,7 +55,6 @@ const INSTRUMENT_INK_LIGHT = 'var(--instrument-ink-light)';
 /** Legible only on the bright instrument fill it was chosen for; light ink reads on every chrome fill. */
 const INSTRUMENT_INK_DARK = 'var(--instrument-ink-dark)';
 
-/** Whichever ink clears 4.5:1 on that fill. */
 const INSTRUMENT_INK = {
   ACQ_CAM: INSTRUMENT_INK_DARK,
   ALOPEKE: INSTRUMENT_INK_DARK,
@@ -260,23 +259,21 @@ export const DENSE = `${String(DENSE_REM)}rem`;
 /** DESIGN.md's tick tier, mirroring `--text-2xs`: numeric axis ticks and nothing else. */
 export const TICK = '0.625rem';
 
-/** A label the reader is meant to read: row headings, band names, bar labels. */
+/** A label the reader is meant to read, rather than the chart's own chrome. */
 export const CHART_LABEL = { color: 'var(--timeline-text)', fontSize: DENSE, fontWeight: '600' } as const;
 
-/** A label that names the chart's own scaffolding rather than the schedule: axis headings, captions. */
+/** A label that names the chart's own scaffolding rather than the schedule. */
 export const MUTED_LABEL = { color: 'var(--timeline-muted-text)', fontSize: DENSE } as const;
 
-/** A numeric axis tick, the only thing DESIGN.md lets down to the tick tier. */
 export const MUTED_TICK = { color: 'var(--timeline-muted-text)', fontSize: TICK } as const;
 
 /** The now marker's own label, which takes the marker's colour so the two read as one thing. */
 export const NOW_LABEL = { color: 'var(--schedule-today)', fontSize: DENSE, fontWeight: '700' } as const;
 
 /**
- * Advance of semibold label type, in px per rem of font size, and an over-estimate on purpose: a
- * label the estimate calls narrower than it draws gets drawn and clipped. The short all-caps
- * instrument names are the widest per character, so they set it, not the sentence-shaped labels.
- * It bounds label-shaped text, not any string - a closure reason in capitals can still beat it.
+ * Advance of semibold label type, in px per rem of font size - over-estimated on purpose because an
+ * under-estimate clips, set by the short all-caps instrument names that are widest per character,
+ * and a bound on label-shaped text rather than any string.
  */
 export const LABEL_ADVANCE_PER_REM = 12.4;
 

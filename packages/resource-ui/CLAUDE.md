@@ -341,31 +341,16 @@ only when the override is one instance rather than a selector the theme already 
 left in this package is `StatusTag`'s muted Spare tag, picked out by utility classes at 0-1-0 that cannot
 otherwise reach `.dark .p-tag`'s 0-2-0 fill and ink.
 
-**Type sizes come from the scale, never from a literal.** `global.css`'s `@theme` owns all four -
-`--text-2xs`, `--text-xs`, `--text-sm`, `--text-base` - and resets the rest of Tailwind's namespace,
-so `text-lg` and above generate nothing at all. Use the step's name; a component saying
-`text-[0.6rem]` is a size only it knows. An `aria-hidden` icon glyph is the one thing sized off the
-scale, because it is measured against the label beside it rather than the root - and it takes that
-size from **FontAwesome's own `size` prop** (`size="sm"` = 0.875em, `size="xs"` = 0.75em, omitted =
-1em), never a class of ours. FA's scale is already em, and each step carries the `line-height` and
-`vertical-align` correction that keeps the glyph on the text's baseline; a hand-rolled em utility
-gets the size right and the baseline wrong. **In the masthead, add `widthAuto`**: FontAwesome 7
-pads every icon to a fixed 1.25em canvas, and that padding is width the bar cannot spare (see
-`.tickets/sc-tbd-masthead-text-resize.md`). Leave it fixed in the app menu, where the padding is
-what aligns the icon column.
-**A new `@theme` role must take a t-shirt name**, or `tailwind-merge` reads it as a colour and
-silently drops it when a colour follows - `src/test/textTokens.test.ts` compiles the stylesheet and
-fails on a name it cannot classify.
-Chart options cannot read a `var()` (the fit maths needs the number, and a label measuring
-NaN never draws), so `timelineOptions.ts` mirrors two of them as `DENSE` and `TICK` and every chart
-imports them from there - pinned to the tokens by `src/test/cssMirrors.test.ts`, since a mirror that
-can move on one side is the whole risk.
+**The type scale and the rem-versus-px rule are DESIGN.md's** - the steps and their roles, the
+`DENSE`/`TICK` chart mirrors, and which values grow with the reader's own font-size setting. One
+mechanic it does not carry:
 
-**The app sets no root font size**, so a reader's browser font-size setting scales the type.
-Density lives in `--spacing` (3.5px) and in the px chrome values, which is why a rem arriving on a
-gap, a padding or a border width is a bug rather than a style choice. A width or height whose job
-is to hold text goes the other way and is sized in rem, so the words can grow their box - the
-chart gutter in `features/timeline/timelineOptions.ts` derives itself that way.
+- **An `aria-hidden` icon glyph takes its size from FontAwesome's own `size` prop** (`size="sm"` =
+  0.875em, `size="xs"` = 0.75em, omitted = 1em), never a class of ours: FA's scale is already em and
+  each step carries the `line-height` and `vertical-align` correction that keeps the glyph on the
+  text's baseline, which a hand-rolled em utility gets wrong. **In the masthead, add `widthAuto`** -
+  FontAwesome 7 pads every icon to a fixed 1.25em canvas and the bar cannot spare that width. Leave
+  it padded in the app menu, where it aligns the icon column.
 
 Prefer Tailwind utilities over CSS files except where Tailwind can't express it (complex selectors,
 keyframes, third-party overrides).

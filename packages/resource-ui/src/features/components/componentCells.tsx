@@ -6,7 +6,6 @@ import type { FinderRow } from '@/domain/componentFinder';
 
 import { componentStatus } from './componentLabels';
 
-/** The name a reader knows the piece by, over the codes ICTD hands them. */
 export function ComponentIdentityCell({ row }: { row: FinderRow }): JSX.Element {
   return (
     <span className="flex flex-col">
