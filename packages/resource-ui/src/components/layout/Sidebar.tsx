@@ -8,7 +8,7 @@ import { carrySelection, searchString } from '@/app/carriedSelection';
 import type { SidebarMenuItem } from './SidebarMenu';
 import { SIDEBAR_MENU_SECTIONS } from './SidebarMenu';
 
-const ITEM_BASE = 'flex items-center gap-2 border-l-2 px-4 py-2 text-sm';
+const ITEM_BASE = 'flex items-center gap-2 border-l-2 px-4 py-2 text-xs';
 
 function itemClassName(isActive: boolean, isDisabled: boolean): string {
   if (isDisabled) {
@@ -26,8 +26,7 @@ function itemClassName(isActive: boolean, isDisabled: boolean): string {
 function SidebarItem({ item }: { item: SidebarMenuItem }): JSX.Element {
   const [params] = useSearchParams();
   const search = searchString(carrySelection(params));
-  const icon =
-    item.icon === undefined ? null : <FontAwesomeIcon icon={item.icon} className="h-4 w-4" aria-hidden="true" />;
+  const icon = item.icon === undefined ? null : <FontAwesomeIcon icon={item.icon} size="sm" aria-hidden="true" />;
 
   if (item.disabled === true) {
     return (
@@ -57,7 +56,9 @@ export default function Sidebar(): JSX.Element {
           <div key={section.label || index}>
             {section.label !== '' && (
               <div className="px-4 pt-4 pb-2">
-                <div className="font-mono text-xs tracking-widest text-foreground-muted uppercase">{section.label}</div>
+                <div className="font-mono text-xs tracking-widest text-foreground-secondary uppercase">
+                  {section.label}
+                </div>
               </div>
             )}
             {section.items.map((item) => (

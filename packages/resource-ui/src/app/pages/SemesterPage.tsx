@@ -92,8 +92,8 @@ export default function SemesterPage(): JSX.Element {
           <>
             <LabelledControl
               label="Semester"
-              className="flex flex-col gap-1"
-              labelClassName="text-[0.65rem] tracking-wide text-foreground uppercase"
+              className="flex min-w-0 flex-col gap-1"
+              labelClassName="text-xs font-semibold tracking-wider text-foreground uppercase"
             >
               {(id) => (
                 <Dropdown
@@ -110,7 +110,7 @@ export default function SemesterPage(): JSX.Element {
                   onChange={(event) => {
                     setSemester(event.value as string);
                   }}
-                  className="xp-page-select w-32"
+                  className="xp-page-select w-[9.5rem] max-w-full"
                   pt={{
                     // The native select mirrors the combobox for form submission; unnamed in the
                     // accessibility tree it is a second, anonymous control saying the same thing.

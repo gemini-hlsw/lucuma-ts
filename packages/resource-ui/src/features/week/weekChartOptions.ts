@@ -12,11 +12,14 @@ import {
   eveningDescriber,
   LABELLED_BAND_Z,
   MARKER_LINE_Z,
+  MUTED_LABEL,
+  readerPx,
+  WASH_Z,
+  WEEK_LINE_Z,
 } from '@/features/timeline/timelineOptions';
 
-const ROW_HEIGHT = 30;
-const BOTTOM_MARGIN = 32;
-const LABEL_GUTTER = 100;
+const ROW_HEIGHT_REM = 1.875;
+const BOTTOM_MARGIN_REM = 2;
 
 const headingFormat = zoneFormatters('en-GB', { weekday: 'short', day: 'numeric' });
 
@@ -40,7 +43,7 @@ export const buildWeekBands = (week: WeekTimeline, site: Site): XAxisPlotBandsOp
   ...week.nights.flatMap((night) => {
     const sun = nightSunTimes(site, night.interval);
     const wash = (from: number | null, to: number | null, color: string, className: string) =>
-      from === null || to === null || to <= from ? [] : [{ from, to, color, className, zIndex: 5 }];
+      from === null || to === null || to <= from ? [] : [{ from, to, color, className, zIndex: WASH_Z }];
     return [
       ...wash(night.interval.start, sun.sunset, 'var(--night-daylight-wash)', 'night-daylight'),
       ...wash(sun.sunset, sun.duskAstronomical, 'var(--night-twilight-wash)', 'night-twilight'),
@@ -59,14 +62,14 @@ export const buildWeekBands = (week: WeekTimeline, site: Site): XAxisPlotBandsOp
       zIndex: LABELLED_BAND_Z,
       label: {
         text: 'not recorded',
-        style: { color: 'var(--timeline-muted-text)', fontSize: '0.62rem' },
+        style: MUTED_LABEL,
         rotation: 0,
         align: 'center' as const,
         verticalAlign: 'top' as const,
-        y: 12,
+        y: readerPx(0.75),
       },
     })),
-  ...week.bands.map((band) => closureBandPlotBand(band, 14)),
+  ...week.bands.map((band) => closureBandPlotBand(band, 0.875)),
 ];
 
 export const buildWeekLines = (week: WeekTimeline): XAxisPlotLinesOptions[] =>
@@ -74,7 +77,7 @@ export const buildWeekLines = (week: WeekTimeline): XAxisPlotLinesOptions[] =>
     value: night.interval.start,
     color: 'var(--schedule-week-line)',
     width: 1,
-    zIndex: 2,
+    zIndex: WEEK_LINE_Z,
     className: 'week-night-line',
   }));
 
@@ -92,9 +95,8 @@ export const buildWeekChartOptions = ({ week, site, now }: WeekChartModel): Opti
     rows: week.rows,
     site,
     describe: eveningDescriber(site),
-    rowHeight: ROW_HEIGHT,
-    labelGutter: LABEL_GUTTER,
-    bottomMargin: BOTTOM_MARGIN,
+    rowHeightRem: ROW_HEIGHT_REM,
+    bottomMarginRem: BOTTOM_MARGIN_REM,
     seriesName: 'Week',
     xAxis: {
       type: 'datetime',
@@ -112,8 +114,8 @@ export const buildWeekChartOptions = ({ week, site, now }: WeekChartModel): Opti
           const night = week.nights.find((candidate) => midpoint(candidate.interval) === Number(this.value));
           return night === undefined ? '' : nightLabel(night, site);
         },
-        style: { color: 'var(--timeline-muted-text)', fontSize: '0.68rem' },
-        y: 18,
+        style: MUTED_LABEL,
+        y: readerPx(1.125),
       },
       plotBands: buildWeekBands(week, site),
       plotLines: [

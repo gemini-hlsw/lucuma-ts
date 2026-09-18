@@ -50,3 +50,6 @@ playwright/.cache/
 .vitest/
 __screenshots__/
 .vitest-attachments/
+
+# Agent scratch output
+.scratch/

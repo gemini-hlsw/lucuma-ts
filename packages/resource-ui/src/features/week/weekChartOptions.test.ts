@@ -4,6 +4,8 @@ import { describe, expect, it } from 'vitest';
 import { observingNightInterval } from '@/domain/siteTime';
 import type { Closure } from '@/domain/types';
 import { buildWeekTimeline } from '@/domain/weekTimeline';
+import { DENSE } from '@/features/timeline/timelineOptions';
+import { collectFontSizes } from '@/test/fontSizes';
 
 import {
   buildWeekBands,
@@ -89,6 +91,13 @@ describe('the chart', () => {
 
     expect(axisOf().min).toBe(week.interval.start);
     expect(axisOf().max).toBe(week.interval.end);
+  });
+
+  it('sets every chart label at Data-small - nothing on the week chart drops below the type floor', () => {
+    // Six un-entered nights, so the hatched bands' "not recorded" labels are in the walk.
+    const options = buildWeekChartOptions({ week: build(new Set(['2026-11-14'])), site: 'GS', now: null });
+
+    expect(new Set(collectFontSizes(options))).toEqual(new Set([DENSE]));
   });
 });
 

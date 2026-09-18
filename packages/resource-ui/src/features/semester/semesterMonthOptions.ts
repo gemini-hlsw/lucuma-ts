@@ -8,24 +8,27 @@ import {
   closureBandPlotBand,
   eveningDescriber,
   MARKER_LINE_Z,
+  MUTED_TICK,
+  NIGHT_LINE_Z,
+  readerPx,
 } from '@/features/timeline/timelineOptions';
 
 /** Height of one row, headings and data rows alike. */
-const ROW_HEIGHT = 26;
+const ROW_HEIGHT_REM = 1.625;
 
 /** Room below the plot area, where the day numbers sit. */
-const BOTTOM_MARGIN = 26;
-
-/** Load-bearing: the group heading type is sized to fit it, so re-check the headings before narrowing. */
-const LABEL_GUTTER = 92;
+const BOTTOM_MARGIN_REM = 1.625;
 
 /** Derived from the night count, because a 28-night February fits numbers a 31-night August cannot. */
-const PX_PER_LABEL = 15;
-const PX_PER_LABEL_TIGHT = 8;
+const PER_LABEL_REM = 0.9375;
+const PER_LABEL_TIGHT_REM = 0.5;
 
-// The night and week charts keep their own geometry; no page reads both.
-export const widthForEveryNight = (nightCount: number): number => nightCount * PX_PER_LABEL;
-const widthForEveryOtherNight = (nightCount: number): number => nightCount * PX_PER_LABEL_TIGHT;
+export const pxPerLabel = (): number => readerPx(PER_LABEL_REM);
+export const pxPerLabelTight = (): number => readerPx(PER_LABEL_TIGHT_REM);
+
+// The night and week charts space their own axes; no page reads both.
+export const widthForEveryNight = (nightCount: number): number => nightCount * pxPerLabel();
+const widthForEveryOtherNight = (nightCount: number): number => nightCount * pxPerLabelTight();
 
 /** Chosen rather than left to Highcharts, which drops colliding labels one at a time. */
 export const dayTickPositions = (month: TimelineMonth, step: number): number[] =>
@@ -40,7 +43,7 @@ export const buildMonthBands = (month: TimelineMonth): XAxisPlotBandsOptions[] =
       color: 'var(--schedule-weekend)',
       className: 'schedule-weekend',
     })),
-  ...month.bands.map((band) => closureBandPlotBand(band, 12)),
+  ...month.bands.map((band) => closureBandPlotBand(band, 0.75)),
 ];
 
 /** The week starts on Sunday, so the chart and the calendar cannot sit a night apart. */
@@ -51,7 +54,7 @@ export const buildMonthLines = (month: TimelineMonth): XAxisPlotLinesOptions[] =
       value: night.interval.start,
       color: startsWeek ? 'var(--schedule-week-line)' : 'var(--schedule-night-line)',
       width: 1,
-      zIndex: 1,
+      zIndex: NIGHT_LINE_Z,
     };
   });
 
@@ -69,9 +72,8 @@ export const buildSemesterMonthOptions = ({ month, site, now }: SemesterMonthMod
     rows: month.rows,
     site,
     describe: eveningDescriber(site),
-    rowHeight: ROW_HEIGHT,
-    labelGutter: LABEL_GUTTER,
-    bottomMargin: BOTTOM_MARGIN,
+    rowHeightRem: ROW_HEIGHT_REM,
+    bottomMarginRem: BOTTOM_MARGIN_REM,
     seriesName: month.label,
     xAxis: {
       type: 'datetime',
@@ -90,8 +92,8 @@ export const buildSemesterMonthOptions = ({ month, site, now }: SemesterMonthMod
           const night = month.nights.find((candidate) => midpoint(candidate.interval) === Number(this.value));
           return night === undefined ? '' : String(Number(night.eveningDate.slice(8, 10)));
         },
-        style: { color: 'var(--timeline-muted-text)', fontSize: '0.65rem' },
-        y: 16,
+        style: MUTED_TICK,
+        y: readerPx(1),
       },
       plotBands: buildMonthBands(month),
       plotLines: [
@@ -120,7 +122,6 @@ export const buildSemesterMonthOptions = ({ month, site, now }: SemesterMonthMod
           condition: { maxWidth: widthForEveryOtherNight(month.nights.length) },
           chartOptions: {
             xAxis: { tickPositions: dayTickPositions(month, 5) },
-            yAxis: { labels: { style: { fontSize: '0.65rem' } } },
           },
         },
       ],
