@@ -24,6 +24,7 @@ import {
   useProgramObservations,
   useUpdateConfigurationRequests,
 } from '@/gql/odb/changeRequests';
+import { formatUtcMinute, joinTargetNames } from '@/gql/odb/shared';
 import type {
   ChangeRequest,
   ConfigurationRequestStatus,
@@ -32,6 +33,7 @@ import type {
   Site,
   TimingWindowRow,
 } from '@/gql/types';
+import { exploreProgramUrl } from '@/lib/explore';
 
 const EMPTY: ChangeRequest[] = [];
 
@@ -65,10 +67,9 @@ const ALL = 'ALL';
  * PI. Approve/deny calls the real updateConfigurationRequests mutation, then
  * reloads from the ODB.
  *
- * Two ODB schema gaps surfaced honestly rather than hidden: CR-received
- * timestamps aren't tracked (the "Received" column says so), and there's no
- * reviewer-justification field (the resolve response is kept for the session
- * and shown as a tooltip on the status dot instead).
+ * One ODB schema gap is surfaced honestly rather than hidden: there's no
+ * reviewer-justification field, so the resolve response is kept for the
+ * session and shown as a tooltip on the status dot instead.
  */
 export default function ChangeRequestsPage(): JSX.Element {
   const toast = useToast();
@@ -247,7 +248,18 @@ export default function ChangeRequestsPage(): JSX.Element {
             header="Program"
             sortable
             style={{ width: '13rem' }}
-            headerTooltip="The program's reference label (falls back to its internal id when no reference has been assigned)."
+            headerTooltip="The program's reference label, linked to Explore (falls back to its internal id when no reference has been assigned)."
+            body={(p: (typeof filteredPrograms)[number]) =>
+              // A program with no reference falls back to its internal id, which
+              // isn't a valid Explore path — show it as plain text (sc-10159).
+              p.programReference === p.programId ? (
+                p.programReference
+              ) : (
+                <a href={exploreProgramUrl(p.programReference)} target="_blank" rel="noreferrer">
+                  {p.programReference}
+                </a>
+              )
+            }
           />
           <Column
             header="Status"
@@ -295,15 +307,15 @@ export default function ChangeRequestsPage(): JSX.Element {
             <Column field="id" header="ID" sortable style={{ width: '6rem' }} />
             <Column
               header="Received"
-              style={{ width: '8rem' }}
-              body={() => <span className="cr-untracked">not yet tracked</span>}
-              headerTooltip="The date a change request was received isn't tracked by the ODB yet — a known sc-9094 gap."
+              style={{ width: '10rem' }}
+              body={(r: ChangeRequest) => formatUtcMinute(r.createdAt)}
+              headerTooltip="When the PI submitted the change request (UTC)."
             />
             <Column
               header="Target"
-              style={{ width: '7rem' }}
-              body={() => '—'}
-              headerTooltip="No target name is tracked by the ODB — only coordinates are available (see RA/Dec)."
+              style={{ width: '9rem' }}
+              body={(r: VisibleRequest) => joinTargetNames(r.observations.map((o) => o.target))}
+              headerTooltip="Target name(s) of the request's applicable observations. A configuration request carries only coordinates, so the names come from those observations (sc-10159)."
             />
             <Column field="ra" header="RA" style={{ width: '9rem' }} />
             <Column field="dec" header="Dec" style={{ width: '9rem' }} />
@@ -452,6 +464,9 @@ interface WindowGroup {
   readonly windows: readonly TimingWindowRow[];
 }
 
+/** Carries the observations alongside the request because several columns
+ *  (Target, Observations, Windows) describe the request through them — the
+ *  request itself holds only a configuration and coordinates. */
 type VisibleRequest = ChangeRequest & { readonly observations: readonly ObservationRow[] };
 
 /** Group a request's resolved observations by id, keeping only those that

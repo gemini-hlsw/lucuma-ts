@@ -443,6 +443,8 @@ export interface ChangeRequest {
   readonly pi: string;
   readonly status: ConfigurationRequestStatus;
   readonly justification: string;
+  /** When the PI submitted the request (ODB Timestamp, ISO-8601 UTC). */
+  readonly createdAt: string;
   readonly site: Site;
   /** RA/Dec of the requested configuration's target, e.g. "06:08:31.9" / "-59:32:27". */
   readonly ra: string;

@@ -17,7 +17,14 @@ import type {
 import type { DocumentType } from './gen';
 import { graphql } from './gen';
 import type { Instrument } from './gen/graphql';
-import { formatConditions, isScienceObservation, mapObservationRow } from './shared';
+import {
+  DEC_DECIMALS,
+  formatConditions,
+  isScienceObservation,
+  mapObservationRow,
+  RA_DECIMALS,
+  trimSexagesimal,
+} from './shared';
 
 export const CHANGE_REQUESTS_QUERY = graphql(`
   query AdminChangeRequests($offset: ConfigurationRequestId) {
@@ -32,6 +39,7 @@ export const CHANGE_REQUESTS_QUERY = graphql(`
         id
         status
         justification
+        createdAt
         applicableObservations
         program {
           id
@@ -112,9 +120,10 @@ export function mapChangeRequests(raw: AdminChangeRequestsResult): ChangeRequest
       pi: [prof?.givenName, prof?.familyName].filter(Boolean).join(' ') || '(unknown PI)',
       status: c.status,
       justification: c.justification ?? '',
+      createdAt: c.createdAt,
       site: site.site,
-      ra: coords?.ra.hms ?? '—',
-      dec: coords?.dec.dms ?? '—',
+      ra: coords ? trimSexagesimal(coords.ra.hms, RA_DECIMALS) : '—',
+      dec: coords ? trimSexagesimal(coords.dec.dms, DEC_DECIMALS) : '—',
       raDeg: parseNumber(coords?.ra.degrees) ?? null,
       decDeg: parseNumber(coords?.dec.degrees) ?? null,
       modeType: c.configuration.observingMode?.mode ?? null,

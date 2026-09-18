@@ -1,5 +1,5 @@
 /** Selections and mapping helpers shared by more than one view. */
-import { parseNumber } from '@gemini-hlsw/lucuma-common-ui';
+import { isNotNullish, parseNumber } from '@gemini-hlsw/lucuma-common-ui';
 
 import { type Instrument, INSTRUMENT_LABEL, type ObservationRow, type TimingWindowRow } from '../types';
 import { graphql } from './gen';
@@ -240,12 +240,48 @@ const UTC_MINUTE_FORMAT = new Intl.DateTimeFormat('en-US', {
   hour12: false,
 });
 
+/** Stands in for an observation whose target has no name, so a row always reads
+ *  as something. Exported because callers that aggregate names (the Change
+ *  Requests Target column) must drop it rather than list it as a target. */
+export const NO_TARGET = '(no target)';
+
+/** Join the distinct target names of a row's observations for display, e.g.
+ *  "NGC 300, M31". Both the Change Requests table and the conflict rows resolve
+ *  a name per observation and show the set: "—" when none of them names a
+ *  target, since a configuration carries coordinates rather than a name.
+ *  Entries that named nothing arrive here as undefined or as NO_TARGET and are
+ *  dropped rather than listed as if they were names. */
+export function joinTargetNames(names: readonly (string | undefined)[]): string {
+  const named = Array.from(new Set(names)).filter((n) => isNotNullish(n) && n !== NO_TARGET);
+  return named.length > 0 ? named.join(', ') : '—';
+}
+
+/** The coordinate precisions the story names (sc-10159 item 7): RA as
+ *  HH:MM:SS.ss, Dec as DD:MM:SS.s. Shared, so the Change Requests table and the
+ *  conflict rows cannot drift apart. */
+export const RA_DECIMALS = 2;
+export const DEC_DECIMALS = 1;
+
+/** Trim an ODB sexagesimal angle to one of those precisions. The ODB returns
+ *  six decimals ("01:01:45.034320"), far finer than a conflict review needs,
+ *  and it crowds the column.
+ *
+ *  Truncates rather than rounds: rounding the seconds alone cannot carry into
+ *  the minutes, so "+20:55:59.999" would round to "+20:55:60.0" — not a valid
+ *  sexagesimal value. The sub-arcsecond difference is irrelevant at the
+ *  separations this table compares. */
+export function trimSexagesimal(angle: string, decimals: number): string {
+  const dot = angle.indexOf('.');
+  // No fractional part (or an unexpected shape) — nothing to trim.
+  return dot === -1 ? angle : angle.slice(0, dot + 1 + decimals);
+}
+
 /** Render an ODB Timestamp to minute precision in UTC, e.g.
- *  "2024-01-30 14:55 UTC". Scheduling windows are inherently UTC (Explore shows
- *  them "… UTC"); common-ui's formatDateTime renders in the browser's zone and
- *  would silently shift every window by the viewer's offset — the same instant
- *  reads 04:55 in Hawaii and 23:55 in Tokyo. */
-function formatUtcMinute(iso: string): string {
+ *  "2024-01-30 14:55 UTC". Scheduling windows and submission times are
+ *  inherently UTC (Explore shows them "… UTC"); common-ui's formatDateTime
+ *  renders in the browser's zone and would silently shift each one by the
+ *  viewer's offset — the same instant reads 04:55 in Hawaii and 23:55 in Tokyo. */
+export function formatUtcMinute(iso: string): string {
   const parts = new Map(UTC_MINUTE_FORMAT.formatToParts(new Date(iso)).map((p) => [p.type, p.value]));
   // Every part requested above is always emitted; the "" can only be reached if
   // that option list and these lookups disagree.
@@ -297,9 +333,9 @@ export function mapObservationRow(
   const hours = groupHours ?? observationDigestHours(o) ?? 0;
   return {
     id: o.id,
-    target: target?.name ?? '(no target)',
-    ra: target?.sidereal?.ra.hms ?? '—',
-    dec: target?.sidereal?.dec.dms ?? '—',
+    target: target?.name ?? NO_TARGET,
+    ra: target?.sidereal ? trimSexagesimal(target.sidereal.ra.hms, RA_DECIMALS) : '—',
+    dec: target?.sidereal ? trimSexagesimal(target.sidereal.dec.dms, DEC_DECIMALS) : '—',
     raDeg: parseNumber(target?.sidereal?.ra.degrees) ?? null,
     decDeg: parseNumber(target?.sidereal?.dec.degrees) ?? null,
     modeType: o.observingMode?.mode ?? null,

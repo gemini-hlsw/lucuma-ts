@@ -19,6 +19,7 @@ function request(overrides: Partial<RawRequest>): RawRequest {
     id: 'x-357',
     status: 'REQUESTED',
     justification: 'Please adjust the conditions',
+    createdAt: '2027-06-01T12:30:00Z',
     applicableObservations: ['o-9c5', 'o-ca0'],
     program: {
       __typename: 'Program',
@@ -74,8 +75,8 @@ describe(mapChangeRequests, () => {
     expect(c?.pi).toBe('Andrew Stephens');
     expect(c?.site).toBe('SOUTH');
     expect(c?.instrument).toBe('GMOS-S');
-    expect(c?.ra).toBe('06:08:31.926560');
-    expect(c?.dec).toBe('-59:32:27.190177');
+    expect(c?.ra).toBe('06:08:31.92');
+    expect(c?.dec).toBe('-59:32:27.1');
     expect(c?.raDeg).toBeCloseTo(92.133027);
     expect(c?.decDeg).toBeCloseTo(-59.540886);
     expect(c?.modeType).toBe('GMOS_SOUTH_LONG_SLIT');
@@ -180,6 +181,7 @@ describe(groupChangeRequestsByProgram, () => {
     pi: 'PI',
     status,
     justification: '',
+    createdAt: '2027-06-01T12:30:00Z',
     site,
     ra: '—',
     dec: '—',
