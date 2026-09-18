@@ -13,6 +13,7 @@ import { NoteCell } from '@/components/ui/NoteCell';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { ErrorAlert, Loading } from '@/components/ui/PageStatus';
 import { RecordHistoryTable } from '@/components/ui/RecordHistoryTable';
+import { EXPANDER_COLUMN_STYLE } from '@/components/ui/styles';
 import { WhereCell } from '@/components/ui/WhereCell';
 import { buildFinderRows, type FinderRow, historyOf, matchesComponent, whereOf } from '@/domain/componentFinder';
 import { semesterHolding } from '@/domain/coverage';
@@ -122,7 +123,7 @@ export default function ComponentsPage(): JSX.Element {
     const installed = summary?.installed ?? 0;
     return (
       <InstrumentSwatch instrument={row.component.instrument} className="py-0.5">
-        <span className="text-xs text-foreground-muted">
+        <span className="text-xs text-foreground-secondary">
           {total} {total === 1 ? 'piece' : 'pieces'}
           {installed > 0 && ` · ${installed} on telescope`}
         </span>
@@ -151,7 +152,7 @@ export default function ComponentsPage(): JSX.Element {
                 setSearch(event.target.value);
               }}
               placeholder="Name, code, barcode or alias"
-              className="w-72"
+              className="w-[16rem] max-w-full"
             />
           )}
         </FilterField>
@@ -166,7 +167,7 @@ export default function ComponentsPage(): JSX.Element {
               }}
               showClear
               placeholder="All"
-              className="w-44"
+              className="w-[12rem] max-w-full"
             />
           )}
         </FilterField>
@@ -181,7 +182,7 @@ export default function ComponentsPage(): JSX.Element {
               }}
               showClear
               placeholder="All"
-              className="w-40"
+              className="w-[12rem] max-w-full"
             />
           )}
         </FilterField>
@@ -213,7 +214,7 @@ export default function ComponentsPage(): JSX.Element {
           data-testid="component-table"
           emptyMessage="No components match."
         >
-          <Column expander style={{ width: '2.5rem' }} />
+          <Column expander style={EXPANDER_COLUMN_STYLE} />
           <Column header="Component" body={(row: FinderRow) => <ComponentIdentityCell row={row} />} />
           <Column header="Type" body={(row: FinderRow) => TYPE_LABEL[row.component.componentType]} />
           <Column header="Where" body={(row: FinderRow) => <WhereCell where={componentWhere(row)} />} />

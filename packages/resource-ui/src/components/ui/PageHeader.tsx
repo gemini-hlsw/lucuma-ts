@@ -18,10 +18,10 @@ export function PageHeader({ title, demo = false, children, actions }: PageHeade
     <header className="mb-4 flex flex-wrap items-end gap-4">
       <div>
         <div className="flex items-center gap-2">
-          <h1 className="text-lg font-semibold text-foreground">{title}</h1>
+          <h1 className="text-base font-semibold text-foreground">{title}</h1>
           {demo && <SyntheticDataTag />}
         </div>
-        {children !== undefined && <p className="mt-1 text-xs text-foreground-muted">{children}</p>}
+        {children !== undefined && <p className="mt-1 text-xs text-foreground-secondary">{children}</p>}
       </div>
       {actions !== undefined && <div className="ml-auto flex items-end gap-3">{actions}</div>}
     </header>

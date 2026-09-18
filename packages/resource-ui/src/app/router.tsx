@@ -8,7 +8,7 @@ import SemesterPage from './pages/SemesterPage';
 import WeekPage from './pages/WeekPage';
 
 /** Tonight is the front door: no `night` in the URL means the night in progress. */
-const routes: RouteObject[] = [
+export const routes: RouteObject[] = [
   {
     path: '/',
     element: <Layout />,

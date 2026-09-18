@@ -36,16 +36,16 @@ export function AboutResource({ visible, onHide }: { visible: boolean; onHide: (
       onHide={onHide}
       dismissableMask
       resizable={false}
-      className="xp-about-dialog w-[26rem] max-w-[92vw]"
+      className="xp-about-dialog w-[364px] max-w-[92vw]"
       header={<span className="xp-wordmark">Resource</span>}
       data-testid="about-resource"
     >
       <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 pt-3 text-sm">
         <dt className="text-foreground-muted">Endpoint</dt>
-        <dd className="font-mono text-[0.8rem] text-foreground-secondary">{liveGraphqlEndpoint}</dd>
+        <dd className="font-mono text-foreground-secondary">{liveGraphqlEndpoint}</dd>
       </dl>
       <div className="mt-4 flex items-center justify-end gap-2">
-        <span className="font-mono text-[0.85rem] text-foreground-muted">Version: {version}</span>
+        <span className="font-mono text-sm text-foreground-muted">Version: {version}</span>
         <button
           type="button"
           className="xp-icon-btn"
@@ -53,7 +53,8 @@ export function AboutResource({ visible, onHide }: { visible: boolean; onHide: (
           aria-label="Copy version"
           onClick={() => void copyVersion()}
         >
-          <FontAwesomeIcon icon={copied ? faCheck : faCopy} className="text-[0.8rem]" aria-hidden="true" />
+          {/* A glyph, not type: the button's accessible name carries the action. */}
+          <FontAwesomeIcon icon={copied ? faCheck : faCopy} size="xs" aria-hidden="true" />
         </button>
       </div>
     </Dialog>

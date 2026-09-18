@@ -30,6 +30,9 @@ const CLOCK_ITEM = 'xp-menu-clock';
 
 const CLOCK_GROUP_LABEL = 'Clock';
 
+/* Spacing only; the size is FontAwesome's `xs` step, and the width stays fixed so the icons align. */
+const MENU_ICON = 'mr-2';
+
 interface ClockMenuItem {
   readonly className?: string;
   readonly value?: TimeDisplay;
@@ -70,7 +73,8 @@ export default function Navbar(): JSX.Element {
         className={cn('xp-wordmark', FOCUS_RING)}
         title="GPP Resource - telescope calendar & operational-resource manager. Go to tonight."
       >
-        <FontAwesomeIcon icon={faLayerGroup} className="text-sm text-gpp" aria-hidden="true" />
+        {/* A glyph, not type: the wordmark beside it carries the name, and the mark matches it. */}
+        <FontAwesomeIcon icon={faLayerGroup} widthAuto className="text-gpp" aria-hidden="true" />
         {BRAND_LABEL}
       </Link>
 
@@ -91,7 +95,8 @@ export default function Navbar(): JSX.Element {
           className="flex items-center gap-1.5 text-xs tracking-wide text-foreground-secondary"
           title="Authentication is not implemented yet - the mock allows everything."
         >
-          <FontAwesomeIcon icon={faUser} className="text-[0.7rem]" aria-hidden="true" />
+          {/* A glyph, not type: the name beside it is what the row says. */}
+          <FontAwesomeIcon icon={faUser} size="sm" widthAuto aria-hidden="true" />
           {/* Only the icon fits the phone bar; the name stays announced, and the menu carries it for the eye. */}
           <span className="max-md:sr-only">{ACCOUNT_LABEL}</span>
         </span>
@@ -104,7 +109,7 @@ export default function Navbar(): JSX.Element {
             menu.current?.toggle(event);
           }}
         >
-          <FontAwesomeIcon icon={faBars} aria-hidden="true" />
+          <FontAwesomeIcon icon={faBars} widthAuto aria-hidden="true" />
         </button>
         <Menu
           model={[
@@ -118,7 +123,8 @@ export default function Navbar(): JSX.Element {
               icon: (
                 <FontAwesomeIcon
                   icon={faCheck}
-                  className={cn('mr-2 text-[0.8rem]', choice.value === timeDisplay ? '' : 'invisible')}
+                  size="xs"
+                  className={cn(MENU_ICON, choice.value === timeDisplay ? '' : 'invisible')}
                   aria-hidden="true"
                 />
               ),
@@ -129,7 +135,7 @@ export default function Navbar(): JSX.Element {
             { separator: true },
             {
               label: 'About Resource',
-              icon: <FontAwesomeIcon icon={faCircleInfo} className="mr-2 text-[0.8rem]" aria-hidden="true" />,
+              icon: <FontAwesomeIcon icon={faCircleInfo} size="xs" className={MENU_ICON} aria-hidden="true" />,
               command: () => {
                 setAboutOpen(true);
               },
@@ -137,7 +143,7 @@ export default function Navbar(): JSX.Element {
             { separator: true },
             {
               label: 'Login with ORCID',
-              icon: <FontAwesomeIcon icon={faArrowRightToBracket} className="mr-2 text-[0.8rem]" aria-hidden="true" />,
+              icon: <FontAwesomeIcon icon={faArrowRightToBracket} size="xs" className={MENU_ICON} aria-hidden="true" />,
               // A disabled item says the login waits for SSO rather than hiding the affordance.
               disabled: true,
             },

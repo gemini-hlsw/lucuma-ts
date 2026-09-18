@@ -12,7 +12,7 @@ export function LiveFailureBanner(): JSX.Element | null {
     <div
       role="alert"
       data-testid="live-failure-banner"
-      className="flex flex-wrap items-center gap-3 border-b border-amber-600/60 bg-amber-900/30 px-4 py-2 text-sm text-amber-100"
+      className="flex flex-wrap items-center gap-3 border-b border-warning-edge/60 bg-warning-fill/30 px-4 py-2 text-sm text-warning-ink"
     >
       <span className="min-w-0 flex-1">{failure}</span>
     </div>

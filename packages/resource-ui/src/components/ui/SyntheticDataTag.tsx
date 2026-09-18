@@ -7,7 +7,7 @@ export function SyntheticDataTag(): JSX.Element {
     <Tag
       value="SYNTHETIC DATA"
       severity="warning"
-      className="shrink-0 !text-[0.6rem] tracking-wide"
+      className="shrink-0 tracking-wider"
       data-testid="synthetic-data-tag"
     />
   );

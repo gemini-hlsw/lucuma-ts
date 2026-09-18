@@ -5,7 +5,8 @@ import { buildNightTimeline } from '@/domain/nightTimeline';
 import { portRowLabel, TELESCOPE_PORTS } from '@/domain/ports';
 import { observingNightInterval } from '@/domain/siteTime';
 import type { Closure, Mounting } from '@/domain/types';
-import { buildTimelinePoints, type TimelinePoint } from '@/features/timeline/timelineOptions';
+import { buildTimelinePoints, DENSE, readerPx, TICK, type TimelinePoint } from '@/features/timeline/timelineOptions';
+import { collectFontSizes } from '@/test/fontSizes';
 
 import {
   buildNightChartOptions,
@@ -14,7 +15,7 @@ import {
   clockLabel,
   durationLabel,
   nightDescriber,
-  ROW_HEIGHT,
+  ROW_HEIGHT_REM,
 } from './nightChartOptions';
 
 const NIGHT = '2026-11-14';
@@ -178,6 +179,19 @@ describe('the chart', () => {
     }
   });
 
+  it('sets every chart label at Data-small but the hour ticks, which are the tick tier', () => {
+    // A closure band and a now marker, so every label the night chart can set is in the walk.
+    const night = buildNightTimeline({
+      site: 'GS',
+      observingNight: NIGHT,
+      mountings: [mounting({ id: 'a', port: 3, interval })],
+      closures: [{ id: 'wide', availability: 'CLOSED', port: null, reason: 'Shutdown', interval }],
+    });
+    const options = buildNightChartOptions({ night, site: 'GS', now: interval.start + HOUR, timeDisplay: 'site' });
+
+    expect(new Set(collectFontSizes(options))).toEqual(new Set([DENSE, TICK]));
+  });
+
   it('marks now only when it falls inside the night', () => {
     const marker = (now: number | null) => plotLines(now).filter((line) => line.className === 'schedule-today');
 
@@ -211,7 +225,7 @@ describe('the telescope-state header band', () => {
     expect(data.some((bar) => bar.y === 0 || bar.y === 3)).toBe(false);
     expect(data.some((bar) => bar.y === 5)).toBe(true);
     // The heading rows are real height, not squeezed out of the rows.
-    expect(options.chart?.height).toBe(8 + 34 + (2 + 2 + ROWS.length) * ROW_HEIGHT);
+    expect(options.chart?.height).toBe(8 + readerPx(2.125) + (2 + 2 + ROWS.length) * readerPx(ROW_HEIGHT_REM));
   });
 
   it('draws the state rows monochrome - bright only when the state is notable', () => {
@@ -228,9 +242,18 @@ describe('the telescope-state header band', () => {
       formatter?.call({ pos, value } as AxisLabelsFormatterContextObject, {} as never) ?? '';
 
     expect(printed(0, 'Telescope')).toContain('TELESCOPE');
-    expect(printed(0, 'Telescope')).toContain('var(--timeline-muted-text)');
+    expect(printed(0, 'Telescope')).toContain('var(--timeline-text)');
     expect(printed(1, 'Mode')).toBe('Mode');
     expect(printed(4, 'Port 1-up')).toBe('Port 1-up');
+  });
+
+  it('sets a heading at Dense, the one chart size the walk cannot see', () => {
+    // A heading's font-size lives inside a formatter-built HTML string, invisible to collectFontSizes'
+    // object walk, so this is the one place that has to assert the size directly.
+    const formatter = yAxis.labels?.formatter;
+    const printed = formatter?.call({ pos: 0, value: 'Telescope' } as AxisLabelsFormatterContextObject, {} as never);
+
+    expect(printed).toContain(`font-size: ${DENSE}`);
   });
 });
 

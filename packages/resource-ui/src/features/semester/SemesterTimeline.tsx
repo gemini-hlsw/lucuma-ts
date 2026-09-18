@@ -29,7 +29,7 @@ function MonthChart({ month, site, now }: { month: TimelineMonth; site: Site; no
       testId={`semester-month-${month.label}`}
       onInstantClick={openNightAt}
       heading={
-        <h3 className="mb-1 text-xs font-semibold tracking-wide text-foreground-secondary uppercase">{month.label}</h3>
+        <h3 className="mb-1 text-xs font-semibold tracking-wider text-foreground-secondary uppercase">{month.label}</h3>
       }
     />
   );
@@ -48,7 +48,7 @@ export function SemesterTimeline({
     <div
       data-testid="semester-timeline"
       // auto-fit, not a breakpoint: the sidebar takes width a viewport query cannot see.
-      className="grid [grid-template-columns:repeat(auto-fit,minmax(min(30rem,100%),1fr))] gap-x-8 gap-y-5"
+      className="grid [grid-template-columns:repeat(auto-fit,minmax(min(420px,100%),1fr))] gap-x-8 gap-y-5"
     >
       {timeline.months.map((month) => (
         <MonthChart key={`${month.year}-${month.month}`} month={month} site={site} now={now} />

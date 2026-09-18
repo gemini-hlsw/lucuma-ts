@@ -10,11 +10,16 @@ import {
   buildTimelineChart,
   closureBandPlotBand,
   MARKER_LINE_Z,
+  MUTED_LABEL,
+  MUTED_TICK,
+  NOW_LABEL,
+  readerPx,
+  WASH_Z,
+  WEEK_LINE_Z,
 } from '@/features/timeline/timelineOptions';
 
-export const ROW_HEIGHT = 34;
-const BOTTOM_MARGIN = 34;
-const LABEL_GUTTER = 104;
+export const ROW_HEIGHT_REM = 2.125;
+const BOTTOM_MARGIN_REM = 2.125;
 const HOUR_MS = 3_600_000;
 
 const clockFormat = zoneFormatters('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
@@ -47,7 +52,7 @@ export const buildSunBands = (interval: NightTimeline['interval'], sun: NightSun
   const bands: XAxisPlotBandsOptions[] = [];
   const wash = (from: number, to: number, color: string, className: string): void => {
     if (to > from) {
-      bands.push({ from, to, color, className, zIndex: 5 });
+      bands.push({ from, to, color, className, zIndex: WASH_Z });
     }
   };
   if (sun.sunset !== null) {
@@ -78,8 +83,8 @@ const sunLine = (value: number, text: string): XAxisPlotLinesOptions => ({
     rotation: 0,
     align: 'left',
     x: 4,
-    y: 12,
-    style: { color: 'var(--timeline-muted-text)', fontSize: '0.65rem' },
+    y: readerPx(0.75),
+    style: MUTED_LABEL,
   },
 });
 
@@ -95,7 +100,7 @@ export const buildTransitionLines = (transitions: readonly number[]): XAxisPlotL
     value,
     color: 'var(--schedule-week-line)',
     width: 1,
-    zIndex: 2,
+    zIndex: WEEK_LINE_Z,
     className: 'night-transition',
   }));
 
@@ -114,9 +119,8 @@ export const buildNightChartOptions = ({ night, site, now, timeDisplay }: NightC
     site,
     timeDisplay,
     describe: nightDescriber(site, night.interval, timeDisplay),
-    rowHeight: ROW_HEIGHT,
-    labelGutter: LABEL_GUTTER,
-    bottomMargin: BOTTOM_MARGIN,
+    rowHeightRem: ROW_HEIGHT_REM,
+    bottomMarginRem: BOTTOM_MARGIN_REM,
     seriesName: `Night of ${night.observingNight}`,
     xAxis: {
       type: 'datetime',
@@ -134,12 +138,12 @@ export const buildNightChartOptions = ({ night, site, now, timeDisplay }: NightC
       labels: {
         // Highcharts formats in `time.timezone`, which the shared frame sets from the masthead.
         format: '{value:%H:%M}',
-        style: { color: 'var(--timeline-muted-text)', fontSize: '0.68rem' },
-        y: 18,
+        style: MUTED_TICK,
+        y: readerPx(1.125),
       },
       plotBands: [
         ...buildSunBands(night.interval, night.sun),
-        ...night.bands.map((band) => closureBandPlotBand(band, 14)),
+        ...night.bands.map((band) => closureBandPlotBand(band, 0.875)),
       ],
       plotLines: [
         ...buildTransitionLines(night.transitions),
@@ -154,7 +158,7 @@ export const buildNightChartOptions = ({ night, site, now, timeDisplay }: NightC
                 className: 'schedule-today',
                 label: {
                   text: 'now',
-                  style: { color: 'var(--schedule-today)', fontSize: '0.65rem', fontWeight: '700' },
+                  style: NOW_LABEL,
                 },
               },
             ]

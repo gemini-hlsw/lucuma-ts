@@ -289,11 +289,26 @@ mount against the mock via `src/test/renderApp.tsx` and drive real interactions 
   unreachable from `renderApp` locators. Drive dropdowns through `src/test/helpers.ts` (`openDropdown` /
   `selectDropdownOption`), which reaches the panel via `page`, scoped through `getByRole('listbox')` so the
   hidden native `<select>` mirror does not also match.
-- **The tests load no app stylesheet**: a test that needs styling to pass is testing the stylesheet. Two
-  exceptions, both behaviour rather than appearance, each importing what it needs itself: `styles/chartOverlays.css`
-  (a Highcharts overlay that catches the pointer swallows the hover under it), and `Layout.test.tsx`, which loads
-  the app's whole styling (`global.css` + `main.css`) because which navigation answers at a width, whether the
-  masthead fits the viewport, and what the focus ring measures against are all the stylesheet's to decide.
+- **The tests load no app stylesheet**: a test that needs styling to pass is testing the stylesheet. The
+  exceptions are behaviour rather than appearance, and each imports what it needs itself. `NightPage.test.tsx`
+  takes `styles/chartOverlays.css` alone, because a Highcharts overlay that catches the pointer swallows the
+  hover under it; those rules are unscoped, so it needs no theme. The rest load the app's whole styling
+  (`global.css` + `main.css`): `Layout.test.tsx`, because which navigation answers at a width, whether the
+  masthead fits the viewport, and what the focus ring measures against are all the stylesheet's to decide;
+  `StatusTag.test.tsx`, because the dark-ink swap on a success/danger tag (shell.css's
+  `.dark .p-tag.p-tag-success, .dark .p-tag.p-tag-danger` rule) is a contrast fact only the stylesheet can
+  make true; and `SemesterTimeline.test.tsx`, `test/labelAdvance.test.ts` and
+  `test/filterControlWidths.test.tsx`, which spend a pixel budget, and a budget measured in the wrong face
+  measures nothing. Those five need `.dark` in scope or the theme's rules never apply - four add it to the
+  root as `main.tsx` does, `StatusTag.test.tsx` wraps the subject in a `.dark` div instead, because the rule
+  it is testing is a descendant selector either way.
+- **A value the stylesheet owns and code restates is pinned in `src/test/cssMirrors.test.ts`**: the chart
+  copies of the type tokens, every `var()` the code names, the per-instrument ink contrast, each alert
+  panel's ink on its own fill, the foreground ladder against every surface, and the hand-written masthead
+  breakpoint. It reads the CSS as text rather
+  than loading it, so it is not a fifth exception. The foreground block pins both directions, since
+  "muted is decoration only" is a claim about what must _fail_ 4.5:1 as much as what must clear it. Add
+  the pin with the mirror, or the next reader has no way to know the two must agree.
 - **The URL hooks in `src/app/` are driven through the URL**, not through `renderHook`: `test/probe.tsx` renders
   a hook inside the real router, prints what a test asserts on and offers buttons standing in for the app's
   controls. One `Probe` per route, though - two routes rendering it at the same position let React reuse the
@@ -318,8 +333,39 @@ nothing here, because PrimeReact's layer is not the competitor - do not reach fo
 
 Override through the variables first: `shell.css` re-tints `lucuma-ui-css` by reassigning its own
 `--surface-*`, `--text-color`, `--primary-color` and `--highlight-*`, which is why the app matches without
-fighting any selector. Reach for `!` only where `lucuma-ui-css` hardcodes a value with no variable behind
-it - today that is `.p-tag { font-size: 0.75rem }`, the reason every `!` in this package sits on a `<Tag>`.
+fighting any selector. Where the theme hardcodes a value with no variable behind it - the `.p-tag` size,
+fill and ink - a rule of the theme's own shape in `shell.css` (`.dark .p-tag`, and
+`.dark .p-tag.p-tag-success, .dark .p-tag.p-tag-danger`) ties on specificity and wins on source order:
+that is how the tag's Dense size and the success and danger inks land with no `!` at all. Reach for `!`
+only when the override is one instance rather than a selector the theme already names - the single `!`
+left in this package is `StatusTag`'s muted Spare tag, picked out by utility classes at 0-1-0 that cannot
+otherwise reach `.dark .p-tag`'s 0-2-0 fill and ink.
+
+**Type sizes come from the scale, never from a literal.** `global.css`'s `@theme` owns all four -
+`--text-2xs`, `--text-xs`, `--text-sm`, `--text-base` - and resets the rest of Tailwind's namespace,
+so `text-lg` and above generate nothing at all. Use the step's name; a component saying
+`text-[0.6rem]` is a size only it knows. An `aria-hidden` icon glyph is the one thing sized off the
+scale, because it is measured against the label beside it rather than the root - and it takes that
+size from **FontAwesome's own `size` prop** (`size="sm"` = 0.875em, `size="xs"` = 0.75em, omitted =
+1em), never a class of ours. FA's scale is already em, and each step carries the `line-height` and
+`vertical-align` correction that keeps the glyph on the text's baseline; a hand-rolled em utility
+gets the size right and the baseline wrong. **In the masthead, add `widthAuto`**: FontAwesome 7
+pads every icon to a fixed 1.25em canvas, and that padding is width the bar cannot spare (see
+`.tickets/sc-tbd-masthead-text-resize.md`). Leave it fixed in the app menu, where the padding is
+what aligns the icon column.
+**A new `@theme` role must take a t-shirt name**, or `tailwind-merge` reads it as a colour and
+silently drops it when a colour follows - `src/test/textTokens.test.ts` compiles the stylesheet and
+fails on a name it cannot classify.
+Chart options cannot read a `var()` (the fit maths needs the number, and a label measuring
+NaN never draws), so `timelineOptions.ts` mirrors two of them as `DENSE` and `TICK` and every chart
+imports them from there - pinned to the tokens by `src/test/cssMirrors.test.ts`, since a mirror that
+can move on one side is the whole risk.
+
+**The app sets no root font size**, so a reader's browser font-size setting scales the type.
+Density lives in `--spacing` (3.5px) and in the px chrome values, which is why a rem arriving on a
+gap, a padding or a border width is a bug rather than a style choice. A width or height whose job
+is to hold text goes the other way and is sized in rem, so the words can grow their box - the
+chart gutter in `features/timeline/timelineOptions.ts` derives itself that way.
 
 Prefer Tailwind utilities over CSS files except where Tailwind can't express it (complex selectors,
 keyframes, third-party overrides).

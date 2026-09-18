@@ -11,7 +11,7 @@ export function ComponentIdentityCell({ row }: { row: FinderRow }): JSX.Element 
   return (
     <span className="flex flex-col">
       <span className="font-medium text-foreground">{row.component.name}</span>
-      <span className="text-[0.65rem] text-foreground-muted">
+      <span className="text-xs text-foreground-secondary">
         {row.component.code}
         {when(row.component.barcode, (barcode) => ` · barcode ${barcode}`)}
       </span>

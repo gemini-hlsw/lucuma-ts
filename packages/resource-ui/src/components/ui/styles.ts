@@ -5,3 +5,7 @@
    translucent green an active nav item fills with, under the 3:1 floor for a UI part. */
 export const FOCUS_RING =
   'focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-gpp-light';
+
+/* Density in px, not a rem: an expander chevron is chrome and must not grow with the reader's type.
+   An inline style because PrimeReact's Column takes no class that reaches the cell it sizes. */
+export const EXPANDER_COLUMN_STYLE = { width: '35px' } as const;

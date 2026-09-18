@@ -31,7 +31,7 @@ export function InstrumentSwatch({
       />
       <span className="font-semibold text-foreground">{label}</span>
       {publishedName !== undefined && publishedName !== label && (
-        <span className="text-xs text-foreground-muted">{publishedName}</span>
+        <span className="text-xs text-foreground-secondary">{publishedName}</span>
       )}
       {children}
     </span>

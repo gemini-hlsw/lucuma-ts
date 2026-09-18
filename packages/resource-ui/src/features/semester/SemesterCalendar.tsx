@@ -56,7 +56,6 @@ interface NightEvent {
 
 const pad = (value: number): string => String(value).padStart(2, '0');
 
-/** ISO evening date -> local midnight. */
 const localDateOf = (iso: string): Date => {
   const [year = 0, month = 1, day = 1] = iso.split('-').map(Number);
   return new Date(year, month - 1, day);
@@ -250,7 +249,7 @@ function MonthCalendar({
               toolbar.onNavigate('DATE', localDateOf(`${String(event.value)}-01`));
             }}
             aria-label="Month"
-            className="w-52"
+            className="w-[12rem] min-w-0"
           />
           <Button
             text
@@ -270,7 +269,8 @@ function MonthCalendar({
       dateHeader: (header: DateHeaderProps) => {
         const night = byEvening.get(isoOf(header.date));
         if (night === undefined) {
-          return <span className="px-1 text-[0.7rem] text-foreground-muted opacity-50">{header.label.trim()}</span>;
+          // Muted, not dimmed further: a day the semester does not cover is chrome keeping the week seven wide.
+          return <span className="px-1 text-xs text-foreground-muted">{header.label.trim()}</span>;
         }
         return (
           <button
@@ -281,19 +281,20 @@ function MonthCalendar({
             onClick={header.onDrillDown}
           >
             <span className="flex items-center justify-between gap-1">
-              <span className="text-[0.72rem] font-semibold tabular-nums">{header.label.trim()}</span>
+              <span className="text-xs font-semibold tabular-nums">{header.label.trim()}</span>
               <span className="flex items-center gap-1">
                 {night.publishedMoon !== null && (
-                  <span className="text-[0.55rem] font-semibold tracking-wide uppercase opacity-80">
+                  // The published moon is a record, not the computed phase the disc beside it draws.
+                  <span className="text-xs font-semibold tracking-wider text-foreground uppercase">
                     {night.publishedMoon === 'NEW' ? 'new' : 'full'}
                   </span>
                 )}
-                <MoonDisc phase={night.moon} size={12} className="shrink-0" />
+                <MoonDisc phase={night.moon} className="shrink-0" />
               </span>
             </span>
-            <span className="flex items-baseline justify-between gap-1 text-[0.6rem] text-foreground-muted">
+            <span className="flex items-baseline justify-between gap-1 text-xs text-foreground-secondary">
               <span>{night.darkHours === null ? '' : `${night.darkHours.toFixed(1)} h`}</span>
-              {night.isHoliday && <span className="font-semibold text-amber-300">holiday</span>}
+              {night.isHoliday && <span className="font-semibold text-warning">holiday</span>}
             </span>
           </button>
         );
@@ -305,7 +306,7 @@ function MonthCalendar({
     <Calendar<NightEvent>
       localizer={localizer}
       // Inline, not stylesheet: the height decides the week-row geometry and the tests load no global.css.
-      style={{ height: '44rem' }}
+      style={{ height: '38.5rem' }}
       date={date}
       onNavigate={handleNavigate}
       view="month"
