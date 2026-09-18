@@ -13,3 +13,34 @@ body {
   background: var(--color-background);
   color: var(--xp-text);
 }
+
+/* Scrollbars, themed app-wide rather than per-scroller: any overflowing element
+ * (PrimeReact's DataTable wrapper, the CfP coordinate limits) would otherwise
+ * fall back to the browser's light default against the dark UI. Explore styles
+ * these globally too; it has its own --scrollbar-* tokens, so we use the
+ * surface tokens this app already defines. Each falls back to the --xp-* token
+ * it aliases: the aliases are declared on `body`, so they do not resolve on the
+ * root element, and the page scrollbar would otherwise stay at the default. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--surface-border, var(--xp-border)) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track,
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--surface-border, var(--xp-border));
+  border-radius: 4px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--text-color-secondary, var(--xp-text-muted));
+}

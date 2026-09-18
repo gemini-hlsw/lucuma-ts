@@ -8,7 +8,7 @@ import { DataTable } from 'primereact/datatable';
 import { Dropdown } from 'primereact/dropdown';
 import { InputText } from 'primereact/inputtext';
 import { SplitButton } from 'primereact/splitbutton';
-import { type JSX, useMemo, useState } from 'react';
+import { Fragment, type JSX, useMemo, useState } from 'react';
 
 import { DataSourceBadge } from '@/components/DataSourceBadge';
 import { CircleCheck, CircleXMark, Copy, Plus, Upload, XMark } from '@/components/Icons';
@@ -617,47 +617,59 @@ function CoordinateLimits({
       >
         <tbody>
           {sites.map(({ label, limits, update }) => (
-            <tr key={label}>
-              <td className="cfp-site" title={`RA (hours) and Dec (degrees) limits for ${label}.`}>
-                {label}
-              </td>
-              <td>
-                <NumberInput
-                  value={limits.raStart}
-                  suffix=" h"
-                  maxFractionDigits={1}
-                  onValueChange={(e) => update({ ...limits, raStart: e.value ?? 0 })}
-                  inputClassName="cfp-coord-input"
-                />
-              </td>
-              <td className="cfp-le">≤ RA ≤</td>
-              <td>
-                <NumberInput
-                  value={limits.raEnd}
-                  suffix=" h"
-                  maxFractionDigits={1}
-                  onValueChange={(e) => update({ ...limits, raEnd: e.value ?? 0 })}
-                  inputClassName="cfp-coord-input"
-                />
-              </td>
-              <td>
-                <NumberInput
-                  value={limits.decStart}
-                  suffix="°"
-                  onValueChange={(e) => update({ ...limits, decStart: e.value ?? 0 })}
-                  inputClassName="cfp-coord-input"
-                />
-              </td>
-              <td className="cfp-le">≤ Dec ≤</td>
-              <td>
-                <NumberInput
-                  value={limits.decEnd}
-                  suffix="°"
-                  onValueChange={(e) => update({ ...limits, decEnd: e.value ?? 0 })}
-                  inputClassName="cfp-coord-input"
-                />
-              </td>
-            </tr>
+            <Fragment key={label}>
+              {/* The site name sits above its own limits rather than beside them:
+                  as a nowrap cell in the row it cost ~100px of the column's width,
+                  which is what pushed the Dec limit out of view (sc-9098). */}
+              <tr>
+                <th
+                  className="cfp-site"
+                  colSpan={6}
+                  scope="colgroup"
+                  title={`RA (hours) and Dec (degrees) limits for ${label}.`}
+                >
+                  {label}
+                </th>
+              </tr>
+              <tr>
+                <td>
+                  <NumberInput
+                    value={limits.raStart}
+                    suffix=" h"
+                    maxFractionDigits={1}
+                    onValueChange={(e) => update({ ...limits, raStart: e.value ?? 0 })}
+                    inputClassName="cfp-coord-input"
+                  />
+                </td>
+                <td className="cfp-le">≤ RA ≤</td>
+                <td>
+                  <NumberInput
+                    value={limits.raEnd}
+                    suffix=" h"
+                    maxFractionDigits={1}
+                    onValueChange={(e) => update({ ...limits, raEnd: e.value ?? 0 })}
+                    inputClassName="cfp-coord-input"
+                  />
+                </td>
+                <td>
+                  <NumberInput
+                    value={limits.decStart}
+                    suffix="°"
+                    onValueChange={(e) => update({ ...limits, decStart: e.value ?? 0 })}
+                    inputClassName="cfp-coord-input"
+                  />
+                </td>
+                <td className="cfp-le">≤ Dec ≤</td>
+                <td>
+                  <NumberInput
+                    value={limits.decEnd}
+                    suffix="°"
+                    onValueChange={(e) => update({ ...limits, decEnd: e.value ?? 0 })}
+                    inputClassName="cfp-coord-input"
+                  />
+                </td>
+              </tr>
+            </Fragment>
           ))}
         </tbody>
       </table>
