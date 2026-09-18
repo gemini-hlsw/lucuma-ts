@@ -1,8 +1,7 @@
+import { fetchDeployedVersion, isNewerVersion, isNotNullish } from '@gemini-hlsw/lucuma-common-ui';
 import { Button } from 'primereact/button';
 import { Toast } from 'primereact/toast';
 import { type JSX, useEffect, useRef } from 'react';
-
-import { fetchDeployedVersion, isNewerBuild } from '@/lib/version';
 
 import { Rotate } from './Icons';
 
@@ -10,7 +9,11 @@ import { Rotate } from './Icons';
  *  minute: a stale Admin tab is an inconvenience, not an operational risk. */
 const POLL_INTERVAL_MS = 5 * 60 * 1000;
 
-/** `YYYYMMDD-commit`; the commit is what GitHub needs to show what changed. */
+/** The commit from a `YYYYMMDD-commit` version, which is what GitHub needs to
+ *  show what changed. Admin-specific, so it stays here rather than moving to
+ *  common-ui with the rest: this is Explore's version scheme (vite.config.ts),
+ *  while navigate and resource stamp `<ref>+YYYYMMDD.commit`, where splitting on
+ *  the first `-` would return the whole string. */
 function commitOf(version: string): string {
   return version.slice(version.indexOf('-') + 1);
 }
@@ -44,14 +47,26 @@ export function VersionCheck({
     if (!enabled) return;
 
     const controller = new AbortController();
+    const outlet = toast.current;
+    // Scoped to this effect run, deliberately, and paired with the `clear` in the
+    // cleanup below: the two together mean a run raises at most one prompt and
+    // takes it down when it ends. Hoisting this to a ref so a dismissal outlived
+    // a re-run would be worse — the cleanup would clear the prompt while the ref
+    // suppressed the re-run from raising it again, losing it for good.
     let announced = false;
 
     async function check(): Promise<void> {
       const deployed = await fetchDeployed(controller.signal);
-      // Announce once: re-showing on every poll would fight the user's dismissal.
-      if (announced || !isNewerBuild(running, deployed)) return;
+      // This run is over: the cleanup has already taken its prompt down, so
+      // raising one now would resurrect it. `fetchDeployed` is a prop, so the
+      // signal alone cannot be relied on — an implementation that ignores it
+      // still resolves here long after the abort.
+      if (controller.signal.aborted) return;
+      // The nullish check is not redundant with isNewerVersion, which returns a
+      // plain boolean: commitOf below needs `deployed` narrowed to a string.
+      if (announced || !isNotNullish(deployed) || !isNewerVersion(running, deployed)) return;
       announced = true;
-      toast.current?.show({
+      outlet?.show({
         severity: 'info',
         sticky: true,
         detail: (
@@ -59,7 +74,7 @@ export function VersionCheck({
             <span>
               A new version of{' '}
               <a
-                href={`https://github.com/gemini-hlsw/lucuma-ts/compare/${commitOf(running)}...HEAD`}
+                href={`https://github.com/gemini-hlsw/lucuma-ts/compare/${commitOf(running)}...${commitOf(deployed)}`}
                 target="_blank"
                 rel="noreferrer"
                 // The toast theme resets anchor decoration, so underline here.
@@ -86,6 +101,14 @@ export function VersionCheck({
     return () => {
       controller.abort();
       clearInterval(timer);
+      // Take the prompt down with the effect that raised it. On unmount React
+      // discards the Toast anyway, but when a dependency changes the effect
+      // re-runs against the same live outlet, and the new check would stack a
+      // second prompt on top of the stale one. `clear` rather than `remove`
+      // because this outlet holds nothing else — that is why the component owns
+      // one — and `remove` matches by deep equality on the whole message, which
+      // a rebuilt element would never satisfy.
+      outlet?.clear();
     };
   }, [enabled, running, fetchDeployed, pollIntervalMs]);
 
