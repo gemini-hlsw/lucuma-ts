@@ -81,4 +81,18 @@ describe(ProposalsPage, () => {
     await userEvent.click(row);
     await expect.element(detail).not.toBeInTheDocument();
   });
+
+  it('offers a roster-backed contact-scientist picker in the accept award — sc-9624', async () => {
+    const screen = await renderWithContext(<ProposalsPage />, { token: STAFF_TOKEN, mocks: [proposalsMock()] });
+    // The first proposal auto-selects; choosing Accept reveals the award form.
+    await userEvent.click(screen.getByRole('button', { name: 'Accept' }));
+
+    await expect.element(screen.getByText('Contact Scientists')).toBeInTheDocument();
+    // The field is the roster AutoComplete now, not the old free-text Chips
+    // placeholder (both once shared the "Add a contact…" prompt).
+    const contacts = screen.container.querySelector('#award-contacts');
+    expect(contacts, 'contact-scientist input should be rendered').not.toBeNull();
+    expect(contacts?.closest('.p-autocomplete')).not.toBeNull();
+    expect(contacts?.closest('.p-chips')).toBeNull();
+  });
 });

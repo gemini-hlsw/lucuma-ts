@@ -259,6 +259,38 @@ export function useDeleteProgramUser() {
   return useMutation(DELETE_PROGRAM_USER_MUTATION);
 }
 
+/** Assign contact scientists to a program — the Programs editor and the
+ *  Proposals award both do this, so the pair lives here rather than in either.
+ *
+ *  The ODB has no single mutation for it: `addProgramUser` creates a SUPPORT
+ *  ProgramUser with no user attached (the slot an invitation would later fill),
+ *  and `linkUser` needs that slot's id, so the two calls are ordered by the
+ *  schema. Each assignment is independent, so they run concurrently; a failure
+ *  in any one rejects, leaving the caller's error handling to report it. */
+export function useAssignContactScientists(): {
+  assign: (programId: string, userIds: readonly string[]) => Promise<void>;
+  loading: boolean;
+} {
+  const [addProgramUser, { loading: adding }] = useAddProgramUser();
+  const [linkUser, { loading: linking }] = useLinkUser();
+
+  const assign = async (programId: string, userIds: readonly string[]): Promise<void> => {
+    await Promise.all(
+      userIds.map(async (userId) => {
+        const res = await addProgramUser({ variables: { programId } });
+        const programUserId = res.data?.addProgramUser.programUser.id;
+        // The schema makes this non-null, so a missing id means the mutation
+        // didn't land — surface it rather than silently skipping the link and
+        // leaving an unlinked slot behind.
+        if (programUserId === undefined) throw new Error(`Could not add a contact scientist to ${programId}`);
+        await linkUser({ variables: { programUserId, userId } });
+      }),
+    );
+  };
+
+  return { assign, loading: adding || linking };
+}
+
 export type AdminProgramsResult = DocumentType<typeof PROGRAMS_QUERY>;
 
 /** Map Program rows onto the editable Program view shape. */

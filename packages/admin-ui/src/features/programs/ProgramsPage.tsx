@@ -1,6 +1,6 @@
 import './ProgramsPage.css';
 
-import { NumberInput } from '@gemini-hlsw/lucuma-common-ui';
+import { isNotNullish, NumberInput } from '@gemini-hlsw/lucuma-common-ui';
 import { AutoComplete } from 'primereact/autocomplete';
 import { Button } from 'primereact/button';
 import { Checkbox } from 'primereact/checkbox';
@@ -23,10 +23,9 @@ import {
   mapPrograms,
   programPropertiesInput,
   proposalTypeInput,
-  useAddProgramUser,
+  useAssignContactScientists,
   useCreateProgramNote,
   useDeleteProgramUser,
-  useLinkUser,
   usePrograms,
   useSetAllocations,
   useUpdateProgram,
@@ -80,8 +79,7 @@ export default function ProgramsPage(): JSX.Element {
   const [setAllocations, { loading: settingAllocations }] = useSetAllocations();
   const [createNote, { loading: creatingNote }] = useCreateProgramNote();
   const [updateNote, { loading: updatingNote }] = useUpdateProgramNote();
-  const [addProgramUser, { loading: addingUser }] = useAddProgramUser();
-  const [linkUser, { loading: linkingUser }] = useLinkUser();
+  const { assign: assignContactScientists, loading: assigningContacts } = useAssignContactScientists();
   const [deleteProgramUser, { loading: deletingUser }] = useDeleteProgramUser();
   const saving =
     updatingProgram ||
@@ -89,8 +87,7 @@ export default function ProgramsPage(): JSX.Element {
     settingAllocations ||
     creatingNote ||
     updatingNote ||
-    addingUser ||
-    linkingUser ||
+    assigningContacts ||
     deletingUser;
 
   /** Persist every edited aspect of the program through its own mutation.
@@ -119,11 +116,13 @@ export default function ProgramsPage(): JSX.Element {
     for (const removed of original.contactScientists.filter((c) => !draftIds.has(c.programUserId))) {
       await deleteProgramUser({ variables: { programUserId: removed.programUserId ?? '' } });
     }
-    for (const added of draft.contactScientists.filter((c) => !c.programUserId && c.userId)) {
-      const res = await addProgramUser({ variables: { programId: draft.id } });
-      const programUserId = res.data?.addProgramUser.programUser.id;
-      if (programUserId) await linkUser({ variables: { programUserId, userId: added.userId ?? '' } });
-    }
+    await assignContactScientists(
+      draft.id,
+      draft.contactScientists
+        .filter((c) => !c.programUserId)
+        .map((c) => c.userId)
+        .filter(isNotNullish),
+    );
   }
 
   // Defaults to the current semester per sc-9582; the user can widen to "All".
