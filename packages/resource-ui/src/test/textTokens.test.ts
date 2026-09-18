@@ -1,7 +1,8 @@
 /** Tailwind's own compiler reads the roles, so a token added to `@theme` cannot escape the guard. */
-import { cn } from '@gemini-hlsw/lucuma-common-ui';
 import { __unstable__loadDesignSystem } from 'tailwindcss';
 import { describe, expect, it } from 'vitest';
+
+import { cn, FONT_SIZE_NAMES } from '@/styles/cn';
 
 import globalCss from '../styles/global.css?raw';
 
@@ -13,6 +14,10 @@ const shadowKeys = new Set(designSystem.theme.keysInNamespaces(['--text-shadow']
 const declared = designSystem.theme.keysInNamespaces(['--text']).filter((key) => !shadowKeys.has(key));
 
 describe('the font-size roles in global.css', () => {
+  it('is the list `cn` was built from - an unlisted role merges as a colour', () => {
+    expect([...declared].sort()).toStrictEqual([...FONT_SIZE_NAMES].sort());
+  });
+
   it.each(declared)('survives a following colour: text-%s', (key) => {
     expect(cn(`text-${key}`, 'text-foreground-secondary')).toContain(`text-${key}`);
   });

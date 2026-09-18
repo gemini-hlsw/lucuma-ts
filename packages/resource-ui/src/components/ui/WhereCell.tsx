@@ -1,6 +1,7 @@
-import { cn } from '@gemini-hlsw/lucuma-common-ui';
 import { Tag } from 'primereact/tag';
 import type { JSX } from 'react';
+
+import { cn } from '@/styles/cn';
 
 /** Coarser than either finder's own `where` union; an empty dot is never "unavailable" (I4). */
 export type Presence = 'ON_TELESCOPE' | 'OFF_TELESCOPE' | 'NOT_RECORDED';

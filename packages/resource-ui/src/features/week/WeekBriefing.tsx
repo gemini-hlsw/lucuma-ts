@@ -1,4 +1,4 @@
-import { cn, when } from '@gemini-hlsw/lucuma-common-ui';
+import { when } from '@gemini-hlsw/lucuma-common-ui';
 import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
 import { Tag } from 'primereact/tag';
@@ -12,6 +12,7 @@ import type { WeekChange, WeekNightFacts } from '@/domain/weekBriefing';
 import { MoonDisc } from '@/features/calendar/MoonDisc';
 import { LOCATION_LABEL } from '@/features/components/componentLabels';
 import { INSTRUMENT_LABEL } from '@/features/timeline/timelineOptions';
+import { cn } from '@/styles/cn';
 
 const whenFormat = zoneFormatters('en-GB', {
   weekday: 'short',

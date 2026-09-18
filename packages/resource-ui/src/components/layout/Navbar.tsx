@@ -7,7 +7,6 @@ import {
   faUser,
 } from '@fortawesome/pro-regular-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { cn } from '@gemini-hlsw/lucuma-common-ui';
 import { Menu } from 'primereact/menu';
 import { type JSX, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
@@ -20,6 +19,7 @@ import { SegmentedControl, type SegmentedOption } from '@/components/ui/Segmente
 import { FOCUS_RING } from '@/components/ui/styles';
 import type { TimeDisplay } from '@/domain/siteTime';
 import { type Site, SITE_NAMES, SITES } from '@/domain/types';
+import { cn } from '@/styles/cn';
 
 const BRAND_LABEL = 'Resource';
 

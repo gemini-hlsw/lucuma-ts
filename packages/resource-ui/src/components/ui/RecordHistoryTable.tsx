@@ -1,5 +1,6 @@
-import { cn } from '@gemini-hlsw/lucuma-common-ui';
 import type { JSX } from 'react';
+
+import { cn } from '@/styles/cn';
 
 import type { RecordStatus, StatusTone } from './StatusTag';
 

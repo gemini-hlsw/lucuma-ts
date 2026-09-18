@@ -1,9 +1,9 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { cn } from '@gemini-hlsw/lucuma-common-ui';
 import type { JSX } from 'react';
 import { NavLink, useSearchParams } from 'react-router';
 
 import { carrySelection, searchString } from '@/app/carriedSelection';
+import { cn } from '@/styles/cn';
 
 import type { SidebarMenuItem } from './SidebarMenu';
 import { SIDEBAR_MENU_SECTIONS } from './SidebarMenu';

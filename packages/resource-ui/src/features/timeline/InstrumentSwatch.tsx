@@ -1,8 +1,8 @@
 /** `aria-hidden` always: the name beside it is the identity and the square is decoration. */
-import { cn } from '@gemini-hlsw/lucuma-common-ui';
 import type { JSX } from 'react';
 
 import type { Instrument } from '@/domain/types';
+import { cn } from '@/styles/cn';
 
 import { INSTRUMENT_LABEL, instrumentColor } from './timelineOptions';
 

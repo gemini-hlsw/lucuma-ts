@@ -353,9 +353,13 @@ gets the size right and the baseline wrong. **In the masthead, add `widthAuto`**
 pads every icon to a fixed 1.25em canvas, and that padding is width the bar cannot spare (see
 `.tickets/sc-tbd-masthead-text-resize.md`). Leave it fixed in the app menu, where the padding is
 what aligns the icon column.
-**A new `@theme` role must take a t-shirt name**, or `tailwind-merge` reads it as a colour and
-silently drops it when a colour follows - `src/test/textTokens.test.ts` compiles the stylesheet and
-fails on a name it cannot classify.
+**A new `@theme` role must be named in `FONT_SIZE_NAMES` in `src/styles/cn.ts`**: tailwind-merge
+classifies `text-*` from the name alone, so a role it does not know reads as a colour and is dropped
+when a colour follows. That file is also where this app's `cn` comes from - import it from
+`@/styles/cn`, which `no-restricted-imports` in `eslint.config.js` enforces by banning the `cn`
+named import from `@gemini-hlsw/lucuma-common-ui` (its other exports are unaffected), because a
+call site on the shared `cn` loses the scale silently rather than failing.
+`src/test/textTokens.test.ts` compiles the stylesheet and fails on a role the list is missing.
 Chart options cannot read a `var()` (the fit maths needs the number, and a label measuring
 NaN never draws), so `timelineOptions.ts` mirrors two of them as `DENSE` and `TICK` and every chart
 imports them from there - pinned to the tokens by `src/test/cssMirrors.test.ts`, since a mirror that

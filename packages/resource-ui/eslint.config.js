@@ -55,6 +55,51 @@ export default defineConfig(
     },
   },
   {
+    files: ['src/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: '@gemini-hlsw/lucuma-common-ui',
+              importNames: ['cn'],
+              message:
+                "Import `cn` from '@/styles/cn': the shared one cannot see this app's `@theme` type scale, and merges a size it does not recognise away as a colour.",
+            },
+          ],
+        },
+      ],
+      'no-restricted-syntax': [
+        'error',
+        {
+          // `@theme` resets the namespace, so a step above `base` compiles to nothing at all.
+          selector: ':matches(Literal, TemplateElement)[value.raw=/(^|[\\s\'"`:])text-(lg|xl|[2-9]xl)($|[\\s\'"`])/]',
+          message:
+            'The type scale stops at `text-base`. A larger step emits no CSS, so the text silently renders at whatever it inherits.',
+        },
+        {
+          selector: 'Literal[value=/(^|[\\s\'"`:])text-(lg|xl|[2-9]xl)($|[\\s\'"`])/]',
+          message:
+            'The type scale stops at `text-base`. A larger step emits no CSS, so the text silently renders at whatever it inherits.',
+        },
+        {
+          // A length in the `text-` namespace, so an arbitrary colour or `var()` is left alone.
+          selector:
+            ':matches(Literal, TemplateElement)[value.raw=/(^|[\\s\'"`:])text-\\[(length:|[0-9.]+(px|rem|em|pt|pc|in|cm|mm|ch|ex|vw|vh|vmin|vmax)\\])/]',
+          message:
+            'The type scale is `text-2xs`, `text-xs`, `text-sm` and `text-base`. An arbitrary size is one only this component knows; a size outside the scale needs a role in DESIGN.md first.',
+        },
+        {
+          selector:
+            'Literal[value=/(^|[\\s\'"`:])text-\\[(length:|[0-9.]+(px|rem|em|pt|pc|in|cm|mm|ch|ex|vw|vh|vmin|vmax)\\])/]',
+          message:
+            'The type scale is `text-2xs`, `text-xs`, `text-sm` and `text-base`. An arbitrary size is one only this component knows; a size outside the scale needs a role in DESIGN.md first.',
+        },
+      ],
+    },
+  },
+  {
     settings: {
       react: { version: '19.2' },
     },

@@ -256,10 +256,18 @@ sits on. A bar label carries instrument identity and a gutter label carries a po
 unique facts and both stay at Dense. Dense as the floor matches Primer, Carbon, Atlassian, Fluent
 and Grafana, and the Fermilab ACORN control-room guide's 12 CSS px seated.
 
-There is no fifth token, and `text-lg` and above do not exist - `--text-*: initial` in `@theme`
-removes the rest of Tailwind's scale so the four above are the whole system. A new role is added
-in `@theme` alone, and only under a t-shirt name: `src/test/textTokens.test.ts` compiles the
-stylesheet and fails if a declared role is one `tailwind-merge` would read as a colour.
+No size enters the scale without a role this document names and a surface that draws it. Four have
+one today; a fifth would have to earn its own row here first, which nothing currently asks for. The
+gate is what holds - a count would only tell whoever needs a fifth to break the rule or reach for an
+arbitrary value instead.
+
+`text-lg` and above do not exist: `--text-*: initial` in `@theme` removes the rest of Tailwind's
+scale, so those classes compile to nothing and the text quietly renders at whatever it inherits.
+`no-restricted-syntax` in `eslint.config.js` rejects them, since nothing else would - and rejects an
+arbitrary size like `text-[20px]`, which does compile and is a size only its own component knows,
+while leaving an arbitrary colour alone. A role added to
+`@theme` is named in `FONT_SIZE_NAMES` in `src/styles/cn.ts`, which is what tells tailwind-merge it
+is a size rather than a colour; `src/test/textTokens.test.ts` fails on a role missing from the list.
 
 `DENSE` and `TICK` in `features/timeline/timelineOptions.ts` mirror `--text-xs` and `--text-2xs`
 for the chart options, which need the number rather than the `var()` - a label measuring NaN
