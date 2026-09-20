@@ -624,13 +624,13 @@ importers:
         version: 0.176.0
       '@highcharts/react':
         specifier: 5.3.0
-        version: 5.3.0(@types/react@19.3.0)(highcharts@13.0.2)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+        version: 5.3.0(@types/react@19.3.0)(highcharts@13.1.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       date-fns:
         specifier: 4.4.0
         version: 4.4.0
       highcharts:
-        specifier: 13.0.2
-        version: 13.0.2
+        specifier: 13.1.0
+        version: 13.1.0
       primereact:
         specifier: 10.9.9
         version: 10.9.9(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
@@ -4025,8 +4025,8 @@ packages:
   hermes-parser@0.25.1:
     resolution: {integrity: sha512-6pEjquH3rqaI6cYAXYPcz9MS4rY6R4ngRgrgfDshRptUZIc3lw0MCIJIGDj9++mfySOuPTHB4nrSW99BCvOPIA==}
 
-  highcharts@13.0.2:
-    resolution: {integrity: sha512-BBqoxQpRgA4c2oCfIIBRVIs+lt1CHKs1cZic9YBt54OukFY6DSyvQbLZ+/1UrN2iKu24I5HvMdVG89Z+Pis6zA==}
+  highcharts@13.1.0:
+    resolution: {integrity: sha512-bBIdIw4WhbwBVa+7qNpTh3ZoMDcLC1kHnPWjndFTOrKXnOA5U1V21olSL1AMeAp0Evzn+/aLLClRpeIYqU9Hpw==}
     peerDependencies:
       jspdf: ^4.1.0
       svg2pdf.js: ^2.7.0
@@ -7190,9 +7190,9 @@ snapshots:
       protobufjs: 7.6.6
       yargs: 17.7.3
 
-  '@highcharts/react@5.3.0(@types/react@19.3.0)(highcharts@13.0.2)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)':
+  '@highcharts/react@5.3.0(@types/react@19.3.0)(highcharts@13.1.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)':
     dependencies:
-      highcharts: 13.0.2
+      highcharts: 13.1.0
       react: 19.3.0
       react-dom: 19.3.0(react@19.3.0)
     optionalDependencies:
@@ -9891,7 +9891,7 @@ snapshots:
     dependencies:
       hermes-estree: 0.25.1
 
-  highcharts@13.0.2: {}
+  highcharts@13.1.0: {}
 
   hookified@1.15.1: {}
 
