@@ -13,9 +13,10 @@ import { formatModeType } from '@/gql/odb/shared';
  * "Potential Conflicts" table (sc-9243): active programs planning equivalent
  * observations — configuration requests, plus observations in active ToO
  * programs — with a similar observing mode within half the requested
- * configuration's field of view. The active-period and observing-mode filters
- * run in the ODB; the coordinate cone is computed here until the ODB grows
- * coordinate query filters (sc-9240), at which point it moves server-side.
+ * configuration's field of view.
+ *
+ * Every filter runs in the ODB, the coordinate cone included, so the separation
+ * shown here is for the reader rather than a test any row had to pass.
  */
 export function ConflictsTable({
   title,
@@ -24,14 +25,14 @@ export function ConflictsTable({
   readonly title: string;
   readonly sources: readonly ConflictSource[];
 }): JSX.Element {
-  const { candidates, loading, error } = useConflictCandidates(sources);
+  const { candidates, loading, error, truncated } = useConflictCandidates(sources);
   const rows = useMemo(() => matchConflicts(sources, candidates), [sources, candidates]);
 
   return (
     <section className="check-section">
       <h3
         className="check-title"
-        title="Planned observations in other active programs that would yield equivalent data (sc-9243): a similar observing mode within half the requested configuration's field of view. Covers configuration requests and, since ToO configurations carry no coordinates, the observations of active ToO programs."
+        title="Planned observations in other active programs that would yield equivalent data (sc-9243): a similar observing mode within half the requested configuration's field of view. Covers configuration requests and, since ToO configurations carry no coordinates, the observations of active ToO programs. A target of opportunity still awaiting its alert has no position to compare and is not covered."
       >
         {title}
         {loading && <Spinner spin className="check-spinner" />}
@@ -41,11 +42,24 @@ export function ConflictsTable({
           <TriangleExclamation /> Conflict check failed: {friendlyError(error)}
         </p>
       )}
+      {truncated && (
+        <p className="check-error">
+          <TriangleExclamation /> More candidates matched than this check can list. The rows below are incomplete.
+        </p>
+      )}
       <DataTable
         value={rows}
         dataKey="key"
         className="pl-striped-table"
-        emptyMessage={loading ? 'Checking active programs…' : 'No conflicting plans found in other active programs.'}
+        // Never an all-clear on an incomplete pool: a failed or truncated check
+        // that reads "no conflicts found" is what a missed duplicate looks like.
+        emptyMessage={
+          loading
+            ? 'Checking active programs…'
+            : error || truncated
+              ? 'Conflicts could not be checked — see above.'
+              : 'No conflicting plans found in other active programs.'
+        }
       >
         <Column
           field="sourceId"
@@ -86,7 +100,7 @@ export function ConflictsTable({
           header="Sep"
           style={{ width: '5rem' }}
           headerTooltip="Angular separation from the requested coordinates."
-          body={(r: ConflictRow) => `${r.sepArcsec.toFixed(1)}″`}
+          body={(r: ConflictRow) => (r.sepArcsec === null ? '—' : `${r.sepArcsec.toFixed(1)}″`)}
         />
         <Column header="Config" style={{ width: '10rem' }} body={(r: ConflictRow) => formatModeType(r.modeType)} />
       </DataTable>
