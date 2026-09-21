@@ -1,0 +1,430 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-17",
+  "title": "Design System: Resource",
+  "extensions": {
+    "colorMeta": {
+      "gpp": {
+        "role": "primary",
+        "displayName": "GPP Action Green",
+        "canonical": "hsl(122deg 39% 49%)",
+        "tonalRamp": ["hsl(122deg 39% 43%)", "hsl(122deg 39% 49%)", "hsl(122deg 39% 55%)"],
+        "note": "The one action colour. Same value as lucuma-ui --green-500 (#4caf50); prefer the lucuma-ui variable where it is in scope."
+      },
+      "gpp-dark": {
+        "role": "primary",
+        "displayName": "GPP Action Green, Pressed",
+        "canonical": "hsl(122deg 39% 43%)"
+      },
+      "gpp-light": {
+        "role": "primary",
+        "displayName": "GPP Action Green, Light",
+        "canonical": "hsl(122deg 39% 55%)",
+        "note": "Hover fill, and the focus step: 3.35:1 on the active-nav fill where the base green is 2.91:1."
+      },
+      "gpp-accent": {
+        "role": "primary",
+        "displayName": "Brand Light Green",
+        "canonical": "rgb(144 238 144 / 80%)",
+        "note": "Identity only. Never interactive, never a state."
+      },
+      "action-info": {
+        "role": "secondary",
+        "displayName": "Info Blue",
+        "canonical": "rgb(33 108 165)"
+      },
+      "action-secondary": {
+        "role": "secondary",
+        "displayName": "Secondary Slate",
+        "canonical": "rgb(106 115 124)"
+      },
+      "canvas": {
+        "role": "neutral",
+        "displayName": "Canvas",
+        "canonical": "#000",
+        "tonalRamp": ["#000", "#1e1e1e", "#262626", "#313131", "#414141", "#454545"],
+        "note": "Step 0 of the chrome ladder measured from Explore. The ramp is the whole ladder, canvas to subtle; climb it in order and never invent an intermediate grey."
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "Surface",
+        "canonical": "#1e1e1e"
+      },
+      "panel": {
+        "role": "neutral",
+        "displayName": "Panel",
+        "canonical": "#262626"
+      },
+      "panel-header": {
+        "role": "neutral",
+        "displayName": "Panel Header",
+        "canonical": "#313131"
+      },
+      "surface-raised": {
+        "role": "neutral",
+        "displayName": "Raised",
+        "canonical": "#414141",
+        "note": "Table headers, and the one hover step for every surface."
+      },
+      "subtle": {
+        "role": "neutral",
+        "displayName": "Subtle",
+        "canonical": "#454545"
+      },
+      "foreground": {
+        "role": "neutral",
+        "displayName": "Foreground",
+        "canonical": "rgb(255 255 255 / 87%)",
+        "tonalRamp": ["rgb(255 255 255 / 38%)", "rgb(255 255 255 / 60%)", "rgb(255 255 255 / 87%)"],
+        "note": "A white-opacity ladder (Material dark), not a grey ramp."
+      },
+      "foreground-secondary": {
+        "role": "neutral",
+        "displayName": "Secondary",
+        "canonical": "rgb(255 255 255 / 60%)",
+        "note": "The floor tone for information at every size."
+      },
+      "foreground-muted": {
+        "role": "neutral",
+        "displayName": "Muted",
+        "canonical": "rgb(255 255 255 / 38%)",
+        "note": "Fails AA on every surface in the ladder at any size, so it may never be the only carrier of information."
+      },
+      "warning": {
+        "role": "tertiary",
+        "displayName": "Amber",
+        "canonical": "oklch(87.9% 0.169 91.605deg)",
+        "tonalRamp": [
+          "oklch(41.4% 0.112 45.904deg)",
+          "oklch(66.6% 0.179 58.318deg)",
+          "oklch(87.9% 0.169 91.605deg)",
+          "oklch(96.2% 0.059 95.617deg)"
+        ],
+        "note": "The ramp is the panel triplet plus the canvas weight: fill, edge, word, ink."
+      },
+      "warning-fill": {
+        "role": "tertiary",
+        "displayName": "Amber Panel Fill",
+        "canonical": "oklch(41.4% 0.112 45.904deg)"
+      },
+      "warning-edge": {
+        "role": "tertiary",
+        "displayName": "Amber Panel Edge",
+        "canonical": "oklch(66.6% 0.179 58.318deg)"
+      },
+      "warning-ink": {
+        "role": "tertiary",
+        "displayName": "Amber Panel Ink",
+        "canonical": "oklch(96.2% 0.059 95.617deg)"
+      },
+      "danger": {
+        "role": "tertiary",
+        "displayName": "Alert Red",
+        "canonical": "oklch(80.8% 0.114 19.571deg)",
+        "tonalRamp": [
+          "oklch(39.6% 0.141 25.723deg)",
+          "oklch(50.5% 0.213 27.518deg)",
+          "oklch(80.8% 0.114 19.571deg)",
+          "oklch(93.6% 0.032 17.717deg)"
+        ],
+        "note": "The ramp is the panel triplet plus the canvas weight: fill, edge, word, ink."
+      },
+      "danger-fill": {
+        "role": "tertiary",
+        "displayName": "Alert Red Panel Fill",
+        "canonical": "oklch(39.6% 0.141 25.723deg)"
+      },
+      "danger-edge": {
+        "role": "tertiary",
+        "displayName": "Alert Red Panel Edge",
+        "canonical": "oklch(50.5% 0.213 27.518deg)"
+      },
+      "danger-ink": {
+        "role": "tertiary",
+        "displayName": "Alert Red Panel Ink",
+        "canonical": "oklch(93.6% 0.032 17.717deg)"
+      },
+      "schedule-closed": {
+        "role": "tertiary",
+        "displayName": "Closure Red",
+        "canonical": "#b91c1c",
+        "note": "Telescope shutdown on the charts, solid. Declared as --schedule-closed, not --color-closure-red."
+      },
+      "state-routine": {
+        "role": "neutral",
+        "displayName": "Routine State Grey",
+        "canonical": "#737373",
+        "note": "Schedule state rows are monochrome on purpose: hue means instrument identity and nothing else."
+      },
+      "state-notable": {
+        "role": "neutral",
+        "displayName": "Notable State Grey",
+        "canonical": "#d4d4d4"
+      },
+      "instrument-unknown": {
+        "role": "neutral",
+        "displayName": "Unknown Zinc",
+        "canonical": "#a1a1aa",
+        "note": "A reserved neutral outside the two validated site hue sets; it must read as \"identity unresolved\"."
+      }
+    },
+    "typographyMeta": {
+      "title": {
+        "displayName": "Title",
+        "token": "--text-base",
+        "purpose": "One page title per destination, in PageHeader. Exactly one element on a page may carry it."
+      },
+      "body": {
+        "displayName": "Body",
+        "token": "--text-sm",
+        "purpose": "Anything a reader reads as words: cells, controls, prose, messages, empty states. The default, set once on body."
+      },
+      "dense": {
+        "displayName": "Dense",
+        "token": "--text-xs",
+        "purpose": "The chrome and every dense data surface. The floor for informative text; the weight (400-700) is the call site’s."
+      },
+      "tick": {
+        "displayName": "Tick",
+        "token": "--text-2xs",
+        "purpose": "Numeric axis tick labels and nothing else. Below the informative floor, which is why nothing informative may take it."
+      },
+      "wordmark": {
+        "displayName": "Wordmark",
+        "token": "--text-sm",
+        "purpose": "\"RESOURCE\" is not a size: it sits at Body and takes its identity from 700 weight and 0.4em tracking."
+      }
+    },
+    "shadows": [],
+    "shadowPolicy": "None. The system is flat and tonal: depth is stated by climbing the surface ladder, never by box-shadow. The two exceptions are the modal scrim and the chart tooltip’s 1px border, both under unmappedTokens.",
+    "motion": [],
+    "breakpoints": [
+      {
+        "name": "md",
+        "value": "768px",
+        "purpose": "The shell’s one breakpoint, written 48rem in shell.css and md: in Tailwind. Below it the phone frame replaces the sidebar with a bottom bar; at and above it the desktop shell is untouched."
+      },
+      {
+        "name": "sm",
+        "value": "640px",
+        "purpose": "A verification width, not a design width: 640 CSS px is 200% zoom on a 1280px screen (WCAG 1.4.4), so max-sm: reads natively as \"below the AA zoom point\"."
+      },
+      {
+        "name": "reflow",
+        "value": "320px",
+        "purpose": "A verification width, not a design width: WCAG 1.4.10 reflow. A chart or a data table may scroll inside its own container; nothing else may be lost or put out of reach."
+      }
+    ],
+    "focusRing": {
+      "treatments": [
+        {
+          "name": "FOCUS_RING",
+          "appliesTo": "the app’s own elements (masthead, phone bar today)",
+          "value": "focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-gpp-light",
+          "css": "outline: none; box-shadow: inset 0 0 0 2px var(--color-gpp-light, hsl(122deg 39% 55%));",
+          "source": "src/components/ui/styles.ts"
+        },
+        {
+          "name": "calendar event outline",
+          "appliesTo": "react-big-calendar events",
+          "css": "outline: 2px solid var(--color-gpp, hsl(122deg 39% 49%)); outline-offset: 1px;",
+          "source": "src/styles/global.css"
+        },
+        {
+          "name": "segmented control outline",
+          "appliesTo": ".p-selectbutton .p-button",
+          "css": "outline: 2px solid var(--color-gpp-light, hsl(122deg 39% 55%)); outline-offset: -2px;",
+          "source": "src/styles/shell.css",
+          "why": "An outline rather than a ring: the selected segment spends its box-shadow on the underline, so a focus shadow would be replaced by it and the segment a keyboard lands on first would show no focus at all."
+        }
+      ],
+      "contrast": "The light green step, not the base one. The base green measures 2.91:1 against the translucent green an active nav item fills with, under WCAG 1.4.11’s 3:1 floor for a UI part; the light step measures 3.35:1.",
+      "shortfalls": "Week cards ride the browser-default ring, and chart bars are mouse-only with no keyboard path to a bar’s open-night action."
+    },
+    "unmappedTokens": [
+      {
+        "name": "--schedule-band",
+        "value": "rgb(231 0 11 / 22%)",
+        "purpose": "The one translucent closure wash laid over the subject rows. A shutdown is said once, per chart, never per row."
+      },
+      {
+        "name": "--schedule-band-edge",
+        "value": "rgb(231 0 11 / 70%)",
+        "purpose": "The wash’s own edge."
+      },
+      {
+        "name": "--instrument-ink-light",
+        "value": "#fff",
+        "purpose": "Bar label ink where light clears 4.5:1 on the instrument fill."
+      },
+      {
+        "name": "--instrument-ink-dark",
+        "value": "#0a0a0a",
+        "purpose": "Bar label ink where dark clears 4.5:1 on the instrument fill."
+      },
+      {
+        "name": "--timeline-block-border",
+        "value": "rgb(255 255 255 / 12%)",
+        "purpose": "A 1px separator between adjacent blocks that share a hue."
+      },
+      {
+        "name": "modal scrim",
+        "value": "rgb(0 0 0 / 60%) with backdrop-filter: blur(2px)",
+        "purpose": "One of the two exceptions to the flat rule: the darker scrim (60% against the theme’s 40%) plus the blur together state that a modal is up."
+      },
+      {
+        "name": "chart tooltip radius",
+        "value": "6px",
+        "purpose": "features/timeline/timelineOptions.ts. Larger than the 4px control radius because a tooltip is an overlay, not a control."
+      },
+      {
+        "name": "schedule bar radius",
+        "value": "3px",
+        "purpose": "Softens a corner without moving an edge off its time. A bar’s edges are facts (half-open intervals), so no rounding or padding may move one."
+      }
+    ],
+    "tokenSource": "src/styles/global.css (@theme and the chart variables) and src/styles/shell.css are normative for every value. DESIGN.md is normative for every rule. Neither this file nor DESIGN.md’s frontmatter is a complete token list: the fourteen-hue instrument palette, both block inks, the --timeline-* variables, the washes and the grid lines live only in the CSS."
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The one action colour. At most one primary action per view, and today’s read-only views correctly have none.",
+      "html": "<button class=\"ds-btn ds-btn-primary\">Tonight</button>",
+      "css": ".ds-btn { font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif; font-size: var(--text-xs, 0.75rem); line-height: 1rem; height: 28px; padding: 4.2px 9.8px; border: 1px solid transparent; border-radius: 4px; cursor: pointer; } .ds-btn-primary { background: var(--color-gpp, hsl(122deg 39% 49%)); border-color: var(--color-gpp, hsl(122deg 39% 49%)); color: #fff; } .ds-btn-primary:hover { background: var(--color-gpp-light, hsl(122deg 39% 55%)); border-color: var(--color-gpp-light, hsl(122deg 39% 55%)); } .ds-btn-primary:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--color-gpp-light, hsl(122deg 39% 55%)); } .ds-btn-primary:disabled { opacity: 0.4; cursor: default; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Slate fill for a control that must not read as the primary action.",
+      "html": "<button class=\"ds-btn ds-btn-secondary\">Previous night</button>",
+      "css": ".ds-btn { font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif; font-size: var(--text-xs, 0.75rem); line-height: 1rem; height: 28px; padding: 4.2px 9.8px; border: 1px solid transparent; border-radius: 4px; cursor: pointer; } .ds-btn-secondary { background: var(--color-action-secondary, rgb(106 115 124)); border-color: var(--color-action-secondary, rgb(106 115 124)); color: var(--color-foreground, rgb(255 255 255 / 87%)); } .ds-btn-secondary:hover { background: color-mix(in srgb, var(--color-action-secondary, rgb(106 115 124)) 85%, white); border-color: color-mix(in srgb, var(--color-action-secondary, rgb(106 115 124)) 85%, white); } .ds-btn-secondary:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--color-gpp-light, hsl(122deg 39% 55%)); }"
+    },
+    {
+      "name": "Icon Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "28px square, transparent at rest. Hover climbs one step of the surface ladder; disabled drops to 40%. Always carries an accessible name.",
+      "html": "<button class=\"ds-icon-btn\" aria-label=\"Open settings\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 16 16\" fill=\"currentColor\" aria-hidden=\"true\"><path d=\"M8 5a3 3 0 100 6 3 3 0 000-6zm0 4.5a1.5 1.5 0 110-3 1.5 1.5 0 010 3z\"/><path d=\"M14 8l1.3-1.1-1.3-2.3-1.6.5a5.9 5.9 0 00-1.5-.9L10.6 2H7.4l-.3 1.7a5.9 5.9 0 00-1.5.9l-1.6-.5-1.3 2.3L4 8l-1.3 1.1 1.3 2.3 1.6-.5c.5.4 1 .7 1.5.9l.3 1.7h3.2l.3-1.7a5.9 5.9 0 001.5-.9l1.6.5 1.3-2.3L14 8z\" opacity=\".55\"/></svg></button>",
+      "css": ".ds-icon-btn { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: transparent; border: none; color: var(--color-foreground-secondary, rgb(255 255 255 / 60%)); border-radius: 4px; cursor: pointer; } .ds-icon-btn:not(:disabled):hover { background: var(--color-surface-raised, #414141); color: var(--color-foreground, rgb(255 255 255 / 87%)); } .ds-icon-btn:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--color-gpp-light, hsl(122deg 39% 55%)); } .ds-icon-btn:disabled { opacity: 0.4; cursor: default; }"
+    },
+    {
+      "name": "Segmented Control",
+      "kind": "nav",
+      "refersTo": "segment-idle",
+      "description": "View and clock toggles. The selected segment raises its surface and carries a 2px inset action-green underline; a green fill would compete with the real action.",
+      "html": "<div class=\"ds-seg\" role=\"group\" aria-label=\"View\"><button class=\"ds-seg-btn\" type=\"button\">Chart</button><button class=\"ds-seg-btn ds-seg-btn-on\" type=\"button\" aria-pressed=\"true\">Calendar</button></div>",
+      "css": ".ds-seg { display: inline-flex; }.ds-seg-btn { font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif; font-size: var(--text-xs, 0.75rem); line-height: 1rem; min-height: 24px; padding: 2.8px 7.7px; background: var(--color-surface, #1e1e1e); border: 1px solid var(--color-subtle, #454545); color: var(--color-foreground-secondary, rgb(255 255 255 / 60%)); font-weight: 500; cursor: pointer; } .ds-seg-btn:first-child { border-radius: 4px 0 0 4px; } .ds-seg-btn:last-child { border-radius: 0 4px 4px 0; border-left: none; } .ds-seg-btn:not(.ds-seg-btn-on):hover { background: var(--color-surface-raised, #414141); color: var(--color-foreground, rgb(255 255 255 / 87%)); } .ds-seg-btn-on { background: var(--color-surface-raised, #414141); color: var(--color-foreground, rgb(255 255 255 / 87%)); font-weight: 600; box-shadow: inset 0 -2px 0 0 var(--color-gpp, hsl(122deg 39% 49%)); } .ds-seg-btn:focus-visible { outline: 2px solid var(--color-gpp-light, hsl(122deg 39% 55%)); outline-offset: -2px; }"
+    },
+    {
+      "name": "Status Tag",
+      "kind": "chip",
+      "refersTo": "table-row",
+      "description": "One status vocabulary everywhere: Science, Engineering, Spare, Unavailable. Dense type, and the success and danger fills take dark ink (7.56:1 and 7.22:1) rather than the theme’s light text.",
+      "html": "<span class=\"ds-tag ds-tag-success\">Science</span> <span class=\"ds-tag ds-tag-info\">Engineering</span> <span class=\"ds-tag ds-tag-muted\">Spare</span> <span class=\"ds-tag ds-tag-danger\">Unavailable</span>",
+      "css": ".ds-tag { font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif; display: inline-flex; align-items: center; font-size: var(--text-xs, 0.75rem); line-height: 1rem; padding: 2.1px 7.7px; border-radius: 4px; font-weight: 600; } .ds-tag-success { background: var(--color-gpp, hsl(122deg 39% 49%)); color: var(--color-canvas, #000); } .ds-tag-info { background: var(--color-action-info, rgb(33 108 165)); color: #fff; } .ds-tag-muted { background: var(--color-surface-raised, #414141); color: var(--color-foreground-secondary, rgb(255 255 255 / 60%)); } .ds-tag-danger { background: var(--color-danger, oklch(80.8% 0.114 19.571deg)); color: var(--color-canvas, #000); }"
+    },
+    {
+      "name": "Environment Banner",
+      "kind": "custom",
+      "description": "A full-width strip above the masthead naming a build that is not production, in the identity accent with dark ink (9.34:1). Production renders nothing.",
+      "html": "<div class=\"ds-env-banner\">Development</div>",
+      "css": ".ds-env-banner { font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif; display: flex; align-items: center; justify-content: center; height: 20px; background: var(--color-gpp-accent, rgb(144 238 144 / 80%)); color: var(--color-canvas, #000); font-size: var(--text-xs, 0.75rem); font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; }"
+    },
+    {
+      "name": "Sidebar Navigation Item",
+      "kind": "nav",
+      "description": "Uppercase section label over icon+text items. The current destination fills with the action green at 40% and carries aria-current=\"page\", set by the router.",
+      "html": "<nav class=\"ds-nav\" aria-label=\"Primary navigation\"><div class=\"ds-nav-label\">Schedule</div><a class=\"ds-nav-item ds-nav-item-on\" href=\"#\" aria-current=\"page\">Night</a><a class=\"ds-nav-item\" href=\"#\">Week</a><a class=\"ds-nav-item ds-nav-item-off\" aria-disabled=\"true\">Semester</a></nav>",
+      "css": ".ds-nav { font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif; width: 196px; background: var(--color-surface, #1e1e1e); border-right: 1px solid var(--color-subtle, #454545); padding: 7px 0; } .ds-nav-label { padding: 14px 14px 7px; font-size: var(--text-xs, 0.75rem); line-height: 1rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-foreground-secondary, rgb(255 255 255 / 60%)); } .ds-nav-item { display: flex; align-items: center; gap: 7px; padding: 7px 14px; border-left: 2px solid transparent; font-size: var(--text-xs, 0.75rem); line-height: 1rem; color: var(--color-foreground-secondary, rgb(255 255 255 / 60%)); text-decoration: none; } .ds-nav-item:not(.ds-nav-item-on):not(.ds-nav-item-off):hover { background: var(--color-surface-raised, #414141); color: var(--color-foreground, rgb(255 255 255 / 87%)); } .ds-nav-item-on { border-left-color: var(--color-gpp, hsl(122deg 39% 49%)); background: color-mix(in oklab, var(--color-gpp, hsl(122deg 39% 49%)) 40%, transparent); color: #fff; } .ds-nav-item-off { color: var(--color-foreground-muted, rgb(255 255 255 / 38%)); } .ds-nav-item:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--color-gpp-light, hsl(122deg 39% 55%)); }"
+    },
+    {
+      "name": "Data Table",
+      "kind": "card",
+      "refersTo": "table-header",
+      "description": "Real tables: <th> for headers, <td> for data. Raised header, surface rows, a subtle stripe on alternates. Row height belongs to lucuma-ui-css and is rem-sized, so a reader who scales their type gets taller rows.",
+      "html": "<table class=\"ds-table\"><thead><tr><th>Port</th><th>Instrument</th><th>Status</th></tr></thead><tbody><tr><td>Side-looking</td><td>GMOS-S</td><td>Science</td></tr><tr><td>Up-looking</td><td>‘Alopeke</td><td>Engineering</td></tr><tr><td>Cassegrain</td><td>IGRINS-2</td><td>Science</td></tr></tbody></table>",
+      "css": ".ds-table { font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif; border-collapse: collapse; font-size: var(--text-sm, 0.875rem); line-height: 1.25rem; color: var(--color-foreground, rgb(255 255 255 / 87%)); } .ds-table th { background: var(--color-surface-raised, #414141); color: var(--color-foreground, rgb(255 255 255 / 87%)); font-weight: 600; text-align: left; padding: 7px 10.5px; } .ds-table td { background: var(--color-surface, #1e1e1e); padding: 7px 10.5px; } .ds-table tbody tr:nth-child(even) td { background: rgb(255 255 255 / 1%); } .ds-table tbody tr:hover td { background: var(--color-surface-raised, #414141); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "One Observatory Console",
+    "overview": "Resource is one console among the GPP applications, and it must feel like it: a reader coming from Explore (https://explore-dev.lucuma.xyz/) stays in the same dark, dense, matter-of-fact world. The chrome was measured from the running Explore application - the surface ladder, the white-opacity text ladder, the action green, the lightgreen identity accent - and those measured values are recorded here as tokens. Continuity is a floor, not a ceiling: where Resource can achieve clearer hierarchy, stronger accessibility, better interaction design, or more efficient use of space than Explore, it does, without breaking the family resemblance.\n\nThe surface is an information-dense engineering dashboard for experts - astronomers, night operations, staff - who scan, compare, and monitor the same views repeatedly. Density wins ties: condensed is correct here, airy is not. The interface recedes behind the record; colour is spent on identity and alarm, never on decoration. Today every view reads; mutations, auth, and a telescope scheduler builder are coming, so every pattern below is chosen to survive the arrival of editing (see Future Readiness).",
+    "keyCharacteristics": [
+      "Dark-first and only: black canvas, tonal layering, no glare, minimal chrome.",
+      "Dense: type and the boxes that hold it in rem so a reader can scale them, spacing in px so it does not.",
+      "Colour is semantic: hue = instrument identity, red = telescope closure, green = action.",
+      "Honest: a gap draws as a gap; absence is hollow; unknown is grey. Nothing is decorated to look complete (invariant I4 in PRODUCT.md).",
+      "WCAG 2.2 Level AA is the target, not an aspiration."
+    ],
+    "rules": [
+      {
+        "name": "The One Green Rule",
+        "body": "Action green acts; light-green accent identifies; no third green exists. If a green element does nothing when pressed, it must be the accent; if it acts, it must be `--color-gpp`.",
+        "section": "colors"
+      },
+      {
+        "name": "Red Is the Telescope's Alone (on the charts)",
+        "body": "A shutdown is said once: a solid red block on the Telescope row, one translucent band wash over the subject rows, the reason printed once on the band, one legend key. Never per-row red painting - the ports are not each closed, and no other row may claim red. Off the charts, red says only closed, unavailable, or error.",
+        "section": "colors"
+      },
+      {
+        "name": "Hue Means Identity and Nothing Else",
+        "body": "Chart hue identifies an instrument. States are monochrome; do not give a state a hue - a new state kind joins the two neutrals or the closure red. Identity never rides on colour alone: every block, row and swatch carries its published name in words.",
+        "section": "colors"
+      },
+      {
+        "name": "Treatment, Not a Second Palette",
+        "body": "Usability is a treatment over the identity hue: Science is the plain bar; Engineering-use the same hue hatched; Not-available hollow with the hue on the outline and a muted label - visually distinct from the ghost, and never red. Absence is drawn hollow (`schedule-ghost`), never as another identity colour, and never red either.",
+        "section": "colors"
+      },
+      {
+        "name": "A Gap Is a Gap",
+        "body": "Empty cells, empty calendar squares, and unrecorded spans stay empty. \"Not recorded\" must never be styled as \"closed\" or \"unavailable\" (invariant I4).",
+        "section": "colors"
+      },
+      {
+        "name": "The One-Number Rule",
+        "body": "Density is one number: `--spacing` in `@theme`, **3.5px**. Every Tailwind spacing utility compiles to `calc(var(--spacing) * n)`, so that one value sets every gap, padding and margin written as a utility. Never fix a layout problem by nudging it. **The number is not a single switch, though.** `shell.css` and `global.css` also carry multiples of the step derived by hand and written as literals - 12.6, 9.8, 8.4, 7.7, 4.2, 3.5, 2.8 and 2.1px - and those do not move when `--spacing` does. Changing the step means re-deriving every px figure in those two stylesheets in the same commit; half-done, the app silently runs at two densities, which the Don't list forbids.",
+        "section": "typography"
+      },
+      {
+        "name": "The app sets no root font size",
+        "body": ", which is what lets a reader's own browser font-size setting scale the type. Comeau's question decides which unit a value takes: _should this grow when the reader raises that setting?_ Type says yes, and so does any box whose job is to hold type - a width or a height that has to grow with the words inside it, the chart's label gutter being the worked example. Spacing says no and is written in px: gaps, padding, margins, border widths, and the target tokens (`--xp-target-floor`, `--xp-touch-target`), because a finger is a finger. An absolute px root would pin all of it and silently disable the setting.",
+        "section": "typography"
+      },
+      {
+        "name": "Dense Is The Floor",
+        "body": "No role carrying information sits below 12px. Tick is the single named exception and it is not information: a tick number repeats what its axis already says. Secondary (60%) is the floor tone for information at every size; muted carries only decoration or duplication (the same rule the Colors ladder states).",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat-By-Default Rule",
+        "body": "No new shadow vocabulary. If a surface needs to read as above another, move it up the ladder.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** climb the surface ladder in order; a new layer takes the next step, not a new hex.",
+      "**Do** spend colour on data. Chrome stays neutral so instruments and alarms own the hue.",
+      "**Do** put every control on the 28px line and every caption through `LabelledControl`.",
+      "**Do** show the published name (`'Alopeke`, Maroon-X), never the enum, and keep the name in words beside every colour.",
+      "**Do** give every chart a block-table reading - the semester chart's screen-reader table is the model, and the night and week charts still owe theirs - and drive tests through accessible queries.",
+      "**Do** target WCAG 2.2 AA on every change: 4.5:1 text, 3:1 UI parts, visible focus, 24px minimum targets (or spacing equivalents), full keyboard paths.",
+      "**Do** design every new component with its editing states in mind (see Future Readiness), even while the app is read-only."
+    ],
+    "donts": [
+      "**Don't** hard-code a colour in a component - extend from the tokens; components read variables.",
+      "**Don't** give a schedule state a hue, a port its own red, or absence a colour.",
+      "**Don't** decorate a gap. No skeleton rows, placeholder bars, or \"probably fine\" fills where the record holds nothing.",
+      "**Don't** use the identity accent (`--color-gpp-accent`) on anything interactive.",
+      "**Don't** put informative text below 60% white, or below Dense (12px), anywhere new (the shipped deviations are catalogued by pattern under Typography and queued to be fixed).",
+      "**Don't** add a masthead item without re-measuring the width budget.",
+      "**Don't** introduce a second density: no per-view font-size overrides to make something fit; fix the layout instead.",
+      "**Don't** set a root font size on `html`. An absolute one disables the reader's own browser font-size setting; density belongs to `--spacing` and to the px chrome values.",
+      "**Don't** copy an Explore weakness for continuity's sake - continuity binds palette, density and family resemblance, not defects."
+    ]
+  }
+}

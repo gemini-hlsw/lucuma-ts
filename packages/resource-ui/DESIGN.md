@@ -2,9 +2,9 @@
 name: Resource
 description: Dark, dense engineering console for Gemini telescope schedules, chrome-continuous with GPP Explore
 colors:
-  gpp-green: 'hsl(122deg 39% 49%)'
-  gpp-green-dark: 'hsl(122deg 39% 43%)'
-  gpp-green-light: 'hsl(122deg 39% 55%)'
+  gpp: 'hsl(122deg 39% 49%)'
+  gpp-dark: 'hsl(122deg 39% 43%)'
+  gpp-light: 'hsl(122deg 39% 55%)'
   gpp-accent: 'rgb(144 238 144 / 80%)'
   action-info: 'rgb(33 108 165)'
   action-secondary: 'rgb(106 115 124)'
@@ -17,48 +17,67 @@ colors:
   foreground: 'rgb(255 255 255 / 87%)'
   foreground-secondary: 'rgb(255 255 255 / 60%)'
   foreground-muted: 'rgb(255 255 255 / 38%)'
-  closure-red: '#b91c1c'
+  warning: 'oklch(87.9% 0.169 91.605deg)'
+  warning-fill: 'oklch(41.4% 0.112 45.904deg)'
+  warning-edge: 'oklch(66.6% 0.179 58.318deg)'
+  warning-ink: 'oklch(96.2% 0.059 95.617deg)'
+  danger: 'oklch(80.8% 0.114 19.571deg)'
+  danger-fill: 'oklch(39.6% 0.141 25.723deg)'
+  danger-edge: 'oklch(50.5% 0.213 27.518deg)'
+  danger-ink: 'oklch(93.6% 0.032 17.717deg)'
+  schedule-closed: '#b91c1c'
   state-routine: '#737373'
   state-notable: '#d4d4d4'
   instrument-unknown: '#a1a1aa'
 typography:
   body:
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"'
-    fontSize: '1rem'
+    fontSize: '0.875rem'
     fontWeight: 400
-    lineHeight: 1.5
-  title:
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"'
+    lineHeight: '1.25rem'
+  display:
+    fontSize: '1.5rem'
+    fontWeight: 600
+    lineHeight: '2rem'
+  section:
     fontSize: '1.125rem'
     fontWeight: 600
-  label:
+    lineHeight: '1.625rem'
+  title:
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"'
-    fontSize: '0.65rem'
+    fontSize: '1rem'
+    fontWeight: 600
+    lineHeight: '1.5rem'
+  dense:
+    fontSize: '0.75rem'
+    lineHeight: '1rem'
+  tick:
+    fontSize: '0.625rem'
     fontWeight: 400
-    letterSpacing: '0.025em'
+    lineHeight: '0.875rem'
   wordmark:
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"'
-    fontSize: '0.95rem'
+    fontSize: '0.875rem'
     fontWeight: 700
     letterSpacing: '0.4em'
 rounded:
   chip: '2px'
   control: '4px'
 spacing:
-  root: '14px'
-  masthead: '2.5rem'
-  env-banner: '1.4rem'
-  control-line: '2rem'
-  bottom-nav: '3.5rem'
-  touch-target: '44px'
+  spacing: '3.5px'
+  xp-masthead-height: '35px'
+  xp-banner-height: '20px'
+  xp-bottomnav-height: '49px'
+  xp-target-floor: '24px'
+  xp-touch-target: '44px'
 components:
   button-primary:
-    backgroundColor: '{colors.gpp-green}'
+    backgroundColor: '{colors.gpp}'
     textColor: '#fff'
     rounded: '{rounded.control}'
-    padding: '0.3rem 0.7rem'
+    padding: '4.2px 9.8px'
   button-primary-hover:
-    backgroundColor: '{colors.gpp-green-light}'
+    backgroundColor: '{colors.gpp-light}'
   button-secondary:
     backgroundColor: '{colors.action-secondary}'
     textColor: '{colors.foreground}'
@@ -81,10 +100,13 @@ components:
 
 Every visual and interface decision for `@gemini-hlsw/resource-ui` lives here or in
 [PRODUCT.md](PRODUCT.md): product truth there, design here. CLAUDE.md carries engineering
-mechanics only. Tokens above are normative; the prose says how to apply them. The CSS source
-of truth is `src/styles/global.css` (`@theme` and the chart variables) and
-`src/styles/shell.css` - a value changed there changes here in the same commit, and vice
-versa.
+mechanics only. The block above is a machine-readable digest of the chrome tokens, keyed by the
+names the CSS gives them. `src/styles/global.css` (`@theme` and the chart variables) and
+`src/styles/shell.css` are the normative source for every value; this document is normative for
+every rule. The digest is deliberately partial - the fourteen-hue instrument palette, both block
+inks, the `--timeline-*` variables, the washes and the grid lines have no place in it - so read
+the CSS, not the block, to learn what a token holds. A value changed there changes here in the
+same commit, and vice versa.
 
 ## Overview
 
@@ -108,7 +130,7 @@ arrival of editing (see Future Readiness).
 **Key characteristics:**
 
 - Dark-first and only: black canvas, tonal layering, no glare, minimal chrome.
-- Dense: one density number (a 14px root, matching Explore), everything in rem.
+- Dense: type and the boxes that hold it in rem so a reader can scale them, spacing in px so it does not.
 - Colour is semantic: hue = instrument identity, red = telescope closure, green = action.
 - Honest: a gap draws as a gap; absence is hollow; unknown is grey. Nothing is decorated to
   look complete (invariant I4 in PRODUCT.md).
@@ -152,17 +174,18 @@ Text is a white-opacity ladder (Material dark), not a grey ramp:
 
 - **Foreground** `rgb(255 255 255 / 87%)` - all informative text.
 - **Secondary** `rgb(255 255 255 / 60%)` - supporting text, idle control labels.
-- **Muted** `rgb(255 255 255 / 38%)` - decorative or duplicated text only. At body sizes on
-  dark surfaces 38% white fails AA contrast, so it may never be the only carrier of
-  information.
+- **Muted** `rgb(255 255 255 / 38%)` - decorative or duplicated text only. 38% white fails AA
+  on every surface above, at any size, so it may never be the only carrier of information.
+  `src/test/cssMirrors.test.ts` pins both halves of that against those surfaces.
 
 ### Data colours
 
 - **Closure Red** (`#b91c1c` solid, `rgb(231 0 11 / 22%)` band wash): telescope shutdowns
   on the charts. Red has one meaning everywhere - closed, unavailable, or error - carried
-  by more than one value: the chart closure tokens, `ErrorAlert`'s Tailwind reds, and the
-  Unavailable tag's PrimeReact danger. One meaning, several values; nothing else may be
-  red.
+  by more than one value: the chart closure tokens, the `--color-danger` family, and the
+  Unavailable tag's PrimeReact danger. `--color-danger` is the weight a word takes on the
+  canvas (the history table's alert tone); `--color-danger-fill` / `-edge` / `-ink` are the
+  panel triplet `ErrorAlert` draws. One meaning, several values; nothing else may be red.
 - **State neutrals** (`#737373` routine, `#d4d4d4` notable): schedule state rows (Open,
   Queue, ToOs) are monochrome bands - the quiet neutral for the ordinary state, the bright
   one for a state worth noticing.
@@ -176,12 +199,12 @@ Text is a white-opacity ladder (Material dark), not a grey ramp:
 - **Unknown** (`#a1a1aa` zinc): a reserved neutral outside the validated hue sets - it must
   read as "identity unresolved". Where an unknown run coincides with a named one, the named
   run wins the shared span.
-- **Amber**: unknown/warning accents, one family end to end - `amber-400` for the
-  calendar's holiday day-inset and the week cards' holiday dates, `amber-300` for the
-  calendar's "holiday" word, the PrimeReact warning tags, and the service-unavailable
-  banner at the darker end (`amber-600/60` border, `amber-900/30` fill, `amber-100` text).
-  Amber warns; it never celebrates. (Cal-Zorro's identity hue happens to share the family -
-  that one is identity, not a warning.)
+- **Amber**: unknown/warning accents, one family end to end, named as `--color-warning` (the
+  weight a warning word takes on the canvas: the calendar's and the week cards' "holiday",
+  the PrimeReact warning tags) plus a panel triplet `--color-warning-fill` / `-edge` / `-ink`
+  for the service-unavailable banner. Amber warns; it never celebrates. Two exceptions stay
+  raw: the calendar's holiday day-inset ring, which is a date accent rather than a warning,
+  and Cal-Zorro's identity hue, which happens to share the family.
 - **Block ink** (`#fff` / `#0a0a0a`): bar labels take whichever of light or dark clears
   4.5:1 on the fill.
 
@@ -222,71 +245,123 @@ personality. (When verifying in a browser, Chrome serializes `BlinkMacSystemFont
 **Character:** quiet, engineered, label-heavy. Uppercase letter-spaced micro-labels do the
 naming; data sits at body size in sentence case.
 
-### Hierarchy
+### The scale
 
-- **Wordmark** (700, 0.95rem, 0.4em tracking, uppercase): "RESOURCE" in the masthead only.
-- **Title** (600, 1.125rem): one page title per destination, in `PageHeader`.
-- **Body** (400, 1rem/1.5): table cells, controls, prose. The default; most of the interface
-  is body text.
-- **Label** (400-600, 0.65-0.78rem, +0.025em to +0.05em tracking, uppercase): the environment
-  banner, page-header control captions (SEMESTER), legend section names, chart gutter group
-  headings (small-caps "Telescope" /
-  "Instruments", sized to fit the narrowest 92px gutter).
-- **Data-small** (400, 0.75rem): chart annotations, calendar chips (down to 0.64rem), night
-  card metadata. Reserved for dense data surfaces where the same fact is available at body
-  size elsewhere (every chart owes a block-table reading for exactly this reason; today only
-  the semester chart has one - see the Do list).
+Six steps, on the browser's own 16px root, where every one lands on a whole pixel:
+24 / 18 / 16 / 14 / 12 / 10px, under Tailwind's t-shirt names. The reading ladder is arithmetic at
++2px - 10, 12, 14, 16 - and `lg` at 18px continues it exactly; `2xl` at 24px breaks the arithmetic
+on purpose, because a size read from a step back has to separate itself from the sizes read at the
+keyboard rather than extend them. `text-xl` (20px) is deliberately absent - nothing sits between
+Section and Display, so 20px would be a step with no role. Line heights tighten as the size grows -
+1.5 at Title, 1.44 at Section, 1.33 at Display - and every one lands on a whole even pixel.
+Tailwind's remaining steps are switched off in `@theme`, which is what keeps a seventh size from
+arriving as `text-xl`. Every role below body size is a token, so a call site says the role:
+
+| Token                       | Size            | Role, and the rule for using it                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| --------------------------- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `--text-2xl` / `text-2xl`   | 1.5rem (24px)   | **Display** (600). The single glanceable fact a destination exists to answer, at most one per page, read from a step back rather than at the keyboard. A destination with no such fact does not reach for it.                                                                                                                                                                                                                                                                              |
+| `--text-lg` / `text-lg`     | 1.125rem (18px) | **Section** (600). Head a section within a destination, where a page has more than one and the reader has to find the right one. Never a substitute for Title, which names the destination itself.                                                                                                                                                                                                                                                                                         |
+| `--text-base` / `text-base` | 1rem (16px)     | **Title** (600). Name the destination the reader is on, once per page, in `PageHeader`, and nothing else. Exactly one element on a page may carry it.                                                                                                                                                                                                                                                                                                                                      |
+| `--text-sm` / `text-sm`     | 0.875rem (14px) | **Body** (400). Set anything a reader reads as words - table cells, controls, prose, messages, empty states - at this, and reach for it by default. It is set once on `body`, so an unclassed surface inherits it rather than the root.                                                                                                                                                                                                                                                    |
+| `--text-xs` / `text-xs`     | 0.75rem (12px)  | **Dense** (400-700). The chrome's own size and every dense data surface - buttons, page selects, the masthead right cluster, sidebar links, segmented controls, chart annotations, table captions, night card metadata. Pack a surface tighter than Body only where the reader is scanning rather than reading, and never go smaller. The weight is the call site's, since a chart label and a button want different emphasis at the one size. **This is the floor for informative text.** |
+| `--text-2xs` / `text-2xs`   | 0.625rem (10px) | **Tick** (400). Number an axis tick - the day numbers on the semester chart, the hour times on the night chart. Nothing else may take it, ever.                                                                                                                                                                                                                                                                                                                                            |
+
+Tick is the one step below the floor, and it earns the exception by carrying nothing: a tick number
+is a scale marker, scanned rather than read, one or two characters, and redundant with the axis it
+sits on. A bar label carries instrument identity and a gutter label carries a port, so both are
+unique facts and both stay at Dense. Dense as the floor matches Primer, Carbon, Atlassian, Fluent
+and Grafana, and the Fermilab ACORN control-room guide's 12 CSS px seated.
+
+No size enters the scale without a role this document names and a surface that draws it. Four steps
+hold both halves. Display and Section hold the role and not yet the surface: declared ahead of
+demand, each earns its second half at its first call site, and neither is precedent for a seventh,
+which needs both up front. The gate is what holds - a count would only tell whoever needs a seventh
+to break the rule or reach for an arbitrary value instead.
+
+`text-xl` and `text-3xl` upward do not exist: `--text-*: initial` in `@theme` removes every Tailwind
+step these six do not reinstate, so those classes compile to nothing and the text quietly renders at
+whatever it inherits. Nothing catches that - no build error, no lint, no visible break - so the six
+steps are the only guard. An arbitrary size like `text-[20px]` is unchecked in the same way and does
+compile, which makes it the quieter mistake: a size only its own component knows, off the scale
+every other surface reads from. `src/test/textTokens.test.ts` asserts that tailwind-merge reads
+every `@theme` text role as a size, and fails on one it would take for a colour - which a merge
+drops with nothing to show for it.
+
+`DENSE` and `TICK` in `features/timeline/timelineOptions.ts` mirror `--text-xs` and `--text-2xs`
+for the chart options, which need the number rather than the `var()` - a label measuring NaN
+never draws.
+
+**Below Body, hierarchy is weight, case and tracking - never a smaller size.** Micro-labels -
+the environment banner, page-header control captions (SEMESTER), legend section names, calendar
+weekday headers, chart gutter group headings, the phone bar, the calendar chip - are Dense set
+uppercase with 0.05em tracking (`tracking-wider`), and semibold or bold where their neighbours
+are not. Butterick gives 0.05-0.12em for all-caps and Bringhurst 0.05-0.10em, so 0.05em is the
+floor rather than a preference. That dress is what separates them, so **set a micro-label in
+anything but uppercase and it stops being one**. This is what dense scientific consoles do:
+Grafana and Carbon ship nothing below 12px for reading, and Salt separates body from h4 by
+weight at one size.
+
+**Wordmark** is not a size either. "RESOURCE" sits at Body and takes its identity from 700
+weight and 0.4em tracking.
 
 ### Named rules
 
-**The One-Number Rule.** Density is one number: the root font size, set once in
-`shell.css`. The standard is **14px**, matching the root the running Explore application
-renders at; everything is sized in rem, so that number is the only density control. Never
-fix a layout problem by nudging the root. (Note: a media query's rem is the initial 16px,
-not the app root.) Queued deviation: the shipped root is 13px - moving it to 14px is its
-own change, and the masthead width budget below must be re-measured when it lands, since
-every rem-sized width grows with the root.
+**The One-Number Rule.** Density is one number: `--spacing` in `@theme`, **3.5px**. Every
+Tailwind spacing utility compiles to `calc(var(--spacing) * n)`, so that one value sets every
+gap, padding and margin written as a utility. Never fix a layout problem by nudging it.
+**The number is not a single switch, though.** `shell.css` and `global.css` also carry
+multiples of the step derived by hand and written as literals - 12.6, 9.8, 8.4, 7.7, 4.2, 3.5,
+2.8 and 2.1px - and those do not move when `--spacing` does. Changing the step means
+re-deriving every px figure in those two stylesheets in the same commit; half-done, the app
+silently runs at two densities, which the Don't list forbids.
 
-**Small Type Is a Duplicate.** Anything below 0.75rem must be either decorative or a
-duplicate of information available at body size. Informative text below 0.75rem uses
-foreground (87%), never secondary or muted; at 0.75rem and above, secondary (60%) is the
-floor for information. Muted carries only decoration or duplication, at every size (the
-same rule the Colors ladder states).
+**The app sets no root font size**, which is what lets a reader's own browser font-size setting
+scale the type. Comeau's question decides which unit a value takes: _should this grow when the
+reader raises that setting?_ Type says yes, and so does any box whose job is to hold type - a
+width or a height that has to grow with the words inside it, the chart's label gutter being the
+worked example. Spacing says no and is written in px: gaps, padding, margins, border widths, and
+the target tokens (`--xp-target-floor`, `--xp-touch-target`), because a finger is a finger. An
+absolute px root would pin all of it and silently disable the setting.
 
-### Known deviations (queued work, not precedent)
+**Dense Is The Floor.** No role carrying information sits below 12px. Tick is the single
+named exception and it is not information: a tick number repeats what its axis already says. Secondary (60%) is the floor tone for
+information at every size; muted carries only decoration or duplication (the same rule the
+Colors ladder states).
+
+### Shipped code that breaks these rules (queued, never precedent)
 
 The rules above are the design being established; the shipped code predates them and falls
 short of the type rules in three recurring patterns. A shipped counter-example is queued
 work, never licence to add another. **The code is the catalogue** - search it before
-extending or fixing, rather than trusting any prose list to stay complete:
+extending or fixing, rather than trusting any prose list to stay complete.
 
-- **Tags forced under the floor:** `<Tag>`s overridden below 0.75rem (today via
-  `!text-[0.6rem]`), several pairing light text with a severity fill that fails 4.5:1 (the
-  success and danger fills; the info tag ships dark ink and passes).
-- **Sub-0.75rem informative text below the foreground tone**, declared four ways: in
-  Tailwind classes (find them with `text-\[0\.[0-7]` near
-  `foreground-muted`/`foreground-secondary` - table headers, cell and
-  date-cell metadata); in CSS files the class grep cannot see (the calendar's `.rbc-header`
-  column names); in chart options declaring `font-size:` in JS (the Highcharts gutter
-  headings and inline labels on `--timeline-muted-text` - the gutter headings also ship
-  `letter-spacing: 1px`, outside the Label spec); and as foreground dimmed by opacity (the
-  calendar's published-moon word at `opacity-80`).
+Three patterns stand:
+
+- **Foreground dimmed by opacity in CSS:** `.rbc-off-range` takes an out-of-month date number
+  to 0.35, below the muted step. The square is chrome, so this reads as decoration rather than
+  a tone violation, but it is an opacity dim and not a step on the ladder.
 - **Muted carrying information at any size:** `text-foreground-muted` on text that is a
-  fact's only rendering - record notes, page subtitles, the Loading state, sidebar section
-  labels, and their kin. Grep `text-foreground-muted`; whatever is not genuinely decorative
-  or a duplicate belongs to this set.
+  fact's only rendering - the semester calendar's empty message, the Loading state, the About
+  dialog's Endpoint caption (its value reads at Secondary) and its version line, and their kin.
+  A note, an empty message, a "not recorded" where-reading and a history row's status word are
+  the pattern already at Secondary; copy those. Grep `text-foreground-muted`; whatever is not
+  genuinely decorative, a disabled affordance or a duplicate belongs to this set.
+- **A fixed px size on a box that holds text:** the masthead and banner heights, the 28px control
+  line, and the 196px sidebar column. The words do not grow their box. The bottom bar, the calendar
+  height and the filter and page controls are already on the right side of the rule, being
+  `min-height` and rem. A new fixed box is a bug, not a precedent.
 
 Each fix lands as its own change. The pattern descriptions define the set; no instance list
 here is ever complete.
 
 ## Layout
 
-**Banner, masthead, sidebar, workspace.** A thin full-width strip (`--xp-env-banner`) sits
-above everything and names the environment; production renders none. Under it, a 2.5rem
+**Banner, masthead, sidebar, workspace.** A thin full-width strip (`--xp-banner-height`) sits
+above everything and names the environment; production renders none. Under it, a 35px
 masthead (surface, 1px subtle bottom border) carries four things and no more: the wordmark
 (home link), the GN|GS site control beside it, a flexible gap, and the right cluster of
 account name and menu. A fixed-width
-(14rem) sidebar groups navigation under uppercase section labels (SCHEDULE: Semester, Week,
+(196px) sidebar groups navigation under uppercase section labels (SCHEDULE: Semester, Week,
 Night; INVENTORY: Instruments, Components). The remaining viewport is the workspace: one
 scroll container, `PageHeader` (title, subtitle, right-hand controls slot), then content at
 full width. This structure is the starting point, not a law - if a future workflow (the
@@ -320,18 +395,36 @@ the workflow into it, but keep masthead selections global and page controls loca
   working zones; the choice picks the zone every clock time renders in, while observing-night
   labels and evening dates stay on the site's own calendar. It is a per-browser preference:
   a link sent to a colleague opens in _their_ habit, not the sender's.
-- **Density before whitespace.** Vertical rhythm comes from the 2rem control line (every
-  toolbar control is 2rem tall) and compact table rows (~2.8rem). Charts and tables stretch
-  to the workspace width; there is no max-width column.
-- **The masthead has a measured width budget, and the overhaul made it slack.** The figures are
-  taken at the shipped 13px root; every one moves when the root reaches its 14px standard -
-  re-measure then. The bar holds four things at every width: 133.7px wordmark, 61.6px GN|GS,
-  the flexible gap, and a 109.1px right cluster (67.1px below `md`, where the account name goes
-  `sr-only`). With 35.1px of gaps and 26px of padding that is 365.5px of fixed content, against
-  768px at the narrowest desktop width - the gap absorbs the rest. Below `md` the same bar
-  measures 286.6px inside a 320px viewport, 33.5px to spare. Nothing clips between 320px and
-  1400px. Check the budget before adding an item, and remember what the old bar taught: the
-  flexible column is what gives way first, so whatever sits in it is what disappears.
+- **Density before whitespace.** Vertical rhythm comes from the 28px control line (every
+  toolbar control is 28px tall) and compact table rows. The 28px is a literal repeated at four
+  sites in `shell.css` rather than a custom property, so grep it; the other chrome heights are
+  `--xp-*` tokens. Charts and tables stretch to the workspace width; there is no max-width
+  column.
+- **The masthead has a measured width budget.** The bar holds four things at every width:
+  149.1px wordmark, 68.8px GN|GS, the flexible gap, and a 124.4px right cluster (68.8px below
+  `md`, where the account name goes `sr-only` and the wordmark tightens to 132.3px). With 37.8px
+  of gaps and 28px of padding that is 408.1px of fixed content, against 768px at the narrowest
+  desktop width - the gap absorbs the rest. Below `md` the same bar measures 311.9px inside a
+  320px viewport, **8.1px to spare**: the tightest figure in this file, and the one to check
+  first when anything joins the bar - the SSO merge's signed-in states are its known next tenant,
+  and they arrive in the right cluster. Nothing clips between 320px and 1440px. The controls in
+  the bar are `lucuma-ui-css`'s and are sized in rem against a 16px root, so a reader who raises
+  their browser font size spends this slack; re-measure rather than assuming it. Check the budget
+  before adding an item: the flexible column is what gives way first, so whatever sits in it is
+  what disappears.
+- **320px and 640px are verification widths, not breakpoints.** Nothing is designed at them;
+  every frontend change is checked at them. 640 CSS px is 200% zoom on a 1280px screen (WCAG
+  1.4.4) and is exactly `sm`, so `max-sm:` reads natively as "below the AA zoom point". 320px is
+  the reflow point (1.4.10), where a chart or a data table may scroll inside its own container -
+  the criterion allows those two - but nothing may be lost or put out of reach. Check the width
+  budget at both: the bar clears 640px with its menu whole and in view, and 320px by 8.1px.
+  The two are checked separately, and a reader who raises their font size without zooming does
+  combine them: at phone widths at 200% a control clips its own value, because the sidebar's
+  `196px 1fr` grid holds the row wide whatever the viewport does. Where that starts depends on
+  the route, so measure it rather than quoting a width. Ellipsis is the deliberate choice there -
+  the shell clips, so the alternative is a control nothing can reach. Measure with the browser's
+  own font-size setting, not a page-level `font-size`: only the setting moves the `rem`
+  breakpoints, so an override reads a layout no reader gets.
 - **Desktop-first, phone-supported.** Optimise for wide screens beside the other GPP tools;
   the phone is a supported secondary scene (PRODUCT.md): every destination stays reachable,
   legible and operable at phone widths, touch targets on the 24px floor, layout adapting
@@ -340,14 +433,14 @@ the workflow into it, but keep masthead selections global and page controls loca
 ### The phone shell
 
 `md` (768px) is the shell's one breakpoint. Below it the frame changes; at and above it the
-desktop shell above is untouched. A media query's rem is the initial 16px, not the app root,
-so the breakpoint is 48rem in `shell.css` and `md:` in Tailwind - the same 768px.
+desktop shell above is untouched. The breakpoint is written 48rem in `shell.css` and `md:` in
+Tailwind - the same 768px.
 
-| Surface                                | Below `md`                                            | At `md` and up          |
-| -------------------------------------- | ----------------------------------------------------- | ----------------------- |
-| Environment banner (`--xp-env-banner`) | the same strip                                        | the same strip          |
-| Masthead (`--xp-masthead-height`)      | wordmark, GN\|GS, gap, account icon, menu             | the same, plus the name |
-| Navigation                             | bottom bar (`--xp-bottomnav-height`), icon over label | the 14rem sidebar       |
+| Surface                                   | Below `md`                                            | At `md` and up          |
+| ----------------------------------------- | ----------------------------------------------------- | ----------------------- |
+| Environment banner (`--xp-banner-height`) | the same strip                                        | the same strip          |
+| Masthead (`--xp-masthead-height`)         | wordmark, GN\|GS, gap, account icon, menu             | the same, plus the name |
+| Navigation                                | bottom bar (`--xp-bottomnav-height`), icon over label | the 196px sidebar       |
 
 - **One navigation at a width, never two.** The sidebar is the desktop's and the bottom bar is
   the phone's; each is `display: none` where the other answers, so only one is ever in the
@@ -362,16 +455,21 @@ so the breakpoint is 48rem in `shell.css` and `md:` in Tailwind - the same 768px
   natural width it cannot give up: the wordmark tightens its tracking, the account name goes
   `sr-only`, and the flexible gap absorbs whatever is left.
 - **Touch targets are px, not rem** (`--xp-target-floor` 24px, `--xp-touch-target` 44px): a
-  finger is the one size that must not ride the density root, so the WCAG floor and the
+  finger is the one size that must not grow with the reader's type, so the WCAG floor and the
   comfortable reach are both absolute. Every segmented control carries the 24px floor even at
   its compact size. **One exception, and it is the bar's height, not a choice:** the menu button
-  gets the full 44px across but only the masthead's own height (32.5px at the 13px root),
-  because a 44px-tall target in a 32.5px bar reaches past it and takes taps from whatever the
+  gets the full 44px across but only the masthead's own 35px,
+  because a 44px-tall target in a 35px bar reaches past it and takes taps from whatever the
   page puts under the chrome. It clears the 24px floor the Do list states; a full 44 square
   needs a taller bar.
-- **A bottom-bar label wraps, never truncates.** The bar is sized by `min-height`, so a label
-  that needs two lines gets them and the bar grows: a reader's own text spacing (WCAG 1.4.12)
-  must not cost a destination its name.
+- **A bottom-bar label is never truncated and never broken mid-word.** Each item is sized by its
+  own label rather than to an equal share, which is what puts all five names on one line at
+  320px; the five together measure about 276px of the 320 available. When a reader's text
+  spacing (WCAG 1.4.12) or font size takes them past that, the bar wraps to a second row and
+  grows on its `min-height` instead - a name may move, it may not be cut.
+- **Five destinations is the bar's ceiling, not its current size.** The labels already fill the
+  320px row, and Material's navigation bar is a three-to-five component by design. A sixth
+  destination is a different component; it is not reached by narrowing this one.
 - **The shell is `dvh`, not `vh`.** A phone browser's toolbar is inside `100vh` but outside the
   visible viewport, so a `vh` shell hides its own bottom bar under the toolbar on first load.
 - **The bottom bar pads itself against `env(safe-area-inset-bottom)`**, and `index.html` asks
@@ -393,8 +491,8 @@ another, move it up the ladder.
 
 ## Shapes
 
-Rectangles, small radii, 1px borders. Controls and panels round at 4px (the masthead icon
-button alone at 0.4rem); calendar chips at 2px; chart tooltips at 6px; nothing pill-shaped,
+Rectangles, small radii, 1px borders. Controls and panels round at 4px; calendar chips at
+2px; chart tooltips at 6px; nothing pill-shaped,
 nothing circular except status dots and moon-phase icons. Form
 language for schedule data is exact: bars are rectangles whose edges are facts (half-open
 intervals - an end is exclusive; the deliberate 3px corner radius softens a corner without
@@ -412,28 +510,70 @@ lucuma-ui's CSS (`@gemini-hlsw/lucuma-ui-css`), re-tinted through its own variab
 restate a colour a token already holds. Where a design change is needed, change the variable
 first (the mechanics of winning specificity battles are engineering and live in CLAUDE.md).
 
+### Interaction states
+
+Five states, stated once here because they are the app's and not any one component's. A section
+below adds only what is particular to its component.
+
+- **Focus.** Every interactive element shows a visible action-green focus indicator, using one of
+  the two shared treatments - the calendar events' 2px outline offset 1px, or `FOCUS_RING` (a 2px
+  inset ring, `components/ui/styles.ts`). The ring is the green's **light** step
+  (`--color-gpp-light`): the base green measures 2.91:1 against the translucent green an active
+  nav item fills with, under 1.4.11's 3:1 floor for a UI part, where the light step measures
+  3.35:1 and gains contrast everywhere else too. A segmented control takes that same light green
+  as an **outline** rather than a ring: its selected segment spends its box-shadow on the
+  underline, so a focus shadow would simply be replaced by it and the selected segment - the one
+  a keyboard lands on first - would show no focus at all.
+- **Hover.** A hovered surface climbs one step of the ladder, to Raised (`#414141`), and its text
+  brightens to foreground. The primary button is the one exception: it lightens its own fill to
+  `--color-gpp-light` rather than climbing the neutral ladder.
+- **Disabled.** An icon button drops to 40% opacity and takes the default cursor; a disabled
+  navigation item drops its text to muted. Muted carrying a disabled affordance is the sanctioned
+  case, not a tone violation. Whether a disabled control must also say _why_ is Future Readiness's
+  rule, and it arrives with editing.
+- **Selected.** The selected member of a set raises its surface, brightens its text to foreground,
+  and carries a 2px inset action-green underline. Selection is never a green fill: choosing a view
+  is navigation, not a success state, and a fill would compete with the real action.
+- **Active.** The current destination fills with the action green at 40% and carries
+  `aria-current="page"`, set by the router rather than by hand, so the highlight cannot drift from
+  what is announced.
+
+**Shipped shortfalls, queued like the type deviations:** week cards ride the browser-default ring,
+chart bars are mouse-only with no keyboard path to a bar's open-night action (nights stay reachable
+through the date controls until bars get a focusable treatment), and `FOCUS_RING` is worn only by
+the masthead and the phone bar today.
+
 ### Buttons
 
-- **Shape:** 4px radius, 0.3rem x 0.7rem padding, 0.82rem type; every toolbar control sits
-  on the 2rem line.
-- **Primary:** action green fill, white text; hover lightens to `--color-gpp-light`. One
-  primary action per view at most - today's views have none, which is correct for reading.
+- **Shape:** 4px radius, 4.2px x 9.8px padding, Dense type; every toolbar control sits
+  on the 28px line.
+- **Primary:** action green fill, white text. One primary action per view at most - today's
+  views have none, which is correct for reading.
 - **Secondary:** slate fill (`--color-action-secondary`), foreground text.
-- **Icon buttons:** 2rem square, transparent at rest, secondary-text glyph; hover raises the
-  surface and brightens the glyph; disabled drops to 40% opacity. Every icon button has an
-  accessible name; the icon clarifies, the name carries.
+- **Icon buttons:** 28px square, transparent at rest, secondary-text glyph, taking the shared
+  hover and disabled treatments. Every icon button has an accessible name; the icon clarifies,
+  the name carries.
+- **Glyph size is em, and it comes from FontAwesome's own scale.** A decorative glyph is
+  measured against the label beside it, not against the root, so it keeps its proportion
+  wherever that label sits on the type scale and it follows a reader's font-size setting.
+  Use FA's `size` prop - omitted for a glyph that matches its label (1em), `size="sm"`
+  (0.875em) for one that should sit under it, `size="xs"` (0.75em) for a menu row. Do not
+  write a px or rem glyph size, and do not add a parallel em utility: FA's steps carry the
+  baseline correction that keeps the glyph aligned, which a bare `font-size` does not.
+  Note this is the one place the app spends a reader's font-size increase on width - the
+  masthead's budget is the constraint, so masthead glyphs also take `widthAuto` to drop
+  FontAwesome 7's fixed 1.25em canvas.
 
 ### Segmented controls (view/clock toggles)
 
-Idle segments are surface-on-subtle with secondary text. The selected segment raises the
-surface, brightens the text to foreground, and carries a 2px inset action-green underline.
-Choosing a view is navigation, not a success state: a green fill would compete with the real
-action. Compact variant (`seg-sm`) for chart-corner toggles.
+Idle segments are surface-on-subtle with secondary text; the selected segment takes the shared
+Selected treatment and the shared focus **outline**, both under Interaction states. Compact
+variant (`seg-sm`) for chart-corner toggles.
 
 ### Page-header selects
 
 The masthead carries no select at all: site is a segmented control, and the semester picker
-belongs to /semester. A page's own Dropdown sits on the 2rem control line, captioned by an
+belongs to /semester. A page's own Dropdown sits on the 28px control line, captioned by an
 uppercase micro-label above it; the value never inherits the label's uppercase dress. The
 caption is bound to the control by id (`LabelledControl`) and is the control's only
 accessible name - no call site repeats it as an `aria-label`.
@@ -449,8 +589,10 @@ to yield to make room. Production renders nothing.
 
 - **Headers:** raised (`#414141`), 600 weight, body-size type, sortable where sorting means
   something.
-- **Rows:** surface (`#1e1e1e`), ~2.8rem tall, subtle stripe on alternates; an expansion is
-  its row continued (one shade off, `rgb(255 255 255 / 1%)`).
+- **Rows:** surface (`#1e1e1e`), compact, subtle stripe on alternates; an expansion is
+  its row continued (one shade off, `rgb(255 255 255 / 1%)`). The row height is
+  `lucuma-ui-css`'s, not this file's: its cell padding and row toggler are rem-sized, so a
+  reader who scales their type gets taller rows.
 - **History tables** (`RecordHistoryTable`): a plain `<table>` rather than a nested
   DataTable; columns keep their place even when empty; a note goes in a column that wraps,
   never a second line that truncates.
@@ -463,10 +605,13 @@ to yield to make room. Production renders nothing.
 One vocabulary everywhere, from `componentStatus`: **Science** (success green),
 **Engineering** (info blue), **Spare** (neutral, muted tone), and **Unavailable** (danger
 red, alert tone), rendered by `StatusTag`. The status cell shows the badge alone - the
-presence dot belongs to `WhereCell`, and a record's note is its own column. Target (the
-shipped tags deviate; see Known deviations under Typography): tag text clears 4.5:1 on its
-fill, with dark ink on the green rather than light if the measured pair fails, and tag type
-at 0.75rem or above.
+presence dot belongs to `WhereCell`, and a record's note is its own column. Tag text clears
+4.5:1 on its fill, and tag type sits at Dense, taken from the app's own token in `shell.css`
+once for every tag rather than per call site - the theme restates the size as a literal, which
+is free to drift off the scale.
+The success green and the danger red take dark ink (7.56:1 and 7.22:1 measured)
+rather than the theme's light text, retinted once in `shell.css`; info, warning and the
+default blue already clear the bar with the ink the theme gives them.
 
 ### Page status (`PageStatus`)
 
@@ -502,29 +647,16 @@ phrasing of a span, nothing else.
   are expected over time.
 - **Change feeds** (week changes table, calendar news) read ports only: a shelf change is
   inventory, not a night's headline; a boundary on the window's edge is not a change.
-- **Every night-shaped thing opens its night view** - calendar squares, week cards, chart
-  bars route onto `/night`. The rule: every interactive element shows a visible
-  action-green focus indicator, using one of the two shared treatments - the calendar
-  events' 2px outline offset 1px, or `FOCUS_RING` (a 2px inset ring,
-  `components/ui/styles.ts`). The ring is the green's **light** step: the base green measures
-  2.91:1 against the translucent green an active nav item fills with, under 1.4.11's 3:1 floor
-  for a UI part, where the light step measures 3.35:1 and gains contrast everywhere else too.
-  A segmented control takes that same light green as an **outline** rather than a ring: its
-  selected segment spends its box-shadow on the underline, so a focus shadow would simply be
-  replaced by it and the selected segment - the one a keyboard lands on first - would show no
-  focus at all.
-  Shipped shortfalls, queued like the type deviations: week
-  cards ride the browser-default ring, chart bars are mouse-only with no keyboard path to a
-  bar's open-night action (nights stay reachable through the date controls until bars get a
-  focusable treatment), and `FOCUS_RING` is worn only by the masthead and the phone bar today.
+- **Every night-shaped thing opens its night view** - calendar squares, week cards, chart bars
+  route onto `/night`. What each of those must show on focus, and which of them still falls
+  short, is Interaction states above.
 
 ### Navigation (sidebar and phone bar)
 
-Uppercase section labels over icon+text items; the active item fills with a translucent
-green and `aria-current="page"`. Sections are driven by configuration
+Uppercase section labels over icon+text items, the current one taking the shared Active
+treatment under Interaction states. Sections are driven by configuration
 (`SIDEBAR_MENU_SECTIONS`), not hard-coded lists. The phone's bottom bar draws the same
-destinations icon-over-label with the same fill, reading the `aria-current` the router sets
-so the highlight cannot drift from the announced state; which of the two is shown is the
+destinations icon-over-label with the same fill; which of the two is shown is the
 Layout section's phone shell.
 
 ## Do's and Don'ts
@@ -533,7 +665,7 @@ Layout section's phone shell.
 
 - **Do** climb the surface ladder in order; a new layer takes the next step, not a new hex.
 - **Do** spend colour on data. Chrome stays neutral so instruments and alarms own the hue.
-- **Do** put every control on the 2rem line and every caption through `LabelledControl`.
+- **Do** put every control on the 28px line and every caption through `LabelledControl`.
 - **Do** show the published name (`'Alopeke`, Maroon-X), never the enum, and keep the name
   in words beside every colour.
 - **Do** give every chart a block-table reading - the semester chart's screen-reader table
@@ -552,11 +684,13 @@ Layout section's phone shell.
 - **Don't** decorate a gap. No skeleton rows, placeholder bars, or "probably fine" fills
   where the record holds nothing.
 - **Don't** use the identity accent (`--color-gpp-accent`) on anything interactive.
-- **Don't** put informative text below 60% white, or below 0.75rem, anywhere new (the
+- **Don't** put informative text below 60% white, or below Dense (12px), anywhere new (the
   shipped deviations are catalogued by pattern under Typography and queued to be fixed).
 - **Don't** add a masthead item without re-measuring the width budget.
 - **Don't** introduce a second density: no per-view font-size overrides to make something
   fit; fix the layout instead.
+- **Don't** set a root font size on `html`. An absolute one disables the reader's own browser
+  font-size setting; density belongs to `--spacing` and to the px chrome values.
 - **Don't** copy an Explore weakness for continuity's sake - continuity binds palette,
   density and family resemblance, not defects.
 

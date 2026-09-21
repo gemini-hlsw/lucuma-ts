@@ -1,4 +1,4 @@
-import { cn, when } from '@gemini-hlsw/lucuma-common-ui';
+import { when } from '@gemini-hlsw/lucuma-common-ui';
 import { Tag, type TagProps } from 'primereact/tag';
 import type { JSX } from 'react';
 
@@ -18,10 +18,7 @@ export function StatusTag({ status }: { status: RecordStatus }): JSX.Element {
     <Tag
       value={status.label}
       severity={status.severity}
-      className={cn(
-        '!text-[0.6rem]',
-        when(status.tone === 'muted', () => '!bg-surface-raised !text-foreground-secondary'),
-      )}
+      className={when(status.tone === 'muted', () => '!bg-surface-raised !text-foreground-secondary')}
     />
   );
 }

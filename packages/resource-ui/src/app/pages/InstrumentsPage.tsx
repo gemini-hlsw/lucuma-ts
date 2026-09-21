@@ -14,6 +14,7 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { ErrorAlert, Loading } from '@/components/ui/PageStatus';
 import { RecordHistoryTable } from '@/components/ui/RecordHistoryTable';
 import { type RecordStatus, StatusTag } from '@/components/ui/StatusTag';
+import { EXPANDER_COLUMN_STYLE } from '@/components/ui/styles';
 import { WhereCell, type WhereReading } from '@/components/ui/WhereCell';
 import { semesterHolding } from '@/domain/coverage';
 import {
@@ -113,7 +114,7 @@ export default function InstrumentsPage(): JSX.Element {
                 setSearch(event.target.value);
               }}
               placeholder="Instrument or published name"
-              className="w-72"
+              className="w-[16rem] max-w-full"
             />
           )}
         </FilterField>
@@ -128,7 +129,7 @@ export default function InstrumentsPage(): JSX.Element {
               }}
               showClear
               placeholder="Anywhere"
-              className="w-56"
+              className="w-[12rem] max-w-full"
             />
           )}
         </FilterField>
@@ -150,7 +151,7 @@ export default function InstrumentsPage(): JSX.Element {
           data-testid="instrument-table"
           emptyMessage="No instruments match."
         >
-          <Column expander style={{ width: '2.5rem' }} />
+          <Column expander style={EXPANDER_COLUMN_STYLE} />
           <Column
             header="Instrument"
             body={(row: InstrumentRow) => (

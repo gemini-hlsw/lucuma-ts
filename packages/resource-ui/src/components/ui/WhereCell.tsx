@@ -23,8 +23,8 @@ export function WhereCell({ where }: { where: WhereReading }): JSX.Element {
   return (
     <span className="flex items-center gap-2">
       <span aria-hidden className={cn('inline-block h-2 w-2 rounded-full', DOT[where.presence])} />
-      <span className={where.presence === 'NOT_RECORDED' ? 'text-foreground-muted italic' : ''}>{where.label}</span>
-      {where.changes !== null && <Tag value={where.changes} severity="warning" className="!text-[0.6rem]" />}
+      <span className={where.presence === 'NOT_RECORDED' ? 'text-foreground-secondary italic' : ''}>{where.label}</span>
+      {where.changes !== null && <Tag value={where.changes} severity="warning" />}
     </span>
   );
 }

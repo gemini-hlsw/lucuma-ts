@@ -17,8 +17,8 @@ export interface HistoryRow {
 
 const TONE_CLASS = {
   normal: 'text-foreground',
-  muted: 'text-foreground-muted',
-  alert: 'text-red-300',
+  muted: 'text-foreground-secondary',
+  alert: 'text-danger',
 } satisfies Record<StatusTone, string>;
 
 interface RecordHistoryTableProps {
@@ -46,7 +46,7 @@ export function RecordHistoryTable({
     <div className="w-full overflow-x-auto pl-12" data-testid={testId}>
       <table className="w-full text-xs" aria-label={ariaLabel}>
         <thead>
-          <tr className="border-b border-subtle text-[0.6rem] tracking-wide text-foreground-secondary uppercase">
+          <tr className="border-b border-subtle text-xs tracking-wider text-foreground uppercase">
             <th scope="col" className={HEAD_CELL}>
               Dates
             </th>
@@ -68,7 +68,7 @@ export function RecordHistoryTable({
         <tbody className="divide-y divide-subtle/40">
           {rows.length === 0 ? (
             <tr>
-              <td className={cn(CELL, 'text-foreground-muted italic')} colSpan={5}>
+              <td className={cn(CELL, 'text-foreground-secondary italic')} colSpan={5}>
                 {emptyMessage}
               </td>
             </tr>
@@ -79,7 +79,7 @@ export function RecordHistoryTable({
                 <td className={cn(CELL, 'text-right text-foreground-secondary tabular-nums')}>{row.nights}</td>
                 <td className={cn(CELL, 'whitespace-nowrap')}>{row.where}</td>
                 <td className={cn(CELL, 'whitespace-nowrap', TONE_CLASS[row.status.tone])}>{row.status.label}</td>
-                <td className={cn(CELL, 'text-foreground-muted italic')}>{row.note}</td>
+                <td className={cn(CELL, 'text-foreground-secondary italic')}>{row.note}</td>
               </tr>
             ))
           )}

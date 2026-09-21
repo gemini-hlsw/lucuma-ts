@@ -5,7 +5,8 @@ import { portRowLabel, TELESCOPE_PORTS } from '@/domain/ports';
 import { buildSemesterTimeline, type TimelineMonth } from '@/domain/semesterTimeline';
 import { observingNightInterval } from '@/domain/siteTime';
 import type { Closure, Mounting, Site } from '@/domain/types';
-import { buildTimelinePoints, eveningDescriber } from '@/features/timeline/timelineOptions';
+import { buildTimelinePoints, DENSE, eveningDescriber, TICK } from '@/features/timeline/timelineOptions';
+import { collectFontSizes } from '@/test/fontSizes';
 
 import {
   buildMonthBands,
@@ -186,6 +187,13 @@ describe('axis', () => {
     const options = buildSemesterMonthOptions({ month: august, site: 'GS', now: null });
 
     expect(options.yAxis).toMatchObject({ min: 0, max: ROWS.length - 1, categories: ROWS });
+  });
+
+  it('sets every chart label at Data-small but the day ticks, whatever the month width', () => {
+    const options = buildSemesterMonthOptions({ month: august, site: 'GS', now: null });
+
+    // The walk reaches the responsive rules too: a narrow month thins its ticks, never its labels.
+    expect(new Set(collectFontSizes(options))).toEqual(new Set([DENSE, TICK]));
   });
 
   it('marks now only in the month it falls in', () => {

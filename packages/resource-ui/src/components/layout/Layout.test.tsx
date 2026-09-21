@@ -10,6 +10,7 @@ import { page, userEvent } from 'vitest/browser';
 
 import { chooseClock, chooseSite, openAppMenu } from '@/test/helpers';
 import { renderApp } from '@/test/renderApp';
+import { contrastRatio, pixelOver, resolvedSize, ROOT_FONT_SIZE } from '@/test/styleProbe';
 
 import Layout from './Layout';
 import { SIDEBAR_MENU_SECTIONS } from './SidebarMenu';
@@ -35,32 +36,15 @@ function navigations(container: HTMLElement): { sidebar: Element; bottom: Elemen
   return { sidebar: sidebar!, bottom: bottom! };
 }
 
-function pixelOver(color: string, backdrop: string): [number, number, number] {
-  const canvas = document.createElement('canvas');
-  canvas.width = 1;
-  canvas.height = 1;
-  const context = canvas.getContext('2d')!;
-  for (const layer of [backdrop, color]) {
-    context.fillStyle = layer;
-    context.fillRect(0, 0, 1, 1);
-  }
-  const [r, g, b] = context.getImageData(0, 0, 1, 1).data;
-  return [r!, g!, b!];
-}
-
-function contrastRatio(a: [number, number, number], b: [number, number, number]): number {
-  const luminance = (rgb: [number, number, number]) =>
-    rgb
-      .map((c) => (c / 255 <= 0.03928 ? c / 255 / 12.92 : ((c / 255 + 0.055) / 1.055) ** 2.4))
-      .reduce((sum, channel, index) => sum + [0.2126, 0.7152, 0.0722][index]! * channel, 0);
-  const [high, low] = [luminance(a), luminance(b)].sort((x, y) => y - x) as [number, number];
-  return (high + 0.05) / (low + 0.05);
-}
-
 describe(Layout, () => {
   beforeAll(() => {
     // The lucuma-ui theme is scoped under `.dark`, the way `main.tsx` scopes it.
     document.documentElement.classList.add('dark');
+  });
+
+  it('leaves the root where the browser put it - DESIGN.md One-Number Rule', () => {
+    // An absolute px root would pin every rem and silently disable the reader's own font-size setting.
+    expect(getComputedStyle(document.documentElement).fontSize).toBe(ROOT_FONT_SIZE);
   });
 
   it('opens every destination from the phone bar', async () => {
@@ -123,6 +107,30 @@ describe(Layout, () => {
     const box = element.getBoundingClientRect();
     expect(box.left).toBe(0);
     expect(box.right).toBe(window.innerWidth);
+  });
+
+  it('sets the banner text to whatever the Dense token resolves to at the root', async () => {
+    const screen = await renderShell();
+
+    const banner = screen.getByTestId('env-banner').element() as HTMLElement;
+    // Dense is the floor below which informative text must take the foreground tone.
+    expect(getComputedStyle(banner).fontSize).toBe(resolvedSize('--text-xs'));
+  });
+
+  it('sets the sidebar links to whatever the Dense token resolves to at the root', async () => {
+    await page.viewport(DESKTOP.width, DESKTOP.height);
+    const screen = await renderShell();
+
+    const link = screen.getByRole('link', { name: ALL_ITEMS[0]!.label, exact: true }).element() as HTMLElement;
+    expect(getComputedStyle(link).fontSize).toBe(resolvedSize('--text-xs'));
+  });
+
+  it('sets the masthead right cluster to whatever the Dense token resolves to at the root', async () => {
+    await page.viewport(DESKTOP.width, DESKTOP.height);
+    const screen = await renderShell();
+
+    const cluster = screen.container.querySelector<HTMLElement>('.xp-masthead-right')!;
+    expect(getComputedStyle(cluster).fontSize).toBe(resolvedSize('--text-xs'));
   });
 
   it('keeps the banner ink readable against its own composited fill', async () => {

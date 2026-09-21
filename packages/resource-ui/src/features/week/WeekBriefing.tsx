@@ -22,7 +22,6 @@ const whenFormat = zoneFormatters('en-GB', {
   hour12: false,
 });
 
-/** "Sun 22 Nov, 10:00" - the instant's wall-clock date in the chosen clock. */
 const whenLabel = (instant: number, site: Site, display: TimeDisplay): string =>
   whenFormat(displayTimeZone(site, display)).format(new Date(instant));
 
@@ -45,7 +44,7 @@ export function WeekNightStrip({ facts }: { facts: readonly WeekNightFacts[] }):
           >
             <div className="flex items-center justify-between gap-2">
               {/* A card is found by its weekday, and seven of them span one month or two. */}
-              <span className={cn('font-semibold', fact.isHoliday ? 'text-amber-400' : 'text-foreground')}>
+              <span className={cn('font-semibold', fact.isHoliday ? 'text-warning' : 'text-foreground')}>
                 {eveningLabel(fact.eveningDate, 'weekdayDayMonth')}
               </span>
               <MoonDisc phase={fact.moon} size={14} />
@@ -53,14 +52,14 @@ export function WeekNightStrip({ facts }: { facts: readonly WeekNightFacts[] }):
             <div className="mt-1 text-foreground-secondary">
               {fact.darkHours === null ? 'No astronomical night' : `${fact.darkHours.toFixed(1)} h dark`}
             </div>
-            <div className="text-foreground-muted">{Math.round(fact.moon.fraction * 100)}% moon</div>
+            <div className="text-foreground-secondary">{Math.round(fact.moon.fraction * 100)}% moon</div>
             {(fact.publishedMoon !== null || fact.isHoliday || !fact.dataAvailable) && (
               <div className="mt-1 flex flex-wrap gap-1">
                 {when(fact.publishedMoon, (publishedMoon) => (
-                  <Tag value={publishedMoon === 'NEW' ? 'new moon' : 'full moon'} className="!text-[0.6rem]" />
+                  <Tag value={publishedMoon === 'NEW' ? 'new moon' : 'full moon'} />
                 ))}
-                {fact.isHoliday && <Tag value="holiday" severity="warning" className="!text-[0.6rem]" />}
-                {!fact.dataAvailable && <Tag value="not recorded" severity="secondary" className="!text-[0.6rem]" />}
+                {fact.isHoliday && <Tag value="holiday" severity="warning" />}
+                {!fact.dataAvailable && <Tag value="not recorded" severity="secondary" />}
               </div>
             )}
           </button>
@@ -135,7 +134,7 @@ export function WeekChangesTable({
                 <span className="flex flex-col">
                   <span className="font-medium text-foreground">{whatLabel(change)}</span>
                   {when(note === whatLabel(change) ? null : note, (note) => (
-                    <span className="text-[0.65rem] text-foreground-muted italic">{note}</span>
+                    <span className="text-xs text-foreground-secondary italic">{note}</span>
                   ))}
                 </span>
               );

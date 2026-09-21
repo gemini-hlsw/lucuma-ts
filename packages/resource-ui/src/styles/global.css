@@ -15,6 +15,17 @@
   --color-action-info: rgb(33 108 165);
   --color-action-secondary: rgb(106 115 124);
 
+  /* The two alert families, each a panel (fill, edge, ink) plus the weight a word takes on the
+     canvas. Values are the Tailwind weights already in use. */
+  --color-warning-fill: oklch(41.4% 0.112 45.904deg);
+  --color-warning-edge: oklch(66.6% 0.179 58.318deg);
+  --color-warning-ink: oklch(96.2% 0.059 95.617deg);
+  --color-warning: oklch(87.9% 0.169 91.605deg);
+  --color-danger-fill: oklch(39.6% 0.141 25.723deg);
+  --color-danger-edge: oklch(50.5% 0.213 27.518deg);
+  --color-danger-ink: oklch(93.6% 0.032 17.717deg);
+  --color-danger: oklch(80.8% 0.114 19.571deg);
+
   /* Explore's exact layering, canvas to raised. Climb it in order; do not invent intermediate greys. */
   --color-canvas: #000;
   --color-surface: #1e1e1e;
@@ -27,6 +38,26 @@
   --color-foreground: rgb(255 255 255 / 87%);
   --color-foreground-secondary: rgb(255 255 255 / 60%);
   --color-foreground-muted: rgb(255 255 255 / 38%);
+  --spacing: 3.5px;
+
+  /* DESIGN.md's whole type scale, in rem so it scales with the reader's own browser setting. The
+     reset drops Tailwind's other steps, so these six are the only font sizes in the system, and
+     each carries the line height Tailwind pairs with it. */
+  /* stylelint-disable custom-property-pattern */
+  --text-*: initial;
+  --text-2xs: 0.625rem;
+  --text-2xs--line-height: 0.875rem;
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1rem;
+  --text-sm: 0.875rem;
+  --text-sm--line-height: 1.25rem;
+  --text-base: 1rem;
+  --text-base--line-height: 1.5rem;
+  --text-lg: 1.125rem;
+  --text-lg--line-height: 1.625rem;
+  --text-2xl: 1.5rem;
+  --text-2xl--line-height: 2rem;
+  /* stylelint-enable custom-property-pattern */
 }
 
 /* One source of truth for every chart colour; components never hard-code one. */
@@ -41,33 +72,33 @@
   --timeline-tooltip-border: var(--color-neutral-700);
 
   /* Monochrome on purpose: hue means instrument identity and nothing else. */
-  --state-routine: #737373; /* neutral-500 */
-  --state-notable: #d4d4d4; /* neutral-300 */
+  --state-routine: #737373;
+  --state-notable: #d4d4d4;
 
   /* Optimised over the pairs that can actually share a chart, never over all fourteen at once. */
-  --instrument-alopeke: #ffdf20; /* yellow-300 */
-  --instrument-altair: #ec003f; /* rose-600 */
-  --instrument-cal-zorro: #ffb900; /* amber-400 */
-  --instrument-canopus: #155dfc; /* blue-600 */
-  --instrument-engineering: #51a2ff; /* blue-400 */
-  --instrument-f2: #f54900; /* orange-600 */
-  --instrument-gcal: #c27aff; /* purple-400 */
-  --instrument-ghost: #009689; /* teal-600 */
-  --instrument-gmos: #53eafd; /* cyan-300 */
-  --instrument-gnirs: #ff8904; /* orange-400 */
-  --instrument-gsaoi: #bbf451; /* lime-300 */
-  --instrument-igrins2: #00bba7; /* teal-500 */
-  --instrument-iqueye: #00d492; /* emerald-400 */
-  --instrument-maroon-x: #4f39f6; /* indigo-600 */
+  --instrument-alopeke: #ffdf20;
+  --instrument-altair: #ec003f;
+  --instrument-cal-zorro: #ffb900;
+  --instrument-canopus: #155dfc;
+  --instrument-engineering: #51a2ff;
+  --instrument-f2: #f54900;
+  --instrument-gcal: #c27aff;
+  --instrument-ghost: #009689;
+  --instrument-gmos: #53eafd;
+  --instrument-gnirs: #ff8904;
+  --instrument-gsaoi: #bbf451;
+  --instrument-igrins2: #00bba7;
+  --instrument-iqueye: #00d492;
+  --instrument-maroon-x: #4f39f6;
 
   /* Outside the two measured site sets: these never draw a bar. */
-  --instrument-acq-cam: #94a3b8; /* slate-400 */
-  --instrument-gpi: #f472b6; /* pink-400 */
-  --instrument-niri: #a78bfa; /* violet-400 */
-  --instrument-scorpio: #fb923c; /* orange-400 */
+  --instrument-acq-cam: #94a3b8;
+  --instrument-gpi: #f472b6;
+  --instrument-niri: #a78bfa;
+  --instrument-scorpio: #fb923c;
 
   /* A reserved neutral outside the validated sets: it must read as "identity unresolved". */
-  --instrument-unknown: #a1a1aa; /* zinc-400 */
+  --instrument-unknown: #a1a1aa;
 
   /* Whichever of light or dark clears 4.5:1 on the fill. */
   --instrument-ink-light: #fff;
@@ -107,7 +138,7 @@
 /* react-big-calendar ships a light theme in plain selectors; every rule here is scoped to it. */
 .resource-calendar {
   color: var(--color-foreground);
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
 }
 
 .resource-calendar .rbc-calendar {
@@ -121,13 +152,13 @@
 }
 
 .resource-calendar .rbc-header {
-  padding: 0.3rem 0;
+  padding: 4.2px 0;
   border-color: var(--timeline-grid);
-  color: var(--color-foreground-secondary);
-  font-size: 0.68rem;
+  color: var(--color-foreground);
+  font-size: var(--text-xs);
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
 }
 
 .resource-calendar .rbc-month-row {
@@ -189,8 +220,8 @@
   padding: 0 4px;
   border: none;
   border-radius: 2px;
-  font-size: 0.64rem;
-  line-height: 1rem;
+  font-size: var(--text-xs);
+  line-height: 0.875rem;
 }
 
 .resource-calendar .rbc-row-segment {

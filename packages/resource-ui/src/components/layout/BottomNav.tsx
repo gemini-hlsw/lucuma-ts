@@ -18,7 +18,7 @@ function BottomNavItem({ item }: { item: SidebarMenuItem }): JSX.Element {
   const search = searchString(carrySelection(params));
   const content = (
     <>
-      {item.icon === undefined ? null : <FontAwesomeIcon icon={item.icon} className="h-4 w-4" aria-hidden="true" />}
+      {item.icon === undefined ? null : <FontAwesomeIcon icon={item.icon} size="sm" aria-hidden="true" />}
       <span>{item.label}</span>
     </>
   );

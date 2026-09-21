@@ -6,12 +6,11 @@ import type { FinderRow } from '@/domain/componentFinder';
 
 import { componentStatus } from './componentLabels';
 
-/** The name a reader knows the piece by, over the codes ICTD hands them. */
 export function ComponentIdentityCell({ row }: { row: FinderRow }): JSX.Element {
   return (
     <span className="flex flex-col">
       <span className="font-medium text-foreground">{row.component.name}</span>
-      <span className="text-[0.65rem] text-foreground-muted">
+      <span className="text-xs text-foreground-secondary">
         {row.component.code}
         {when(row.component.barcode, (barcode) => ` · barcode ${barcode}`)}
       </span>

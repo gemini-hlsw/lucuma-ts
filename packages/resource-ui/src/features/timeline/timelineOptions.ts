@@ -55,7 +55,6 @@ const INSTRUMENT_INK_LIGHT = 'var(--instrument-ink-light)';
 /** Legible only on the bright instrument fill it was chosen for; light ink reads on every chrome fill. */
 const INSTRUMENT_INK_DARK = 'var(--instrument-ink-dark)';
 
-/** Whichever ink clears 4.5:1 on that fill, measured. Re-measure an entry when its hex moves. */
 const INSTRUMENT_INK = {
   ACQ_CAM: INSTRUMENT_INK_DARK,
   ALOPEKE: INSTRUMENT_INK_DARK,
@@ -181,8 +180,6 @@ export const calendarLegendExtras = (options: {
     : []),
 ];
 
-// No subsystem section: every span there draws in the one quiet neutral, so a key would key no distinction.
-
 /** The instrument's own hue hatched with its measured ink: identity on the hue, stripes say reserved. */
 const engineeringPattern = (instrument: Instrument): PatternObject => ({
   pattern: {
@@ -233,7 +230,6 @@ const blockInk = (block: TimelineBlock): string => {
   return INSTRUMENT_INK[block.instrument];
 };
 
-/** Extra per-point data carried through Highcharts to the tooltip. */
 export interface TimelinePointCustom {
   readonly blockId: string;
   readonly rowLabel: string;
@@ -256,17 +252,50 @@ export interface TimelinePoint extends XrangePointOptionsObject {
   readonly borderWidth?: number;
 }
 
-/** Rough advance of the label font (0.68rem, semibold), for the fit test. */
-const LABEL_CHAR_WIDTH = 6.2;
+/** The fit maths need the number, and `Number.parseFloat` on a `var(...)` is NaN. */
+const DENSE_REM = 0.75;
+export const DENSE = `${String(DENSE_REM)}rem`;
+
+/** DESIGN.md's tick tier, mirroring `--text-2xs`: numeric axis ticks and nothing else. */
+export const TICK = '0.625rem';
+
+/** A label the reader is meant to read, rather than the chart's own chrome. */
+export const CHART_LABEL = { color: 'var(--timeline-text)', fontSize: DENSE, fontWeight: '600' } as const;
+
+/** A label that names the chart's own scaffolding rather than the schedule. */
+export const MUTED_LABEL = { color: 'var(--timeline-muted-text)', fontSize: DENSE } as const;
+
+export const MUTED_TICK = { color: 'var(--timeline-muted-text)', fontSize: TICK } as const;
+
+/** The now marker's own label, which takes the marker's colour so the two read as one thing. */
+export const NOW_LABEL = { color: 'var(--schedule-today)', fontSize: DENSE, fontWeight: '700' } as const;
+
+/**
+ * Advance of semibold label type, in px per rem of font size - over-estimated on purpose because an
+ * under-estimate clips, set by the short all-caps instrument names that are widest per character,
+ * and a bound on label-shaped text rather than any string.
+ */
+export const LABEL_ADVANCE_PER_REM = 12.4;
+
+/** The root size the measured constants here were taken against. */
+export const BASE_ROOT_PX = 16;
+
+/** The app sets no root size, so this is the reader's own browser setting and every rem below tracks it. */
+const rootFontSizePx = (): number =>
+  Number.parseFloat(getComputedStyle(document.documentElement).fontSize) || BASE_ROOT_PX;
+
+/** A rem in the pixels chart options take, since Highcharts measures in numbers rather than lengths. */
+export const readerPx = (rem: number): number => rem * rootFontSizePx();
+
+/** Over-estimated width of `characters` of label type set at `fontRem`, in the reader's own pixels. */
+const labelWidthPx = (characters: number, fontRem: number, rootPx: number): number =>
+  characters * fontRem * (rootPx / BASE_ROOT_PX) * LABEL_ADVANCE_PER_REM;
 
 const LABEL_PADDING = 4;
 
-/** The same advance normalised per rem, for labels set at other sizes. */
-const LABEL_CHAR_WIDTH_PER_REM = LABEL_CHAR_WIDTH / 0.68;
-
 /** Dropped rather than truncated: a clipped label costs the row its identity and says nothing. */
-const labelIfItFits = (label: string, availablePx: number): string =>
-  label.length * LABEL_CHAR_WIDTH <= availablePx ? label : '';
+const labelIfItFits = (label: string, availablePx: number, rootPx: number): string =>
+  labelWidthPx(label.length, DENSE_REM, rootPx) <= availablePx ? label : '';
 
 /** Highcharts wraps a band label at spaces and hyphens, so "In-Situ Wash" can clip to "In-". */
 const longestUnbreakable = (text: string): number =>
@@ -287,8 +316,8 @@ export interface BandFitChart {
   }[];
 }
 
-/** Drops a label its band cannot hold; only the rendered chart knows the band pixel width. */
-export const fitBandLabels = (chart: BandFitChart): void => {
+/** Called post-render, because only the rendered chart knows the band pixel width. */
+export const fitBandLabels = (chart: BandFitChart, rootPx: number): void => {
   for (const axis of chart.xAxis) {
     for (const band of axis.plotLinesAndBands ?? []) {
       const { from, to, label } = band.options;
@@ -296,8 +325,8 @@ export const fitBandLabels = (chart: BandFitChart): void => {
         continue;
       }
       const width = Math.abs(axis.toPixels(to, false) - axis.toPixels(from, false));
-      const rem = Number.parseFloat(label?.style?.fontSize ?? '') || 0.68;
-      const fits = longestUnbreakable(label?.text ?? '') * rem * LABEL_CHAR_WIDTH_PER_REM <= width;
+      const rem = Number.parseFloat(label?.style?.fontSize ?? '') || DENSE_REM;
+      const fits = labelWidthPx(longestUnbreakable(label?.text ?? ''), rem, rootPx) <= width;
       if (fits) {
         band.label.show();
       } else {
@@ -358,7 +387,6 @@ const toPoint = (block: TimelineBlock, rowIndex: number, describe: BlockDescribe
   };
 };
 
-/** Exported so the unit tests can read a window's point list directly. */
 export const buildTimelinePoints = (rows: readonly TimelineRow[], describe: BlockDescriber): readonly TimelinePoint[] =>
   rows.flatMap((row, rowIndex) => row.blocks.map((block) => toPoint(block, rowIndex, describe)));
 
@@ -366,11 +394,11 @@ interface TimelineChartModel {
   readonly rows: readonly TimelineRow[];
   readonly site: Site;
   readonly describe: BlockDescriber;
-  /** The view's own axis: extent, ticks, labels, bands and lines. */
   readonly xAxis: XAxisOptions;
-  readonly rowHeight: number;
-  readonly labelGutter: number;
-  readonly bottomMargin: number;
+  /** Rem: a row has to hold its gutter label at whatever size the reader reads at. */
+  readonly rowHeightRem: number;
+  /** Rem: the axis labels are drawn in it. */
+  readonly bottomMarginRem: number;
   readonly responsive?: Options['responsive'];
   readonly seriesName: string;
   /** Reaches Highcharts as `time.timezone`, so only labels Highcharts itself formats move with it. */
@@ -389,8 +417,8 @@ interface GroupedRowLayout {
   readonly offsetFor: (rowIndex: number) => number;
 }
 
-/** The closure band all three views draw; `labelY` is the one thing they legitimately differ on. */
-export const closureBandPlotBand = (band: TimelineBand, labelY: number): XAxisPlotBandsOptions => ({
+/** The closure band all three views draw; `labelYRem` is the one thing they legitimately differ on. */
+export const closureBandPlotBand = (band: TimelineBand, labelYRem: number): XAxisPlotBandsOptions => ({
   from: band.interval.start,
   to: band.interval.end,
   color: 'var(--schedule-band)',
@@ -400,20 +428,29 @@ export const closureBandPlotBand = (band: TimelineBand, labelY: number): XAxisPl
   className: 'schedule-closure-band',
   label: {
     text: band.label,
-    style: { color: 'var(--timeline-text)', fontSize: '0.68rem', fontWeight: '600' },
+    style: CHART_LABEL,
     rotation: 0,
     align: 'center' as const,
     verticalAlign: 'top' as const,
-    y: labelY,
+    y: readerPx(labelYRem),
   },
 });
 
-/** Above the washes and the grid, below anything that must still be seen or hangs a label in the top row. */
+/*
+ * Every chart's stacking order, bottom to top: night lines are texture under the week lines that
+ * group them; the sun washes cover both; the heading mask hides all three where a heading row runs;
+ * a band labelled in that row has to clear the mask; the now marker clears everything.
+ */
+export const NIGHT_LINE_Z = 1;
+export const WEEK_LINE_Z = 2;
+export const WASH_Z = 5;
 const HEADING_MASK_Z = 6;
-/** A band whose label lives in the heading row, so it draws over the mask. */
 export const LABELLED_BAND_Z = 8;
-/** A marker line that must stay visible the whole chart height. */
 export const MARKER_LINE_Z = 9;
+
+export const GUTTER_HEADINGS = ['Telescope', 'Instruments'] as const;
+
+const [STATE_HEADING, INSTRUMENT_HEADING] = GUTTER_HEADINGS;
 
 /** Not an axis break: a break inflates the adjacent slot and drops its gutter label out of line. */
 const groupedRowLayout = (labels: readonly string[], headerRows: number): GroupedRowLayout => {
@@ -421,28 +458,51 @@ const groupedRowLayout = (labels: readonly string[], headerRows: number): Groupe
     return { categories: [...labels], headingPositions: new Set(), offsetFor: (rowIndex) => rowIndex };
   }
   return {
-    categories: ['Telescope', ...labels.slice(0, headerRows), 'Instruments', ...labels.slice(headerRows)],
+    categories: [STATE_HEADING, ...labels.slice(0, headerRows), INSTRUMENT_HEADING, ...labels.slice(headerRows)],
     headingPositions: new Set([0, headerRows + 1]),
     offsetFor: (rowIndex) => (rowIndex < headerRows ? rowIndex + 1 : rowIndex + 2),
   };
 };
 
-/** Sized so "INSTRUMENTS" fits the narrowest gutter, `LABEL_GUTTER`. */
+/** Highcharts' own `labels.distance`, which is chrome between the gutter type and the plot. */
+const LABEL_DISTANCE = 15;
+
+/**
+ * What the gutter reserves for type, in rem, so a reader who raises their font size gets a wider
+ * gutter rather than a clipped heading. `labelAdvance.test.ts` measures every string the gutter can
+ * print against it, under the letter-spacing WCAG 1.4.12 lets a reader impose.
+ */
+const GUTTER_TEXT_REM = 7;
+
+export const gutterTextWidth = (): number => readerPx(GUTTER_TEXT_REM);
+
+/**
+ * One gutter for all three views, so their plot areas align - the situation Highcharts names as the
+ * reason to override its own label-aware sizing at all.
+ */
+export const labelGutter = (): number => gutterTextWidth() + LABEL_DISTANCE;
+
+/** A gutter heading's dress, tracked in em so it scales with the type; widening it spends the gutter. */
+export const HEADING_LABEL = { fontSize: DENSE, fontWeight: '700', letterSpacing: '0.05em' } as const;
+
 const headingLabelHtml = (value: string): string =>
-  `<span style="color: var(--timeline-muted-text); font-size: 0.55rem; font-weight: 700; letter-spacing: 1px;">${value.toUpperCase()}</span>`;
+  `<span style="color: var(--timeline-text); font-size: ${HEADING_LABEL.fontSize}; font-weight: ${HEADING_LABEL.fontWeight}; letter-spacing: ${HEADING_LABEL.letterSpacing};">${value.toUpperCase()}</span>`;
 
 export const buildTimelineChart = ({
   rows,
   site,
   describe,
   xAxis,
-  rowHeight,
-  labelGutter,
-  bottomMargin,
+  rowHeightRem,
+  bottomMarginRem,
   responsive,
   seriesName,
   timeDisplay = 'site',
 }: TimelineChartModel): Options => {
+  // One read for the whole options object, so the bar and band fit tests judge at the same root.
+  const rootPx = rootFontSizePx();
+  const rowHeight = readerPx(rowHeightRem);
+  const bottomMargin = readerPx(bottomMarginRem);
   // Derived from the rows, never passed alongside them, so a category list cannot disagree with the data.
   const headerRows = stateRowCount(rows);
   const { categories, headingPositions, offsetFor } = groupedRowLayout(
@@ -458,14 +518,14 @@ export const buildTimelineChart = ({
       type: 'xrange',
       events: {
         render() {
-          fitBandLabels(this);
+          fitBandLabels(this, rootPx);
         },
       },
       backgroundColor: 'transparent',
       height: TOP_MARGIN + bottomMargin + categories.length * rowHeight,
       marginTop: TOP_MARGIN,
       marginBottom: bottomMargin,
-      marginLeft: labelGutter,
+      marginLeft: labelGutter(),
       marginRight: 8,
       spacing: [0, 0, 0, 0],
       style: { fontFamily: 'inherit' },
@@ -497,7 +557,9 @@ export const buildTimelineChart = ({
       lineWidth: 0,
       tickLength: 0,
       labels: {
-        style: { color: 'var(--timeline-text)', fontSize: '0.72rem', fontWeight: '600' },
+        // Highcharts guards ellipsizing on this, so a label outgrowing the gutter renders whole and
+        // overhangs instead of losing three characters.
+        style: { ...CHART_LABEL, whiteSpace: 'nowrap' },
         formatter(this: AxisLabelsFormatterContextObject) {
           return headingPositions.has(this.pos) ? headingLabelHtml(String(this.value)) : String(this.value);
         },
@@ -510,7 +572,7 @@ export const buildTimelineChart = ({
       borderColor: 'var(--timeline-tooltip-border)',
       borderRadius: 6,
       shadow: false,
-      style: { color: 'var(--timeline-text)', fontSize: '0.75rem' },
+      style: { color: 'var(--timeline-text)', fontSize: DENSE },
     },
     plotOptions: {
       xrange: {
@@ -538,12 +600,10 @@ export const buildTimelineChart = ({
             if (custom === undefined) {
               return '';
             }
-            return labelIfItFits(custom.label, (point?.shapeArgs?.width ?? 0) - LABEL_PADDING * 2);
+            return labelIfItFits(custom.label, (point?.shapeArgs?.width ?? 0) - LABEL_PADDING * 2, rootPx);
           },
           style: {
-            color: 'var(--timeline-text)',
-            fontSize: '0.68rem',
-            fontWeight: '600',
+            ...CHART_LABEL,
             textOutline: 'none',
             // A label must not take the pointer: it sits over its own bar and would swallow the hover.
             pointerEvents: 'none',
@@ -574,5 +634,5 @@ export const tooltipHtml = (custom: TimelinePointCustom, continuesLabel: string)
   if (custom.detail !== null && custom.detail !== custom.label) {
     rows.push(`<div style="margin-top:4px">${escapeHtml(custom.detail)}</div>`);
   }
-  return `<div style="min-width:9rem;line-height:1.35">${rows.join('')}</div>`;
+  return `<div style="min-width:126px;line-height:1.35">${rows.join('')}</div>`;
 };

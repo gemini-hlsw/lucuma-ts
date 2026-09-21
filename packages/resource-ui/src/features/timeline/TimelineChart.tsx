@@ -104,7 +104,7 @@ function LegendSection({ label, entries }: { label: string; entries: readonly Le
   }
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-2" role="group" aria-label={label}>
-      <span className="text-[0.62rem] font-semibold tracking-wider text-foreground-muted uppercase">{label}</span>
+      <span className="text-xs font-semibold tracking-wider text-foreground uppercase">{label}</span>
       <ul className="flex flex-wrap items-center gap-x-4 gap-y-2">
         {entries.map((entry) => (
           <li key={entry.key} className="flex items-center gap-1.5">
