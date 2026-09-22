@@ -123,8 +123,8 @@ more efficient use of space than Explore, it does, without breaking the family r
 The surface is an information-dense engineering dashboard for experts - astronomers, night
 operations, staff - who scan, compare, and monitor the same views repeatedly. Density wins
 ties: condensed is correct here, airy is not. The interface recedes behind the record; colour
-is spent on identity and alarm, never on decoration. Today every view reads; mutations, auth,
-and a telescope scheduler builder are coming, so every pattern below is chosen to survive the
+is spent on identity and alarm, never on decoration. Today every view reads; mutations and a
+telescope scheduler builder are coming, so every pattern below is chosen to survive the
 arrival of editing (see Future Readiness).
 
 **Key characteristics:**
@@ -406,8 +406,11 @@ the workflow into it, but keep masthead selections global and page controls loca
   of gaps and 28px of padding that is 408.1px of fixed content, against 768px at the narrowest
   desktop width - the gap absorbs the rest. Below `md` the same bar measures 311.9px inside a
   320px viewport, **8.1px to spare**: the tightest figure in this file, and the one to check
-  first when anything joins the bar - the SSO merge's signed-in states are its known next tenant,
-  and they arrive in the right cluster. Nothing clips between 320px and 1440px. The controls in
+  first when anything joins the bar. The signed-in name is the right cluster's one item that
+  varies with its content, and it is bounded: `.xp-account-name` caps it at 8.75rem with an
+  ellipsis, the whole name staying in the control's `title`, and below `md` it is `sr-only`
+  altogether. `Layout.test.tsx` pins the bar's fit at 320, 390, 768 and 1024 with a
+  40-character name. Nothing clips between 320px and 1440px. The controls in
   the bar are `lucuma-ui-css`'s and are sized in rem against a 16px root, so a reader who raises
   their browser font size spends this slack; re-measure rather than assuming it. Check the budget
   before adding an item: the flexible column is what gives way first, so whatever sits in it is
@@ -509,6 +512,17 @@ lucuma-ui's CSS (`@gemini-hlsw/lucuma-ui-css`), re-tinted through its own variab
 `shell.css`. Do not recreate a component the shared stack already provides, and do not
 restate a colour a token already holds. Where a design change is needed, change the variable
 first (the mechanics of winning specificity battles are engineering and live in CLAUDE.md).
+
+**The One-Library Rule.** Every component is PrimeReact's: buttons, dialogs, menus, tables,
+inputs and overlays come from `primereact/*` and take the lucuma-ui theme, always. A
+hand-written element that imitates a component PrimeReact ships is not an option, whatever it
+would save in overrides; plain HTML with Tailwind is for what PrimeReact has no component for -
+a caption, a live region, a line of text - and never for a look-alike control.
+
+**The One-Glyph-Set Rule.** Every icon or glyph is a FontAwesome icon rendered through the
+project's `FontAwesomeIcon`, sized by FontAwesome's own `size` prop: no image logos, no
+inline SVG, no PrimeIcons. Brand marks (ORCID) come from FontAwesome's brands set and take the
+theme's ink like any other glyph.
 
 ### Interaction states
 
@@ -696,17 +710,19 @@ Layout section's phone shell.
 
 ## Future Readiness
 
-The app is read-only today; mutations, authentication, and a telescope scheduler builder
-are coming (PRODUCT.md). These rules keep today's surface from becoming tomorrow's rewrite.
+The app is read-only today; mutations and a telescope scheduler builder are coming
+(PRODUCT.md). These rules keep today's surface from becoming tomorrow's rewrite.
 None of this is to be built speculatively - it is room being reserved, not features.
 
 - **States to design for, per component, as they are touched:** loading, empty, error (all
   three exist today in `PageStatus`), plus disabled-with-reason, unsaved-change, validation
   failure, save success, conflict (the record changed under you), and no-permission. A
   disabled control states why (tooltip + accessible description), never just greys out.
-- **Auth arrives in the masthead right cluster.** "Guest User" is already a slot; identity,
-  roles, and sign-in/out extend it without moving the selection controls. Permission
-  differences render as capability (what you can press), never as a different theme.
+- **Auth lives in the masthead right cluster.** The account control names the signed-in reader,
+  or reads "Not signed in", or "Checking sign-in" while the first refresh is still out; signing
+  in and signing out sit in the app menu's account block, and the selection controls did not
+  move. Roles are not shown. Permission differences render as capability (what you can press),
+  never as a different theme.
 - **Editing is a mode of the same views, not new views.** The scheduler builder will
   compose over the same timeline: selection (single and range), a contextual detail panel,
   drag-and-drop with a full keyboard equivalent for every drag, inline validation against

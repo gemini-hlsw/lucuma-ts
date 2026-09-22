@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-09-17",
+  "generatedAt": "2026-09-22",
   "title": "Design System: Resource",
   "extensions": {
     "colorMeta": {
@@ -404,6 +404,16 @@
         "name": "The Flat-By-Default Rule",
         "body": "No new shadow vocabulary. If a surface needs to read as above another, move it up the ladder.",
         "section": "elevation"
+      },
+      {
+        "name": "The One-Library Rule",
+        "body": "Every component is PrimeReact's: buttons, dialogs, menus, tables, inputs and overlays come from `primereact/*` and take the lucuma-ui theme, always. A hand-written element that imitates a component PrimeReact ships is not an option; plain HTML with Tailwind is for what PrimeReact has no component for - a caption, a live region, a line of text - never for a look-alike control.",
+        "section": "components"
+      },
+      {
+        "name": "The One-Glyph-Set Rule",
+        "body": "Every icon or glyph is a FontAwesome icon rendered through `FontAwesomeIcon`, sized by FontAwesome's own `size` prop: no image logos, no inline SVG, no PrimeIcons. Brand marks (ORCID) come from FontAwesome's brands set and take the theme's ink like any other glyph.",
+        "section": "components"
       }
     ],
     "dos": [
