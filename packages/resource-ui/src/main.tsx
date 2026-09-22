@@ -3,6 +3,7 @@ import './styles/main.css';
 
 import { ApolloProvider } from '@apollo/client/react';
 import { Provider as JotaiProvider } from 'jotai';
+import { PrimeReactProvider } from 'primereact/api';
 import { type ReactNode, StrictMode } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 
@@ -23,13 +24,15 @@ const root: Root = createRoot(rootElement);
 
 const app: ReactNode = (
   <StrictMode>
-    <JotaiProvider store={store}>
-      <ApolloProvider client={client}>
-        <AuthSession>
-          <App />
-        </AuthSession>
-      </ApolloProvider>
-    </JotaiProvider>
+    <PrimeReactProvider>
+      <JotaiProvider store={store}>
+        <ApolloProvider client={client}>
+          <AuthSession>
+            <App />
+          </AuthSession>
+        </ApolloProvider>
+      </JotaiProvider>
+    </PrimeReactProvider>
   </StrictMode>
 );
 

@@ -10,6 +10,11 @@ export function standardUser(roleType: 'pi' | 'ngo' | 'staff' | 'admin'): Standa
   };
 }
 
+export function namedUser(name: string): StandardUser {
+  const base = standardUser('staff');
+  return { ...base, profile: { ...base.profile, profile: { creditName: name } } };
+}
+
 export function fakeJwt(user: User, expiresInSeconds = 3600): string {
   // Standard base64, not base64url: common-ui's decodedTokenPayloadAtom decodes with plain atob.
   const encode = (value: unknown): string =>

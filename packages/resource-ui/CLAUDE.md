@@ -70,8 +70,9 @@ the clock toggle, finder scoping) are DESIGN.md's. The mechanics:
 
 ## Auth mechanics
 
-No view is gated on a session yet - a signed-out reader can open every one; what a session buys
-today is one header on every Resource request (`ENDPOINTS.md`, "The endpoint").
+The masthead says who is signed in and the app menu holds the login and the logout. No view is
+gated on a session - a signed-out reader can open every one - and what a session buys today is
+one header on every Resource request (`ENDPOINTS.md`, "The endpoint").
 
 - **The token lives in common-ui's `odbTokenAtom`**, a sessionStorage-backed Jotai atom, and the
   app reaches it - and `userAtom`, `isLoggedInAtom`, `sessionStatusAtom` - only through

@@ -1,5 +1,6 @@
 import { ApolloProvider } from '@apollo/client/react';
 import { Provider as JotaiProvider } from 'jotai';
+import { PrimeReactProvider } from 'primereact/api';
 import type { ReactElement } from 'react';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import { render } from 'vitest-browser-react';
@@ -50,11 +51,13 @@ export async function renderApp({
   store.set(sessionCheckedAtom, sessionChecked);
 
   const result = await render(
-    <JotaiProvider store={store}>
-      <ApolloProvider client={mock.client}>
-        <RouterProvider router={router} />
-      </ApolloProvider>
-    </JotaiProvider>,
+    <PrimeReactProvider>
+      <JotaiProvider store={store}>
+        <ApolloProvider client={mock.client}>
+          <RouterProvider router={router} />
+        </ApolloProvider>
+      </JotaiProvider>
+    </PrimeReactProvider>,
   );
   return Object.assign(result, { mock, router, store });
 }

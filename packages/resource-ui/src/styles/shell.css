@@ -86,6 +86,37 @@ body {
   flex: none;
 }
 
+.xp-account-name {
+  max-width: 8.75rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dark .xp-app-menu .p-menuitem > .p-menuitem-content .p-menuitem-link,
+.dark .xp-app-menu .p-submenu-header {
+  padding: calc(var(--spacing) * 3) calc(var(--spacing) * 4);
+  font-size: var(--text-xs);
+  line-height: 1;
+}
+
+.dark .xp-app-menu .p-menuitem > .p-menuitem-content .p-menuitem-link .p-menuitem-icon {
+  margin-right: calc(var(--spacing) * 2);
+}
+
+/* The list holds focus and hover also marks an item .p-focus, so the ring keys off the list's own focus-visible. */
+.dark .xp-app-menu .p-menu-list:focus-visible .p-menuitem.p-focus > .p-menuitem-content {
+  outline: 2px solid var(--color-gpp-light);
+  outline-offset: -2px;
+}
+
+.xp-app-menu .xp-menu-status {
+  padding: 0 calc(var(--spacing) * 4) calc(var(--spacing) * 3);
+  color: var(--color-foreground);
+  font-size: var(--text-xs);
+  line-height: 1rem;
+}
+
 .xp-page-select.p-dropdown {
   height: 28px;
   align-items: center;
@@ -97,27 +128,29 @@ body {
   font-size: var(--text-xs);
 }
 
-.xp-icon-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+.dark .xp-about-dialog .p-button.p-button-text,
+.dark .xp-masthead .p-button.p-button-text {
   width: 28px;
   height: 28px;
-  background: transparent;
-  border: none;
+  padding: 0;
   color: var(--color-foreground-secondary);
-  cursor: pointer;
-  border-radius: 4px;
 }
 
-.xp-icon-btn:disabled {
-  opacity: 0.4;
-  cursor: default;
-}
-
-.xp-icon-btn:not(:disabled):hover {
-  color: var(--color-foreground);
+.dark .xp-about-dialog .p-button.p-button-text:hover,
+.dark .xp-masthead .p-button.p-button-text:hover {
   background: var(--color-surface-raised);
+  color: var(--color-foreground);
+}
+
+.dark .xp-about-dialog .p-button.p-button-text:focus,
+.dark .xp-masthead .p-button.p-button-text:focus {
+  box-shadow: none;
+}
+
+.dark .xp-about-dialog .p-button.p-button-text:focus-visible,
+.dark .xp-masthead .p-button.p-button-text:focus-visible {
+  outline: 2px solid var(--color-gpp-light);
+  outline-offset: -2px;
 }
 
 .xp-bottomnav {
@@ -134,7 +167,7 @@ body {
     letter-spacing: 0.25em;
   }
 
-  .xp-masthead-right .xp-icon-btn {
+  .dark .xp-masthead-right .p-button.p-button-text {
     width: var(--xp-touch-target);
     height: var(--xp-masthead-height);
   }
@@ -288,4 +321,14 @@ body .p-dialog-mask.p-component-overlay {
 
 .xp-about-dialog .p-dialog-header {
   border-bottom: 2px solid var(--color-gpp-accent);
+}
+
+.dark .xp-about-dialog .p-datatable .p-datatable-tbody > tr > td {
+  padding: 3.5px 0;
+  border-bottom-width: 0;
+  vertical-align: baseline;
+}
+
+.dark .xp-about-dialog .p-datatable .p-datatable-tbody > tr > td[role='rowheader'] {
+  padding-right: 14px;
 }
