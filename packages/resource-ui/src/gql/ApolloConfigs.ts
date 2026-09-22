@@ -4,20 +4,10 @@ import { ErrorLink } from '@apollo/client/link/error';
 import { Observable } from '@apollo/client/utilities';
 import { withAbsoluteUri } from '@gemini-hlsw/lucuma-common-ui';
 
+import { liveGraphqlEndpoint } from '@/app/environment';
+
 import { buildCache } from './cache';
 import { clearLiveFailure, reportLiveFailure } from './liveStatus';
-
-const graphqlEndpoints = {
-  'resource-dev.lucuma.xyz': 'https://lucuma-resource-dev.lucuma.xyz/resource/graphql',
-  'resource-staging.lucuma.xyz': 'https://lucuma-resource-staging.lucuma.xyz/resource/graphql',
-  localhost: '/resource/graphql',
-} satisfies Record<string, string>;
-
-const defaultGraphqlEndpoint = graphqlEndpoints.localhost;
-
-/** The live endpoint this serving resolves to. Exported for the About dialog. */
-export const liveGraphqlEndpoint =
-  graphqlEndpoints[window.location.hostname as keyof typeof graphqlEndpoints] ?? defaultGraphqlEndpoint;
 
 /** GraphQL errors mean the server answered but not this API; anything else is no answer at all. */
 export const liveFailureMessage = (error: unknown): string => {

@@ -3,16 +3,9 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Dialog } from 'primereact/dialog';
 import { type JSX, useState } from 'react';
 
-import { liveGraphqlEndpoint } from '@/gql/ApolloConfigs';
+import { CURRENT_ENV, liveGraphqlEndpoint } from '@/app/environment';
 
-/** Anything unrecognised, localhost included, is a development serving. */
-const ENV_SUFFIX = {
-  'resource-dev.lucuma.xyz': 'DEV',
-  'resource-staging.lucuma.xyz': 'STAGING',
-} satisfies Record<string, string>;
-
-const displayVersion = (): string =>
-  `${import.meta.env.FRONTEND_VERSION}-${ENV_SUFFIX[window.location.hostname as keyof typeof ENV_SUFFIX] ?? 'DEV'}`;
+const displayVersion = (): string => `${import.meta.env.FRONTEND_VERSION}-${CURRENT_ENV.versionSuffix}`;
 
 export function AboutResource({ visible, onHide }: { visible: boolean; onHide: () => void }): JSX.Element {
   const [copied, setCopied] = useState(false);
