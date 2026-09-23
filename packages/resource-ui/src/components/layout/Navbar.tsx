@@ -1,4 +1,3 @@
-import { faOrcid } from '@fortawesome/free-brands-svg-icons';
 import {
   faArrowRightFromBracket,
   faBars,
@@ -18,6 +17,7 @@ import { Link, useSearchParams } from 'react-router';
 import { carrySelection, searchString } from '@/app/carriedSelection';
 import { setClockPreference, useClockPreference } from '@/app/useClockPreference';
 import { useSelection } from '@/app/useSelection';
+import orcidLogo from '@/assets/orcid-logo.svg';
 import { signOut } from '@/auth/session';
 import { signInUrl } from '@/auth/ssoClient';
 import { type SessionStatus, useSessionStatus, useUser } from '@/components/atoms/auth';
@@ -120,7 +120,9 @@ export default function Navbar(): JSX.Element {
 
   const loginItem: MenuItem = {
     label: 'Login with ORCID',
-    icon: <FontAwesomeIcon icon={faOrcid} className={MENU_ICON} aria-hidden="true" />,
+    icon: (
+      <img src={orcidLogo} alt="" aria-hidden="true" className={cn(MENU_ICON, 'h-[1em] w-[1.25em] object-contain')} />
+    ),
     url: signInUrl(),
   };
 

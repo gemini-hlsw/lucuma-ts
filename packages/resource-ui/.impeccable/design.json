@@ -412,7 +412,7 @@
       },
       {
         "name": "The One-Glyph-Set Rule",
-        "body": "Every icon or glyph is a FontAwesome icon rendered through `FontAwesomeIcon`, sized by FontAwesome's own `size` prop: no image logos, no inline SVG, no PrimeIcons. Brand marks (ORCID) come from FontAwesome's brands set and take the theme's ink like any other glyph.",
+        "body": "Every icon or glyph is a FontAwesome icon rendered through `FontAwesomeIcon`, sized by FontAwesome's own `size` prop: no inline SVG, no PrimeIcons. The one image is the ORCID iD logo on the login item (`src/assets/orcid-logo.svg`, the file navigate-ui's login page renders), shown in ORCID's own green rather than the theme's ink, because the mark identifies the sign-in provider and is used as ORCID publishes it. Nothing else may be an image.",
         "section": "components"
       }
     ],

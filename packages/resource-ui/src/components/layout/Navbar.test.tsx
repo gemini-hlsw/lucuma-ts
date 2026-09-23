@@ -4,6 +4,7 @@ import { type LocatorSelectors, page, userEvent } from 'vitest/browser';
 import { CURRENT_ENV } from '@/app/environment';
 import NightPage from '@/app/pages/NightPage';
 import { setLastSite } from '@/app/useLastSite';
+import orcidLogo from '@/assets/orcid-logo.svg';
 import { signInUrl } from '@/auth/ssoClient';
 import { setToken } from '@/components/atoms/auth';
 import { fakeJwt, namedUser, standardUser } from '@/test/factories';
@@ -294,8 +295,10 @@ describe(Navbar, () => {
 
     await expect.element(page.getByRole('menu').getByText('Not signed in', { exact: true })).toBeVisible();
     await expect.element(page.getByRole('link', { name: 'Login with ORCID' })).toHaveAttribute('href', signInUrl());
-    const logo = page.getByRole('menuitem', { name: 'Login with ORCID' }).element().querySelector('svg.fa-orcid');
+    const logo = page.getByRole('menuitem', { name: 'Login with ORCID' }).element().querySelector('img');
     expect(logo).not.toBeNull();
+    expect(logo!.getAttribute('src')).toBe(orcidLogo);
+    expect(logo!.getAttribute('alt')).toBe('');
     expect(logo!.getAttribute('aria-hidden')).toBe('true');
     await expect.element(page.getByRole('menuitem', { name: 'Login with ORCID' })).not.toHaveAttribute('aria-disabled');
     await expect.element(page.getByRole('menuitem', { name: 'Logout' })).not.toBeInTheDocument();

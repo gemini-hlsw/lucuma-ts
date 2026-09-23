@@ -521,9 +521,11 @@ would save in overrides; plain HTML with Tailwind is for what PrimeReact has no 
 a caption, a live region, a line of text - and never for a look-alike control.
 
 **The One-Glyph-Set Rule.** Every icon or glyph is a FontAwesome icon rendered through the
-project's `FontAwesomeIcon`, sized by FontAwesome's own `size` prop: no image logos, no
-inline SVG, no PrimeIcons. Brand marks (ORCID) come from FontAwesome's brands set and take the
-theme's ink like any other glyph.
+project's `FontAwesomeIcon`, sized by FontAwesome's own `size` prop: no inline SVG, no
+PrimeIcons. The one image is the ORCID iD logo on the login item (`src/assets/orcid-logo.svg`,
+the file navigate-ui's login page renders), shown in ORCID's own green rather than the theme's
+ink, because the mark identifies the sign-in provider and is used as ORCID publishes it.
+Nothing else may be an image.
 
 ### Interaction states
 
@@ -577,7 +579,9 @@ the masthead and the phone bar today.
   baseline correction that keeps the glyph aligned, which a bare `font-size` does not.
   Note this is the one place the app spends a reader's font-size increase on width - the
   masthead's budget is the constraint, so masthead glyphs also take `widthAuto` to drop
-  FontAwesome 7's fixed 1.25em canvas.
+  FontAwesome 7's fixed 1.25em canvas. The ORCID logo on the login item is an image with no
+  `size` prop, so it alone is given the menu glyphs' box, 1.25em by 1em, as utilities, and the
+  icon column stays aligned.
 
 ### Segmented controls (view/clock toggles)
 

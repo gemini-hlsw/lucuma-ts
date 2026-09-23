@@ -233,7 +233,14 @@ changing the schema. What follows is the half that is this app's, plus the rules
   hardware. The cache lock that enforces this is under "Gotchas" above.
 - **No new schema type without a requirement behind it**: a column in the workbook, a line in the
   scheduler contract, or a request from Bryan or Andrew.
-- **One capability per commit**, with its tests.
+- **One capability per commit**, with its tests. The message is one concise Conventional Commits
+  subject that says what the commit did (`feat(resource-ui): sign in and out from the app menu`), no
+  body unless it states a fact the diff cannot show. Fold fixes and test additions into the commit
+  they belong to before opening a PR, so history reads as capabilities, and never add AI or tool
+  attribution trailers.
+- **Comments are the exception, not the default.** Ship code with none; add one sentence only where
+  the code cannot carry a constraint from outside the file (a library quirk, a rejected approach and
+  why). Never history, attribution, session talk, or a restatement of what the code says.
 
 ## Testing
 
@@ -304,7 +311,9 @@ mechanic it does not carry:
   each step carries the `line-height` and `vertical-align` correction that keeps the glyph on the
   text's baseline, which a hand-rolled em utility gets wrong. **In the masthead, add `widthAuto`** -
   FontAwesome 7 pads every icon to a fixed 1.25em canvas and the bar cannot spare that width. Leave
-  it padded in the app menu, where it aligns the icon column.
+  it padded in the app menu, where it aligns the icon column. The ORCID logo on the login item is an
+  `<img>` with no `size` prop and takes that same box as `h-[1em] w-[1.25em] object-contain`, so it
+  sits in the column.
 
 Prefer Tailwind utilities over CSS files except where Tailwind can't express it (complex selectors,
 keyframes, third-party overrides).
