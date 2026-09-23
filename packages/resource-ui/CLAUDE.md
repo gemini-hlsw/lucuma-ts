@@ -68,6 +68,28 @@ the clock toggle, finder scoping) are DESIGN.md's. The mechanics:
   override, so a new link needs no convention, only the helper where it wants site and night.
 - Site scoping for the finder pages comes from `app/useSiteSpan.ts`.
 
+## Auth mechanics
+
+No view is gated on a session yet - a signed-out reader can open every one; what a session buys
+today is one header on every Resource request (`ENDPOINTS.md`, "The endpoint").
+
+- **The token lives in common-ui's `odbTokenAtom`**, a sessionStorage-backed Jotai atom, and the
+  app reaches it - and `userAtom`, `isLoggedInAtom`, `sessionStatusAtom` - only through
+  `@/components/atoms/auth`. **`app/preference.ts` is not for it**: a session is not a reader's
+  habit and must not outlive the tab.
+- **Tests sign in through `renderApp`**: `renderApp({ token: fakeJwt(standardUser('staff')) })`
+  (`src/test/factories.ts`). Every test starts signed out because `src/test/setup.ts` resets the
+  session before it (sessionStorage, the token, the checked flag); each render then hydrates the
+  shared store (`components/atoms/store.ts`), the one `authLink` and `signOut` read, with the token
+  and `sessionCheckedAtom` on top of that. Two trees rendered in one test share that session, and
+  the later `renderApp` call sets it.
+- **The SSO host is absolute in every environment** (`app/environment.ts`'s `ssoUri`) - the cookie
+  flows cannot go through the dev-server proxy. Each SSO host admits origins under its own domain
+  and refuses the rest: staging's `sso-test.gpp.gemini.edu` answers `gemini.edu` and not
+  `resource-staging.lucuma.xyz`, so staging reads signed out until that host is admitted, and
+  neither host answers a `localhost` origin, so `pnpm resource-ui dev` always reads signed out (the
+  blocked refresh takes the unreachable path and retries on its backoff).
+
 ## The views
 
 **Do not give a view its own path from records to pixels.** Every view projects from the placed rows

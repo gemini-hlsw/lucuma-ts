@@ -7,6 +7,7 @@ describe(environmentFor, () => {
     expect(environmentFor('resource-dev.lucuma.xyz')).toEqual({
       name: 'development',
       graphqlEndpoint: 'https://lucuma-resource-dev.lucuma.xyz/resource/graphql',
+      ssoUri: 'https://sso-dev.gpp.lucuma.xyz',
       versionSuffix: 'DEV',
     });
   });
@@ -15,6 +16,7 @@ describe(environmentFor, () => {
     expect(environmentFor('resource-staging.lucuma.xyz')).toEqual({
       name: 'staging',
       graphqlEndpoint: 'https://lucuma-resource-staging.lucuma.xyz/resource/graphql',
+      ssoUri: 'https://sso-test.gpp.gemini.edu',
       versionSuffix: 'STAGING',
     });
   });
@@ -25,6 +27,7 @@ describe(environmentFor, () => {
       expect(environmentFor(hostname)).toEqual({
         name: 'development',
         graphqlEndpoint: '/resource/graphql',
+        ssoUri: 'https://sso-dev.gpp.lucuma.xyz',
         versionSuffix: 'DEV',
       });
     },
