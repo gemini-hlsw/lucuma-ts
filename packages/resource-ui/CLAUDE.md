@@ -77,6 +77,19 @@ today is one header on every Resource request (`ENDPOINTS.md`, "The endpoint").
   app reaches it - and `userAtom`, `isLoggedInAtom`, `sessionStatusAtom` - only through
   `@/components/atoms/auth`. **`app/preference.ts` is not for it**: a session is not a reader's
   habit and must not outlive the tab.
+- **`src/auth/session.ts` is the one session keeper** - a module-level controller over the shared
+  store (`components/atoms/store.ts`). It bootstraps from the SSO cookie, re-refreshes from the
+  token's own `exp`, keeps one request in flight, and backs off only when SSO is unreachable (30 s
+  doubling to 16 min, with or without a token); a rejected refresh signs the reader out with no
+  retry, a token that has expired is dropped on any failed refresh so no stale bearer is sent, and
+  `signOut` tears the keeper down whether or not SSO answers, so only a full page load can sign
+  the reader back in.
+  Non-React callers - the Apollo auth link, `signOut` - read the store directly rather than a hook.
+- **`auth/AuthSession.tsx` starts that keeper once**, wrapped around `<App />` in `main.tsx`. It
+  holds the app back until the first check settles and refetches every active query when the
+  reader signs in or out, so no Resource request goes out before the bearer is known. While that
+  check is out the page renders nothing, and there is no client-side timeout: a hung SSO answer
+  leaves it blank until the browser gives up.
 - **Tests sign in through `renderApp`**: `renderApp({ token: fakeJwt(standardUser('staff')) })`
   (`src/test/factories.ts`). Every test starts signed out because `src/test/setup.ts` resets the
   session before it (sessionStorage, the token, the checked flag); each render then hydrates the
