@@ -154,6 +154,18 @@ describe('clearOnSuccessLink composed with the ErrorLink', () => {
     expect(report).toHaveBeenCalledWith(noApiMessage);
     expect(hook.result.current).toBe(noApiMessage);
   });
+
+  it('reports a refused session, not a missing API, when the answer denies access', async () => {
+    const report = vi.fn(reportLiveFailure);
+    const hook = await renderHook(() => useLiveFailure());
+
+    await hook.act(async () => {
+      await answerThrough(composedLinks(report), { data: null, errors: [{ message: 'Access denied.' }] });
+    });
+
+    expect(report).toHaveBeenCalledTimes(1);
+    expect(hook.result.current).toBe('The live server refused this session. Sign in again.');
+  });
 });
 
 describe(liveFailureMessage, () => {
@@ -163,6 +175,12 @@ describe(liveFailureMessage, () => {
     expect(liveFailureMessage(error)).toBe(
       'The live server answered, but it does not serve this version of the Resource API yet.',
     );
+  });
+
+  it('says the session was refused, not that the API is missing, when the server denies access', () => {
+    const error = new CombinedGraphQLErrors({ errors: [{ message: 'Access denied.' }] });
+
+    expect(liveFailureMessage(error)).toBe('The live server refused this session. Sign in again.');
   });
 
   it('says the server could not be reached for a network failure, with the detail', () => {
