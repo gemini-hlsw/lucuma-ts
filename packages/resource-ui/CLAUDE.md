@@ -81,10 +81,12 @@ one header on every Resource request (`ENDPOINTS.md`, "The endpoint").
 - **`src/auth/session.ts` is the one session keeper** - a module-level controller over the shared
   store (`components/atoms/store.ts`). It bootstraps from the SSO cookie, re-refreshes from the
   token's own `exp`, keeps one request in flight, and backs off only when SSO is unreachable (30 s
-  doubling to 16 min, with or without a token); a rejected refresh signs the reader out with no
-  retry, a token that has expired is dropped on any failed refresh so no stale bearer is sent, and
-  `signOut` tears the keeper down whether or not SSO answers, so only a full page load can sign
-  the reader back in.
+  doubling to 16 min, with or without a token); a rejected refresh signs the reader out and arms
+  no timer, though refocusing the tab still asks SSO for the cookie once 30 s have passed since
+  the last attempt, which is how a session started in another lucuma.xyz tab gets picked up; a
+  token that has expired, or arrives expired, is dropped on any refresh answer, with a console
+  warning when SSO issued it that way, so no stale bearer is sent, and `signOut` tears the keeper
+  down whether or not SSO answers, so only a full page load can sign the reader back in.
   Non-React callers - the Apollo auth link, `signOut` - read the store directly rather than a hook.
 - **`auth/AuthSession.tsx` starts that keeper once**, wrapped around `<App />` in `main.tsx`. It
   holds the app back until the first check settles and refetches every active query when the
@@ -93,10 +95,11 @@ one header on every Resource request (`ENDPOINTS.md`, "The endpoint").
   leaves it blank until the browser gives up.
 - **Tests sign in through `renderApp`**: `renderApp({ token: fakeJwt(standardUser('staff')) })`
   (`src/test/factories.ts`). Every test starts signed out because `src/test/setup.ts` resets the
-  session before it (sessionStorage, the token, the checked flag); each render then hydrates the
-  shared store (`components/atoms/store.ts`), the one `authLink` and `signOut` read, with the token
-  and `sessionCheckedAtom` on top of that. Two trees rendered in one test share that session, and
-  the later `renderApp` call sets it.
+  session before it (it clears localStorage, then writes `odbTokenAtom` null - overwriting the
+  token in sessionStorage - and `sessionCheckedAtom` false on the shared store); each render then
+  hydrates the shared store (`components/atoms/store.ts`), the one `authLink` and `signOut` read,
+  with the token and `sessionCheckedAtom` on top of that. Two trees rendered in one test share that
+  session, and the later `renderApp` call sets it.
 - **The SSO host is absolute in every environment** (`app/environment.ts`'s `ssoUri`) - the cookie
   flows cannot go through the dev-server proxy. Each SSO host admits origins under its own domain
   and refuses the rest: staging's `sso-test.gpp.gemini.edu` answers `gemini.edu` and not

@@ -254,6 +254,31 @@ describe(startSession, () => {
     expect(refreshes()).toHaveLength(1);
   });
 
+  it('drops a token SSO hands back already expired, and arms no timer for it', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
+    const warned = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+    try {
+      stop = startSession();
+      const settled = pendingRefresh();
+      expect(refreshes()).toHaveLength(1);
+
+      call(0).answer({ body: tokenFor('staff', -60) });
+      await settled;
+
+      expect(store.get(odbTokenAtom)).toBeNull();
+      expect(store.get(sessionStatusAtom)).toBe('signed-out');
+      expect(store.get(sessionCheckedAtom)).toBe(true);
+      expect(warned).toHaveBeenCalledTimes(1);
+      expect(warned).toHaveBeenCalledWith(expect.stringMatching(/ahead of the server/));
+
+      vi.advanceTimersByTime(60 * 60_000);
+      expect(refreshes()).toHaveLength(1);
+    } finally {
+      warned.mockRestore();
+    }
+  });
+
   it('treats a stored undecodable token as no token at bootstrap', async () => {
     store.set(odbTokenAtom, 'header.payload.signature');
 

@@ -32,11 +32,14 @@ proxy carries the same path, so the real service must serve it too.
 `Authorization: Bearer <JWT>`, on every request while an SSO session is active, and no
 header at all when nobody is signed in; the JWT is the SSO one the ODB already takes, so
 the service validates it the same way. The deployed service (dev and staging) currently
-rejects every data field without that header (`Field '...' requires authentication.`, HTTP 422) and serves introspection anonymously. The intended split, still backend work: the
-published schedule - `publishedSemesters`, the night and range projections - is readable
-without a session, because anyone may see it; anything user-specific, and every write
-once writes exist, requires one. The mock allows everything. No subscriptions, no
-mutations: v1 is read-only, and consumers re-query.
+serves introspection anonymously, and a request without that header sees a schema with none of
+the data fields: `{ publishedSemesters }` answers HTTP 422 with
+`No field 'publishedSemesters' for type Query`. The app reads that answer as the API not being
+served, not as a refused session (`liveFailureMessage` in `src/gql/ApolloConfigs.ts`). The
+intended split, still backend work: the published schedule - `publishedSemesters`, the night
+and range projections - is readable without a session, because anyone may see it; anything
+user-specific, and every write once writes exist, requires one. The mock allows everything. No
+subscriptions, no mutations: v1 is read-only, and consumers re-query.
 
 ## The queries
 

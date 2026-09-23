@@ -401,11 +401,12 @@ the workflow into it, but keep masthead selections global and page controls loca
   `--xp-*` tokens. Charts and tables stretch to the workspace width; there is no max-width
   column.
 - **The masthead has a measured width budget.** The bar holds four things at every width:
-  149.1px wordmark, 68.8px GN|GS, the flexible gap, and a 124.4px right cluster (68.8px below
-  `md`, where the account name goes `sr-only` and the wordmark tightens to 132.3px). With 37.8px
-  of gaps and 28px of padding that is 408.1px of fixed content, against 768px at the narrowest
-  desktop width - the gap absorbs the rest. Below `md` the same bar measures 311.9px inside a
-  320px viewport, **8.1px to spare**: the tightest figure in this file, and the one to check
+  147.8px wordmark, 68.8px GN|GS, the flexible gap, and a 198.0px right cluster with the name at
+  its cap (68.8px below `md`, where the account name goes `sr-only`, the wordmark tightens to
+  131.0px, and the gaps and padding drop to 8.4px each). With 37.8px of gaps and 28px of padding
+  that is 480.4px of fixed content, against 768px at the narrowest desktop width - the gap
+  absorbs the rest. Below `md` the same bar measures 310.6px inside a 320px viewport, **9.4px to
+  spare**: the tightest figure in this file, and the one to check
   first when anything joins the bar. The signed-in name is the right cluster's one item that
   varies with its content, and it is bounded: `.xp-account-name` caps it at 8.75rem with an
   ellipsis, the whole name staying in the control's `title`, and below `md` it is `sr-only`
@@ -420,7 +421,7 @@ the workflow into it, but keep masthead selections global and page controls loca
   1.4.4) and is exactly `sm`, so `max-sm:` reads natively as "below the AA zoom point". 320px is
   the reflow point (1.4.10), where a chart or a data table may scroll inside its own container -
   the criterion allows those two - but nothing may be lost or put out of reach. Check the width
-  budget at both: the bar clears 640px with its menu whole and in view, and 320px by 8.1px.
+  budget at both: the bar clears 640px with its menu whole and in view, and 320px by 9.4px.
   The two are checked separately, and a reader who raises their font size without zooming does
   combine them: at phone widths at 200% a control clips its own value, because the sidebar's
   `196px 1fr` grid holds the row wide whatever the viewport does. Where that starts depends on

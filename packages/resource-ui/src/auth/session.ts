@@ -69,7 +69,6 @@ function apply(result: RefreshResult): void {
         backoffMs = 0;
         retryNotBefore = 0;
         setToken(store, result.token);
-        if (store.get(tokenExpAtom) === null) setToken(store, null);
         break;
       case 'rejected':
         backoffMs = 0;
@@ -79,10 +78,17 @@ function apply(result: RefreshResult): void {
       case 'unreachable': {
         backoffMs = backoffMs === 0 ? MIN_INTERVAL_MS : Math.min(backoffMs * 2, BACKOFF_CAP_MS);
         retryNotBefore = Date.now() + backoffMs;
-        const exp = store.get(tokenExpAtom);
-        if (exp !== null && exp.getTime() <= Date.now()) setToken(store, null);
         break;
       }
+    }
+    const exp = store.get(tokenExpAtom);
+    if (store.get(odbTokenAtom) !== null && (exp === null || exp.getTime() <= Date.now())) {
+      if (result.kind === 'token' && exp !== null) {
+        console.warn(
+          `Session refresh: SSO issued a token that expired ${Math.round((Date.now() - exp.getTime()) / 1000)} s ago; this browser's clock is probably ahead of the server's.`,
+        );
+      }
+      setToken(store, null);
     }
   } finally {
     store.set(sessionCheckedAtom, true);
