@@ -1,4 +1,4 @@
-import { type ApolloClient, ApolloLink } from '@apollo/client';
+import { type ApolloClient, ApolloLink, gql } from '@apollo/client';
 import { ApolloProvider } from '@apollo/client/react';
 import { Observable } from '@apollo/client/utilities';
 import type { PublishedSemestersQuery } from '@gql/gen/graphql';
@@ -38,6 +38,12 @@ const ONE_SEMESTER: PublishedSemestersQuery = {
     },
   ],
 };
+
+const RENEWAL_MARKER = gql`
+  query RenewalMarker {
+    __typename
+  }
+`;
 
 const onSecondRequest = (outcome: ApolloLink.Result | Error): ApolloLink => {
   let requests = 0;
@@ -186,14 +192,15 @@ describe(AuthSession, () => {
 
   it('does not refetch on a token renewal', async () => {
     const token = signIn();
-    const { screen, authorizations } = await renderAuthSession(<SemesterCount />);
+    const { mock, authorizations } = capturingApollo();
+    const screen = await renderInSession(mock.client, <SemesterCount />);
     await expect.element(screen.getByTestId('semesters')).not.toHaveTextContent('loading');
 
-    store.set(odbTokenAtom, fakeJwt(standardUser('staff'), 7200));
-    store.set(odbTokenAtom, null);
+    const renewed = fakeJwt(standardUser('staff'), 7200);
+    store.set(odbTokenAtom, renewed);
+    await mock.client.query({ query: RENEWAL_MARKER, fetchPolicy: 'network-only' });
 
-    await expect.poll(() => authorizations.length).toBe(2);
-    expect(authorizations).toEqual([`Bearer ${token}`, null]);
+    expect(authorizations).toEqual([`Bearer ${token}`, `Bearer ${renewed}`]);
     expect(ssoCalls()).toHaveLength(0);
   });
 

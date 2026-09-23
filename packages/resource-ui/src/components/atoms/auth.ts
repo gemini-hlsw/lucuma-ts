@@ -1,4 +1,4 @@
-import { isLoggedInAtom, odbTokenAtom, tokenExpAtom } from '@gemini-hlsw/lucuma-common-ui';
+import { isLoggedInAtom, odbTokenAtom } from '@gemini-hlsw/lucuma-common-ui';
 import { atom, type createStore, useAtomValue } from 'jotai';
 
 export {
@@ -18,15 +18,10 @@ export {
 
 export const sessionCheckedAtom = atom(false);
 
-export const expiryTickAtom = atom(0);
-
 export type SessionStatus = 'checking' | 'signed-out' | 'signed-in';
 
-// isLoggedInAtom memoizes its clock comparison, so the tick and a live check are what expire the status.
 export const sessionStatusAtom = atom<SessionStatus>((get) => {
-  get(expiryTickAtom);
-  const exp = get(tokenExpAtom);
-  if (get(isLoggedInAtom) && exp !== null && exp.getTime() > Date.now()) return 'signed-in';
+  if (get(isLoggedInAtom)) return 'signed-in';
   return get(sessionCheckedAtom) ? 'signed-out' : 'checking';
 });
 

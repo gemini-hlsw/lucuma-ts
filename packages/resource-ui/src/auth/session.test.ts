@@ -1,12 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import {
-  expiryTickAtom,
-  isLoggedInAtom,
-  odbTokenAtom,
-  sessionCheckedAtom,
-  sessionStatusAtom,
-} from '@/components/atoms/auth';
+import { isLoggedInAtom, odbTokenAtom, sessionCheckedAtom, sessionStatusAtom } from '@/components/atoms/auth';
 import { store } from '@/components/atoms/store';
 import { fakeJwt, standardUser } from '@/test/factories';
 import { type PendingSsoCall, ssoCall as call, ssoCalls, stubSso } from '@/test/sso';
@@ -245,6 +239,7 @@ describe(startSession, () => {
 
     call(0).answer({ body: 'header.payload.signature' });
     await settled;
+    vi.advanceTimersByTime(0);
 
     expect(store.get(odbTokenAtom)).toBeNull();
     expect(store.get(sessionStatusAtom)).toBe('signed-out');
@@ -265,6 +260,7 @@ describe(startSession, () => {
 
       call(0).answer({ body: tokenFor('staff', -60) });
       await settled;
+      vi.advanceTimersByTime(0);
 
       expect(store.get(odbTokenAtom)).toBeNull();
       expect(store.get(sessionStatusAtom)).toBe('signed-out');
@@ -423,13 +419,16 @@ describe(startSession, () => {
     expect(refreshes()).toHaveLength(2);
   });
 
-  it('drops a token that has already expired when SSO will not renew it, and stops asking', async () => {
+  it('drops a stored token that has already expired at once, and stops asking when SSO will not renew it', async () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
     store.set(odbTokenAtom, tokenFor('staff', -60));
 
     stop = startSession();
     const settled = pendingRefresh();
     expect(refreshes()).toHaveLength(1);
+
+    vi.advanceTimersByTime(0);
+    expect(store.get(odbTokenAtom)).toBeNull();
 
     call(0).answer({ status: 403 });
     await settled;
@@ -453,14 +452,17 @@ describe(startSession, () => {
     await settled;
     expect(store.get(odbTokenAtom)).toBe(token);
 
-    vi.advanceTimersByTime(30_000);
+    vi.advanceTimersByTime(20_000);
+    expect(store.get(odbTokenAtom)).toBeNull();
+    expect(store.get(sessionStatusAtom)).toBe('signed-out');
+
+    vi.advanceTimersByTime(10_000);
     settled = pendingRefresh();
     expect(refreshes()).toHaveLength(2);
     call(1).answer({ status: 500 });
     await settled;
 
     expect(store.get(odbTokenAtom)).toBeNull();
-    expect(store.get(sessionStatusAtom)).toBe('signed-out');
 
     vi.advanceTimersByTime(60_000);
     expect(refreshes()).toHaveLength(3);
@@ -500,6 +502,7 @@ describe(startSession, () => {
 
     vi.advanceTimersByTime(20_000);
     expect(refreshes()).toHaveLength(1);
+    expect(store.get(odbTokenAtom)).toBeNull();
     expect(store.get(sessionStatusAtom)).toBe('signed-out');
 
     const settled = pendingRefresh();
@@ -509,17 +512,32 @@ describe(startSession, () => {
     expect(store.get(sessionStatusAtom)).toBe('signed-in');
   });
 
-  it('clears the expiry tick timer when the session is stopped before the token expires', () => {
+  it('keeps a token that expires months from now past the longest timer, and drops it once it expires', () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
-    store.set(odbTokenAtom, tokenFor('staff', 20));
+    const lifetimeMs = 30 * 24 * 60 * 60_000;
+    const token = tokenFor('staff', lifetimeMs / 1000);
+    store.set(odbTokenAtom, token);
+
+    stop = startSession();
+
+    vi.advanceTimersByTime(2_147_483_647);
+    expect(store.get(odbTokenAtom)).toBe(token);
+
+    vi.advanceTimersByTime(lifetimeMs - 2_147_483_647);
+    expect(store.get(odbTokenAtom)).toBeNull();
+  });
+
+  it('leaves the token alone once stopped before it expires', () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
+    const token = tokenFor('staff', 20);
+    store.set(odbTokenAtom, token);
 
     const stopNow = startSession();
-    const before = store.get(expiryTickAtom);
 
     stopNow();
     vi.advanceTimersByTime(25_000);
 
-    expect(store.get(expiryTickAtom)).toBe(before);
+    expect(store.get(odbTokenAtom)).toBe(token);
   });
 });
 
@@ -626,22 +644,5 @@ describe(signOut, () => {
 
     expect(refreshes()).toHaveLength(0);
     expect(store.get(odbTokenAtom)).toBeNull();
-  });
-
-  it('clears the expiry tick timer when signOut tears the session down before the token expires', async () => {
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
-    store.set(odbTokenAtom, tokenFor('staff', 20));
-
-    stop = startSession();
-    const before = store.get(expiryTickAtom);
-
-    const signedOut = signOut();
-    const logoutCall = ssoCalls().find((made) => made.url.includes('/api/v1/logout'));
-    logoutCall?.answer({ status: 200 });
-    await signedOut;
-
-    vi.advanceTimersByTime(25_000);
-
-    expect(store.get(expiryTickAtom)).toBe(before);
   });
 });

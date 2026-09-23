@@ -569,7 +569,8 @@ the masthead and the phone bar today.
 - **Secondary:** slate fill (`--color-action-secondary`), foreground text.
 - **Icon buttons:** 28px square, transparent at rest, secondary-text glyph, taking the shared
   hover and disabled treatments. Every icon button has an accessible name; the icon clarifies,
-  the name carries.
+  the name carries. A `text` Button takes this treatment by wearing `xp-icon-btn`, wherever it
+  sits.
 - **Glyph size is em, and it comes from FontAwesome's own scale.** A decorative glyph is
   measured against the label beside it, not against the root, so it keeps its proportion
   wherever that label sits on the type scale and it follows a reader's font-size setting.

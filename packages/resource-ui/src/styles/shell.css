@@ -128,27 +128,23 @@ body {
   font-size: var(--text-xs);
 }
 
-.dark .xp-about-dialog .p-button.p-button-text,
-.dark .xp-masthead .p-button.p-button-text {
+.dark .p-button.p-button-text.xp-icon-btn {
   width: 28px;
   height: 28px;
   padding: 0;
   color: var(--color-foreground-secondary);
 }
 
-.dark .xp-about-dialog .p-button.p-button-text:hover,
-.dark .xp-masthead .p-button.p-button-text:hover {
+.dark .p-button.p-button-text.xp-icon-btn:hover {
   background: var(--color-surface-raised);
   color: var(--color-foreground);
 }
 
-.dark .xp-about-dialog .p-button.p-button-text:focus,
-.dark .xp-masthead .p-button.p-button-text:focus {
+.dark .p-button.p-button-text.xp-icon-btn:focus {
   box-shadow: none;
 }
 
-.dark .xp-about-dialog .p-button.p-button-text:focus-visible,
-.dark .xp-masthead .p-button.p-button-text:focus-visible {
+.dark .p-button.p-button-text.xp-icon-btn:focus-visible {
   outline: 2px solid var(--color-gpp-light);
   outline-offset: -2px;
 }
@@ -167,7 +163,7 @@ body {
     letter-spacing: 0.25em;
   }
 
-  .dark .xp-masthead-right .p-button.p-button-text {
+  .dark .xp-masthead-right .p-button.xp-icon-btn {
     width: var(--xp-touch-target);
     height: var(--xp-masthead-height);
   }

@@ -84,9 +84,10 @@ one header on every Resource request (`ENDPOINTS.md`, "The endpoint").
   doubling to 16 min, with or without a token); a rejected refresh signs the reader out and arms
   no timer, though refocusing the tab still asks SSO for the cookie once 30 s have passed since
   the last attempt, which is how a session started in another lucuma.xyz tab gets picked up; a
-  token that has expired, or arrives expired, is dropped on any refresh answer, with a console
-  warning when SSO issued it that way, so no stale bearer is sent, and `signOut` tears the keeper
-  down whether or not SSO answers, so only a full page load can sign the reader back in.
+  token leaves the store when its `exp` passes, at once if it is restored or arrives expired
+  (with a console warning when SSO issued it that way), and the auth link also checks `exp`
+  itself because a sleeping tab fires that timer late; `signOut` tears the keeper down whether or
+  not SSO answers, so only a full page load can sign the reader back in.
   Non-React callers - the Apollo auth link, `signOut` - read the store directly rather than a hook.
 - **`auth/AuthSession.tsx` starts that keeper once**, wrapped around `<App />` in `main.tsx`. It
   holds the app back until the first check settles and refetches every active query when the

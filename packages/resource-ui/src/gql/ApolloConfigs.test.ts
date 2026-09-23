@@ -2,9 +2,11 @@ import { ApolloClient, ApolloLink, gql } from '@apollo/client';
 import { Observable } from '@apollo/client/utilities';
 import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
 
+import { startSession } from '@/auth/session';
 import { odbTokenAtom } from '@/components/atoms/auth';
 import { store } from '@/components/atoms/store';
 import { fakeJwt, standardUser } from '@/test/factories';
+import { stubSso } from '@/test/sso';
 
 import { authLink, client } from './ApolloConfigs';
 import { buildCache } from './cache';
@@ -74,6 +76,25 @@ describe(authLink, () => {
     store.set(odbTokenAtom, fakeJwt(standardUser('staff'), -60));
 
     expect(await headersSent()).not.toHaveProperty('Authorization');
+  });
+
+  it('sends no Authorization header once the session drops the token at its expiry', async () => {
+    stubSso();
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
+    store.set(odbTokenAtom, fakeJwt(standardUser('staff'), 20));
+    const stop = startSession();
+
+    try {
+      vi.advanceTimersByTime(20_000);
+      expect(store.get(odbTokenAtom)).toBeNull();
+
+      vi.useRealTimers();
+      expect(await headersSent()).not.toHaveProperty('Authorization');
+    } finally {
+      stop();
+      vi.useRealTimers();
+      vi.unstubAllGlobals();
+    }
   });
 });
 

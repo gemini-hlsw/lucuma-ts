@@ -33,17 +33,15 @@ export function AboutResource({ visible, onHide }: { visible: boolean; onHide: (
   const version = displayVersion();
 
   const copyVersion = async (): Promise<void> => {
-    const written =
-      (await navigator.clipboard?.writeText(version).then(
-        () => true,
-        () => false,
-      )) ?? false;
-    if (written) {
-      setCopied(true);
-      setTimeout(() => {
-        setCopied(false);
-      }, 2000);
+    try {
+      await navigator.clipboard.writeText(version);
+    } catch {
+      return;
     }
+    setCopied(true);
+    setTimeout(() => {
+      setCopied(false);
+    }, 2000);
   };
 
   const facts: AboutFact[] = [
@@ -60,7 +58,7 @@ export function AboutResource({ visible, onHide }: { visible: boolean; onHide: (
               text
               type="button"
               size="small"
-              className="ml-2 align-middle"
+              className="xp-icon-btn ml-2 align-middle"
               title="Copy the version to the clipboard"
               aria-label="Copy version"
               onClick={() => void copyVersion()}

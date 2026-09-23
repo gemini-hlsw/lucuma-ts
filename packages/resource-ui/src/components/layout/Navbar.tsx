@@ -175,6 +175,7 @@ export default function Navbar(): JSX.Element {
           type="button"
           text
           size="small"
+          className="xp-icon-btn"
           ref={menuButton}
           aria-label="Menu"
           aria-haspopup="menu"
