@@ -12,6 +12,7 @@
   "scripts": {
     "dev": "vite",
     "dev:mock": "RESOURCE_API=mock vite",
+    "dev:https": "RESOURCE_HTTPS=1 vite",
     "predev:mock-server": "pnpm run codegen",
     "dev:mock-server": "node --conditions=development --watch --enable-source-maps ./mock-server/server.ts",
     "codegen": "graphql-codegen --config tasks/codegen.ts",
@@ -55,6 +56,7 @@
     "@types/react-big-calendar": "1.16.3",
     "@types/react-dom": "19.3.0",
     "@typescript/native": "npm:typescript@7.0.2",
+    "@vitejs/plugin-basic-ssl": "2.3.0",
     "@vitejs/plugin-react": "6.1.1",
     "@vitest/browser-playwright": "5.0.1",
     "@vitest/eslint-plugin": "1.6.27",

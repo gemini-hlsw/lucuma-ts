@@ -101,8 +101,10 @@ one header on every Resource request (`ENDPOINTS.md`, "The endpoint").
   flows cannot go through the dev-server proxy. Each SSO host admits origins under its own domain
   and refuses the rest: staging's `sso-test.gpp.gemini.edu` answers `gemini.edu` and not
   `resource-staging.lucuma.xyz`, so staging reads signed out until that host is admitted, and
-  neither host answers a `localhost` origin, so `pnpm resource-ui dev` always reads signed out (the
-  blocked refresh takes the unreachable path and retries on its backoff).
+  neither host answers a `localhost` origin, so `pnpm resource-ui dev` reads signed out (the
+  blocked refresh takes the unreachable path and retries on its backoff). `dev:https` with
+  `local.lucuma.xyz` aliased in `/etc/hosts` is the way in (README, "Signing in locally"): the
+  name is admitted, and https is what lets the browser send the `SameSite=Strict` cookie.
 
 ## The views
 

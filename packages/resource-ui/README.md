@@ -47,6 +47,20 @@ exists.
 The mock server is also what to run on its own for GraphiQL, or for an external consumer
 trying the API.
 
+### Signing in locally
+
+The dev SSO admits any `lucuma.xyz` origin and refuses `localhost`, and its session cookie is
+`SameSite=Strict`, which the browser sends only from an https page on that domain. So give the
+dev server such a name and serve it over https:
+
+```bash
+sudo sh -c 'echo "127.0.0.1 local.lucuma.xyz" >> /etc/hosts'   # once
+pnpm resource-ui dev:https                                         # RESOURCE_HTTPS=1 vite, self-signed
+```
+
+Open https://local.lucuma.xyz:5173 (accept the certificate once), then sign in from the app
+menu with an ORCID account. A session started on any other lucuma.xyz app is already there.
+
 ### Codegen
 
 ```bash
