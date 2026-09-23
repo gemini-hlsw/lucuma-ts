@@ -22,7 +22,7 @@ import {
   observationsByIdFrom,
   useChangeRequests,
   useProgramObservations,
-  useUpdateConfigurationRequests,
+  useResolveChangeRequests,
 } from '@/gql/odb/changeRequests';
 import { formatUtcMinute, joinTargetNames } from '@/gql/odb/shared';
 import type {
@@ -67,15 +67,15 @@ const ALL = 'ALL';
  * PI. Approve/deny calls the real updateConfigurationRequests mutation, then
  * reloads from the ODB.
  *
- * One ODB schema gap is surfaced honestly rather than hidden: there's no
- * reviewer-justification field, so the resolve response is kept for the
- * session and shown as a tooltip on the status dot instead.
+ * The response is persisted as the request's `feedback` — the ODB's staff-side
+ * counterpart to the PI's `justification` — and shown as a tooltip on the
+ * status dot.
  */
 export default function ChangeRequestsPage(): JSX.Element {
   const toast = useToast();
   const { data, loading, error } = useChangeRequests();
   const requests = useMemo(() => (data ? mapChangeRequests(data) : EMPTY), [data]);
-  const [updateRequests, { loading: saving }] = useUpdateConfigurationRequests();
+  const { resolve, loading: saving } = useResolveChangeRequests();
   const programs = useMemo(() => groupChangeRequestsByProgram(requests), [requests]);
 
   const [semester, setSemester] = useState<string>(ALL);
@@ -139,12 +139,6 @@ export default function ChangeRequestsPage(): JSX.Element {
   const [response, setResponse] = useState('');
   const [decision, setDecision] = useState<Decision | null>(null);
 
-  // The reviewer's response, kept per-request so it can be shown as a status
-  // tooltip (per the sc-9094 mockup note: "could be in a tool-tip on the
-  // status"). There's no reviewer-justification field in the ODB yet — this
-  // is session-only and lost on reload.
-  const [reviewerNotes, setReviewerNotes] = useState<ReadonlyMap<string, string>>(new Map());
-
   // The effective selection can change without a click — e.g. a facet change
   // hides the selected program and the view falls back to the first one.
   // Reset the per-program review state whenever it changes, however it
@@ -175,16 +169,15 @@ export default function ChangeRequestsPage(): JSX.Element {
     if (!decision || selectedRequests.length === 0) return;
     const ids = selectedRequests.map((r) => r.id);
     try {
-      await updateRequests({ variables: { ids, status: decision } });
+      // Choosing a decision seeds the boilerplate, so an empty box means the
+      // reviewer cleared it deliberately: resolve without writing a response,
+      // which leaves any note already stored on the request intact.
+      const trimmed = response.trim();
+      await resolve(ids, decision, trimmed === '' ? null : trimmed);
       toast.success(
         decision === 'APPROVED' ? 'Change requests approved' : 'Change requests denied',
         `${ids.length} request${ids.length === 1 ? '' : 's'} in ${selectedProgram?.programReference ?? ''}`,
       );
-      setReviewerNotes((prev) => {
-        const next = new Map(prev);
-        for (const id of ids) next.set(id, response);
-        return next;
-      });
       setSelectedIds(new Set());
       setDecision(null);
       setResponse('');
@@ -356,7 +349,7 @@ export default function ChangeRequestsPage(): JSX.Element {
               header="Status"
               style={{ width: '5rem' }}
               body={(r: ChangeRequest) => {
-                const note = reviewerNotes.get(r.id);
+                const note = r.feedback;
                 const label =
                   r.status === 'REQUESTED'
                     ? 'Pending'
@@ -372,7 +365,9 @@ export default function ChangeRequestsPage(): JSX.Element {
                   />
                 );
               }}
-              headerTooltip="Hover a resolved request's status to see the reviewer's response — there's no dedicated reviewer-justification field in the ODB yet, so it's kept here for this session only."
+              // Staff may leave feedback before resolving, so this is not
+              // limited to resolved requests.
+              headerTooltip="Hover a request's status to see the response sent to the PI, when one has been given."
             />
           </DataTable>
         </Tile>

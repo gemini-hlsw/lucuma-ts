@@ -1,18 +1,18 @@
+import { dms2deg, hms2deg } from '@gemini-hlsw/lucuma-core';
 import { describe, expect, it } from 'vitest';
 
 import { executionDigest } from '@/test/factories';
 
 import type { GroupElementItemFragment, ObservationItemFragment } from './gen/graphql';
 import {
-  DEC_DECIMALS,
   formatConditions,
+  formatDec,
+  formatRa,
   isScienceObservation,
   joinTargetNames,
   mapObservationRow,
   NO_TARGET,
-  RA_DECIMALS,
   telluricGroupHours,
-  trimSexagesimal,
 } from './shared';
 
 function observation(overrides: Partial<ObservationItemFragment>): ObservationItemFragment {
@@ -40,8 +40,8 @@ function observation(overrides: Partial<ObservationItemFragment>): ObservationIt
         name: 'NGC 300',
         sidereal: {
           __typename: 'Sidereal',
-          ra: { __typename: 'RightAscension', hms: '00:54:53', degrees: 13.723 },
-          dec: { __typename: 'Declination', dms: '-37:41:04', degrees: -37.684 },
+          ra: { __typename: 'RightAscension', degrees: 13.723 },
+          dec: { __typename: 'Declination', degrees: -37.684 },
         },
       },
     },
@@ -78,15 +78,15 @@ describe(mapObservationRow, () => {
             name: 'NGC 300',
             sidereal: {
               __typename: 'Sidereal',
-              ra: { __typename: 'RightAscension', hms: '00:54:53.123456', degrees: 13.723 },
-              dec: { __typename: 'Declination', dms: '-37:41:04.987654', degrees: -37.684 },
+              ra: { __typename: 'RightAscension', degrees: 13.721347733333333 },
+              dec: { __typename: 'Declination', degrees: -37.68471879277778 },
             },
           },
         },
       }),
     );
     expect(row.ra).toBe('00:54:53.12');
-    expect(row.dec).toBe('-37:41:04.9');
+    expect(row.dec).toBe('-37:41:05.0');
   });
 
   it('shows non-sidereal targets without coordinates', () => {
@@ -256,24 +256,51 @@ describe(joinTargetNames, () => {
   });
 });
 
-describe(trimSexagesimal, () => {
+describe('coordinate formatting', () => {
   it('shows RA to hundredths and Dec to tenths of a second (sc-10159 item 7)', () => {
-    expect(trimSexagesimal('01:01:45.034320', RA_DECIMALS)).toBe('01:01:45.03');
-    expect(trimSexagesimal('+20:55:43.744800', DEC_DECIMALS)).toBe('+20:55:43.7');
+    expect(formatRa(hms2deg('01:01:45.034320'))).toBe('01:01:45.03');
+    expect(formatDec(dms2deg('+20:55:43.744800'))).toBe('+20:55:43.7');
   });
 
-  it('truncates rather than rounds, so seconds can never reach 60', () => {
-    // Rounding the seconds field alone cannot carry into the minutes, so
-    // "+20:55:59.999" would become the invalid "+20:55:60.0".
-    expect(trimSexagesimal('+20:55:59.999000', DEC_DECIMALS)).toBe('+20:55:59.9');
+  it('rounds rather than truncates', () => {
+    // Cutting the formatted string instead would bias every value low: these
+    // four each sit above the halfway mark and would lose that digit.
+    expect(formatDec(dms2deg('+17:33:56.39'))).toBe('+17:33:56.4');
+    expect(formatDec(dms2deg('-17:33:56.39'))).toBe('-17:33:56.4');
+    expect(formatRa(hms2deg('03:47:31.866'))).toBe('03:47:31.87');
+    expect(formatRa(hms2deg('01:01:45.036'))).toBe('01:01:45.04');
   });
 
-  it('leaves a value with no fractional part, and a placeholder, alone', () => {
-    expect(trimSexagesimal('02:00:00', RA_DECIMALS)).toBe('02:00:00');
-    expect(trimSexagesimal('—', RA_DECIMALS)).toBe('—');
+  it('carries a rounded second into the minutes rather than showing 60', () => {
+    // The reason the first attempt truncated: rounding the seconds field in
+    // isolation would produce the invalid "+20:55:60.0". Rounding in degrees
+    // and reformatting carries properly.
+    expect(formatDec(dms2deg('+20:55:59.999000'))).toBe('+20:56:00.0');
+    expect(formatRa(hms2deg('01:01:59.999'))).toBe('01:02:00.00');
   });
 
-  it('keeps the sign of a southern declination', () => {
-    expect(trimSexagesimal('-07:57:07.397999', DEC_DECIMALS)).toBe('-07:57:07.3');
+  it('wraps a rounded RA at 24h, and rounds a Dec up to the pole itself', () => {
+    expect(formatRa(hms2deg('23:59:59.999999'))).toBe('00:00:00.00');
+    // Reaching +90 is this function's own rounding, not a carry inside
+    // `deg2dms` — that reflects past the pole rather than carrying.
+    expect(formatDec(dms2deg('+89:59:59.999'))).toBe('+90:00:00.0');
+    expect(formatDec(dms2deg('-89:59:59.999'))).toBe('-90:00:00.0');
+  });
+
+  it('keeps the sign of a southern declination, rounding away from zero', () => {
+    expect(formatDec(dms2deg('-00:00:00.499'))).toBe('-00:00:00.5');
+    expect(formatDec(dms2deg('-89:59:59.999'))).toBe('-90:00:00.0');
+  });
+
+  it('drops the sign only where the declination rounds to zero', () => {
+    // The rounded value is zero, which carries no sign. Just past the
+    // boundary the sign survives, so this is the whole extent of it.
+    expect(formatDec(-0.0499 / 3600)).toBe('+00:00:00.0');
+    expect(formatDec(-0.05 / 3600)).toBe('-00:00:00.1');
+  });
+
+  it('renders an exact value with the full requested precision', () => {
+    expect(formatRa(hms2deg('02:00:00'))).toBe('02:00:00.00');
+    expect(formatDec(dms2deg('+00:00:00'))).toBe('+00:00:00.0');
   });
 });

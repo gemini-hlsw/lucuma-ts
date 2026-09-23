@@ -23,7 +23,7 @@ import { searchRadiusArcsec, separationArcsec } from '@/lib/geminiArchive';
 import type { DocumentType } from './gen';
 import { graphql } from './gen';
 import type { ConfigurationRequestStatus, ObservingModeType } from './gen/graphql';
-import { asObservingModeType, DEC_DECIMALS, joinTargetNames, RA_DECIMALS, trimSexagesimal } from './shared';
+import { asObservingModeType, formatDec, formatRa, joinTargetNames } from './shared';
 
 /** sc-9243's "similar" observing modes: the same configuration style on the
  *  paired instrument yields equivalent data (GMOS-N ~ GMOS-S, GNIRS ~
@@ -88,11 +88,9 @@ export const CONFLICTS_QUERY = graphql(`
           target {
             coordinates {
               ra {
-                hms
                 degrees
               }
               dec {
-                dms
                 degrees
               }
             }
@@ -153,11 +151,9 @@ export const CONFLICTS_QUERY = graphql(`
             name
             sidereal {
               ra {
-                hms
                 degrees
               }
               dec {
-                dms
                 degrees
               }
             }
@@ -236,6 +232,8 @@ const CR_STATUS_LABEL: Partial<Record<ConfigurationRequestStatus, string>> = {
 export function mapConflictCandidates(raw: AdminConflictCheckResult): ConflictCandidate[] {
   const fromRequests = raw.configurationRequests.matches.map((c): ConflictCandidate => {
     const coords = c.configuration.target?.coordinates;
+    const raDeg = parseNumber(coords?.ra.degrees) ?? null;
+    const decDeg = parseNumber(coords?.dec.degrees) ?? null;
     return {
       programLabel: c.program.reference?.label ?? null,
       detailLabel: c.id,
@@ -244,10 +242,10 @@ export function mapConflictCandidates(raw: AdminConflictCheckResult): ConflictCa
       status: CR_STATUS_LABEL[c.status] ?? c.status,
       target: '—', // resolved from applicableObservations by the display layer
       applicableObservations: c.applicableObservations,
-      ra: coords ? trimSexagesimal(coords.ra.hms, RA_DECIMALS) : '—',
-      dec: coords ? trimSexagesimal(coords.dec.dms, DEC_DECIMALS) : '—',
-      raDeg: parseNumber(coords?.ra.degrees) ?? null,
-      decDeg: parseNumber(coords?.dec.degrees) ?? null,
+      ra: raDeg === null ? '—' : formatRa(raDeg),
+      dec: decDeg === null ? '—' : formatDec(decDeg),
+      raDeg,
+      decDeg,
       modeType: c.configuration.observingMode?.mode ?? null,
     };
   });
@@ -264,6 +262,8 @@ export function mapConflictCandidates(raw: AdminConflictCheckResult): ConflictCa
       const target = o.targetEnvironment.firstScienceTarget;
       const state = o.workflow?.value?.state ?? 'UNDEFINED';
       const sidereal = target?.sidereal;
+      const raDeg = parseNumber(sidereal?.ra.degrees) ?? null;
+      const decDeg = parseNumber(sidereal?.dec.degrees) ?? null;
       const programLabel = o.program.reference?.label ?? null;
       const obsRef = o.reference?.label ?? o.id;
       return {
@@ -283,10 +283,10 @@ export function mapConflictCandidates(raw: AdminConflictCheckResult): ConflictCa
         status: state.charAt(0) + state.slice(1).toLowerCase(),
         target: target?.name ?? '—',
         applicableObservations: [],
-        ra: sidereal ? trimSexagesimal(sidereal.ra.hms, RA_DECIMALS) : '—',
-        dec: sidereal ? trimSexagesimal(sidereal.dec.dms, DEC_DECIMALS) : '—',
-        raDeg: parseNumber(sidereal?.ra.degrees) ?? null,
-        decDeg: parseNumber(sidereal?.dec.degrees) ?? null,
+        ra: raDeg === null ? '—' : formatRa(raDeg),
+        dec: decDeg === null ? '—' : formatDec(decDeg),
+        raDeg,
+        decDeg,
         modeType: o.observingMode?.mode ?? null,
       };
     });

@@ -128,8 +128,8 @@ describe(mapConflictCandidates, () => {
                 __typename: 'ConfigurationTarget',
                 coordinates: {
                   __typename: 'Coordinates',
-                  ra: { __typename: 'RightAscension', hms: '02:00:00.000000', degrees: 30 },
-                  dec: { __typename: 'Declination', dms: '-30:00:00.000000', degrees: -30 },
+                  ra: { __typename: 'RightAscension', degrees: 30 },
+                  dec: { __typename: 'Declination', degrees: -30 },
                 },
               },
               observingMode: { __typename: 'ConfigurationObservingMode', mode: 'GMOS_SOUTH_LONG_SLIT' },
@@ -149,8 +149,8 @@ describe(mapConflictCandidates, () => {
               name: 'NGC 1027',
               sidereal: {
                 __typename: 'Sidereal',
-                ra: { __typename: 'RightAscension', hms: '02:00:00.240000', degrees: 30.001 },
-                dec: { __typename: 'Declination', dms: '-30:00:00.000000', degrees: -30 },
+                ra: { __typename: 'RightAscension', degrees: 30.001 },
+                dec: { __typename: 'Declination', degrees: -30 },
               },
             },
             'G-2027B-0057-Q-0311',
@@ -169,8 +169,8 @@ describe(mapConflictCandidates, () => {
               name: 'SN 2027aa',
               sidereal: {
                 __typename: 'Sidereal',
-                ra: { __typename: 'RightAscension', hms: '02:04:00.000000', degrees: 31 },
-                dec: { __typename: 'Declination', dms: '-31:00:00.000000', degrees: -31 },
+                ra: { __typename: 'RightAscension', degrees: 31 },
+                dec: { __typename: 'Declination', degrees: -31 },
               },
             },
             'G-2027B-0058-Q-0001',

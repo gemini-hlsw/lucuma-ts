@@ -1,5 +1,6 @@
 /** Selections and mapping helpers shared by more than one view. */
 import { isNotNullish, parseNumber } from '@gemini-hlsw/lucuma-common-ui';
+import { deg2dms, deg2hms } from '@gemini-hlsw/lucuma-core';
 
 import { type Instrument, INSTRUMENT_LABEL, type ObservationRow, type TimingWindowRow } from '../types';
 import { graphql } from './gen';
@@ -197,11 +198,9 @@ export const OBSERVATION_ROW_FRAGMENT = graphql(`
         name
         sidereal {
           ra {
-            hms
             degrees
           }
           dec {
-            dms
             degrees
           }
         }
@@ -257,23 +256,67 @@ export function joinTargetNames(names: readonly (string | undefined)[]): string 
 }
 
 /** The coordinate precisions the story names (sc-10159 item 7): RA as
- *  HH:MM:SS.ss, Dec as DD:MM:SS.s. Shared, so the Change Requests table and the
- *  conflict rows cannot drift apart. */
-export const RA_DECIMALS = 2;
-export const DEC_DECIMALS = 1;
+ *  HH:MM:SS.ss, Dec as DD:MM:SS.s. */
+const RA_DECIMALS = 2;
+const DEC_DECIMALS = 1;
 
-/** Trim an ODB sexagesimal angle to one of those precisions. The ODB returns
- *  six decimals ("01:01:45.034320"), far finer than a conflict review needs,
- *  and it crowds the column.
+/** Round `degrees` to `1 / step` of the unit `format` prints, format it, and
+ *  cut the result back to `decimals` places.
  *
- *  Truncates rather than rounds: rounding the seconds alone cannot carry into
- *  the minutes, so "+20:55:59.999" would round to "+20:55:60.0" — not a valid
- *  sexagesimal value. The sub-arcsecond difference is irrelevant at the
- *  separations this table compares. */
-export function trimSexagesimal(angle: string, decimals: number): string {
+ *  The three steps belong together: the cut is only lossless because the
+ *  rounding just put zeros in the digits it removes, so neither half is safe
+ *  to call alone. The two precisions nest — a hundredth of a second of time is
+ *  an exact multiple of the millisecond `deg2hms` rounds to, and a tenth of an
+ *  arcsecond of the 10 mas `deg2dms` rounds to — so formatting cannot shift a
+ *  value the rounding here already settled.
+ *
+ *  `deg2hms`/`deg2dms` wrap lucuma-core's `truncatedRA`/`truncatedDec`, which
+ *  round (despite the name) to a millisecond of time and 10 mas — three and
+ *  two decimals, the precision Explore's observation table shows. They are the
+ *  only sexagesimal formatters lucuma-core exports to JS and neither takes a
+ *  precision, so the one coarser step this story asks for is taken here. Both
+ *  emit their decimals for whole values too ("02:00:00.000", "+30:00:00.00"),
+ *  so the no-fraction branch is a guard, not a reachable path. */
+function roundAndFormat(degrees: number, step: number, decimals: number, format: (degrees: number) => string): string {
+  const angle = format(Math.round(degrees * step) / step);
   const dot = angle.indexOf('.');
-  // No fractional part (or an unexpected shape) — nothing to trim.
   return dot === -1 ? angle : angle.slice(0, dot + 1 + decimals);
+}
+
+/** Right ascension in degrees as "HH:MM:SS.ss" (sc-10159 item 7).
+ *
+ *  Rounds to the nearest hundredth of a second of time. The ODB's own
+ *  sexagesimal strings carry six decimals, far finer than a review needs, but
+ *  they are not what gets rounded: rounding a seconds field in isolation
+ *  cannot carry, so 23:59:59.9999 would reach the invalid "23:59:60.00".
+ *  Rounding in degrees and reformatting lets the carry run through minutes and
+ *  the 24h wrap on its own, giving "00:00:00.00". */
+export function formatRa(degrees: number): string {
+  // 240 = degrees to seconds of time; the 100 takes it to hundredths.
+  return roundAndFormat(degrees, 240 * 100, RA_DECIMALS, deg2hms);
+}
+
+/** Declination in degrees as "DD:MM:SS.s" (sc-10159 item 7).
+ *
+ *  Rounds to the nearest tenth of an arcsecond before formatting, so a rounded
+ *  second carries into the minutes: +20:55:59.999 becomes +20:56:00.0. The
+ *  carry happens in degrees — `deg2dms` itself reflects rather than carries
+ *  past the pole, giving +89:59:59.96 for both 89.99999 and 90.00001.
+ *
+ *  Rounding the magnitude keeps a southern declination rounding away from zero
+ *  exactly as a northern one does.
+ *
+ *  `toAngle` is deliberately not used here: it is unsigned, so a declination of
+ *  -07:57:07.4 would render as 352:02:52.6.
+ *
+ *  A declination less than 0.05" south of the equator rounds to zero and
+ *  renders "+00:00:00.0" — the rounded value is zero, which carries no sign.
+ *  lucuma-core's `truncatedDec` normalises the same way at its own precision. */
+export function formatDec(degrees: number): string {
+  // Round the magnitude and restore the sign, so south rounds away from zero
+  // as north does. 3600 = degrees to arcseconds; the 10 takes it to tenths.
+  const sign = degrees < 0 ? -1 : 1;
+  return roundAndFormat(Math.abs(degrees), 3600 * 10, DEC_DECIMALS, (d) => deg2dms(sign * d));
 }
 
 /** Render an ODB Timestamp to minute precision in UTC, e.g.
@@ -331,13 +374,15 @@ export function mapObservationRow(
   // A null/absent group simply misses the telluric-group map.
   const groupHours = o.groupId === null ? undefined : telluricHoursByGroup?.get(o.groupId);
   const hours = groupHours ?? observationDigestHours(o) ?? 0;
+  const raDeg = parseNumber(target?.sidereal?.ra.degrees) ?? null;
+  const decDeg = parseNumber(target?.sidereal?.dec.degrees) ?? null;
   return {
     id: o.id,
     target: target?.name ?? NO_TARGET,
-    ra: target?.sidereal ? trimSexagesimal(target.sidereal.ra.hms, RA_DECIMALS) : '—',
-    dec: target?.sidereal ? trimSexagesimal(target.sidereal.dec.dms, DEC_DECIMALS) : '—',
-    raDeg: parseNumber(target?.sidereal?.ra.degrees) ?? null,
-    decDeg: parseNumber(target?.sidereal?.dec.degrees) ?? null,
+    ra: raDeg === null ? '—' : formatRa(raDeg),
+    dec: decDeg === null ? '—' : formatDec(decDeg),
+    raDeg,
+    decDeg,
     modeType: o.observingMode?.mode ?? null,
     instrument,
     config: modeSuffix ? `${instrument}, ${modeSuffix}` : instrument,
