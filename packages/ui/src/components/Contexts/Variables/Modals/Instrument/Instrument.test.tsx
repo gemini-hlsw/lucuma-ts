@@ -65,6 +65,7 @@ describe(`${Instrument.name} modal`, () => {
     expect(updateConfigurationMock.request.variables).toHaveBeenCalledExactlyOnceWith({
       obsInstrument: 'GMOS_NORTH',
       pk: 1,
+      fpu: null,
     });
     expect(setTemporaryInstrumentMock.request.variables).toHaveBeenCalledExactlyOnceWith(
       createInstrumentConfig({ createdAt: now }),

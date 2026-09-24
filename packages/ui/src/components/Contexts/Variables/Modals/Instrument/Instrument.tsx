@@ -73,6 +73,11 @@ function useModifyInstrument() {
   const modifyInstrument = (instrument: InstrumentConfig) => {
     if (!configuration) return Promise.resolve();
 
+    // extraParams has no schema-derived shape (it's a raw JSON scalar); `ifu` is the only
+    // key ever written to it (see useConfiguredInstrument in gql/configs/Instrument.ts).
+    // TODO: In the future we may want to add instruments using extraParams for other purposes, so we should consider adding a schema for it.
+    const isIfu = (instrument.extraParams as { ifu?: boolean } | null | undefined)?.ifu === true;
+
     return startTransition(async () => {
       await Promise.all([
         setTemporaryInstrument({
@@ -84,6 +89,7 @@ function useModifyInstrument() {
           variables: {
             pk: configuration.pk,
             obsInstrument: instrument.name,
+            fpu: isIfu ? 'IFU_BLUE' : null,
           },
           refetchQueries: [GET_INSTRUMENT],
           awaitRefetchQueries: true,
