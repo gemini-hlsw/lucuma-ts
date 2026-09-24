@@ -1,6 +1,9 @@
 import { groupBy, isNullish } from '@gemini-hlsw/lucuma-common-ui';
 import { useUpdateConfiguration } from '@gql/configs/Configuration';
+import type { Instrument } from '@gql/configs/gen/graphql';
+import { useInstrument } from '@gql/configs/Instrument';
 import { useNavigateState } from '@gql/server/NavigateState';
+import { useServerConfigValue } from '@gql/server/ServerConfiguration';
 import { useRestoreTarget, useSwapTarget } from '@gql/server/TargetSwap';
 import { Button } from 'primereact/button';
 import { SplitButton } from 'primereact/splitbutton';
@@ -9,7 +12,12 @@ import { useCanEdit } from '@/components/atoms/auth';
 import { useToast } from '@/Helpers/toast';
 import type { Target } from '@/types';
 
-import { createTargetPropertiesInput, createUpdateSelectedTargetVariables, useTcsConfigInput } from './inputs';
+import {
+  createOriginInput,
+  createTargetPropertiesInput,
+  createUpdateSelectedTargetVariables,
+  useTcsConfigInput,
+} from './inputs';
 
 export function TargetSwapButton({
   configurationPk,
@@ -33,8 +41,19 @@ export function TargetSwapButton({
 
   const { data: tcsConfig, loading: tcsConfigInputLoading, detail } = useTcsConfigInput();
 
+  const { site } = useServerConfigValue();
+  const acqCamName: Instrument = site === 'GN' ? 'ACQ_CAM_NORTH' : 'ACQ_CAM_SOUTH';
+  const { data: acqCamData, loading: acqCamInstrumentLoading } = useInstrument({ variables: { name: acqCamName } });
+  const acqCamInstrument = acqCamData?.instrument;
+
   const loading =
-    stateLoading || swapLoading || restoreLoading || tcsConfigInputLoading || updateConfigurationLoading || propLoading;
+    stateLoading ||
+    swapLoading ||
+    restoreLoading ||
+    tcsConfigInputLoading ||
+    updateConfigurationLoading ||
+    acqCamInstrumentLoading ||
+    propLoading;
 
   const disabled = !canEdit;
 
@@ -58,13 +77,26 @@ export function TargetSwapButton({
           });
           return;
         }
+        if (!acqCamInstrument) {
+          toast?.show({
+            severity: 'warn',
+            summary: 'Cannot swap target',
+            detail: `No configuration found for ${acqCamName}`,
+          });
+          return;
+        }
         // If swapping
         // Use Guide target if swapping
         const targetInput = createTargetPropertiesInput(selectedGuider);
         await swapTarget({
           variables: {
             swapConfig: {
-              acParams: tcsConfig.instParams,
+              acParams: {
+                agName: tcsConfig.instParams.agName,
+                focusOffset: tcsConfig.instParams.focusOffset,
+                iaa: tcsConfig.instParams.iaa,
+                origin: createOriginInput(acqCamInstrument),
+              },
               rotator: tcsConfig.rotator,
               guideTarget: targetInput,
             },

@@ -14,6 +14,7 @@ import type {
   InstrumentSpecificsInput,
   LightSinkVariant,
   NonsiderealInput,
+  PointOriginInput,
   RotatorTrackingInput,
   RotatorTrackingMode,
   SiderealInput,
@@ -37,12 +38,16 @@ export function createRotatorTrackingInput(rotator: Rotator): RotatorTrackingInp
   return { ipa: { degrees: rotator.angle }, mode: rotator.tracking };
 }
 
+export function createOriginInput(instrument: Pick<InstrumentConfig, 'originX' | 'originY'>): PointOriginInput {
+  return { x: { arcseconds: instrument.originX }, y: { arcseconds: instrument.originY } };
+}
+
 export function createInstrumentSpecificsInput(instrument: InstrumentConfig): InstrumentSpecificsInput {
   return {
     iaa: { degrees: instrument.iaa },
     focusOffset: { millimeters: instrument.focusOffset },
     agName: instrument.name,
-    origin: { x: { arcseconds: instrument.originX }, y: { arcseconds: instrument.originY } },
+    origin: createOriginInput(instrument),
   };
 }
 
