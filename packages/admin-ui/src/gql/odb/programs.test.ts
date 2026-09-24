@@ -232,36 +232,61 @@ describe(proposalTypeInput, () => {
       classical: { minPercentTime: 75 },
     });
   });
+});
 
-  describe(proposalTypeChanged, () => {
-    // sc-10439: a Director's Time program reaches the editor with its subtype
-    // preserved in programType but collapsed to QUEUE in programClass. Saving an
-    // edit that leaves the proposal type alone must not send the type block at
-    // all, or the ODB rejects the Queue proposal against the Director's Time call.
-    const dd: Program = { ...base, programType: 'DIRECTORS_TIME' };
+describe(proposalTypeChanged, () => {
+  // sc-10439: a Director's Time program reaches the editor with its subtype
+  // preserved in programType but collapsed to QUEUE in programClass. Saving an
+  // edit that leaves the proposal type alone must not send the type block at
+  // all, or the ODB rejects the Queue proposal against the Director's Time call.
+  const base: Program = {
+    id: 'p-1',
+    reference: 'R',
+    name: 'N',
+    pi: 'PI',
+    programClass: 'QUEUE',
+    programType: 'QUEUE',
+    tooStatus: 'RAPID',
+    contactScientists: [],
+    activeStart: '2027-08-01',
+    activeEnd: '2028-02-01',
+    status: 'INACTIVE',
+    explicitStatus: null,
+    defaultStatus: 'INACTIVE',
+    proprietaryMonths: 12,
+    considerForBand3: true,
+    minPercentTime: 75,
+    privateHeader: true,
+    thesisInvestigators: [],
+    allocations: [],
+    privateNote: '',
+    privateNoteId: null,
+  };
+  const dd: Program = { ...base, programType: 'DIRECTORS_TIME' };
 
-    it('stays quiet when an unrelated field is edited on a Directors Time program', () => {
-      expect(
-        proposalTypeChanged(dd, { ...dd, contactScientists: [{ programUserId: 'pu-1', userId: 'u-1', name: 'CS' }] }),
-      ).toBe(false);
-      expect(
-        proposalTypeChanged(dd, { ...dd, allocations: [{ category: 'US', scienceBand: 'BAND1', hours: 3 }] }),
-      ).toBe(false);
-      expect(proposalTypeChanged(dd, { ...dd, privateNote: 'note' })).toBe(false);
-    });
+  it('stays quiet when an unrelated field is edited on a Directors Time program', () => {
+    expect(
+      proposalTypeChanged(dd, { ...dd, contactScientists: [{ programUserId: 'pu-1', userId: 'u-1', name: 'CS' }] }),
+    ).toBe(false);
+    expect(proposalTypeChanged(dd, { ...dd, allocations: [{ category: 'US', scienceBand: 'BAND1', hours: 3 }] })).toBe(
+      false,
+    );
+    expect(proposalTypeChanged(dd, { ...dd, privateNote: 'note' })).toBe(false);
+  });
 
-    it('stays quiet when nothing at all changed', () => {
-      expect(proposalTypeChanged(base, { ...base })).toBe(false);
-    });
+  it('stays quiet when nothing at all changed', () => {
+    expect(proposalTypeChanged(base, { ...base })).toBe(false);
+  });
 
-    it.each([
-      ['programClass', { programClass: 'CLASSICAL' } as const],
-      ['tooStatus', { tooStatus: 'STANDARD' } as const],
-      ['minPercentTime', { minPercentTime: 50 } as const],
-      ['considerForBand3', { considerForBand3: false } as const],
-    ])('reports a change when %s is edited', (_field, patch) => {
-      expect(proposalTypeChanged(base, { ...base, ...patch })).toBe(true);
-    });
+  // Every field `proposalTypeInput` reads, each flipped on its own: a term
+  // dropped from the guard leaves exactly one of these failing.
+  it.each([
+    ['programClass', { programClass: 'CLASSICAL' } as const],
+    ['tooStatus', { tooStatus: 'STANDARD' } as const],
+    ['minPercentTime', { minPercentTime: 50 } as const],
+    ['considerForBand3', { considerForBand3: false } as const],
+  ])('reports a change when %s is edited', (_field, patch) => {
+    expect(proposalTypeChanged(base, { ...base, ...patch })).toBe(true);
   });
 });
 
