@@ -37,6 +37,8 @@ function program(overrides: Partial<RawProgram>): RawProgram {
     __typename: 'Program',
     id: 'p-1322',
     name: null,
+    resourceCount: 2,
+    resourceLimit: 1000,
     proposalStatus: 'ACCEPTED',
     reference: { __typename: 'ScienceProgramReference', label: 'G-2027B-1322-Q' },
     pi: {
@@ -77,6 +79,20 @@ const result = (matches: RawProgram[]): AdminProgramsResult => ({
 describe(mapPrograms, () => {
   it('returns an empty array when there are no matches', () => {
     expect(mapPrograms(result([]))).toEqual([]);
+  });
+
+  it('carries the resource count and limit through (sc-9090)', () => {
+    const [p] = mapPrograms(result([program({ resourceCount: 84, resourceLimit: 1000 })]));
+    expect(p?.resourceCount).toBe(84);
+    expect(p?.resourceLimit).toBe(1000);
+  });
+
+  it('keeps a count that has passed its limit rather than clamping it', () => {
+    // The ODB allows the limit to be set below the count — the program is
+    // frozen, not corrected — so the form has to be able to show that state.
+    const [p] = mapPrograms(result([program({ resourceCount: 84, resourceLimit: 1 })]));
+    expect(p?.resourceCount).toBe(84);
+    expect(p?.resourceLimit).toBe(1);
   });
 
   it('projects a Queue program, reading contact scientists from SUPPORT roles and thesis from ProgramUser', () => {
@@ -200,6 +216,8 @@ describe(proposalTypeInput, () => {
     id: 'p-1',
     reference: 'R',
     name: 'N',
+    resourceCount: 0,
+    resourceLimit: 1000,
     pi: 'PI',
     programClass: 'QUEUE',
     programType: 'QUEUE',
@@ -256,6 +274,8 @@ describe(programPropertiesInput, () => {
     id: 'p-1',
     reference: 'R',
     name: 'N',
+    resourceCount: 0,
+    resourceLimit: 1000,
     pi: 'PI',
     programClass: 'QUEUE',
     programType: 'QUEUE',

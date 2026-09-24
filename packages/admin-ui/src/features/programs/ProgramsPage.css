@@ -15,9 +15,19 @@
   color: var(--text-color, #e4e4e7);
 }
 
-.program-gap {
+/* A field label sitting inline with its input, not a unit suffix — it borrows
+   the suffix's muted type without inheriting a unit's styling. */
+.resource-limit-label {
   color: var(--text-color-secondary, #9a9aa2);
-  font-style: italic;
+  font-size: 0.88rem;
+  white-space: nowrap;
+}
+
+.program-warn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--yellow-400, #d9b85c);
   font-size: 0.84rem;
 }
 
