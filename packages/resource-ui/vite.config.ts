@@ -1,5 +1,6 @@
 import babel from '@rolldown/plugin-babel';
 import tailwindcss from '@tailwindcss/vite';
+import basicSsl from '@vitejs/plugin-basic-ssl';
 import react, { reactCompilerPreset } from '@vitejs/plugin-react';
 import { playwright } from '@vitest/browser-playwright';
 import { execSync } from 'child_process';
@@ -41,11 +42,13 @@ export default defineConfig({
     tsconfigPaths: true,
   },
   plugins: [
+    ...(process.env.RESOURCE_HTTPS === '1' ? [basicSsl({ domains: ['local.lucuma.xyz'] })] : []),
     react(),
     babel({ presets: [reactCompilerPreset()], exclude: /[/\\](node_modules|common-ui)[/\\]/ }),
     tailwindcss(),
   ],
   server: {
+    ...(process.env.RESOURCE_HTTPS === '1' ? { host: '127.0.0.1' } : {}),
     allowedHosts: ['localhost', '.lucuma.xyz', '.gemini.edu'],
     proxy: {
       /* The real service by default; `RESOURCE_API=mock` swaps the proxy target, never the app. */
@@ -62,6 +65,8 @@ export default defineConfig({
   },
   test: {
     clearMocks: true,
+    restoreMocks: true,
+    unstubGlobals: true,
     globals: true,
     exclude: ['**/node_modules/**', '**/dist/**'],
     // No app stylesheet: a test that needs styling to pass is testing the stylesheet.

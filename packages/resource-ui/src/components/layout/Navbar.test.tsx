@@ -1,16 +1,45 @@
 import { describe, expect, it } from 'vitest';
-import { page, userEvent } from 'vitest/browser';
+import { type LocatorSelectors, page, userEvent } from 'vitest/browser';
 
+import { CURRENT_ENV } from '@/app/environment';
 import NightPage from '@/app/pages/NightPage';
 import { setLastSite } from '@/app/useLastSite';
+import orcidLogo from '@/assets/orcid-logo.svg';
+import { signInUrl } from '@/auth/ssoClient';
+import { setToken } from '@/components/atoms/auth';
+import { fakeJwt, standardUser } from '@/test/factories';
 import { chooseClock, chooseSite, openAppMenu } from '@/test/helpers';
 import { renderApp } from '@/test/renderApp';
+import { ssoCall, stubSso } from '@/test/sso';
 
 import Layout from './Layout';
 import Navbar from './Navbar';
 
-// The navbar carries the global selection, so it reads the mock API through renderApp.
 const renderNavbar = async (route = '/') => renderApp({ element: <Navbar />, route });
+
+const SSO_UNREACHABLE_NOTE = 'Logout did not reach SSO. Close the browser to end the session.';
+const MENU_OWNABLE = ['menuitem', 'menuitemradio', 'menuitemcheckbox', 'group', 'separator'];
+const MENU_FORBIDDEN = ['[role="status"]', '[role="alert"]', '[role="log"]', '[role="none"]', '[aria-live]'];
+
+const logOutFromMenu = async () => {
+  stubSso();
+  const screen = await renderApp({ element: <Navbar />, route: '/', token: fakeJwt(standardUser('staff')) });
+  await openAppMenu(screen);
+  await page.getByRole('menuitem', { name: 'Logout' }).click();
+  return screen;
+};
+
+/** PrimeReact binds its outside-click listener only when the enter transition ends, which this class marks. */
+const settleOverlay = async (): Promise<void> => {
+  const overlay = () => page.getByRole('menu').element().closest('.p-menu');
+  await expect.poll(() => overlay()?.classList.contains('p-connected-overlay-enter-done')).toBe(true);
+};
+
+const MENU_CLOSERS: readonly [string, (screen: LocatorSelectors) => Promise<void>][] = [
+  ['Escape', () => userEvent.keyboard('{Escape}')],
+  ['a click outside', (screen) => userEvent.click(screen.getByTestId('account-control'))],
+  ['choosing an item', () => page.getByRole('menuitemradio', { name: 'Clock: UTC', exact: true }).click()],
+];
 
 describe(Navbar, () => {
   it('renders the Resource wordmark', async () => {
@@ -20,7 +49,6 @@ describe(Navbar, () => {
   });
 
   it('links the wordmark to tonight, dropping the deep-linked night', async () => {
-    // The brand goes home: /night with no night parameter. The site survives; page state does not.
     const screen = await renderNavbar('/semester?site=GS&night=2026-11-14&view=calendar');
 
     const brand = screen.getByRole('link', { name: 'Resource', exact: false });
@@ -58,8 +86,6 @@ describe(Navbar, () => {
     await expect.poll(() => screen.router.state.location.search).toBe('?site=GS');
 
     await screen.router.navigate(-1);
-
-    // Back returns to the site it left, rather than the memory quietly restoring the new one.
     await expect.poll(() => screen.router.state.location.search).toBe('?site=GN');
     await expect.element(screen.getByRole('button', { name: 'Gemini North' })).toHaveAttribute('aria-pressed', 'true');
   });
@@ -88,9 +114,7 @@ describe(Navbar, () => {
     const screen = await renderNavbar();
 
     await openAppMenu(screen);
-
-    // `role="none"` takes a header's words out of the accessibility tree entirely.
-    for (const heading of ['Guest User', 'Clock']) {
+    for (const heading of ['Not signed in', 'Clock']) {
       await expect.element(page.getByRole('group').getByText(heading, { exact: true })).toBeVisible();
     }
   });
@@ -113,16 +137,7 @@ describe(Navbar, () => {
     await expect.poll(() => screen.router.state.location.search).toContain('site=GN');
   });
 
-  it('heads the menu with the account at every width, where sign-out will land', async () => {
-    const screen = await renderNavbar();
-
-    await openAppMenu(screen);
-
-    await expect.element(page.getByRole('menu').getByText('Guest User', { exact: true })).toBeVisible();
-  });
-
   it('offers no way to choose a backend - there is one, and it is not a setting', async () => {
-    // One backend, so a Demo | Live control would be chrome pretending to be a choice.
     const screen = await renderNavbar();
 
     await expect.element(screen.getByLabelText('Site', { exact: true })).toBeInTheDocument();
@@ -132,8 +147,6 @@ describe(Navbar, () => {
   it('offers the clock in the menu, defaulting to the site clock', async () => {
     const screen = await renderNavbar();
     await openAppMenu(screen);
-
-    // A radio group, not two commands: the pair is one choice, and says which half holds.
     await expect
       .element(page.getByRole('menuitemradio', { name: 'Clock: Site time', exact: true }))
       .toHaveAttribute('aria-checked', 'true');
@@ -158,13 +171,10 @@ describe(Navbar, () => {
     await expect.element(screen.getByText('14:00 to 14:00 site time', { exact: false })).toBeVisible();
 
     await chooseClock(screen, 'UTC');
-
-    // Chile runs UTC-3 in November: the same boundary, named as UTC so nobody mistakes it.
     await expect.element(screen.getByText('17:00 to 17:00 UTC', { exact: false })).toBeVisible();
   });
 
   it('switches the clock from the keyboard, the row being the whole control', async () => {
-    // The clock rows carry no anchor of their own, so activation has to reach the row itself.
     const screen = await renderApp({
       element: <Layout />,
       route: '/night?site=GS&night=2026-11-14',
@@ -174,15 +184,12 @@ describe(Navbar, () => {
     await expect.element(screen.getByText('14:00 to 14:00 site time', { exact: false })).toBeVisible();
 
     await openAppMenu(screen);
-    // Opening focuses the first row and the headers are skipped, so one step down reaches UTC.
-    await userEvent.keyboard('{ArrowDown}{Enter}');
+    await userEvent.keyboard('{ArrowDown}{ArrowDown}{Enter}');
 
     await expect.element(screen.getByText('17:00 to 17:00 UTC', { exact: false })).toBeVisible();
   });
 
   it('operates the clock from the keyboard - the spike kept menu-native navigation for exactly this', async () => {
-    // PrimeReact's Menu tracks focus as an active-descendant on the list, not real DOM focus per item -
-    // the fact the spike's rejected SegmentedControl-in-a-menuitem could not do at all.
     const screen = await renderApp({
       element: <Layout />,
       route: '/night?site=GS&night=2026-11-14',
@@ -194,9 +201,7 @@ describe(Navbar, () => {
     await openAppMenu(screen);
     const utc = page.getByRole('menuitemradio', { name: 'Clock: UTC', exact: true });
     const menuList = () => document.querySelector('ul[role="menu"]');
-
-    // Opening the menu already focuses "Site time", the first choice; one step reaches "UTC".
-    await userEvent.keyboard('{ArrowDown}');
+    await userEvent.keyboard('{ArrowDown}{ArrowDown}');
     expect(menuList()?.getAttribute('aria-activedescendant')).toBe(utc.element().id);
 
     await userEvent.keyboard('{Enter}');
@@ -238,35 +243,239 @@ describe(Navbar, () => {
     const screen = await renderNavbar('/night?site=GS');
 
     await screen.getByRole('button', { name: 'Menu' }).click();
-    // The popup renders into document.body; wait for it so the click never races the mount.
     const about = page.getByText('About Resource');
     await expect.element(about).toBeVisible();
     await about.click();
 
     const dialog = page.getByTestId('about-resource');
     await expect.element(dialog).toBeVisible();
-    // Explore's VERSION+DATE.COMMIT-ENV form, and the endpoint this serving actually reads.
-    await expect.element(dialog.getByText(/Version: .+-DEV/)).toBeVisible();
+    await expect.element(dialog.getByText(new RegExp(`.+-${CURRENT_ENV.versionSuffix}$`, 'u'))).toBeVisible();
     await expect.element(dialog.getByText('/resource/graphql', { exact: false })).toBeVisible();
+
+    await userEvent.keyboard('{Escape}');
+    await expect.element(dialog).not.toBeInTheDocument();
   });
 
-  it('keeps the login in the menu, disabled until SSO arrives', async () => {
+  it('hands focus back to the menu button when About is dismissed from the keyboard', async () => {
     const screen = await renderNavbar('/night?site=GS');
+    const menuButton = screen.getByRole('button', { name: 'Menu' }).element() as HTMLElement;
 
-    await screen.getByRole('button', { name: 'Menu' }).click();
+    menuButton.focus();
+    await userEvent.keyboard('{Enter}');
+    await expect.element(page.getByRole('menuitem', { name: 'About Resource' })).toBeVisible();
+    await userEvent.keyboard('{Enter}');
+    await expect.element(page.getByTestId('about-resource')).toBeVisible();
 
-    const login = page.getByRole('menuitem', { name: 'Login with ORCID' });
-    await expect.element(login).toBeVisible();
-    await expect.element(login).toHaveAttribute('aria-disabled', 'true');
+    await userEvent.keyboard('{Escape}');
+
+    await expect.element(page.getByTestId('about-resource')).not.toBeInTheDocument();
+    await expect.poll(() => document.activeElement).toBe(menuButton);
   });
 
-  it('shows the account control as the placeholder it is until SSO lands', async () => {
+  it('hands focus back to the menu button when About is closed by its own button', async () => {
+    const screen = await renderNavbar('/night?site=GS');
+    const menuButton = screen.getByRole('button', { name: 'Menu' }).element() as HTMLElement;
+
+    await openAppMenu(screen);
+    await page.getByRole('menuitem', { name: 'About Resource' }).click();
+    await expect.element(page.getByTestId('about-resource')).toBeVisible();
+
+    await page.getByRole('button', { name: 'Close' }).click();
+
+    await expect.element(page.getByTestId('about-resource')).not.toBeInTheDocument();
+    await expect.poll(() => document.activeElement).toBe(menuButton);
+  });
+
+  it('offers the ORCID login as a link the browser follows', async () => {
     const screen = await renderNavbar();
 
-    const account = screen.getByTestId('account-control');
-    await expect.element(account).toHaveTextContent('Guest User');
-    await expect
-      .element(account)
-      .toHaveAttribute('title', 'Authentication is not implemented yet - the mock allows everything.');
+    await openAppMenu(screen);
+
+    await expect.element(page.getByRole('link', { name: 'Login with ORCID' })).toHaveAttribute('href', signInUrl());
+    const logo = page.getByRole('menuitem', { name: 'Login with ORCID' }).element().querySelector('img');
+    expect(logo).not.toBeNull();
+    expect(logo!.getAttribute('src')).toBe(orcidLogo);
+    expect(logo!.getAttribute('alt')).toBe('');
+    expect(logo!.getAttribute('aria-hidden')).toBe('true');
+    await expect.element(page.getByRole('menuitem', { name: 'Login with ORCID' })).not.toHaveAttribute('aria-disabled');
+  });
+
+  it('closes the menu on a click outside it, and the click takes focus with it', async () => {
+    const screen = await renderNavbar();
+    const menuButton = screen.getByRole('button', { name: 'Menu' }).element();
+
+    await openAppMenu(screen);
+    await settleOverlay();
+    await userEvent.click(screen.getByTestId('account-control'));
+
+    await expect.element(page.getByRole('menu')).not.toBeInTheDocument();
+    expect(document.activeElement?.closest('[role="menu"]') ?? null).toBeNull();
+    expect(document.activeElement).not.toBe(menuButton);
+  });
+
+  it.each([['{Tab}'], ['{Shift>}{Tab}{/Shift}']])(
+    'closes the menu on %s and hands focus back to the button, so the tab sequence continues from it',
+    async (keys) => {
+      const screen = await renderApp({ element: <Layout />, route: '/night?site=GS' });
+      const menuButton = screen.getByRole('button', { name: 'Menu' }).element();
+
+      await openAppMenu(screen);
+      await expect.poll(() => document.activeElement?.getAttribute('role')).toBe('menu');
+      await userEvent.keyboard(keys);
+
+      await expect.element(page.getByRole('menu')).not.toBeInTheDocument();
+      await expect.poll(() => document.activeElement).toBe(menuButton);
+    },
+  );
+
+  it.each(MENU_CLOSERS)(
+    'tells assistive technology the menu is open and which list the button controls, until %s closes it',
+    async (_how, close) => {
+      const screen = await renderNavbar();
+      const menuButton = screen.getByRole('button', { name: 'Menu' });
+
+      await expect.element(menuButton).toHaveAttribute('aria-expanded', 'false');
+      await expect.element(menuButton).not.toHaveAttribute('aria-controls');
+
+      await openAppMenu(screen);
+      await settleOverlay();
+      await expect.element(menuButton).toHaveAttribute('aria-expanded', 'true');
+      expect(menuButton.element().getAttribute('aria-controls')).toBe(page.getByRole('menu').element().id);
+
+      await close(screen);
+      await expect.element(page.getByRole('menu')).not.toBeInTheDocument();
+      await expect.element(menuButton).toHaveAttribute('aria-expanded', 'false');
+      await expect.element(menuButton).not.toHaveAttribute('aria-controls');
+    },
+  );
+
+  it('names the list that carries the menu role, not the wrapper around it', async () => {
+    const screen = await renderNavbar();
+
+    await openAppMenu(screen);
+
+    await expect.element(page.getByRole('menu', { name: 'Application menu' })).toBeVisible();
+  });
+
+  it('reads About first and the account block last, the order Explore uses', async () => {
+    const screen = await renderNavbar();
+
+    await openAppMenu(screen);
+
+    const rows = [...page.getByRole('menu').element().children].map((row) => row.textContent?.trim() ?? '');
+    expect(rows).toEqual(['About Resource', 'Clock', 'Site time', 'UTC', '', 'Not signed in', 'Login with ORCID']);
+  });
+
+  it.each([
+    ['signed out', { token: null }, 'Not signed in', null, 'Login with ORCID'],
+    [
+      'the token has expired',
+      { token: fakeJwt(standardUser('staff'), -60) },
+      'Not signed in',
+      null,
+      'Login with ORCID',
+    ],
+    ['signed in', { token: fakeJwt(standardUser('staff')) }, 'Ada Lovelace', 'Ada Lovelace', 'Logout'],
+    ['checking', { sessionChecked: false }, 'Checking sign-in', null, null],
+  ])(
+    'names the account and offers only the auth item that applies when %s',
+    async (_state, options, label, title, item) => {
+      const screen = await renderApp({ element: <Navbar />, route: '/', ...options });
+
+      const account = screen.getByTestId('account-control');
+      await expect.element(account).toHaveTextContent(label);
+      await expect.poll(() => account.element().getAttribute('title')).toBe(title);
+
+      await openAppMenu(screen);
+
+      await expect.element(page.getByRole('menu').getByText(label, { exact: true })).toBeVisible();
+      const offered = ['Login with ORCID', 'Logout'].filter(
+        (name) => page.getByRole('menuitem', { name }).elements().length > 0,
+      );
+      expect(offered).toEqual(item === null ? [] : [item]);
+    },
+  );
+
+  it('says the cookie may still stand when the logout never reached SSO, until the next sign-in', async () => {
+    const screen = await logOutFromMenu();
+    await expect.poll(() => screen.getByRole('status').element().textContent).toBe('Logged out');
+
+    ssoCall(0).fail();
+    await expect.poll(() => screen.getByRole('status').element().textContent).toBe(SSO_UNREACHABLE_NOTE);
+
+    await openAppMenu(screen);
+    await expect.element(page.getByRole('menu').getByText(SSO_UNREACHABLE_NOTE)).toBeVisible();
+    await expect.element(screen.getByTestId('account-control')).toHaveTextContent('Not signed in');
+
+    setToken(screen.store, fakeJwt(standardUser('staff')));
+
+    await expect.element(page.getByRole('menu').getByText(SSO_UNREACHABLE_NOTE)).not.toBeInTheDocument();
+  });
+
+  it('keeps every row of the menu to what `role="menu"` may own, at every depth', async () => {
+    const screen = await logOutFromMenu();
+    ssoCall(0).fail();
+
+    await openAppMenu(screen);
+    const menu = page.getByRole('menu').element();
+    await expect.element(page.getByRole('menu').getByText(SSO_UNREACHABLE_NOTE)).toBeVisible();
+
+    const rows = [...menu.children];
+    expect(rows.length).toBeGreaterThan(0);
+    for (const row of rows) {
+      expect(MENU_OWNABLE).toContain(row.getAttribute('role'));
+    }
+    expect([...menu.querySelectorAll(MENU_FORBIDDEN.join(', '))]).toHaveLength(0);
+  });
+
+  it('signs out before SSO answers, hands focus back to the menu button, and re-announces after a fresh sign-in', async () => {
+    const screen = await logOutFromMenu();
+    await expect.element(screen.getByTestId('account-control')).toHaveTextContent('Not signed in');
+    await expect.element(screen.getByRole('status')).toHaveTextContent('Logged out');
+    const menuButton = screen.getByRole('button', { name: 'Menu' }).element();
+    await expect.poll(() => document.activeElement).toBe(menuButton);
+    ssoCall(0).answer({ status: 200 });
+
+    await openAppMenu(screen);
+    await expect.element(page.getByRole('menu').getByText(SSO_UNREACHABLE_NOTE)).not.toBeInTheDocument();
+    expect(screen.getByRole('status').element().textContent).toBe('Logged out');
+
+    setToken(screen.store, fakeJwt(standardUser('staff')));
+    await expect.element(screen.getByTestId('account-control')).toHaveTextContent('Ada Lovelace');
+    await expect.element(screen.getByRole('status')).toHaveTextContent('');
+
+    await expect.element(page.getByRole('menuitem', { name: 'Logout' })).toBeVisible();
+    await page.getByRole('menuitem', { name: 'Logout' }).click();
+
+    await expect.element(screen.getByTestId('account-control')).toHaveTextContent('Not signed in');
+    await expect.element(screen.getByRole('status')).toHaveTextContent('Logged out');
+    ssoCall(1).fail();
+
+    await openAppMenu(screen);
+    await expect.element(page.getByRole('menu').getByText(SSO_UNREACHABLE_NOTE)).toBeVisible();
+  });
+
+  it('sends the login return address to the page actually open, not a fixed default', async () => {
+    const original = window.location.href;
+    try {
+      history.pushState(null, '', '/night?site=GS&night=2026-11-14');
+      const first = await renderNavbar();
+      await openAppMenu(first);
+      const firstExpected = signInUrl();
+      await expect.element(page.getByRole('link', { name: 'Login with ORCID' })).toHaveAttribute('href', firstExpected);
+      await first.unmount();
+
+      history.pushState(null, '', '/semester?site=GN');
+      const second = await renderNavbar();
+      await openAppMenu(second);
+      const secondExpected = signInUrl();
+
+      expect(secondExpected).not.toBe(firstExpected);
+      await expect
+        .element(page.getByRole('link', { name: 'Login with ORCID' }))
+        .toHaveAttribute('href', secondExpected);
+    } finally {
+      history.pushState(null, '', original);
+    }
   });
 });

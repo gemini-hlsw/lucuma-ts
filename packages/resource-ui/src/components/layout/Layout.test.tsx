@@ -8,6 +8,7 @@ import '@/styles/main.css';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
 
+import { fakeJwt, namedUser } from '@/test/factories';
 import { chooseClock, chooseSite, openAppMenu } from '@/test/helpers';
 import { renderApp } from '@/test/renderApp';
 import { contrastRatio, pixelOver, resolvedSize, ROOT_FONT_SIZE } from '@/test/styleProbe';
@@ -16,18 +17,15 @@ import Layout from './Layout';
 import { SIDEBAR_MENU_SECTIONS } from './SidebarMenu';
 
 const ALL_ITEMS = SIDEBAR_MENU_SECTIONS.flatMap((section) => section.items);
-
-/** Stand-in pages: the subject is the shell, not what each view does with its own width. */
 const CHILD_ROUTES = ALL_ITEMS.map((item) => ({ path: item.to.slice(1), element: <div>{item.label} page</div> }));
 
 const PHONE = { width: 390, height: 844 };
 const DESKTOP = { width: 1024, height: 768 };
+const LONG_NAME = 'Bartholomew Fitzwilliams Oyelaran-Smythe';
 
-async function renderShell(route = '/night?site=GS'): Promise<Awaited<ReturnType<typeof renderApp>>> {
-  return renderApp({ element: <Layout />, route, path: '/', childRoutes: CHILD_ROUTES });
+async function renderShell(route = '/night?site=GS', token?: string): Promise<Awaited<ReturnType<typeof renderApp>>> {
+  return renderApp({ element: <Layout />, route, path: '/', childRoutes: CHILD_ROUTES, token });
 }
-
-/** The two navigations share a name because only one is ever exposed; the class holds both at once. */
 function navigations(container: HTMLElement): { sidebar: Element; bottom: Element } {
   const sidebar = container.querySelector('aside');
   const bottom = container.querySelector('.xp-bottomnav');
@@ -38,12 +36,10 @@ function navigations(container: HTMLElement): { sidebar: Element; bottom: Elemen
 
 describe(Layout, () => {
   beforeAll(() => {
-    // The lucuma-ui theme is scoped under `.dark`, the way `main.tsx` scopes it.
     document.documentElement.classList.add('dark');
   });
 
   it('leaves the root where the browser put it - DESIGN.md One-Number Rule', () => {
-    // An absolute px root would pin every rem and silently disable the reader's own font-size setting.
     expect(getComputedStyle(document.documentElement).fontSize).toBe(ROOT_FONT_SIZE);
   });
 
@@ -68,8 +64,6 @@ describe(Layout, () => {
 
     await chooseSite(screen, 'GN');
     await expect.poll(() => screen.router.state.location.search).toContain('site=GN');
-
-    // The popup renders into document.body, so the helpers reach it through `page`.
     await chooseClock(screen, 'UTC');
     await openAppMenu(screen);
     await expect
@@ -87,7 +81,6 @@ describe(Layout, () => {
 
     const masthead = screen.container.querySelector('header.xp-masthead');
     expect(masthead).not.toBeNull();
-    // The shell is `overflow-x: hidden`, so anything wider than the viewport is unreachable, not scrollable.
     expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(window.innerWidth);
     expect(masthead!.scrollWidth).toBe(masthead!.clientWidth);
   });
@@ -102,7 +95,6 @@ describe(Layout, () => {
     const banner = screen.getByTestId('env-banner');
     await expect.element(banner).toBeVisible();
     const element = banner.element() as HTMLElement;
-    // A full-width strip: no width can clip it, which is what the badge could not promise.
     expect(element.innerText.trim()).toBe('DEVELOPMENT');
     const box = element.getBoundingClientRect();
     expect(box.left).toBe(0);
@@ -113,7 +105,6 @@ describe(Layout, () => {
     const screen = await renderShell();
 
     const banner = screen.getByTestId('env-banner').element() as HTMLElement;
-    // Dense is the floor below which informative text must take the foreground tone.
     expect(getComputedStyle(banner).fontSize).toBe(resolvedSize('--text-xs'));
   });
 
@@ -139,7 +130,6 @@ describe(Layout, () => {
 
     const banner = screen.container.querySelector<HTMLElement>('.xp-env-banner')!;
     const style = getComputedStyle(banner);
-    // The accent is translucent, so the fill is what it composites to over the page behind it.
     const fill = pixelOver(style.backgroundColor, getComputedStyle(document.body).backgroundColor);
     const ink = pixelOver(style.color, `rgb(${fill[0]} ${fill[1]} ${fill[2]})`);
 
@@ -152,18 +142,14 @@ describe(Layout, () => {
 
     const bar = screen.container.querySelector('.xp-bottomnav')!;
     const active = bar.querySelector<HTMLElement>('a[aria-current="page"]')!;
-    // The ring is a keyboard affordance, and `:focus-visible` follows the last input modality.
     await userEvent.tab();
     active.focus();
     expect(active.matches(':focus-visible')).toBe(true);
-
-    // The ring is the one inset shadow among the focus utilities' layers.
     const ring = /rgba?\([^)]*\)(?=[^,]*inset)/.exec(getComputedStyle(active).boxShadow)?.[0];
     expect(ring).toBeDefined();
 
     const barBackground = getComputedStyle(bar).backgroundColor;
     const fill = pixelOver(getComputedStyle(active).backgroundColor, barBackground);
-    // WCAG 1.4.11: a UI part needs 3:1 against what it sits on, and the active item's fill is that.
     expect(contrastRatio(pixelOver(ring!, barBackground), fill)).toBeGreaterThanOrEqual(3);
   });
 
@@ -174,7 +160,6 @@ describe(Layout, () => {
     const labels = [...screen.container.querySelectorAll<HTMLElement>('.xp-bottomnav-item > span')];
     expect(labels).toHaveLength(ALL_ITEMS.length);
     for (const label of labels) {
-      // WCAG 1.4.12: a reader's own spacing must not cost a destination its name.
       label.style.letterSpacing = '0.12em';
       label.style.wordSpacing = '0.16em';
       label.style.lineHeight = '1.5';
@@ -189,8 +174,37 @@ describe(Layout, () => {
     const menu = screen.getByRole('button', { name: 'Menu' }).element().getBoundingClientRect();
     const masthead = screen.container.querySelector('header.xp-masthead')!;
     expect(menu.width).toBe(44);
-    // The bar, not the glyph, is what caps the height.
     expect(menu.height).toBeCloseTo(masthead.getBoundingClientRect().height, 0);
+  });
+
+  it('gives every app-menu row one height, the way Explore does', async () => {
+    await page.viewport(DESKTOP.width, DESKTOP.height);
+    const screen = await renderShell();
+    await openAppMenu(screen);
+
+    const heights = [...page.getByRole('menu').element().children]
+      .filter((row) => row.getAttribute('role') !== 'separator')
+      .map((row) => row.getBoundingClientRect().height);
+    expect(heights.length).toBeGreaterThan(3);
+    expect(new Set(heights).size).toBe(1);
+  });
+
+  it('dims an app-menu glyph at rest and brightens it with its row', async () => {
+    await page.viewport(DESKTOP.width, DESKTOP.height);
+    const screen = await renderShell();
+    await openAppMenu(screen);
+    const row = page.getByRole('menuitemradio', { name: 'Clock: Site time', exact: true }).element();
+    const icon = row.querySelector('svg')!;
+    const label = row.querySelector<HTMLElement>('.p-menuitem-text')!;
+    const alpha = (colour: string): number => {
+      const parts = /^rgba?\(([^)]+)\)$/u.exec(colour)?.[1]?.split(',') ?? [];
+      return parts.length === 4 ? Number.parseFloat(parts[3]!) : 1;
+    };
+    expect(alpha(getComputedStyle(icon).color)).toBeLessThan(alpha(getComputedStyle(label).color));
+
+    await userEvent.hover(row);
+
+    expect(alpha(getComputedStyle(icon).color)).toBe(alpha(getComputedStyle(label).color));
   });
 
   it('shows the phone bar and no sidebar below `md`', async () => {
@@ -223,8 +237,6 @@ describe(Layout, () => {
 
     const brand = screen.getByRole('link', { name: 'Resource', exact: false }).element().getBoundingClientRect();
     const site = screen.getByRole('group', { name: 'Site' }).element().getBoundingClientRect();
-
-    // Site is identity, so it shares the wordmark's band at every width: one bar, never two rows.
     expect(site.top).toBeLessThan(brand.bottom);
     expect(site.bottom).toBeGreaterThan(brand.top);
   });
@@ -232,8 +244,6 @@ describe(Layout, () => {
   it('exposes exactly one Primary navigation to assistive tech at either width', async () => {
     await page.viewport(PHONE.width, PHONE.height);
     const screen = await renderShell();
-
-    // Two named navs at one width would double-announce; the role query reads the accessibility tree, not pixels.
     const nav = screen.getByRole('navigation', { name: 'Primary navigation', exact: true });
     await expect.poll(() => nav.elements().length).toBe(1);
     expect(nav.element()).toBe(screen.container.querySelector('.xp-bottomnav'));
@@ -248,14 +258,37 @@ describe(Layout, () => {
     const screen = await renderShell();
 
     const account = screen.getByTestId('account-control').element();
-    const name = [...account.querySelectorAll('span')].find((span) => span.textContent === 'Guest User');
+    const name = [...account.querySelectorAll('span')].find((span) => span.textContent === 'Not signed in');
     expect(name).toBeDefined();
-    // Visually yielded but still in the accessibility tree: sr-only, never `display: none`.
     expect(getComputedStyle(name!).display).not.toBe('none');
     expect(name!.getBoundingClientRect().width).toBeLessThanOrEqual(2);
 
     await screen.getByRole('button', { name: 'Menu' }).click();
-    await expect.element(page.getByRole('menu').getByText('Guest User', { exact: true })).toBeVisible();
+    await expect.element(page.getByRole('menu').getByText('Not signed in', { exact: true })).toBeVisible();
+  });
+
+  it.each([
+    [320, 568],
+    [PHONE.width, PHONE.height],
+    [768, 1024],
+    [DESKTOP.width, DESKTOP.height],
+  ])('keeps the bar inside a %ix%i viewport with a long name signed in', async (width, height) => {
+    await page.viewport(width, height);
+    const screen = await renderShell('/night?site=GS', fakeJwt(namedUser(LONG_NAME)));
+
+    await expect.element(screen.getByTestId('account-control')).toHaveAttribute('title', LONG_NAME);
+    const masthead = screen.container.querySelector('header.xp-masthead')!;
+    expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(window.innerWidth);
+    expect(masthead.scrollWidth).toBe(masthead.clientWidth);
+  });
+
+  it('gives a long name an ellipsis rather than letting it push the menu off the bar', async () => {
+    await page.viewport(DESKTOP.width, DESKTOP.height);
+    const screen = await renderShell('/night?site=GS', fakeJwt(namedUser(LONG_NAME)));
+
+    const name = screen.container.querySelector<HTMLElement>('.xp-account-name')!;
+    expect(getComputedStyle(name).textOverflow).toBe('ellipsis');
+    expect(name.scrollWidth).toBeGreaterThan(name.clientWidth);
   });
 
   it('shows the account name on the bar at `md` and up, and heads the menu with it too', async () => {
@@ -263,12 +296,10 @@ describe(Layout, () => {
     const screen = await renderShell();
 
     const account = screen.getByTestId('account-control').element();
-    const name = [...account.querySelectorAll('span')].find((span) => span.textContent === 'Guest User');
+    const name = [...account.querySelectorAll('span')].find((span) => span.textContent === 'Not signed in');
     expect(name).toBeDefined();
     expect(name!.getBoundingClientRect().width).toBeGreaterThan(10);
-
-    // The menu names its account at every width: with sign-out coming, the header is where it acts.
     await openAppMenu(screen);
-    await expect.element(page.getByRole('menu').getByText('Guest User', { exact: true })).toBeVisible();
+    await expect.element(page.getByRole('menu').getByText('Not signed in', { exact: true })).toBeVisible();
   });
 });

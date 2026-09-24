@@ -68,6 +68,48 @@ the clock toggle, finder scoping) are DESIGN.md's. The mechanics:
   override, so a new link needs no convention, only the helper where it wants site and night.
 - Site scoping for the finder pages comes from `app/useSiteSpan.ts`.
 
+## Auth mechanics
+
+The masthead says who is signed in and the app menu holds the login and the logout. No view is
+gated on a session - a signed-out reader can open every one - and what a session buys today is
+one header on every Resource request (`ENDPOINTS.md`, "The endpoint").
+
+- **The token lives in common-ui's `odbTokenAtom`**, a sessionStorage-backed Jotai atom, and the
+  app reaches it - and `userAtom`, `isLoggedInAtom`, `sessionStatusAtom` - only through
+  `@/components/atoms/auth`. **`app/preference.ts` is not for it**: a session is not a reader's
+  habit and must not outlive the tab.
+- **`src/auth/session.ts` is the one session keeper** - a module-level controller over the shared
+  store (`components/atoms/store.ts`). It bootstraps from the SSO cookie, re-refreshes from the
+  token's own `exp`, keeps one request in flight, and backs off only when SSO is unreachable (30 s
+  doubling to 16 min, with or without a token); a rejected refresh signs the reader out and arms
+  no timer, though refocusing the tab still asks SSO for the cookie once 30 s have passed since
+  the last attempt, which is how a session started in another lucuma.xyz tab gets picked up; a
+  token leaves the store when its `exp` passes, at once if it is restored or arrives expired
+  (with a console warning when SSO issued it that way), and the auth link also checks `exp`
+  itself because a sleeping tab fires that timer late; `signOut` tears the keeper down whether or
+  not SSO answers, so only a full page load can sign the reader back in.
+  Non-React callers - the Apollo auth link, `signOut` - read the store directly rather than a hook.
+- **`auth/AuthSession.tsx` starts that keeper once**, wrapped around `<App />` in `main.tsx`. It
+  holds the app back until the first check settles and refetches every active query when the
+  reader signs in or out, so no Resource request goes out before the bearer is known. While that
+  check is out the page renders nothing, and there is no client-side timeout: a hung SSO answer
+  leaves it blank until the browser gives up.
+- **Tests sign in through `renderApp`**: `renderApp({ token: fakeJwt(standardUser('staff')) })`
+  (`src/test/factories.ts`). Every test starts signed out because `src/test/setup.ts` resets the
+  session before it (it clears localStorage, then writes `odbTokenAtom` null - overwriting the
+  token in sessionStorage - and `sessionCheckedAtom` false on the shared store); each render then
+  hydrates the shared store (`components/atoms/store.ts`), the one `authLink` and `signOut` read,
+  with the token and `sessionCheckedAtom` on top of that. Two trees rendered in one test share that
+  session, and the later `renderApp` call sets it.
+- **The SSO host is absolute in every environment** (`app/environment.ts`'s `ssoUri`) - the cookie
+  flows cannot go through the dev-server proxy. Each SSO host admits origins under its own domain
+  and refuses the rest: staging's `sso-test.gpp.gemini.edu` answers `gemini.edu` and not
+  `resource-staging.lucuma.xyz`, so staging reads signed out until that host is admitted, and
+  neither host answers a `localhost` origin, so `pnpm resource-ui dev` reads signed out (the
+  blocked refresh takes the unreachable path and retries on its backoff). `dev:https` with
+  `local.lucuma.xyz` aliased in `/etc/hosts` is the way in (README, "Signing in locally"): the
+  name is admitted, and https is what lets the browser send the `SameSite=Strict` cookie.
+
 ## The views
 
 **Do not give a view its own path from records to pixels.** Every view projects from the placed rows
@@ -192,7 +234,14 @@ changing the schema. What follows is the half that is this app's, plus the rules
   hardware. The cache lock that enforces this is under "Gotchas" above.
 - **No new schema type without a requirement behind it**: a column in the workbook, a line in the
   scheduler contract, or a request from Bryan or Andrew.
-- **One capability per commit**, with its tests.
+- **One capability per commit**, with its tests. The message is one concise Conventional Commits
+  subject that says what the commit did (`feat(resource-ui): sign in and out from the app menu`), no
+  body unless it states a fact the diff cannot show. Fold fixes and test additions into the commit
+  they belong to before opening a PR, so history reads as capabilities, and never add AI or tool
+  attribution trailers.
+- **Comments are the exception, not the default.** Ship code with none; add one sentence only where
+  the code cannot carry a constraint from outside the file (a library quirk, a rejected approach and
+  why). Never history, attribution, session talk, or a restatement of what the code says.
 
 ## Testing
 
@@ -263,7 +312,9 @@ mechanic it does not carry:
   each step carries the `line-height` and `vertical-align` correction that keeps the glyph on the
   text's baseline, which a hand-rolled em utility gets wrong. **In the masthead, add `widthAuto`** -
   FontAwesome 7 pads every icon to a fixed 1.25em canvas and the bar cannot spare that width. Leave
-  it padded in the app menu, where it aligns the icon column.
+  it padded in the app menu, where it aligns the icon column. The ORCID logo on the login item is an
+  `<img>` with no `size` prop and takes that same box as `h-[1em] w-[1.25em] object-contain`, so it
+  sits in the column.
 
 Prefer Tailwind utilities over CSS files except where Tailwind can't express it (complex selectors,
 keyframes, third-party overrides).

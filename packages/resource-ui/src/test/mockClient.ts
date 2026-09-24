@@ -23,3 +23,14 @@ export const createMockApollo = (before?: ApolloLink): MockApollo => {
   });
   return { client, store, schema };
 };
+
+/** Records the named header on each operation that reaches it, `null` where the operation does not set it. */
+export const captureHeader = (name: string): { link: ApolloLink; sent: (string | null | undefined)[] } => {
+  const sent: (string | null | undefined)[] = [];
+  const link = new ApolloLink((operation, forward) => {
+    const headers = (operation.getContext().headers ?? {}) as Record<string, string>;
+    sent.push(Object.hasOwn(headers, name) ? headers[name] : null);
+    return forward(operation);
+  });
+  return { link, sent };
+};

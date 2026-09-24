@@ -26,10 +26,20 @@ allowed to decide `dataAvailable`.
 One path everywhere a client sees: **`/resource/graphql`**. The deployed frontend maps
 its own hostname to a service host and appends that path
 (`https://lucuma-resource-dev.lucuma.xyz/resource/graphql`, `…-staging…`), and the dev
-proxy carries the same path, so the real service must serve it too. No authentication in
-v1 - the mock allows everything and the frontend sends no credentials; aligning the
-PoC's per-field auth with that intent is backend work. No subscriptions, no mutations:
-v1 is read-only, and consumers re-query.
+proxy carries the same path, so the real service must serve it too.
+
+**Authentication is part of v1**, through GPP SSO. The frontend sends one header,
+`Authorization: Bearer <JWT>`, on every request while an SSO session is active, and no
+header at all when nobody is signed in; the JWT is the SSO one the ODB already takes, so
+the service validates it the same way. The deployed service (dev and staging) currently
+serves introspection anonymously, and a request without that header sees a schema with none of
+the data fields: `{ publishedSemesters }` answers HTTP 422 with
+`No field 'publishedSemesters' for type Query`. The app reads that answer as the API not being
+served, not as a refused session (`liveFailureMessage` in `src/gql/ApolloConfigs.ts`). The
+intended split, still backend work: the published schedule - `publishedSemesters`, the night
+and range projections - is readable without a session, because anyone may see it; anything
+user-specific, and every write once writes exist, requires one. The mock allows everything. No
+subscriptions, no mutations: v1 is read-only, and consumers re-query.
 
 ## The queries
 

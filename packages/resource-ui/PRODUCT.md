@@ -27,9 +27,10 @@ vocabulary: ports, instruments, observing nights, semesters, Gemini North and Ge
 Today they are checking a record; composing one is coming (see Capabilities), and the same
 audiences will do the composing.
 
-There is no authenticated user yet - every visitor is a guest, and the app says so - but
-**authentication is coming soon**, arriving with the write capabilities. Treat a signed-in
-user as a near-term state to design room for, not a hypothetical.
+A reader signs in with a GPP SSO account, backed by ORCID, from the app menu; the masthead
+names whoever is signed in and says "Not signed in" otherwise. No view is gated on a session: a
+signed-out reader can open every destination, and today a session buys the bearer on Resource
+requests and nothing more. Writes will require a session when they arrive.
 
 ## Product Purpose
 
