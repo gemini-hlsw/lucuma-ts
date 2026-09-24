@@ -3,37 +3,46 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { isLoggedInAtom, odbTokenAtom, sessionCheckedAtom, sessionStatusAtom } from '@/components/atoms/auth';
 import { store } from '@/components/atoms/store';
 import { fakeJwt, standardUser } from '@/test/factories';
-import { type PendingSsoCall, ssoCall as call, ssoCalls, stubSso } from '@/test/sso';
+import {
+  type PendingSsoCall,
+  ssoCall as call,
+  ssoCalls,
+  ssoLogout,
+  ssoRefreshes as refreshes,
+  stubSso,
+} from '@/test/sso';
 
 import { pendingRefresh, signOut, startSession } from './session';
 
 let stop: (() => void) | undefined;
 
-const refreshes = (): PendingSsoCall[] => ssoCalls().filter((made) => made.url.includes('/api/v1/refresh-token'));
-
 const tokenFor = (role: 'pi' | 'staff' = 'staff', expiresInSeconds = 3600): string =>
   fakeJwt(standardUser(role), expiresInSeconds);
 
+async function answerRefresh(index: number, response: Parameters<PendingSsoCall['answer']>[0]): Promise<void> {
+  const settled = pendingRefresh();
+  call(index).answer(response);
+  await settled;
+}
+
 beforeEach(() => {
   stubSso();
+  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
 });
 
 afterEach(() => {
   stop?.();
   stop = undefined;
   vi.useRealTimers();
-  vi.unstubAllGlobals();
 });
 
 describe(startSession, () => {
   it('signs a returning reader in from the SSO session cookie', async () => {
     stop = startSession();
-    const settled = pendingRefresh();
     expect(refreshes()).toHaveLength(1);
 
     const token = tokenFor();
-    call(0).answer({ body: token });
-    await settled;
+    await answerRefresh(0, { body: token });
 
     expect(store.get(odbTokenAtom)).toBe(token);
     expect(store.get(isLoggedInAtom)).toBe(true);
@@ -42,10 +51,8 @@ describe(startSession, () => {
 
   it('leaves a visitor signed out, and says the question was asked', async () => {
     stop = startSession();
-    const settled = pendingRefresh();
 
-    call(0).answer({ status: 403 });
-    await settled;
+    await answerRefresh(0, { status: 403 });
 
     expect(store.get(odbTokenAtom)).toBeNull();
     expect(store.get(sessionCheckedAtom)).toBe(true);
@@ -63,7 +70,6 @@ describe(startSession, () => {
   });
 
   it('refreshes at the token own expiry and not a moment earlier', () => {
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
     store.set(odbTokenAtom, tokenFor('staff', 120));
 
     stop = startSession();
@@ -76,16 +82,13 @@ describe(startSession, () => {
   });
 
   it('collapses two triggers inside one window into one request', async () => {
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
     store.set(odbTokenAtom, tokenFor('staff', 20));
 
     stop = startSession();
     document.dispatchEvent(new Event('visibilitychange'));
-    const settled = pendingRefresh();
     expect(refreshes()).toHaveLength(1);
 
-    call(0).answer({ body: tokenFor('staff', 20) });
-    await settled;
+    await answerRefresh(0, { body: tokenFor('staff', 20) });
 
     document.dispatchEvent(new Event('visibilitychange'));
     expect(refreshes()).toHaveLength(1);
@@ -98,7 +101,6 @@ describe(startSession, () => {
   });
 
   it('keeps one in-flight refresh when a second trigger crosses the retry floor before it lands', async () => {
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
     store.set(odbTokenAtom, tokenFor('staff', 120));
 
     stop = startSession();
@@ -121,17 +123,14 @@ describe(startSession, () => {
   });
 
   it('keeps a still-valid token when SSO cannot be reached, and waits out the backoff', async () => {
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
     const token = tokenFor('staff', 20);
     store.set(odbTokenAtom, token);
 
     stop = startSession();
     vi.advanceTimersByTime(1);
-    const settled = pendingRefresh();
     expect(refreshes()).toHaveLength(1);
 
-    call(0).answer({ status: 500 });
-    await settled;
+    await answerRefresh(0, { status: 500 });
 
     expect(store.get(odbTokenAtom)).toBe(token);
 
@@ -143,14 +142,11 @@ describe(startSession, () => {
   });
 
   it('doubles the backoff on each unreachable answer and caps it at 16 minutes', async () => {
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
     store.set(odbTokenAtom, tokenFor('staff', 20));
 
     stop = startSession();
     vi.advanceTimersByTime(1);
-    let settled = pendingRefresh();
-    call(0).answer({ status: 500 });
-    await settled;
+    await answerRefresh(0, { status: 500 });
 
     const expectedDelaysMs = [30_000, 60_000, 120_000, 240_000, 480_000, 960_000, 960_000];
     for (const [round, delayMs] of expectedDelaysMs.entries()) {
@@ -160,33 +156,24 @@ describe(startSession, () => {
       vi.advanceTimersByTime(1);
       expect(refreshes()).toHaveLength(round + 2);
 
-      settled = pendingRefresh();
-      call(round + 1).answer({ status: 500 });
-      await settled;
+      await answerRefresh(round + 1, { status: 500 });
     }
 
     expect(store.get(odbTokenAtom)).toBeNull();
   });
 
   it('resets the backoff once a refresh finally succeeds, rather than keeping the wait it grew to', async () => {
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
     store.set(odbTokenAtom, tokenFor('staff', 20));
 
     stop = startSession();
     vi.advanceTimersByTime(1);
-    let settled = pendingRefresh();
-    call(0).answer({ status: 500 });
-    await settled;
+    await answerRefresh(0, { status: 500 });
 
     vi.advanceTimersByTime(30_000);
-    settled = pendingRefresh();
-    call(1).answer({ status: 500 });
-    await settled;
+    await answerRefresh(1, { status: 500 });
 
     vi.advanceTimersByTime(60_000);
-    settled = pendingRefresh();
-    call(2).answer({ body: tokenFor('staff', 1) });
-    await settled;
+    await answerRefresh(2, { body: tokenFor('staff', 1) });
 
     vi.advanceTimersByTime(29_999);
     expect(refreshes()).toHaveLength(3);
@@ -196,15 +183,12 @@ describe(startSession, () => {
   });
 
   it('re-arms without storming when the fresh token expires when the old one did', async () => {
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
     const token = tokenFor('staff', 20);
     store.set(odbTokenAtom, token);
 
     stop = startSession();
     vi.advanceTimersByTime(1);
-    const settled = pendingRefresh();
-    call(0).answer({ body: token });
-    await settled;
+    await answerRefresh(0, { body: token });
 
     vi.advanceTimersByTime(29_000);
     expect(refreshes()).toHaveLength(1);
@@ -214,14 +198,10 @@ describe(startSession, () => {
   });
 
   it('asks a visitor with no session once, and not again when the backoff windows go by', async () => {
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
-
     stop = startSession();
-    const settled = pendingRefresh();
     expect(refreshes()).toHaveLength(1);
 
-    call(0).answer({ status: 403 });
-    await settled;
+    await answerRefresh(0, { status: 403 });
 
     expect(store.get(odbTokenAtom)).toBeNull();
     expect(store.get(sessionCheckedAtom)).toBe(true);
@@ -231,14 +211,10 @@ describe(startSession, () => {
   });
 
   it('drops a token that cannot be decoded, rather than holding it with no timer', async () => {
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
-
     stop = startSession();
-    const settled = pendingRefresh();
     expect(refreshes()).toHaveLength(1);
 
-    call(0).answer({ body: 'header.payload.signature' });
-    await settled;
+    await answerRefresh(0, { body: 'header.payload.signature' });
     vi.advanceTimersByTime(0);
 
     expect(store.get(odbTokenAtom)).toBeNull();
@@ -250,53 +226,40 @@ describe(startSession, () => {
   });
 
   it('drops a token SSO hands back already expired, and arms no timer for it', async () => {
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
     const warned = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 
-    try {
-      stop = startSession();
-      const settled = pendingRefresh();
-      expect(refreshes()).toHaveLength(1);
+    stop = startSession();
+    expect(refreshes()).toHaveLength(1);
 
-      call(0).answer({ body: tokenFor('staff', -60) });
-      await settled;
-      vi.advanceTimersByTime(0);
+    await answerRefresh(0, { body: tokenFor('staff', -60) });
+    vi.advanceTimersByTime(0);
 
-      expect(store.get(odbTokenAtom)).toBeNull();
-      expect(store.get(sessionStatusAtom)).toBe('signed-out');
-      expect(store.get(sessionCheckedAtom)).toBe(true);
-      expect(warned).toHaveBeenCalledTimes(1);
-      expect(warned).toHaveBeenCalledWith(expect.stringMatching(/ahead of the server/));
+    expect(store.get(odbTokenAtom)).toBeNull();
+    expect(store.get(sessionStatusAtom)).toBe('signed-out');
+    expect(store.get(sessionCheckedAtom)).toBe(true);
+    expect(warned).toHaveBeenCalledTimes(1);
+    expect(warned).toHaveBeenCalledWith(expect.stringMatching(/ahead of the server/));
 
-      vi.advanceTimersByTime(60 * 60_000);
-      expect(refreshes()).toHaveLength(1);
-    } finally {
-      warned.mockRestore();
-    }
+    vi.advanceTimersByTime(60 * 60_000);
+    expect(refreshes()).toHaveLength(1);
   });
 
   it('treats a stored undecodable token as no token at bootstrap', async () => {
     store.set(odbTokenAtom, 'header.payload.signature');
 
     stop = startSession();
-    const settled = pendingRefresh();
     expect(refreshes()).toHaveLength(1);
 
-    call(0).answer({ status: 403 });
-    await settled;
+    await answerRefresh(0, { status: 403 });
 
     expect(store.get(odbTokenAtom)).toBeNull();
   });
 
   it('asks again on the backoff when SSO is unreachable for a visitor with no token', async () => {
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
-
     stop = startSession();
-    const settled = pendingRefresh();
     expect(refreshes()).toHaveLength(1);
 
-    call(0).answer({ status: 500 });
-    await settled;
+    await answerRefresh(0, { status: 500 });
 
     expect(store.get(odbTokenAtom)).toBeNull();
     expect(store.get(sessionCheckedAtom)).toBe(true);
@@ -309,15 +272,12 @@ describe(startSession, () => {
   });
 
   it('signs the reader out when a refresh is rejected', async () => {
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
     store.set(odbTokenAtom, tokenFor('staff', 20));
 
     stop = startSession();
     vi.advanceTimersByTime(1);
-    const settled = pendingRefresh();
 
-    call(0).answer({ status: 401 });
-    await settled;
+    await answerRefresh(0, { status: 401 });
 
     expect(store.get(odbTokenAtom)).toBeNull();
     expect(store.get(sessionCheckedAtom)).toBe(true);
@@ -327,25 +287,23 @@ describe(startSession, () => {
   });
 
   it('refreshes a token past its deadline as soon as the tab is looked at again', async () => {
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
     store.set(odbTokenAtom, tokenFor('staff', 20));
 
     stop = startSession();
     document.dispatchEvent(new Event('visibilitychange'));
-    const settled = pendingRefresh();
     expect(refreshes()).toHaveLength(1);
 
-    call(0).answer({ status: 500 });
-    await settled;
+    await answerRefresh(0, { status: 500 });
 
     document.dispatchEvent(new Event('visibilitychange'));
 
     expect(refreshes()).toHaveLength(1);
   });
 
-  it('waits rather than firing at once for a token that expires months from now', () => {
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
-    store.set(odbTokenAtom, tokenFor('staff', 60 * 24 * 60 * 60));
+  it('holds a token that expires months from now past the longest timer, refreshing at the cap and dropping it at expiry', () => {
+    const lifetimeMs = 30 * 24 * 60 * 60_000;
+    const token = tokenFor('staff', lifetimeMs / 1000);
+    store.set(odbTokenAtom, token);
 
     stop = startSession();
 
@@ -354,6 +312,10 @@ describe(startSession, () => {
 
     vi.advanceTimersByTime(1);
     expect(refreshes()).toHaveLength(1);
+    expect(store.get(odbTokenAtom)).toBe(token);
+
+    vi.advanceTimersByTime(lifetimeMs - 2_147_483_647);
+    expect(store.get(odbTokenAtom)).toBeNull();
   });
 
   it('aborts the refresh it started when it is stopped, and changes nothing afterwards', async () => {
@@ -372,7 +334,6 @@ describe(startSession, () => {
   });
 
   it('settles and reports when a token subscriber throws, instead of rejecting the refresh', async () => {
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
     const reported = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     const unsubscribe = store.sub(odbTokenAtom, () => {
       throw new Error('a token subscriber failed');
@@ -380,11 +341,9 @@ describe(startSession, () => {
 
     try {
       stop = startSession();
-      const settled = pendingRefresh();
       const token = tokenFor('staff', 20);
 
-      call(0).answer({ body: token });
-      await settled;
+      await answerRefresh(0, { body: token });
 
       expect(store.get(odbTokenAtom)).toBe(token);
       expect(store.get(sessionCheckedAtom)).toBe(true);
@@ -394,7 +353,6 @@ describe(startSession, () => {
       expect(refreshes()).toHaveLength(2);
     } finally {
       unsubscribe();
-      reported.mockRestore();
     }
   });
 
@@ -420,18 +378,15 @@ describe(startSession, () => {
   });
 
   it('drops a stored token that has already expired at once, and stops asking when SSO will not renew it', async () => {
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
     store.set(odbTokenAtom, tokenFor('staff', -60));
 
     stop = startSession();
-    const settled = pendingRefresh();
     expect(refreshes()).toHaveLength(1);
 
     vi.advanceTimersByTime(0);
     expect(store.get(odbTokenAtom)).toBeNull();
 
-    call(0).answer({ status: 403 });
-    await settled;
+    await answerRefresh(0, { status: 403 });
 
     expect(store.get(sessionStatusAtom)).toBe('signed-out');
     expect(store.get(odbTokenAtom)).toBeNull();
@@ -441,15 +396,12 @@ describe(startSession, () => {
   });
 
   it('drops a token once it expires while SSO is unreachable, and keeps asking on the backoff', async () => {
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
     const token = tokenFor('staff', 20);
     store.set(odbTokenAtom, token);
 
     stop = startSession();
     vi.advanceTimersByTime(1);
-    let settled = pendingRefresh();
-    call(0).answer({ status: 500 });
-    await settled;
+    await answerRefresh(0, { status: 500 });
     expect(store.get(odbTokenAtom)).toBe(token);
 
     vi.advanceTimersByTime(20_000);
@@ -457,10 +409,8 @@ describe(startSession, () => {
     expect(store.get(sessionStatusAtom)).toBe('signed-out');
 
     vi.advanceTimersByTime(10_000);
-    settled = pendingRefresh();
     expect(refreshes()).toHaveLength(2);
-    call(1).answer({ status: 500 });
-    await settled;
+    await answerRefresh(1, { status: 500 });
 
     expect(store.get(odbTokenAtom)).toBeNull();
 
@@ -469,19 +419,14 @@ describe(startSession, () => {
   });
 
   it('does not let a tab focus inside the backoff window pull the retry forward', async () => {
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
     store.set(odbTokenAtom, tokenFor('staff', 20));
 
     stop = startSession();
     vi.advanceTimersByTime(1);
-    let settled = pendingRefresh();
-    call(0).answer({ status: 500 });
-    await settled;
+    await answerRefresh(0, { status: 500 });
 
     vi.advanceTimersByTime(30_000);
-    settled = pendingRefresh();
-    call(1).answer({ status: 500 });
-    await settled;
+    await answerRefresh(1, { status: 500 });
 
     vi.advanceTimersByTime(31_000);
     document.dispatchEvent(new Event('visibilitychange'));
@@ -492,7 +437,6 @@ describe(startSession, () => {
   });
 
   it('reports signed-out once the token expires mid-refresh, and signed-in again when the refresh lands', async () => {
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
     store.set(odbTokenAtom, tokenFor('staff', 20));
 
     stop = startSession();
@@ -505,30 +449,12 @@ describe(startSession, () => {
     expect(store.get(odbTokenAtom)).toBeNull();
     expect(store.get(sessionStatusAtom)).toBe('signed-out');
 
-    const settled = pendingRefresh();
-    call(0).answer({ body: tokenFor('staff', 20) });
-    await settled;
+    await answerRefresh(0, { body: tokenFor('staff', 20) });
 
     expect(store.get(sessionStatusAtom)).toBe('signed-in');
   });
 
-  it('keeps a token that expires months from now past the longest timer, and drops it once it expires', () => {
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
-    const lifetimeMs = 30 * 24 * 60 * 60_000;
-    const token = tokenFor('staff', lifetimeMs / 1000);
-    store.set(odbTokenAtom, token);
-
-    stop = startSession();
-
-    vi.advanceTimersByTime(2_147_483_647);
-    expect(store.get(odbTokenAtom)).toBe(token);
-
-    vi.advanceTimersByTime(lifetimeMs - 2_147_483_647);
-    expect(store.get(odbTokenAtom)).toBeNull();
-  });
-
   it('leaves the token alone once stopped before it expires', () => {
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
     const token = tokenFor('staff', 20);
     store.set(odbTokenAtom, token);
 
@@ -543,7 +469,6 @@ describe(startSession, () => {
 
 describe(signOut, () => {
   it('discards a refresh already in flight when signOut runs, and arms no new timer once it lands', async () => {
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
     store.set(odbTokenAtom, tokenFor('staff', 20));
 
     stop = startSession();
@@ -556,8 +481,7 @@ describe(signOut, () => {
 
     call(0).answer({ body: tokenFor('pi') });
     await late;
-    const logoutCall = ssoCalls().find((made) => made.url.includes('/api/v1/logout'));
-    logoutCall?.answer({ status: 200 });
+    ssoLogout().answer({ status: 200 });
 
     expect(await signedOut).toEqual({ reachedSso: true });
     expect(store.get(odbTokenAtom)).toBeNull();
@@ -568,15 +492,12 @@ describe(signOut, () => {
   });
 
   it('settles the session as signed out when the reader signs out mid-bootstrap', async () => {
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
     stop = startSession();
     const bootstrap = pendingRefresh();
     expect(refreshes()).toHaveLength(1);
 
     const signedOut = signOut();
-    ssoCalls()
-      .find((made) => made.url.includes('/api/v1/logout'))
-      ?.answer({ status: 200 });
+    ssoLogout().answer({ status: 200 });
     expect(await signedOut).toEqual({ reachedSso: true });
 
     call(0).answer({ body: tokenFor() });
@@ -592,12 +513,10 @@ describe(signOut, () => {
 
   it('still signs the reader out here when SSO refuses the logout', async () => {
     stop = startSession();
-    call(0).answer({ status: 403 });
-    await pendingRefresh();
+    await answerRefresh(0, { status: 403 });
 
     const signedOut = signOut();
-    const logoutCall = ssoCalls().find((made) => made.url.includes('/api/v1/logout'));
-    logoutCall?.answer({ status: 500, body: 'no session' });
+    ssoLogout().answer({ status: 500, body: 'no session' });
 
     expect(await signedOut).toEqual({ reachedSso: false });
     expect(store.get(odbTokenAtom)).toBeNull();
@@ -614,29 +533,24 @@ describe(signOut, () => {
 
     try {
       const signedOut = signOut();
-      const logoutCall = ssoCalls().find((made) => made.url.includes('/api/v1/logout'));
-      logoutCall?.answer({ status: 200 });
+      ssoLogout().answer({ status: 200 });
 
       expect(await signedOut).toEqual({ reachedSso: true });
       expect(store.get(odbTokenAtom)).toBeNull();
       expect(store.get(sessionCheckedAtom)).toBe(true);
-      expect(logoutCall).toBeDefined();
       expect(reported).toHaveBeenCalledTimes(1);
     } finally {
       unsubscribe();
-      reported.mockRestore();
     }
   });
 
   it('keeps the reader signed out when the tab is looked at again after a failed logout', async () => {
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
     store.set(odbTokenAtom, tokenFor('staff', 20));
 
     stop = startSession();
 
     const signedOut = signOut();
-    const logoutCall = ssoCalls().find((made) => made.url.includes('/api/v1/logout'));
-    logoutCall?.answer({ status: 500 });
+    ssoLogout().answer({ status: 500 });
     expect(await signedOut).toEqual({ reachedSso: false });
 
     document.dispatchEvent(new Event('visibilitychange'));

@@ -1,9 +1,6 @@
-import { displayName } from '@gemini-hlsw/lucuma-common-ui';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { fakeJwt, standardUser } from '@/test/factories';
-import { Probe } from '@/test/probe';
-import { renderApp } from '@/test/renderApp';
 
 import {
   isLoggedInAtom,
@@ -12,7 +9,6 @@ import {
   sessionStatusAtom,
   setToken,
   useSessionStatus,
-  useUser,
 } from './auth';
 import { store } from './store';
 
@@ -50,45 +46,7 @@ describe(useSessionStatus, () => {
   });
 });
 
-describe('renderApp signing a tree in', () => {
-  const openProbe = (options: { token?: string | null; sessionChecked?: boolean }) =>
-    renderApp({
-      route: '/',
-      element: (
-        <Probe
-          use={() => ({ user: useUser(), status: useSessionStatus() })}
-          readout={({ user, status }) => ({ user: user ? displayName(user) : 'none', status })}
-        />
-      ),
-      ...options,
-    });
-
-  it('shows the signed-in user and status for a valid token', async () => {
-    const screen = await openProbe({ token: fakeJwt(standardUser('staff')) });
-
-    await expect.element(screen.getByTestId('probe-user')).toHaveTextContent('Ada Lovelace');
-    await expect.element(screen.getByTestId('probe-status')).toHaveTextContent('signed-in');
-  });
-
-  it('shows no user and signed-out with no token', async () => {
-    const screen = await openProbe({});
-
-    await expect.element(screen.getByTestId('probe-user')).toHaveTextContent('none');
-    await expect.element(screen.getByTestId('probe-status')).toHaveTextContent('signed-out');
-  });
-
-  it('shows checking while the session has not been checked yet', async () => {
-    const screen = await openProbe({ sessionChecked: false });
-
-    await expect.element(screen.getByTestId('probe-status')).toHaveTextContent('checking');
-  });
-});
-
 describe(setToken, () => {
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
   it('holds the session for the tab when storage refuses to persist it', () => {
     const jwt = fakeJwt(standardUser('staff'));
     vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {

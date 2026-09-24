@@ -3,34 +3,11 @@ import '@/styles/main.css';
 
 import { beforeAll, describe, expect, it } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
-import { render } from 'vitest-browser-react';
 
-import {
-  contentBoxHeight,
-  contrastRatio,
-  lastTextLineRect,
-  pixelOver,
-  type Rgb,
-  ROOT_FONT_SIZE,
-} from '@/test/styleProbe';
+import { expectCopyButtonBesideLastToken, expectVersionOnOneLine, openDialog, value } from '@/test/aboutDialog';
+import { contrastRatio, pixelOver, type Rgb, ROOT_FONT_SIZE } from '@/test/styleProbe';
 
 import { AboutResource } from './AboutResource';
-
-const DESKTOP = { width: 1024, height: 768 };
-
-async function openDialog(): Promise<HTMLElement> {
-  await page.viewport(DESKTOP.width, DESKTOP.height);
-  await render(<AboutResource visible onHide={() => undefined} />);
-  const dialog = page.getByTestId('about-resource');
-  await expect.element(dialog).toBeVisible();
-  return dialog.element() as HTMLElement;
-}
-
-function value(dialog: HTMLElement, caption: string): HTMLElement {
-  const header = [...dialog.querySelectorAll('td[role="rowheader"]')].find((node) => node.textContent === caption);
-  expect(header, `no ${caption} caption`).toBeDefined();
-  return header!.nextElementSibling as HTMLElement;
-}
 
 function surfaceOf(dialog: HTMLElement): Rgb {
   const content = dialog.querySelector('.p-dialog-content')!;
@@ -80,29 +57,16 @@ describe(AboutResource, () => {
   it('holds the version and its copy button on one line at 1024', async () => {
     const dialog = await openDialog();
 
-    const row = value(dialog, 'Version');
-    const button = row.querySelector('button')!.getBoundingClientRect();
-    expect(contentBoxHeight(row)).toBeCloseTo(button.height, 0);
+    expectVersionOnOneLine(value(dialog, 'Version'));
   });
 
   it.each([
     [320, 568],
     [390, 844],
   ])('keeps the copy button beside the version last token at %ix%i', async (width, height) => {
-    await page.viewport(width, height);
-    await render(<AboutResource visible onHide={() => undefined} />);
-    const dialog = page.getByTestId('about-resource');
-    await expect.element(dialog).toBeVisible();
-    const panel = dialog.element() as HTMLElement;
+    const dialog = await openDialog(width, height);
 
-    const row = value(panel, 'Version');
-    const tail = lastTextLineRect(row);
-    const button = panel.querySelector<HTMLElement>('button[aria-label="Copy version"]')!.getBoundingClientRect();
-
-    expect(button.top).toBeLessThan(tail.bottom);
-    expect(button.bottom).toBeGreaterThan(tail.top);
-    expect(button.left).toBeGreaterThanOrEqual(tail.right);
-    expect(button.height).toBe(28);
+    expectCopyButtonBesideLastToken(value(dialog, 'Version'));
   });
 
   it('capitalises the environment without rewriting the word in the DOM', async () => {

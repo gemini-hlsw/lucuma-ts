@@ -4,7 +4,7 @@ import { Observable } from '@apollo/client/utilities';
 import type { PublishedSemestersQuery } from '@gql/gen/graphql';
 import { Provider as JotaiProvider } from 'jotai';
 import { type JSX, type ReactNode, StrictMode } from 'react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render } from 'vitest-browser-react';
 
 import { isLoggedInAtom, odbTokenAtom, sessionCheckedAtom } from '@/components/atoms/auth';
@@ -12,7 +12,7 @@ import { store } from '@/components/atoms/store';
 import { authLink } from '@/gql/ApolloConfigs';
 import { usePublishedSemesters } from '@/gql/hooks';
 import { fakeJwt, standardUser } from '@/test/factories';
-import { createMockApollo } from '@/test/mockClient';
+import { captureHeader, createMockApollo } from '@/test/mockClient';
 import { ssoCalls, stubSso } from '@/test/sso';
 
 import { AuthSession } from './AuthSession';
@@ -62,13 +62,8 @@ const onSecondRequest = (outcome: ApolloLink.Result | Error): ApolloLink => {
 };
 
 const capturingApollo = (after?: ApolloLink) => {
-  const authorizations: (string | null)[] = [];
-  const capture = new ApolloLink((operation, forward) => {
-    const headers = (operation.getContext().headers ?? {}) as Record<string, string>;
-    authorizations.push(headers.Authorization ?? null);
-    return forward(operation);
-  });
-  const links = after === undefined ? [authLink(), capture] : [authLink(), capture, after];
+  const { link, sent: authorizations } = captureHeader('Authorization');
+  const links = after === undefined ? [authLink(), link] : [authLink(), link, after];
   return { mock: createMockApollo(ApolloLink.from(links)), authorizations };
 };
 
@@ -86,7 +81,7 @@ const renderInSession = (client: ApolloClient, children: ReactNode) =>
 const renderAuthSession = async (children: ReactNode = null, after?: ApolloLink) => {
   const { mock, authorizations } = capturingApollo(after);
   const screen = await renderInSession(mock.client, children);
-  return { screen, authorizations };
+  return { screen, mock, authorizations };
 };
 
 const survivingSsoCall = () => ssoCalls().find((made) => !made.signal?.aborted);
@@ -100,10 +95,6 @@ const signIn = (expiresInSeconds?: number): string => {
 
 beforeEach(() => {
   stubSso();
-});
-
-afterEach(() => {
-  vi.unstubAllGlobals();
 });
 
 describe(AuthSession, () => {
@@ -192,8 +183,7 @@ describe(AuthSession, () => {
 
   it('does not refetch on a token renewal', async () => {
     const token = signIn();
-    const { mock, authorizations } = capturingApollo();
-    const screen = await renderInSession(mock.client, <SemesterCount />);
+    const { screen, mock, authorizations } = await renderAuthSession(<SemesterCount />);
     await expect.element(screen.getByTestId('semesters')).not.toHaveTextContent('loading');
 
     const renewed = fakeJwt(standardUser('staff'), 7200);

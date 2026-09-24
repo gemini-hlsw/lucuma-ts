@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { type LocatorSelectors, page, userEvent } from 'vitest/browser';
 
 import { CURRENT_ENV } from '@/app/environment';
@@ -7,7 +7,7 @@ import { setLastSite } from '@/app/useLastSite';
 import orcidLogo from '@/assets/orcid-logo.svg';
 import { signInUrl } from '@/auth/ssoClient';
 import { setToken } from '@/components/atoms/auth';
-import { fakeJwt, namedUser, standardUser } from '@/test/factories';
+import { fakeJwt, standardUser } from '@/test/factories';
 import { chooseClock, chooseSite, openAppMenu } from '@/test/helpers';
 import { renderApp } from '@/test/renderApp';
 import { ssoCall, stubSso } from '@/test/sso';
@@ -20,8 +20,14 @@ const renderNavbar = async (route = '/') => renderApp({ element: <Navbar />, rou
 const SSO_UNREACHABLE_NOTE = 'Logout did not reach SSO. Close the browser to end the session.';
 const MENU_OWNABLE = ['menuitem', 'menuitemradio', 'menuitemcheckbox', 'group', 'separator'];
 const MENU_FORBIDDEN = ['[role="status"]', '[role="alert"]', '[role="log"]', '[role="none"]', '[aria-live]'];
-const renderSignedIn = async () =>
-  renderApp({ element: <Navbar />, route: '/', token: fakeJwt(standardUser('staff')) });
+
+const logOutFromMenu = async () => {
+  stubSso();
+  const screen = await renderApp({ element: <Navbar />, route: '/', token: fakeJwt(standardUser('staff')) });
+  await openAppMenu(screen);
+  await page.getByRole('menuitem', { name: 'Logout' }).click();
+  return screen;
+};
 
 /** PrimeReact binds its outside-click listener only when the enter transition ends, which this class marks. */
 const settleOverlay = async (): Promise<void> => {
@@ -34,10 +40,6 @@ const MENU_CLOSERS: readonly [string, (screen: LocatorSelectors) => Promise<void
   ['a click outside', (screen) => userEvent.click(screen.getByTestId('account-control'))],
   ['choosing an item', () => page.getByRole('menuitemradio', { name: 'Clock: UTC', exact: true }).click()],
 ];
-
-afterEach(() => {
-  vi.unstubAllGlobals();
-});
 
 describe(Navbar, () => {
   it('renders the Resource wordmark', async () => {
@@ -284,16 +286,11 @@ describe(Navbar, () => {
     await expect.poll(() => document.activeElement).toBe(menuButton);
   });
 
-  it('says nobody is signed in, and offers the ORCID login as a link the browser follows', async () => {
+  it('offers the ORCID login as a link the browser follows', async () => {
     const screen = await renderNavbar();
-
-    const account = screen.getByTestId('account-control');
-    await expect.element(account).toHaveTextContent('Not signed in');
-    await expect.element(account).not.toHaveAttribute('title');
 
     await openAppMenu(screen);
 
-    await expect.element(page.getByRole('menu').getByText('Not signed in', { exact: true })).toBeVisible();
     await expect.element(page.getByRole('link', { name: 'Login with ORCID' })).toHaveAttribute('href', signInUrl());
     const logo = page.getByRole('menuitem', { name: 'Login with ORCID' }).element().querySelector('img');
     expect(logo).not.toBeNull();
@@ -301,7 +298,6 @@ describe(Navbar, () => {
     expect(logo!.getAttribute('alt')).toBe('');
     expect(logo!.getAttribute('aria-hidden')).toBe('true');
     await expect.element(page.getByRole('menuitem', { name: 'Login with ORCID' })).not.toHaveAttribute('aria-disabled');
-    await expect.element(page.getByRole('menuitem', { name: 'Logout' })).not.toBeInTheDocument();
   });
 
   it('closes the menu on a click outside it, and the click takes focus with it', async () => {
@@ -371,74 +367,37 @@ describe(Navbar, () => {
   });
 
   it.each([
-    ['signed out', { token: null }, 'Login with ORCID'],
-    ['signed in', { token: fakeJwt(standardUser('staff')) }, 'Logout'],
-    ['checking', { sessionChecked: false }, null],
-  ])('offers only the auth item that applies when %s', async (_state, options, expected) => {
-    const screen = await renderApp({ element: <Navbar />, route: '/', ...options });
+    ['signed out', { token: null }, 'Not signed in', null, 'Login with ORCID'],
+    [
+      'the token has expired',
+      { token: fakeJwt(standardUser('staff'), -60) },
+      'Not signed in',
+      null,
+      'Login with ORCID',
+    ],
+    ['signed in', { token: fakeJwt(standardUser('staff')) }, 'Ada Lovelace', 'Ada Lovelace', 'Logout'],
+    ['checking', { sessionChecked: false }, 'Checking sign-in', null, null],
+  ])(
+    'names the account and offers only the auth item that applies when %s',
+    async (_state, options, label, title, item) => {
+      const screen = await renderApp({ element: <Navbar />, route: '/', ...options });
 
-    await openAppMenu(screen);
+      const account = screen.getByTestId('account-control');
+      await expect.element(account).toHaveTextContent(label);
+      await expect.poll(() => account.element().getAttribute('title')).toBe(title);
 
-    const offered = ['Login with ORCID', 'Logout'].filter(
-      (label) => page.getByRole('menuitem', { name: label }).elements().length > 0,
-    );
-    expect(offered).toEqual(expected === null ? [] : [expected]);
-  });
+      await openAppMenu(screen);
 
-  it('claims neither state while the first refresh is still out', async () => {
-    const screen = await renderApp({ element: <Navbar />, route: '/', sessionChecked: false });
-
-    await expect.element(screen.getByText('Checking sign-in')).toBeInTheDocument();
-    await expect.element(screen.getByTestId('account-control')).not.toHaveAttribute('title');
-
-    await openAppMenu(screen);
-
-    await expect.element(page.getByRole('menuitem', { name: 'Login with ORCID' })).not.toBeInTheDocument();
-    await expect.element(page.getByRole('menuitem', { name: 'Logout' })).not.toBeInTheDocument();
-  });
-
-  it('names the signed-in reader in the bar and at the head of the menu', async () => {
-    const screen = await renderApp({ element: <Navbar />, route: '/', token: fakeJwt(standardUser('staff')) });
-
-    await expect.element(screen.getByTestId('account-control')).toHaveTextContent('Ada Lovelace');
-
-    await openAppMenu(screen);
-
-    await expect.element(page.getByRole('menu').getByText('Ada Lovelace', { exact: true })).toBeVisible();
-    await expect.element(page.getByRole('menuitem', { name: 'Logout' })).toBeVisible();
-    await expect.element(page.getByRole('menuitem', { name: 'Login with ORCID' })).not.toBeInTheDocument();
-  });
-
-  it('keeps a long name whole in the title, the bar showing only what fits', async () => {
-    const longName = 'Bartholomew Fitzwilliams Oyelaran-Smythe';
-    const screen = await renderApp({ element: <Navbar />, route: '/', token: fakeJwt(namedUser(longName)) });
-
-    await expect.element(screen.getByTestId('account-control')).toHaveAttribute('title', longName);
-  });
-
-  it('signs out before SSO answers, announces it, and hands focus back to the menu button', async () => {
-    stubSso();
-    const screen = await renderSignedIn();
-
-    await openAppMenu(screen);
-    await page.getByRole('menuitem', { name: 'Logout' }).click();
-    await expect.element(screen.getByTestId('account-control')).toHaveTextContent('Not signed in');
-    await expect.element(screen.getByRole('status')).toHaveTextContent('Logged out');
-    const menuButton = screen.getByRole('button', { name: 'Menu' }).element();
-    await expect.poll(() => document.activeElement).toBe(menuButton);
-
-    ssoCall(0).answer({ status: 200 });
-    await openAppMenu(screen);
-    await expect.element(page.getByRole('menu').getByText(SSO_UNREACHABLE_NOTE)).not.toBeInTheDocument();
-    expect(screen.getByRole('status').element().textContent).toBe('Logged out');
-  });
+      await expect.element(page.getByRole('menu').getByText(label, { exact: true })).toBeVisible();
+      const offered = ['Login with ORCID', 'Logout'].filter(
+        (name) => page.getByRole('menuitem', { name }).elements().length > 0,
+      );
+      expect(offered).toEqual(item === null ? [] : [item]);
+    },
+  );
 
   it('says the cookie may still stand when the logout never reached SSO, until the next sign-in', async () => {
-    stubSso();
-    const screen = await renderSignedIn();
-
-    await openAppMenu(screen);
-    await page.getByRole('menuitem', { name: 'Logout' }).click();
+    const screen = await logOutFromMenu();
     await expect.poll(() => screen.getByRole('status').element().textContent).toBe('Logged out');
 
     ssoCall(0).fail();
@@ -454,11 +413,7 @@ describe(Navbar, () => {
   });
 
   it('keeps every row of the menu to what `role="menu"` may own, at every depth', async () => {
-    stubSso();
-    const screen = await renderSignedIn();
-
-    await openAppMenu(screen);
-    await page.getByRole('menuitem', { name: 'Logout' }).click();
+    const screen = await logOutFromMenu();
     ssoCall(0).fail();
 
     await openAppMenu(screen);
@@ -473,31 +428,17 @@ describe(Navbar, () => {
     expect([...menu.querySelectorAll(MENU_FORBIDDEN.join(', '))]).toHaveLength(0);
   });
 
-  it('reads an expired token as signed out, even though the user still decodes', async () => {
-    const screen = await renderApp({ element: <Navbar />, route: '/', token: fakeJwt(standardUser('staff'), -60) });
-
-    const account = screen.getByTestId('account-control');
-    await expect.element(account).toHaveTextContent('Not signed in');
-    await expect.element(account).not.toHaveAttribute('title');
-
-    await openAppMenu(screen);
-
-    await expect.element(page.getByRole('menu').getByText('Not signed in', { exact: true })).toBeVisible();
-    await expect.element(page.getByRole('menuitem', { name: 'Login with ORCID' })).toBeVisible();
-    await expect.element(page.getByRole('menuitem', { name: 'Logout' })).not.toBeInTheDocument();
-  });
-
-  it('re-announces sign-out and re-decides the unreachable note after a fresh sign-in', async () => {
-    stubSso();
-    const screen = await renderSignedIn();
-
-    await openAppMenu(screen);
-    await page.getByRole('menuitem', { name: 'Logout' }).click();
+  it('signs out before SSO answers, hands focus back to the menu button, and re-announces after a fresh sign-in', async () => {
+    const screen = await logOutFromMenu();
+    await expect.element(screen.getByTestId('account-control')).toHaveTextContent('Not signed in');
     await expect.element(screen.getByRole('status')).toHaveTextContent('Logged out');
+    const menuButton = screen.getByRole('button', { name: 'Menu' }).element();
+    await expect.poll(() => document.activeElement).toBe(menuButton);
     ssoCall(0).answer({ status: 200 });
 
     await openAppMenu(screen);
     await expect.element(page.getByRole('menu').getByText(SSO_UNREACHABLE_NOTE)).not.toBeInTheDocument();
+    expect(screen.getByRole('status').element().textContent).toBe('Logged out');
 
     setToken(screen.store, fakeJwt(standardUser('staff')));
     await expect.element(screen.getByTestId('account-control')).toHaveTextContent('Ada Lovelace');

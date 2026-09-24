@@ -37,3 +37,13 @@ export function ssoCall(index: number): PendingSsoCall {
   if (!pending) throw new Error(`no SSO request #${index} was made`);
   return pending;
 }
+
+const callsTo = (path: string): readonly PendingSsoCall[] => calls.filter((made) => made.url.includes(path));
+
+export const ssoRefreshes = (): readonly PendingSsoCall[] => callsTo('/api/v1/refresh-token');
+
+export function ssoLogout(): PendingSsoCall {
+  const [pending] = callsTo('/api/v1/logout');
+  if (!pending) throw new Error('no SSO logout request was made');
+  return pending;
+}

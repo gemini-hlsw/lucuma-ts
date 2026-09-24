@@ -1,15 +1,12 @@
-import { ApolloClient, ApolloLink, gql } from '@apollo/client';
-import { Observable } from '@apollo/client/utilities';
-import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
+import { ApolloLink, gql } from '@apollo/client';
+import { beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
 
-import { startSession } from '@/auth/session';
 import { odbTokenAtom } from '@/components/atoms/auth';
 import { store } from '@/components/atoms/store';
 import { fakeJwt, standardUser } from '@/test/factories';
-import { stubSso } from '@/test/sso';
+import { captureHeader, createMockApollo } from '@/test/mockClient';
 
 import { authLink, client } from './ApolloConfigs';
-import { buildCache } from './cache';
 
 const QUERY = gql`
   query AuthHeaderProbe {
@@ -22,79 +19,46 @@ const QUERY = gql`
 const TOKEN = fakeJwt(standardUser('staff'));
 const UNDECODABLE_TOKEN = 'header.payload.signature';
 
-const headersSent = async (context?: ApolloLink.OperationContext): Promise<Record<string, string>> => {
-  let headers: Record<string, string> = {};
-  const capture = new ApolloLink((operation) => {
-    headers = (operation.getContext().headers ?? {}) as Record<string, string>;
-    return new Observable<ApolloLink.Result>((observer) => {
-      observer.next({ data: { publishedSemesters: [] } });
-      observer.complete();
-    });
-  });
-  const isolatedClient = new ApolloClient({ link: ApolloLink.empty(), cache: buildCache() });
-
-  await new Promise<void>((resolve, reject) => {
-    ApolloLink.execute(
-      ApolloLink.from([authLink(), capture]),
-      { query: QUERY, context },
-      { client: isolatedClient },
-    ).subscribe({ complete: resolve, error: reject });
-  });
-  return headers;
+const headerSent = async (name: string, context?: ApolloLink.OperationContext): Promise<string | null | undefined> => {
+  const capture = captureHeader(name);
+  const mock = createMockApollo(ApolloLink.from([authLink(), capture.link]));
+  await mock.client.query({ query: QUERY, context });
+  return capture.sent[0];
 };
 
 describe(authLink, () => {
   it('sends the signed-in user token as a bearer', async () => {
     store.set(odbTokenAtom, TOKEN);
 
-    expect(await headersSent()).toHaveProperty('Authorization', `Bearer ${TOKEN}`);
+    expect(await headerSent('Authorization')).toBe(`Bearer ${TOKEN}`);
   });
 
   it('sends no Authorization header at all when signed out', async () => {
-    expect(await headersSent()).not.toHaveProperty('Authorization');
+    expect(await headerSent('Authorization')).toBeNull();
   });
 
   it('leaves headers the operation already set alone', async () => {
     store.set(odbTokenAtom, TOKEN);
 
-    expect(await headersSent({ headers: { 'X-Probe': 'kept' } })).toHaveProperty('X-Probe', 'kept');
+    expect(await headerSent('X-Probe', { headers: { 'X-Probe': 'kept' } })).toBe('kept');
   });
 
   it('omits the header rather than sending empty credentials for an empty stored token', async () => {
     store.set(odbTokenAtom, '');
 
-    expect(await headersSent()).not.toHaveProperty('Authorization');
+    expect(await headerSent('Authorization')).toBeNull();
   });
 
   it('sends no header for a token it cannot decode', async () => {
     store.set(odbTokenAtom, UNDECODABLE_TOKEN);
 
-    expect(await headersSent()).not.toHaveProperty('Authorization');
+    expect(await headerSent('Authorization')).toBeNull();
   });
 
   it('sends no Authorization header once the held token has expired', async () => {
     store.set(odbTokenAtom, fakeJwt(standardUser('staff'), -60));
 
-    expect(await headersSent()).not.toHaveProperty('Authorization');
-  });
-
-  it('sends no Authorization header once the session drops the token at its expiry', async () => {
-    stubSso();
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
-    store.set(odbTokenAtom, fakeJwt(standardUser('staff'), 20));
-    const stop = startSession();
-
-    try {
-      vi.advanceTimersByTime(20_000);
-      expect(store.get(odbTokenAtom)).toBeNull();
-
-      vi.useRealTimers();
-      expect(await headersSent()).not.toHaveProperty('Authorization');
-    } finally {
-      stop();
-      vi.useRealTimers();
-      vi.unstubAllGlobals();
-    }
+    expect(await headerSent('Authorization')).toBeNull();
   });
 });
 
@@ -110,10 +74,6 @@ describe("the live client's request chain", () => {
         }),
       ),
     );
-  });
-
-  afterEach(() => {
-    fetchSpy.mockRestore();
   });
 
   const authorizationSent = async (): Promise<string | null> => {

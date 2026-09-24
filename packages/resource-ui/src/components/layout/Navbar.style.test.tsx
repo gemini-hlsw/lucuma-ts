@@ -11,6 +11,11 @@ import Navbar from './Navbar';
 
 const DESKTOP = { width: 1024, height: 768 };
 
+const renderAtDesktop = async () => {
+  await page.viewport(DESKTOP.width, DESKTOP.height);
+  return renderApp({ element: <Navbar />, route: '/night?site=GS' });
+};
+
 const centre = (rect: DOMRect): [number, number] => [rect.left + rect.width / 2, rect.top + rect.height / 2];
 
 describe(Navbar, () => {
@@ -19,8 +24,7 @@ describe(Navbar, () => {
   });
 
   it('centres the menu glyph in its 28px button', async () => {
-    await page.viewport(DESKTOP.width, DESKTOP.height);
-    const screen = await renderApp({ element: <Navbar />, route: '/night?site=GS' });
+    const screen = await renderAtDesktop();
 
     const button = screen.getByRole('button', { name: 'Menu' }).element();
     const glyph = button.querySelector('svg')!;
@@ -34,8 +38,7 @@ describe(Navbar, () => {
   });
 
   it('rings the keyboard-focused menu item at 3:1 or better against the row it paints over', async () => {
-    await page.viewport(DESKTOP.width, DESKTOP.height);
-    const screen = await renderApp({ element: <Navbar />, route: '/night?site=GS' });
+    const screen = await renderAtDesktop();
 
     (screen.getByRole('button', { name: 'Menu' }).element() as HTMLElement).focus();
     await userEvent.keyboard('{Enter}');
@@ -56,8 +59,7 @@ describe(Navbar, () => {
   });
 
   it('leaves the ring off a menu item the pointer merely hovers', async () => {
-    await page.viewport(DESKTOP.width, DESKTOP.height);
-    const screen = await renderApp({ element: <Navbar />, route: '/night?site=GS' });
+    const screen = await renderAtDesktop();
 
     await screen.getByRole('button', { name: 'Menu' }).click();
     const hovered = page.getByRole('menuitemradio', { name: 'Clock: UTC', exact: true });

@@ -1,29 +1,15 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { page } from 'vitest/browser';
-import { render } from 'vitest-browser-react';
 
 import { CURRENT_ENV, liveGraphqlEndpoint } from '@/app/environment';
+import { openDialog, value } from '@/test/aboutDialog';
 
 import { AboutResource } from './AboutResource';
 
 const buildVersion = `${import.meta.env.FRONTEND_VERSION}-${CURRENT_ENV.versionSuffix}`;
 
-async function openDialog(): Promise<HTMLElement> {
-  await render(<AboutResource visible onHide={() => undefined} />);
-  const dialog = page.getByTestId('about-resource');
-  await expect.element(dialog).toBeVisible();
-  return dialog.element() as HTMLElement;
-}
-
-function value(dialog: HTMLElement, caption: string): HTMLElement {
-  const header = [...dialog.querySelectorAll('td[role="rowheader"]')].find((node) => node.textContent === caption);
-  expect(header, `no ${caption} caption`).toBeDefined();
-  return header!.nextElementSibling as HTMLElement;
-}
-
 describe(AboutResource, () => {
   afterEach(() => {
-    vi.restoreAllMocks();
     delete (navigator as { clipboard?: Clipboard }).clipboard;
   });
 
@@ -34,10 +20,8 @@ describe(AboutResource, () => {
       return Promise.resolve();
     });
 
-    await render(<AboutResource visible onHide={() => undefined} />);
-    const dialog = page.getByTestId('about-resource');
-    await expect.element(dialog).toBeVisible();
-    const button = dialog.getByRole('button', { name: 'Copy version' });
+    await openDialog();
+    const button = page.getByTestId('about-resource').getByRole('button', { name: 'Copy version' });
     expect(button.element().querySelector('svg')?.getAttribute('data-icon')).toBe('copy');
 
     await button.click();

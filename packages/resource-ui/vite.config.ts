@@ -65,6 +65,8 @@ export default defineConfig({
   },
   test: {
     clearMocks: true,
+    restoreMocks: true,
+    unstubGlobals: true,
     globals: true,
     exclude: ['**/node_modules/**', '**/dist/**'],
     // No app stylesheet: a test that needs styling to pass is testing the stylesheet.

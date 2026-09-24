@@ -6,10 +6,7 @@ import { store } from '@/components/atoms/store';
 import { fakeJwt, standardUser } from '@/test/factories';
 import { Probe } from '@/test/probe';
 import { renderApp } from '@/test/renderApp';
-import { type PendingSsoCall, ssoCall, ssoCalls, stubSso } from '@/test/sso';
-
-const refreshes = (): readonly PendingSsoCall[] =>
-  ssoCalls().filter((made) => made.url.includes('/api/v1/refresh-token'));
+import { ssoCall, ssoRefreshes, stubSso } from '@/test/sso';
 
 beforeEach(() => {
   stubSso();
@@ -30,7 +27,7 @@ describe('session state between tests', () => {
     const stop = startSession();
 
     expect(store.get(sessionCheckedAtom)).toBe(false);
-    expect(refreshes()).toHaveLength(1);
+    expect(ssoRefreshes()).toHaveLength(1);
 
     const settled = pendingRefresh();
     ssoCall(0).answer({ status: 403 });

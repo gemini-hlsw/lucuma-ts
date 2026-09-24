@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { CURRENT_ENV } from '@/app/environment';
 
@@ -13,10 +13,6 @@ const answer = (response: { ok: boolean; status?: number; body?: string }) => {
   vi.stubGlobal('fetch', fetchMock);
   return fetchMock;
 };
-
-afterEach(() => {
-  vi.unstubAllGlobals();
-});
 
 describe(refreshSession, () => {
   it('reads the trimmed token out of a successful exchange', async () => {
