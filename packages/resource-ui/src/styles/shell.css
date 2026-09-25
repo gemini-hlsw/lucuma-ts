@@ -310,6 +310,31 @@ body {
   color: var(--color-canvas);
 }
 
+.dark .p-toast {
+  opacity: 1;
+}
+
+.dark .p-toast .p-toast-message.p-toast-message-warn {
+  background: var(--color-warning-fill);
+  border-color: var(--color-warning-edge);
+  color: var(--color-warning-ink);
+}
+
+.dark .p-toast .p-toast-message.p-toast-message-warn .p-toast-message-icon,
+.dark .p-toast .p-toast-message.p-toast-message-warn .p-toast-icon-close {
+  color: var(--color-warning-ink);
+}
+
+.dark .p-toast .p-toast-message .p-toast-icon-close:hover {
+  background: color-mix(in oklab, currentcolor 14%, transparent);
+}
+
+.dark .p-toast .p-toast-message .p-toast-icon-close:focus-visible {
+  outline: 2px solid currentcolor;
+  outline-offset: -2px;
+  box-shadow: none;
+}
+
 body .p-dialog-mask.p-component-overlay {
   background-color: rgb(0 0 0 / 60%);
   backdrop-filter: blur(2px);
