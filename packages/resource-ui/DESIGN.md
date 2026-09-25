@@ -670,10 +670,11 @@ with no wait and no fade.
 - **Place.** PrimeReact's bottom-right corner, 20px from the right and 36px from the bottom (the
   theme's 16px margin under each toast); on a phone, the full width inside 20px gutters.
 - **Colour.** Warn takes the warning panel triplet (`--color-warning-fill`, `-edge`, `-ink`) and
-  is opaque. The other severities keep the theme's colours until the change that first shows one
-  styles it.
+  is opaque; it is the only severity restyled. Info keeps the theme's look, and the severities
+  not yet shown keep it until the change that first shows one styles it.
 - **Words.** The summary says what happened in the reader's terms; the detail says why, or what
-  to do next. The three live-server failure toasts are the exception: a summary alone.
+  to do next. The three live-server failure toasts and the other-tab sign-out are the exception:
+  a summary alone.
 - **Lifetime.** PrimeReact's, and a pointer resting on the toast holds it. Anything the reader
   must not miss is `sticky`.
 - **Close.** The close button is named "Close". It sits on coloured fills no single green

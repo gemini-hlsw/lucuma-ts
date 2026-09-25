@@ -18,6 +18,11 @@ export {
 
 export const sessionCheckedAtom = atom(false);
 
+/** True once another tab's logout ended this tab's session, until a token arrives. */
+export const signedOutElsewhereAtom = atom(false);
+
+export const useSignedOutElsewhere = () => useAtomValue(signedOutElsewhereAtom);
+
 export type SessionStatus = 'checking' | 'signed-out' | 'signed-in';
 
 export const sessionStatusAtom = atom<SessionStatus>((get) => {
@@ -28,6 +33,7 @@ export const sessionStatusAtom = atom<SessionStatus>((get) => {
 export const useSessionStatus = () => useAtomValue(sessionStatusAtom);
 
 export function setToken(store: ReturnType<typeof createStore>, token: string | null): void {
+  if (token !== null) store.set(signedOutElsewhereAtom, false);
   try {
     store.set(odbTokenAtom, token);
   } catch (error) {

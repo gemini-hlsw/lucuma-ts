@@ -11,7 +11,8 @@ import { cn, displayName, type User } from '@gemini-hlsw/lucuma-common-ui';
 import { Button } from 'primereact/button';
 import { Menu } from 'primereact/menu';
 import type { MenuItem } from 'primereact/menuitem';
-import { type JSX, useRef, useState } from 'react';
+import type { ToastMessage } from 'primereact/toast';
+import { type JSX, useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 
 import { carrySelection, searchString } from '@/app/carriedSelection';
@@ -20,7 +21,8 @@ import { useSelection } from '@/app/useSelection';
 import orcidLogo from '@/assets/orcid-logo.svg';
 import { signOut } from '@/auth/session';
 import { signInUrl } from '@/auth/ssoClient';
-import { type SessionStatus, useSessionStatus, useUser } from '@/components/atoms/auth';
+import { type SessionStatus, useSessionStatus, useSignedOutElsewhere, useUser } from '@/components/atoms/auth';
+import { useToast } from '@/components/atoms/toast';
 import { AboutResource } from '@/components/layout/AboutResource';
 import { SegmentedControl, type SegmentedOption } from '@/components/ui/SegmentedControl';
 import { FOCUS_RING } from '@/components/ui/styles';
@@ -34,9 +36,25 @@ const CHECKING_LABEL = 'Checking sign-in';
 const SIGNED_OUT_LABEL = 'Not signed in';
 
 const LOGGED_OUT_ANNOUNCEMENT = 'Logged out';
-const SSO_UNREACHABLE_NOTE = 'Logout did not reach SSO. Close the browser to end the session.';
+const LOGIN_LABEL = 'Login with ORCID';
+const SESSION_ENDED_TOAST = {
+  severity: 'warn',
+  summary: 'Your session ended',
+  detail: `Choose "${LOGIN_LABEL}" from the menu to sign in again.`,
+  sticky: true,
+} satisfies ToastMessage;
+const SIGNED_OUT_ELSEWHERE_TOAST = {
+  severity: 'info',
+  summary: 'You signed out in another tab',
+  sticky: true,
+} satisfies ToastMessage;
+const LOGOUT_UNREACHABLE_TOAST = {
+  severity: 'warn',
+  summary: 'Logout did not reach SSO',
+  detail: 'Close the browser to end the session.',
+  sticky: true,
+} satisfies ToastMessage;
 const CLOCK_ITEM = 'xp-menu-clock';
-const STATUS_ITEM = 'xp-menu-status';
 
 const CLOCK_GROUP_LABEL = 'Clock';
 
@@ -64,10 +82,6 @@ const CLOCK_CHOICES: readonly { readonly label: string; readonly value: TimeDisp
   { label: 'Site time', value: 'site' },
   { label: 'UTC', value: 'utc' },
 ];
-function announcementOf(afterSignOut: boolean, ssoUnreachable: boolean): string {
-  if (!afterSignOut) return '';
-  return ssoUnreachable ? SSO_UNREACHABLE_NOTE : LOGGED_OUT_ANNOUNCEMENT;
-}
 function accountLabelOf(status: SessionStatus, user: User | null): string {
   switch (status) {
     case 'checking':
@@ -87,17 +101,33 @@ export default function Navbar(): JSX.Element {
   const [menuOpen, setMenuOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
   const [announceSignOut, setAnnounceSignOut] = useState(false);
-  const [ssoUnreachable, setSsoUnreachable] = useState(false);
+  const signingOut = useRef(false);
   const home = searchString(carrySelection(params, ['site']));
 
   const { site, setSite } = useSelection();
   const timeDisplay = useClockPreference();
   const status = useSessionStatus();
   const user = useUser();
+  const signedOutElsewhere = useSignedOutElsewhere();
+  const toast = useToast();
 
   const signedIn = status === 'signed-in';
   const accountLabel = accountLabelOf(status, user);
-  const announcement = announcementOf(!signedIn && announceSignOut, ssoUnreachable);
+  const announcement = !signedIn && announceSignOut ? LOGGED_OUT_ANNOUNCEMENT : '';
+
+  const previousStatus = useRef(status);
+  useEffect(() => {
+    const previous = previousStatus.current;
+    previousStatus.current = status;
+    if (status === 'signed-in') {
+      signingOut.current = false;
+      toast?.remove(SESSION_ENDED_TOAST);
+      toast?.remove(LOGOUT_UNREACHABLE_TOAST);
+      toast?.remove(SIGNED_OUT_ELSEWHERE_TOAST);
+    } else if (status === 'signed-out' && previous === 'signed-in' && !signingOut.current) {
+      toast?.show(signedOutElsewhere ? SIGNED_OUT_ELSEWHERE_TOAST : SESSION_ENDED_TOAST);
+    }
+  }, [signedOutElsewhere, status, toast]);
 
   const focusMenuButton = (): void => {
     if (menuButton.current instanceof HTMLButtonElement) menuButton.current.focus();
@@ -106,9 +136,9 @@ export default function Navbar(): JSX.Element {
   const onSignOut = (): void => {
     focusMenuButton();
     setAnnounceSignOut(true);
-    setSsoUnreachable(false);
+    signingOut.current = true;
     void signOut().then(({ reachedSso }) => {
-      setSsoUnreachable(!reachedSso);
+      if (!reachedSso && signingOut.current) toast?.show(LOGOUT_UNREACHABLE_TOAST);
     });
   };
 
@@ -119,17 +149,11 @@ export default function Navbar(): JSX.Element {
   };
 
   const loginItem: MenuItem = {
-    label: 'Login with ORCID',
+    label: LOGIN_LABEL,
     icon: (
       <img src={orcidLogo} alt="" aria-hidden="true" className={cn(MENU_ICON, 'h-[1em] w-[1.25em] object-contain')} />
     ),
     url: signInUrl(),
-  };
-
-  const ssoNoteItem: MenuItem = {
-    className: STATUS_ITEM,
-    disabled: true,
-    template: () => <div>{SSO_UNREACHABLE_NOTE}</div>,
   };
 
   return (
@@ -212,7 +236,6 @@ export default function Navbar(): JSX.Element {
             })),
             { separator: true },
             { label: accountLabel, className: 'xp-menu-account', items: [] },
-            ...(ssoUnreachable && !signedIn ? [ssoNoteItem] : []),
             ...(signedIn ? [logoutItem] : []),
             ...(status === 'signed-out' ? [loginItem] : []),
           ]}
@@ -244,7 +267,7 @@ export default function Navbar(): JSX.Element {
                   'aria-label': `${CLOCK_GROUP_LABEL}: ${item.label ?? ''}`,
                 };
               }
-              return item?.className === STATUS_ITEM ? { role: 'group', 'aria-disabled': undefined } : {};
+              return {};
             },
             action: (options) => (menuItemOf(options)?.className === CLOCK_ITEM ? { href: undefined } : {}),
           }}

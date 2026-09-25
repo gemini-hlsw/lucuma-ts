@@ -90,7 +90,8 @@ one header on every Resource request (`ENDPOINTS.md`, "The endpoint").
   itself because a sleeping tab fires that timer late; `signOut` tears the keeper down whether or
   not SSO answers, so only a full page load can sign the reader back in. Before asking SSO it
   announces the logout on the `resource-session` BroadcastChannel, which a keeper holds open only
-  while it runs; every other tab's keeper then signs out the same way without calling SSO. It
+  while it runs; every other tab's keeper then signs out the same way without calling SSO, first
+  setting `signedOutElsewhereAtom` so that tab's toast says where the logout happened. It
   announces again once the logout call settles, for a tab that loaded in between.
   Non-React callers - the Apollo auth link, `signOut` - read the store directly rather than a hook.
 - **`auth/AuthSession.tsx` starts that keeper once**, wrapped around `<App />` in `main.tsx`, and

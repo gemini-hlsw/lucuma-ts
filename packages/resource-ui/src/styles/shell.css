@@ -110,13 +110,6 @@ body {
   outline-offset: -2px;
 }
 
-.xp-app-menu .xp-menu-status {
-  padding: 0 calc(var(--spacing) * 4) calc(var(--spacing) * 3);
-  color: var(--color-foreground);
-  font-size: var(--text-xs);
-  line-height: 1rem;
-}
-
 .xp-page-select.p-dropdown {
   height: 28px;
   align-items: center;
