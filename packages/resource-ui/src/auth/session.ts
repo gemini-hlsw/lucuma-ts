@@ -3,17 +3,32 @@ import { store } from '@/components/atoms/store';
 
 import { logout, type RefreshResult, refreshSession } from './ssoClient';
 
-const REFRESH_AHEAD_MS = 30_000;
-const MIN_INTERVAL_MS = 30_000;
-const BACKOFF_CAP_MS = 16 * 60_000;
-const MAX_TIMEOUT_MS = 2_147_483_647;
+export interface SessionTimings {
+  readonly refreshAheadMs: number;
+  readonly minIntervalMs: number;
+  readonly backoffCapMs: number;
+  /** A longer `setTimeout` delay overflows and fires at once. */
+  readonly maxTimerMs: number;
+}
 
+export const SESSION_TIMINGS: SessionTimings = {
+  refreshAheadMs: 30_000,
+  minIntervalMs: 30_000,
+  backoffCapMs: 16 * 60_000,
+  maxTimerMs: 2_147_483_647,
+};
+
+export const SESSION_CHANNEL = 'resource-session';
+export const SIGNED_OUT_MESSAGE = 'signed-out';
+
+let timings = SESSION_TIMINGS;
 let sessionId = 0;
 let timer: ReturnType<typeof setTimeout> | undefined;
 let expiryTimer: ReturnType<typeof setTimeout> | undefined;
 let abortController: AbortController | undefined;
 let inFlight: Promise<void> | undefined;
 let unsubscribe: (() => void) | undefined;
+let channel: BroadcastChannel | undefined;
 let backoffMs = 0;
 let retryNotBefore = 0;
 let refreshDueAt: number | null = null;
@@ -34,7 +49,7 @@ function armExpiry(): void {
   if (store.get(odbTokenAtom) === null) return;
 
   const exp = store.get(tokenExpAtom);
-  expiryTimer = setTimeout(expireToken, Math.min(MAX_TIMEOUT_MS, Math.max(0, (exp?.getTime() ?? 0) - Date.now())));
+  expiryTimer = setTimeout(expireToken, Math.min(timings.maxTimerMs, Math.max(0, (exp?.getTime() ?? 0) - Date.now())));
 }
 
 function expireToken(): void {
@@ -58,14 +73,14 @@ function arm(): void {
   const exp = store.get(tokenExpAtom);
   // Dropping an expired token keeps its deadline, so the refresh it was waiting on still runs.
   if (store.get(odbTokenAtom) !== null) {
-    refreshDueAt = exp !== null && exp.getTime() > now ? exp.getTime() - REFRESH_AHEAD_MS : null;
+    refreshDueAt = exp !== null && exp.getTime() > now ? exp.getTime() - timings.refreshAheadMs : null;
   }
   const backoffDue = retryNotBefore === 0 ? null : retryNotBefore;
   if (refreshDueAt === null && backoffDue === null) return;
 
   const delay = Math.min(
-    MAX_TIMEOUT_MS,
-    Math.max(0, (refreshDueAt ?? 0) - now, (backoffDue ?? 0) - now, lastAttemptAt + MIN_INTERVAL_MS - now),
+    timings.maxTimerMs,
+    Math.max(0, (refreshDueAt ?? 0) - now, (backoffDue ?? 0) - now, lastAttemptAt + timings.minIntervalMs - now),
   );
   timer = setTimeout(() => {
     void refresh();
@@ -94,7 +109,7 @@ function apply(result: RefreshResult): void {
         setToken(store, null);
         break;
       case 'unreachable': {
-        backoffMs = backoffMs === 0 ? MIN_INTERVAL_MS : Math.min(backoffMs * 2, BACKOFF_CAP_MS);
+        backoffMs = backoffMs === 0 ? timings.minIntervalMs : Math.min(backoffMs * 2, timings.backoffCapMs);
         retryNotBefore = Date.now() + backoffMs;
         break;
       }
@@ -145,24 +160,44 @@ function teardown(): void {
   unsubscribe?.();
   unsubscribe = undefined;
   document.removeEventListener('visibilitychange', onVisibilityChange);
+  channel?.close();
+  channel = undefined;
+}
+
+function endSession(reason: string): void {
+  teardown();
+  try {
+    setToken(store, null);
+  } catch (error: unknown) {
+    console.error(`${reason}: a subscriber of the token atom failed.`, error);
+  }
+  store.set(sessionCheckedAtom, true);
+}
+
+function onSignedOutElsewhere(event: MessageEvent<unknown>): void {
+  if (event.data !== SIGNED_OUT_MESSAGE) return;
+  endSession('Sign out in another tab');
 }
 
 function onVisibilityChange(): void {
   if (document.visibilityState !== 'visible') return;
-  if (Date.now() - lastAttemptAt < MIN_INTERVAL_MS) return;
+  if (Date.now() - lastAttemptAt < timings.minIntervalMs) return;
   if (Date.now() < retryNotBefore) return;
   const exp = store.get(tokenExpAtom);
-  if (exp !== null && Date.now() < exp.getTime() - REFRESH_AHEAD_MS) return;
+  if (exp !== null && Date.now() < exp.getTime() - timings.refreshAheadMs) return;
   void refresh();
 }
 
-export function startSession(): () => void {
+export function startSession(sessionTimings: SessionTimings = SESSION_TIMINGS): () => void {
   if (unsubscribe !== undefined) teardown();
+  timings = sessionTimings;
   sessionId += 1;
   const mySession = sessionId;
 
   unsubscribe = store.sub(odbTokenAtom, arm);
   document.addEventListener('visibilitychange', onVisibilityChange);
+  channel = new BroadcastChannel(SESSION_CHANNEL);
+  channel.addEventListener('message', onSignedOutElsewhere);
 
   if (store.get(isLoggedInAtom)) {
     store.set(sessionCheckedAtom, true);
@@ -177,17 +212,20 @@ export function startSession(): () => void {
 }
 
 export async function signOut(): Promise<{ reachedSso: boolean }> {
-  teardown();
-  try {
-    setToken(store, null);
-  } catch (error: unknown) {
-    console.error('Sign out: a subscriber of the token atom failed.', error);
-  }
-  store.set(sessionCheckedAtom, true);
+  const announced = channel !== undefined;
+  channel?.postMessage(SIGNED_OUT_MESSAGE);
+  endSession('Sign out');
   try {
     await logout();
     return { reachedSso: true };
   } catch {
     return { reachedSso: false };
+  } finally {
+    // A tab that loaded during the logout missed the first post and may have renewed from the cookie.
+    if (announced) {
+      const late = new BroadcastChannel(SESSION_CHANNEL);
+      late.postMessage(SIGNED_OUT_MESSAGE);
+      late.close();
+    }
   }
 }

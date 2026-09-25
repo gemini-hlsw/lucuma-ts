@@ -81,13 +81,17 @@ one header on every Resource request (`ENDPOINTS.md`, "The endpoint").
 - **`src/auth/session.ts` is the one session keeper** - a module-level controller over the shared
   store (`components/atoms/store.ts`). It bootstraps from the SSO cookie, re-refreshes from the
   token's own `exp`, keeps one request in flight, and backs off only when SSO is unreachable (30 s
-  doubling to 16 min, with or without a token); a rejected refresh signs the reader out and arms
-  no timer, though refocusing the tab still asks SSO for the cookie once 30 s have passed since
-  the last attempt, which is how a session started in another lucuma.xyz tab gets picked up; a
-  token leaves the store when its `exp` passes, at once if it is restored or arrives expired
-  (with a console warning when SSO issued it that way), and the auth link also checks `exp`
+  doubling to 16 min, with or without a token - the `SESSION_TIMINGS` defaults `startSession` takes,
+  which tests shrink to tens of milliseconds to run on the real clock); a rejected refresh signs the
+  reader out and arms no timer, though refocusing the tab still asks SSO for the cookie once 30 s
+  have passed since the last attempt, which is how a session started in another lucuma.xyz tab gets
+  picked up; a token leaves the store when its `exp` passes, at once if it is restored or arrives
+  expired (with a console warning when SSO issued it that way), and the auth link also checks `exp`
   itself because a sleeping tab fires that timer late; `signOut` tears the keeper down whether or
-  not SSO answers, so only a full page load can sign the reader back in.
+  not SSO answers, so only a full page load can sign the reader back in. Before asking SSO it
+  announces the logout on the `resource-session` BroadcastChannel, which a keeper holds open only
+  while it runs; every other tab's keeper then signs out the same way without calling SSO. It
+  announces again once the logout call settles, for a tab that loaded in between.
   Non-React callers - the Apollo auth link, `signOut` - read the store directly rather than a hook.
 - **`auth/AuthSession.tsx` starts that keeper once**, wrapped around `<App />` in `main.tsx`. It
   holds the app back until the first check settles and refetches every active query when the
