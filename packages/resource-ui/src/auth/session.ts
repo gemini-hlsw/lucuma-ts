@@ -1,4 +1,11 @@
-import { isLoggedInAtom, odbTokenAtom, sessionCheckedAtom, setToken, tokenExpAtom } from '@/components/atoms/auth';
+import {
+  isLoggedInAtom,
+  odbTokenAtom,
+  sessionCheckedAtom,
+  setToken,
+  signedOutElsewhereAtom,
+  tokenExpAtom,
+} from '@/components/atoms/auth';
 import { store } from '@/components/atoms/store';
 
 import { logout, REFRESH_TIMEOUT_MS, type RefreshResult, refreshSession } from './ssoClient';
@@ -178,6 +185,7 @@ function endSession(reason: string): void {
 
 function onSignedOutElsewhere(event: MessageEvent<unknown>): void {
   if (event.data !== SIGNED_OUT_MESSAGE) return;
+  store.set(signedOutElsewhereAtom, true);
   endSession('Sign out in another tab');
 }
 
