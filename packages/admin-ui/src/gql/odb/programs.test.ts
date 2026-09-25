@@ -278,8 +278,9 @@ describe(proposalTypeChanged, () => {
     expect(proposalTypeChanged(base, { ...base })).toBe(false);
   });
 
-  // Every field `proposalTypeInput` reads, each flipped on its own: a term
-  // dropped from the guard leaves exactly one of these failing.
+  // Every field the Queue branch of `proposalTypeInput` sends, each flipped on
+  // its own. The guard compares built payloads, so these also pin down that
+  // each field actually reaches the input.
   it.each([
     ['programClass', { programClass: 'CLASSICAL' } as const],
     ['tooStatus', { tooStatus: 'STANDARD' } as const],
@@ -287,6 +288,16 @@ describe(proposalTypeChanged, () => {
     ['considerForBand3', { considerForBand3: false } as const],
   ])('reports a change when %s is edited', (_field, patch) => {
     expect(proposalTypeChanged(base, { ...base, ...patch })).toBe(true);
+  });
+
+  // The Classical branch sends only minPercentTime, so a difference in a field
+  // it never sends is not a change worth a mutation. The editor disables ToO
+  // and band-3 off Queue, so this is defence in depth rather than a live path.
+  it('ignores fields the Classical branch never sends', () => {
+    const classical: Program = { ...base, programClass: 'CLASSICAL', programType: 'CLASSICAL' };
+    expect(proposalTypeChanged(classical, { ...classical, tooStatus: 'STANDARD' })).toBe(false);
+    expect(proposalTypeChanged(classical, { ...classical, considerForBand3: false })).toBe(false);
+    expect(proposalTypeChanged(classical, { ...classical, minPercentTime: 50 })).toBe(true);
   });
 });
 
