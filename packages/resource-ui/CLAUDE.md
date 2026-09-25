@@ -14,8 +14,8 @@ The v1 read surface is complete and waiting on its backend; PRODUCT.md names the
 destinations it draws.
 
 **The app reads one backend, over HTTP** - the live Resource service at `/resource/graphql`,
-which does not serve the v1 API yet. Every view is therefore empty behind the failure banner
-(`src/gql/liveStatus.ts`, `LiveFailureBanner`): the expected state, in development and deployed
+which does not serve the v1 API yet. Every view is therefore empty under a sticky warning toast
+(the live link in `src/gql/ApolloConfigs.ts`): the expected state, in development and deployed
 alike.
 
 **No data source runs in the client.** The app must never execute a GraphQL schema in the
@@ -93,11 +93,14 @@ one header on every Resource request (`ENDPOINTS.md`, "The endpoint").
   while it runs; every other tab's keeper then signs out the same way without calling SSO. It
   announces again once the logout call settles, for a tab that loaded in between.
   Non-React callers - the Apollo auth link, `signOut` - read the store directly rather than a hook.
-- **`auth/AuthSession.tsx` starts that keeper once**, wrapped around `<App />` in `main.tsx`. It
-  holds the app back until the first check settles and refetches every active query when the
-  reader signs in or out, so no Resource request goes out before the bearer is known. While that
-  check is out the page renders nothing, and there is no client-side timeout: a hung SSO answer
-  leaves it blank until the browser gives up.
+- **`auth/AuthSession.tsx` starts that keeper once**, wrapped around `<App />` in `main.tsx`, and
+  renders the app at once. The requests wait instead: `sessionHoldLink`, first in the live chain
+  (`gql/ApolloConfigs.ts`), holds each one until `sessionCheckedAtom` is true, so none goes out
+  before the bearer is known and a signed-in cold load sends each query once, with the bearer.
+  `AuthSession` also refetches every active query when the reader signs in or out later. The
+  check is bounded: `refreshSession` gives up on SSO after 10 s and reads the silence as
+  `unreachable`, so a hung answer releases the requests signed out and the keeper's backoff and
+  token-retention rules take over.
 - **Tests sign in through `renderApp`**: `renderApp({ token: fakeJwt(standardUser('staff')) })`
   (`src/test/factories.ts`). Every test starts signed out because `src/test/setup.ts` resets the
   session before it (it clears localStorage, then writes `odbTokenAtom` null - overwriting the
@@ -180,7 +183,8 @@ these components are DESIGN.md's; this table is the ownership map.
 
 - **Toasts go through the one PrimeReact `Toast` that `ToastOutlet` mounts in `main.tsx`.**
   `useToast()`, or `store.get(toastAtom)` outside React, returns its handle, null until it mounts.
-  Show a module-level `ToastMessage` constant with string `summary` and `detail`, and withdraw it
+  Show a module-level `ToastMessage` constant with string `summary` and `detail` (the live-server
+  failure toasts carry a summary alone), and withdraw it
   with `remove(thatConstant)`: PrimeReact removes by deep equality. What a toast says and looks
   like is DESIGN.md's ("Toasts").
 
@@ -200,7 +204,7 @@ Fixed structurally - do not undo it.
 ## Commands
 
 **`README.md` is the command reference** - every script, the two-terminal mock setup, codegen, the
-first-time `playwright install chromium`, and why `dev` shows the failure banner. It is not repeated here.
+first-time `playwright install chromium`, and why `dev` shows the failure toast. It is not repeated here.
 
 ## GraphQL, the mock server and the schedule data
 

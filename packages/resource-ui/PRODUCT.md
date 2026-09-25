@@ -28,9 +28,11 @@ Today they are checking a record; composing one is coming (see Capabilities), an
 audiences will do the composing.
 
 A reader signs in with a GPP SSO account, backed by ORCID, from the app menu; the masthead
-names whoever is signed in and says "Not signed in" otherwise. No view is gated on a session: a
-signed-out reader can open every destination, and today a session buys the bearer on Resource
-requests and nothing more. Writes will require a session when they arrive.
+names whoever is signed in and says "Not signed in" otherwise. A page is on screen from the first
+render while the sign-in check runs, its data loading once the check settles, which takes 10 s at
+most when SSO does not answer. No view is gated on a session: a signed-out reader can open every
+destination, and today a session buys the bearer on Resource requests and nothing more. Writes will
+require a session when they arrive.
 
 ## Product Purpose
 
@@ -93,7 +95,7 @@ projection path are what absorb them: adding a view must never mean copying anot
 path from records to pixels, and never mean restructuring the ones that exist.
 
 **One backend, over HTTP.** The app reads the live Resource service at `/resource/graphql`.
-That service does not serve the v1 API yet, so every view is empty behind a banner naming the
+That service does not serve the v1 API yet, so every view is empty under a toast naming the
 situation. That is the expected state, in development and deployed alike. There is no control
 to choose a backend and there never will be one in the app.
 
@@ -119,7 +121,7 @@ Each is open; none is scheduled. Anything built here needs a reason recorded bes
 - **A visible "List" as a third view toggle.** A screen-reader block table already backs the
   semester chart, so exposing a list there is nearly free - but it adds a mode, and the
   night and week views would first need their tables built.
-- **A retry affordance on the load-failure banner**, which is message-only today.
+- **A retry affordance on the load-failure toast**, which is message-only today.
 - **A components table on the night view.** If it returns it should answer a question
   `/components` cannot.
 - **"Jump to current month"** in the calendar, when the viewed semester holds today.

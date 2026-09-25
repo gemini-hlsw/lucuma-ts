@@ -58,6 +58,58 @@
   --text-2xl: 1.5rem;
   --text-2xl--line-height: 2rem;
   /* stylelint-enable custom-property-pattern */
+
+  --animate-loader-hop: loader-hop 1.8s infinite;
+  --animate-loader-appear: loader-appear 200ms ease-out 300ms both;
+
+  @keyframes loader-appear {
+    from {
+      opacity: 0;
+    }
+  }
+
+  @keyframes loader-hop {
+    0% {
+      transform: none;
+      animation-timing-function: cubic-bezier(0.33, 0, 0.66, 1);
+    }
+
+    8% {
+      transform: scale(1.12, 0.88);
+      animation-timing-function: cubic-bezier(0.2, 0.6, 0.4, 1);
+    }
+
+    30% {
+      transform: scale(0.94, 1.08) translateY(-0.5em);
+      animation-timing-function: cubic-bezier(0.5, 0, 0.8, 0.4);
+    }
+
+    50% {
+      transform: scale(1.14, 0.86);
+      animation-timing-function: ease-out;
+    }
+
+    58% {
+      transform: skew(-9deg, -9deg);
+    }
+
+    65% {
+      transform: skew(6deg, 6deg);
+    }
+
+    72% {
+      transform: skew(-3deg, -3deg);
+    }
+
+    79% {
+      transform: skew(1.5deg, 1.5deg);
+    }
+
+    86%,
+    100% {
+      transform: none;
+    }
+  }
 }
 
 /* One source of truth for every chart colour; components never hard-code one. */

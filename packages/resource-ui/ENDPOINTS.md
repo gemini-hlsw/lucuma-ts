@@ -35,7 +35,7 @@ the service validates it the same way. The deployed service (dev and staging) cu
 serves introspection anonymously, and a request without that header sees a schema with none of
 the data fields: `{ publishedSemesters }` answers HTTP 422 with
 `No field 'publishedSemesters' for type Query`. The app reads that answer as the API not being
-served, not as a refused session (`liveFailureMessage` in `src/gql/ApolloConfigs.ts`). The
+served, not as a refused session (`liveFailureToast` in `src/gql/ApolloConfigs.ts`). The
 intended split, still backend work: the published schedule - `publishedSemesters`, the night
 and range projections - is readable without a session, because anyone may see it; anything
 user-specific, and every write once writes exist, requires one. The mock allows everything. No
