@@ -70,4 +70,21 @@ describe(Navbar, () => {
     expect(page.getByRole('menu').element().matches(':focus-visible')).toBe(false);
     expect(getComputedStyle(hovered.element().querySelector('.p-menuitem-content')!).outlineStyle).toBe('none');
   });
+
+  it.each([
+    [768, 'draws it in the masthead, where the name goes', true],
+    [767, 'keeps it for screen readers only, as it does the name', false],
+  ])('at %i px "Checking sign-in" %s', async (width, _where, drawn) => {
+    await page.viewport(width, DESKTOP.height);
+    const screen = await renderApp({ element: <Navbar />, route: '/night?site=GS', sessionChecked: false });
+
+    const control = screen.getByTestId('account-control');
+    await expect.element(control).toHaveTextContent('Checking sign-in');
+    const label = control.getByText('Checking sign-in').element();
+    const rect = label.getBoundingClientRect();
+
+    expect(rect.width > 40, 'wide enough to read').toBe(drawn);
+    expect(rect.width <= 1 && rect.height <= 1, 'collapsed to a screen-reader-only box').toBe(!drawn);
+    expect(document.elementFromPoint(...centre(rect)) === label, 'on top where it sits').toBe(drawn);
+  });
 });

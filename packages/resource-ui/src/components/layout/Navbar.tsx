@@ -164,9 +164,7 @@ export default function Navbar(): JSX.Element {
           {/* A glyph, not type: the name beside it is what the row says. */}
           <FontAwesomeIcon icon={faUser} size="sm" widthAuto aria-hidden="true" />
           {/* Only the icon fits the phone bar; the name stays announced, and the menu carries it for the eye. */}
-          <span className={cn('xp-account-name', status === 'checking' ? 'sr-only' : 'max-md:sr-only')}>
-            {accountLabel}
-          </span>
+          <span className="xp-account-name max-md:sr-only">{accountLabel}</span>
         </span>
         <span role="status" className="sr-only">
           {announcement}

@@ -4,19 +4,25 @@ import { Observable } from '@apollo/client/utilities';
 import type { PublishedSemestersQuery } from '@gql/gen/graphql';
 import { Provider as JotaiProvider } from 'jotai';
 import { type JSX, type ReactNode, StrictMode } from 'react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render } from 'vitest-browser-react';
 
-import { isLoggedInAtom, odbTokenAtom, sessionCheckedAtom } from '@/components/atoms/auth';
+import NightPage from '@/app/pages/NightPage';
+import { isLoggedInAtom, odbTokenAtom, sessionCheckedAtom, sessionStatusAtom } from '@/components/atoms/auth';
 import { store } from '@/components/atoms/store';
-import { authLink } from '@/gql/ApolloConfigs';
+import { toastAtom } from '@/components/atoms/toast';
+import Layout from '@/components/layout/Layout';
+import { ToastOutlet } from '@/components/ui/ToastOutlet';
+import { liveLink } from '@/gql/ApolloConfigs';
 import { usePublishedSemesters } from '@/gql/hooks';
 import { fakeJwt, standardUser } from '@/test/factories';
+import { act } from '@/test/helpers';
 import { captureHeader, createMockApollo } from '@/test/mockClient';
-import { ssoCalls, stubSso } from '@/test/sso';
+import { renderApp } from '@/test/renderApp';
+import { ssoCalls, ssoRefreshes, stubSso } from '@/test/sso';
 
 import { AuthSession } from './AuthSession';
-import { pendingRefresh } from './session';
+import { pendingRefresh, SESSION_TIMINGS, type SessionTimings } from './session';
 
 function SemesterCount({ testId = 'semesters' }: { testId?: string }): JSX.Element {
   const { semesters, loading } = usePublishedSemesters();
@@ -63,8 +69,10 @@ const onSecondRequest = (outcome: ApolloLink.Result | Error): ApolloLink => {
 
 const capturingApollo = (after?: ApolloLink) => {
   const { link, sent: authorizations } = captureHeader('Authorization');
-  const links = after === undefined ? [authLink(), link] : [authLink(), link, after];
-  return { mock: createMockApollo(ApolloLink.from(links)), authorizations };
+  return {
+    mock: createMockApollo(liveLink(after === undefined ? link : ApolloLink.from([link, after]))),
+    authorizations,
+  };
 };
 
 const renderInSession = (client: ApolloClient, children: ReactNode) =>
@@ -93,8 +101,66 @@ const signIn = (expiresInSeconds?: number): string => {
   return token;
 };
 
+const NIGHT_LOADING = 'Loading the night…';
+
+/** Stands in for a Resource service that denies an anonymous caller, answering with an error and no data. */
+const deniesAnonymous = new ApolloLink((operation, forward) => {
+  const headers = (operation.getContext().headers ?? {}) as Record<string, string>;
+  if (Object.hasOwn(headers, 'Authorization')) {
+    return forward(operation);
+  }
+  return new Observable<ApolloLink.Result>((observer) => {
+    observer.next({ errors: [{ message: 'Access denied.' }] });
+    observer.complete();
+  });
+});
+
+const renderShell = async ({
+  token = null,
+  after,
+  timings = SESSION_TIMINGS,
+}: {
+  token?: string | null;
+  after?: ApolloLink;
+  timings?: SessionTimings;
+} = {}) => {
+  const operations: string[] = [];
+  const logOperation = new ApolloLink((operation, forward) => {
+    operations.push(operation.operationName ?? '');
+    return forward(operation);
+  });
+  const { mock, authorizations } = capturingApollo(
+    after === undefined ? logOperation : ApolloLink.from([logOperation, after]),
+  );
+  const screen = await renderApp({
+    route: '/night?site=GS&night=2025-11-14',
+    path: '/',
+    element: (
+      <AuthSession timings={timings}>
+        <Layout />
+        <ToastOutlet />
+      </AuthSession>
+    ),
+    childRoutes: [{ path: 'night', element: <NightPage /> }],
+    mock,
+    token,
+    sessionChecked: token !== null,
+  });
+  return Object.assign(screen, { authorizations, operations });
+};
+
+const sentOnce = (operations: readonly string[]): boolean => new Set(operations).size === operations.length;
+
+const fakeTimeouts = (): void => {
+  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+};
+
 beforeEach(() => {
   stubSso();
+});
+
+afterEach(() => {
+  vi.useRealTimers();
 });
 
 describe(AuthSession, () => {
@@ -114,7 +180,7 @@ describe(AuthSession, () => {
     expect(store.get(sessionCheckedAtom)).toBe(true);
   });
 
-  it('asks Resource again with the bearer once the bootstrap signs the reader in', async () => {
+  it('holds a query mounted beside the session until the bootstrap signs the reader in, then sends it once with the bearer', async () => {
     const { mock, authorizations } = capturingApollo();
 
     const screen = await render(
@@ -128,22 +194,8 @@ describe(AuthSession, () => {
       </StrictMode>,
     );
 
-    await expect.element(screen.getByTestId('semesters')).not.toHaveTextContent('loading');
     await expect.poll(() => ssoCalls().length).toBe(2);
-    expect(authorizations).toEqual([null]);
-
-    const token = fakeJwt(standardUser('staff'));
-    survivingSsoCall()?.answer({ body: token });
-    await pendingRefresh();
-
-    await expect.poll(() => authorizations.at(-1)).toBe(`Bearer ${token}`);
-  });
-
-  it('renders nothing until the session check settles, then the app with the bearer already in hand', async () => {
-    const { screen, authorizations } = await renderAuthSession(<SemesterCount />);
-
-    await expect.poll(() => ssoCalls().length).toBe(2);
-    await expect.element(screen.getByTestId('semesters')).not.toBeInTheDocument();
+    await expect.element(screen.getByTestId('semesters')).toHaveTextContent('loading');
     expect(authorizations).toEqual([]);
 
     const token = fakeJwt(standardUser('staff'));
@@ -151,33 +203,24 @@ describe(AuthSession, () => {
     await pendingRefresh();
 
     await expect.element(screen.getByTestId('semesters')).not.toHaveTextContent('loading');
-    expect(authorizations.length).toBeGreaterThan(0);
-    expect(authorizations.every((authorization) => authorization === `Bearer ${token}`)).toBe(true);
+    expect(authorizations).toEqual([`Bearer ${token}`]);
   });
 
-  it('renders the app signed out when the bootstrap is rejected', async () => {
+  it.each([
+    ['the bootstrap is rejected', () => survivingSsoCall()?.answer({ status: 403 })],
+    ['SSO proves unreachable', () => survivingSsoCall()?.fail()],
+  ])('renders the app at once, holding its query until %s, then sends it signed out', async (_, settle) => {
     const { screen, authorizations } = await renderAuthSession(<SemesterCount />);
 
     await expect.poll(() => ssoCalls().length).toBe(2);
-    await expect.element(screen.getByTestId('semesters')).not.toBeInTheDocument();
+    await expect.element(screen.getByTestId('semesters')).toHaveTextContent('loading');
+    expect(authorizations).toEqual([]);
 
-    survivingSsoCall()?.answer({ status: 403 });
+    settle();
     await pendingRefresh();
 
     await expect.element(screen.getByTestId('semesters')).not.toHaveTextContent('loading');
-    expect(authorizations).toEqual([null]);
-  });
-
-  it('renders the app signed out when SSO is unreachable', async () => {
-    const { screen, authorizations } = await renderAuthSession(<SemesterCount />);
-
-    await expect.poll(() => ssoCalls().length).toBe(2);
-    await expect.element(screen.getByTestId('semesters')).not.toBeInTheDocument();
-
-    survivingSsoCall()?.fail();
-    await pendingRefresh();
-
-    await expect.element(screen.getByTestId('semesters')).not.toHaveTextContent('loading');
+    expect(store.get(sessionStatusAtom)).toBe('signed-out');
     expect(authorizations).toEqual([null]);
   });
 
@@ -244,17 +287,111 @@ describe(AuthSession, () => {
   });
 
   it('stops the controller on unmount, so no refresh timer survives it', async () => {
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    fakeTimeouts();
+    signIn(120);
+
+    const { screen } = await renderAuthSession();
+    await screen.unmount();
+
+    vi.advanceTimersByTime(200_000);
+    expect(ssoCalls()).toHaveLength(0);
+  });
+
+  it('draws the shell at once and sends nothing before the check settles, then each page query once with the bearer it found', async () => {
+    const screen = await renderShell();
+
+    await expect.element(screen.getByTestId('account-control')).toHaveTextContent('Checking sign-in');
+    await expect.element(screen.getByRole('navigation', { name: 'Primary navigation' }).first()).toBeVisible();
+    await expect.element(screen.getByRole('heading', { level: 1, name: 'Night of 2025-11-14' })).toBeVisible();
+    await expect.element(screen.getByText(NIGHT_LOADING)).toBeVisible();
+    expect(screen.operations).toEqual([]);
+
+    const token = fakeJwt(standardUser('staff'));
+    const settled = pendingRefresh();
+    ssoRefreshes()[0]?.answer({ body: token });
+    await settled;
+
+    await expect.element(screen.getByTestId('account-control')).toHaveTextContent('Ada Lovelace');
+    await expect.element(screen.getByText(NIGHT_LOADING)).not.toBeInTheDocument();
+    expect(screen.operations.toSorted()).toEqual(['NightSchedule', 'PublishedSemesters']);
+    expect(screen.authorizations).toEqual([`Bearer ${token}`, `Bearer ${token}`]);
+  });
+
+  it('shows no live-server failure while requests wait on the check', async () => {
+    const screen = await renderShell({ after: deniesAnonymous });
+    await expect.element(screen.getByText(NIGHT_LOADING)).toBeVisible();
+
+    const settled = pendingRefresh();
+    ssoRefreshes()[0]?.answer({ body: fakeJwt(standardUser('staff')) });
+    await settled;
+    await expect.element(screen.getByText(NIGHT_LOADING)).not.toBeInTheDocument();
+
+    expect(store.get(toastAtom)).not.toBeNull();
+    expect(document.querySelector('.p-toast-message')).toBeNull();
+  });
+
+  it('sends a returning tab its requests at once with the bearer, each once', async () => {
+    const token = fakeJwt(standardUser('staff'));
+    const screen = await renderShell({ token });
+
+    await expect.element(screen.getByText(NIGHT_LOADING)).not.toBeInTheDocument();
+    await screen.mock.client.query({ query: RENEWAL_MARKER, fetchPolicy: 'network-only' });
+
+    expect(screen.operations.length).toBeGreaterThan(1);
+    expect(sentOnce(screen.operations)).toBe(true);
+    expect(screen.authorizations.every((authorization) => authorization === `Bearer ${token}`)).toBe(true);
+    expect(ssoCalls()).toHaveLength(0);
+  });
+
+  it('holds the data for the full 10 s while the first refresh goes unanswered', async () => {
+    fakeTimeouts();
+    const screen = await renderShell();
+
+    await act(() => vi.advanceTimersByTimeAsync(9_999));
+
+    expect(screen.getByTestId('account-control').element()).toHaveTextContent('Checking sign-in');
+    expect(screen.getByText(NIGHT_LOADING).element()).toBeVisible();
+    expect(screen.operations).toEqual([]);
+  });
+
+  it('sends the data without a bearer once the first refresh goes unanswered past the bound', async () => {
+    const screen = await renderShell({ timings: { ...SESSION_TIMINGS, refreshTimeoutMs: 20 } });
+
+    await expect.element(screen.getByTestId('account-control')).toHaveTextContent('Not signed in');
+    await expect.element(screen.getByText(NIGHT_LOADING)).not.toBeInTheDocument();
+    expect(screen.operations.toSorted()).toEqual(['NightSchedule', 'PublishedSemesters']);
+    expect(screen.authorizations).toEqual([null, null]);
+  });
+
+  it('never draws "Not signed in" on the way to signing in from an answer at 9 s', async () => {
+    fakeTimeouts();
+    const drawn: string[] = [];
+    const observer = new MutationObserver((records) => {
+      for (const record of records) {
+        drawn.push(record.target.textContent ?? '');
+        record.addedNodes.forEach((node) => drawn.push(node.textContent ?? ''));
+      }
+    });
+    observer.observe(document.body, { subtree: true, childList: true, characterData: true });
     try {
-      signIn(120);
+      const screen = await renderShell();
+      expect(screen.getByTestId('account-control').element()).toHaveTextContent('Checking sign-in');
 
-      const { screen } = await renderAuthSession();
-      await screen.unmount();
+      await act(() => vi.advanceTimersByTimeAsync(9_000));
+      await act(() => {
+        const settled = pendingRefresh();
+        ssoRefreshes()[0]?.answer({ body: fakeJwt(standardUser('staff')) });
+        return settled;
+      });
+      await act(() => vi.advanceTimersByTimeAsync(60_000));
 
-      vi.advanceTimersByTime(200_000);
-      expect(ssoCalls()).toHaveLength(0);
+      expect(screen.getByTestId('account-control').element()).toHaveTextContent('Ada Lovelace');
     } finally {
-      vi.useRealTimers();
+      observer.disconnect();
     }
+
+    expect(drawn.some((text) => text.includes('Checking sign-in'))).toBe(true);
+    expect(drawn.filter((text) => text.includes('Not signed in'))).toEqual([]);
+    expect(ssoRefreshes()).toHaveLength(1);
   });
 });

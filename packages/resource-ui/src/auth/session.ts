@@ -1,7 +1,7 @@
 import { isLoggedInAtom, odbTokenAtom, sessionCheckedAtom, setToken, tokenExpAtom } from '@/components/atoms/auth';
 import { store } from '@/components/atoms/store';
 
-import { logout, type RefreshResult, refreshSession } from './ssoClient';
+import { logout, REFRESH_TIMEOUT_MS, type RefreshResult, refreshSession } from './ssoClient';
 
 export interface SessionTimings {
   readonly refreshAheadMs: number;
@@ -9,6 +9,7 @@ export interface SessionTimings {
   readonly backoffCapMs: number;
   /** A longer `setTimeout` delay overflows and fires at once. */
   readonly maxTimerMs: number;
+  readonly refreshTimeoutMs: number;
 }
 
 export const SESSION_TIMINGS: SessionTimings = {
@@ -16,6 +17,7 @@ export const SESSION_TIMINGS: SessionTimings = {
   minIntervalMs: 30_000,
   backoffCapMs: 16 * 60_000,
   maxTimerMs: 2_147_483_647,
+  refreshTimeoutMs: REFRESH_TIMEOUT_MS,
 };
 
 export const SESSION_CHANNEL = 'resource-session';
@@ -127,7 +129,7 @@ function refresh(): Promise<void> {
   abortController = controller;
   lastAttemptAt = Date.now();
 
-  const run = refreshSession(controller.signal)
+  const run = refreshSession(controller.signal, timings.refreshTimeoutMs)
     .then((result) => {
       if (!controller.signal.aborted) apply(result);
     })
