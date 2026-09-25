@@ -540,7 +540,8 @@ below adds only what is particular to its component.
   3.35:1 and gains contrast everywhere else too. A segmented control takes that same light green
   as an **outline** rather than a ring: its selected segment spends its box-shadow on the
   underline, so a focus shadow would simply be replaced by it and the selected segment - the one
-  a keyboard lands on first - would show no focus at all.
+  a keyboard lands on first - would show no focus at all. A toast's close button is an
+  exception (see Toasts).
 - **Hover.** A hovered surface climbs one step of the ladder, to Raised (`#414141`), and its text
   brightens to foreground. The primary button is the one exception: it lightens its own fill to
   `--color-gpp-light` rather than climbing the neutral ladder.
@@ -640,6 +641,29 @@ that decides: `ErrorAlert` (reserved danger red, `role="alert"`, the error's own
 verbatim), `Loading`, and `EmptyPanel` (neutral - never red, never a warning: a gap means
 "not recorded"). The night view alone has three distinct empty states, one carrying a
 button.
+
+### Toasts
+
+- **Purpose.** A toast says that something happened. A standing condition is not an event and
+  stays a banner or a `PageStatus`. The app has one outlet, above navigation, so a toast stays
+  on screen across a route change.
+- **Place.** PrimeReact's bottom-right corner, 20px from the right and 36px from the bottom (the
+  theme's 16px margin under each toast); on a phone, the full width inside 20px gutters.
+- **Colour.** Warn takes the warning panel triplet (`--color-warning-fill`, `-edge`, `-ink`) and
+  is opaque. The other severities keep the theme's colours until the change that first shows one
+  styles it.
+- **Words.** The summary says what happened in the reader's terms; the detail says why, or what
+  to do next.
+- **Lifetime.** PrimeReact's, and a pointer resting on the toast holds it. Anything the reader
+  must not miss is `sticky`.
+- **Close.** The close button is named "Close". It sits on coloured fills no single green
+  clears, so its focus outline takes the toast's own ink, not the light green, and clears 3:1 on
+  every severity's fill, pastel or dark.
+- **Every toast is an alert**, whatever its severity, so keep toasts for events worth
+  interrupting for.
+- **Shipped shortfalls, queued.** Focus drops to the page after a toast closes (WCAG 2.4.3). A
+  phone toast can cover the bottom bar (2.4.11), and no Escape reveals a covered control (2.4.11).
+  A timed toast does not pause for keyboard focus (2.2.1). A tall stack is unbounded (1.4.10).
 
 ### Charts (the signature component)
 

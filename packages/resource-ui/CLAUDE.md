@@ -178,6 +178,12 @@ these components are DESIGN.md's; this table is the ownership map.
 | `InstrumentSwatch`                       | Colour square plus name (in `features/timeline/`, beside the palette it reads).                                                                                                                                                                                                                                                                                          |
 | `siteTime.eveningLabel` / `eveningRange` | The one evening formatter. Style is a parameter (`dayMonth`, `dayMonthYear`, `weekdayDayMonth`) because that choice is about what the page already says, never about what the date means.                                                                                                                                                                                |
 
+- **Toasts go through the one PrimeReact `Toast` that `ToastOutlet` mounts in `main.tsx`.**
+  `useToast()`, or `store.get(toastAtom)` outside React, returns its handle, null until it mounts.
+  Show a module-level `ToastMessage` constant with string `summary` and `detail`, and withdraw it
+  with `remove(thatConstant)`: PrimeReact removes by deep equality. What a toast says and looks
+  like is DESIGN.md's ("Toasts").
+
 ## Gotchas that cost real debugging
 
 Fixed structurally - do not undo it.
