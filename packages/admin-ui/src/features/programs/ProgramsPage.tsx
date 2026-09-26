@@ -12,7 +12,7 @@ import { InputTextarea } from 'primereact/inputtextarea';
 import { type JSX, useMemo, useState } from 'react';
 
 import { DataSourceBadge } from '@/components/DataSourceBadge';
-import { Upload, XMark } from '@/components/Icons';
+import { TriangleExclamation, Upload, XMark } from '@/components/Icons';
 import { SearchInput } from '@/components/SearchInput';
 import { Tile } from '@/components/Tile';
 import { TimeAwardsGrid } from '@/components/TimeAwardsGrid';
@@ -28,6 +28,7 @@ import {
   useDeleteProgramUser,
   usePrograms,
   useSetAllocations,
+  useSetProgramResourceLimit,
   useUpdateProgram,
   useUpdateProgramNote,
   useUpdateProposalType,
@@ -77,6 +78,7 @@ export default function ProgramsPage(): JSX.Element {
   const [updateProgram, { loading: updatingProgram }] = useUpdateProgram();
   const [updateProposalType, { loading: updatingProposalType }] = useUpdateProposalType();
   const [setAllocations, { loading: settingAllocations }] = useSetAllocations();
+  const [setResourceLimit, { loading: settingResourceLimit }] = useSetProgramResourceLimit();
   const [createNote, { loading: creatingNote }] = useCreateProgramNote();
   const [updateNote, { loading: updatingNote }] = useUpdateProgramNote();
   const { assign: assignContactScientists, loading: assigningContacts } = useAssignContactScientists();
@@ -85,6 +87,7 @@ export default function ProgramsPage(): JSX.Element {
     updatingProgram ||
     updatingProposalType ||
     settingAllocations ||
+    settingResourceLimit ||
     creatingNote ||
     updatingNote ||
     assigningContacts ||
@@ -101,6 +104,18 @@ export default function ProgramsPage(): JSX.Element {
 
     if (JSON.stringify(draft.allocations) !== JSON.stringify(original.allocations)) {
       await setAllocations({ variables: { programId: draft.id, allocations: allocationsInput(draft.allocations) } });
+    }
+
+    if (draft.resourceLimit !== original.resourceLimit) {
+      // Lowering the limit below the current count is allowed, and answers with
+      // the updated program *and* a warning. `errorPolicy: 'all'` keeps that
+      // from throwing — but it also stops a real failure (an expired token, a
+      // non-staff role, since this mutation is staff-gated where the others
+      // here are not) from throwing, so the outcome has to be read rather than
+      // assumed. A warning carries the program with it; a failure carries
+      // nothing, and is the caller's to report.
+      const res = await setResourceLimit({ variables: { programId: draft.id, limit: draft.resourceLimit } });
+      if (!res.data) throw new Error(res.error?.message ?? 'Could not set the resource limit');
     }
 
     if (draft.privateNote !== original.privateNote && draft.privateNote.trim() !== '') {
@@ -443,10 +458,63 @@ function ProgramEditor({
               <span className="suffix">%</span>
             </div>
 
-            <label title="Resource usage isn't tracked by the ODB yet — Andy's updated sc-9090 mockup adds 'Resources Used' (display) and 'Resource Limit' (editable); shown here as the schema gap it is rather than faked.">
-              Resources
+            {/* The mockup pairs the count and the limit on one line, so this
+                row carries two labelled values where every other carries one.
+                Each label owns its own value: the row label names the count,
+                and the limit's label is the one `htmlFor`-bound to the input. */}
+            <label
+              id="rescount-label"
+              title="Observations, groups, targets, attachments and program notes associated with this program, counted together."
+            >
+              Resources Used
             </label>
-            <span className="program-gap">not yet tracked by the ODB</span>
+            <div className="suffixed">
+              {/* The count is read-only, so no control carries this row's
+                  label. `aria-labelledby` ties the two together, which the
+                  other read-only rows get from adjacency alone — this one
+                  shares its row with a labelled input, so it needs saying. */}
+              <span aria-labelledby="rescount-label">{draft.resourceCount}</span>
+              <label
+                htmlFor="reslimit"
+                className="resource-limit-label"
+                title="The cap on that count. Setting it below the current count deletes nothing, but no new resources can be added until the count is back at or under the cap."
+              >
+                Resource Limit
+              </label>
+              <NumberInput
+                inputId="reslimit"
+                value={draft.resourceLimit}
+                min={0}
+                // NonNegInt, stored as a Postgres integer: past this the ODB
+                // answers with a raw coercion error rather than a useful one.
+                max={2147483647}
+                onValueChange={(e) => set('resourceLimit', e.value ?? 0)}
+              />
+              {/* Driven by the draft, so this appears as soon as the field is
+                  committed — before the save, and afterwards against the saved
+                  values, so the next person to open a frozen program sees it
+                  too. The ODB allows the write and answers with its own
+                  warning.
+
+                  Icon-only with the detail on hover, as navigate marks a
+                  flagged control: the row stays the same height as its
+                  siblings, and the form doesn't fill with prose. The tooltip
+                  is a native `title`, which is how every other field on this
+                  page explains itself.
+
+                  The enforcement trigger exempts calibration and system
+                  programs, which this says nothing about — the table only
+                  lists ACCEPTED science programs, so none can reach this row. */}
+              {draft.resourceCount > draft.resourceLimit && (
+                <span
+                  className="program-warn"
+                  aria-label={`Freezes the program: no new resources until the count is back to ${String(draft.resourceLimit)} or fewer.`}
+                  title={`Freezes the program — no new resources until the count is back to ${String(draft.resourceLimit)} or fewer.`}
+                >
+                  <TriangleExclamation />
+                </span>
+              )}
+            </div>
 
             <label
               htmlFor="header"

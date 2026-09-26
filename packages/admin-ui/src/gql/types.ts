@@ -364,6 +364,14 @@ export interface Program {
   /** Queue/Classical minPercentTime — the minimum fraction of the award that
    *  must be observed for the program to count as successful. */
   readonly minPercentTime: number;
+  /** Resources (observations, groups, targets, attachments and program notes,
+   *  combined) currently associated with the program. Read-only — the ODB
+   *  maintains it. */
+  readonly resourceCount: number;
+  /** The cap on that count. Staff may set it below the current count, which
+   *  adds nothing and deletes nothing but stops the program growing until the
+   *  count drops back under the limit. */
+  readonly resourceLimit: number;
   readonly privateHeader: boolean;
   /** Names of program users (typically COIs) whose `thesis` flag is set — the
    *  ODB tracks thesis per investigator (ProgramUser.thesis), not per program. */
