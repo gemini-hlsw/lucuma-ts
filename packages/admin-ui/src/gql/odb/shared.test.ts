@@ -1,9 +1,19 @@
+import { dms2deg, hms2deg } from '@gemini-hlsw/lucuma-core';
 import { describe, expect, it } from 'vitest';
 
 import { executionDigest } from '@/test/factories';
 
 import type { GroupElementItemFragment, ObservationItemFragment } from './gen/graphql';
-import { formatConditions, isScienceObservation, mapObservationRow, telluricGroupHours } from './shared';
+import {
+  formatConditions,
+  formatDec,
+  formatRa,
+  isScienceObservation,
+  joinTargetNames,
+  mapObservationRow,
+  NO_TARGET,
+  telluricGroupHours,
+} from './shared';
 
 function observation(overrides: Partial<ObservationItemFragment>): ObservationItemFragment {
   return {
@@ -30,8 +40,8 @@ function observation(overrides: Partial<ObservationItemFragment>): ObservationIt
         name: 'NGC 300',
         sidereal: {
           __typename: 'Sidereal',
-          ra: { __typename: 'RightAscension', hms: '00:54:53', degrees: 13.723 },
-          dec: { __typename: 'Declination', dms: '-37:41:04', degrees: -37.684 },
+          ra: { __typename: 'RightAscension', degrees: 13.723 },
+          dec: { __typename: 'Declination', degrees: -37.684 },
         },
       },
     },
@@ -52,6 +62,31 @@ describe(mapObservationRow, () => {
       observingMode: { __typename: 'ObservingMode', mode: 'FLAMINGOS_2_LONG_SLIT' },
     });
     expect(mapObservationRow(f2).config).toBe('Flamingos-2, LongSlit');
+  });
+
+  it('shows the target coordinates at the display precision, not the ODB\u2019s six decimals', () => {
+    // The Observations table sits directly under the trimmed coordinate columns
+    // on the Change Requests page, so it must not show a finer value (sc-10159
+    // item 7).
+    const row = mapObservationRow(
+      observation({
+        targetEnvironment: {
+          __typename: 'TargetEnvironment',
+          firstScienceTarget: {
+            __typename: 'Target',
+            id: 't-3',
+            name: 'NGC 300',
+            sidereal: {
+              __typename: 'Sidereal',
+              ra: { __typename: 'RightAscension', degrees: 13.721347733333333 },
+              dec: { __typename: 'Declination', degrees: -37.68471879277778 },
+            },
+          },
+        },
+      }),
+    );
+    expect(row.ra).toBe('00:54:53.12');
+    expect(row.dec).toBe('-37:41:05.0');
   });
 
   it('shows non-sidereal targets without coordinates', () => {
@@ -194,5 +229,78 @@ describe(isScienceObservation, () => {
     expect(isScienceObservation({ calibrationRole: null })).toBe(true);
     expect(isScienceObservation({ calibrationRole: 'TWILIGHT' })).toBe(false);
     expect(isScienceObservation({ calibrationRole: 'SPECTROPHOTOMETRIC' })).toBe(false);
+  });
+});
+
+describe(joinTargetNames, () => {
+  it('lists distinct names in order, comma-separated', () => {
+    expect(joinTargetNames(['M31', 'M32'])).toBe('M31, M32');
+  });
+
+  it('collapses repeats of the same target to one entry', () => {
+    expect(joinTargetNames(['NGC 300', 'NGC 300'])).toBe('NGC 300');
+  });
+
+  it.each([
+    ['an observation that resolved to nothing', [undefined]],
+    ['an observation whose target has no name', [NO_TARGET]],
+    ['nothing at all', []],
+  ])('reads as a dash when every entry is %s', (_case, names) => {
+    expect(joinTargetNames(names)).toBe('—');
+  });
+
+  it('keeps the real names alongside unusable entries rather than listing those', () => {
+    // The placeholder and the unresolved id must not appear as if they were
+    // targets — this is the whole reason NO_TARGET is exported.
+    expect(joinTargetNames(['M31', NO_TARGET, undefined, 'M32'])).toBe('M31, M32');
+  });
+});
+
+describe('coordinate formatting', () => {
+  it('shows RA to hundredths and Dec to tenths of a second (sc-10159 item 7)', () => {
+    expect(formatRa(hms2deg('01:01:45.034320'))).toBe('01:01:45.03');
+    expect(formatDec(dms2deg('+20:55:43.744800'))).toBe('+20:55:43.7');
+  });
+
+  it('rounds rather than truncates', () => {
+    // Cutting the formatted string instead would bias every value low: these
+    // four each sit above the halfway mark and would lose that digit.
+    expect(formatDec(dms2deg('+17:33:56.39'))).toBe('+17:33:56.4');
+    expect(formatDec(dms2deg('-17:33:56.39'))).toBe('-17:33:56.4');
+    expect(formatRa(hms2deg('03:47:31.866'))).toBe('03:47:31.87');
+    expect(formatRa(hms2deg('01:01:45.036'))).toBe('01:01:45.04');
+  });
+
+  it('carries a rounded second into the minutes rather than showing 60', () => {
+    // The reason the first attempt truncated: rounding the seconds field in
+    // isolation would produce the invalid "+20:55:60.0". Rounding in degrees
+    // and reformatting carries properly.
+    expect(formatDec(dms2deg('+20:55:59.999000'))).toBe('+20:56:00.0');
+    expect(formatRa(hms2deg('01:01:59.999'))).toBe('01:02:00.00');
+  });
+
+  it('wraps a rounded RA at 24h, and rounds a Dec up to the pole itself', () => {
+    expect(formatRa(hms2deg('23:59:59.999999'))).toBe('00:00:00.00');
+    // Reaching +90 is this function's own rounding, not a carry inside
+    // `deg2dms` — that reflects past the pole rather than carrying.
+    expect(formatDec(dms2deg('+89:59:59.999'))).toBe('+90:00:00.0');
+    expect(formatDec(dms2deg('-89:59:59.999'))).toBe('-90:00:00.0');
+  });
+
+  it('keeps the sign of a southern declination, rounding away from zero', () => {
+    expect(formatDec(dms2deg('-00:00:00.499'))).toBe('-00:00:00.5');
+    expect(formatDec(dms2deg('-89:59:59.999'))).toBe('-90:00:00.0');
+  });
+
+  it('drops the sign only where the declination rounds to zero', () => {
+    // The rounded value is zero, which carries no sign. Just past the
+    // boundary the sign survives, so this is the whole extent of it.
+    expect(formatDec(-0.0499 / 3600)).toBe('+00:00:00.0');
+    expect(formatDec(-0.05 / 3600)).toBe('-00:00:00.1');
+  });
+
+  it('renders an exact value with the full requested precision', () => {
+    expect(formatRa(hms2deg('02:00:00'))).toBe('02:00:00.00');
+    expect(formatDec(dms2deg('+00:00:00'))).toBe('+00:00:00.0');
   });
 });

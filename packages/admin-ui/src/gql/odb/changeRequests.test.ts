@@ -19,6 +19,8 @@ function request(overrides: Partial<RawRequest>): RawRequest {
     id: 'x-357',
     status: 'REQUESTED',
     justification: 'Please adjust the conditions',
+    feedback: null,
+    createdAt: '2027-06-01T12:30:00Z',
     applicableObservations: ['o-9c5', 'o-ca0'],
     program: {
       __typename: 'Program',
@@ -41,8 +43,8 @@ function request(overrides: Partial<RawRequest>): RawRequest {
         __typename: 'ConfigurationTarget',
         coordinates: {
           __typename: 'Coordinates',
-          ra: { __typename: 'RightAscension', hms: '06:08:31.926560', degrees: 92.133027 },
-          dec: { __typename: 'Declination', dms: '-59:32:27.190177', degrees: -59.540886 },
+          ra: { __typename: 'RightAscension', degrees: 92.133027 },
+          dec: { __typename: 'Declination', degrees: -59.540886 },
         },
       },
       observingMode: {
@@ -67,6 +69,25 @@ const result = (matches: RawRequest[]): AdminChangeRequestsResult => ({
 });
 
 describe(mapChangeRequests, () => {
+  it('carries staff feedback through, distinct from the PI justification', () => {
+    const [c] = mapChangeRequests(
+      result([
+        request({
+          status: 'DENIED',
+          justification: 'PI wants darker skies',
+          feedback: 'Denied: no dark time left this semester',
+        }),
+      ]),
+    );
+    expect(c?.feedback).toBe('Denied: no dark time left this semester');
+    expect(c?.justification).toBe('PI wants darker skies');
+  });
+
+  it('reads an unresolved request\u2019s absent feedback as empty', () => {
+    const [c] = mapChangeRequests(result([request({ feedback: null })]));
+    expect(c?.feedback).toBe('');
+  });
+
   it('projects coordinates, instrument/site, and a percentile-based conditions string', () => {
     const [c] = mapChangeRequests(result([request({})]));
     expect(c?.programId).toBe('p-172');
@@ -74,13 +95,17 @@ describe(mapChangeRequests, () => {
     expect(c?.pi).toBe('Andrew Stephens');
     expect(c?.site).toBe('SOUTH');
     expect(c?.instrument).toBe('GMOS-S');
-    expect(c?.ra).toBe('06:08:31.926560');
-    expect(c?.dec).toBe('-59:32:27.190177');
+    expect(c?.ra).toBe('06:08:31.93');
+    expect(c?.dec).toBe('-59:32:27.2');
     expect(c?.raDeg).toBeCloseTo(92.133027);
     expect(c?.decDeg).toBeCloseTo(-59.540886);
     expect(c?.modeType).toBe('GMOS_SOUTH_LONG_SLIT');
     expect(c?.conditions).toBe('IQ<2.0″ / CC100 / SB100 / WV100');
     expect(c?.observationIds).toEqual(['o-9c5', 'o-ca0']);
+    // `justification` is the PI's case, `feedback` is staff's reply. Keeping
+    // both asserted here guards against one being mapped over the other.
+    expect(c?.justification).toBe('Please adjust the conditions');
+    expect(c?.feedback).toBe('');
     expect(c?.observations).toEqual([]); // joined later by the page via observationsByIdFrom
   });
 });
@@ -140,8 +165,8 @@ describe(observationsByIdFrom, () => {
             name: 'Bol 213',
             sidereal: {
               __typename: 'Sidereal',
-              ra: { __typename: 'RightAscension', hms: '00:41:24', degrees: 10.35 },
-              dec: { __typename: 'Declination', dms: '+41:14:37', degrees: 41.243611 },
+              ra: { __typename: 'RightAscension', degrees: 10.35 },
+              dec: { __typename: 'Declination', degrees: 41.243611 },
             },
           },
         },
@@ -151,8 +176,8 @@ describe(observationsByIdFrom, () => {
     expect(out.get('o-9c5')).toEqual({
       id: 'o-9c5',
       target: 'Bol 213',
-      ra: '00:41:24',
-      dec: '+41:14:37',
+      ra: '00:41:24.00',
+      dec: '+41:14:37.0',
       raDeg: 10.35,
       decDeg: 41.243611,
       modeType: 'GMOS_NORTH_LONG_SLIT',
@@ -179,7 +204,9 @@ describe(groupChangeRequestsByProgram, () => {
     programTitle: 'T',
     pi: 'PI',
     status,
+    feedback: '',
     justification: '',
+    createdAt: '2027-06-01T12:30:00Z',
     site,
     ra: '—',
     dec: '—',

@@ -16,6 +16,12 @@ export interface Environment {
   readonly odbUri: string;
   /** SSO's GraphQL endpoint (the Users view's roster + role mutations). */
   readonly ssoGraphqlUri: string;
+  /** Explore, the science UI — Admin links program references to it so a
+   *  reviewer can open the program (sc-10159). Matched to this environment so a
+   *  reviewer is never sent to a program from another one. Hosts come from
+   *  Explore's own environments.conf.json, where explore-test.gemini.edu is the
+   *  STAGING deployment (an unlisted host falls through to DEVELOPMENT). */
+  readonly exploreUri: string;
 }
 
 const DEV: Environment = {
@@ -23,6 +29,7 @@ const DEV: Environment = {
   ssoUri: 'https://sso-dev.gpp.lucuma.xyz',
   odbUri: 'https://lucuma-postgres-odb-dev.herokuapp.com/odb',
   ssoGraphqlUri: 'https://sso-dev.gpp.lucuma.xyz/graphql',
+  exploreUri: 'https://explore-dev.lucuma.xyz',
 };
 
 const STAGING: Environment = {
@@ -30,6 +37,7 @@ const STAGING: Environment = {
   ssoUri: 'https://sso-test.gpp.gemini.edu',
   odbUri: 'https://lucuma-postgres-odb-staging.herokuapp.com/odb',
   ssoGraphqlUri: 'https://sso-test.gpp.gemini.edu/graphql',
+  exploreUri: 'https://explore-test.gemini.edu',
 };
 
 const PRODUCTION: Environment = {
@@ -37,6 +45,7 @@ const PRODUCTION: Environment = {
   ssoUri: 'https://sso.gpp.gemini.edu',
   odbUri: 'https://lucuma-postgres-odb-production.herokuapp.com/odb',
   ssoGraphqlUri: 'https://sso.gpp.gemini.edu/graphql',
+  exploreUri: 'https://explore.gemini.edu',
 };
 
 const LOCAL_DEV: Environment = {
@@ -45,6 +54,9 @@ const LOCAL_DEV: Environment = {
   // Vite proxies (vite.config.ts) — same-origin in dev, so no CORS.
   odbUri: '/odb',
   ssoGraphqlUri: '/sso-graphql',
+  // Explore is a separate deployed app, so link to the dev one rather than
+  // proxying it.
+  exploreUri: DEV.exploreUri,
 };
 
 const environments = {

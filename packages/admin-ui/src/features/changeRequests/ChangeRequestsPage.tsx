@@ -22,8 +22,9 @@ import {
   observationsByIdFrom,
   useChangeRequests,
   useProgramObservations,
-  useUpdateConfigurationRequests,
+  useResolveChangeRequests,
 } from '@/gql/odb/changeRequests';
+import { formatUtcMinute, joinTargetNames } from '@/gql/odb/shared';
 import type {
   ChangeRequest,
   ConfigurationRequestStatus,
@@ -32,6 +33,7 @@ import type {
   Site,
   TimingWindowRow,
 } from '@/gql/types';
+import { exploreProgramUrl } from '@/lib/explore';
 
 const EMPTY: ChangeRequest[] = [];
 
@@ -65,16 +67,15 @@ const ALL = 'ALL';
  * PI. Approve/deny calls the real updateConfigurationRequests mutation, then
  * reloads from the ODB.
  *
- * Two ODB schema gaps surfaced honestly rather than hidden: CR-received
- * timestamps aren't tracked (the "Received" column says so), and there's no
- * reviewer-justification field (the resolve response is kept for the session
- * and shown as a tooltip on the status dot instead).
+ * The response is persisted as the request's `feedback` — the ODB's staff-side
+ * counterpart to the PI's `justification` — and shown as a tooltip on the
+ * status dot.
  */
 export default function ChangeRequestsPage(): JSX.Element {
   const toast = useToast();
   const { data, loading, error } = useChangeRequests();
   const requests = useMemo(() => (data ? mapChangeRequests(data) : EMPTY), [data]);
-  const [updateRequests, { loading: saving }] = useUpdateConfigurationRequests();
+  const { resolve, loading: saving } = useResolveChangeRequests();
   const programs = useMemo(() => groupChangeRequestsByProgram(requests), [requests]);
 
   const [semester, setSemester] = useState<string>(ALL);
@@ -138,12 +139,6 @@ export default function ChangeRequestsPage(): JSX.Element {
   const [response, setResponse] = useState('');
   const [decision, setDecision] = useState<Decision | null>(null);
 
-  // The reviewer's response, kept per-request so it can be shown as a status
-  // tooltip (per the sc-9094 mockup note: "could be in a tool-tip on the
-  // status"). There's no reviewer-justification field in the ODB yet — this
-  // is session-only and lost on reload.
-  const [reviewerNotes, setReviewerNotes] = useState<ReadonlyMap<string, string>>(new Map());
-
   // The effective selection can change without a click — e.g. a facet change
   // hides the selected program and the view falls back to the first one.
   // Reset the per-program review state whenever it changes, however it
@@ -174,16 +169,15 @@ export default function ChangeRequestsPage(): JSX.Element {
     if (!decision || selectedRequests.length === 0) return;
     const ids = selectedRequests.map((r) => r.id);
     try {
-      await updateRequests({ variables: { ids, status: decision } });
+      // Choosing a decision seeds the boilerplate, so an empty box means the
+      // reviewer cleared it deliberately: resolve without writing a response,
+      // which leaves any note already stored on the request intact.
+      const trimmed = response.trim();
+      await resolve(ids, decision, trimmed === '' ? null : trimmed);
       toast.success(
         decision === 'APPROVED' ? 'Change requests approved' : 'Change requests denied',
         `${ids.length} request${ids.length === 1 ? '' : 's'} in ${selectedProgram?.programReference ?? ''}`,
       );
-      setReviewerNotes((prev) => {
-        const next = new Map(prev);
-        for (const id of ids) next.set(id, response);
-        return next;
-      });
       setSelectedIds(new Set());
       setDecision(null);
       setResponse('');
@@ -247,7 +241,18 @@ export default function ChangeRequestsPage(): JSX.Element {
             header="Program"
             sortable
             style={{ width: '13rem' }}
-            headerTooltip="The program's reference label (falls back to its internal id when no reference has been assigned)."
+            headerTooltip="The program's reference label, linked to Explore (falls back to its internal id when no reference has been assigned)."
+            body={(p: (typeof filteredPrograms)[number]) =>
+              // A program with no reference falls back to its internal id, which
+              // isn't a valid Explore path — show it as plain text (sc-10159).
+              p.programReference === p.programId ? (
+                p.programReference
+              ) : (
+                <a href={exploreProgramUrl(p.programReference)} target="_blank" rel="noreferrer">
+                  {p.programReference}
+                </a>
+              )
+            }
           />
           <Column
             header="Status"
@@ -295,15 +300,15 @@ export default function ChangeRequestsPage(): JSX.Element {
             <Column field="id" header="ID" sortable style={{ width: '6rem' }} />
             <Column
               header="Received"
-              style={{ width: '8rem' }}
-              body={() => <span className="cr-untracked">not yet tracked</span>}
-              headerTooltip="The date a change request was received isn't tracked by the ODB yet — a known sc-9094 gap."
+              style={{ width: '10rem' }}
+              body={(r: ChangeRequest) => formatUtcMinute(r.createdAt)}
+              headerTooltip="When the PI submitted the change request (UTC)."
             />
             <Column
               header="Target"
-              style={{ width: '7rem' }}
-              body={() => '—'}
-              headerTooltip="No target name is tracked by the ODB — only coordinates are available (see RA/Dec)."
+              style={{ width: '9rem' }}
+              body={(r: VisibleRequest) => joinTargetNames(r.observations.map((o) => o.target))}
+              headerTooltip="Target name(s) of the request's applicable observations. A configuration request carries only coordinates, so the names come from those observations (sc-10159)."
             />
             <Column field="ra" header="RA" style={{ width: '9rem' }} />
             <Column field="dec" header="Dec" style={{ width: '9rem' }} />
@@ -344,7 +349,7 @@ export default function ChangeRequestsPage(): JSX.Element {
               header="Status"
               style={{ width: '5rem' }}
               body={(r: ChangeRequest) => {
-                const note = reviewerNotes.get(r.id);
+                const note = r.feedback;
                 const label =
                   r.status === 'REQUESTED'
                     ? 'Pending'
@@ -360,7 +365,9 @@ export default function ChangeRequestsPage(): JSX.Element {
                   />
                 );
               }}
-              headerTooltip="Hover a resolved request's status to see the reviewer's response — there's no dedicated reviewer-justification field in the ODB yet, so it's kept here for this session only."
+              // Staff may leave feedback before resolving, so this is not
+              // limited to resolved requests.
+              headerTooltip="Hover a request's status to see the response sent to the PI, when one has been given."
             />
           </DataTable>
         </Tile>
@@ -452,6 +459,9 @@ interface WindowGroup {
   readonly windows: readonly TimingWindowRow[];
 }
 
+/** Carries the observations alongside the request because several columns
+ *  (Target, Observations, Windows) describe the request through them — the
+ *  request itself holds only a configuration and coordinates. */
 type VisibleRequest = ChangeRequest & { readonly observations: readonly ObservationRow[] };
 
 /** Group a request's resolved observations by id, keeping only those that

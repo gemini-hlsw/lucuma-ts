@@ -23,7 +23,7 @@ import { searchRadiusArcsec, separationArcsec } from '@/lib/geminiArchive';
 import type { DocumentType } from './gen';
 import { graphql } from './gen';
 import type { ConfigurationRequestStatus, ObservingModeType } from './gen/graphql';
-import { asObservingModeType } from './shared';
+import { asObservingModeType, formatDec, formatRa, joinTargetNames } from './shared';
 
 /** sc-9243's "similar" observing modes: the same configuration style on the
  *  paired instrument yields equivalent data (GMOS-N ~ GMOS-S, GNIRS ~
@@ -75,6 +75,9 @@ export const CONFLICTS_QUERY = graphql(`
       matches {
         id
         status
+        # Resolve the request's target name(s) from its observations (sc-10159
+        # items 4-5) — a Configuration carries coordinates, not a name.
+        applicableObservations
         program {
           id
           reference {
@@ -122,6 +125,9 @@ export const CONFLICTS_QUERY = graphql(`
         }
         program {
           id
+          reference {
+            label
+          }
           proposal {
             gemini {
               ... on Queue {
@@ -167,10 +173,12 @@ export type AdminConflictCheckResult = DocumentType<typeof CONFLICTS_QUERY>;
  * match happens afterwards in matchConflicts.
  */
 export function useConflictCandidates(sources: readonly { readonly modeType: string | null }[]) {
-  const modeTypes = useMemo(
-    () => Array.from(new Set(sources.flatMap((s) => similarModeTypes(s.modeType)))).sort(),
-    [sources],
-  );
+  // Not memoized: callers build `sources` inline, so any memo keyed on it would
+  // miss every render anyway, and Apollo compares watch options — variables
+  // included — structurally (@wry/equality), so an equal array built afresh does
+  // not refetch. Deduping a handful of modes each render is cheaper than the
+  // machinery needed to avoid it.
+  const modeTypes = Array.from(new Set(sources.flatMap((s) => similarModeTypes(s.modeType)))).sort();
   const { data, loading, error } = useQuery(
     CONFLICTS_QUERY,
     modeTypes.length === 0
@@ -186,15 +194,26 @@ export function useConflictCandidates(sources: readonly { readonly modeType: str
 
 /** One planned observation elsewhere that could yield equivalent data. */
 export interface ConflictCandidate {
-  /** "G-2027B-1235-Q x-42" for a configuration request, or the observation
-   *  reference label for a ToO program's observation. */
-  readonly label: string;
+  /** The program's reference label ("G-2027B-1235-Q"), linkable to Explore
+   *  (sc-10159 items 1-2). Null only when the program has no reference. */
+  readonly programLabel: string | null;
+  /** The trailing identifier shown after the program label: the request id
+   *  for a configuration request, or the ToO observation's reference/id. */
+  readonly detailLabel: string;
   readonly programId: string;
   /** Excluded from matching against itself when the source is a request. */
   readonly requestId: string | null;
   /** CR status (Requested/Approved/Denied) or observation workflow state. */
   readonly status: string;
+  /** Target name where directly known (ToO observations). CR configurations
+   *  carry no name — resolved from `applicableObservations` for display rows. */
   readonly target: string;
+  /** The request's applicable observation ids, used to look up target names
+   *  (sc-10159 items 4-5). Empty for ToO-observation candidates. */
+  readonly applicableObservations: readonly string[];
+  /** Sexagesimal RA/Dec for display (sc-10159 item 7); "—" when unknown. */
+  readonly ra: string;
+  readonly dec: string;
   readonly raDeg: number | null;
   readonly decDeg: number | null;
   readonly modeType: string | null;
@@ -213,14 +232,20 @@ const CR_STATUS_LABEL: Partial<Record<ConfigurationRequestStatus, string>> = {
 export function mapConflictCandidates(raw: AdminConflictCheckResult): ConflictCandidate[] {
   const fromRequests = raw.configurationRequests.matches.map((c): ConflictCandidate => {
     const coords = c.configuration.target?.coordinates;
+    const raDeg = parseNumber(coords?.ra.degrees) ?? null;
+    const decDeg = parseNumber(coords?.dec.degrees) ?? null;
     return {
-      label: `${c.program.reference?.label ?? c.program.id} ${c.id}`,
+      programLabel: c.program.reference?.label ?? null,
+      detailLabel: c.id,
       programId: c.program.id,
       requestId: c.id,
       status: CR_STATUS_LABEL[c.status] ?? c.status,
-      target: '—', // configurations carry coordinates, not target names
-      raDeg: parseNumber(coords?.ra.degrees) ?? null,
-      decDeg: parseNumber(coords?.dec.degrees) ?? null,
+      target: '—', // resolved from applicableObservations by the display layer
+      applicableObservations: c.applicableObservations,
+      ra: raDeg === null ? '—' : formatRa(raDeg),
+      dec: decDeg === null ? '—' : formatDec(decDeg),
+      raDeg,
+      decDeg,
       modeType: c.configuration.observingMode?.mode ?? null,
     };
   });
@@ -236,14 +261,32 @@ export function mapConflictCandidates(raw: AdminConflictCheckResult): ConflictCa
     .map((o): ConflictCandidate => {
       const target = o.targetEnvironment.firstScienceTarget;
       const state = o.workflow?.value?.state ?? 'UNDEFINED';
+      const sidereal = target?.sidereal;
+      const raDeg = parseNumber(sidereal?.ra.degrees) ?? null;
+      const decDeg = parseNumber(sidereal?.dec.degrees) ?? null;
+      const programLabel = o.program.reference?.label ?? null;
+      const obsRef = o.reference?.label ?? o.id;
       return {
-        label: o.reference?.label ?? o.id,
+        programLabel,
+        // An observation reference embeds its program reference
+        // ("G-2027B-0057-Q-0311"); drop that prefix, and the hyphen joining it,
+        // so the linked program label isn't shown twice. Falls back to the full
+        // reference/id when it doesn't carry the prefix.
+        // `|| obsRef` keeps a malformed reference ("…-Q-") from stripping to
+        // nothing, which would render a bare link and weaken the row key.
+        detailLabel:
+          (programLabel !== null && obsRef.startsWith(`${programLabel}-`)
+            ? obsRef.slice(programLabel.length + 1)
+            : obsRef) || obsRef,
         programId: o.program.id,
         requestId: null,
         status: state.charAt(0) + state.slice(1).toLowerCase(),
         target: target?.name ?? '—',
-        raDeg: parseNumber(target?.sidereal?.ra.degrees) ?? null,
-        decDeg: parseNumber(target?.sidereal?.dec.degrees) ?? null,
+        applicableObservations: [],
+        ra: raDeg === null ? '—' : formatRa(raDeg),
+        dec: decDeg === null ? '—' : formatDec(decDeg),
+        raDeg,
+        decDeg,
         modeType: o.observingMode?.mode ?? null,
       };
     });
@@ -285,8 +328,72 @@ export function matchConflicts(
       if (c.programId === s.programId || c.requestId === s.id) continue;
       if (c.raDeg === null || c.decDeg === null || c.modeType === null || !similar.has(c.modeType)) continue;
       const sep = separationArcsec(s.raDeg, s.decDeg, c.raDeg, c.decDeg);
-      if (sep <= radius) rows.push({ ...c, key: `${s.id}:${c.label}`, sourceId: s.id, sepArcsec: sep });
+      if (sep <= radius)
+        rows.push({ ...c, key: `${s.id}:${c.programId}:${c.detailLabel}`, sourceId: s.id, sepArcsec: sep });
     }
   }
   return rows.sort((a, b) => a.sourceId.localeCompare(b.sourceId) || a.sepArcsec - b.sepArcsec);
+}
+
+/*
+ * A configuration request carries no target name, only coordinates — the name
+ * lives on its applicable observations (sc-10159 items 4-5). We resolve names
+ * only for the requests that actually surface as conflict rows (never the full
+ * 1000-candidate pool), in one id-batched query. `id: { IN: [...] }` is bounded
+ * by the number of displayed rows, so it can't approach Postgres's bind-param
+ * limit the way a program-wide fetch could.
+ */
+export const CONFLICT_TARGETS_QUERY = graphql(`
+  query AdminConflictTargets($ids: [ObservationId!]!) {
+    observations(WHERE: { id: { IN: $ids } }, LIMIT: 1000) {
+      matches {
+        id
+        targetEnvironment {
+          firstScienceTarget {
+            id
+            name
+          }
+        }
+      }
+    }
+  }
+`);
+
+export type AdminConflictTargetsResult = DocumentType<typeof CONFLICT_TARGETS_QUERY>;
+
+/** Resolve display target names for the change-request conflict rows: an id →
+ *  name map over the union of their applicable observations (sc-10159). ToO
+ *  rows already carry a name and contribute no ids, so the query is skipped
+ *  entirely when there are none.
+ *
+ *  `network-only` rather than the app's usual `cache-and-network`: the conflict
+ *  check is consulted to decide whether to approve a request, so it reads the
+ *  ODB as it stands now — the same reason the candidate query above does. A
+ *  name cached from an earlier visit would be shown without any indication it
+ *  is stale. (Not reachable by a test here: every render builds a cold cache,
+ *  which makes the two policies indistinguishable.) */
+export function useConflictTargetNames(rows: readonly ConflictRow[]): ReadonlyMap<string, string> {
+  const ids = useMemo(() => Array.from(new Set(rows.flatMap((r) => r.applicableObservations))).sort(), [rows]);
+  const { data } = useQuery(
+    CONFLICT_TARGETS_QUERY,
+    ids.length === 0 ? skipToken : { variables: { ids: [...ids] }, fetchPolicy: 'network-only' },
+  );
+  return useMemo(() => {
+    const byId = new Map<string, string>();
+    for (const o of data?.observations.matches ?? []) {
+      // The schema makes a target's name non-null, so only the target itself
+      // can be absent — an observation without one simply contributes nothing.
+      const name = o.targetEnvironment.firstScienceTarget?.name;
+      if (name !== undefined) byId.set(o.id, name);
+    }
+    return byId;
+  }, [data]);
+}
+
+/** The distinct target names of a conflict row: for a change request, the
+ *  names of its applicable observations (from `targetsById`); for a ToO
+ *  observation, its own already-known name. "—" when none resolve. */
+export function conflictTargetLabel(row: ConflictRow, targetsById: ReadonlyMap<string, string>): string {
+  if (row.applicableObservations.length === 0) return row.target;
+  return joinTargetNames(row.applicableObservations.map((id) => targetsById.get(id)));
 }
