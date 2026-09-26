@@ -191,6 +191,19 @@ export function proposalTypeInput(p: Program): GeminiProposalTypeInput {
     : { classical: { minPercentTime: p.minPercentTime } };
 }
 
+/** Whether an edit touched anything `proposalTypeInput` sends. The proposal
+ *  type is a `oneOf`, so there is no "leave it as it is" value: sending the
+ *  block at all rewrites the proposal's type. Since the editor collapses every
+ *  subtype to Queue or Classical, sending it on an untouched Director's Time
+ *  (or Poor Weather, Large Program, …) proposal would rewrite it as a Queue one
+ *  and the ODB rejects that against a Director's Time call (sc-10439).
+ *
+ *  Compared through `proposalTypeInput` rather than field by field, so a field
+ *  added to the input can never go unnoticed here and drop a save. */
+export function proposalTypeChanged(original: Program, draft: Program): boolean {
+  return JSON.stringify(proposalTypeInput(original)) !== JSON.stringify(proposalTypeInput(draft));
+}
+
 export const CREATE_PROGRAM_NOTE_MUTATION = graphql(`
   mutation AdminCreatePrivateNote($programId: ProgramId!, $text: NonEmptyString!) {
     createProgramNote(input: { programId: $programId, SET: { title: "Admin note", text: $text, isPrivate: true } }) {
