@@ -3,9 +3,33 @@ import { describe, expect, it } from 'vitest';
 import { executionDigest } from '@/test/factories';
 
 import type { GroupElementItemFragment, ObservationItemFragment } from './gen/graphql';
-import { type AdminProposalsResult, mapProposals, semesterOfReference } from './proposals';
+import {
+  type AdminProposalDetailsResult,
+  type AdminProposalsResult,
+  mapProposals,
+  mergeDetailPages,
+  type ProposalDetails,
+  semesterOfReference,
+} from './proposals';
 
 type RawProgram = AdminProposalsResult['programs']['matches'][number];
+type RawDetail = AdminProposalDetailsResult['programs']['matches'][number];
+
+/** Observations and groups now arrive from a second query (sc-10520), keyed by
+ *  program id — this builds that map the way `proposalDetailsById` does. */
+function detailsFor(
+  programId: string,
+  observations: readonly ObservationItemFragment[],
+  allGroupElements: readonly GroupElementItemFragment[] = [],
+): ProposalDetails {
+  const detail: RawDetail = {
+    __typename: 'Program',
+    id: programId,
+    observations: { __typename: 'ObservationSelectResult', matches: [...observations] },
+    allGroupElements: [...allGroupElements],
+  };
+  return new Map([[programId, detail]]);
+}
 
 function observation(id: string, targetName: string, hours: number | null): ObservationItemFragment {
   return {
@@ -52,40 +76,36 @@ function specialProgram(overrides: Partial<RawProgram>): RawProgram {
       reference: { __typename: 'ProposalReference', label: 'G-2027B-0042-DD' },
       gemini: { __typename: 'DirectorsTime', scienceSubtype: 'DIRECTORS_TIME' },
     },
-    observations: { __typename: 'ObservationSelectResult', matches: [] },
-    allGroupElements: [],
     ...overrides,
   };
 }
 
 describe(mapProposals, () => {
   it('projects only special-subtype proposals, with abstract + observation rows', () => {
-    const out = mapProposals({
-      programs: {
-        __typename: 'ProgramSelectResult',
-        hasMore: false,
-        matches: [
-          specialProgram({
-            observations: {
-              __typename: 'ObservationSelectResult',
-              matches: [
-                observation('o-1db', 'Gaia DR2 2342904698625661824', 0.4),
-                observation('o-459a', 'HIP 3320', null),
-              ],
-            },
-          }),
-          // Not a special subtype (a regular Queue proposal) — excluded.
-          specialProgram({
-            id: 'p-999',
-            proposal: {
-              __typename: 'Proposal',
-              reference: null,
-              gemini: { __typename: 'Queue', scienceSubtype: 'QUEUE' },
-            },
-          }),
-        ],
+    const out = mapProposals(
+      {
+        programs: {
+          __typename: 'ProgramSelectResult',
+          hasMore: false,
+          matches: [
+            specialProgram({}),
+            // Not a special subtype (a regular Queue proposal) — excluded.
+            specialProgram({
+              id: 'p-999',
+              proposal: {
+                __typename: 'Proposal',
+                reference: null,
+                gemini: { __typename: 'Queue', scienceSubtype: 'QUEUE' },
+              },
+            }),
+          ],
+        },
       },
-    });
+      detailsFor('p-110', [
+        observation('o-1db', 'Gaia DR2 2342904698625661824', 0.4),
+        observation('o-459a', 'HIP 3320', null),
+      ]),
+    );
     expect(out.length).toBe(1);
     const p = out[0];
     expect(p?.id).toBe('p-110');
@@ -129,18 +149,16 @@ describe(mapProposals, () => {
     // The science observation's own digest is 0.27h, but it sits in a telluric
     // group whose combined estimate is 0.53h — that total is its Time.
     const science = { ...observation('o-sci', 'NGC 4038', 0.27), groupId: 'g-tel' };
-    const [p] = mapProposals({
-      programs: {
-        __typename: 'ProgramSelectResult',
-        hasMore: false,
-        matches: [
-          specialProgram({
-            observations: { __typename: 'ObservationSelectResult', matches: [science] },
-            allGroupElements: [telluricGroup],
-          }),
-        ],
+    const [p] = mapProposals(
+      {
+        programs: {
+          __typename: 'ProgramSelectResult',
+          hasMore: false,
+          matches: [specialProgram({})],
+        },
       },
-    });
+      detailsFor('p-110', [science], [telluricGroup]),
+    );
     expect(p?.observations[0]).toMatchObject({ id: 'o-sci', hours: 0.5 });
   });
 });
@@ -149,5 +167,34 @@ describe(semesterOfReference, () => {
   it('parses the semester token, degrading to an em-dash', () => {
     expect(semesterOfReference('G-2027B-0042-DD')).toBe('2027B');
     expect(semesterOfReference('p-110')).toBe('—');
+  });
+});
+
+describe(mergeDetailPages, () => {
+  const row = (id: string): AdminProposalDetailsResult['programs']['matches'][number] => ({
+    __typename: 'Program',
+    id,
+    observations: { __typename: 'ObservationSelectResult', matches: [] },
+    allGroupElements: [],
+  });
+  const result = (
+    matches: AdminProposalDetailsResult['programs']['matches'],
+    hasMore = false,
+  ): AdminProposalDetailsResult => ({
+    programs: { __typename: 'ProgramSelectResult', matches, hasMore },
+  });
+
+  it('drops the row the inclusive cursor repeats', () => {
+    // The ODB's OFFSET is inclusive (Predicates.program.id.gtEql), so page two
+    // opens with page one's last row. Keeping it would map that program twice.
+    const merged = mergeDetailPages(result([row('p-1'), row('p-2')], true), {
+      fetchMoreResult: result([row('p-2'), row('p-3')]),
+    });
+    expect(merged.programs.matches.map((p) => p.id)).toEqual(['p-1', 'p-2', 'p-3']);
+  });
+
+  it('takes hasMore from the newest page, not the accumulated one', () => {
+    const merged = mergeDetailPages(result([row('p-1')], true), { fetchMoreResult: result([row('p-2')], false) });
+    expect(merged.programs.hasMore).toBe(false);
   });
 });
