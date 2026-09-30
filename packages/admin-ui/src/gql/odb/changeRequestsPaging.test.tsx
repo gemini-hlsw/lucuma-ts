@@ -16,6 +16,8 @@ const cr = (id: string, programId: string): RawRequest => ({
   id,
   status: 'REQUESTED',
   justification: null,
+  feedback: null,
+  createdAt: '2027-06-01T12:30:00Z',
   applicableObservations: [],
   program: {
     __typename: 'Program',

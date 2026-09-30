@@ -442,9 +442,16 @@ export interface ChangeRequest {
   readonly programTitle: string;
   readonly pi: string;
   readonly status: ConfigurationRequestStatus;
+  /** The PI's case for the change. */
   readonly justification: string;
+  /** Staff's response to the PI, persisted on the request. Empty when no
+   *  response has been recorded. */
+  readonly feedback: string;
+  /** When the PI submitted the request (ODB Timestamp, ISO-8601 UTC). */
+  readonly createdAt: string;
   readonly site: Site;
-  /** RA/Dec of the requested configuration's target, e.g. "06:08:31.9" / "-59:32:27". */
+  /** RA/Dec of the requested configuration's target, formatted for display:
+   *  "06:08:31.93" / "-59:32:27.2", or "—" when it has no coordinates. */
   readonly ra: string;
   readonly dec: string;
   /** Degrees for the sc-9243/9244 checks; null for ToO configurations,
