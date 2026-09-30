@@ -26,7 +26,7 @@ pnpm resource-ui dev            # vite dev server on http://localhost:5173
 
 The app reads **one backend**, over HTTP, at `/resource/graphql`. The vite proxy carries
 that path to the real dev deployment, purely to sidestep CORS. That service does not
-serve the v1 API yet, so `dev` shows an amber banner naming the situation and every view
+serve the v1 API yet, so `dev` shows an amber toast naming the situation and every view
 is empty. **That is the expected state of this branch**, and it is what a deployed build
 shows too.
 
@@ -46,6 +46,20 @@ exists.
 
 The mock server is also what to run on its own for GraphiQL, or for an external consumer
 trying the API.
+
+### Signing in locally
+
+The dev SSO admits any `lucuma.xyz` origin and refuses `localhost`, and its session cookie is
+`SameSite=Strict`, which the browser sends only from an https page on that domain. So give the
+dev server such a name and serve it over https:
+
+```bash
+sudo sh -c 'echo "127.0.0.1 local.lucuma.xyz" >> /etc/hosts'   # once
+pnpm resource-ui dev:https                                         # RESOURCE_HTTPS=1 vite, self-signed
+```
+
+Open https://local.lucuma.xyz:5173 (accept the certificate once), then sign in from the app
+menu with an ORCID account. A session started on any other lucuma.xyz app is already there.
 
 ### Codegen
 

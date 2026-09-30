@@ -4,11 +4,13 @@ import {
   type AdminConflictObservations,
   type AdminConflictRequests,
   type ConflictCandidate,
+  type ConflictRow,
+  conflictTargetLabel,
   mapConflictCandidates,
   matchConflicts,
   similarModeTypes,
+  withoutRequestedObservations,
 } from './conflicts';
-import type { TooActivation } from './gen/graphql';
 import { formatModeType } from './shared';
 
 describe(similarModeTypes, () => {
@@ -53,9 +55,8 @@ function siderealBase(name: string, raDeg: number, decDeg: number): RawBasePosit
   };
 }
 
-function tooObservation(
+function observation(
   id: string,
-  tooActivationCeiling: TooActivation,
   target: RawBasePosition,
   reference: string | null,
   workflow: RawObservation['workflow'],
@@ -69,13 +70,60 @@ function tooObservation(
     program: {
       __typename: 'Program',
       id: `p-${id}`,
-      proposal: { __typename: 'Proposal', gemini: { __typename: 'Queue', tooActivationCeiling } },
+      // The program reference is the observation reference without its trailing
+      // observation index, so the display can strip the shared prefix.
+      reference:
+        reference === null ? null : { __typename: 'ScienceProgramReference', label: reference.replace(/-\d+$/, '') },
     },
     targetEnvironment: { __typename: 'TargetEnvironment', basePosition: target },
   };
 }
 
 describe(mapConflictCandidates, () => {
+  /** An observation whose reference and program label are set independently, to
+   *  exercise the prefix strip's edges (the observation helper derives one
+   *  from the other, so it cannot express these). */
+  function withLabels(reference: string | null, programLabel: string | null): RawObservation {
+    const base = observation('o-e', null, reference, {
+      __typename: 'CalculatedObservationWorkflow',
+      value: { __typename: 'ObservationWorkflow', state: 'READY' },
+    });
+    return {
+      ...base,
+      program: {
+        ...base.program,
+        reference: programLabel === null ? null : { __typename: 'ScienceProgramReference', label: programLabel },
+      },
+    };
+  }
+
+  const detailLabelOf = (reference: string | null, programLabel: string | null): string =>
+    mapConflictCandidates('x-125', {
+      observations: {
+        __typename: 'ObservationSelectResult',
+        hasMore: false,
+        matches: [withLabels(reference, programLabel)],
+      },
+    })[0]!.detailLabel;
+
+  it.each([
+    // Normal case: the shared program prefix and its hyphen come off.
+    ['G-2027B-0057-Q-0311', 'G-2027B-0057-Q', '0311'],
+    // A reference that is all prefix would strip to nothing, leaving a bare
+    // link; it keeps the full reference instead.
+    ['G-2027B-0057-Q-', 'G-2027B-0057-Q', 'G-2027B-0057-Q-'],
+    // The reference IS the program label — nothing to strip.
+    ['G-2027B-0057-Q', 'G-2027B-0057-Q', 'G-2027B-0057-Q'],
+    // A reference that doesn't carry the prefix is shown whole. Deliberately
+    // longer than the program label: an equal-length one would slice to "" and
+    // be rescued by the `|| obsRef` guard, hiding a missing prefix check.
+    ['GS-2025B-FT-218-0007', 'G-2027B-0057-Q', 'GS-2025B-FT-218-0007'],
+    // No program reference to strip: the observation id is the whole label.
+    [null, null, 'o-e'],
+  ])('derives the detail label for %s under %s', (reference, programLabel, expected) => {
+    expect(detailLabelOf(reference, programLabel)).toBe(expected);
+  });
+
   it('reads a configuration request from its reference coordinates', () => {
     const requests: AdminConflictRequests = {
       configurationRequests: {
@@ -86,6 +134,7 @@ describe(mapConflictCandidates, () => {
             __typename: 'ConfigurationRequest',
             id: 'x-42',
             status: 'APPROVED',
+            applicableObservations: ['o-42a', 'o-42b'],
             program: {
               __typename: 'Program',
               id: 'p-2',
@@ -108,22 +157,32 @@ describe(mapConflictCandidates, () => {
       },
     };
     expect(mapConflictCandidates('x-125', requests)).toEqual([
-      expect.objectContaining({ label: 'G-2027B-0421-P x-42', status: 'Approved', requestId: 'x-42', raDeg: 30 }),
+      expect.objectContaining({
+        sourceId: 'x-125',
+        programLabel: 'G-2027B-0421-P',
+        detailLabel: 'x-42',
+        status: 'Approved',
+        requestId: 'x-42',
+        applicableObservations: ['o-42a', 'o-42b'],
+        raDeg: 30,
+        ra: '02:00:00.00',
+        dec: '-30:00:00.0',
+      }),
     ]);
   });
 
-  it('keeps only observations whose program can be triggered as a ToO', () => {
+  it('keeps every observation whatever its program’s ToO status, which the ODB no longer exposes usefully', () => {
     const observations: AdminConflictObservations = {
       observations: {
         __typename: 'ObservationSelectResult',
         hasMore: false,
         matches: [
-          tooObservation('o-1', 'RAPID', siderealBase('NGC 1027', 30.001, -30), 'G-2027B-0057-Q-0311', {
+          observation('o-1', siderealBase('NGC 1027', 30.001, -30), 'G-2027B-0057-Q-0311', {
             __typename: 'CalculatedObservationWorkflow',
             value: { __typename: 'ObservationWorkflow', state: 'READY' },
           }),
-          tooObservation('o-2', 'NONE', siderealBase('Vega', 31, -31), null, null),
-          tooObservation('o-3', 'INTERRUPTING', siderealBase('SN 2027aa', 31, -31), 'G-2027B-0058-Q-0001', {
+          observation('o-2', siderealBase('Vega', 31, -31), null, null),
+          observation('o-3', siderealBase('SN 2027aa', 31, -31), 'G-2027B-0058-Q-0001', {
             __typename: 'CalculatedObservationWorkflow',
             value: { __typename: 'ObservationWorkflow', state: 'READY' },
           }),
@@ -131,9 +190,22 @@ describe(mapConflictCandidates, () => {
       },
     };
     const candidates = mapConflictCandidates('x-125', observations);
-    expect(candidates).toHaveLength(2); // the NONE-ceiling observation is dropped
-    expect(candidates[0]).toMatchObject({ label: 'G-2027B-0057-Q-0311', status: 'Ready', target: 'NGC 1027' });
-    expect(candidates[1]).toMatchObject({ label: 'G-2027B-0058-Q-0001', status: 'Ready', target: 'SN 2027aa' });
+    expect(candidates).toHaveLength(3);
+    expect(candidates.map((c) => c.observationId)).toEqual(['o-1', 'o-2', 'o-3']);
+    expect(candidates[0]).toMatchObject({
+      // The program-reference prefix is stripped from the observation reference.
+      programLabel: 'G-2027B-0057-Q',
+      detailLabel: '0311',
+      status: 'Ready',
+      target: 'NGC 1027',
+      ra: '02:00:00.24',
+    });
+    expect(candidates[2]).toMatchObject({
+      programLabel: 'G-2027B-0058-Q',
+      detailLabel: '0001',
+      status: 'Ready',
+      target: 'SN 2027aa',
+    });
   });
 
   it('reads the base position of a resolved target of opportunity (sc-9243)', () => {
@@ -147,7 +219,7 @@ describe(mapConflictCandidates, () => {
         __typename: 'ObservationSelectResult',
         hasMore: false,
         matches: [
-          tooObservation('o-62ca', 'RAPID', siderealBase('YYG A', 39.66225, 16.615939), 'G-2026B-0134-Q-0276', {
+          observation('o-62ca', siderealBase('YYG A', 39.66225, 16.615939), 'G-2026B-0134-Q-0276', {
             __typename: 'CalculatedObservationWorkflow',
             value: { __typename: 'ObservationWorkflow', state: 'READY' },
           }),
@@ -165,9 +237,8 @@ describe(mapConflictCandidates, () => {
         __typename: 'ObservationSelectResult',
         hasMore: false,
         matches: [
-          tooObservation(
+          observation(
             'o-9',
-            'RAPID',
             {
               __typename: 'BasePosition',
               name: 'M31, M32',
@@ -199,9 +270,8 @@ describe(mapConflictCandidates, () => {
         __typename: 'ObservationSelectResult',
         hasMore: false,
         matches: [
-          tooObservation(
+          observation(
             'o-10',
-            'RAPID',
             { __typename: 'BasePosition', name: 'Ceres', sidereal: null, coordinates: null },
             'G-2027B-0060-Q-0001',
             {
@@ -219,11 +289,16 @@ describe(mapConflictCandidates, () => {
 function candidate(overrides: Partial<ConflictCandidate>): ConflictCandidate {
   return {
     sourceId: 'x-125',
-    label: 'G-2027B-0421-P x-42',
+    programLabel: 'G-2027B-0421-P',
+    detailLabel: 'x-42',
     programId: 'p-2',
     requestId: 'x-42',
+    observationId: null,
     status: 'Approved',
     target: '—',
+    applicableObservations: [],
+    ra: '02:00:00.00',
+    dec: '-30:00:00.0',
     raDeg: 30,
     decDeg: -30,
     modeType: 'GMOS_NORTH_LONG_SLIT',
@@ -281,7 +356,33 @@ describe(matchConflicts, () => {
       [source, { ...source, id: 'x-126' }],
       [candidate({ sourceId: 'x-125' }), candidate({ sourceId: 'x-126' })],
     );
-    expect(rows.map((r) => r.key)).toEqual(['x-125:G-2027B-0421-P x-42', 'x-126:G-2027B-0421-P x-42']);
+    expect(rows.map((r) => r.key)).toEqual(['x-125:p-2:x-42', 'x-126:p-2:x-42']);
+  });
+});
+
+describe(conflictTargetLabel, () => {
+  const row = (overrides: Partial<ConflictRow>): ConflictRow => ({
+    ...candidate({}),
+    key: 'k',
+    sepArcsec: 0,
+    ...overrides,
+  });
+
+  it("keeps an observation's own name (no applicable observations to resolve)", () => {
+    expect(conflictTargetLabel(row({ applicableObservations: [], target: 'SN 2027aa' }), new Map())).toBe('SN 2027aa');
+  });
+
+  it('resolves distinct names of a request from its applicable observations', () => {
+    const names = new Map([
+      ['o-1', 'NGC 300'],
+      ['o-2', 'NGC 300'], // same target, two observations — de-duplicated
+      ['o-3', 'M31'],
+    ]);
+    expect(conflictTargetLabel(row({ applicableObservations: ['o-1', 'o-2', 'o-3'] }), names)).toBe('NGC 300, M31');
+  });
+
+  it('dashes when a request has applicable observations but none resolved yet', () => {
+    expect(conflictTargetLabel(row({ applicableObservations: ['o-9'] }), new Map())).toBe('—');
   });
 });
 
@@ -290,8 +391,8 @@ describe('matchConflicts ordering', () => {
 
   it('sorts rows by source id, then by separation', () => {
     const forSource = (sourceId: string) => [
-      candidate({ sourceId, label: 'far', decDeg: -30.02 }),
-      candidate({ sourceId, label: 'near', decDeg: -30.005 }),
+      candidate({ sourceId, detailLabel: 'far', programId: 'p-far', decDeg: -30.02 }),
+      candidate({ sourceId, detailLabel: 'near', programId: 'p-near', decDeg: -30.005 }),
     ];
     const rows = matchConflicts(
       [
@@ -300,6 +401,43 @@ describe('matchConflicts ordering', () => {
       ],
       [...forSource('x-2'), ...forSource('x-1')],
     );
-    expect(rows.map((r) => `${r.sourceId}:${r.label}`)).toEqual(['x-1:near', 'x-1:far', 'x-2:near', 'x-2:far']);
+    expect(rows.map((r) => `${r.sourceId}:${r.detailLabel}`)).toEqual(['x-1:near', 'x-1:far', 'x-2:near', 'x-2:far']);
+  });
+
+  it('breaks a separation tie by program label, then detail label', () => {
+    const tied = (programLabel: string, detailLabel: string) =>
+      candidate({ programLabel, detailLabel, programId: `p-${programLabel}${detailLabel}`, decDeg: -30.01 });
+    const rows = matchConflicts([source], [tied('G-B', 'x-2'), tied('G-A', 'x-9'), tied('G-B', 'x-1')]);
+    expect(rows.map((r) => `${r.programLabel}:${r.detailLabel}`)).toEqual(['G-A:x-9', 'G-B:x-1', 'G-B:x-2']);
+  });
+});
+
+describe(withoutRequestedObservations, () => {
+  const request = (sourceId: string, applicable: string[]) =>
+    candidate({ sourceId, requestId: 'x-42', applicableObservations: applicable });
+  const obs = (sourceId: string, observationId: string) =>
+    candidate({
+      sourceId,
+      requestId: null,
+      observationId,
+      detailLabel: observationId,
+      programId: `p-${observationId}`,
+    });
+
+  it('reports an observation once, through the request that carries it', () => {
+    const kept = withoutRequestedObservations([request('x-1', ['o-1']), obs('x-1', 'o-1'), obs('x-1', 'o-2')]);
+    expect(kept.map((c) => c.observationId)).toEqual([null, 'o-2']);
+  });
+
+  it('keeps an observation whose request was denied, which is no plan to act on', () => {
+    const denied = { ...request('x-1', ['o-1']), status: 'Denied' };
+    const kept = withoutRequestedObservations([denied, obs('x-1', 'o-1')]);
+    expect(kept.map((c) => c.observationId)).toEqual([null, 'o-1']);
+  });
+
+  it('keeps the observation for a source whose cone did not find the request', () => {
+    // The request was found for x-1 only; x-2's cone reached the observation alone.
+    const kept = withoutRequestedObservations([request('x-1', ['o-1']), obs('x-2', 'o-1')]);
+    expect(kept.map((c) => c.sourceId)).toEqual(['x-1', 'x-2']);
   });
 });

@@ -72,3 +72,20 @@ export function advancePerRem(samples: readonly string[], fontSize: string, font
     );
   });
 }
+
+export function lastTextLineRect(element: HTMLElement): DOMRect {
+  const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+  let last: Text | null = null;
+  for (let node = walker.nextNode(); node; node = walker.nextNode()) last = node as Text;
+  if (last === null) throw new Error('lastTextLineRect: the element holds no text');
+  const range = document.createRange();
+  range.selectNode(last);
+  const rects = [...range.getClientRects()];
+  if (rects.length === 0) throw new Error(`lastTextLineRect: no line box for "${last.data}"`);
+  return rects[rects.length - 1]!;
+}
+
+export function contentBoxHeight(element: HTMLElement): number {
+  const { paddingTop, paddingBottom } = getComputedStyle(element);
+  return element.getBoundingClientRect().height - Number.parseFloat(paddingTop) - Number.parseFloat(paddingBottom);
+}

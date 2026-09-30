@@ -3,7 +3,6 @@ import { Outlet } from 'react-router';
 
 import BottomNav from './BottomNav';
 import { EnvBanner } from './EnvBanner';
-import { LiveFailureBanner } from './LiveFailureBanner';
 import Navbar from './Navbar';
 import Sidebar from './Sidebar';
 
@@ -14,7 +13,6 @@ export default function Layout(): JSX.Element {
       <div className="print:hidden">
         <EnvBanner />
         <Navbar />
-        <LiveFailureBanner />
       </div>
       <div className="row-start-2 grid min-h-0 grid-cols-[196px_1fr] overflow-hidden max-md:grid-cols-1 print:row-start-auto print:block print:overflow-visible">
         <div className="contents print:hidden">

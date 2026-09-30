@@ -14,8 +14,8 @@ The v1 read surface is complete and waiting on its backend; PRODUCT.md names the
 destinations it draws.
 
 **The app reads one backend, over HTTP** - the live Resource service at `/resource/graphql`,
-which does not serve the v1 API yet. Every view is therefore empty behind the failure banner
-(`src/gql/liveStatus.ts`, `LiveFailureBanner`): the expected state, in development and deployed
+which does not serve the v1 API yet. Every view is therefore empty under a sticky warning toast
+(the live link in `src/gql/ApolloConfigs.ts`): the expected state, in development and deployed
 alike.
 
 **No data source runs in the client.** The app must never execute a GraphQL schema in the
@@ -67,6 +67,56 @@ the clock toggle, finder scoping) are DESIGN.md's. The mechanics:
   This is react-router's own default for `to`; carrying more would be the hand-written
   override, so a new link needs no convention, only the helper where it wants site and night.
 - Site scoping for the finder pages comes from `app/useSiteSpan.ts`.
+
+## Auth mechanics
+
+The masthead says who is signed in and the app menu holds the login and the logout. No view is
+gated on a session - a signed-out reader can open every one - and what a session buys today is
+one header on every Resource request (`ENDPOINTS.md`, "The endpoint").
+
+- **The token lives in common-ui's `odbTokenAtom`**, a sessionStorage-backed Jotai atom, and the
+  app reaches it - and `userAtom`, `isLoggedInAtom`, `sessionStatusAtom` - only through
+  `@/components/atoms/auth`. **`app/preference.ts` is not for it**: a session is not a reader's
+  habit and must not outlive the tab.
+- **`src/auth/session.ts` is the one session keeper** - a module-level controller over the shared
+  store (`components/atoms/store.ts`). It bootstraps from the SSO cookie, re-refreshes from the
+  token's own `exp`, keeps one request in flight, and backs off only when SSO is unreachable (30 s
+  doubling to 16 min, with or without a token - the `SESSION_TIMINGS` defaults `startSession` takes,
+  which tests shrink to tens of milliseconds to run on the real clock); a rejected refresh signs the
+  reader out and arms no timer, though refocusing the tab still asks SSO for the cookie once 30 s
+  have passed since the last attempt, which is how a session started in another lucuma.xyz tab gets
+  picked up; a token leaves the store when its `exp` passes, at once if it is restored or arrives
+  expired (with a console warning when SSO issued it that way), and the auth link also checks `exp`
+  itself because a sleeping tab fires that timer late; `signOut` tears the keeper down whether or
+  not SSO answers, so only a full page load can sign the reader back in. Before asking SSO it
+  announces the logout on the `resource-session` BroadcastChannel, which a keeper holds open only
+  while it runs; every other tab's keeper then signs out the same way without calling SSO, first
+  setting `signedOutElsewhereAtom` so that tab's toast says where the logout happened. It
+  announces again once the logout call settles, for a tab that loaded in between.
+  Non-React callers - the Apollo auth link, `signOut` - read the store directly rather than a hook.
+- **`auth/AuthSession.tsx` starts that keeper once**, wrapped around `<App />` in `main.tsx`, and
+  renders the app at once. The requests wait instead: `sessionHoldLink`, first in the live chain
+  (`gql/ApolloConfigs.ts`), holds each one until `sessionCheckedAtom` is true, so none goes out
+  before the bearer is known and a signed-in cold load sends each query once, with the bearer.
+  `AuthSession` also refetches every active query when the reader signs in or out later. The
+  check is bounded: `refreshSession` gives up on SSO after 10 s and reads the silence as
+  `unreachable`, so a hung answer releases the requests signed out and the keeper's backoff and
+  token-retention rules take over.
+- **Tests sign in through `renderApp`**: `renderApp({ token: fakeJwt(standardUser('staff')) })`
+  (`src/test/factories.ts`). Every test starts signed out because `src/test/setup.ts` resets the
+  session before it (it clears localStorage, then writes `odbTokenAtom` null - overwriting the
+  token in sessionStorage - and `sessionCheckedAtom` false on the shared store); each render then
+  hydrates the shared store (`components/atoms/store.ts`), the one `authLink` and `signOut` read,
+  with the token and `sessionCheckedAtom` on top of that. Two trees rendered in one test share that
+  session, and the later `renderApp` call sets it.
+- **The SSO host is absolute in every environment** (`app/environment.ts`'s `ssoUri`) - the cookie
+  flows cannot go through the dev-server proxy. Each SSO host admits origins under its own domain
+  and refuses the rest: staging's `sso-test.gpp.gemini.edu` answers `gemini.edu` and not
+  `resource-staging.lucuma.xyz`, so staging reads signed out until that host is admitted, and
+  neither host answers a `localhost` origin, so `pnpm resource-ui dev` reads signed out (the
+  blocked refresh takes the unreachable path and retries on its backoff). `dev:https` with
+  `local.lucuma.xyz` aliased in `/etc/hosts` is the way in (README, "Signing in locally"): the
+  name is admitted, and https is what lets the browser send the `SameSite=Strict` cookie.
 
 ## The views
 
@@ -132,6 +182,13 @@ these components are DESIGN.md's; this table is the ownership map.
 | `InstrumentSwatch`                       | Colour square plus name (in `features/timeline/`, beside the palette it reads).                                                                                                                                                                                                                                                                                          |
 | `siteTime.eveningLabel` / `eveningRange` | The one evening formatter. Style is a parameter (`dayMonth`, `dayMonthYear`, `weekdayDayMonth`) because that choice is about what the page already says, never about what the date means.                                                                                                                                                                                |
 
+- **Toasts go through the one PrimeReact `Toast` that `ToastOutlet` mounts in `main.tsx`.**
+  `useToast()`, or `store.get(toastAtom)` outside React, returns its handle, null until it mounts.
+  Show a module-level `ToastMessage` constant with string `summary` and `detail` (the live-server
+  failure toasts carry a summary alone), and withdraw it
+  with `remove(thatConstant)`: PrimeReact removes by deep equality. What a toast says and looks
+  like is DESIGN.md's ("Toasts").
+
 ## Gotchas that cost real debugging
 
 Fixed structurally - do not undo it.
@@ -148,7 +205,7 @@ Fixed structurally - do not undo it.
 ## Commands
 
 **`README.md` is the command reference** - every script, the two-terminal mock setup, codegen, the
-first-time `playwright install chromium`, and why `dev` shows the failure banner. It is not repeated here.
+first-time `playwright install chromium`, and why `dev` shows the failure toast. It is not repeated here.
 
 ## GraphQL, the mock server and the schedule data
 
@@ -192,7 +249,14 @@ changing the schema. What follows is the half that is this app's, plus the rules
   hardware. The cache lock that enforces this is under "Gotchas" above.
 - **No new schema type without a requirement behind it**: a column in the workbook, a line in the
   scheduler contract, or a request from Bryan or Andrew.
-- **One capability per commit**, with its tests.
+- **One capability per commit**, with its tests. The message is one concise Conventional Commits
+  subject that says what the commit did (`feat(resource-ui): sign in and out from the app menu`), no
+  body unless it states a fact the diff cannot show. Fold fixes and test additions into the commit
+  they belong to before opening a PR, so history reads as capabilities, and never add AI or tool
+  attribution trailers.
+- **Comments are the exception, not the default.** Ship code with none; add one sentence only where
+  the code cannot carry a constraint from outside the file (a library quirk, a rejected approach and
+  why). Never history, attribution, session talk, or a restatement of what the code says.
 
 ## Testing
 
@@ -263,7 +327,9 @@ mechanic it does not carry:
   each step carries the `line-height` and `vertical-align` correction that keeps the glyph on the
   text's baseline, which a hand-rolled em utility gets wrong. **In the masthead, add `widthAuto`** -
   FontAwesome 7 pads every icon to a fixed 1.25em canvas and the bar cannot spare that width. Leave
-  it padded in the app menu, where it aligns the icon column.
+  it padded in the app menu, where it aligns the icon column. The ORCID logo on the login item is an
+  `<img>` with no `size` prop and takes that same box as `h-[1em] w-[1.25em] object-contain`, so it
+  sits in the column.
 
 Prefer Tailwind utilities over CSS files except where Tailwind can't express it (complex selectors,
 keyframes, third-party overrides).
