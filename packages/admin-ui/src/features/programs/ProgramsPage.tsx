@@ -35,6 +35,8 @@ import {
 import { mapRosterUsers, useUsers } from '@/gql/sso/roster';
 import {
   type ContactScientist,
+  NO_CEILING_OPTION,
+  NO_TOO_CEILING_LABEL,
   type Program,
   PROGRAM_CLASS_LABEL,
   PROGRAM_CLASSES,
@@ -46,7 +48,8 @@ import {
   type ScienceSubtype,
   TOO_LABEL,
   TOO_STATUSES,
-  type TooActivation,
+  tooCeilingFromOption,
+  tooCeilingToOption,
 } from '@/gql/types';
 import { matchesQuery } from '@/lib/search';
 import { currentSemester, NO_SEMESTER, semesterOf } from '@/lib/semester';
@@ -95,7 +98,7 @@ export default function ProgramsPage(): JSX.Element {
    *  remaining step is independent. Throws on the first failure so the user
    *  sees exactly what broke (the ODB is transactional per mutation). */
   async function saveProgram(original: Program, draft: Program): Promise<void> {
-    await updateProgram({ variables: { programId: draft.id, set: programPropertiesInput(draft) } });
+    await updateProgram({ variables: { programId: draft.id, set: programPropertiesInput(draft, original) } });
 
     await updateProposalType({ variables: { programId: draft.id, gemini: proposalTypeInput(draft) } });
 
@@ -241,8 +244,8 @@ export default function ProgramsPage(): JSX.Element {
             header="ToO"
             sortable
             style={{ width: '7rem' }}
-            body={(p: Program) => TOO_LABEL[p.tooStatus]}
-            headerTooltip="Target-of-Opportunity activation."
+            body={(p: Program) => (p.tooStatus === null ? NO_TOO_CEILING_LABEL : TOO_LABEL[p.tooStatus])}
+            headerTooltip="Target-of-Opportunity ceiling: the most disruptive activation the program's observations may declare. Unrestricted means no ceiling."
           />
           <Column field="name" header="Title" sortable />
         </DataTable>
@@ -330,16 +333,19 @@ function ProgramEditor({
 
             <label
               htmlFor="too"
-              title="Target-of-Opportunity ceiling — the most disruptive activation this program's observations may declare (None / Standard / Rapid / Interrupting). Queue programs only."
+              title="Target-of-Opportunity ceiling — the most disruptive activation this program's observations may declare (None / Rapid / Interrupting). Unrestricted lifts the ceiling."
             >
               ToO Status
             </label>
             <Dropdown
               inputId="too"
-              value={draft.tooStatus}
-              options={TOO_STATUSES.map((t) => ({ label: TOO_LABEL[t], value: t }))}
-              onChange={(e) => set('tooStatus', e.value as TooActivation)}
-              disabled={draft.programClass !== 'QUEUE'}
+              value={tooCeilingToOption(draft.tooStatus)}
+              options={[
+                // Least to most permissive, so a stray click never lands on the loosest.
+                ...TOO_STATUSES.map((t) => ({ label: TOO_LABEL[t], value: t })),
+                { label: NO_TOO_CEILING_LABEL, value: NO_CEILING_OPTION },
+              ]}
+              onChange={(e) => set('tooStatus', tooCeilingFromOption(e.value as string))}
             />
 
             <label
