@@ -341,7 +341,7 @@ function ProgramEditor({
               inputId="too"
               value={tooCeilingToOption(draft.tooStatus)}
               options={[
-                // Least to most permissive, so a stray click never lands on the loosest.
+                // Least to most permissive.
                 ...TOO_STATUSES.map((t) => ({ label: TOO_LABEL[t], value: t })),
                 { label: NO_TOO_CEILING_LABEL, value: NO_CEILING_OPTION },
               ]}
