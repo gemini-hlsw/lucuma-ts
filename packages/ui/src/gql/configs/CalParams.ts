@@ -59,7 +59,7 @@ export function useCreateCalParams() {
   });
 }
 
-const CAL_PARAMS_HISTORY = graphql(`
+export const CAL_PARAMS_HISTORY = graphql(`
   query CalParamsHistory($site: Site!) {
     calParamsHistory(site: $site) {
       pk

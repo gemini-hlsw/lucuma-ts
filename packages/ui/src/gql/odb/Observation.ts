@@ -152,7 +152,7 @@ export function useObservationById() {
   return useLazyQuery(GET_OBSERVATION_BY_ID, { fetchPolicy: 'network-only' });
 }
 
-const GET_OBSERVATIONS_BY_STATE = graphql(`
+export const GET_OBSERVATIONS_BY_STATE = graphql(`
   # eslint-disable @graphql-eslint/selection-set-depth
   query ObservationsByState($states: [ObservationWorkflowState!]!, $site: Site!, $date: Date!) {
     observations(
