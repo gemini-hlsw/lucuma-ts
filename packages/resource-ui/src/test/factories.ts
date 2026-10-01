@@ -20,6 +20,6 @@ export function fakeJwt(user: User, expiresInSeconds = 3600): string {
   const encode = (value: unknown): string =>
     btoa(String.fromCharCode(...new TextEncoder().encode(JSON.stringify(value)))).replace(/=+$/, '');
   const header = encode({ alg: 'none', typ: 'JWT' });
-  const payload = encode({ 'lucuma-user': user, exp: Math.floor(Date.now() / 1000) + expiresInSeconds });
+  const payload = encode({ 'lucuma-user': user, exp: Date.now() / 1000 + expiresInSeconds });
   return `${header}.${payload}.signature`;
 }

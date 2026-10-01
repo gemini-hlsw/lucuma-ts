@@ -46,6 +46,7 @@ const directorsTimeProgram = (): RawProgram => ({
   status: 'ACTIVE',
   explicitStatus: null,
   defaultStatus: 'ACTIVE',
+  tooActivationCeiling: 'NONE',
   allocations: [],
   goa: { __typename: 'GoaProperties', proprietaryMonths: 12, privateHeader: false },
   proposal: {
@@ -67,7 +68,6 @@ const queueProgram = (): RawProgram => ({
     gemini: {
       __typename: 'Queue',
       scienceSubtype: 'QUEUE',
-      tooActivationCeiling: 'NONE',
       minPercentTime: 80,
       considerForBand3: 'CONSIDER',
     },
@@ -125,7 +125,9 @@ describe(ProgramsPage, () => {
     const screen = await renderWithContext(<ProgramsPage />, { token: STAFF_TOKEN, mocks: [programsMock()] });
     await expect.element(screen.getByRole('spinbutton', { name: /Minimum Time/ })).toBeDisabled();
     await expect.element(screen.getByRole('checkbox', { name: /Consider for Band 3/ })).toBeDisabled();
-    await expect.element(screen.getByRole('textbox', { name: /ToO Status/ })).toBeDisabled();
+    // The ToO ceiling belongs to the program, not the proposal type, so it stays
+    // editable here.
+    await expect.element(screen.getByRole('textbox', { name: /ToO Status/ })).not.toBeDisabled();
     // Class most of all: it selects which arm of the oneOf is sent.
     await expect.element(screen.getByRole('textbox', { name: 'Class', exact: true })).toBeDisabled();
   });
@@ -143,7 +145,7 @@ describe(ProgramsPage, () => {
         {
           request: {
             query: UPDATE_PROGRAM_MUTATION,
-            variables: { programId: 'p-1532', set: programPropertiesInput(draft) },
+            variables: { programId: 'p-1532', set: programPropertiesInput(draft, mapped()) },
           },
           result: {
             data: {
@@ -165,6 +167,59 @@ describe(ProgramsPage, () => {
     await userEvent.click(screen.getByRole('button', { name: /Save/ }));
     await expect.element(screen.getByText(/Program saved/)).toBeInTheDocument();
     expect(rec.sent).toBe(false);
+  });
+
+  it('still sends the proposal type when it was edited', async () => {
+    // The other half of the guard: skipping an unchanged type must not swallow
+    // a real edit. Minimum Time is a Queue field the editor can build.
+    let sent = false;
+    const original = mapped(queueProgram());
+    const draft = { ...original, minPercentTime: 50 };
+    const screen = await renderWithContext(<ProgramsPage />, {
+      token: STAFF_TOKEN,
+      mocks: [
+        queueMock(),
+        {
+          request: {
+            query: UPDATE_PROGRAM_MUTATION,
+            variables: { programId: 'p-1533', set: programPropertiesInput(draft, original) },
+          },
+          result: {
+            data: {
+              updatePrograms: {
+                __typename: 'UpdateProgramsResult',
+                programs: [{ __typename: 'Program', id: 'p-1533' }],
+              },
+            },
+          },
+        },
+        {
+          request: {
+            query: UPDATE_PROPOSAL_TYPE_MUTATION,
+            variables: { programId: 'p-1533', gemini: proposalTypeInput(draft) },
+          },
+          result: () => {
+            sent = true;
+            return {
+              data: {
+                updateProposal: {
+                  __typename: 'UpdateProposalResult',
+                  proposal: { __typename: 'Proposal', category: null },
+                },
+              },
+            };
+          },
+        },
+      ],
+    });
+
+    const minimum = screen.getByRole('spinbutton', { name: /Minimum Time/ });
+    await expect.element(minimum).toHaveValue('80');
+    await userEvent.fill(minimum, '50');
+    await userEvent.tab();
+    await userEvent.click(screen.getByRole('button', { name: /Save/ }));
+    await expect.element(screen.getByText(/Program saved/)).toBeInTheDocument();
+    expect(sent).toBe(true);
   });
 
   // Wrapping a control in a <span> for its tooltip makes the span the grid
@@ -195,10 +250,11 @@ describe(ProgramsPage, () => {
     const reference = width(form.querySelector('.p-autocomplete'));
     expect(reference).toBeGreaterThan(0);
 
-    // Both Class and ToO; the other wrapped controls are not dropdowns and the
+    // Class is the only wrapped dropdown (the ToO ceiling is a program field and
+    // needs no wrapper); the other wrapped controls are not dropdowns and the
     // rule does not reach them.
     const dropdowns = [...form.querySelectorAll(':scope > span > .p-dropdown')];
-    expect(dropdowns).toHaveLength(2);
+    expect(dropdowns).toHaveLength(1);
     for (const dropdown of dropdowns) {
       // Both read the same grid track, so these are bit-identical rather than
       // merely close; a collapsed dropdown misses by ~500px, not by a pixel.
@@ -208,10 +264,10 @@ describe(ProgramsPage, () => {
   });
 });
 
-/** The mapped program the fixture yields, so a save mock can be built from the
+/** The mapped program a fixture yields, so a save mock can be built from the
  *  same values the page will send. */
-function mapped() {
-  const [p] = mapPrograms({ programs: { __typename: 'ProgramSelectResult', matches: [directorsTimeProgram()] } });
+function mapped(raw: RawProgram = directorsTimeProgram()) {
+  const [p] = mapPrograms({ programs: { __typename: 'ProgramSelectResult', matches: [raw] } });
   if (!p) throw new Error('fixture did not map');
   return p;
 }

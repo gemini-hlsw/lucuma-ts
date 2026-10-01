@@ -1,32 +1,89 @@
-import { describe, expect, it } from 'vitest';
+import type { ToastMessage } from 'primereact/toast';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { type LocatorSelectors, page, userEvent } from 'vitest/browser';
 
 import { CURRENT_ENV } from '@/app/environment';
 import NightPage from '@/app/pages/NightPage';
 import { setLastSite } from '@/app/useLastSite';
 import orcidLogo from '@/assets/orcid-logo.svg';
+import { AuthSession } from '@/auth/AuthSession';
+import { SESSION_CHANNEL, SESSION_TIMINGS, SIGNED_OUT_MESSAGE, startSession } from '@/auth/session';
 import { signInUrl } from '@/auth/ssoClient';
-import { setToken } from '@/components/atoms/auth';
+import { sessionCheckedAtom, setToken } from '@/components/atoms/auth';
+import { store } from '@/components/atoms/store';
+import { toastAtom } from '@/components/atoms/toast';
+import { ToastOutlet } from '@/components/ui/ToastOutlet';
 import { fakeJwt, standardUser } from '@/test/factories';
-import { chooseClock, chooseSite, openAppMenu } from '@/test/helpers';
-import { renderApp } from '@/test/renderApp';
-import { ssoCall, stubSso } from '@/test/sso';
+import { act, chooseClock, chooseSite, openAppMenu } from '@/test/helpers';
+import { renderApp, type RenderedApp } from '@/test/renderApp';
+import { ssoCall, ssoRefreshes, stubSso } from '@/test/sso';
 
 import Layout from './Layout';
 import Navbar from './Navbar';
 
-const renderNavbar = async (route = '/') => renderApp({ element: <Navbar />, route });
+const NAVBAR_WITH_TOASTS = (
+  <>
+    <Navbar />
+    <ToastOutlet />
+  </>
+);
 
-const SSO_UNREACHABLE_NOTE = 'Logout did not reach SSO. Close the browser to end the session.';
+const renderNavbar = async (route = '/') => renderApp({ element: NAVBAR_WITH_TOASTS, route });
+
+const renderSignedIn = async () =>
+  renderApp({ element: NAVBAR_WITH_TOASTS, route: '/', token: fakeJwt(standardUser('staff')) });
+
+const SESSION_ENDED = 'Your session ended';
+const LOGOUT_UNREACHABLE = 'Logout did not reach SSO';
+const SIGNED_OUT_ELSEWHERE = 'You signed out in another tab';
+const TEN_MINUTES = 10 * 60 * 1000;
+/** Renews a sixty-second token at once, so the refusal and not the token's own expiry ends the session. */
+const RENEW_AT_ONCE = { ...SESSION_TIMINGS, refreshAheadMs: 60_000 };
+const FLUSH = { severity: 'info', summary: 'Flushed' } satisfies ToastMessage;
 const MENU_OWNABLE = ['menuitem', 'menuitemradio', 'menuitemcheckbox', 'group', 'separator'];
 const MENU_FORBIDDEN = ['[role="status"]', '[role="alert"]', '[role="log"]', '[role="none"]', '[aria-live]'];
 
 const logOutFromMenu = async () => {
   stubSso();
-  const screen = await renderApp({ element: <Navbar />, route: '/', token: fakeJwt(standardUser('staff')) });
+  const screen = await renderSignedIn();
   await openAppMenu(screen);
   await page.getByRole('menuitem', { name: 'Logout' }).click();
   return screen;
+};
+
+const toastNamed = (summary: string) => page.getByRole('alert').filter({ hasText: summary });
+
+/** A closing toast stays in the DOM through PrimeReact's exit transition, marked by this class. */
+async function expectShowing(summary: string): Promise<void> {
+  await expect.element(toastNamed(summary)).toBeVisible();
+  await expect.element(toastNamed(summary)).not.toHaveClass('p-toast-message-exit');
+}
+
+/** Toasts still on screen, leaving out those closing and the one `afterPendingWork` flushes with. */
+const noticesShowing = (): string[] =>
+  page
+    .getByRole('alert')
+    .elements()
+    .filter((toast) => !toast.classList.contains('p-toast-message-exit'))
+    .map((toast) => toast.textContent)
+    .filter((text) => text !== FLUSH.summary);
+
+/** Once this toast renders, so has every update queued before it, including a show from a promise already settled, whose callbacks run before React renders. */
+async function afterPendingWork(): Promise<void> {
+  const toast = store.get(toastAtom)!;
+  toast.show(FLUSH);
+  await expect.element(toastNamed(FLUSH.summary)).toBeInTheDocument();
+  toast.remove(FLUSH);
+}
+
+const fakeTimeouts = (): void => {
+  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+};
+
+/** Logs out without polling for the menu, so it does not mix polling with fake timers. */
+const logOutAtOnce = async (screen: RenderedApp): Promise<void> => {
+  await screen.getByRole('button', { name: 'Menu' }).click();
+  await page.getByRole('menuitem', { name: 'Logout' }).click();
 };
 
 /** PrimeReact binds its outside-click listener only when the enter transition ends, which this class marks. */
@@ -42,6 +99,10 @@ const MENU_CLOSERS: readonly [string, (screen: LocatorSelectors) => Promise<void
 ];
 
 describe(Navbar, () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('renders the Resource wordmark', async () => {
     const screen = await renderNavbar();
 
@@ -396,29 +457,28 @@ describe(Navbar, () => {
     },
   );
 
-  it('says the cookie may still stand when the logout never reached SSO, until the next sign-in', async () => {
+  it('warns in a toast when the logout never reached SSO, until the next sign-in', async () => {
     const screen = await logOutFromMenu();
-    await expect.poll(() => screen.getByRole('status').element().textContent).toBe('Logged out');
+    await expect.element(screen.getByRole('status')).toHaveTextContent('Logged out');
 
     ssoCall(0).fail();
-    await expect.poll(() => screen.getByRole('status').element().textContent).toBe(SSO_UNREACHABLE_NOTE);
 
-    await openAppMenu(screen);
-    await expect.element(page.getByRole('menu').getByText(SSO_UNREACHABLE_NOTE)).toBeVisible();
-    await expect.element(screen.getByTestId('account-control')).toHaveTextContent('Not signed in');
+    await expectShowing(LOGOUT_UNREACHABLE);
+    await expect
+      .element(toastNamed(LOGOUT_UNREACHABLE).getByText('Close the browser to end the session.'))
+      .toBeVisible();
+    expect(screen.getByRole('status').element().textContent).toBe('Logged out');
 
     setToken(screen.store, fakeJwt(standardUser('staff')));
 
-    await expect.element(page.getByRole('menu').getByText(SSO_UNREACHABLE_NOTE)).not.toBeInTheDocument();
+    await expect.element(toastNamed(LOGOUT_UNREACHABLE)).not.toBeInTheDocument();
   });
 
   it('keeps every row of the menu to what `role="menu"` may own, at every depth', async () => {
-    const screen = await logOutFromMenu();
-    ssoCall(0).fail();
+    const screen = await renderNavbar();
 
     await openAppMenu(screen);
     const menu = page.getByRole('menu').element();
-    await expect.element(page.getByRole('menu').getByText(SSO_UNREACHABLE_NOTE)).toBeVisible();
 
     const rows = [...menu.children];
     expect(rows.length).toBeGreaterThan(0);
@@ -434,25 +494,17 @@ describe(Navbar, () => {
     await expect.element(screen.getByRole('status')).toHaveTextContent('Logged out');
     const menuButton = screen.getByRole('button', { name: 'Menu' }).element();
     await expect.poll(() => document.activeElement).toBe(menuButton);
-    ssoCall(0).answer({ status: 200 });
-
-    await openAppMenu(screen);
-    await expect.element(page.getByRole('menu').getByText(SSO_UNREACHABLE_NOTE)).not.toBeInTheDocument();
-    expect(screen.getByRole('status').element().textContent).toBe('Logged out');
 
     setToken(screen.store, fakeJwt(standardUser('staff')));
     await expect.element(screen.getByTestId('account-control')).toHaveTextContent('Ada Lovelace');
     await expect.element(screen.getByRole('status')).toHaveTextContent('');
 
+    await openAppMenu(screen);
     await expect.element(page.getByRole('menuitem', { name: 'Logout' })).toBeVisible();
     await page.getByRole('menuitem', { name: 'Logout' }).click();
 
     await expect.element(screen.getByTestId('account-control')).toHaveTextContent('Not signed in');
     await expect.element(screen.getByRole('status')).toHaveTextContent('Logged out');
-    ssoCall(1).fail();
-
-    await openAppMenu(screen);
-    await expect.element(page.getByRole('menu').getByText(SSO_UNREACHABLE_NOTE)).toBeVisible();
   });
 
   it('sends the login return address to the page actually open, not a fixed default', async () => {
@@ -477,5 +529,189 @@ describe(Navbar, () => {
     } finally {
       history.pushState(null, '', original);
     }
+  });
+
+  it('shows a notice when SSO refuses to renew the session', async () => {
+    stubSso();
+    await renderApp({
+      element: <AuthSession timings={RENEW_AT_ONCE}>{NAVBAR_WITH_TOASTS}</AuthSession>,
+      route: '/',
+      token: fakeJwt(standardUser('staff'), 60),
+    });
+
+    await expect.poll(() => ssoRefreshes()).toHaveLength(1);
+    ssoRefreshes()[0]?.answer({ status: 403 });
+
+    await expectShowing(SESSION_ENDED);
+    await expect
+      .element(
+        toastNamed(SESSION_ENDED).getByText('Choose "Login with ORCID" from the menu to sign in again.', {
+          exact: true,
+        }),
+      )
+      .toBeVisible();
+  });
+
+  it('says the reader signed out in another tab, and after a fresh sign-in that the session ended', async () => {
+    stubSso();
+    const screen = await renderApp({
+      element: <AuthSession>{NAVBAR_WITH_TOASTS}</AuthSession>,
+      route: '/',
+      token: fakeJwt(standardUser('staff')),
+    });
+    const otherTab = new BroadcastChannel(SESSION_CHANNEL);
+
+    try {
+      otherTab.postMessage(SIGNED_OUT_MESSAGE);
+      await expectShowing(SIGNED_OUT_ELSEWHERE);
+    } finally {
+      otherTab.close();
+    }
+
+    expect(noticesShowing()).toEqual([expect.stringContaining(SIGNED_OUT_ELSEWHERE)]);
+
+    setToken(screen.store, fakeJwt(standardUser('staff'), 60));
+    await expect.element(toastNamed(SIGNED_OUT_ELSEWHERE)).not.toBeInTheDocument();
+
+    const stop = startSession(RENEW_AT_ONCE);
+    try {
+      await expect.poll(() => ssoRefreshes()).toHaveLength(1);
+      ssoRefreshes()[0]?.answer({ status: 403 });
+      await expectShowing(SESSION_ENDED);
+    } finally {
+      stop();
+    }
+    expect(noticesShowing()).toEqual([expect.stringContaining(SESSION_ENDED)]);
+  });
+
+  it.each([
+    ['from the first render', { token: null, sessionChecked: true }],
+    ['once the first check settles', { token: null, sessionChecked: false }],
+  ])('shows no session-ended notice to a visitor signed out %s', async (_when, options) => {
+    const screen = await renderApp({ element: NAVBAR_WITH_TOASTS, route: '/', ...options });
+
+    await act(() => {
+      screen.store.set(sessionCheckedAtom, true);
+    });
+
+    expect(screen.getByTestId('account-control').element()).toHaveTextContent('Not signed in');
+    expect(noticesShowing()).toEqual([]);
+  });
+
+  it.each([
+    [SESSION_ENDED, (screen: RenderedApp) => setToken(screen.store, null)],
+    [
+      LOGOUT_UNREACHABLE,
+      async (screen: RenderedApp) => {
+        await logOutAtOnce(screen);
+        ssoCall(0).fail();
+        await vi.advanceTimersByTimeAsync(0);
+      },
+    ],
+  ])('keeps "%s" on screen ten minutes on', async (summary, end) => {
+    fakeTimeouts();
+    stubSso();
+    const screen = await renderSignedIn();
+
+    await act(() => end(screen));
+    expect(noticesShowing()).toContainEqual(expect.stringContaining(summary));
+    await act(() => vi.advanceTimersByTimeAsync(TEN_MINUTES));
+
+    expect(noticesShowing()).toContainEqual(expect.stringContaining(summary));
+  });
+
+  it(`keeps "${SIGNED_OUT_ELSEWHERE}" on screen ten minutes on`, async () => {
+    fakeTimeouts();
+    stubSso();
+    await renderApp({
+      element: <AuthSession>{NAVBAR_WITH_TOASTS}</AuthSession>,
+      route: '/',
+      token: fakeJwt(standardUser('staff')),
+    });
+    const otherTab = new BroadcastChannel(SESSION_CHANNEL);
+    // A channel delivers to its listeners in the order they opened, so this one hears the message after the session keeper has.
+    const listener = new BroadcastChannel(SESSION_CHANNEL);
+    const delivered = new Promise((resolve) => {
+      listener.addEventListener('message', resolve, { once: true });
+    });
+
+    try {
+      otherTab.postMessage(SIGNED_OUT_MESSAGE);
+      await act(() => delivered);
+      expect(noticesShowing()).toContainEqual(expect.stringContaining(SIGNED_OUT_ELSEWHERE));
+      await act(() => vi.advanceTimersByTimeAsync(TEN_MINUTES));
+
+      expect(noticesShowing()).toContainEqual(expect.stringContaining(SIGNED_OUT_ELSEWHERE));
+    } finally {
+      otherTab.close();
+      listener.close();
+    }
+  });
+
+  it.each([
+    ['after the reader logs out', 'Logged out', () => ssoCall(0).answer({ status: 200 })],
+    [
+      'when SSO fails only after the reader signed in again',
+      '',
+      async (screen: RenderedApp) => {
+        await act(() => setToken(screen.store, fakeJwt(standardUser('staff'))));
+        ssoCall(0).fail();
+      },
+    ],
+  ])('shows no notice %s', async (_when, announcement, settle) => {
+    fakeTimeouts();
+    stubSso();
+    const screen = await renderSignedIn();
+
+    await act(() => logOutAtOnce(screen));
+    await settle(screen);
+    await act(() => vi.advanceTimersByTimeAsync(0));
+
+    expect(screen.getByRole('status').element().textContent).toBe(announcement);
+    expect(noticesShowing()).toEqual([]);
+  });
+
+  it('removes the session-ended notice once the reader signs in, and shows one when the next session ends', async () => {
+    const screen = await renderSignedIn();
+    setToken(screen.store, null);
+    await expectShowing(SESSION_ENDED);
+
+    setToken(screen.store, fakeJwt(standardUser('staff')));
+    await expect.element(toastNamed(SESSION_ENDED)).not.toBeInTheDocument();
+
+    setToken(screen.store, null);
+    await expectShowing(SESSION_ENDED);
+    await afterPendingWork();
+
+    expect(noticesShowing().filter((text) => text.startsWith(SESSION_ENDED))).toHaveLength(1);
+  });
+
+  it('warns when the session ends on its own after an earlier logout and a fresh sign-in', async () => {
+    const screen = await logOutFromMenu();
+    ssoCall(0).answer({ status: 200 });
+    setToken(screen.store, fakeJwt(standardUser('staff')));
+    await expect.element(screen.getByTestId('account-control')).toHaveTextContent('Ada Lovelace');
+
+    setToken(screen.store, null);
+
+    await expectShowing(SESSION_ENDED);
+  });
+
+  it('shows the session-ended notice above the open About dialog without taking focus from it', async () => {
+    const screen = await renderSignedIn();
+    await openAppMenu(screen);
+    await page.getByRole('menuitem', { name: 'About Resource' }).click();
+    const dialog = page.getByTestId('about-resource');
+    await expect.element(dialog).toBeVisible();
+    const copy = dialog.getByRole('button', { name: 'Copy version' }).element() as HTMLElement;
+    copy.focus();
+
+    setToken(screen.store, null);
+    await expectShowing(SESSION_ENDED);
+
+    expect(document.activeElement).toBe(copy);
+    await toastNamed(SESSION_ENDED).getByRole('button', { name: 'Close' }).click();
+    await expect.element(toastNamed(SESSION_ENDED)).not.toBeInTheDocument();
+    await expect.element(dialog).toBeVisible();
   });
 });
