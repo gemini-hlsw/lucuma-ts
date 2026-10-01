@@ -1,7 +1,7 @@
 import { when } from '@gemini-hlsw/lucuma-common-ui';
 import { useCalParams } from '@gql/configs/CalParams';
 import { useConfiguration } from '@gql/configs/Configuration';
-import type { TargetType, UpdateConfigurationMutationVariables } from '@gql/configs/gen/graphql';
+import type { GuidingType, TargetType, UpdateConfigurationMutationVariables } from '@gql/configs/gen/graphql';
 import { useConfiguredInstrument } from '@gql/configs/Instrument';
 import { useRotator } from '@gql/configs/Rotator';
 import { useTargets } from '@gql/configs/Target';
@@ -15,6 +15,7 @@ import type {
   LightSinkVariant,
   NonsiderealInput,
   PointOriginInput,
+  ProbeTrackingInput,
   RotatorTrackingInput,
   RotatorTrackingMode,
   SiderealInput,
@@ -127,15 +128,24 @@ export function createBafflesInput(
   }
 }
 
-function createGuiderConfig(target: Target): GuiderConfig {
+const guidingTypeToProbeTracking = {
+  NORMAL: {
+    nodAchopA: true,
+    nodAchopB: false,
+    nodBchopA: false,
+    nodBchopB: true,
+  },
+  OFF: {
+    nodAchopA: false,
+    nodAchopB: false,
+    nodBchopA: false,
+    nodBchopB: false,
+  },
+} satisfies Record<GuidingType, ProbeTrackingInput>;
+
+function createGuiderConfig(target: Target, guidingType: GuidingType): GuiderConfig {
   return {
-    tracking: {
-      // TODO: this should be selected depending on the "GuiderFooter" dropdown value!
-      nodAchopA: true,
-      nodAchopB: false,
-      nodBchopA: false,
-      nodBchopB: true,
-    },
+    tracking: guidingTypeToProbeTracking[guidingType],
     target: {
       name: target.name,
       sidereal: when(target.sidereal, createSiderealInput),
@@ -152,7 +162,10 @@ export function createTcsConfigInput(
   p1Target: Target | undefined,
   p2Target: Target | undefined,
   calParams: Pick<CalParams, 'baffleVisible' | 'baffleNearIR'>,
-  configuration: Pick<Configuration, 'baffleMode' | 'centralBaffle' | 'deployableBaffle' | 'fpu'>,
+  configuration: Pick<
+    Configuration,
+    'baffleMode' | 'centralBaffle' | 'deployableBaffle' | 'fpu' | 'oiGuidingType' | 'p1GuidingType' | 'p2GuidingType'
+  >,
 ): TcsConfigInput {
   const rotatorInput = createRotatorTrackingInput(rotator);
 
@@ -170,9 +183,9 @@ export function createTcsConfigInput(
     rotator: rotatorInput,
     sourceATarget: targetInput,
     baffles: bafflesInput,
-    oiwfs: when(oiTarget, createGuiderConfig),
-    pwfs1: when(p1Target, createGuiderConfig),
-    pwfs2: when(p2Target, createGuiderConfig),
+    oiwfs: when(oiTarget, (t) => createGuiderConfig(t, configuration.oiGuidingType)),
+    pwfs1: when(p1Target, (t) => createGuiderConfig(t, configuration.p1GuidingType)),
+    pwfs2: when(p2Target, (t) => createGuiderConfig(t, configuration.p2GuidingType)),
     lightSinkVariant,
   };
 }
