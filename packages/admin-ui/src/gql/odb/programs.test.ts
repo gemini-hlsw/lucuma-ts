@@ -54,12 +54,12 @@ function program(overrides: Partial<RawProgram>): RawProgram {
     defaultStatus: 'INACTIVE',
     allocations: [],
     goa: { __typename: 'GoaProperties', proprietaryMonths: 6, privateHeader: true },
+    tooActivationCeiling: 'RAPID',
     proposal: {
       __typename: 'Proposal',
       gemini: {
         __typename: 'Queue',
         scienceSubtype: 'QUEUE',
-        tooActivationCeiling: 'STANDARD',
         considerForBand3: 'CONSIDER',
         minPercentTime: 80,
       },
@@ -117,7 +117,7 @@ describe(mapPrograms, () => {
     expect(p?.pi).toBe('Grace Hopper');
     expect(p?.programClass).toBe('QUEUE');
     expect(p?.programType).toBe('QUEUE');
-    expect(p?.tooStatus).toBe('STANDARD');
+    expect(p?.tooStatus).toBe('RAPID');
     expect(p?.considerForBand3).toBe(true);
     expect(p?.minPercentTime).toBe(80);
     // Only SUPPORT_PRIMARY/SUPPORT_SECONDARY are contact scientists — not the PI or a plain COI.
@@ -144,10 +144,11 @@ describe(mapPrograms, () => {
     expect(p?.explicitStatus).toBe('COMPLETE');
   });
 
-  it('treats Classical proposals as CLASSICAL with no ToO/Band-3 (those are Queue-only)', () => {
+  it('treats Classical proposals as CLASSICAL with no Band-3 (Queue-only), and a null ceiling as unrestricted', () => {
     const [p] = mapPrograms(
       result([
         program({
+          tooActivationCeiling: null,
           proposal: {
             __typename: 'Proposal',
             gemini: { __typename: 'Classical', scienceSubtype: 'CLASSICAL', minPercentTime: 90 },
@@ -158,7 +159,7 @@ describe(mapPrograms, () => {
     );
     expect(p?.programClass).toBe('CLASSICAL');
     expect(p?.programType).toBe('CLASSICAL');
-    expect(p?.tooStatus).toBe('NONE');
+    expect(p?.tooStatus).toBeNull(); // a null ceiling is no restriction, not NONE
     expect(p?.considerForBand3).toBe(false);
     expect(p?.minPercentTime).toBe(90);
     expect(p?.pi).toBe('(unknown PI)');
@@ -222,7 +223,7 @@ describe(proposalTypeInput, () => {
 
   it('builds the queue arm of the oneOf for Queue programs', () => {
     expect(proposalTypeInput(base)).toEqual({
-      queue: { explicitTooActivationCeiling: 'RAPID', minPercentTime: 75, considerForBand3: 'CONSIDER' },
+      queue: { minPercentTime: 75, considerForBand3: 'CONSIDER' },
     });
   });
 
@@ -277,7 +278,7 @@ describe(programPropertiesInput, () => {
   };
 
   it('carries the GOA properties, active period, and status override', () => {
-    expect(programPropertiesInput(base)).toEqual({
+    expect(programPropertiesInput(base, base)).toEqual({
       goa: { proprietaryMonths: 12, privateHeader: true },
       activeStart: '2027-08-01',
       activeEnd: '2028-02-01',
@@ -286,14 +287,25 @@ describe(programPropertiesInput, () => {
   });
 
   it('omits blank active dates rather than sending empty strings', () => {
-    expect(programPropertiesInput({ ...base, activeStart: '', activeEnd: '' })).toEqual({
+    expect(programPropertiesInput({ ...base, activeStart: '', activeEnd: '' }, base)).toEqual({
       goa: { proprietaryMonths: 12, privateHeader: true },
       explicitStatus: null,
     });
   });
 
+  it('sends the ToO ceiling only when it was edited', () => {
+    expect(programPropertiesInput(base, base)).not.toHaveProperty('tooActivationCeiling');
+    expect(programPropertiesInput({ ...base, tooStatus: 'INTERRUPTING' }, base)).toMatchObject({
+      tooActivationCeiling: 'INTERRUPTING',
+    });
+  });
+
+  it('sends null to lift the ceiling, since omitting the key would leave the old one in place', () => {
+    expect(programPropertiesInput({ ...base, tooStatus: null }, base)).toHaveProperty('tooActivationCeiling', null);
+  });
+
   it('sends an explicit status override when one is set (sc-10277)', () => {
-    expect(programPropertiesInput({ ...base, explicitStatus: 'COMPLETE' })).toMatchObject({
+    expect(programPropertiesInput({ ...base, explicitStatus: 'COMPLETE' }, base)).toMatchObject({
       explicitStatus: 'COMPLETE',
     });
   });

@@ -14,7 +14,7 @@
  * moves into the WHERE clause.
  */
 import { skipToken, useQuery } from '@apollo/client/react';
-import { parseNumber } from '@gemini-hlsw/lucuma-common-ui';
+import { isNotNullish, parseNumber } from '@gemini-hlsw/lucuma-common-ui';
 import { dateToLocalObservingNight } from '@gemini-hlsw/lucuma-core';
 import { useMemo } from 'react';
 
@@ -128,22 +128,9 @@ export const CONFLICTS_QUERY = graphql(`
           reference {
             label
           }
-          proposal {
-            gemini {
-              ... on Queue {
-                tooActivationCeiling
-              }
-              ... on LargeProgram {
-                tooActivationCeiling
-              }
-              ... on DirectorsTime {
-                tooActivationCeiling
-              }
-              ... on FastTurnaround {
-                tooActivationCeiling
-              }
-            }
-          }
+          # The most disruptive ToO activation the program's observations may
+          # declare; null means no restriction.
+          tooActivationCeiling
         }
         targetEnvironment {
           firstScienceTarget {
@@ -251,12 +238,13 @@ export function mapConflictCandidates(raw: AdminConflictCheckResult): ConflictCa
   });
   const fromToO = raw.observations.matches
     .filter((o) => {
-      const gemini = o.program.proposal?.gemini;
-      const ceiling = gemini && 'tooActivationCeiling' in gemini ? gemini.tooActivationCeiling : undefined;
+      const ceiling = o.program.tooActivationCeiling;
       // The ceiling is the most disruptive activation the program's
-      // observations may declare, so any value above NONE marks a ToO program.
-      // Excluding NONE keeps new levels (INTERRUPTING) in scope automatically.
-      return ceiling !== undefined && ceiling !== 'NONE';
+      // observations may declare. A null ceiling means unrestricted, but the
+      // ODB only sets one on acceptance, so null marks the many programs still
+      // under review. Admitting them would flag nearly every such observation
+      // as a ToO candidate, which a ToO program is not.
+      return isNotNullish(ceiling) && ceiling !== 'NONE';
     })
     .map((o): ConflictCandidate => {
       const target = o.targetEnvironment.firstScienceTarget;

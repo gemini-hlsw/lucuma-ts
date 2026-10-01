@@ -305,10 +305,18 @@ export interface Allocation {
   readonly hours: number;
 }
 
-export const TOO_STATUSES: readonly TooActivation[] = ['NONE', 'STANDARD', 'RAPID', 'INTERRUPTING'];
+export const TOO_STATUSES: readonly TooActivation[] = ['NONE', 'RAPID', 'INTERRUPTING'];
+/** Shown for a program with no ceiling, which the ODB reads as no restriction. */
+export const NO_TOO_CEILING_LABEL = 'Unrestricted';
+/** ToO-dropdown sentinel for "no ceiling" — a real string, since PrimeReact
+ *  mishandles a null option value. */
+export const NO_CEILING_OPTION = 'NO_CEILING';
+export const tooCeilingToOption = (ceiling: TooActivation | null): string => ceiling ?? NO_CEILING_OPTION;
+export const tooCeilingFromOption = (option: string): TooActivation | null =>
+  option === NO_CEILING_OPTION ? null : (option as TooActivation);
+
 export const TOO_LABEL: Record<TooActivation, string> = {
   NONE: 'None',
-  STANDARD: 'Standard',
   RAPID: 'Rapid',
   INTERRUPTING: 'Interrupting',
 };
@@ -338,9 +346,9 @@ export interface Program {
    *  proposal. Distinct from programClass, which the editor collapses to the
    *  two editable classes. */
   readonly programType: ScienceSubtype | null;
-  /** The proposal's ToO activation ceiling. Only Queue proposals carry one;
-   *  Classical and the other types have none. */
-  readonly tooStatus: TooActivation;
+  /** The program's ToO activation ceiling: the most disruptive activation its
+   *  observations may declare. Null means no restriction. */
+  readonly tooStatus: TooActivation | null;
   /** Program users with role SUPPORT_PRIMARY/SUPPORT_SECONDARY — the real
    *  Gemini "contact scientist" roles. */
   readonly contactScientists: readonly ContactScientist[];

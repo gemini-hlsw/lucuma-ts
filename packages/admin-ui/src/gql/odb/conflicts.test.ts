@@ -41,7 +41,7 @@ type RawObservation = AdminConflictCheckResult['observations']['matches'][number
 
 function tooObservation(
   id: string,
-  tooActivationCeiling: TooActivation,
+  tooActivationCeiling: TooActivation | null,
   target: RawObservation['targetEnvironment']['firstScienceTarget'],
   reference: string | null,
   workflow: RawObservation['workflow'],
@@ -59,7 +59,7 @@ function tooObservation(
       // observation index, so the display can strip the shared prefix.
       reference:
         reference === null ? null : { __typename: 'ScienceProgramReference', label: reference.replace(/-\d+$/, '') },
-      proposal: { __typename: 'Proposal', gemini: { __typename: 'Queue', tooActivationCeiling } },
+      tooActivationCeiling,
     },
     targetEnvironment: { __typename: 'TargetEnvironment', firstScienceTarget: target },
   };
@@ -179,10 +179,12 @@ describe(mapConflictCandidates, () => {
               value: { __typename: 'ObservationWorkflow', state: 'READY' },
             },
           ),
+          // No ceiling yet (the program is still under review): not a ToO program.
+          tooObservation('o-4', null, null, 'G-2027B-0059-Q-0002', null),
         ],
       },
     });
-    expect(candidates).toHaveLength(3); // the NONE-ceiling observation is dropped
+    expect(candidates).toHaveLength(3); // the NONE-ceiling and unset-ceiling observations are dropped
     expect(candidates[0]).toMatchObject({
       programLabel: 'G-2027B-0421-P',
       detailLabel: 'x-42',
