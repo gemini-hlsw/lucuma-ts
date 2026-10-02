@@ -3,6 +3,7 @@ import tailwindcss from '@tailwindcss/vite';
 import react, { reactCompilerPreset } from '@vitejs/plugin-react';
 import { playwright } from '@vitest/browser-playwright';
 import { execSync } from 'child_process';
+import type { Plugin } from 'vite';
 import { defineConfig } from 'vitest/config';
 
 const commitHash = (process.env.GITHUB_SHA || execSync('git rev-parse --short HEAD').toString()).trim().slice(0, 7);
@@ -20,6 +21,21 @@ function formatDate(date: Date) {
 // runtime CURRENT_ENV, since one bundle serves every environment by hostname.
 const frontendVersion = `${formatDate(buildTime)}-${commitHash}`;
 
+/** Publishes the build's version next to index.html so a long-running tab can
+ *  tell when a newer Admin has been deployed (sc-10422). Build-only: in dev the
+ *  running bundle is always the current one. */
+const buildVersionFile = (): Plugin => ({
+  name: 'admin-build-version-file',
+  apply: 'build',
+  buildStart() {
+    this.emitFile({
+      type: 'asset',
+      fileName: 'version.json',
+      source: JSON.stringify({ version: frontendVersion }),
+    });
+  },
+});
+
 // https://vite.dev/config/
 export default defineConfig({
   define: {
@@ -35,6 +51,7 @@ export default defineConfig({
     react(),
     babel({ presets: [reactCompilerPreset()], exclude: /[/\\](node_modules|common-ui)[/\\]/ }),
     tailwindcss(),
+    buildVersionFile(),
   ],
   server: {
     allowedHosts: ['localhost', '.lucuma.xyz', '.gemini.edu'],
