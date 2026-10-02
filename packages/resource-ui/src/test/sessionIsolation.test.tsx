@@ -18,6 +18,7 @@ describe('session state between tests', () => {
       route: '/',
       token: fakeJwt(standardUser('staff')),
       element: <Probe use={() => useSessionStatus()} readout={(status) => ({ status })} />,
+      mocks: [],
     });
 
     await expect.element(screen.getByTestId('probe-status')).toHaveTextContent('signed-in');

@@ -1,4 +1,6 @@
 import { ApolloProvider } from '@apollo/client/react';
+import type { MockLink } from '@apollo/client/testing';
+import { AtomsAndApollo } from '@gemini-hlsw/lucuma-common-ui/testing';
 import { Provider as JotaiProvider } from 'jotai';
 import { PrimeReactProvider } from 'primereact/api';
 import type { ReactElement } from 'react';
@@ -12,10 +14,21 @@ import { createMockApollo, type MockApollo } from './mockClient';
 
 /** The router comes back too: a memory router keeps its own history, and window.history would not. */
 export type RenderedApp = Awaited<ReturnType<typeof render>> & {
-  mock: MockApollo;
   router: ReturnType<typeof createMemoryRouter>;
   store: typeof store;
 };
+
+/** Each operation answered from a typed response built in `test/fixtures/`. */
+interface Fixtures {
+  mocks: readonly MockLink.MockedResponse[];
+  mock?: never;
+}
+
+/** The in-repo mock schema, the default until every test passes `mocks`. */
+interface MockSchema {
+  mock?: MockApollo;
+  mocks?: never;
+}
 
 interface RenderOptions {
   element: ReactElement;
@@ -27,10 +40,12 @@ interface RenderOptions {
   extraRoutes?: readonly { path: string; element: ReactElement }[];
   /** Child routes for `element`'s `<Outlet />`, to mount the real shell around a page. */
   childRoutes?: readonly { path: string; element: ReactElement }[];
-  mock?: MockApollo;
   token?: string | null;
   sessionChecked?: boolean;
 }
+
+export function renderApp(options: RenderOptions & Fixtures): Promise<RenderedApp>;
+export function renderApp(options: RenderOptions & MockSchema): Promise<RenderedApp & { mock: MockApollo }>;
 
 export async function renderApp({
   element,
@@ -38,10 +53,11 @@ export async function renderApp({
   path: pattern,
   extraRoutes = [],
   childRoutes,
-  mock = createMockApollo(),
+  mocks,
+  mock = mocks === undefined ? createMockApollo() : undefined,
   token = null,
   sessionChecked = true,
-}: RenderOptions): Promise<RenderedApp> {
+}: RenderOptions & (Fixtures | MockSchema)): Promise<RenderedApp & { mock: MockApollo | undefined }> {
   const path = pattern ?? route.split('?')[0] ?? '/';
   const root = childRoutes === undefined ? { path, element } : { path, element, children: [...childRoutes] };
   const router = createMemoryRouter([root, ...extraRoutes.filter((extra) => extra.path !== path)], {
@@ -52,11 +68,17 @@ export async function renderApp({
 
   const result = await render(
     <PrimeReactProvider>
-      <JotaiProvider store={store}>
-        <ApolloProvider client={mock.client}>
+      {mock === undefined ? (
+        <AtomsAndApollo store={store} mocks={mocks}>
           <RouterProvider router={router} />
-        </ApolloProvider>
-      </JotaiProvider>
+        </AtomsAndApollo>
+      ) : (
+        <JotaiProvider store={store}>
+          <ApolloProvider client={mock.client}>
+            <RouterProvider router={router} />
+          </ApolloProvider>
+        </JotaiProvider>
+      )}
     </PrimeReactProvider>,
   );
   return Object.assign(result, { mock, router, store });

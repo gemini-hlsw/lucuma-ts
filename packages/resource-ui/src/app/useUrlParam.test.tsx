@@ -19,6 +19,7 @@ const openView = async (route: string, options?: Parameters<typeof useUrlParam>[
         ]}
       />
     ),
+    mocks: [],
   });
 
 describe(useUrlParam, () => {

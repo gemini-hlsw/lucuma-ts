@@ -23,6 +23,7 @@ const openSelection = async (route: string) =>
         ]}
       />
     ),
+    mocks: [],
   });
 
 describe(useSelection, () => {
