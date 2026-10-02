@@ -1,24 +1,28 @@
 import { type ApolloClient, ApolloLink, gql } from '@apollo/client';
 import { ApolloProvider } from '@apollo/client/react';
+import type { MockLink } from '@apollo/client/testing';
 import { Observable } from '@apollo/client/utilities';
+import type { MockedResponseOf } from '@gemini-hlsw/lucuma-common-ui/testing';
 import type { PublishedSemestersQuery } from '@gql/gen/graphql';
 import { Provider as JotaiProvider } from 'jotai';
+import { PrimeReactProvider } from 'primereact/api';
 import { type JSX, type ReactNode, StrictMode } from 'react';
+import { createMemoryRouter, RouterProvider } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render } from 'vitest-browser-react';
 
 import NightPage from '@/app/pages/NightPage';
-import { isLoggedInAtom, odbTokenAtom, sessionCheckedAtom, sessionStatusAtom } from '@/components/atoms/auth';
+import { isLoggedInAtom, odbTokenAtom, sessionCheckedAtom, sessionStatusAtom, setToken } from '@/components/atoms/auth';
 import { store } from '@/components/atoms/store';
 import { toastAtom } from '@/components/atoms/toast';
 import Layout from '@/components/layout/Layout';
 import { ToastOutlet } from '@/components/ui/ToastOutlet';
 import { liveLink } from '@/gql/ApolloConfigs';
 import { usePublishedSemesters } from '@/gql/hooks';
+import { NIGHT_SCHEDULE_QUERY, PUBLISHED_SEMESTERS_QUERY } from '@/gql/resource';
 import { fakeJwt, standardUser } from '@/test/factories';
 import { act } from '@/test/helpers';
-import { captureHeader, createMockApollo } from '@/test/mockClient';
-import { renderApp } from '@/test/renderApp';
+import { captureHeader, createLinkClient } from '@/test/linkClient';
 import { ssoCalls, ssoRefreshes, stubSso } from '@/test/sso';
 
 import { AuthSession } from './AuthSession';
@@ -67,10 +71,43 @@ const onSecondRequest = (outcome: ApolloLink.Result | Error): ApolloLink => {
   });
 };
 
+const NO_SEMESTERS: MockedResponseOf<typeof PUBLISHED_SEMESTERS_QUERY> = {
+  request: { query: PUBLISHED_SEMESTERS_QUERY },
+  result: { data: { publishedSemesters: [] } },
+};
+
+const EMPTY_NIGHT: MockedResponseOf<typeof NIGHT_SCHEDULE_QUERY> = {
+  request: { query: NIGHT_SCHEDULE_QUERY, variables: () => true },
+  result: ({ night, interval }) => ({
+    data: {
+      telescopeNight: {
+        __typename: 'TelescopeNight',
+        observingNight: night,
+        dataAvailable: true,
+        interval: { __typename: 'TimestampInterval', ...interval },
+      },
+      instrumentAvailability: [],
+      telescopeAvailability: [],
+      tooSupport: [],
+      telescopeMode: [],
+      telescopeSubsystemAvailability: [],
+    },
+  }),
+};
+
+const MARKED: MockLink.MockedResponse = {
+  request: { query: RENEWAL_MARKER },
+  result: { data: { __typename: 'Query' } },
+};
+
 const capturingApollo = (after?: ApolloLink) => {
   const { link, sent: authorizations } = captureHeader('Authorization');
   return {
-    mock: createMockApollo(liveLink(after === undefined ? link : ApolloLink.from([link, after]))),
+    client: createLinkClient(liveLink(after === undefined ? link : ApolloLink.from([link, after])), [
+      NO_SEMESTERS,
+      EMPTY_NIGHT,
+      MARKED,
+    ]),
     authorizations,
   };
 };
@@ -87,9 +124,9 @@ const renderInSession = (client: ApolloClient, children: ReactNode) =>
   );
 
 const renderAuthSession = async (children: ReactNode = null, after?: ApolloLink) => {
-  const { mock, authorizations } = capturingApollo(after);
-  const screen = await renderInSession(mock.client, children);
-  return { screen, mock, authorizations };
+  const { client, authorizations } = capturingApollo(after);
+  const screen = await renderInSession(client, children);
+  return { screen, client, authorizations };
 };
 
 const survivingSsoCall = () => ssoCalls().find((made) => !made.signal?.aborted);
@@ -129,24 +166,36 @@ const renderShell = async ({
     operations.push(operation.operationName ?? '');
     return forward(operation);
   });
-  const { mock, authorizations } = capturingApollo(
+  const { client, authorizations } = capturingApollo(
     after === undefined ? logOperation : ApolloLink.from([logOperation, after]),
   );
-  const screen = await renderApp({
-    route: '/night?site=GS&night=2025-11-14',
-    path: '/',
-    element: (
-      <AuthSession timings={timings}>
-        <Layout />
-        <ToastOutlet />
-      </AuthSession>
-    ),
-    childRoutes: [{ path: 'night', element: <NightPage /> }],
-    mock,
-    token,
-    sessionChecked: token !== null,
-  });
-  return Object.assign(screen, { authorizations, operations });
+  const router = createMemoryRouter(
+    [
+      {
+        path: '/',
+        element: (
+          <AuthSession timings={timings}>
+            <Layout />
+            <ToastOutlet />
+          </AuthSession>
+        ),
+        children: [{ path: 'night', element: <NightPage /> }],
+      },
+    ],
+    { initialEntries: ['/night?site=GS&night=2025-11-14'] },
+  );
+  setToken(store, token);
+  store.set(sessionCheckedAtom, token !== null);
+  const screen = await render(
+    <PrimeReactProvider>
+      <JotaiProvider store={store}>
+        <ApolloProvider client={client}>
+          <RouterProvider router={router} />
+        </ApolloProvider>
+      </JotaiProvider>
+    </PrimeReactProvider>,
+  );
+  return Object.assign(screen, { client, authorizations, operations });
 };
 
 const sentOnce = (operations: readonly string[]): boolean => new Set(operations).size === operations.length;
@@ -181,12 +230,12 @@ describe(AuthSession, () => {
   });
 
   it('holds a query mounted beside the session until the bootstrap signs the reader in, then sends it once with the bearer', async () => {
-    const { mock, authorizations } = capturingApollo();
+    const { client, authorizations } = capturingApollo();
 
     const screen = await render(
       <StrictMode>
         <JotaiProvider store={store}>
-          <ApolloProvider client={mock.client}>
+          <ApolloProvider client={client}>
             <AuthSession>{null}</AuthSession>
             <SemesterCount />
           </ApolloProvider>
@@ -226,12 +275,12 @@ describe(AuthSession, () => {
 
   it('does not refetch on a token renewal', async () => {
     const token = signIn();
-    const { screen, mock, authorizations } = await renderAuthSession(<SemesterCount />);
+    const { screen, client, authorizations } = await renderAuthSession(<SemesterCount />);
     await expect.element(screen.getByTestId('semesters')).not.toHaveTextContent('loading');
 
     const renewed = fakeJwt(standardUser('staff'), 7200);
     store.set(odbTokenAtom, renewed);
-    await mock.client.query({ query: RENEWAL_MARKER, fetchPolicy: 'network-only' });
+    await client.query({ query: RENEWAL_MARKER, fetchPolicy: 'network-only' });
 
     expect(authorizations).toEqual([`Bearer ${token}`, `Bearer ${renewed}`]);
     expect(ssoCalls()).toHaveLength(0);
@@ -268,11 +317,11 @@ describe(AuthSession, () => {
     const token = signIn();
     const stranded = capturingApollo();
     const probe = await render(
-      <ApolloProvider client={stranded.mock.client}>
+      <ApolloProvider client={stranded.client}>
         <SemesterCount testId="stranded" />
       </ApolloProvider>,
     );
-    const session = await renderInSession(stranded.mock.client, null);
+    const session = await renderInSession(stranded.client, null);
     await expect.element(probe.getByTestId('stranded')).not.toHaveTextContent('loading');
     expect(stranded.authorizations).toEqual([`Bearer ${token}`]);
     await session.unmount();
@@ -335,7 +384,7 @@ describe(AuthSession, () => {
     const screen = await renderShell({ token });
 
     await expect.element(screen.getByText(NIGHT_LOADING)).not.toBeInTheDocument();
-    await screen.mock.client.query({ query: RENEWAL_MARKER, fetchPolicy: 'network-only' });
+    await screen.client.query({ query: RENEWAL_MARKER, fetchPolicy: 'network-only' });
 
     expect(screen.operations.length).toBeGreaterThan(1);
     expect(sentOnce(screen.operations)).toBe(true);

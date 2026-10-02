@@ -18,9 +18,9 @@ const UNREACHABLE = {
   summary: 'The live server could not be reached.',
   sticky: true,
 } satisfies ToastMessage;
-const NOT_SERVED = {
+const FAILED = {
   severity: 'warn',
-  summary: 'The live server does not serve this version of the Resource API yet.',
+  summary: 'The live server answered with an error.',
   sticky: true,
 } satisfies ToastMessage;
 const REFUSED = {
@@ -29,13 +29,16 @@ const REFUSED = {
   sticky: true,
 } satisfies ToastMessage;
 
-/** GraphQL errors mean the server answered, refusing the bearer or not serving this API; anything else is no answer at all. */
+const isSignInError = (message: string): boolean =>
+  message === 'Access denied.' || message.endsWith(' requires authentication.');
+
+/** GraphQL errors mean the server answered, missing or refusing the bearer or failing otherwise; anything else is no answer at all. */
 const liveFailureToast = (error: unknown): ToastMessage => {
   if (CombinedGraphQLErrors.is(error)) {
     // The message is the only signal: the 403 is lost to the graphql-response+json content type and the body carries no extensions.
-    return error.errors.filter(isNotNullish).some((graphqlError) => graphqlError.message === 'Access denied.')
+    return error.errors.filter(isNotNullish).some((graphqlError) => isSignInError(graphqlError.message))
       ? REFUSED
-      : NOT_SERVED;
+      : FAILED;
   }
   return UNREACHABLE;
 };
