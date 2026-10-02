@@ -1,10 +1,10 @@
 import type {
   ComponentLocation,
-  Instrument,
   InstrumentComponentType,
   InstrumentPlace,
   Partner,
   PowerSource,
+  ResourceInstrument,
   ResourceUsage,
   Site,
   TelescopeAvailability,
@@ -16,10 +16,10 @@ import type {
 // INSTALLED resolves through the instrument's own records, so a piece cannot claim a port it is not on.
 export type {
   ComponentLocation,
-  Instrument,
   InstrumentPlace,
   Partner,
   PowerSource,
+  ResourceInstrument,
   ResourceUsage,
   Site,
   TelescopeAvailability,
@@ -49,7 +49,7 @@ export interface Interval {
 /** `id` is the adapter's row key, not the API's: a block is a projection, so it carries no identity. */
 export interface Mounting {
   readonly id: string;
-  readonly instrument: Instrument;
+  readonly instrument: ResourceInstrument;
   /** The name exactly as the schedule prints it, e.g. "cal/ZORRO". */
   readonly publishedName: string;
   readonly usage: ResourceUsage;
@@ -129,7 +129,7 @@ export type ComponentType = InstrumentComponentType;
 /** An instrument piece's identity - the ICTD catalog half. */
 export interface ComponentRecord {
   readonly id: string;
-  readonly instrument: Instrument;
+  readonly instrument: ResourceInstrument;
   readonly componentType: ComponentType;
   readonly code: string;
   readonly name: string;

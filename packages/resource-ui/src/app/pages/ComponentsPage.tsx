@@ -18,7 +18,7 @@ import { WhereCell } from '@/components/ui/WhereCell';
 import { buildFinderRows, type FinderRow, historyOf, matchesComponent, whereOf } from '@/domain/componentFinder';
 import { semesterHolding } from '@/domain/coverage';
 import { eveningLabel, eveningRange, firstEveningDate, nightCount, observingNightInterval } from '@/domain/siteTime';
-import type { ComponentBlock, ComponentType, Instrument, Mounting, Site } from '@/domain/types';
+import type { ComponentBlock, ComponentType, Mounting, ResourceInstrument, Site } from '@/domain/types';
 import { ComponentIdentityCell, StatusCell } from '@/features/components/componentCells';
 import { componentStatus, componentWhere, TYPE_LABEL, whereLabel } from '@/features/components/componentLabels';
 import { InstrumentSwatch } from '@/features/timeline/InstrumentSwatch';
@@ -34,7 +34,7 @@ function History({
 }: {
   blocks: readonly ComponentBlock[];
   mountings: readonly Mounting[];
-  instrument: Instrument;
+  instrument: ResourceInstrument;
   site: Site;
 }): JSX.Element {
   const rows = blocks.map((block) => ({
@@ -68,7 +68,7 @@ export default function ComponentsPage(): JSX.Element {
   const [instrumentParam, setInstrumentParam] = useUrlParam('instrument', '', { replace: true });
   const [typeParam, setTypeParam] = useUrlParam('type', '', { replace: true });
   // `Object.hasOwn`, not `in`: `in` answers true for `toString` and `__proto__`, leaving All over an empty table.
-  const instrument = Object.hasOwn(INSTRUMENT_LABEL, instrumentParam) ? (instrumentParam as Instrument) : null;
+  const instrument = Object.hasOwn(INSTRUMENT_LABEL, instrumentParam) ? (instrumentParam as ResourceInstrument) : null;
   const componentType = Object.hasOwn(TYPE_LABEL, typeParam) ? (typeParam as ComponentType) : null;
   // Which rows are open stays local: it is reading posture, not a finding.
   const [expanded, setExpanded] = useState<FinderRow[]>([]);
@@ -91,7 +91,7 @@ export default function ComponentsPage(): JSX.Element {
   );
 
   // Every option carries its catalog count, and a type nothing has is not offered at all.
-  const instrumentCounts = new Map<Instrument, number>();
+  const instrumentCounts = new Map<ResourceInstrument, number>();
   for (const component of components) {
     instrumentCounts.set(component.instrument, (instrumentCounts.get(component.instrument) ?? 0) + 1);
   }
@@ -107,7 +107,7 @@ export default function ComponentsPage(): JSX.Element {
     .filter((value) => typeCounts.has(value))
     .map((value) => countedOption(value, TYPE_LABEL[value], typeCounts.get(value) ?? 0));
 
-  const groupSummaries = new Map<Instrument, { total: number; installed: number }>();
+  const groupSummaries = new Map<ResourceInstrument, { total: number; installed: number }>();
   for (const row of visible) {
     const entry = groupSummaries.get(row.component.instrument) ?? { total: 0, installed: 0 };
     entry.total += 1;

@@ -12,7 +12,7 @@ export interface NightRow {
 /** The window the page asks for: the observing night itself. */
 export const nightWindow = ({ site, night }: NightRow): NightScheduleQueryVariables => {
   const { start, end } = overNights(site, night, night);
-  return { site, night, interval: { start, end } };
+  return { site, night, start, end };
 };
 
 type NightBlocks = Partial<Omit<NightScheduleQuery, 'telescopeNight'>> & {
@@ -25,7 +25,7 @@ export const nightSchedule = (
   window: NightRow | NightScheduleQueryVariables,
   { dataAvailable = true, ...blocks }: NightBlocks = {},
 ): MockedResponseOf<typeof NIGHT_SCHEDULE_QUERY> => {
-  const variables = 'interval' in window ? window : nightWindow(window);
+  const variables = 'start' in window ? window : nightWindow(window);
   return {
     request: { query: NIGHT_SCHEDULE_QUERY, variables },
     result: {
@@ -34,7 +34,7 @@ export const nightSchedule = (
           __typename: 'TelescopeNight',
           observingNight: variables.night,
           dataAvailable,
-          interval: { __typename: 'TimestampInterval', ...variables.interval },
+          interval: { __typename: 'TimestampInterval', start: variables.start, end: variables.end },
         },
         instrumentAvailability: [],
         telescopeAvailability: [],

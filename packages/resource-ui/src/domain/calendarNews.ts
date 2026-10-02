@@ -1,7 +1,7 @@
 import { portRowLabel } from './ports';
 import type { TimelineNight } from './timeline';
 import { nightAt, USAGE_LABEL } from './timeline';
-import type { Closure, Instrument, Mounting } from './types';
+import type { Closure, Mounting, ResourceInstrument } from './types';
 
 /** INSTRUMENT also covers a usability change, not only an instrument swap. */
 export type CalendarNewsKind = 'INSTRUMENT' | 'CLOSED' | 'OPEN';
@@ -15,7 +15,7 @@ export interface CalendarNewsItem {
   /** The row the change is about; null for the telescope's own news. */
   readonly rowLabel: string | null;
   /** The incoming instrument, for the chip's hue; null for telescope news. */
-  readonly instrument: Instrument | null;
+  readonly instrument: ResourceInstrument | null;
   /** The closure reason or record note, for the tooltip. */
   readonly detail: string | null;
 }

@@ -44,7 +44,7 @@ const NIGHT = '2026-11-14';
 const NIGHT_SCHEDULE: MockedResponseOf<typeof NIGHT_SCHEDULE_QUERY> = {
   request: {
     query: NIGHT_SCHEDULE_QUERY,
-    variables: { site: 'GS', night: NIGHT, interval: toApiInterval(observingNightInterval('GS', NIGHT)) },
+    variables: { site: 'GS', night: NIGHT, ...toApiInterval(observingNightInterval('GS', NIGHT)) },
   },
   result: {
     data: {

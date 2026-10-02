@@ -1,7 +1,7 @@
 import { overlaps, transitionsOf } from './interval';
 import { STORAGE_PLACE_LABEL } from './places';
 import { portRowLabel } from './ports';
-import type { Instrument, Interval, Mounting, OffPortPlace, ResourceUsage } from './types';
+import type { Interval, Mounting, OffPortPlace, ResourceInstrument, ResourceUsage } from './types';
 
 export type InstrumentWhere =
   | { readonly kind: 'PORT'; readonly port: number }
@@ -11,7 +11,7 @@ export type InstrumentWhere =
   | { readonly kind: 'NOT_RECORDED' };
 
 export interface InstrumentRow {
-  readonly instrument: Instrument;
+  readonly instrument: ResourceInstrument;
   /** The name the schedule prints, e.g. "GMOS-S" - what the row label shows. */
   readonly publishedName: string;
   readonly where: InstrumentWhere;
@@ -119,7 +119,7 @@ export const locationOptions = (rows: readonly InstrumentRow[]): readonly { labe
 };
 
 /** An instrument's runs over the window, oldest first - the row expansion. */
-export const runsOf = (instrument: Instrument, mountings: readonly Mounting[]): readonly Mounting[] =>
+export const runsOf = (instrument: ResourceInstrument, mountings: readonly Mounting[]): readonly Mounting[] =>
   mountings
     .filter((mounting) => mounting.instrument === instrument)
     .sort((a, b) => a.interval.start - b.interval.start);

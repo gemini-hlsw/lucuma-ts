@@ -33,7 +33,7 @@ const asInput = ({ start, end }: { start: string; end: string }) => ({ start, en
 const NIGHT_SCHEDULE: MockedResponseOf<typeof NIGHT_SCHEDULE_QUERY> = {
   request: {
     query: NIGHT_SCHEDULE_QUERY,
-    variables: { site: 'GS', night: NIGHT, interval: asInput(overNights('GS', NIGHT, NIGHT)) },
+    variables: { site: 'GS', night: NIGHT, ...asInput(overNights('GS', NIGHT, NIGHT)) },
   },
   result: {
     data: {
@@ -57,8 +57,9 @@ const WEEK_SCHEDULE: MockedResponseOf<typeof WEEK_SCHEDULE_QUERY> = {
     query: WEEK_SCHEDULE_QUERY,
     variables: {
       site: 'GS',
-      nights: { start: NIGHT, end: addDays(NIGHT, WEEK_NIGHTS) },
-      interval: asInput(overNights('GS', NIGHT, addDays(NIGHT, WEEK_NIGHTS - 1))),
+      nightsStart: NIGHT,
+      nightsEnd: addDays(NIGHT, WEEK_NIGHTS),
+      ...asInput(overNights('GS', NIGHT, addDays(NIGHT, WEEK_NIGHTS - 1))),
     },
   },
   result: {

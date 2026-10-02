@@ -457,7 +457,8 @@ describe(NightPage, () => {
         nightSchedule({
           site: 'GS',
           night: '2026-11-14',
-          interval: { start: '2026-11-13T17:00:00.000Z', end: '2026-11-14T17:00:00.000Z' },
+          start: '2026-11-13T17:00:00.000Z',
+          end: '2026-11-14T17:00:00.000Z',
         }),
       );
 
@@ -472,7 +473,8 @@ describe(NightPage, () => {
         nightSchedule({
           site: 'GS',
           night: '2026-09-06',
-          interval: { start: '2026-09-05T18:00:00.000Z', end: '2026-09-06T17:00:00.000Z' },
+          start: '2026-09-05T18:00:00.000Z',
+          end: '2026-09-06T17:00:00.000Z',
         }),
       );
 

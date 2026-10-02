@@ -89,7 +89,7 @@ const EMPTY_INTERVAL: ApiInterval = { start: '', end: '' };
 /** `skip` covers the first render, before the picker has resolved which semester is shown. */
 export const useSemesterSchedule = (site: Site, bounds: ApiInterval | null): ScheduleResult => {
   const { data, loading, error } = useQuery(SEMESTER_SCHEDULE_QUERY, {
-    variables: { site, interval: bounds ?? EMPTY_INTERVAL },
+    variables: { site, ...(bounds ?? EMPTY_INTERVAL) },
     skip: bounds === null,
   });
 
@@ -111,7 +111,7 @@ const NO_COMPONENTS: NightComponents = { components: [], blocks: [] };
 /** One night: its records, and whether anything is recorded for it at all. */
 export const useNightSchedule = (site: Site, observingNight: string, bounds: ApiInterval): NightScheduleResult => {
   const { data, loading, error } = useQuery(NIGHT_SCHEDULE_QUERY, {
-    variables: { site, night: observingNight, interval: bounds },
+    variables: { site, night: observingNight, ...bounds },
   });
 
   const { mountings, closures, tooBlocks, modeBlocks } = toScheduleBlocks(data);
@@ -144,7 +144,7 @@ export const useWeekSchedule = (
   bounds: ApiInterval,
 ): WeekScheduleResult => {
   const { data, loading, error } = useQuery(WEEK_SCHEDULE_QUERY, {
-    variables: { site, nights, interval: bounds },
+    variables: { site, nightsStart: nights.start, nightsEnd: nights.end, ...bounds },
   });
 
   const { mountings, closures, tooBlocks, modeBlocks } = toScheduleBlocks(data);
@@ -177,7 +177,7 @@ export interface ComponentBrowserResult {
 /** One round trip: catalog, records over the window, and the mountings INSTALLED resolves against. */
 export const useComponentBrowser = (site: Site, interval: ApiInterval | null): ComponentBrowserResult => {
   const { data, loading, error } = useQuery(COMPONENT_BROWSER_QUERY, {
-    variables: { site, interval: interval ?? EMPTY_INTERVAL },
+    variables: { site, ...(interval ?? EMPTY_INTERVAL) },
     skip: interval === null,
   });
 
