@@ -22,6 +22,7 @@ import {
   allocationsInput,
   mapPrograms,
   programPropertiesInput,
+  proposalTypeChanged,
   proposalTypeInput,
   useAssignContactScientists,
   useCreateProgramNote,
@@ -100,7 +101,9 @@ export default function ProgramsPage(): JSX.Element {
   async function saveProgram(original: Program, draft: Program): Promise<void> {
     await updateProgram({ variables: { programId: draft.id, set: programPropertiesInput(draft, original) } });
 
-    await updateProposalType({ variables: { programId: draft.id, gemini: proposalTypeInput(draft) } });
+    if (proposalTypeChanged(original, draft)) {
+      await updateProposalType({ variables: { programId: draft.id, gemini: proposalTypeInput(draft) } });
+    }
 
     if (JSON.stringify(draft.allocations) !== JSON.stringify(original.allocations)) {
       await setAllocations({ variables: { programId: draft.id, allocations: allocationsInput(draft.allocations) } });
@@ -286,6 +289,21 @@ function ProgramEditor({
   const [draft, setDraft] = useState<Program>(original);
   const dirty = JSON.stringify(draft) !== JSON.stringify(original);
 
+  /** Whether the proposal-type fields can be edited at all. `proposalTypeInput`
+   *  can only build the Queue and Classical arms of the oneOf, so on any other
+   *  subtype an edit here would send the wrong arm and the ODB would reject it
+   *  against that program's call (sc-10439). Read-only is the honest state
+   *  until there is a type-aware input. `programClass` can't be used for this:
+   *  the mapper collapses every subtype to Queue or Classical. */
+  const proposalTypeEditable = draft.programType === 'QUEUE' || draft.programType === 'CLASSICAL';
+  /** Said on each field it disables, so the grey-out reads as a known limit of
+   *  this subtype rather than a permissions problem or a bug. */
+  const proposalTypeReason = proposalTypeEditable
+    ? undefined
+    : `Only editable on Queue and Classical programs — this one is ${
+        draft.programType === null ? 'not a proposal' : SCIENCE_SUBTYPE_LABEL[draft.programType]
+      }.`;
+
   function set<K extends keyof Program>(key: K, value: Program[K]): void {
     setDraft((d) => ({ ...d, [key]: value }));
   }
@@ -324,12 +342,19 @@ function ProgramEditor({
             >
               Class
             </label>
-            <Dropdown
-              inputId="class"
-              value={draft.programClass}
-              options={PROGRAM_CLASSES.map((c) => ({ label: PROGRAM_CLASS_LABEL[c], value: c }))}
-              onChange={(e) => set('programClass', e.value as ProgramClass)}
-            />
+            {/* Gated as well: Class is the field that picks which arm of the oneOf
+                is sent, so on a subtype the editor can't build, changing it
+                reproduces the very error the guard exists to stop — and the
+                program update has already landed by then. */}
+            <span title={proposalTypeReason}>
+              <Dropdown
+                inputId="class"
+                value={draft.programClass}
+                options={PROGRAM_CLASSES.map((c) => ({ label: PROGRAM_CLASS_LABEL[c], value: c }))}
+                onChange={(e) => set('programClass', e.value as ProgramClass)}
+                disabled={!proposalTypeEditable}
+              />
+            </span>
 
             <label
               htmlFor="too"
@@ -425,12 +450,14 @@ function ProgramEditor({
             >
               Consider for Band 3
             </label>
-            <Checkbox
-              inputId="band3"
-              checked={draft.considerForBand3}
-              onChange={(e) => set('considerForBand3', Boolean(e.checked))}
-              disabled={draft.programClass !== 'QUEUE'}
-            />
+            <span title={proposalTypeReason}>
+              <Checkbox
+                inputId="band3"
+                checked={draft.considerForBand3}
+                onChange={(e) => set('considerForBand3', Boolean(e.checked))}
+                disabled={!proposalTypeEditable || draft.programClass !== 'QUEUE'}
+              />
+            </span>
 
             <label
               htmlFor="minpct"
@@ -439,13 +466,16 @@ function ProgramEditor({
               Minimum Time
             </label>
             <div className="suffixed">
-              <NumberInput
-                inputId="minpct"
-                value={draft.minPercentTime}
-                min={0}
-                max={100}
-                onValueChange={(e) => set('minPercentTime', e.value ?? 0)}
-              />
+              <span title={proposalTypeReason}>
+                <NumberInput
+                  inputId="minpct"
+                  value={draft.minPercentTime}
+                  min={0}
+                  max={100}
+                  onValueChange={(e) => set('minPercentTime', e.value ?? 0)}
+                  disabled={!proposalTypeEditable}
+                />
+              </span>
               <span className="suffix">%</span>
             </div>
 
