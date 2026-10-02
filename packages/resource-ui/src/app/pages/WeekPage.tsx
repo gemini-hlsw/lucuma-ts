@@ -59,17 +59,17 @@ export default function WeekPage(): JSX.Element {
   const draft = buildWeekTimeline({
     site,
     firstNight: observingNight,
-    mountings: [],
-    closures: [],
+    instrumentAvailability: [],
+    telescopeAvailability: [],
     nightsWithData: undefined,
   });
   const bounds = toApiInterval(draft.interval);
 
   const {
-    mountings,
-    closures,
-    tooBlocks,
-    modeBlocks,
+    instrumentAvailability,
+    telescopeAvailability,
+    tooSupport,
+    telescopeMode,
     loading,
     error,
     nightsWithData,
@@ -80,10 +80,10 @@ export default function WeekPage(): JSX.Element {
   const week = buildWeekTimeline({
     site,
     firstNight: observingNight,
-    mountings,
-    closures,
-    tooBlocks,
-    modeBlocks,
+    instrumentAvailability,
+    telescopeAvailability,
+    tooSupport,
+    telescopeMode,
     nightsWithData: nightsResolved ? nightsWithData : undefined,
   });
 
@@ -95,9 +95,9 @@ export default function WeekPage(): JSX.Element {
   const summary = summarizeWeek(facts);
   const changes = buildWeekChanges({
     interval: week.interval,
-    mountings,
-    closures,
-    componentBlocks: nightComponents.blocks,
+    instrumentAvailability,
+    telescopeAvailability,
+    componentAvailability: nightComponents.blocks,
     components: nightComponents.components,
   });
 
@@ -164,9 +164,9 @@ export default function WeekPage(): JSX.Element {
         <>
           <TimelineLegendBar
             legend={week}
-            telescope={telescopeLegendExtras(closures)}
-            mode={modeLegendExtras(modeBlocks)}
-            too={tooLegendExtras(tooBlocks)}
+            telescope={telescopeLegendExtras(telescopeAvailability)}
+            mode={modeLegendExtras(telescopeMode)}
+            too={tooLegendExtras(tooSupport)}
             sky={skyLegendExtras()}
             calendar={calendarLegendExtras({
               weekend: week.nights.some((night) => night.isWeekend),

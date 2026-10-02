@@ -1,4 +1,4 @@
-import type { InstrumentBlockFieldsFragment } from '@gql/gen/graphql';
+import type { InstrumentAvailabilityBlockItemFragment } from '@gql/gen/graphql';
 import { describe, expect, it } from 'vitest';
 
 import { instrumentAvailabilityBlock, overNights } from '@/test/fixtures/blocks';
@@ -65,7 +65,7 @@ const GNIRS_SPLIT = [
 const openInstruments = (
   route: string,
   semesters: readonly [PublishedSemesterRow, ...PublishedSemesterRow[]],
-  instrumentAvailability: InstrumentBlockFieldsFragment[],
+  instrumentAvailability: InstrumentAvailabilityBlockItemFragment[],
 ) =>
   renderApp({
     element: <InstrumentsPage />,
@@ -147,7 +147,6 @@ describe(InstrumentsPage, () => {
     const screen = await openInstruments(GN_NIGHT, [GN_2026B], GNIRS_SPLIT);
     await screen.getByRole('button', { name: /expand GNIRS/i }).click();
 
-    // The evenings of 6 to 17 August 2026: twelve nights.
     const runs = screen.getByTestId('instrument-runs');
     await expect.element(runs.getByRole('row', { name: /Not available/ })).toMatchTextContent('12');
   });

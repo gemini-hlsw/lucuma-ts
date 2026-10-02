@@ -64,7 +64,6 @@ describe(SemesterPage, () => {
 
       await expect.element(screen.getByText('Gemini South Semester 2025B', { exact: false })).toBeVisible();
       await expect.element(screen.getByTestId('semester-timeline')).toBeVisible();
-      // August 2025 through January 2026, grouped by the evening date's month.
       await expect.element(screen.getByRole('region', { name: 'August 2025' })).toBeVisible();
       await expect.element(screen.getByRole('region', { name: 'January 2026' })).toBeVisible();
     });
@@ -598,8 +597,8 @@ describe(SemesterPage, () => {
         site: 'GS',
         firstNight: '2025-11-02',
         lastNight: '2025-12-01',
-        mountings: [],
-        closures: [],
+        instrumentAvailability: [],
+        telescopeAvailability: [],
       }).months[0]!;
       const monthEvenings = new Set(november.nights.map((night) => night.eveningDate));
 

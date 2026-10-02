@@ -14,7 +14,7 @@ import { render as renderBare } from 'vitest-browser-react';
 
 import { buildSemesterTimeline } from '@/domain/semesterTimeline';
 import { observingNightInterval } from '@/domain/siteTime';
-import type { Mounting } from '@/domain/types';
+import type { InstrumentAvailabilityBlock } from '@/domain/types';
 import { ROOT_FONT_SIZE } from '@/test/styleProbe';
 
 import { SemesterTimeline } from './SemesterTimeline';
@@ -23,7 +23,7 @@ import { SemesterTimeline } from './SemesterTimeline';
 const render = async (element: ReactElement) => renderBare(<MemoryRouter>{element}</MemoryRouter>);
 
 const night = (label: string) => observingNightInterval('GS', label);
-const MOUNTINGS: readonly Mounting[] = [
+const INSTRUMENT_BLOCKS: readonly InstrumentAvailabilityBlock[] = [
   {
     id: 'ghost',
     instrument: 'GHOST',
@@ -40,8 +40,8 @@ const timeline = buildSemesterTimeline({
   site: 'GS',
   firstNight: '2026-08-02',
   lastNight: '2026-09-01',
-  mountings: MOUNTINGS,
-  closures: [],
+  instrumentAvailability: INSTRUMENT_BLOCKS,
+  telescopeAvailability: [],
 });
 
 /** Carries a whole-telescope record, because the group headings only head a chart that has state rows. */
@@ -49,8 +49,8 @@ const headedTimeline = buildSemesterTimeline({
   site: 'GS',
   firstNight: '2026-08-02',
   lastNight: '2026-09-01',
-  mountings: MOUNTINGS,
-  closures: [
+  instrumentAvailability: INSTRUMENT_BLOCKS,
+  telescopeAvailability: [
     {
       id: 'open',
       availability: 'OPEN',

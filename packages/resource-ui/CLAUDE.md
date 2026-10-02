@@ -121,7 +121,7 @@ one header on every Resource request (`ENDPOINTS.md`, "The endpoint").
 ## The views
 
 **Do not give a view its own path from records to pixels.** Every view projects from the placed rows
-`domain/timeline.ts` produced, never from a `Mounting`, and both charts build on `domain/timeline.ts`
+`domain/timeline.ts` produced, never from an `InstrumentAvailabilityBlock`, and both charts build on `domain/timeline.ts`
 plus `features/timeline/`. A view supplies its own axis and its own way of phrasing a span - dates and
 nights for the semester and week, clock times for a night - and nothing else. Adding a fourth window
 should not mean copying any of it. The one deliberate exception is `domain/calendarNews.ts`, which
@@ -239,8 +239,8 @@ changing the schema. What follows is the half that is this app's, plus the rules
 - **`toLocation` in `domain/adapters.ts` is the only place the app re-checks the `place`/`port` pairing**,
   and a contradictory record reads as off-port/`UNKNOWN` with a dev-mode warning, never an error, because
   one bad record must not empty a night. Do not build a location literal at a call site, and do not push
-  the pair past the adapter: the domain model carries the exclusive form (`Mounting.port` xor
-  `Mounting.place`, whose type `OffPortPlace` excludes `PORT`).
+  the pair past the adapter: the domain model carries the exclusive form (`InstrumentAvailabilityBlock.port` xor
+  `InstrumentAvailabilityBlock.place`, whose type `OffPortPlace` excludes `PORT`).
 - **A record's port is its row; there is no row label.** `domain/ports.ts` renders the label from the port
   - do not reintroduce a display string the model can derive. The row set is `TELESCOPE_PORTS` unioned
     with any port the records name, so a quiet port keeps its blank row (blank says "nothing recorded"; a

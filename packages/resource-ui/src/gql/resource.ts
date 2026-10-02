@@ -1,7 +1,7 @@
 import { graphql } from './gen';
 
-export const INSTRUMENT_BLOCK_FIELDS = graphql(`
-  fragment InstrumentBlockFields on InstrumentAvailabilityBlock {
+export const INSTRUMENT_AVAILABILITY_BLOCK_FRAGMENT = graphql(`
+  fragment InstrumentAvailabilityBlockItem on InstrumentAvailabilityBlock {
     instrument
     publishedName
     usage
@@ -17,8 +17,8 @@ export const INSTRUMENT_BLOCK_FIELDS = graphql(`
   }
 `);
 
-export const CLOSURE_FIELDS = graphql(`
-  fragment ClosureFields on TelescopeAvailabilityBlock {
+export const TELESCOPE_AVAILABILITY_BLOCK_FRAGMENT = graphql(`
+  fragment TelescopeAvailabilityBlockItem on TelescopeAvailabilityBlock {
     availability
     port
     reason
@@ -29,8 +29,8 @@ export const CLOSURE_FIELDS = graphql(`
   }
 `);
 
-export const TOO_BLOCK_FIELDS = graphql(`
-  fragment TooBlockFields on TooSupportBlock {
+export const TOO_SUPPORT_BLOCK_FRAGMENT = graphql(`
+  fragment TooSupportBlockItem on TooSupportBlock {
     tooSupport
     note
     interval {
@@ -40,8 +40,8 @@ export const TOO_BLOCK_FIELDS = graphql(`
   }
 `);
 
-export const MODE_BLOCK_FIELDS = graphql(`
-  fragment ModeBlockFields on TelescopeModeBlock {
+export const TELESCOPE_MODE_BLOCK_FRAGMENT = graphql(`
+  fragment TelescopeModeBlockItem on TelescopeModeBlock {
     mode
     programReferences
     partner
@@ -53,8 +53,8 @@ export const MODE_BLOCK_FIELDS = graphql(`
   }
 `);
 
-export const SUBSYSTEM_BLOCK_FIELDS = graphql(`
-  fragment SubsystemBlockFields on TelescopeSubsystemAvailabilityBlock {
+export const TELESCOPE_SUBSYSTEM_AVAILABILITY_BLOCK_FRAGMENT = graphql(`
+  fragment TelescopeSubsystemAvailabilityBlockItem on TelescopeSubsystemAvailabilityBlock {
     subsystem
     usage
     powerSource
@@ -67,8 +67,8 @@ export const SUBSYSTEM_BLOCK_FIELDS = graphql(`
 `);
 
 /** The piece's identity is nested, so a view listing what changed needs no second round trip. */
-export const NIGHT_COMPONENT_FIELDS = graphql(`
-  fragment NightComponentFields on InstrumentComponentAvailabilityBlock {
+export const INSTRUMENT_COMPONENT_AVAILABILITY_BLOCK_FRAGMENT = graphql(`
+  fragment InstrumentComponentAvailabilityBlockItem on InstrumentComponentAvailabilityBlock {
     usage
     location
     note
@@ -109,20 +109,20 @@ export const PUBLISHED_SEMESTERS_QUERY = graphql(`
   }
 `);
 
-/** Unclipped, so the view can show a mounting was already there before the window. */
+/** Unclipped, so the view can show an instrument block was already there before the window. */
 export const SEMESTER_SCHEDULE_QUERY = graphql(`
   query SemesterSchedule($site: Site!, $start: Timestamp!, $end: Timestamp!) {
     instrumentAvailability(site: $site, start: $start, end: $end, clip: false) {
-      ...InstrumentBlockFields
+      ...InstrumentAvailabilityBlockItem
     }
     telescopeAvailability(site: $site, start: $start, end: $end, clip: false) {
-      ...ClosureFields
+      ...TelescopeAvailabilityBlockItem
     }
     tooSupport(site: $site, start: $start, end: $end, clip: false) {
-      ...TooBlockFields
+      ...TooSupportBlockItem
     }
     telescopeMode(site: $site, start: $start, end: $end, clip: false) {
-      ...ModeBlockFields
+      ...TelescopeModeBlockItem
     }
   }
 `);
@@ -139,19 +139,19 @@ export const NIGHT_SCHEDULE_QUERY = graphql(`
       }
     }
     instrumentAvailability(site: $site, start: $start, end: $end, clip: false) {
-      ...InstrumentBlockFields
+      ...InstrumentAvailabilityBlockItem
     }
     telescopeAvailability(site: $site, start: $start, end: $end, clip: false) {
-      ...ClosureFields
+      ...TelescopeAvailabilityBlockItem
     }
     tooSupport(site: $site, start: $start, end: $end, clip: false) {
-      ...TooBlockFields
+      ...TooSupportBlockItem
     }
     telescopeMode(site: $site, start: $start, end: $end, clip: false) {
-      ...ModeBlockFields
+      ...TelescopeModeBlockItem
     }
     telescopeSubsystemAvailability(site: $site, start: $start, end: $end, clip: false) {
-      ...SubsystemBlockFields
+      ...TelescopeSubsystemAvailabilityBlockItem
     }
   }
 `);
@@ -164,24 +164,24 @@ export const WEEK_SCHEDULE_QUERY = graphql(`
       dataAvailable
     }
     instrumentAvailability(site: $site, start: $start, end: $end, clip: false) {
-      ...InstrumentBlockFields
+      ...InstrumentAvailabilityBlockItem
     }
     telescopeAvailability(site: $site, start: $start, end: $end, clip: false) {
-      ...ClosureFields
+      ...TelescopeAvailabilityBlockItem
     }
     instrumentComponentAvailability(site: $site, start: $start, end: $end, clip: false) {
-      ...NightComponentFields
+      ...InstrumentComponentAvailabilityBlockItem
     }
     tooSupport(site: $site, start: $start, end: $end, clip: false) {
-      ...TooBlockFields
+      ...TooSupportBlockItem
     }
     telescopeMode(site: $site, start: $start, end: $end, clip: false) {
-      ...ModeBlockFields
+      ...TelescopeModeBlockItem
     }
   }
 `);
 
-/** The catalog, every piece's records, and the mountings the INSTALLED join resolves against. */
+/** The catalog, every piece's records, and the instrument blocks the INSTALLED join resolves against. */
 export const COMPONENT_BROWSER_QUERY = graphql(`
   query ComponentBrowser($site: Site!, $start: Timestamp!, $end: Timestamp!) {
     components(site: $site) {
@@ -206,7 +206,7 @@ export const COMPONENT_BROWSER_QUERY = graphql(`
       }
     }
     instrumentAvailability(site: $site, start: $start, end: $end, clip: false) {
-      ...InstrumentBlockFields
+      ...InstrumentAvailabilityBlockItem
     }
   }
 `);

@@ -1,18 +1,18 @@
 import { portRowLabel, portRows } from './ports';
 import type {
-  Closure,
+  InstrumentAvailabilityBlock,
   Interval,
-  ModeBlock,
-  Mounting,
   Partner,
   ResourceInstrument,
   ResourceUsage,
-  SubsystemBlock,
   TelescopeAvailability,
+  TelescopeAvailabilityBlock,
+  TelescopeModeBlock,
   TelescopeModeType,
   TelescopeSubsystem,
-  TooBlock,
+  TelescopeSubsystemAvailabilityBlock,
   TooSupport,
+  TooSupportBlock,
 } from './types';
 
 export type BlockState =
@@ -146,7 +146,7 @@ const PARTNER_LABEL = {
   US: 'United States',
 } satisfies Record<Partner, string>;
 
-const modeDetail = (block: ModeBlock): string | null => {
+const modeDetail = (block: TelescopeModeBlock): string | null => {
   const parts = [
     ...(block.programReferences.length === 0 ? [] : [block.programReferences.join(', ')]),
     ...(block.partner === null ? [] : [PARTNER_LABEL[block.partner]]),
@@ -233,13 +233,13 @@ export const isNotableState = (block: Pick<TimelineBlock, 'state' | 'variant' | 
 
 /** A window with no state records gets no state rows: the gap stays a gap (I4). */
 export const collectStateRows = (
-  closures: readonly Closure[],
-  tooBlocks: readonly TooBlock[],
-  modeBlocks: readonly ModeBlock[],
-  subsystemBlocks: readonly SubsystemBlock[] = [],
+  telescopeAvailability: readonly TelescopeAvailabilityBlock[],
+  tooSupport: readonly TooSupportBlock[],
+  telescopeMode: readonly TelescopeModeBlock[],
+  telescopeSubsystemAvailability: readonly TelescopeSubsystemAvailabilityBlock[] = [],
 ): readonly { readonly label: string; readonly blocks: readonly UnplacedBlock[] }[] => {
   // Open and Closed alike, unlike the CLOSED-only band below: the Telescope row states both.
-  const telescope = closures.filter((closure) => closure.port === null);
+  const telescope = telescopeAvailability.filter((telescopeBlock) => telescopeBlock.port === null);
   return [
     ...(telescope.length === 0
       ? []
@@ -260,12 +260,12 @@ export const collectStateRows = (
             })),
           },
         ]),
-    ...(modeBlocks.length === 0
+    ...(telescopeMode.length === 0
       ? []
       : [
           {
             label: MODE_ROW_LABEL,
-            blocks: modeBlocks.map((block) => ({
+            blocks: telescopeMode.map((block) => ({
               id: block.id,
               rowLabel: MODE_ROW_LABEL,
               state: 'MODE' as const,
@@ -279,12 +279,12 @@ export const collectStateRows = (
             })),
           },
         ]),
-    ...(tooBlocks.length === 0
+    ...(tooSupport.length === 0
       ? []
       : [
           {
             label: TOO_ROW_LABEL,
-            blocks: tooBlocks.map((block) => ({
+            blocks: tooSupport.map((block) => ({
               id: block.id,
               rowLabel: TOO_ROW_LABEL,
               state: 'TOO' as const,
@@ -300,7 +300,7 @@ export const collectStateRows = (
         ]),
     // Hue stays the instruments' alone, so these draw in the state neutrals.
     ...SUBSYSTEM_ORDER.flatMap((subsystem) => {
-      const records = subsystemBlocks.filter((block) => block.subsystem === subsystem);
+      const records = telescopeSubsystemAvailability.filter((block) => block.subsystem === subsystem);
       return records.length === 0
         ? []
         : [
@@ -324,7 +324,7 @@ export const collectStateRows = (
   ];
 };
 
-const subsystemDetail = (block: SubsystemBlock): string | null => {
+const subsystemDetail = (block: TelescopeSubsystemAvailabilityBlock): string | null => {
   const parts = [
     ...(block.powerSource === null ? [] : [block.powerSource === 'GENERATOR' ? 'Generator power' : 'Commercial power']),
     ...(block.note === null ? [] : [block.note]),
@@ -350,65 +350,69 @@ export const stateRowCount = (rows: readonly { readonly label: string }[]): numb
 };
 
 export interface TimelineSource {
-  readonly mountings: readonly Mounting[];
-  readonly closures: readonly Closure[];
+  readonly instrumentAvailability: readonly InstrumentAvailabilityBlock[];
+  readonly telescopeAvailability: readonly TelescopeAvailabilityBlock[];
 }
 
 /** Window-independent, so a semester places the same blocks in six months without rebuilding them. */
 export const collectBlocks = ({
-  mountings,
-  closures,
+  instrumentAvailability,
+  telescopeAvailability,
 }: TimelineSource): readonly { readonly label: string; readonly blocks: readonly UnplacedBlock[] }[] => {
   // CLOSED only: the Open spans are the Telescope row's, and nothing here may treat them as shut.
-  const wideSpans = closures
-    .filter((closure) => closure.port === null && closure.availability === 'CLOSED')
-    .map((closure) => closure.interval);
+  const wideSpans = telescopeAvailability
+    .filter((telescopeBlock) => telescopeBlock.port === null && telescopeBlock.availability === 'CLOSED')
+    .map((telescopeBlock) => telescopeBlock.interval);
 
-  return portRows([...mountings, ...closures].map((record) => record.port)).map((port) => {
+  return portRows([...instrumentAvailability, ...telescopeAvailability].map((record) => record.port)).map((port) => {
     const rowLabel = portRowLabel(port);
-    const onRow = mountings.filter((mounting) => mounting.port === port);
+    const onRow = instrumentAvailability.filter((instrumentBlock) => instrumentBlock.port === port);
     // One row per port, so an identified run wins a span an UNKNOWN band also covers.
     const identifiedSpans = onRow
-      .filter((mounting) => mounting.instrument !== 'UNKNOWN')
-      .map((mounting) => mounting.interval);
+      .filter((instrumentBlock) => instrumentBlock.instrument !== 'UNKNOWN')
+      .map((instrumentBlock) => instrumentBlock.interval);
 
-    const mountingBlock = (mounting: Mounting, piece: Interval, id: string): UnplacedBlock => ({
+    const instrumentRowBlock = (
+      instrumentBlock: InstrumentAvailabilityBlock,
+      piece: Interval,
+      id: string,
+    ): UnplacedBlock => ({
       id,
       rowLabel,
       state: 'MOUNTED' as const,
-      label: mounting.publishedName,
-      instrument: mounting.instrument,
-      usage: mounting.usage,
+      label: instrumentBlock.publishedName,
+      instrument: instrumentBlock.instrument,
+      usage: instrumentBlock.usage,
       variant: null,
       fullInterval: piece,
       nights: nightsIn(piece),
-      detail: mounting.note,
+      detail: instrumentBlock.note,
     });
 
     return {
       label: rowLabel,
       blocks: [
-        ...onRow.flatMap((mounting) =>
-          mounting.instrument === 'UNKNOWN'
-            ? subtract(mounting.interval, identifiedSpans).map((piece, index) =>
-                mountingBlock(mounting, piece, `${mounting.id}-${index}`),
+        ...onRow.flatMap((instrumentBlock) =>
+          instrumentBlock.instrument === 'UNKNOWN'
+            ? subtract(instrumentBlock.interval, identifiedSpans).map((piece, index) =>
+                instrumentRowBlock(instrumentBlock, piece, `${instrumentBlock.id}-${index}`),
               )
-            : [mountingBlock(mounting, mounting.interval, mounting.id)],
+            : [instrumentRowBlock(instrumentBlock, instrumentBlock.interval, instrumentBlock.id)],
         ),
-        ...closures
-          .filter((closure) => closure.availability === 'CLOSED' && closure.port === port)
-          .flatMap((closure) =>
-            subtract(closure.interval, wideSpans).map((piece, index) => ({
-              id: `${closure.id}-${index}`,
+        ...telescopeAvailability
+          .filter((telescopeBlock) => telescopeBlock.availability === 'CLOSED' && telescopeBlock.port === port)
+          .flatMap((telescopeBlock) =>
+            subtract(telescopeBlock.interval, wideSpans).map((piece, index) => ({
+              id: `${telescopeBlock.id}-${index}`,
               rowLabel,
               state: 'UNSCHEDULED' as const,
-              label: closure.reason ?? '',
+              label: telescopeBlock.reason ?? '',
               instrument: null,
               usage: null,
               variant: null,
               fullInterval: piece,
               nights: nightsIn(piece),
-              detail: closure.reason,
+              detail: telescopeBlock.reason,
             })),
           ),
       ],
@@ -437,12 +441,17 @@ export const placeBlocks = (collected: ReturnType<typeof collectBlocks>, bounds:
   }));
 
 /** Telescope-wide closures clipped to one window. */
-export const placeBands = (closures: readonly Closure[], bounds: Interval): readonly TimelineBand[] =>
-  closures
-    .filter((closure) => closure.port === null && closure.availability === 'CLOSED')
-    .flatMap((closure) => {
-      const visible = clip(closure.interval, bounds);
-      return visible === null ? [] : [{ id: closure.id, interval: visible, label: closure.reason ?? 'Closed' }];
+export const placeBands = (
+  telescopeAvailability: readonly TelescopeAvailabilityBlock[],
+  bounds: Interval,
+): readonly TimelineBand[] =>
+  telescopeAvailability
+    .filter((telescopeBlock) => telescopeBlock.port === null && telescopeBlock.availability === 'CLOSED')
+    .flatMap((telescopeBlock) => {
+      const visible = clip(telescopeBlock.interval, bounds);
+      return visible === null
+        ? []
+        : [{ id: telescopeBlock.id, interval: visible, label: telescopeBlock.reason ?? 'Closed' }];
     });
 
 /** Derived from what was actually placed, never from the schema. */

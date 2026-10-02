@@ -44,7 +44,7 @@ const shownUrl = () => document.querySelector(`[data-testid="${PROBE_URL_TESTID}
 const openNight = (route: string, ...mocks: MockLink.MockedResponse[]) =>
   renderApp({ element: <NightPage />, route, extraRoutes: [SEMESTER_ROUTE], mocks });
 
-/** GS on 2025-11-14 with GHOST on its port: the ordinary night most tests open. */
+/** The ordinary night most tests open. */
 const openOrdinaryNight = (...more: MockLink.MockedResponse[]) =>
   openNight(
     '/night?site=GS&night=2025-11-14',
@@ -188,7 +188,6 @@ describe(NightPage, () => {
       nightSchedule({ site: 'GS', night: '2026-08-01' }),
     );
 
-    // Four abutting semesters read as one unbroken range.
     await expect
       .element(screen.getByText('Published nights at GS run 2024-08-02 to 2026-08-01', { exact: false }))
       .toBeVisible();
