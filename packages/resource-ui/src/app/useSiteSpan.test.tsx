@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
+import { publishedSemester, publishedSemesters } from '@/test/fixtures/semester';
 import { Probe } from '@/test/probe';
 import { renderApp } from '@/test/renderApp';
 
@@ -11,9 +12,17 @@ beforeEach(() => {
   printed = [];
 });
 
+const SEMESTERS = publishedSemesters(
+  publishedSemester({ site: 'GS', semester: '2024B' }),
+  publishedSemester({ site: 'GS', semester: '2026A' }),
+  publishedSemester({ site: 'GN', semester: '2024B' }),
+  publishedSemester({ site: 'GN', semester: '2026B' }),
+);
+
 const openSpan = async (route: string) =>
   renderApp({
     route,
+    mocks: [SEMESTERS],
     element: (
       <Probe
         use={useSiteSpan}

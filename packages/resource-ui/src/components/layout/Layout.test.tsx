@@ -10,7 +10,7 @@ import { page, userEvent } from 'vitest/browser';
 
 import { fakeJwt, namedUser } from '@/test/factories';
 import { chooseClock, chooseSite, openAppMenu } from '@/test/helpers';
-import { renderApp } from '@/test/renderApp';
+import { renderApp, type RenderedApp } from '@/test/renderApp';
 import { contrastRatio, pixelOver, resolvedSize, ROOT_FONT_SIZE } from '@/test/styleProbe';
 
 import Layout from './Layout';
@@ -23,8 +23,8 @@ const PHONE = { width: 390, height: 844 };
 const DESKTOP = { width: 1024, height: 768 };
 const LONG_NAME = 'Bartholomew Fitzwilliams Oyelaran-Smythe';
 
-async function renderShell(route = '/night?site=GS', token?: string): Promise<Awaited<ReturnType<typeof renderApp>>> {
-  return renderApp({ element: <Layout />, route, path: '/', childRoutes: CHILD_ROUTES, token });
+async function renderShell(route = '/night?site=GS', token?: string): Promise<RenderedApp> {
+  return renderApp({ element: <Layout />, route, path: '/', childRoutes: CHILD_ROUTES, token, mocks: [] });
 }
 function navigations(container: HTMLElement): { sidebar: Element; bottom: Element } {
   const sidebar = container.querySelector('aside');

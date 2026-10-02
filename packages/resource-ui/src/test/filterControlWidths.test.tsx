@@ -12,9 +12,6 @@
 import '@/styles/global.css';
 import '@/styles/main.css';
 
-import { ApolloLink } from '@apollo/client';
-import { Observable } from '@apollo/client/utilities';
-import type { PublishedSemestersQuery } from '@gql/gen/graphql';
 import type { ReactElement } from 'react';
 import { MemoryRouter } from 'react-router';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
@@ -28,8 +25,10 @@ import { buildSemesterTimeline } from '@/domain/semesterTimeline';
 import { observingNightInterval } from '@/domain/siteTime';
 import type { Mounting, PublishedSemester } from '@/domain/types';
 import { SemesterCalendar } from '@/features/semester/SemesterCalendar';
+import { instrumentAvailabilityBlock, overNights } from '@/test/fixtures/blocks';
+import { componentBrowser, instrumentComponent } from '@/test/fixtures/components';
+import { publishedSemester, publishedSemesters, semesterSchedule, siteSpan } from '@/test/fixtures/semester';
 import { openDropdown, selectDropdownOption } from '@/test/helpers';
-import { createMockApollo } from '@/test/mockClient';
 import { renderApp } from '@/test/renderApp';
 import { ROOT_FONT_SIZE } from '@/test/styleProbe';
 
@@ -69,55 +68,63 @@ function expectFits(box: HTMLElement): void {
   expect(box.scrollWidth).toBeLessThanOrEqual(box.clientWidth);
 }
 
-const GS_SEMESTER_WITH_DEMO: PublishedSemestersQuery = {
-  publishedSemesters: [
-    {
-      __typename: 'PublishedSemester',
-      site: 'GS',
-      semester: '2025B',
-      title: 'Gemini South Semester 2025B',
-      version: null,
-      demo: false,
-      holidays: [],
-      nights: { __typename: 'DateInterval', start: '2025-08-02', end: '2026-02-02' },
-      moonEvents: [],
-    },
-    {
-      __typename: 'PublishedSemester',
-      site: 'GS',
-      semester: '2026B',
-      title: 'Gemini South Semester 2026B',
-      version: null,
-      demo: true,
-      holidays: [],
-      nights: { __typename: 'DateInterval', start: '2026-08-02', end: '2027-02-02' },
-      moonEvents: [],
-    },
-  ],
-};
-
+const GS_2025B = publishedSemester({ site: 'GS', semester: '2025B' });
 /** The "(demo)" suffix, so the semester picker's own longest option is worth measuring at all. */
-const withDemoSemester = () =>
-  createMockApollo(
-    new ApolloLink((operation, forward) =>
-      operation.operationName === 'PublishedSemesters'
-        ? new Observable((observer) => {
-            observer.next({ data: GS_SEMESTER_WITH_DEMO });
-            observer.complete();
-          })
-        : forward(operation),
-    ),
-  );
+const GS_2026B_DEMO = publishedSemester({ site: 'GS', semester: '2026B', demo: true });
+const GN_2026B = publishedSemester({ site: 'GN', semester: '2026B' });
+
+/** Two-digit counts, as a real catalog has, so each measured option is as wide as it gets in use. */
+const CATALOG = [
+  instrumentComponent({ id: 'k-gs-mask-011', componentType: 'FPU', code: 'GS2026B-011', name: 'Mask GS2026B-011' }),
+  ...Array.from({ length: 10 }, (_, index) =>
+    instrumentComponent({
+      id: `k-gs-grating-${index}`,
+      componentType: 'DISPERSER',
+      code: `G${index}`,
+      name: `Grating ${index}`,
+    }),
+  ),
+  ...Array.from({ length: 12 }, (_, index) =>
+    instrumentComponent({
+      id: `k-gs-filter-${index}`,
+      instrument: 'GSAOI',
+      code: `F${index}`,
+      name: `Filter ${index}`,
+    }),
+  ),
+];
+
+const openComponents = (element: ReactElement) =>
+  renderApp({
+    element,
+    route: '/components?site=GS&night=2025-10-15',
+    mocks: [publishedSemesters(GS_2025B), componentBrowser(siteSpan(GS_2025B), { components: CATALOG })],
+  });
+
+const GN_WHOLE = overNights('GN', '2026-08-02', '2027-02-01');
+
+const openInstruments = () =>
+  renderApp({
+    element: <InstrumentsPage />,
+    route: '/instruments?site=GN&night=2026-09-26',
+    mocks: [
+      publishedSemesters(GN_2026B),
+      semesterSchedule(siteSpan(GN_2026B), {
+        instrumentAvailability: [
+          instrumentAvailabilityBlock({ instrument: 'GNIRS', port: 3, interval: GN_WHOLE }),
+          instrumentAvailabilityBlock({ instrument: 'ALOPEKE', place: 'UNKNOWN', interval: GN_WHOLE }),
+          instrumentAvailabilityBlock({ instrument: 'NIRI', place: 'BASE', usage: 'UNAVAILABLE', interval: GN_WHOLE }),
+        ],
+      }),
+    ],
+  });
 
 describe('the filter and page controls a reader can grow past their own box', () => {
   it.each(ROOTS)(
     'keeps the Components Search field showing its own placeholder-length value at a %s root',
     async (root) => {
       document.documentElement.style.fontSize = root;
-      const screen = await renderApp({
-        element: <ComponentsPage />,
-        route: '/components?site=GS&semester=2025B&night=2025-10-15',
-      });
+      const screen = await openComponents(<ComponentsPage />);
       await expect.element(screen.getByText('Mask GS2026B-011')).toBeVisible();
 
       const input = screen.getByLabelText('Search', { exact: true }).element() as HTMLInputElement;
@@ -130,10 +137,7 @@ describe('the filter and page controls a reader can grow past their own box', ()
     'keeps the Instruments Search field showing its own placeholder-length value at a %s root',
     async (root) => {
       document.documentElement.style.fontSize = root;
-      const screen = await renderApp({
-        element: <InstrumentsPage />,
-        route: '/instruments?site=GN&semester=2026B&night=2026-09-26',
-      });
+      const screen = await openInstruments();
       await expect.element(screen.getByText('GNIRS')).toBeVisible();
 
       const input = screen.getByLabelText('Search', { exact: true }).element() as HTMLInputElement;
@@ -146,10 +150,7 @@ describe('the filter and page controls a reader can grow past their own box', ()
     'keeps the Components Instrument filter showing its own longest selected option at a %s root',
     async (root) => {
       document.documentElement.style.fontSize = root;
-      const screen = await renderApp({
-        element: <ComponentsPage />,
-        route: '/components?site=GS&semester=2025B&night=2025-10-15',
-      });
+      const screen = await openComponents(<ComponentsPage />);
       await expect.element(screen.getByText('Mask GS2026B-011')).toBeVisible();
 
       await selectLongestOption(screen, 'Instrument');
@@ -161,10 +162,7 @@ describe('the filter and page controls a reader can grow past their own box', ()
     'keeps the Components Type filter showing its own longest selected option at a %s root',
     async (root) => {
       document.documentElement.style.fontSize = root;
-      const screen = await renderApp({
-        element: <ComponentsPage />,
-        route: '/components?site=GS&semester=2025B&night=2025-10-15',
-      });
+      const screen = await openComponents(<ComponentsPage />);
       await expect.element(screen.getByText('Mask GS2026B-011')).toBeVisible();
 
       // The reported case: "Disperser (10)" is the longest Type option in this fixture.
@@ -177,10 +175,7 @@ describe('the filter and page controls a reader can grow past their own box', ()
     'keeps the Instruments Location filter showing its own longest selected option at a %s root',
     async (root) => {
       document.documentElement.style.fontSize = root;
-      const screen = await renderApp({
-        element: <InstrumentsPage />,
-        route: '/instruments?site=GN&semester=2026B&night=2026-09-26',
-      });
+      const screen = await openInstruments();
       await expect.element(screen.getByText('GNIRS')).toBeVisible();
 
       await selectLongestOption(screen, 'Location');
@@ -193,7 +188,7 @@ describe('the filter and page controls a reader can grow past their own box', ()
     const screen = await renderApp({
       element: <SemesterPage />,
       route: '/semester?site=GS&semester=2025B',
-      mock: withDemoSemester(),
+      mocks: [publishedSemesters(GS_2025B, GS_2026B_DEMO), semesterSchedule(GS_2025B), semesterSchedule(GS_2026B_DEMO)],
     });
     await expect.element(screen.getByTestId('semester-timeline')).toBeVisible();
 
@@ -252,14 +247,11 @@ describe('the filter and page controls a reader can grow past their own box', ()
   it("lets FilterField's own column shrink so a clamped control's max-w-full is not inert", async () => {
     // Narrower than any one control's own rem width, so the row can only avoid overflowing this
     // 220px `overflow-hidden` stand-in for `.xp-shell` by letting `max-w-full` actually shrink one.
-    const screen = await renderApp({
-      element: (
-        <div style={{ width: '220px', overflow: 'hidden' }} data-testid="squeeze">
-          <ComponentsPage />
-        </div>
-      ),
-      route: '/components?site=GS&semester=2025B&night=2025-10-15',
-    });
+    const screen = await openComponents(
+      <div style={{ width: '220px', overflow: 'hidden' }} data-testid="squeeze">
+        <ComponentsPage />
+      </div>,
+    );
     await expect.element(screen.getByText('Mask GS2026B-011')).toBeVisible();
 
     await selectLongestOption(screen, 'Type');

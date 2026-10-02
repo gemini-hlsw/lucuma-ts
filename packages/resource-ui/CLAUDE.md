@@ -261,8 +261,10 @@ changing the schema. What follows is the half that is this app's, plus the rules
 ## Testing
 
 Browser-mode Vitest (Playwright chromium). Pure functions get plain unit tests; pages get browser tests that
-mount against the mock via `src/test/renderApp.tsx` and drive real interactions with accessible queries
-(`getByRole`, `getByLabelText`).
+mount through `src/test/renderApp.tsx` and drive real interactions with accessible queries
+(`getByRole`, `getByLabelText`). Pass `renderApp` its `mocks`, built per operation by `src/test/fixtures/`
+with only the **Blocks** the assertion depends on; a test that passes none still runs against the mock
+schema until it is moved. A query no mock answers fails the test, so a fixture must match the variables the page sends.
 
 - **Every control whose press, toggle or hover changes what is displayed gets a browser test driving the real
   interaction.** Test both directions where they exist: what must change with the control (the night chart's
