@@ -339,3 +339,7 @@ keyframes, third-party overrides).
 `lucuma-odb/resource/docs/` is authoritative for the v1 backend domain and API, with the v1 scope trims applied
 here: the schedule lifecycle, change log and restrictions are out of scope - every view reads the one published
 record, and editing was descoped from v1. When the two disagree, this file and the code win for this package.
+
+## Agent skills
+
+- Domain docs: glossary at `packages/resource-ui/docs/GLOSSARY.md`, ADRs in `packages/resource-ui/docs/adr/`. See `packages/resource-ui/docs/agents/domain.md`.
