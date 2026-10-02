@@ -1,12 +1,12 @@
 import { overlaps, transitionsOf } from './interval';
 import type {
-  ComponentBlock,
   ComponentLocation,
-  ComponentRecord,
   ComponentUsage,
-  Instrument,
+  InstrumentAvailabilityBlock,
+  InstrumentComponent,
+  InstrumentComponentAvailabilityBlock,
   Interval,
-  Mounting,
+  ResourceInstrument,
 } from './types';
 
 export type ComponentWhere =
@@ -22,7 +22,7 @@ export type ComponentWhere =
   | { readonly kind: 'NOT_RECORDED' };
 
 export interface FinderRow {
-  readonly component: ComponentRecord;
+  readonly component: InstrumentComponent;
   readonly where: ComponentWhere;
   /** Null exactly when nothing is recorded for the night. */
   readonly usage: ComponentUsage | null;
@@ -33,32 +33,34 @@ export interface FinderRow {
 }
 
 /** The latest block touching the night, so a piece that comes off mid-night reports where it ended up. */
-const deciding = (blocks: readonly ComponentBlock[]): ComponentBlock | undefined => blocks.at(-1);
+const deciding = (
+  blocks: readonly InstrumentComponentAvailabilityBlock[],
+): InstrumentComponentAvailabilityBlock | undefined => blocks.at(-1);
 
 /** The same derivation for a row and a history line, so "Installed" cannot mean two places. */
 export const whereOf = (
-  instrument: Instrument,
-  block: ComponentBlock,
-  mountings: readonly Mounting[],
+  instrument: ResourceInstrument,
+  block: InstrumentComponentAvailabilityBlock,
+  instrumentAvailability: readonly InstrumentAvailabilityBlock[],
   span: Interval,
 ): ComponentWhere => {
   if (block.location !== 'INSTALLED') {
     return { kind: 'STORED', location: block.location };
   }
-  const mounting = mountings.find(
+  const instrumentBlock = instrumentAvailability.find(
     (candidate) => candidate.instrument === instrument && overlaps(candidate.interval, span),
   );
   return {
     kind: 'INSTALLED',
-    port: mounting?.port ?? null,
-    instrumentName: mounting?.publishedName ?? instrument,
+    port: instrumentBlock?.port ?? null,
+    instrumentName: instrumentBlock?.publishedName ?? instrument,
   };
 };
 
 export interface BuildFinderRowsOptions {
-  readonly components: readonly ComponentRecord[];
-  readonly blocks: readonly ComponentBlock[];
-  readonly mountings: readonly Mounting[];
+  readonly components: readonly InstrumentComponent[];
+  readonly blocks: readonly InstrumentComponentAvailabilityBlock[];
+  readonly instrumentAvailability: readonly InstrumentAvailabilityBlock[];
   readonly night: Interval;
 }
 
@@ -66,7 +68,7 @@ export interface BuildFinderRowsOptions {
 export const buildFinderRows = ({
   components,
   blocks,
-  mountings,
+  instrumentAvailability,
   night,
 }: BuildFinderRowsOptions): readonly FinderRow[] =>
   components.map((component) => {
@@ -88,7 +90,7 @@ export const buildFinderRows = ({
     const transitions = transitionsOf(tonight);
     return {
       component,
-      where: whereOf(component.instrument, block, mountings, night),
+      where: whereOf(component.instrument, block, instrumentAvailability, night),
       usage: block.usage,
       note: block.note,
       changesTonight: transitions.length > 0,
@@ -97,11 +99,14 @@ export const buildFinderRows = ({
   });
 
 /** A piece's records over the window, newest last - what the row expansion lists. */
-export const historyOf = (componentId: string, blocks: readonly ComponentBlock[]): readonly ComponentBlock[] =>
+export const historyOf = (
+  componentId: string,
+  blocks: readonly InstrumentComponentAvailabilityBlock[],
+): readonly InstrumentComponentAvailabilityBlock[] =>
   blocks.filter((block) => block.componentId === componentId).sort((a, b) => a.interval.start - b.interval.start);
 
 /** Case-insensitive match on any published identity, mirroring the API's `search`. */
-export const matchesComponent = (component: ComponentRecord, search: string): boolean => {
+export const matchesComponent = (component: InstrumentComponent, search: string): boolean => {
   const needle = search.trim().toLowerCase();
   if (needle === '') {
     return true;

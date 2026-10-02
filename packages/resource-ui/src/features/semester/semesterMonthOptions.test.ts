@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { portRowLabel, TELESCOPE_PORTS } from '@/domain/ports';
 import { buildSemesterTimeline, type TimelineMonth } from '@/domain/semesterTimeline';
 import { observingNightInterval } from '@/domain/siteTime';
-import type { Closure, Mounting, Site } from '@/domain/types';
+import type { InstrumentAvailabilityBlock, Site, TelescopeAvailabilityBlock } from '@/domain/types';
 import { buildTimelinePoints, DENSE, eveningDescriber, TICK } from '@/features/timeline/timelineOptions';
 import { collectFontSizes } from '@/test/fontSizes';
 
@@ -23,7 +23,7 @@ const span = (from: string, to: string) => ({ start: night(from).start, end: nig
 /** Every month draws the telescope's ports, whatever the semester holds. */
 const ROWS = TELESCOPE_PORTS.map(portRowLabel);
 
-const GHOST: Mounting = {
+const GHOST: InstrumentAvailabilityBlock = {
   id: 'ghost',
   instrument: 'GHOST',
   publishedName: 'GHOST',
@@ -34,7 +34,7 @@ const GHOST: Mounting = {
   interval: span('2026-08-08', '2027-02-01'),
 };
 
-const AG: Closure = {
+const AG: TelescopeAvailabilityBlock = {
   id: 'ag',
   availability: 'CLOSED',
   port: 4,
@@ -46,8 +46,8 @@ const timeline = buildSemesterTimeline({
   site: 'GS',
   firstNight: '2026-08-02',
   lastNight: '2027-02-01',
-  mountings: [GHOST],
-  closures: [AG],
+  instrumentAvailability: [GHOST],
+  telescopeAvailability: [AG],
 });
 
 const august = timeline.months[0]!;
@@ -89,8 +89,8 @@ describe('points', () => {
       site: 'GS',
       firstNight: '2026-08-02',
       lastNight: '2026-09-01',
-      mountings: [{ ...GHOST, id: 'gmos', instrument: 'GMOS', publishedName: 'GMOS', port: 3 }],
-      closures: [],
+      instrumentAvailability: [{ ...GHOST, id: 'gmos', instrument: 'GMOS', publishedName: 'GMOS', port: 3 }],
+      telescopeAvailability: [],
     });
 
     const point = buildMonthPoints(withoutGhost.months[0]!, 'GS')[0];
@@ -102,8 +102,8 @@ describe('points', () => {
       site: 'GS',
       firstNight: '2026-08-02',
       lastNight: '2026-09-01',
-      mountings: [],
-      closures: [{ ...AG, reason: null }],
+      instrumentAvailability: [],
+      telescopeAvailability: [{ ...AG, reason: null }],
     });
 
     const point = buildMonthPoints(unnamed.months[0]!, 'GS')[0];
@@ -157,8 +157,8 @@ describe('bands', () => {
       site: 'GS',
       firstNight: '2026-08-02',
       lastNight: '2026-09-01',
-      mountings: [],
-      closures: [
+      instrumentAvailability: [],
+      telescopeAvailability: [
         {
           id: 'wide',
           availability: 'CLOSED',
@@ -219,7 +219,7 @@ describe('axis', () => {
 });
 
 describe('the telescope-wide closure band', () => {
-  const shutdown: Closure = {
+  const shutdown: TelescopeAvailabilityBlock = {
     id: 'wide',
     availability: 'CLOSED',
     port: null,
@@ -230,8 +230,8 @@ describe('the telescope-wide closure band', () => {
     site: 'GS',
     firstNight: '2026-08-02',
     lastNight: '2027-02-01',
-    mountings: [],
-    closures: [shutdown],
+    instrumentAvailability: [],
+    telescopeAvailability: [shutdown],
   }).months[0]!;
 
   const closureBand = () => buildMonthBands(month).find((band) => band.className === 'schedule-closure-band');

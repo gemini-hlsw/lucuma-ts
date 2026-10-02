@@ -1,5 +1,5 @@
-import { ApolloProvider } from '@apollo/client/react';
-import { Provider as JotaiProvider } from 'jotai';
+import type { MockLink } from '@apollo/client/testing';
+import { AtomsAndApollo } from '@gemini-hlsw/lucuma-common-ui/testing';
 import { PrimeReactProvider } from 'primereact/api';
 import type { ReactElement } from 'react';
 import { createMemoryRouter, RouterProvider } from 'react-router';
@@ -8,11 +8,8 @@ import { render } from 'vitest-browser-react';
 import { sessionCheckedAtom, setToken } from '@/components/atoms/auth';
 import { store } from '@/components/atoms/store';
 
-import { createMockApollo, type MockApollo } from './mockClient';
-
 /** The router comes back too: a memory router keeps its own history, and window.history would not. */
 export type RenderedApp = Awaited<ReturnType<typeof render>> & {
-  mock: MockApollo;
   router: ReturnType<typeof createMemoryRouter>;
   store: typeof store;
 };
@@ -27,7 +24,8 @@ interface RenderOptions {
   extraRoutes?: readonly { path: string; element: ReactElement }[];
   /** Child routes for `element`'s `<Outlet />`, to mount the real shell around a page. */
   childRoutes?: readonly { path: string; element: ReactElement }[];
-  mock?: MockApollo;
+  /** Each operation answered from a typed response built in `test/fixtures/`. */
+  mocks: readonly MockLink.MockedResponse[];
   token?: string | null;
   sessionChecked?: boolean;
 }
@@ -38,7 +36,7 @@ export async function renderApp({
   path: pattern,
   extraRoutes = [],
   childRoutes,
-  mock = createMockApollo(),
+  mocks,
   token = null,
   sessionChecked = true,
 }: RenderOptions): Promise<RenderedApp> {
@@ -52,12 +50,10 @@ export async function renderApp({
 
   const result = await render(
     <PrimeReactProvider>
-      <JotaiProvider store={store}>
-        <ApolloProvider client={mock.client}>
-          <RouterProvider router={router} />
-        </ApolloProvider>
-      </JotaiProvider>
+      <AtomsAndApollo store={store} mocks={mocks}>
+        <RouterProvider router={router} />
+      </AtomsAndApollo>
     </PrimeReactProvider>,
   );
-  return Object.assign(result, { mock, router, store });
+  return Object.assign(result, { router, store });
 }

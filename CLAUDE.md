@@ -12,7 +12,7 @@ Packages (under `packages/*`):
 
 - **ui** (`@gemini-hlsw/navigate-ui`) — React 19 web UI to configure the telescope. PrimeReact + Tailwind v4, Jotai state, Apollo Client, react-router.
 - **configs** (`@gemini-hlsw/navigate-configs`) — GraphQL backend (graphql-yoga) over a Postgres DB via Prisma. Serves the `/db` endpoint the UI talks to.
-- **resource-ui** (`@gemini-hlsw/resource-ui`) — separate React web UI for Resource. The app reads **one** backend: the live Resource service at `/resource/graphql` (the vite proxy carries that path to the dev deployment purely to sidestep CORS). It does not serve the v1 API yet, so `pnpm resource-ui dev` shows a warning toast and empty views - that is expected, not a broken build. The package's `mock-server` backs the browser tests, codegen and GraphiQL on :4000; the app cannot be pointed at it (see `packages/resource-ui/CLAUDE.md`).
+- **resource-ui** (`@gemini-hlsw/resource-ui`) — separate React web UI for Resource. The app reads **one** backend: the live Resource service at `/resource/graphql` (the vite proxy carries that path to the dev deployment purely to sidestep CORS). Its data fields need an SSO Bearer token, so signed out, `pnpm resource-ui dev` shows a sign-in toast and empty views - that is expected, not a broken build. The schema comes from `@gemini-hlsw/lucuma-odb-schemas/resource`; tests answer each operation with fixtures (see `packages/resource-ui/CLAUDE.md`).
 - **admin-ui** (`@gemini-hlsw/admin-ui`) — separate React web UI for the GPP Admin views (Programs, Users, Proposals, Change Requests, Calls for Proposals). Talks to the ODB and SSO GraphQL endpoints; codegen types under `src/gql/{odb,sso}/gen/`.
 - **common-ui** (`@gemini-hlsw/lucuma-common-ui`) — shared code/utilities/test setup imported by `ui` and `resource-ui`.
 - **e2e** (`@gemini-hlsw/navigate-e2e`) — Playwright end-to-end tests that run real `ui` + `configs` + a `navigate-server` docker image.
@@ -40,7 +40,6 @@ pnpm configs test            # vitest integration tests in Node (spins up a Post
 # resource-ui
 pnpm resource-ui codegen           # regenerate src/gql/gen (gitignored) - needed before test/build on a fresh clone
 pnpm resource-ui dev               # vite dev server (proxies /resource/graphql to the live dev service)
-pnpm resource-ui dev:mock-server   # mock GraphQL server + GraphiQL on :4000 (predev hook runs codegen)
 pnpm resource-ui test              # vitest - runs in a real browser (Playwright/chromium)
 pnpm resource-ui build             # tsc -b && vite build (runs codegen via prebuild)
 

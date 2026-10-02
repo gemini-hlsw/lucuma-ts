@@ -23,6 +23,7 @@ const openProbe = (options: { token?: string | null; sessionChecked?: boolean })
         readout={({ user, status }) => ({ user: user ? displayName(user) : 'none', status })}
       />
     ),
+    mocks: [],
     ...options,
   });
 

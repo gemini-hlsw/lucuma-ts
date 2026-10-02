@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import { buildInstrumentRows, locationOptions, matchesInstrument, runsOf } from './instrumentFinder';
 import { observingNightInterval } from './siteTime';
-import type { Mounting } from './types';
+import type { InstrumentAvailabilityBlock } from './types';
 
 const SITE = 'GS' as const;
 const NIGHT = '2026-08-10';
@@ -15,7 +15,7 @@ const nights = (first: string, last: string) => ({
   end: observingNightInterval(SITE, last).end,
 });
 
-const mounting = (over: Partial<Mounting> = {}): Mounting => ({
+const instrumentBlock = (over: Partial<InstrumentAvailabilityBlock> = {}): InstrumentAvailabilityBlock => ({
   id: 'm1',
   instrument: 'GMOS',
   publishedName: 'GMOS-S',
@@ -29,7 +29,7 @@ const mounting = (over: Partial<Mounting> = {}): Mounting => ({
 
 describe(buildInstrumentRows, () => {
   it('says which port an instrument is on tonight, and how long the run is', () => {
-    const [row] = buildInstrumentRows({ mountings: [mounting()], night });
+    const [row] = buildInstrumentRows({ instrumentAvailability: [instrumentBlock()], night });
 
     expect(row).toMatchObject({ instrument: 'GMOS', publishedName: 'GMOS-S', usage: 'SCIENCE' });
     expect(row?.where).toEqual({ kind: 'PORT', port: 3 });
@@ -39,7 +39,7 @@ describe(buildInstrumentRows, () => {
   it('says an instrument is on no port rather than inventing a place for it', () => {
     // The workbook never says where a port-less instrument sits, so the row must not claim one.
     const [row] = buildInstrumentRows({
-      mountings: [mounting({ instrument: 'CAL_ZORRO', port: null, place: 'UNKNOWN' })],
+      instrumentAvailability: [instrumentBlock({ instrument: 'CAL_ZORRO', port: null, place: 'UNKNOWN' })],
       night,
     });
 
@@ -49,7 +49,7 @@ describe(buildInstrumentRows, () => {
 
   it('reports a night with no record as unrecorded, never as unavailable (I4)', () => {
     const [row] = buildInstrumentRows({
-      mountings: [mounting({ interval: nights('2026-09-01', '2026-09-05') })],
+      instrumentAvailability: [instrumentBlock({ interval: nights('2026-09-01', '2026-09-05') })],
       night,
     });
 
@@ -61,9 +61,9 @@ describe(buildInstrumentRows, () => {
   it('reports where an instrument ended up when it moves during the night', () => {
     const changeover = night.start + 9 * 3_600_000;
     const [row] = buildInstrumentRows({
-      mountings: [
-        mounting({ id: 'a', interval: { start: night.start, end: changeover } }),
-        mounting({ id: 'b', port: 5, interval: { start: changeover, end: night.end } }),
+      instrumentAvailability: [
+        instrumentBlock({ id: 'a', interval: { start: night.start, end: changeover } }),
+        instrumentBlock({ id: 'b', port: 5, interval: { start: changeover, end: night.end } }),
       ],
       night,
     });
@@ -76,7 +76,7 @@ describe(buildInstrumentRows, () => {
   it('lists the instruments the records name, not the whole enum', () => {
     // Nine permanently blank rows would bury the ones that mean something.
     const rows = buildInstrumentRows({
-      mountings: [mounting({ instrument: 'GHOST' }), mounting({ instrument: 'F2' })],
+      instrumentAvailability: [instrumentBlock({ instrument: 'GHOST' }), instrumentBlock({ instrument: 'F2' })],
       night,
     });
 
@@ -87,13 +87,13 @@ describe(buildInstrumentRows, () => {
 describe(locationOptions, () => {
   it('offers the ports in order, then the two plain facts, each with its count', () => {
     const rows = buildInstrumentRows({
-      mountings: [
-        mounting({ instrument: 'GHOST', port: 1 }),
-        mounting({ instrument: 'GCAL', port: 2 }),
-        mounting({ instrument: 'F2', port: 1 }),
-        mounting({ instrument: 'CAL_ZORRO', port: null, place: 'UNKNOWN' }),
+      instrumentAvailability: [
+        instrumentBlock({ instrument: 'GHOST', port: 1 }),
+        instrumentBlock({ instrument: 'GCAL', port: 2 }),
+        instrumentBlock({ instrument: 'F2', port: 1 }),
+        instrumentBlock({ instrument: 'CAL_ZORRO', port: null, place: 'UNKNOWN' }),
         // Recorded elsewhere in the window, nothing tonight.
-        mounting({ instrument: 'CANOPUS', interval: nights('2026-09-01', '2026-09-05') }),
+        instrumentBlock({ instrument: 'CANOPUS', interval: nights('2026-09-01', '2026-09-05') }),
       ],
       night,
     });
@@ -107,7 +107,7 @@ describe(locationOptions, () => {
   });
 
   it('offers only the locations the rows hold, so a filter never empties the table', () => {
-    const rows = buildInstrumentRows({ mountings: [mounting()], night });
+    const rows = buildInstrumentRows({ instrumentAvailability: [instrumentBlock()], night });
 
     expect(locationOptions(rows).map((entry) => entry.label)).toEqual(['Port 3']);
   });
@@ -115,8 +115,8 @@ describe(locationOptions, () => {
 
 describe(runsOf, () => {
   it('gives an instrument its runs over the window, oldest first', () => {
-    const later = mounting({ id: 'b', interval: nights('2026-09-01', '2026-09-05') });
-    const earlier = mounting({ id: 'a', interval: nights('2026-08-01', '2026-08-05') });
+    const later = instrumentBlock({ id: 'b', interval: nights('2026-09-01', '2026-09-05') });
+    const earlier = instrumentBlock({ id: 'a', interval: nights('2026-08-01', '2026-08-05') });
 
     expect(runsOf('GMOS', [later, earlier]).map((run) => run.id)).toEqual(['a', 'b']);
   });
@@ -124,7 +124,7 @@ describe(runsOf, () => {
 
 describe(matchesInstrument, () => {
   it('matches the enum tag and the name the schedule prints, case-insensitively', () => {
-    const [row] = buildInstrumentRows({ mountings: [mounting()], night });
+    const [row] = buildInstrumentRows({ instrumentAvailability: [instrumentBlock()], night });
 
     expect(matchesInstrument(row!, 'gmos-s')).toBe(true);
     expect(matchesInstrument(row!, 'GMOS')).toBe(true);

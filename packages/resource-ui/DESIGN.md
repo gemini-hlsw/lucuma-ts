@@ -673,7 +673,8 @@ with no wait and no fade.
   is opaque; it is the only severity restyled. Info keeps the theme's look, and the severities
   not yet shown keep it until the change that first shows one styles it.
 - **Words.** The summary says what happened in the reader's terms; the detail says why, or what
-  to do next. The three live-server failure toasts and the other-tab sign-out are the exception:
+  to do next. The three live-server failure toasts (unreachable, sign-in, server error) and the
+  other-tab sign-out are the exception:
   a summary alone.
 - **Lifetime.** PrimeReact's, and a pointer resting on the toast holds it. Anything the reader
   must not miss is `sticky`.

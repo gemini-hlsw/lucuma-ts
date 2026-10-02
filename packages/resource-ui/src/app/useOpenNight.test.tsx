@@ -47,6 +47,7 @@ const openProbe = async (route: string) =>
       />
     ),
     extraRoutes: [{ path: '/night', element: <NightProbe /> }],
+    mocks: [],
   });
 
 describe(useOpenNight, () => {

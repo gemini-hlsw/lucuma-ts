@@ -11,7 +11,14 @@ import {
   type TimelineNight,
   type TimelineRow,
 } from './timeline';
-import type { Closure, Interval, ModeBlock, Mounting, Site, TooBlock } from './types';
+import type {
+  InstrumentAvailabilityBlock,
+  Interval,
+  Site,
+  TelescopeAvailabilityBlock,
+  TelescopeModeBlock,
+  TooSupportBlock,
+} from './types';
 
 /** Nights in a week window. Seven, and the rest of the view assumes it. */
 export const WEEK_NIGHTS = 7;
@@ -28,11 +35,11 @@ export interface BuildWeekTimelineOptions {
   readonly site: Site;
   /** The first of the seven nights, labelled by the date it ends on. */
   readonly firstNight: string;
-  readonly mountings: readonly Mounting[];
-  readonly closures: readonly Closure[];
+  readonly instrumentAvailability: readonly InstrumentAvailabilityBlock[];
+  readonly telescopeAvailability: readonly TelescopeAvailabilityBlock[];
   /** The state rows head the chart only when some records exist, like the night view. */
-  readonly tooBlocks?: readonly TooBlock[];
-  readonly modeBlocks?: readonly ModeBlock[];
+  readonly tooSupport?: readonly TooSupportBlock[];
+  readonly telescopeMode?: readonly TelescopeModeBlock[];
   /** Undefined while in flight, which is not empty: an empty set would grey out the whole week. */
   readonly nightsWithData: ReadonlySet<string> | undefined;
 }
@@ -43,10 +50,10 @@ export const weekNightLabels = (firstNight: string): readonly string[] =>
 export const buildWeekTimeline = ({
   site,
   firstNight,
-  mountings,
-  closures,
-  tooBlocks = [],
-  modeBlocks = [],
+  instrumentAvailability,
+  telescopeAvailability,
+  tooSupport = [],
+  telescopeMode = [],
   nightsWithData,
 }: BuildWeekTimelineOptions): WeekTimeline => {
   const nights: readonly TimelineNight[] = weekNightLabels(firstNight).map((observingNight) => {
@@ -65,10 +72,13 @@ export const buildWeekTimeline = ({
     end: nights.at(-1)?.interval.end ?? 0,
   };
   const rows = placeBlocks(
-    [...collectStateRows(closures, tooBlocks, modeBlocks), ...collectBlocks({ mountings, closures })],
+    [
+      ...collectStateRows(telescopeAvailability, tooSupport, telescopeMode),
+      ...collectBlocks({ instrumentAvailability, telescopeAvailability }),
+    ],
     interval,
   );
-  const bands = placeBands(closures, interval);
+  const bands = placeBands(telescopeAvailability, interval);
 
   return { nights, interval, rows, bands, ...legendFor(rows, bands) };
 };

@@ -5,7 +5,13 @@ import { buildNightTimeline } from './nightTimeline';
 import { portRowLabel, TELESCOPE_PORTS } from './ports';
 import { observingNightInterval } from './siteTime';
 import { MODE_ROW_LABEL, TOO_ROW_LABEL } from './timeline';
-import type { Closure, ModeBlock, Mounting, SubsystemBlock, TooBlock } from './types';
+import type {
+  InstrumentAvailabilityBlock,
+  TelescopeAvailabilityBlock,
+  TelescopeModeBlock,
+  TelescopeSubsystemAvailabilityBlock,
+  TooSupportBlock,
+} from './types';
 
 const NIGHT = '2026-11-14';
 const interval = observingNightInterval('GS', NIGHT);
@@ -14,7 +20,9 @@ const ROWS = TELESCOPE_PORTS.map(portRowLabel);
 
 const HOUR = 3_600_000;
 
-const mounting = (over: Partial<Mounting> & Pick<Mounting, 'id' | 'port' | 'interval'>): Mounting => ({
+const instrumentBlock = (
+  over: Partial<InstrumentAvailabilityBlock> & Pick<InstrumentAvailabilityBlock, 'id' | 'port' | 'interval'>,
+): InstrumentAvailabilityBlock => ({
   instrument: 'GMOS',
   publishedName: 'GMOS',
   usage: 'SCIENCE',
@@ -25,21 +33,21 @@ const mounting = (over: Partial<Mounting> & Pick<Mounting, 'id' | 'port' | 'inte
 
 const build = (
   over: {
-    mountings?: readonly Mounting[];
-    closures?: readonly Closure[];
-    tooBlocks?: readonly TooBlock[];
-    modeBlocks?: readonly ModeBlock[];
-    subsystemBlocks?: readonly SubsystemBlock[];
+    instrumentAvailability?: readonly InstrumentAvailabilityBlock[];
+    telescopeAvailability?: readonly TelescopeAvailabilityBlock[];
+    tooSupport?: readonly TooSupportBlock[];
+    telescopeMode?: readonly TelescopeModeBlock[];
+    telescopeSubsystemAvailability?: readonly TelescopeSubsystemAvailabilityBlock[];
   } = {},
 ) =>
   buildNightTimeline({
     site: 'GS',
     observingNight: NIGHT,
-    mountings: over.mountings ?? [],
-    closures: over.closures ?? [],
-    tooBlocks: over.tooBlocks ?? [],
-    modeBlocks: over.modeBlocks ?? [],
-    subsystemBlocks: over.subsystemBlocks ?? [],
+    instrumentAvailability: over.instrumentAvailability ?? [],
+    telescopeAvailability: over.telescopeAvailability ?? [],
+    tooSupport: over.tooSupport ?? [],
+    telescopeMode: over.telescopeMode ?? [],
+    telescopeSubsystemAvailability: over.telescopeSubsystemAvailability ?? [],
   });
 
 const rowIn = (timeline: ReturnType<typeof build>, row: string) => timeline.rows.find((entry) => entry.key === row);
@@ -54,8 +62,8 @@ describe('the night window', () => {
 
   it('clips a run that spans the semester down to tonight, and says it continues', () => {
     const night = build({
-      mountings: [
-        mounting({
+      instrumentAvailability: [
+        instrumentBlock({
           id: 'ghost',
           port: 1,
           instrument: 'GHOST',
@@ -73,7 +81,7 @@ describe('the night window', () => {
 
   it('reports no transitions when the night is uniform, which every published night is', () => {
     const night = build({
-      mountings: [mounting({ id: 'a', port: 3, interval })],
+      instrumentAvailability: [instrumentBlock({ id: 'a', port: 3, interval })],
     });
 
     expect(night.transitions).toEqual([]);
@@ -83,15 +91,15 @@ describe('the night window', () => {
 describe('partial nights', () => {
   // Nothing ever assumed a block covers a whole night, so a mid-night change needs no special case.
   const CHANGEOVER = interval.start + 9 * HOUR;
-  const SPLIT_NIGHT: readonly Mounting[] = [
-    mounting({
+  const SPLIT_NIGHT: readonly InstrumentAvailabilityBlock[] = [
+    instrumentBlock({
       id: 'first',
       port: 3,
       instrument: 'GMOS',
       publishedName: 'GMOS',
       interval: { start: interval.start, end: CHANGEOVER },
     }),
-    mounting({
+    instrumentBlock({
       id: 'second',
       port: 3,
       instrument: 'F2',
@@ -101,7 +109,7 @@ describe('partial nights', () => {
   ];
 
   it('draws a mid-night changeover as two blocks meeting at the boundary', () => {
-    const blocks = rowIn(build({ mountings: SPLIT_NIGHT }), 'Port 3')?.blocks ?? [];
+    const blocks = rowIn(build({ instrumentAvailability: SPLIT_NIGHT }), 'Port 3')?.blocks ?? [];
 
     expect(blocks.map((block) => block.label)).toEqual(['GMOS', 'F2']);
     expect(blocks[0]?.interval.end).toBe(CHANGEOVER);
@@ -109,18 +117,18 @@ describe('partial nights', () => {
   });
 
   it('names the instant the change happens, so it is not left to a seam in the bars', () => {
-    expect(build({ mountings: SPLIT_NIGHT }).transitions).toEqual([CHANGEOVER]);
+    expect(build({ instrumentAvailability: SPLIT_NIGHT }).transitions).toEqual([CHANGEOVER]);
   });
 
   it('keeps both instruments in the legend', () => {
-    expect(build({ mountings: SPLIT_NIGHT }).instruments).toEqual(['F2', 'GMOS']);
+    expect(build({ instrumentAvailability: SPLIT_NIGHT }).instruments).toEqual(['F2', 'GMOS']);
   });
 
   it('lists several changes in order, without repeating a shared boundary', () => {
     const night = build({
-      mountings: [
+      instrumentAvailability: [
         ...SPLIT_NIGHT,
-        mounting({
+        instrumentBlock({
           id: 'other',
           port: 2,
           instrument: 'GHOST',
@@ -136,11 +144,15 @@ describe('partial nights', () => {
 });
 
 describe('the telescope-state rows', () => {
-  const too = (over: Partial<TooBlock> & Pick<TooBlock, 'id' | 'tooSupport' | 'interval'>): TooBlock => ({
+  const too = (
+    over: Partial<TooSupportBlock> & Pick<TooSupportBlock, 'id' | 'tooSupport' | 'interval'>,
+  ): TooSupportBlock => ({
     note: null,
     ...over,
   });
-  const mode = (over: Partial<ModeBlock> & Pick<ModeBlock, 'id' | 'mode' | 'interval'>): ModeBlock => ({
+  const mode = (
+    over: Partial<TelescopeModeBlock> & Pick<TelescopeModeBlock, 'id' | 'mode' | 'interval'>,
+  ): TelescopeModeBlock => ({
     programReferences: [],
     partner: null,
     note: null,
@@ -154,8 +166,8 @@ describe('the telescope-state rows', () => {
 
   it('heads the chart with Mode then ToO when the night has records', () => {
     const night = build({
-      tooBlocks: [too({ id: 't', tooSupport: 'STANDARD', interval })],
-      modeBlocks: [mode({ id: 'm', mode: 'QUEUE', interval })],
+      tooSupport: [too({ id: 't', tooSupport: 'STANDARD', interval })],
+      telescopeMode: [mode({ id: 'm', mode: 'QUEUE', interval })],
     });
 
     expect(night.rows.map((row) => row.key)).toEqual([MODE_ROW_LABEL, TOO_ROW_LABEL, ...ROWS]);
@@ -163,8 +175,8 @@ describe('the telescope-state rows', () => {
 
   it('prints the recorded value on the block, in its operational spelling', () => {
     const night = build({
-      tooBlocks: [too({ id: 't', tooSupport: 'NONE', interval })],
-      modeBlocks: [mode({ id: 'm', mode: 'PRIORITY_VISITOR', interval })],
+      tooSupport: [too({ id: 't', tooSupport: 'NONE', interval })],
+      telescopeMode: [mode({ id: 'm', mode: 'PRIORITY_VISITOR', interval })],
     });
 
     expect(rowIn(night, TOO_ROW_LABEL)?.blocks[0]?.label).toBe('No ToOs');
@@ -175,7 +187,7 @@ describe('the telescope-state rows', () => {
     // ToO support changes at an instant no port row changes at, and the row shows where.
     const change = interval.start + 7 * HOUR;
     const night = build({
-      tooBlocks: [
+      tooSupport: [
         too({ id: 'before', tooSupport: 'STANDARD', interval: { start: interval.start, end: change } }),
         too({ id: 'after', tooSupport: 'RAPID', interval: { start: change, end: interval.end } }),
       ],
@@ -187,7 +199,7 @@ describe('the telescope-state rows', () => {
 
   it('hands the tooltip the programs a classical span is for', () => {
     const night = build({
-      modeBlocks: [
+      telescopeMode: [
         mode({ id: 'm', mode: 'CLASSICAL', programReferences: ['G-2099B-0042-C', 'G-2099B-0043-C'], interval }),
       ],
     });
@@ -197,7 +209,7 @@ describe('the telescope-state rows', () => {
 
   it('hands the tooltip the partner a block-scheduling span belongs to', () => {
     const night = build({
-      modeBlocks: [mode({ id: 'm', mode: 'BLOCK_SCHEDULING', partner: 'UH', interval })],
+      telescopeMode: [mode({ id: 'm', mode: 'BLOCK_SCHEDULING', partner: 'UH', interval })],
     });
 
     const block = rowIn(night, MODE_ROW_LABEL)?.blocks[0];
@@ -207,8 +219,8 @@ describe('the telescope-state rows', () => {
 
   it('rows each subsystem after the state rows, phrased in usage words', () => {
     const night = build({
-      closures: [{ id: 'a', availability: 'OPEN', port: null, interval, reason: null }],
-      subsystemBlocks: [
+      telescopeAvailability: [{ id: 'a', availability: 'OPEN', port: null, interval, reason: null }],
+      telescopeSubsystemAvailability: [
         { id: 's1', subsystem: 'PWFS1', usage: 'SCIENCE', powerSource: null, interval, note: null },
         { id: 's2', subsystem: 'LGS', usage: 'UNAVAILABLE', powerSource: null, interval, note: null },
       ],
@@ -225,8 +237,8 @@ describe('the telescope-state rows', () => {
 
   it('keeps state blocks out of the instrument legend and the unscheduled key', () => {
     const night = build({
-      tooBlocks: [too({ id: 't', tooSupport: 'STANDARD', interval })],
-      modeBlocks: [mode({ id: 'm', mode: 'QUEUE', interval })],
+      tooSupport: [too({ id: 't', tooSupport: 'STANDARD', interval })],
+      telescopeMode: [mode({ id: 'm', mode: 'QUEUE', interval })],
     });
 
     expect(night.instruments).toEqual([]);

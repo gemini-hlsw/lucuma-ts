@@ -94,10 +94,10 @@ expected as a matter of course, not as exceptions. The one-record invariant and 
 projection path are what absorb them: adding a view must never mean copying another view's
 path from records to pixels, and never mean restructuring the ones that exist.
 
-**One backend, over HTTP.** The app reads the live Resource service at `/resource/graphql`.
-That service does not serve the v1 API yet, so every view is empty under a toast naming the
-situation. That is the expected state, in development and deployed alike. There is no control
-to choose a backend and there never will be one in the app.
+**One backend, over HTTP.** The app reads the live Resource service at `/resource/graphql`,
+and its data needs an SSO sign-in: a signed-out reader sees every view empty under a toast
+asking them to sign in. There is no control to choose a backend and there never will be one in
+the app.
 
 **Nothing is gated on data.** No destination is hidden or disabled because a schedule is
 missing; gating on whether a schedule exists strands the reader on one view.
@@ -134,7 +134,7 @@ assumption is recorded so it can be corrected, not defended.
 | Question                                         | The assumption in force                                                                                                                                                                                                                                                                                             |
 | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | What "A&G" on GS Port 4 means                    | Free text on a port-scoped closure, stored unparsed, and never read as a failure. What a port closure means for availability is still open.                                                                                                                                                                         |
-| Mapping the schedule vocabulary onto lucuma-core | Every name the operations workbook mounts is a Resource `Instrument`, including the AO subsystems (Altair, Canopus) and Engineering.                                                                                                                                                                                |
+| Mapping the schedule vocabulary onto lucuma-core | Every name the operations schedule puts on a port is a `ResourceInstrument`, including the AO subsystems (Altair, Canopus) and Engineering.                                                                                                                                                                         |
 | Unidentified runs                                | A name the instrument list does not hold is served as `UNKNOWN`, with its text carried in the record's note.                                                                                                                                                                                                        |
 | Where a reader works                             | Readers live at one site and rarely switch, so the app opens on the site it was last left at rather than a fixed one, and the site sits beside the wordmark as identity. A link naming a site still overrides it.                                                                                                   |
 | What the LGS column means                        | Constant per site in the current export (GN "Yes" on all 915 nights, GS "No" on all 730), so it may record capability rather than a nightly state. Recorded as spans either way, read as the laser being available or not. If operations confirm capability, the row belongs beside the site rather than the night. |
@@ -166,15 +166,10 @@ assumption is recorded so it can be corrected, not defended.
 
 ## Evidence on Hand
 
-- **The published record is the product's only claim.** Nine semesters of schedule data
-  (GS 2024B-2026A, GN 2024B-2026B) exist as fixtures parsed from an operations workbook export,
-  which supersedes the published web overview sheets where they disagreed. They back the tests
-  and the local mock; they are not a product claim and must not be presented as live data.
-- **The instrument component catalog is synthetic.** So is the list of instruments GPP knows but
-  the schedule never mounts. Both are quarantined behind one file each, both are deterministic,
-  and neither may ever decide whether data is available.
-- **There are no users to quote, no adoption numbers, and no benchmarks.** The backend does not
-  serve the v1 API yet, so there is no production usage of any kind. Do not fabricate any.
+- **The published record is the product's only claim.** The live Resource service is the one
+  source; the test fixtures are small hand-built answers and must not be presented as live data.
+- **There are no users to quote, no adoption numbers, and no benchmarks.** There is no
+  production usage of any kind yet. Do not fabricate any.
 
 ## Product Principles
 
