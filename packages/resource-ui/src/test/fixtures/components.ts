@@ -2,13 +2,13 @@ import type { MockedResponseOf } from '@gemini-hlsw/lucuma-common-ui/testing';
 import type {
   ComponentBrowserQuery,
   ComponentBrowserQueryVariables,
-  NightComponentFieldsFragment,
+  InstrumentComponentAvailabilityBlockItemFragment,
 } from '@gql/gen/graphql';
 import { COMPONENT_BROWSER_QUERY } from '@gql/resource';
 
 import { overNights } from './blocks';
 
-type InstrumentComponent = NightComponentFieldsFragment['component'];
+type InstrumentComponent = InstrumentComponentAvailabilityBlockItemFragment['component'];
 
 export const instrumentComponent = ({
   id = 'k-gs-g_G0325',
@@ -36,7 +36,9 @@ export const instrumentComponentAvailabilityBlock = ({
   usage = 'SCIENCE',
   location = 'INSTALLED',
   note = null,
-}: Partial<Omit<NightComponentFieldsFragment, '__typename'>> = {}): NightComponentFieldsFragment => ({
+}: Partial<
+  Omit<InstrumentComponentAvailabilityBlockItemFragment, '__typename'>
+> = {}): InstrumentComponentAvailabilityBlockItemFragment => ({
   __typename: 'InstrumentComponentAvailabilityBlock',
   usage,
   location,

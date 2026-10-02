@@ -37,7 +37,7 @@ const shownUrl = () => document.querySelector(`[data-testid="${PROBE_URL_TESTID}
 const openWeek = (route: string, ...mocks: MockLink.MockedResponse[]) =>
   renderApp({ element: <WeekPage />, route, extraRoutes: LINK_TARGETS, mocks });
 
-/** GS from the night of 2025-11-14, GHOST on its port all week: the ordinary week most tests open. */
+/** The ordinary week most tests open. */
 const openOrdinaryWeek = (...more: MockLink.MockedResponse[]) =>
   openWeek(
     '/week?site=GS&night=2025-11-14',

@@ -110,7 +110,7 @@ const openComponents = (
     mocks: [publishedSemesters(...semesters), componentBrowser(siteSpan(...semesters), data)],
   });
 
-/** The failing R400 among the mountings its "Installed" resolves against. */
+/** The failing R400 among the instrument blocks its "Installed" resolves against. */
 const openR400 = (route: string) =>
   openComponents(route, {
     components: [R400],
@@ -310,11 +310,11 @@ describe(ComponentsPage, () => {
     }
   });
 
-  it('says where "Installed" was, resolving the span against the same mountings the row uses', async () => {
+  it('says where "Installed" was, resolving the span against the same instrument blocks the row uses', async () => {
     const screen = await openR400(DECEMBER);
     await screen.getByRole('button', { name: /expand k-gs-R400_G5325/i }).click();
 
-    // The block only says INSTALLED; the port comes from the mountings already in hand.
+    // The block only says INSTALLED; the port comes from the instrument blocks already in hand.
     const history = screen.getByTestId('component-history');
     await expect.element(history.getByText('Port 3 · GMOS-S').first()).toBeVisible();
     await expect.element(history.getByText('Installed')).not.toBeInTheDocument();
@@ -324,7 +324,6 @@ describe(ComponentsPage, () => {
     const screen = await openR400(DECEMBER);
     await screen.getByRole('button', { name: /expand k-gs-R400_G5325/i }).click();
 
-    // The failure runs 19 Nov 2025 - 31 Jan 2026, both evenings counted.
     const history = screen.getByTestId('component-history');
     await expect.element(history.getByRole('row', { name: /19 Nov 2025 - 31 Jan 2026/ })).toMatchTextContent('74');
   });

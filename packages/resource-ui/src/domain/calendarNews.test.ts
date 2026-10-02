@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { buildCalendarNews } from './calendarNews';
 import { observingNightInterval } from './siteTime';
 import type { TimelineNight } from './timeline';
-import type { Mounting } from './types';
+import type { InstrumentAvailabilityBlock } from './types';
 
 const SITE = 'GS' as const;
 const FIRST = '2026-08-02';
@@ -29,7 +29,9 @@ const windowStart = nights[0]!.interval.start;
 const windowEnd = nights.at(-1)!.interval.end;
 const startOfNight = (label: string) => observingNightInterval(SITE, label).start;
 
-const mounting = (over: Partial<Mounting> & Pick<Mounting, 'id' | 'interval'>): Mounting => ({
+const instrumentBlock = (
+  over: Partial<InstrumentAvailabilityBlock> & Pick<InstrumentAvailabilityBlock, 'id' | 'interval'>,
+): InstrumentAvailabilityBlock => ({
   instrument: 'GMOS',
   publishedName: 'GMOS',
   usage: 'SCIENCE',
@@ -44,21 +46,21 @@ describe(buildCalendarNews, () => {
     const swap = startOfNight('2026-08-05');
     const items = buildCalendarNews({
       nights,
-      mountings: [
-        mounting({
+      instrumentAvailability: [
+        instrumentBlock({
           id: 'a',
           publishedName: 'IGRINS-2',
           instrument: 'IGRINS2',
           interval: { start: windowStart, end: swap },
         }),
-        mounting({
+        instrumentBlock({
           id: 'b',
           publishedName: 'MAROON-X',
           instrument: 'MAROON_X',
           interval: { start: swap, end: windowEnd },
         }),
       ],
-      closures: [],
+      telescopeAvailability: [],
     });
 
     // One chip, not an "out" and an "in" saying the same thing twice.
@@ -76,28 +78,28 @@ describe(buildCalendarNews, () => {
     const returns = startOfNight('2026-08-07');
     const items = buildCalendarNews({
       nights,
-      mountings: [
-        mounting({
+      instrumentAvailability: [
+        instrumentBlock({
           id: 'a',
           publishedName: 'GNIRS',
           instrument: 'GNIRS',
           interval: { start: windowStart, end: fails },
         }),
-        mounting({
+        instrumentBlock({
           id: 'b',
           publishedName: 'GNIRS',
           instrument: 'GNIRS',
           usage: 'UNAVAILABLE',
           interval: { start: fails, end: returns },
         }),
-        mounting({
+        instrumentBlock({
           id: 'c',
           publishedName: 'GNIRS',
           instrument: 'GNIRS',
           interval: { start: returns, end: windowEnd },
         }),
       ],
-      closures: [],
+      telescopeAvailability: [],
     });
 
     expect(items.map((item) => item.label)).toEqual(['GNIRS: Not available', 'GNIRS: Science']);
@@ -107,15 +109,15 @@ describe(buildCalendarNews, () => {
     const arrives = startOfNight('2026-08-06');
     const items = buildCalendarNews({
       nights,
-      mountings: [
-        mounting({
+      instrumentAvailability: [
+        instrumentBlock({
           id: 'a',
           publishedName: 'Zorro',
           instrument: 'CAL_ZORRO',
           interval: { start: arrives, end: windowEnd },
         }),
       ],
-      closures: [],
+      telescopeAvailability: [],
     });
 
     expect(items[0]?.label).toBe('Zorro in');
@@ -126,8 +128,8 @@ describe(buildCalendarNews, () => {
     const reopens = startOfNight('2026-08-08');
     const items = buildCalendarNews({
       nights,
-      mountings: [],
-      closures: [
+      instrumentAvailability: [],
+      telescopeAvailability: [
         { id: 'c', availability: 'CLOSED', port: null, interval: { start: closes, end: reopens }, reason: 'Shutdown' },
       ],
     });
@@ -148,8 +150,8 @@ describe(buildCalendarNews, () => {
   it('treats the window edges as furniture: what was always there is not news', () => {
     const items = buildCalendarNews({
       nights,
-      mountings: [mounting({ id: 'a', interval: { start: windowStart, end: windowEnd } })],
-      closures: [
+      instrumentAvailability: [instrumentBlock({ id: 'a', interval: { start: windowStart, end: windowEnd } })],
+      telescopeAvailability: [
         {
           id: 'open',
           availability: 'OPEN',

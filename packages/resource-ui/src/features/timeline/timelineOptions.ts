@@ -26,13 +26,13 @@ import {
 // Re-exported beside the fills that draw it, so chart code has one import.
 export { USAGE_LABEL } from '@/domain/timeline';
 import type {
-  Closure,
-  ModeBlock,
   ResourceInstrument,
   Site,
+  TelescopeAvailabilityBlock,
+  TelescopeModeBlock,
   TelescopeModeType,
-  TooBlock,
   TooSupport,
+  TooSupportBlock,
 } from '@/domain/types';
 
 /** Keyed by the enum, so a new instrument fails to compile until it has a colour. */
@@ -134,20 +134,20 @@ export interface LegendExtra {
 }
 
 /** Open only: a Closed span draws in the closure red, which the "Closed" key already names. */
-export const telescopeLegendExtras = (closures: readonly Closure[]): LegendExtra[] =>
-  closures.some((closure) => closure.port === null && closure.availability === 'OPEN')
+export const telescopeLegendExtras = (telescopeAvailability: readonly TelescopeAvailabilityBlock[]): LegendExtra[] =>
+  telescopeAvailability.some((telescopeBlock) => telescopeBlock.port === null && telescopeBlock.availability === 'OPEN')
     ? [{ key: 'telescope-open', label: 'Open', swatch: { backgroundColor: stateFill(false) } }]
     : [];
 
-export const modeLegendExtras = (modeBlocks: readonly ModeBlock[]): LegendExtra[] =>
-  [...new Set(modeBlocks.map((block) => block.mode))].map((mode) => ({
+export const modeLegendExtras = (telescopeMode: readonly TelescopeModeBlock[]): LegendExtra[] =>
+  [...new Set(telescopeMode.map((block) => block.mode))].map((mode) => ({
     key: `mode-${mode}`,
     label: TELESCOPE_MODE_LABEL[mode],
     swatch: { backgroundColor: modeColor(mode) },
   }));
 
-export const tooLegendExtras = (tooBlocks: readonly TooBlock[]): LegendExtra[] =>
-  [...new Set(tooBlocks.map((block) => block.tooSupport))].map((too) => ({
+export const tooLegendExtras = (tooSupport: readonly TooSupportBlock[]): LegendExtra[] =>
+  [...new Set(tooSupport.map((block) => block.tooSupport))].map((too) => ({
     key: `too-${too}`,
     label: TOO_SUPPORT_LABEL[too],
     swatch: { backgroundColor: tooColor(too) },

@@ -23,7 +23,7 @@ import InstrumentsPage from '@/app/pages/InstrumentsPage';
 import SemesterPage from '@/app/pages/SemesterPage';
 import { buildSemesterTimeline } from '@/domain/semesterTimeline';
 import { observingNightInterval } from '@/domain/siteTime';
-import type { Mounting, PublishedSemester } from '@/domain/types';
+import type { InstrumentAvailabilityBlock, PublishedSemester } from '@/domain/types';
 import { SemesterCalendar } from '@/features/semester/SemesterCalendar';
 import { instrumentAvailabilityBlock, overNights } from '@/test/fixtures/blocks';
 import { componentBrowser, instrumentComponent } from '@/test/fixtures/components';
@@ -201,7 +201,7 @@ describe('the filter and page controls a reader can grow past their own box', ()
     async (root) => {
       const renderRouted = async (element: ReactElement) => renderBare(<MemoryRouter>{element}</MemoryRouter>);
       const night = (label: string) => observingNightInterval('GS', label);
-      const mountings: readonly Mounting[] = [
+      const instrumentAvailability: readonly InstrumentAvailabilityBlock[] = [
         {
           id: 'ghost',
           instrument: 'GHOST',
@@ -218,8 +218,8 @@ describe('the filter and page controls a reader can grow past their own box', ()
         site: 'GS',
         firstNight: '2026-08-02',
         lastNight: '2026-09-01',
-        mountings,
-        closures: [],
+        instrumentAvailability,
+        telescopeAvailability: [],
       });
       const semester: PublishedSemester = {
         site: 'GS',
@@ -235,7 +235,13 @@ describe('the filter and page controls a reader can grow past their own box', ()
 
       document.documentElement.style.fontSize = root;
       const screen = await renderRouted(
-        <SemesterCalendar timeline={timeline} semester={semester} site="GS" mountings={mountings} closures={[]} />,
+        <SemesterCalendar
+          timeline={timeline}
+          semester={semester}
+          site="GS"
+          instrumentAvailability={instrumentAvailability}
+          telescopeAvailability={[]}
+        />,
       );
       await expect.element(screen.getByLabelText('Month', { exact: true })).toBeVisible();
 

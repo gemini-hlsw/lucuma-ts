@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { brightnessOf, buildCalendarNights } from './calendarNights';
 import { buildSemesterTimeline } from './semesterTimeline';
 import { observingNightInterval } from './siteTime';
-import type { Closure, MoonEvent, Mounting } from './types';
+import type { InstrumentAvailabilityBlock, MoonEvent, TelescopeAvailabilityBlock } from './types';
 
 const SITE = 'GS' as const;
 
@@ -12,7 +12,7 @@ const nights = (first: string, last: string) => ({
   end: observingNightInterval(SITE, last).end,
 });
 
-const mounting = (over: Partial<Mounting> = {}): Mounting => ({
+const instrumentBlock = (over: Partial<InstrumentAvailabilityBlock> = {}): InstrumentAvailabilityBlock => ({
   id: 'm1',
   instrument: 'GMOS',
   publishedName: 'GMOS',
@@ -25,8 +25,8 @@ const mounting = (over: Partial<Mounting> = {}): Mounting => ({
 });
 
 interface BuildOptions {
-  readonly mountings?: readonly Mounting[];
-  readonly closures?: readonly Closure[];
+  readonly instrumentAvailability?: readonly InstrumentAvailabilityBlock[];
+  readonly telescopeAvailability?: readonly TelescopeAvailabilityBlock[];
   readonly holidays?: readonly string[];
   readonly moonEvents?: readonly MoonEvent[];
   readonly firstNight?: string;
@@ -34,8 +34,8 @@ interface BuildOptions {
 }
 
 const build = ({
-  mountings = [mounting()],
-  closures = [],
+  instrumentAvailability = [instrumentBlock()],
+  telescopeAvailability = [],
   holidays = [],
   moonEvents = [],
   firstNight = '2026-08-08',
@@ -45,8 +45,8 @@ const build = ({
     site: SITE,
     firstNight,
     lastNight,
-    mountings,
-    closures,
+    instrumentAvailability,
+    telescopeAvailability,
   });
   const monthNights = timeline.months.flatMap((month) => month.nights);
   return buildCalendarNights({
@@ -89,7 +89,8 @@ describe('what only the calendar can say', () => {
 
   it('reports hours of astronomical dark, which shorten across a southern semester', () => {
     const august = build()[0]?.darkHours;
-    const december = build({ firstNight: '2026-12-20', lastNight: '2026-12-20', mountings: [] })[0]?.darkHours;
+    const december = build({ firstNight: '2026-12-20', lastNight: '2026-12-20', instrumentAvailability: [] })[0]
+      ?.darkHours;
 
     expect(august).toBeGreaterThan(0);
     // Gemini South in December is near midsummer, so its nights are the shortest.
