@@ -46,7 +46,7 @@ export const publishedSemesters = (
 /** The window the page asks for: every observing night the semester publishes. */
 export const semesterWindow = ({ site, nights }: PublishedSemesterRow): SemesterScheduleQueryVariables => {
   const { start, end } = overNights(site, nights.start, addDays(nights.end, -1));
-  return { site, interval: { start, end } };
+  return { site, start, end };
 };
 
 /** Pass a semester to answer the window its page asks for, or explicit variables to pin that window. */
@@ -77,6 +77,7 @@ export const siteSpan = (
   const last = rest.at(-1) ?? first;
   return {
     site: first.site,
-    interval: { start: semesterWindow(first).interval.start, end: semesterWindow(last).interval.end },
+    start: semesterWindow(first).start,
+    end: semesterWindow(last).end,
   };
 };

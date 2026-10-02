@@ -78,13 +78,13 @@ const NO_SEMESTERS: MockedResponseOf<typeof PUBLISHED_SEMESTERS_QUERY> = {
 
 const EMPTY_NIGHT: MockedResponseOf<typeof NIGHT_SCHEDULE_QUERY> = {
   request: { query: NIGHT_SCHEDULE_QUERY, variables: () => true },
-  result: ({ night, interval }) => ({
+  result: ({ night, start, end }) => ({
     data: {
       telescopeNight: {
         __typename: 'TelescopeNight',
         observingNight: night,
         dataAvailable: true,
-        interval: { __typename: 'TimestampInterval', ...interval },
+        interval: { __typename: 'TimestampInterval', start, end },
       },
       instrumentAvailability: [],
       telescopeAvailability: [],

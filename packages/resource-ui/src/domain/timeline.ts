@@ -1,11 +1,11 @@
 import { portRowLabel, portRows } from './ports';
 import type {
   Closure,
-  Instrument,
   Interval,
   ModeBlock,
   Mounting,
   Partner,
+  ResourceInstrument,
   ResourceUsage,
   SubsystemBlock,
   TelescopeAvailability,
@@ -30,7 +30,7 @@ export interface TimelineBlock {
   readonly state: BlockState;
   /** Printed across the block. Empty when the sheet named nothing. */
   readonly label: string;
-  readonly instrument: Instrument | null;
+  readonly instrument: ResourceInstrument | null;
   /** What a MOUNTED instrument can be used for over this span; null otherwise. */
   readonly usage: ResourceUsage | null;
   /** The recorded value behind a TELESCOPE, TOO or MODE block; null otherwise. */
@@ -74,7 +74,7 @@ export interface TimelineNight {
 
 export interface TimelineLegend {
   /** Only those actually drawn: keys to colours that are not on the page are noise. */
-  readonly instruments: readonly Instrument[];
+  readonly instruments: readonly ResourceInstrument[];
   readonly hasClosure: boolean;
   readonly hasUnscheduled: boolean;
   readonly hasEngineeringUse: boolean;
@@ -447,7 +447,7 @@ export const placeBands = (closures: readonly Closure[], bounds: Interval): read
 
 /** Derived from what was actually placed, never from the schema. */
 export const legendFor = (rows: readonly TimelineRow[], bands: readonly TimelineBand[]): TimelineLegend => {
-  const instruments = new Set<Instrument>();
+  const instruments = new Set<ResourceInstrument>();
   let hasUnscheduled = false;
   let hasEngineeringUse = false;
   let hasUnavailable = false;

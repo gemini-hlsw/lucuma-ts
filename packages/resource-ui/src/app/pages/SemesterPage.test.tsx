@@ -637,7 +637,7 @@ describe(SemesterPage, () => {
         '/semester?site=GS&semester=2025B',
         publishedSemesters(GS_2025B),
         semesterSchedule(
-          { site: 'GS', interval: { start: '2025-08-01T18:00:00.000Z', end: '2026-02-01T17:00:00.000Z' } },
+          { site: 'GS', start: '2025-08-01T18:00:00.000Z', end: '2026-02-01T17:00:00.000Z' },
           { instrumentAvailability: [GHOST] },
         ),
       );

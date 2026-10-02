@@ -17,7 +17,7 @@ const WEEK_NIGHTS = 7;
 /** The window the page asks for: seven observing nights, the date range half-open. */
 export const weekWindow = ({ site, night }: WeekRow): WeekScheduleQueryVariables => {
   const { start, end } = overNights(site, night, addDays(night, WEEK_NIGHTS - 1));
-  return { site, nights: { start: night, end: addDays(night, WEEK_NIGHTS) }, interval: { start, end } };
+  return { site, nightsStart: night, nightsEnd: addDays(night, WEEK_NIGHTS), start, end };
 };
 
 type WeekBlocks = Partial<Omit<WeekScheduleQuery, 'telescopeNights'>> & {

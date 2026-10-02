@@ -4,9 +4,9 @@ import type {
   ComponentLocation,
   ComponentRecord,
   ComponentUsage,
-  Instrument,
   Interval,
   Mounting,
+  ResourceInstrument,
 } from './types';
 
 export type ComponentWhere =
@@ -37,7 +37,7 @@ const deciding = (blocks: readonly ComponentBlock[]): ComponentBlock | undefined
 
 /** The same derivation for a row and a history line, so "Installed" cannot mean two places. */
 export const whereOf = (
-  instrument: Instrument,
+  instrument: ResourceInstrument,
   block: ComponentBlock,
   mountings: readonly Mounting[],
   span: Interval,
