@@ -1,20 +1,48 @@
-import { useConfiguration } from '@gql/configs/Configuration';
+import { when } from '@gemini-hlsw/lucuma-common-ui';
+import { useConfiguration, useUpdateConfiguration } from '@gql/configs/Configuration';
+import type { GuidingType } from '@gql/configs/gen/graphql';
 import { useTargets } from '@gql/configs/Target';
 import { Title } from '@Shared/Title/Title';
 import { Dropdown } from 'primereact/dropdown';
 
 import { useCanEdit } from '@/components/atoms/auth';
+import type { Configuration } from '@/types';
 
 import { TargetList } from './TargetList';
 import { TargetSwapButton } from './TargetSwapButton';
 
-function GuiderFooter({ disabled }: { disabled: boolean }) {
+type GuidingTypeField = keyof Pick<Configuration, 'oiGuidingType' | 'p1GuidingType' | 'p2GuidingType'>;
+
+const guidingTypeFieldLabels = {
+  oiGuidingType: 'OIWFS guiding',
+  p1GuidingType: 'PWFS1 guiding',
+  p2GuidingType: 'PWFS2 guiding',
+} satisfies Record<GuidingTypeField, string>;
+
+const guidingTypeOptions = [
+  { label: 'Normal Guiding', value: 'NORMAL' },
+  { label: 'Guiding Off', value: 'OFF' },
+] satisfies { label: string; value: GuidingType }[];
+
+function GuiderFooter({ disabled, field }: { disabled: boolean; field: GuidingTypeField }) {
+  const { data: configurationData, loading: configurationLoading } = useConfiguration();
+  const configuration = configurationData?.configuration;
+  const [updateConfiguration, { loading: updateLoading }] = useUpdateConfiguration();
+
+  const loading = configurationLoading || updateLoading;
+
   return (
     <div className="guiders-footer">
       <Dropdown
         disabled={disabled} // check is a valid target
-        value="NORMAL"
-        options={[{ label: 'Normal Guiding', value: 'NORMAL' }]}
+        ariaLabel={guidingTypeFieldLabels[field]}
+        data-testid={field}
+        loading={loading}
+        value={configuration?.[field] ?? 'NORMAL'}
+        options={guidingTypeOptions}
+        onChange={(e) =>
+          when(configuration?.pk, (pk) => updateConfiguration({ variables: { pk, [field]: e.value as GuidingType } }))
+        }
       />
     </div>
   );
@@ -40,7 +68,7 @@ export function GuiderTargets() {
       <div key="OIWFS" className="guide-probe">
         <Title title={selectedOi ? `OIWFS: ${selectedOi.name}` : 'OIWFS'} />
         <TargetList targets={oiTargets} type="OIWFS" />
-        <GuiderFooter disabled={!canEdit} />
+        <GuiderFooter disabled={!canEdit} field="oiGuidingType" />
       </div>,
     );
   }
@@ -50,7 +78,7 @@ export function GuiderTargets() {
       <div key="PWFS1" className="guide-probe">
         <Title title={selectedP1 ? `PWFS1: ${selectedP1.name}` : 'PWFS1'} />
         <TargetList targets={p1Targets} type="PWFS1" />
-        <GuiderFooter disabled={!canEdit} />
+        <GuiderFooter disabled={!canEdit} field="p1GuidingType" />
       </div>,
     );
   }
@@ -60,7 +88,7 @@ export function GuiderTargets() {
       <div key="PWFS2" className="guide-probe">
         <Title title={selectedP2 ? `PWFS2: ${selectedP2.name}` : 'PWFS2'} />
         <TargetList targets={p2Targets} type="PWFS2" />
-        <GuiderFooter disabled={!canEdit} />
+        <GuiderFooter disabled={!canEdit} field="p2GuidingType" />
       </div>,
     );
   }
@@ -70,7 +98,7 @@ export function GuiderTargets() {
       <div key="guideProbe-0" className="guide-probe">
         <Title title="OIWFS" />
         <TargetList targets={[]} />
-        <GuiderFooter disabled={true} />
+        <GuiderFooter disabled={true} field="oiGuidingType" />
       </div>,
     );
   }
