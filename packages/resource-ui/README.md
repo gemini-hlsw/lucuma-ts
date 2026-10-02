@@ -26,7 +26,7 @@ pnpm resource-ui dev            # vite dev server on http://localhost:5173
 
 The app reads **one backend**, over HTTP, at `/resource/graphql`. The vite proxy carries
 that path to the real dev deployment, purely to sidestep CORS. That service does not
-serve the v1 API yet, so `dev` shows an amber banner naming the situation and every view
+serve the v1 API yet, so `dev` shows an amber toast naming the situation and every view
 is empty. **That is the expected state of this branch**, and it is what a deployed build
 shows too.
 

@@ -26,7 +26,6 @@
 .program-warn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
   color: var(--yellow-400, #d9b85c);
   font-size: 0.84rem;
 }
@@ -61,6 +60,16 @@
 
 .program-form > :not(label) {
   grid-column: field;
+}
+
+/* A dropdown that needs a tooltip while disabled is wrapped in a span
+   (PrimeReact suppresses tooltips on disabled controls). Grid stretches the
+   span, but the dropdown inside falls back to its content width, so the wrapper
+   has to hand the column on. Not keyed on [title]: the reason is undefined
+   while the fields are editable, so React omits the attribute and the dropdown
+   would collapse on exactly the common case. */
+.program-form > span > .p-dropdown {
+  width: 100%;
 }
 
 .thesis-list {

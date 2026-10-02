@@ -110,13 +110,6 @@ body {
   outline-offset: -2px;
 }
 
-.xp-app-menu .xp-menu-status {
-  padding: 0 calc(var(--spacing) * 4) calc(var(--spacing) * 3);
-  color: var(--color-foreground);
-  font-size: var(--text-xs);
-  line-height: 1rem;
-}
-
 .xp-page-select.p-dropdown {
   height: 28px;
   align-items: center;
@@ -308,6 +301,31 @@ body {
 .dark .p-tag.p-tag-success,
 .dark .p-tag.p-tag-danger {
   color: var(--color-canvas);
+}
+
+.dark .p-toast {
+  opacity: 1;
+}
+
+.dark .p-toast .p-toast-message.p-toast-message-warn {
+  background: var(--color-warning-fill);
+  border-color: var(--color-warning-edge);
+  color: var(--color-warning-ink);
+}
+
+.dark .p-toast .p-toast-message.p-toast-message-warn .p-toast-message-icon,
+.dark .p-toast .p-toast-message.p-toast-message-warn .p-toast-icon-close {
+  color: var(--color-warning-ink);
+}
+
+.dark .p-toast .p-toast-message .p-toast-icon-close:hover {
+  background: color-mix(in oklab, currentcolor 14%, transparent);
+}
+
+.dark .p-toast .p-toast-message .p-toast-icon-close:focus-visible {
+  outline: 2px solid currentcolor;
+  outline-offset: -2px;
+  box-shadow: none;
 }
 
 body .p-dialog-mask.p-component-overlay {

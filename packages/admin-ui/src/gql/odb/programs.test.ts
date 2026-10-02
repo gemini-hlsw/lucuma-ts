@@ -6,6 +6,7 @@ import {
   allocationsInput,
   mapPrograms,
   programPropertiesInput,
+  proposalTypeChanged,
   proposalTypeInput,
 } from './programs';
 
@@ -56,12 +57,12 @@ function program(overrides: Partial<RawProgram>): RawProgram {
     defaultStatus: 'INACTIVE',
     allocations: [],
     goa: { __typename: 'GoaProperties', proprietaryMonths: 6, privateHeader: true },
+    tooActivationCeiling: 'RAPID',
     proposal: {
       __typename: 'Proposal',
       gemini: {
         __typename: 'Queue',
         scienceSubtype: 'QUEUE',
-        tooActivationCeiling: 'STANDARD',
         considerForBand3: 'CONSIDER',
         minPercentTime: 80,
       },
@@ -133,7 +134,7 @@ describe(mapPrograms, () => {
     expect(p?.pi).toBe('Grace Hopper');
     expect(p?.programClass).toBe('QUEUE');
     expect(p?.programType).toBe('QUEUE');
-    expect(p?.tooStatus).toBe('STANDARD');
+    expect(p?.tooStatus).toBe('RAPID');
     expect(p?.considerForBand3).toBe(true);
     expect(p?.minPercentTime).toBe(80);
     // Only SUPPORT_PRIMARY/SUPPORT_SECONDARY are contact scientists — not the PI or a plain COI.
@@ -160,10 +161,11 @@ describe(mapPrograms, () => {
     expect(p?.explicitStatus).toBe('COMPLETE');
   });
 
-  it('treats Classical proposals as CLASSICAL with no ToO/Band-3 (those are Queue-only)', () => {
+  it('treats Classical proposals as CLASSICAL with no Band-3 (Queue-only), and a null ceiling as unrestricted', () => {
     const [p] = mapPrograms(
       result([
         program({
+          tooActivationCeiling: null,
           proposal: {
             __typename: 'Proposal',
             gemini: { __typename: 'Classical', scienceSubtype: 'CLASSICAL', minPercentTime: 90 },
@@ -174,7 +176,7 @@ describe(mapPrograms, () => {
     );
     expect(p?.programClass).toBe('CLASSICAL');
     expect(p?.programType).toBe('CLASSICAL');
-    expect(p?.tooStatus).toBe('NONE');
+    expect(p?.tooStatus).toBeNull(); // a null ceiling is no restriction, not NONE
     expect(p?.considerForBand3).toBe(false);
     expect(p?.minPercentTime).toBe(90);
     expect(p?.pi).toBe('(unknown PI)');
@@ -240,7 +242,7 @@ describe(proposalTypeInput, () => {
 
   it('builds the queue arm of the oneOf for Queue programs', () => {
     expect(proposalTypeInput(base)).toEqual({
-      queue: { explicitTooActivationCeiling: 'RAPID', minPercentTime: 75, considerForBand3: 'CONSIDER' },
+      queue: { minPercentTime: 75, considerForBand3: 'CONSIDER' },
     });
   });
 
@@ -248,6 +250,80 @@ describe(proposalTypeInput, () => {
     expect(proposalTypeInput({ ...base, programClass: 'CLASSICAL' })).toEqual({
       classical: { minPercentTime: 75 },
     });
+  });
+});
+
+describe(proposalTypeChanged, () => {
+  // sc-10439: a Director's Time program reaches the editor with its subtype
+  // preserved in programType but collapsed to QUEUE in programClass. Saving an
+  // edit that leaves the proposal type alone must not send the type block at
+  // all, or the ODB rejects the Queue proposal against the Director's Time call.
+  const base: Program = {
+    id: 'p-1',
+    reference: 'R',
+    name: 'N',
+    pi: 'PI',
+    programClass: 'QUEUE',
+    programType: 'QUEUE',
+    tooStatus: 'RAPID',
+    resourceCount: 0,
+    resourceLimit: 1000,
+    contactScientists: [],
+    activeStart: '2027-08-01',
+    activeEnd: '2028-02-01',
+    status: 'INACTIVE',
+    explicitStatus: null,
+    defaultStatus: 'INACTIVE',
+    proprietaryMonths: 12,
+    considerForBand3: true,
+    minPercentTime: 75,
+    privateHeader: true,
+    thesisInvestigators: [],
+    allocations: [],
+    privateNote: '',
+    privateNoteId: null,
+  };
+  const dd: Program = { ...base, programType: 'DIRECTORS_TIME' };
+
+  it('stays quiet when an unrelated field is edited on a Directors Time program', () => {
+    expect(
+      proposalTypeChanged(dd, { ...dd, contactScientists: [{ programUserId: 'pu-1', userId: 'u-1', name: 'CS' }] }),
+    ).toBe(false);
+    expect(proposalTypeChanged(dd, { ...dd, allocations: [{ category: 'US', scienceBand: 'BAND1', hours: 3 }] })).toBe(
+      false,
+    );
+    expect(proposalTypeChanged(dd, { ...dd, privateNote: 'note' })).toBe(false);
+  });
+
+  // The ToO ceiling lives on the program, so editing it is a program update,
+  // never a proposal-type rewrite.
+  it('stays quiet when the ToO ceiling is edited', () => {
+    expect(proposalTypeChanged(base, { ...base, tooStatus: 'NONE' })).toBe(false);
+    expect(proposalTypeChanged(base, { ...base, tooStatus: null })).toBe(false);
+  });
+
+  it('stays quiet when nothing at all changed', () => {
+    expect(proposalTypeChanged(base, { ...base })).toBe(false);
+  });
+
+  // Every field the Queue branch of `proposalTypeInput` sends, each flipped on
+  // its own. The guard compares built payloads, so these also pin down that
+  // each field actually reaches the input.
+  it.each([
+    ['programClass', { programClass: 'CLASSICAL' } as const],
+    ['minPercentTime', { minPercentTime: 50 } as const],
+    ['considerForBand3', { considerForBand3: false } as const],
+  ])('reports a change when %s is edited', (_field, patch) => {
+    expect(proposalTypeChanged(base, { ...base, ...patch })).toBe(true);
+  });
+
+  // The Classical branch sends only minPercentTime, so a difference in a field
+  // it never sends is not a change worth a mutation. The editor disables
+  // band-3 off Queue, so this is defence in depth rather than a live path.
+  it('ignores fields the Classical branch never sends', () => {
+    const classical: Program = { ...base, programClass: 'CLASSICAL', programType: 'CLASSICAL' };
+    expect(proposalTypeChanged(classical, { ...classical, considerForBand3: false })).toBe(false);
+    expect(proposalTypeChanged(classical, { ...classical, minPercentTime: 50 })).toBe(true);
   });
 });
 
@@ -297,7 +373,7 @@ describe(programPropertiesInput, () => {
   };
 
   it('carries the GOA properties, active period, and status override', () => {
-    expect(programPropertiesInput(base)).toEqual({
+    expect(programPropertiesInput(base, base)).toEqual({
       goa: { proprietaryMonths: 12, privateHeader: true },
       activeStart: '2027-08-01',
       activeEnd: '2028-02-01',
@@ -306,14 +382,25 @@ describe(programPropertiesInput, () => {
   });
 
   it('omits blank active dates rather than sending empty strings', () => {
-    expect(programPropertiesInput({ ...base, activeStart: '', activeEnd: '' })).toEqual({
+    expect(programPropertiesInput({ ...base, activeStart: '', activeEnd: '' }, base)).toEqual({
       goa: { proprietaryMonths: 12, privateHeader: true },
       explicitStatus: null,
     });
   });
 
+  it('sends the ToO ceiling only when it was edited', () => {
+    expect(programPropertiesInput(base, base)).not.toHaveProperty('tooActivationCeiling');
+    expect(programPropertiesInput({ ...base, tooStatus: 'INTERRUPTING' }, base)).toMatchObject({
+      tooActivationCeiling: 'INTERRUPTING',
+    });
+  });
+
+  it('sends null to lift the ceiling, since omitting the key would leave the old one in place', () => {
+    expect(programPropertiesInput({ ...base, tooStatus: null }, base)).toHaveProperty('tooActivationCeiling', null);
+  });
+
   it('sends an explicit status override when one is set (sc-10277)', () => {
-    expect(programPropertiesInput({ ...base, explicitStatus: 'COMPLETE' })).toMatchObject({
+    expect(programPropertiesInput({ ...base, explicitStatus: 'COMPLETE' }, base)).toMatchObject({
       explicitStatus: 'COMPLETE',
     });
   });

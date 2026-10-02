@@ -21,6 +21,16 @@ describe(Loading, () => {
     await expect.element(screen.getByText('Loading the catalog…')).toBeVisible();
     expect(screen.container.querySelector('[role="alert"]')).toBeNull();
   });
+
+  it('leads with the Resource mark hidden from screen readers, so the words alone are announced', async () => {
+    const screen = await render(<Loading what="the catalog" />);
+
+    const line = screen.getByText('Loading the catalog…').element();
+    const glyph = screen.container.querySelector('svg');
+    expect(glyph).not.toBeNull();
+    expect(glyph?.getAttribute('aria-hidden')).toBe('true');
+    expect(glyph!.compareDocumentPosition(line) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
 });
 
 describe(EmptyPanel, () => {

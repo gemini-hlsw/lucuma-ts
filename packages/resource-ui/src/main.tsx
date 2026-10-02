@@ -10,6 +10,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import App from './app/App';
 import { AuthSession } from './auth/AuthSession';
 import { store } from './components/atoms/store';
+import { ToastOutlet } from './components/ui/ToastOutlet';
 import { client } from './gql/ApolloConfigs';
 
 // The lucuma-ui PrimeReact theme is scoped under `.dark`, and dialogs portal to <body>.
@@ -30,6 +31,7 @@ const app: ReactNode = (
           <AuthSession>
             <App />
           </AuthSession>
+          <ToastOutlet />
         </ApolloProvider>
       </JotaiProvider>
     </PrimeReactProvider>

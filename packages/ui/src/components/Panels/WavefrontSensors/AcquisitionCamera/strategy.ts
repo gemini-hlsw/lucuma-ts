@@ -118,7 +118,10 @@ export const strategies = {
 
 export function wfsStrategy(probe: GuideProbe): HandsetStrategy {
   return {
-    name: probe === 'GMOS_OIWFS' || probe === 'FLAMINGOS2_OIWFS' ? 'OIWFS' : probe,
+    name:
+      probe === 'GMOS_OIWFS' || probe === 'FLAMINGOS2_OIWFS'
+        ? 'OIWFS'
+        : (probe as Exclude<typeof probe, 'ALTAIR_AOWFS'>),
     up: { label: undefined, mod: plusVertical },
     down: { label: undefined, mod: minusVertical },
     right: { label: undefined, mod: plusHorizontal },

@@ -57,12 +57,14 @@ export const PROGRAM_ITEM_FRAGMENT = graphql(`
       proprietaryMonths
       privateHeader
     }
+    # The most disruptive ToO activation the program's observations may declare;
+    # null means no restriction.
+    tooActivationCeiling
     proposal {
       gemini {
         __typename
         scienceSubtype
         ... on Queue {
-          tooActivationCeiling
           considerForBand3
           minPercentTime
         }
@@ -111,7 +113,7 @@ export function usePrograms() {
 const CONTACT_SCIENTIST_ROLES = new Set(['SUPPORT_PRIMARY', 'SUPPORT_SECONDARY']);
 
 /** The updatePrograms SET for a draft's directly-editable program properties. */
-export function programPropertiesInput(draft: Program): ProgramPropertiesInput {
+export function programPropertiesInput(draft: Program, original: Program): ProgramPropertiesInput {
   return {
     goa: { proprietaryMonths: draft.proprietaryMonths, privateHeader: draft.privateHeader },
     ...(draft.activeStart ? { activeStart: draft.activeStart } : {}),
@@ -119,6 +121,10 @@ export function programPropertiesInput(draft: Program): ProgramPropertiesInput {
     // sc-10277: send the status override; null clears it back to the derived
     // status (per the schema's explicitStatus contract).
     explicitStatus: draft.explicitStatus,
+    // The ToO ceiling is a program property; null lifts it (no restriction).
+    // Sent only when edited: the ODB restricts writing it to staff and, on a
+    // change, withdraws ToO triggers above it and recalculates the program.
+    ...(draft.tooStatus !== original.tooStatus ? { tooActivationCeiling: draft.tooStatus } : {}),
   };
 }
 
@@ -204,20 +210,30 @@ export function useUpdateProposalType() {
   return useMutation(UPDATE_PROPOSAL_TYPE_MUTATION);
 }
 
-/** ToO / minPercentTime / band-3 edits → `GeminiProposalTypeInput` (a oneOf),
- *  keyed by the program's class. Only Queue proposals carry ToO and band-3.
- *  The ODB derives `tooActivationCeiling` from the explicit ceiling when one is
- *  set, so an admin edit writes `explicitTooActivationCeiling`. */
+/** minPercentTime / band-3 edits → `GeminiProposalTypeInput` (a oneOf), keyed
+ *  by the program's class. Only Queue proposals carry band-3. */
 export function proposalTypeInput(p: Program): GeminiProposalTypeInput {
   return p.programClass === 'QUEUE'
     ? {
         queue: {
-          explicitTooActivationCeiling: p.tooStatus,
           minPercentTime: p.minPercentTime,
           considerForBand3: p.considerForBand3 ? 'CONSIDER' : 'DO_NOT_CONSIDER',
         },
       }
     : { classical: { minPercentTime: p.minPercentTime } };
+}
+
+/** Whether an edit touched anything `proposalTypeInput` sends. The proposal
+ *  type is a `oneOf`, so there is no "leave it as it is" value: sending the
+ *  block at all rewrites the proposal's type. Since the editor collapses every
+ *  subtype to Queue or Classical, sending it on an untouched Director's Time
+ *  (or Poor Weather, Large Program, …) proposal would rewrite it as a Queue one
+ *  and the ODB rejects that against a Director's Time call (sc-10439).
+ *
+ *  Compared through `proposalTypeInput` rather than field by field, so a field
+ *  added to the input can never go unnoticed here and drop a save. */
+export function proposalTypeChanged(original: Program, draft: Program): boolean {
+  return JSON.stringify(proposalTypeInput(original)) !== JSON.stringify(proposalTypeInput(draft));
 }
 
 export const CREATE_PROGRAM_NOTE_MUTATION = graphql(`
@@ -363,7 +379,7 @@ export function mapPrograms(raw: AdminProgramsResult): Program[] {
       // The full proposal subtype for the table's Type column (sc-9581),
       // preserved rather than collapsed like programClass.
       programType: proposalType?.scienceSubtype ?? null,
-      tooStatus: queue?.tooActivationCeiling ?? 'NONE',
+      tooStatus: p.tooActivationCeiling ?? null,
       contactScientists,
       activeStart,
       activeEnd,

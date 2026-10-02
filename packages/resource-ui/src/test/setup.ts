@@ -1,6 +1,6 @@
 import { beforeEach } from 'vitest';
 
-import { odbTokenAtom, sessionCheckedAtom } from '@/components/atoms/auth';
+import { odbTokenAtom, sessionCheckedAtom, signedOutElsewhereAtom } from '@/components/atoms/auth';
 import { store } from '@/components/atoms/store';
 
 /**
@@ -12,4 +12,5 @@ beforeEach(() => {
   window.dispatchEvent(new StorageEvent('storage', { key: null }));
   store.set(odbTokenAtom, null);
   store.set(sessionCheckedAtom, false);
+  store.set(signedOutElsewhereAtom, false);
 });

@@ -4,7 +4,7 @@
  */
 import { skipToken, useMutation, useQuery } from '@apollo/client/react';
 import { parseNumber } from '@gemini-hlsw/lucuma-common-ui';
-import { useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
 
 import type {
   ChangeRequest,
@@ -17,7 +17,7 @@ import type {
 import type { DocumentType } from './gen';
 import { graphql } from './gen';
 import type { Instrument } from './gen/graphql';
-import { formatConditions, isScienceObservation, mapObservationRow } from './shared';
+import { formatConditions, formatDec, formatRa, isScienceObservation, mapObservationRow } from './shared';
 
 export const CHANGE_REQUESTS_QUERY = graphql(`
   query AdminChangeRequests($offset: ConfigurationRequestId) {
@@ -32,6 +32,8 @@ export const CHANGE_REQUESTS_QUERY = graphql(`
         id
         status
         justification
+        feedback
+        createdAt
         applicableObservations
         program {
           id
@@ -54,11 +56,9 @@ export const CHANGE_REQUESTS_QUERY = graphql(`
           target {
             coordinates {
               ra {
-                hms
                 degrees
               }
               dec {
-                dms
                 degrees
               }
             }
@@ -102,6 +102,8 @@ export function mapChangeRequests(raw: AdminChangeRequestsResult): ChangeRequest
       label: instrument ?? '(unknown)',
       site: 'NORTH' as Site,
     };
+    const raDeg = parseNumber(coords?.ra.degrees) ?? null;
+    const decDeg = parseNumber(coords?.dec.degrees) ?? null;
     return {
       id: c.id,
       programId: c.program.id,
@@ -112,11 +114,13 @@ export function mapChangeRequests(raw: AdminChangeRequestsResult): ChangeRequest
       pi: [prof?.givenName, prof?.familyName].filter(Boolean).join(' ') || '(unknown PI)',
       status: c.status,
       justification: c.justification ?? '',
+      feedback: c.feedback ?? '',
+      createdAt: c.createdAt,
       site: site.site,
-      ra: coords?.ra.hms ?? '—',
-      dec: coords?.dec.dms ?? '—',
-      raDeg: parseNumber(coords?.ra.degrees) ?? null,
-      decDeg: parseNumber(coords?.dec.degrees) ?? null,
+      ra: raDeg === null ? '—' : formatRa(raDeg),
+      dec: decDeg === null ? '—' : formatDec(decDeg),
+      raDeg,
+      decDeg,
       modeType: c.configuration.observingMode?.mode ?? null,
       instrument: site.label,
       conditions: formatConditions(c.configuration.conditions),
@@ -244,12 +248,42 @@ export function useProgramObservations(programId: string | null): {
   };
 }
 
-export const UPDATE_CONFIGURATION_REQUESTS_MUTATION = graphql(`
-  mutation AdminResolveChangeRequests($ids: [ConfigurationRequestId!]!, $status: ConfigurationRequestStatus!) {
+/** Resolve the requests and write the reviewer's response to `feedback`.
+ *
+ *  Paired with `RESOLVE_KEEPING_FEEDBACK_MUTATION`, which omits the field. The
+ *  two cannot be one document: a `$feedback` variable passed as null *clears*
+ *  the stored note rather than leaving it alone (verified against dev), so
+ *  "no response this time" has to be said by leaving the field out of SET. */
+export const RESOLVE_WITH_FEEDBACK_MUTATION = graphql(`
+  mutation AdminResolveChangeRequests(
+    $ids: [ConfigurationRequestId!]!
+    $status: ConfigurationRequestStatus!
+    $feedback: NonEmptyString
+  ) {
+    updateConfigurationRequests(input: { WHERE: { id: { IN: $ids } }, SET: { status: $status, feedback: $feedback } }) {
+      requests {
+        id
+        status
+        feedback
+      }
+    }
+  }
+`);
+
+/** Resolve the requests without touching the stored response. Every field of
+ *  `ConfigurationRequestProperties` is optional and an omitted one is left as
+ *  it was, so re-resolving cannot silently discard a note written earlier,
+ *  possibly by someone else. */
+export const RESOLVE_KEEPING_FEEDBACK_MUTATION = graphql(`
+  mutation AdminResolveChangeRequestsKeepingFeedback(
+    $ids: [ConfigurationRequestId!]!
+    $status: ConfigurationRequestStatus!
+  ) {
     updateConfigurationRequests(input: { WHERE: { id: { IN: $ids } }, SET: { status: $status } }) {
       requests {
         id
         status
+        feedback
       }
     }
   }
@@ -291,9 +325,22 @@ export function groupChangeRequestsByProgram(requests: readonly ChangeRequest[])
   });
 }
 
-export function useUpdateConfigurationRequests() {
-  return useMutation(UPDATE_CONFIGURATION_REQUESTS_MUTATION, {
-    refetchQueries: [CHANGE_REQUESTS_QUERY],
-    awaitRefetchQueries: true,
-  });
+const RESOLVE_OPTIONS = { refetchQueries: [CHANGE_REQUESTS_QUERY], awaitRefetchQueries: true };
+
+/** Resolve the selected requests, writing `response` as the staff feedback.
+ *
+ *  A null `response` means the reviewer left no response, which keeps whatever
+ *  is stored rather than erasing it — the two cases need different documents,
+ *  since a nulled variable clears the field. */
+export function useResolveChangeRequests() {
+  const [withFeedback, withState] = useMutation(RESOLVE_WITH_FEEDBACK_MUTATION, RESOLVE_OPTIONS);
+  const [keepingFeedback, keepState] = useMutation(RESOLVE_KEEPING_FEEDBACK_MUTATION, RESOLVE_OPTIONS);
+  const resolve = useCallback(
+    (ids: readonly string[], status: ConfigurationRequestStatus, response: string | null) =>
+      response === null
+        ? keepingFeedback({ variables: { ids: [...ids], status } })
+        : withFeedback({ variables: { ids: [...ids], status, feedback: response } }),
+    [withFeedback, keepingFeedback],
+  );
+  return { resolve, loading: withState.loading || keepState.loading };
 }

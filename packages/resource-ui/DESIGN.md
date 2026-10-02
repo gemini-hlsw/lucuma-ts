@@ -202,7 +202,7 @@ Text is a white-opacity ladder (Material dark), not a grey ramp:
 - **Amber**: unknown/warning accents, one family end to end, named as `--color-warning` (the
   weight a warning word takes on the canvas: the calendar's and the week cards' "holiday",
   the PrimeReact warning tags) plus a panel triplet `--color-warning-fill` / `-edge` / `-ink`
-  for the service-unavailable banner. Amber warns; it never celebrates. Two exceptions stay
+  for the warn toast. Amber warns; it never celebrates. Two exceptions stay
   raw: the calendar's holiday day-inset ring, which is a date accent rather than a warning,
   and Cal-Zorro's identity hue, which happens to share the family.
 - **Block ink** (`#fff` / `#0a0a0a`): bar labels take whichever of light or dark clears
@@ -341,7 +341,7 @@ Three patterns stand:
   to 0.35, below the muted step. The square is chrome, so this reads as decoration rather than
   a tone violation, but it is an opacity dim and not a step on the ladder.
 - **Muted carrying information at any size:** `text-foreground-muted` on text that is a
-  fact's only rendering - the semester calendar's empty message, the Loading state, the About
+  fact's only rendering - the semester calendar's empty message, the About
   dialog's Endpoint caption (its value reads at Secondary) and its version line, and their kin.
   A note, an empty message, a "not recorded" where-reading and a history row's status word are
   the pattern already at Secondary; copy those. Grep `text-foreground-muted`; whatever is not
@@ -540,7 +540,8 @@ below adds only what is particular to its component.
   3.35:1 and gains contrast everywhere else too. A segmented control takes that same light green
   as an **outline** rather than a ring: its selected segment spends its box-shadow on the
   underline, so a focus shadow would simply be replaced by it and the selected segment - the one
-  a keyboard lands on first - would show no focus at all.
+  a keyboard lands on first - would show no focus at all. A toast's close button is an
+  exception (see Toasts).
 - **Hover.** A hovered surface climbs one step of the ladder, to Raised (`#414141`), and its text
   brightens to foreground. The primary button is the one exception: it lightens its own fill to
   `--color-gpp-light` rather than climbing the neutral ladder.
@@ -641,6 +642,50 @@ verbatim), `Loading`, and `EmptyPanel` (neutral - never red, never a warning: a 
 "not recorded"). The night view alone has three distinct empty states, one carrying a
 button.
 
+**The loader.** `Loading` is the one place the Resource mark (`faLayerGroup`, the wordmark's
+glyph) moves. It sits centred at the top of the data area in the brand green (`text-gpp`, 7.5:1
+on the canvas), at three times the Dense size (36px), with the Dense words at Secondary beneath
+it; the words are what a screen reader reads, and the mark is hidden from it. The mark performs
+`loader-hop` (`--animate-loader-hop` in `global.css`), one 1.8s cycle: a squash, a hop of half its
+height, a squashed landing, a jelly wobble that settles, and a rest before the next, pivoting on
+its base. A load can include up to 10 s of waiting on the sign-in check, so the wait has to look
+alive, and a loop with a rest in it stays watchable that long where a spin or a pulse turns
+mechanical. Under `prefers-reduced-motion` it stands still (`motion-reduce:animate-none`). The
+same layout holds at every width. Nothing else in the app animates the mark.
+
+The loader renders with its page but stays invisible for its first 300 ms, then fades in over
+200 ms (`loader-appear`, `--animate-loader-appear` in `global.css`, an opacity animation with a
+300 ms delay and `both` fill), so a load that ends inside 300 ms never shows it. There is no
+minimum: the loader leaves when the page stops loading, and if one query fails while another is
+still out, its error can show beside the loader until that query ends. The words stay in the
+accessibility tree while invisible. Under `prefers-reduced-motion` the loader appears at once,
+with no wait and no fade.
+
+### Toasts
+
+- **Purpose.** A toast says that something happened. A standing condition stays a `PageStatus`,
+  except a live-server failure: a sticky warn toast, one at a time, gone at the next answer
+  without errors. The app has one outlet, above navigation, so a toast stays on screen across a
+  route change.
+- **Place.** PrimeReact's bottom-right corner, 20px from the right and 36px from the bottom (the
+  theme's 16px margin under each toast); on a phone, the full width inside 20px gutters.
+- **Colour.** Warn takes the warning panel triplet (`--color-warning-fill`, `-edge`, `-ink`) and
+  is opaque; it is the only severity restyled. Info keeps the theme's look, and the severities
+  not yet shown keep it until the change that first shows one styles it.
+- **Words.** The summary says what happened in the reader's terms; the detail says why, or what
+  to do next. The three live-server failure toasts and the other-tab sign-out are the exception:
+  a summary alone.
+- **Lifetime.** PrimeReact's, and a pointer resting on the toast holds it. Anything the reader
+  must not miss is `sticky`.
+- **Close.** The close button is named "Close". It sits on coloured fills no single green
+  clears, so its focus outline takes the toast's own ink, not the light green, and clears 3:1 on
+  every severity's fill, pastel or dark.
+- **Every toast is an alert**, whatever its severity, so keep toasts for events worth
+  interrupting for.
+- **Shipped shortfalls, queued.** Focus drops to the page after a toast closes (WCAG 2.4.3). A
+  phone toast can cover the bottom bar (2.4.11), and no Escape reveals a covered control (2.4.11).
+  A timed toast does not pause for keyboard focus (2.2.1). A tall stack is unbounded (1.4.10).
+
 ### Charts (the signature component)
 
 Every schedule view draws from the same timeline builders; a view supplies its axis and its
@@ -725,7 +770,10 @@ None of this is to be built speculatively - it is room being reserved, not featu
   failure, save success, conflict (the record changed under you), and no-permission. A
   disabled control states why (tooltip + accessible description), never just greys out.
 - **Auth lives in the masthead right cluster.** The account control names the signed-in reader,
-  or reads "Not signed in", or "Checking sign-in" while the first refresh is still out; signing
+  or reads "Not signed in", or "Checking sign-in" while the first check is out (10 s at most).
+  The checking label sits in the name's slot and follows the name's rules: drawn from `md` up,
+  `sr-only` below it. The page is drawn around it from the first render, and its data areas show
+  their loading state, because Resource requests wait for the check rather than the page. Signing
   in and signing out sit in the app menu's account block, and the selection controls did not
   move. Roles are not shown. Permission differences render as capability (what you can press),
   never as a different theme.

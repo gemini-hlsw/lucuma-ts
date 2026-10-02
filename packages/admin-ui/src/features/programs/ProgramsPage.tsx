@@ -22,6 +22,7 @@ import {
   allocationsInput,
   mapPrograms,
   programPropertiesInput,
+  proposalTypeChanged,
   proposalTypeInput,
   useAssignContactScientists,
   useCreateProgramNote,
@@ -36,6 +37,8 @@ import {
 import { mapRosterUsers, useUsers } from '@/gql/sso/roster';
 import {
   type ContactScientist,
+  NO_CEILING_OPTION,
+  NO_TOO_CEILING_LABEL,
   type Program,
   PROGRAM_CLASS_LABEL,
   PROGRAM_CLASSES,
@@ -47,7 +50,8 @@ import {
   type ScienceSubtype,
   TOO_LABEL,
   TOO_STATUSES,
-  type TooActivation,
+  tooCeilingFromOption,
+  tooCeilingToOption,
 } from '@/gql/types';
 import { matchesQuery } from '@/lib/search';
 import { currentSemester, NO_SEMESTER, semesterOf } from '@/lib/semester';
@@ -67,8 +71,9 @@ const EMPTY_PROGRAMS: Program[] = [];
  * programs table on top (ACCEPTED programs only — the WHERE clause in
  * PROGRAMS_QUERY), then a Selected Program editor — parameter form on the
  * left, Private Program Note on the right, Time Awards grid beneath. Saving is
- * real: updatePrograms, updateProposal, setAllocations, note create/update,
- * and contact-scientist link/unlink, then a reload from the ODB.
+ * real: updatePrograms, updateProposal, setAllocations, setProgramResourceLimit,
+ * note create/update, and contact-scientist link/unlink, then a reload from
+ * the ODB.
  */
 export default function ProgramsPage(): JSX.Element {
   const toast = useToast();
@@ -98,9 +103,11 @@ export default function ProgramsPage(): JSX.Element {
    *  remaining step is independent. Throws on the first failure so the user
    *  sees exactly what broke (the ODB is transactional per mutation). */
   async function saveProgram(original: Program, draft: Program): Promise<void> {
-    await updateProgram({ variables: { programId: draft.id, set: programPropertiesInput(draft) } });
+    await updateProgram({ variables: { programId: draft.id, set: programPropertiesInput(draft, original) } });
 
-    await updateProposalType({ variables: { programId: draft.id, gemini: proposalTypeInput(draft) } });
+    if (proposalTypeChanged(original, draft)) {
+      await updateProposalType({ variables: { programId: draft.id, gemini: proposalTypeInput(draft) } });
+    }
 
     if (JSON.stringify(draft.allocations) !== JSON.stringify(original.allocations)) {
       await setAllocations({ variables: { programId: draft.id, allocations: allocationsInput(draft.allocations) } });
@@ -112,10 +119,11 @@ export default function ProgramsPage(): JSX.Element {
       // from throwing — but it also stops a real failure (an expired token, a
       // non-staff role, since this mutation is staff-gated where the others
       // here are not) from throwing, so the outcome has to be read rather than
-      // assumed. A warning carries the program with it; a failure carries
-      // nothing, and is the caller's to report.
+      // assumed. A warning carries the program with it and is shown as the ODB
+      // worded it; a failure carries nothing, and is the caller's to report.
       const res = await setResourceLimit({ variables: { programId: draft.id, limit: draft.resourceLimit } });
       if (!res.data) throw new Error(res.error?.message ?? 'Could not set the resource limit');
+      if (res.error) toast.warn('Saved with a warning', res.error.message);
     }
 
     if (draft.privateNote !== original.privateNote && draft.privateNote.trim() !== '') {
@@ -256,8 +264,8 @@ export default function ProgramsPage(): JSX.Element {
             header="ToO"
             sortable
             style={{ width: '7rem' }}
-            body={(p: Program) => TOO_LABEL[p.tooStatus]}
-            headerTooltip="Target-of-Opportunity activation."
+            body={(p: Program) => (p.tooStatus === null ? NO_TOO_CEILING_LABEL : TOO_LABEL[p.tooStatus])}
+            headerTooltip="Target-of-Opportunity ceiling: the most disruptive activation the program's observations may declare. Unrestricted means no ceiling."
           />
           <Column field="name" header="Title" sortable />
         </DataTable>
@@ -298,6 +306,21 @@ function ProgramEditor({
   const [draft, setDraft] = useState<Program>(original);
   const dirty = JSON.stringify(draft) !== JSON.stringify(original);
 
+  /** Whether the proposal-type fields can be edited at all. `proposalTypeInput`
+   *  can only build the Queue and Classical arms of the oneOf, so on any other
+   *  subtype an edit here would send the wrong arm and the ODB would reject it
+   *  against that program's call (sc-10439). Read-only is the honest state
+   *  until there is a type-aware input. `programClass` can't be used for this:
+   *  the mapper collapses every subtype to Queue or Classical. */
+  const proposalTypeEditable = draft.programType === 'QUEUE' || draft.programType === 'CLASSICAL';
+  /** Said on each field it disables, so the grey-out reads as a known limit of
+   *  this subtype rather than a permissions problem or a bug. */
+  const proposalTypeReason = proposalTypeEditable
+    ? undefined
+    : `Only editable on Queue and Classical programs — this one is ${
+        draft.programType === null ? 'not a proposal' : SCIENCE_SUBTYPE_LABEL[draft.programType]
+      }.`;
+
   function set<K extends keyof Program>(key: K, value: Program[K]): void {
     setDraft((d) => ({ ...d, [key]: value }));
   }
@@ -336,25 +359,35 @@ function ProgramEditor({
             >
               Class
             </label>
-            <Dropdown
-              inputId="class"
-              value={draft.programClass}
-              options={PROGRAM_CLASSES.map((c) => ({ label: PROGRAM_CLASS_LABEL[c], value: c }))}
-              onChange={(e) => set('programClass', e.value as ProgramClass)}
-            />
+            {/* Gated as well: Class is the field that picks which arm of the oneOf
+                is sent, so on a subtype the editor can't build, changing it
+                reproduces the very error the guard exists to stop — and the
+                program update has already landed by then. */}
+            <span title={proposalTypeReason}>
+              <Dropdown
+                inputId="class"
+                value={draft.programClass}
+                options={PROGRAM_CLASSES.map((c) => ({ label: PROGRAM_CLASS_LABEL[c], value: c }))}
+                onChange={(e) => set('programClass', e.value as ProgramClass)}
+                disabled={!proposalTypeEditable}
+              />
+            </span>
 
             <label
               htmlFor="too"
-              title="Target-of-Opportunity ceiling — the most disruptive activation this program's observations may declare (None / Standard / Rapid / Interrupting). Queue programs only."
+              title="Target-of-Opportunity ceiling — the most disruptive activation this program's observations may declare (None / Rapid / Interrupting). Unrestricted lifts the ceiling."
             >
               ToO Status
             </label>
             <Dropdown
               inputId="too"
-              value={draft.tooStatus}
-              options={TOO_STATUSES.map((t) => ({ label: TOO_LABEL[t], value: t }))}
-              onChange={(e) => set('tooStatus', e.value as TooActivation)}
-              disabled={draft.programClass !== 'QUEUE'}
+              value={tooCeilingToOption(draft.tooStatus)}
+              options={[
+                // Least to most permissive.
+                ...TOO_STATUSES.map((t) => ({ label: TOO_LABEL[t], value: t })),
+                { label: NO_TOO_CEILING_LABEL, value: NO_CEILING_OPTION },
+              ]}
+              onChange={(e) => set('tooStatus', tooCeilingFromOption(e.value as string))}
             />
 
             <label
@@ -434,12 +467,14 @@ function ProgramEditor({
             >
               Consider for Band 3
             </label>
-            <Checkbox
-              inputId="band3"
-              checked={draft.considerForBand3}
-              onChange={(e) => set('considerForBand3', Boolean(e.checked))}
-              disabled={draft.programClass !== 'QUEUE'}
-            />
+            <span title={proposalTypeReason}>
+              <Checkbox
+                inputId="band3"
+                checked={draft.considerForBand3}
+                onChange={(e) => set('considerForBand3', Boolean(e.checked))}
+                disabled={!proposalTypeEditable || draft.programClass !== 'QUEUE'}
+              />
+            </span>
 
             <label
               htmlFor="minpct"
@@ -448,36 +483,39 @@ function ProgramEditor({
               Minimum Time
             </label>
             <div className="suffixed">
-              <NumberInput
-                inputId="minpct"
-                value={draft.minPercentTime}
-                min={0}
-                max={100}
-                onValueChange={(e) => set('minPercentTime', e.value ?? 0)}
-              />
+              <span title={proposalTypeReason}>
+                <NumberInput
+                  inputId="minpct"
+                  value={draft.minPercentTime}
+                  min={0}
+                  max={100}
+                  onValueChange={(e) => set('minPercentTime', e.value ?? 0)}
+                  disabled={!proposalTypeEditable}
+                />
+              </span>
               <span className="suffix">%</span>
             </div>
 
             {/* The mockup pairs the count and the limit on one line, so this
                 row carries two labelled values where every other carries one.
-                Each label owns its own value: the row label names the count,
-                and the limit's label is the one `htmlFor`-bound to the input. */}
+                Each label owns its own value: the row label is `htmlFor`-bound
+                to the count, and the limit's label to the input. */}
             <label
-              id="rescount-label"
+              htmlFor="rescount"
               title="Observations, groups, targets, attachments and program notes associated with this program, counted together."
             >
               Resources Used
             </label>
             <div className="suffixed">
-              {/* The count is read-only, so no control carries this row's
-                  label. `aria-labelledby` ties the two together, which the
-                  other read-only rows get from adjacency alone — this one
-                  shares its row with a labelled input, so it needs saying. */}
-              <span aria-labelledby="rescount-label">{draft.resourceCount}</span>
+              {/* The count is read-only, but an <output> is labelable, so the
+                  row's label binds to it natively: the other read-only rows
+                  get this from adjacency alone, and this one shares its row
+                  with a labelled input, so it needs saying. */}
+              <output id="rescount">{draft.resourceCount}</output>
               <label
                 htmlFor="reslimit"
                 className="resource-limit-label"
-                title="The cap on that count. Setting it below the current count deletes nothing, but no new resources can be added until the count is back at or under the cap."
+                title="The cap on that count. Setting it below the current count deletes nothing, but no new resources can be added until the count drops below the cap."
               >
                 Resource Limit
               </label>
@@ -494,7 +532,9 @@ function ProgramEditor({
                   committed — before the save, and afterwards against the saved
                   values, so the next person to open a frozen program sees it
                   too. The ODB allows the write and answers with its own
-                  warning.
+                  warning, and this fires on the same condition: usage *over*
+                  the limit. A program exactly at its limit is full but not
+                  over it, which the ODB does not warn about either.
 
                   Icon-only with the detail on hover, as navigate marks a
                   flagged control: the row stays the same height as its
@@ -508,8 +548,9 @@ function ProgramEditor({
               {draft.resourceCount > draft.resourceLimit && (
                 <span
                   className="program-warn"
-                  aria-label={`Freezes the program: no new resources until the count is back to ${String(draft.resourceLimit)} or fewer.`}
-                  title={`Freezes the program — no new resources until the count is back to ${String(draft.resourceLimit)} or fewer.`}
+                  role="img"
+                  aria-label={`Freezes the program: no new resources until the count drops below ${String(draft.resourceLimit)}.`}
+                  title={`Freezes the program — no new resources until the count drops below ${String(draft.resourceLimit)}.`}
                 >
                   <TriangleExclamation />
                 </span>
@@ -570,7 +611,7 @@ function ProgramEditor({
         <span
           title={
             dirty
-              ? 'Save changes via updatePrograms / updateProposal / setAllocations (+ note and contact updates), then reload from the ODB.'
+              ? 'Save changes via updatePrograms / updateProposal / setAllocations / setProgramResourceLimit (+ note and contact updates), then reload from the ODB.'
               : 'Nothing to save — edit a field first.'
           }
         >
