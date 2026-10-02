@@ -1,4 +1,4 @@
-import { formatDateTime } from '@gemini-hlsw/lucuma-common-ui';
+import { formatDateTime, when } from '@gemini-hlsw/lucuma-common-ui';
 import { useCalParamsHistory, useDeleteCalParams } from '@gql/configs/CalParams';
 import { useServerConfigValue } from '@gql/server/ServerConfiguration';
 import { Button } from 'primereact/button';
@@ -9,6 +9,8 @@ import { useRef } from 'react';
 
 import { Trash } from '@/components/Icons';
 import type { CalParams } from '@/types';
+
+import { CurrentMarker } from '../CurrentMarker';
 
 export function CalParamsHistoryContent({
   canEdit,
@@ -59,7 +61,14 @@ export function CalParamsHistoryContent({
           header="Created"
           sortable
           dataType="date"
-          body={(c: CalParams) => formatDateTime(c.createdAt, false)}
+          body={(c: CalParams) => (
+            <>
+              {formatDateTime(c.createdAt, false)}
+              {when(isCurrentEntry(c), () => (
+                <CurrentMarker />
+              ))}
+            </>
+          )}
         />
         <Column
           field="comment"
