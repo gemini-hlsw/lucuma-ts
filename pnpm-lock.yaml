@@ -204,8 +204,8 @@ importers:
         specifier: 14.0.0
         version: 14.0.0(eslint@10.10.0(jiti@2.7.0)(supports-color@10.2.2))
       globals:
-        specifier: 17.12.0
-        version: 17.12.0
+        specifier: 17.13.0
+        version: 17.13.0
       husky:
         specifier: 9.1.7
         version: 9.1.7
@@ -330,8 +330,8 @@ importers:
         specifier: 14.0.0
         version: 14.0.0(eslint@10.10.0(jiti@2.7.0)(supports-color@10.2.2))
       globals:
-        specifier: 17.12.0
-        version: 17.12.0
+        specifier: 17.13.0
+        version: 17.13.0
       graphql:
         specifier: 16.14.2
         version: 16.14.2
@@ -442,8 +442,8 @@ importers:
         specifier: 14.0.0
         version: 14.0.0(eslint@10.10.0(jiti@2.7.0)(supports-color@10.2.2))
       globals:
-        specifier: 17.12.0
-        version: 17.12.0
+        specifier: 17.13.0
+        version: 17.13.0
       graphql:
         specifier: 16.14.2
         version: 16.14.2
@@ -548,8 +548,8 @@ importers:
         specifier: 14.0.0
         version: 14.0.0(eslint@10.10.0(jiti@2.7.0)(supports-color@10.2.2))
       globals:
-        specifier: 17.12.0
-        version: 17.12.0
+        specifier: 17.13.0
+        version: 17.13.0
       typescript:
         specifier: npm:@typescript/typescript6@6.0.2
         version: '@typescript/typescript6@6.0.2'
@@ -593,8 +593,8 @@ importers:
         specifier: 14.0.0
         version: 14.0.0(eslint@10.10.0(jiti@2.7.0)(supports-color@10.2.2))
       globals:
-        specifier: 17.12.0
-        version: 17.12.0
+        specifier: 17.13.0
+        version: 17.13.0
       typescript:
         specifier: npm:@typescript/typescript6@6.0.2
         version: '@typescript/typescript6@6.0.2'
@@ -726,8 +726,8 @@ importers:
         specifier: 14.0.0
         version: 14.0.0(eslint@10.10.0(jiti@2.7.0)(supports-color@10.2.2))
       globals:
-        specifier: 17.12.0
-        version: 17.12.0
+        specifier: 17.13.0
+        version: 17.13.0
       graphql:
         specifier: 16.14.2
         version: 16.14.2
@@ -870,8 +870,8 @@ importers:
         specifier: 14.0.0
         version: 14.0.0(eslint@10.10.0(jiti@2.7.0)(supports-color@10.2.2))
       globals:
-        specifier: 17.12.0
-        version: 17.12.0
+        specifier: 17.13.0
+        version: 17.13.0
       graphql:
         specifier: 16.14.2
         version: 16.14.2
@@ -3876,8 +3876,8 @@ packages:
   globalize@1.7.1:
     resolution: {integrity: sha512-PFymRL0PtitFOlSniuwwwNfkooi3cLQJo9Uke1+j1DsGfUkkHkwneImqVtGcqKI0TuzhAlHt7hAcgK324902HA==}
 
-  globals@17.12.0:
-    resolution: {integrity: sha512-cezEd/DTyyht9cvSSURyygXPfy04GtWO/5e6ZPvH7fCtjKz9PYOmuawphw1Ctd1f6C+5JypXfGD7ahNMXvevBA==}
+  globals@17.13.0:
+    resolution: {integrity: sha512-RwMTC61u7hrG3ZJMkZQOK4JLJrKS8QtoTii63EmWvFXHqycY9FObBJQCbsLxSO8kjKhWE5kV1GC+Vb1g3RI0Zg==}
     engines: {node: '>=18'}
 
   globalthis@1.0.4:
@@ -9616,7 +9616,7 @@ snapshots:
     dependencies:
       cldrjs: 0.5.5
 
-  globals@17.12.0: {}
+  globals@17.13.0: {}
 
   globalthis@1.0.4:
     dependencies:
