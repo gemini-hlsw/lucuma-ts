@@ -21,8 +21,8 @@ The `useQuery` hook is the primary way to fetch data in Apollo Client in non-sus
 ### Basic Usage
 
 ```tsx
-import { gql } from '@apollo/client';
-import { useQuery } from '@apollo/client/react';
+import { gql } from "@apollo/client";
+import { useQuery } from "@apollo/client/react";
 
 const GET_DOGS = gql`
   query GetDogs {
@@ -40,13 +40,7 @@ function Dogs() {
   if (loading) return <p>Loading...</p>;
   if (error) return <p>Error: {error.message}</p>;
 
-  return (
-    <ul>
-      {data?.dogs.map((dog) => (
-        <li key={dog.id}>{dog.breed}</li>
-      ))}
-    </ul>
-  );
+  return <ul>{data?.dogs.map((dog) => <li key={dog.id}>{dog.breed}</li>)}</ul>;
 }
 ```
 
@@ -102,8 +96,8 @@ function DogPhoto({ breed }: { breed: string }) {
 Use `TypedDocumentNode` instead of generic type parameters for better type safety:
 
 ```typescript
-import { gql, TypedDocumentNode } from '@apollo/client';
-import { useQuery } from '@apollo/client/react';
+import { gql, TypedDocumentNode } from "@apollo/client";
+import { useQuery } from "@apollo/client/react";
 
 interface GetDogData {
   dog: {
@@ -126,7 +120,7 @@ const GET_DOG: TypedDocumentNode<GetDogData, GetDogVariables> = gql`
 `;
 
 const { data } = useQuery(GET_DOG, {
-  variables: { breed: 'bulldog' },
+  variables: { breed: "bulldog" },
 });
 
 // data?.dog is fully typed
@@ -136,7 +130,7 @@ const { data } = useQuery(GET_DOG, {
 
 ```tsx
 function DogSelector() {
-  const [breed, setBreed] = useState('bulldog');
+  const [breed, setBreed] = useState("bulldog");
 
   // Query automatically re-runs when breed changes
   const { data } = useQuery(GET_DOG, {
@@ -177,7 +171,7 @@ function UserProfile({ userId }: { userId: string }) {
 ### Network Status
 
 ```tsx
-import { NetworkStatus } from '@apollo/client';
+import { NetworkStatus } from "@apollo/client";
 
 function Dogs() {
   const { loading, error, data, networkStatus, refetch } = useQuery(GET_DOGS, {
@@ -213,8 +207,8 @@ Use `useLazyQuery` when you want to execute a query in response to a user-trigge
 ### Basic Usage
 
 ```tsx
-import { gql } from '@apollo/client';
-import { useLazyQuery } from '@apollo/client/react';
+import { gql } from "@apollo/client";
+import { useLazyQuery } from "@apollo/client/react";
 
 const GET_DOG_PHOTO = gql`
   query GetDogPhoto($breed: String!) {
@@ -226,7 +220,8 @@ const GET_DOG_PHOTO = gql`
 `;
 
 function DelayedQuery() {
-  const [getDog, { loading, error, data, called }] = useLazyQuery(GET_DOG_PHOTO);
+  const [getDog, { loading, error, data, called }] =
+    useLazyQuery(GET_DOG_PHOTO);
 
   if (called && loading) return <p>Loading...</p>;
   if (error) return <p>Error: {error.message}</p>;
@@ -234,7 +229,9 @@ function DelayedQuery() {
   return (
     <div>
       {data?.dog && <img src={data.dog.displayImage} />}
-      <button onClick={() => getDog({ variables: { breed: 'bulldog' } })}>Get Bulldog Photo</button>
+      <button onClick={() => getDog({ variables: { breed: "bulldog" } })}>
+        Get Bulldog Photo
+      </button>
     </div>
   );
 }
@@ -245,11 +242,11 @@ function DelayedQuery() {
 If you only need the promise result and don't consume the loading/error/data states from the hook, use `client.query` instead:
 
 ```tsx
-import { useApolloClient } from '@apollo/client/react';
+import { useApolloClient } from "@apollo/client/react";
 
 function SearchDogs() {
   const client = useApolloClient();
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState("");
 
   const handleSearch = async () => {
     try {
@@ -257,9 +254,9 @@ function SearchDogs() {
         query: SEARCH_DOGS,
         variables: { query: search },
       });
-      console.log('Found dogs:', data.searchDogs);
+      console.log("Found dogs:", data.searchDogs);
     } catch (error) {
-      console.error('Search failed:', error);
+      console.error("Search failed:", error);
     }
   };
 
@@ -301,12 +298,10 @@ function DogList() {
   return (
     <div>
       <button onClick={() => refetch()}>Refresh</button>
-      <button onClick={() => refetch({ breed: 'poodle' })}>Refetch Poodles</button>
-      <ul>
-        {data?.dogs.map((dog) => (
-          <li key={dog.id}>{dog.breed}</li>
-        ))}
-      </ul>
+      <button onClick={() => refetch({ breed: "poodle" })}>
+        Refetch Poodles
+      </button>
+      <ul>{data?.dogs.map((dog) => <li key={dog.id}>{dog.breed}</li>)}</ul>
     </div>
   );
 }
@@ -330,23 +325,23 @@ Control how the query interacts with the cache.
 ```tsx
 // Real-time data - always fetch
 const { data } = useQuery(GET_NOTIFICATIONS, {
-  fetchPolicy: 'network-only',
+  fetchPolicy: "network-only",
 });
 
 // Static data - prefer cache
 const { data } = useQuery(GET_CATEGORIES, {
-  fetchPolicy: 'cache-first',
+  fetchPolicy: "cache-first",
 });
 
 // Show cached data while fetching fresh data
 const { data, loading } = useQuery(GET_POSTS, {
-  fetchPolicy: 'cache-and-network',
+  fetchPolicy: "cache-and-network",
 });
 
 // Fetch once, then use cache
 const { data } = useQuery(GET_USER_PROFILE, {
-  fetchPolicy: 'network-only',
-  nextFetchPolicy: 'cache-first',
+  fetchPolicy: "network-only",
+  nextFetchPolicy: "cache-first",
 });
 ```
 
@@ -356,16 +351,16 @@ const { data } = useQuery(GET_USER_PROFILE, {
 // First request: network-only
 // Subsequent requests: cache-first
 const { data } = useQuery(GET_POSTS, {
-  fetchPolicy: 'network-only',
-  nextFetchPolicy: 'cache-first',
+  fetchPolicy: "network-only",
+  nextFetchPolicy: "cache-first",
 });
 
 // Or use a function for more control
 const { data } = useQuery(GET_POSTS, {
-  fetchPolicy: 'network-only',
+  fetchPolicy: "network-only",
   nextFetchPolicy: (currentFetchPolicy, { reason, observable }) => {
-    if (reason === 'after-fetch') {
-      return 'cache-first';
+    if (reason === "after-fetch") {
+      return "cache-first";
     }
     return currentFetchPolicy;
   },
@@ -379,16 +374,16 @@ const { data } = useQuery(GET_POSTS, {
 Use `skipToken` to conditionally skip queries without TypeScript issues:
 
 ```tsx
-import { skipToken } from '@apollo/client';
+import { skipToken } from "@apollo/client";
 
 function UserProfile({ userId }: { userId: string | null }) {
   const { data } = useQuery(
     GET_USER,
-    !userId
-      ? skipToken
-      : {
-          variables: { id: userId },
-        },
+    !userId ? skipToken : (
+      {
+        variables: { id: userId },
+      }
+    )
   );
 
   return userId ? <Profile user={data?.user} /> : <p>Select a user</p>;
@@ -415,7 +410,7 @@ function UserProfile({ userId }: { userId: string | null }) {
 ```tsx
 // Skip during server-side rendering
 const { data } = useQuery(GET_USER_LOCATION, {
-  skip: typeof window === 'undefined',
+  skip: typeof window === "undefined",
   ssr: false,
 });
 ```
