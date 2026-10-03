@@ -12,7 +12,7 @@ import { InputTextarea } from 'primereact/inputtextarea';
 import { type JSX, useMemo, useState } from 'react';
 
 import { DataSourceBadge } from '@/components/DataSourceBadge';
-import { Upload, XMark } from '@/components/Icons';
+import { TriangleExclamation, Upload, XMark } from '@/components/Icons';
 import { SearchInput } from '@/components/SearchInput';
 import { Tile } from '@/components/Tile';
 import { TimeAwardsGrid } from '@/components/TimeAwardsGrid';
@@ -29,6 +29,7 @@ import {
   useDeleteProgramUser,
   usePrograms,
   useSetAllocations,
+  useSetProgramResourceLimit,
   useUpdateProgram,
   useUpdateProgramNote,
   useUpdateProposalType,
@@ -70,8 +71,9 @@ const EMPTY_PROGRAMS: Program[] = [];
  * programs table on top (ACCEPTED programs only — the WHERE clause in
  * PROGRAMS_QUERY), then a Selected Program editor — parameter form on the
  * left, Private Program Note on the right, Time Awards grid beneath. Saving is
- * real: updatePrograms, updateProposal, setAllocations, note create/update,
- * and contact-scientist link/unlink, then a reload from the ODB.
+ * real: updatePrograms, updateProposal, setAllocations, setProgramResourceLimit,
+ * note create/update, and contact-scientist link/unlink, then a reload from
+ * the ODB.
  */
 export default function ProgramsPage(): JSX.Element {
   const toast = useToast();
@@ -81,6 +83,7 @@ export default function ProgramsPage(): JSX.Element {
   const [updateProgram, { loading: updatingProgram }] = useUpdateProgram();
   const [updateProposalType, { loading: updatingProposalType }] = useUpdateProposalType();
   const [setAllocations, { loading: settingAllocations }] = useSetAllocations();
+  const [setResourceLimit, { loading: settingResourceLimit }] = useSetProgramResourceLimit();
   const [createNote, { loading: creatingNote }] = useCreateProgramNote();
   const [updateNote, { loading: updatingNote }] = useUpdateProgramNote();
   const { assign: assignContactScientists, loading: assigningContacts } = useAssignContactScientists();
@@ -89,6 +92,7 @@ export default function ProgramsPage(): JSX.Element {
     updatingProgram ||
     updatingProposalType ||
     settingAllocations ||
+    settingResourceLimit ||
     creatingNote ||
     updatingNote ||
     assigningContacts ||
@@ -107,6 +111,19 @@ export default function ProgramsPage(): JSX.Element {
 
     if (JSON.stringify(draft.allocations) !== JSON.stringify(original.allocations)) {
       await setAllocations({ variables: { programId: draft.id, allocations: allocationsInput(draft.allocations) } });
+    }
+
+    if (draft.resourceLimit !== original.resourceLimit) {
+      // Lowering the limit below the current count is allowed, and answers with
+      // the updated program *and* a warning. `errorPolicy: 'all'` keeps that
+      // from throwing — but it also stops a real failure (an expired token, a
+      // non-staff role, since this mutation is staff-gated where the others
+      // here are not) from throwing, so the outcome has to be read rather than
+      // assumed. A warning carries the program with it and is shown as the ODB
+      // worded it; a failure carries nothing, and is the caller's to report.
+      const res = await setResourceLimit({ variables: { programId: draft.id, limit: draft.resourceLimit } });
+      if (!res.data) throw new Error(res.error?.message ?? 'Could not set the resource limit');
+      if (res.error) toast.warn('Saved with a warning', res.error.message);
     }
 
     if (draft.privateNote !== original.privateNote && draft.privateNote.trim() !== '') {
@@ -479,10 +496,66 @@ function ProgramEditor({
               <span className="suffix">%</span>
             </div>
 
-            <label title="Resource usage isn't tracked by the ODB yet — Andy's updated sc-9090 mockup adds 'Resources Used' (display) and 'Resource Limit' (editable); shown here as the schema gap it is rather than faked.">
-              Resources
+            {/* The mockup pairs the count and the limit on one line, so this
+                row carries two labelled values where every other carries one.
+                Each label owns its own value: the row label is `htmlFor`-bound
+                to the count, and the limit's label to the input. */}
+            <label
+              htmlFor="rescount"
+              title="Observations, groups, targets, attachments and program notes associated with this program, counted together."
+            >
+              Resources Used
             </label>
-            <span className="program-gap">not yet tracked by the ODB</span>
+            <div className="suffixed">
+              {/* The count is read-only, but an <output> is labelable, so the
+                  row's label binds to it natively: the other read-only rows
+                  get this from adjacency alone, and this one shares its row
+                  with a labelled input, so it needs saying. */}
+              <output id="rescount">{draft.resourceCount}</output>
+              <label
+                htmlFor="reslimit"
+                className="resource-limit-label"
+                title="The cap on that count. Setting it below the current count deletes nothing, but no new resources can be added until the count drops below the cap."
+              >
+                Resource Limit
+              </label>
+              <NumberInput
+                inputId="reslimit"
+                value={draft.resourceLimit}
+                min={0}
+                // NonNegInt, stored as a Postgres integer: past this the ODB
+                // answers with a raw coercion error rather than a useful one.
+                max={2147483647}
+                onValueChange={(e) => set('resourceLimit', e.value ?? 0)}
+              />
+              {/* Driven by the draft, so this appears as soon as the field is
+                  committed — before the save, and afterwards against the saved
+                  values, so the next person to open a frozen program sees it
+                  too. The ODB allows the write and answers with its own
+                  warning, and this fires on the same condition: usage *over*
+                  the limit. A program exactly at its limit is full but not
+                  over it, which the ODB does not warn about either.
+
+                  Icon-only with the detail on hover, as navigate marks a
+                  flagged control: the row stays the same height as its
+                  siblings, and the form doesn't fill with prose. The tooltip
+                  is a native `title`, which is how every other field on this
+                  page explains itself.
+
+                  The enforcement trigger exempts calibration and system
+                  programs, which this says nothing about — the table only
+                  lists ACCEPTED science programs, so none can reach this row. */}
+              {draft.resourceCount > draft.resourceLimit && (
+                <span
+                  className="program-warn"
+                  role="img"
+                  aria-label={`Freezes the program: no new resources until the count drops below ${String(draft.resourceLimit)}.`}
+                  title={`Freezes the program — no new resources until the count drops below ${String(draft.resourceLimit)}.`}
+                >
+                  <TriangleExclamation />
+                </span>
+              )}
+            </div>
 
             <label
               htmlFor="header"
@@ -538,7 +611,7 @@ function ProgramEditor({
         <span
           title={
             dirty
-              ? 'Save changes via updatePrograms / updateProposal / setAllocations (+ note and contact updates), then reload from the ODB.'
+              ? 'Save changes via updatePrograms / updateProposal / setAllocations / setProgramResourceLimit (+ note and contact updates), then reload from the ODB.'
               : 'Nothing to save — edit a field first.'
           }
         >
