@@ -20,6 +20,13 @@
   },
   "packageRules": [
     {
+      "description": "Deployed DB volumes are Postgres 17; a major bump needs a data migration (see deploy/docker-compose.yml)",
+      "matchFileNames": ["deploy/docker-compose.yml"],
+      "matchPackageNames": ["postgres"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
+    },
+    {
       "matchUpdateTypes": ["minor", "patch", "pin", "digest", "lockFileMaintenance"],
       "automerge": true
     },
