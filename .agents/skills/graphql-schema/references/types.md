@@ -92,9 +92,9 @@ Both computed and stored data should be fields. Clients don't care about storage
 type Product {
   id: ID!
   name: String!
-  priceInCents: Int! # Stored
-  formattedPrice: String! # Computed
-  inStock: Boolean! # Computed from inventory
+  priceInCents: Int!        # Stored
+  formattedPrice: String!   # Computed
+  inStock: Boolean!         # Computed from inventory
 }
 ```
 
@@ -106,10 +106,10 @@ Make fields non-null unless there's a reason for null:
 
 ```graphql
 type User {
-  id: ID! # Always exists
-  email: String! # Required field
-  name: String # Optional - user might not set
-  deletedAt: DateTime # Null means not deleted
+  id: ID!           # Always exists
+  email: String!    # Required field
+  name: String      # Optional - user might not set
+  deletedAt: DateTime  # Null means not deleted
 }
 ```
 
@@ -162,7 +162,7 @@ interface Node {
 }
 
 type User implements Node {
-  id: ID! # e.g., "User:123" or base64("User:123")
+  id: ID!  # e.g., "User:123" or base64("User:123")
 }
 ```
 
@@ -177,7 +177,6 @@ Post:456 → UG9zdDo0NTY=
 ```
 
 Benefits:
-
 - Globally unique across types
 - Can determine type from ID
 - Opaque to clients (discourages assumptions)
@@ -188,8 +187,8 @@ If clients need the original ID:
 
 ```graphql
 type User implements Node {
-  id: ID! # Global ID: "VXNlcjoxMjM="
-  databaseId: Int! # Original: 123
+  id: ID!           # Global ID: "VXNlcjoxMjM="
+  databaseId: Int!  # Original: 123
 }
 ```
 
@@ -273,12 +272,12 @@ type Query {
 
 ### Unions vs Interfaces
 
-| Use Case                     | Choice                            |
-| ---------------------------- | --------------------------------- |
-| Types share common fields    | Interface                         |
-| Types are mutually exclusive | Union                             |
-| Polymorphic field return     | Either (depends on shared fields) |
-| Error handling patterns      | Union (Result type)               |
+| Use Case | Choice |
+|----------|--------|
+| Types share common fields | Interface |
+| Types are mutually exclusive | Union |
+| Polymorphic field return | Either (depends on shared fields) |
+| Error handling patterns | Union (Result type) |
 
 ### Result Type Pattern
 
@@ -320,6 +319,7 @@ input CreatePostInput {
 }
 
 input UpdatePostInput {
+  id: ID!
   title: String
   body: String
   tags: [String!]
@@ -327,7 +327,7 @@ input UpdatePostInput {
 
 type Mutation {
   createPost(input: CreatePostInput!): Post!
-  updatePost(id: ID!, input: UpdatePostInput!): Post!
+  updatePost(input: UpdatePostInput!): Post!
 }
 ```
 
@@ -337,9 +337,10 @@ Make update input fields nullable to allow partial updates:
 
 ```graphql
 input UpdateUserInput {
-  name: String # Pass to change, omit to keep
-  email: String # Pass to change, omit to keep
-  bio: String # Pass to change, omit to keep
+  id: ID!            # Which user to update
+  name: String       # Pass to change, omit to keep
+  email: String      # Pass to change, omit to keep
+  bio: String        # Pass to change, omit to keep
 }
 ```
 
@@ -402,29 +403,28 @@ enum Role {
 ### Common Custom Scalars
 
 ```graphql
-scalar DateTime # ISO 8601 date-time
-scalar Date # ISO 8601 date
-scalar Time # ISO 8601 time
-scalar URL # Valid URL string
-scalar Email # Valid email address
-scalar JSON # Arbitrary JSON (use sparingly)
-scalar UUID # UUID string
-scalar BigInt # Large integers beyond Int range
+scalar DateTime    # ISO 8601 date-time
+scalar Date        # ISO 8601 date
+scalar Time        # ISO 8601 time
+scalar URL         # Valid URL string
+scalar Email       # Valid email address
+scalar JSON        # Arbitrary JSON (use sparingly)
+scalar UUID        # UUID string
+scalar BigInt      # Large integers beyond Int range
 ```
 
 ### When to Use Custom Scalars
 
 Use custom scalars when:
-
 - Built-in scalars don't capture the domain concept
 - Validation at the schema level is valuable
 - Serialization format matters (e.g., dates)
 
 ```graphql
 type User {
-  email: Email! # Validated email format
-  website: URL # Validated URL format
-  createdAt: DateTime! # Consistent date format
+  email: Email!       # Validated email format
+  website: URL        # Validated URL format
+  createdAt: DateTime!  # Consistent date format
 }
 ```
 

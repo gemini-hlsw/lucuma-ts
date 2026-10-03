@@ -31,7 +31,6 @@ const server = new ApolloServer({
 ### Allow for Development
 
 Keep introspection enabled for:
-
 - Development environments
 - Internal tools
 - Authorized clients (with authentication)
@@ -40,7 +39,8 @@ Keep introspection enabled for:
 const server = new ApolloServer({
   typeDefs,
   resolvers,
-  introspection: process.env.NODE_ENV === 'development' || process.env.ENABLE_INTROSPECTION === 'true',
+  introspection: process.env.NODE_ENV === 'development' ||
+                 process.env.ENABLE_INTROSPECTION === 'true',
 });
 ```
 
@@ -109,7 +109,9 @@ Returns user's posts.
 Cost: Base 5 + (first * 2)
 """
 type User {
-  posts(first: Int = 20 @cost(weight: 2)): PostConnection! @cost(complexity: 5)
+  posts(
+    first: Int = 20 @cost(weight: 2)
+  ): PostConnection! @cost(complexity: 5)
 }
 ```
 
@@ -151,10 +153,10 @@ const server = new ApolloServer({
 ### Recommended Limits
 
 | Application Type | Max Depth |
-| ---------------- | --------- |
-| Simple API       | 5-7       |
-| Complex API      | 7-10      |
-| Internal tools   | 10-15     |
+|-----------------|-----------|
+| Simple API | 5-7 |
+| Complex API | 7-10 |
+| Internal tools | 10-15 |
 
 ## Rate Limiting
 
@@ -192,9 +194,9 @@ const complexityPlugin = {
           throw new GraphQLError('Rate limit exceeded');
         }
         userComplexityBudget.set(userId, current + complexity);
-      },
+      }
     };
-  },
+  }
 };
 ```
 
@@ -229,7 +231,7 @@ type User {
 type User {
   id: ID!
   name: String!
-  email: String! # Admin only
+  email: String!        # Admin only
   internalNotes: String # Admin only
 }
 ```
@@ -252,12 +254,12 @@ const resolvers = {
     internalNotes: (user, args, context) => {
       if (!context.user?.isAdmin) {
         throw new GraphQLError('Not authorized', {
-          extensions: { code: 'UNAUTHORIZED' },
+          extensions: { code: 'UNAUTHORIZED' }
         });
       }
       return user.internalNotes;
-    },
-  },
+    }
+  }
 };
 ```
 
@@ -275,7 +277,7 @@ enum Role {
 type User {
   id: ID!
   name: String!
-  email: String! @auth(requires: USER) # Own data or admin
+  email: String! @auth(requires: USER)  # Own data or admin
   ssn: String @auth(requires: SUPER_ADMIN)
 }
 ```
@@ -287,11 +289,16 @@ type User {
 Use custom scalars for validation:
 
 ```graphql
-scalar Email # Validates email format
-scalar URL # Validates URL format
-scalar DateTime # Validates ISO 8601 format
+scalar Email      # Validates email format
+scalar URL        # Validates URL format
+scalar DateTime   # Validates ISO 8601 format
+
 type Mutation {
-  createUser(email: Email!, website: URL, birthDate: DateTime!): User!
+  createUser(
+    email: Email!
+    website: URL
+    birthDate: DateTime!
+  ): User!
 }
 ```
 
@@ -332,22 +339,22 @@ const resolvers = {
     createPost: (_, { input }) => {
       if (input.title.length > 200) {
         throw new GraphQLError('Title too long', {
-          extensions: { code: 'VALIDATION_ERROR', field: 'title' },
+          extensions: { code: 'VALIDATION_ERROR', field: 'title' }
         });
       }
       if (input.content.length > 50000) {
         throw new GraphQLError('Content too long', {
-          extensions: { code: 'VALIDATION_ERROR', field: 'content' },
+          extensions: { code: 'VALIDATION_ERROR', field: 'content' }
         });
       }
       if (input.tags?.length > 10) {
         throw new GraphQLError('Too many tags', {
-          extensions: { code: 'VALIDATION_ERROR', field: 'tags' },
+          extensions: { code: 'VALIDATION_ERROR', field: 'tags' }
         });
       }
       // ... create post
-    },
-  },
+    }
+  }
 };
 ```
 
@@ -404,11 +411,11 @@ const server = new ApolloServer({
             if (!request.extensions?.persistedQuery) {
               throw new GraphQLError('Only persisted queries allowed');
             }
-          },
+          }
         };
-      },
-    },
-  ],
+      }
+    }
+  ]
 });
 ```
 
@@ -424,7 +431,7 @@ throw new Error(`Database error: SQLSTATE[23000]: duplicate key 'users_email_uni
 
 // Good: User-friendly message
 throw new GraphQLError('Email already registered', {
-  extensions: { code: 'EMAIL_EXISTS' },
+  extensions: { code: 'EMAIL_EXISTS' }
 });
 ```
 
