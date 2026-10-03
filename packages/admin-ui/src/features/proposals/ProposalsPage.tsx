@@ -77,10 +77,16 @@ const BLANK_AWARD: AwardDraft = {
  * applies the reviewer's award (setAllocations + updatePrograms); rejecting
  * records NOT_ACCEPTED.
  */
+/** Shown when the list loaded but the estimates behind the Time column did
+ *  not — the rows are real, the times are simply not there yet. */
+const DETAILS_UNAVAILABLE = 'Time estimates unavailable — the ODB did not return them.';
+/** The list itself is short: whole proposals are missing, not just their time. */
+const LIST_TRUNCATED = 'This list is incomplete — the ODB stopped returning proposals.';
+
 export default function ProposalsPage(): JSX.Element {
   const toast = useToast();
-  const { data, loading, error, refetch } = useProposals();
-  const proposals = useMemo(() => (data ? mapProposals(data) : EMPTY), [data]);
+  const { data, details, loading, error, detailsFailed, listTruncated, refetch } = useProposals();
+  const proposals = useMemo(() => (data ? mapProposals(data, details) : EMPTY), [data, details]);
   const [setProposalStatus, { loading: settingStatus }] = useSetProposalStatus();
   const [setAllocations, { loading: settingAllocations }] = useSetAllocations();
   const [updateProgram, { loading: updatingProgram }] = useUpdateProgram();
@@ -192,7 +198,17 @@ export default function ProposalsPage(): JSX.Element {
     <ReviewView<ReviewProposal>
       title="Proposals"
       blurb="Review & respond to Director’s Time and Poor Weather proposals."
-      badge={<DataSourceBadge loading={loading} error={error && friendlyError(error)} empty={items.length === 0} />}
+      badge={
+        <DataSourceBadge
+          loading={loading}
+          // The detail query carries the Time column. When it fails the list's
+          // rows are still real, so they stay — but the badge has to say the
+          // estimates are missing rather than "Live data" over a zero column.
+          error={listTruncated ? LIST_TRUNCATED : detailsFailed ? DETAILS_UNAVAILABLE : error && friendlyError(error)}
+          empty={items.length === 0}
+          failed={detailsFailed}
+        />
+      }
       controls={controls}
       resolving={resolving}
       items={items}

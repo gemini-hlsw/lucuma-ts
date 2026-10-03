@@ -10,6 +10,7 @@ export function DataSourceBadge({
   loading,
   error,
   empty,
+  failed = false,
 }: {
   loading: boolean;
   /** Present when the query failed (expired token, access denied, …). */
@@ -17,6 +18,12 @@ export function DataSourceBadge({
   /** Whether the view has no rows to show. Also gates `error`: an error that
    *  arrived alongside data (a partial warning) is not treated as a failure. */
   empty?: boolean;
+  /** Set when the view knows a query failed outright, whatever the row count.
+   *  A view backed by more than one query has rows from the ones that
+   *  succeeded, so `empty` is false and the gate below would call it live — a
+   *  second query returning nothing is a failure the reader must see, not a
+   *  partial warning to swallow (sc-10520). */
+  failed?: boolean;
 }): JSX.Element {
   if (loading) {
     return (
@@ -29,7 +36,7 @@ export function DataSourceBadge({
   // With Apollo's errorPolicy 'all' (see ApolloConfigs), a query can return a
   // full result *alongside* a benign per-observation warning — that's still
   // live data, not a failure, so it must not win over the rows (sc-10153).
-  if (error !== undefined && empty !== false) {
+  if (error !== undefined && (failed || empty !== false)) {
     return (
       <span className="ds-badge ds-warn" title={error}>
         <TriangleExclamation /> {error}
