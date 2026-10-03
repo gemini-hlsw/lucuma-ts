@@ -13,20 +13,20 @@ services:
     volumes:
       - database-volume:/var/lib/postgresql/data
     ports:
-      - "${EXPOSE_DB_PORT}:5432"
+      - '${EXPOSE_DB_PORT}:5432'
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      test: ['CMD-SHELL', 'pg_isready -U ${DB_USER} -d ${DB_NAME}']
       interval: 30s
       timeout: 60s
       retries: 5
       start_period: 80s
     logging:
-      driver: "json-file"
+      driver: 'json-file'
       options:
-        max-size: "2m"
-        max-file: "5"
+        max-size: '2m'
+        max-file: '5'
   configs:
-    image: "noirlab/gpp-nav-configs:${NAVIGATE_TAG:?NAVIGATE_TAG is not set, run navigate update <tag>}"
+    image: 'noirlab/gpp-nav-configs:${NAVIGATE_TAG:?NAVIGATE_TAG is not set, run navigate update <tag>}'
     container_name: navigate-configs
     restart: unless-stopped
     environment:
@@ -40,12 +40,12 @@ services:
       database:
         condition: service_healthy
     logging:
-      driver: "json-file"
+      driver: 'json-file'
       options:
-        max-size: "2m"
-        max-file: "5"
+        max-size: '2m'
+        max-file: '5'
   server:
-    image: "noirlab/gpp-nav:${NAVIGATE_TAG:?NAVIGATE_TAG is not set, run navigate update <tag>}"
+    image: 'noirlab/gpp-nav:${NAVIGATE_TAG:?NAVIGATE_TAG is not set, run navigate update <tag>}'
     container_name: navigate-server
     restart: unless-stopped
     network_mode: host
@@ -53,30 +53,30 @@ services:
       - ${CONFIG_DIR}:/opt/docker/conf/local/
       - ${LOGS_DIR}:/gemsoft/var/log/navigate/
     ports:
-      - "${NAVIGATE_EXPOSE_PORT}:7070"
+      - '${NAVIGATE_EXPOSE_PORT}:7070'
       - 5064:5064
       - 5065:5065
     environment:
       - SITE=${SITE}
     logging:
-      driver: "json-file"
+      driver: 'json-file'
       options:
-        max-size: "2m"
-        max-file: "5"
+        max-size: '2m'
+        max-file: '5'
   pgadmin:
-    image: "dpage/pgadmin4:latest"
+    image: 'dpage/pgadmin4:latest'
     container_name: navigate-pgadmin
     restart: unless-stopped
     environment:
       - PGADMIN_DEFAULT_EMAIL=${PGADMIN_EMAIL}
       - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PASS}
     ports:
-      - "${EXPOSE_PORT_PGA}:80"
+      - '${EXPOSE_PORT_PGA}:80'
     logging:
-      driver: "json-file"
+      driver: 'json-file'
       options:
-        max-size: "2m"
-        max-file: "5"
+        max-size: '2m'
+        max-file: '5'
 
 volumes:
   database-volume:
