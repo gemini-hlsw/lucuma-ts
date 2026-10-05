@@ -25,7 +25,15 @@ import {
 
 // Re-exported beside the fills that draw it, so chart code has one import.
 export { USAGE_LABEL } from '@/domain/timeline';
-import type { Closure, Instrument, ModeBlock, Site, TelescopeModeType, TooBlock, TooSupport } from '@/domain/types';
+import type {
+  ResourceInstrument,
+  Site,
+  TelescopeAvailabilityBlock,
+  TelescopeModeBlock,
+  TelescopeModeType,
+  TooSupport,
+  TooSupportBlock,
+} from '@/domain/types';
 
 /** Keyed by the enum, so a new instrument fails to compile until it has a colour. */
 const INSTRUMENT_COLOR = {
@@ -48,7 +56,7 @@ const INSTRUMENT_COLOR = {
   NIRI: 'var(--instrument-niri)',
   SCORPIO: 'var(--instrument-scorpio)',
   UNKNOWN: 'var(--instrument-unknown)',
-} satisfies Record<Instrument, string>;
+} satisfies Record<ResourceInstrument, string>;
 
 const INSTRUMENT_INK_LIGHT = 'var(--instrument-ink-light)';
 
@@ -75,7 +83,7 @@ const INSTRUMENT_INK = {
   NIRI: INSTRUMENT_INK_DARK,
   SCORPIO: INSTRUMENT_INK_DARK,
   UNKNOWN: INSTRUMENT_INK_DARK,
-} satisfies Record<Instrument, string>;
+} satisfies Record<ResourceInstrument, string>;
 
 /** Published spellings, so a legend reads as the sheet does, not as the enum. */
 export const INSTRUMENT_LABEL = {
@@ -98,11 +106,11 @@ export const INSTRUMENT_LABEL = {
   NIRI: 'NIRI',
   SCORPIO: 'SCORPIO',
   UNKNOWN: 'Unknown',
-} satisfies Record<Instrument, string>;
+} satisfies Record<ResourceInstrument, string>;
 
-export const instrumentColor = (instrument: Instrument): string => INSTRUMENT_COLOR[instrument];
+export const instrumentColor = (instrument: ResourceInstrument): string => INSTRUMENT_COLOR[instrument];
 
-export const instrumentInk = (instrument: Instrument): string => INSTRUMENT_INK[instrument];
+export const instrumentInk = (instrument: ResourceInstrument): string => INSTRUMENT_INK[instrument];
 
 export const UNSCHEDULED_LABEL = 'No instrument scheduled';
 /** The one name a closure has everywhere; the reason rides on the record, never on the key. */
@@ -126,20 +134,20 @@ export interface LegendExtra {
 }
 
 /** Open only: a Closed span draws in the closure red, which the "Closed" key already names. */
-export const telescopeLegendExtras = (closures: readonly Closure[]): LegendExtra[] =>
-  closures.some((closure) => closure.port === null && closure.availability === 'OPEN')
+export const telescopeLegendExtras = (telescopeAvailability: readonly TelescopeAvailabilityBlock[]): LegendExtra[] =>
+  telescopeAvailability.some((telescopeBlock) => telescopeBlock.port === null && telescopeBlock.availability === 'OPEN')
     ? [{ key: 'telescope-open', label: 'Open', swatch: { backgroundColor: stateFill(false) } }]
     : [];
 
-export const modeLegendExtras = (modeBlocks: readonly ModeBlock[]): LegendExtra[] =>
-  [...new Set(modeBlocks.map((block) => block.mode))].map((mode) => ({
+export const modeLegendExtras = (telescopeMode: readonly TelescopeModeBlock[]): LegendExtra[] =>
+  [...new Set(telescopeMode.map((block) => block.mode))].map((mode) => ({
     key: `mode-${mode}`,
     label: TELESCOPE_MODE_LABEL[mode],
     swatch: { backgroundColor: modeColor(mode) },
   }));
 
-export const tooLegendExtras = (tooBlocks: readonly TooBlock[]): LegendExtra[] =>
-  [...new Set(tooBlocks.map((block) => block.tooSupport))].map((too) => ({
+export const tooLegendExtras = (tooSupport: readonly TooSupportBlock[]): LegendExtra[] =>
+  [...new Set(tooSupport.map((block) => block.tooSupport))].map((too) => ({
     key: `too-${too}`,
     label: TOO_SUPPORT_LABEL[too],
     swatch: { backgroundColor: tooColor(too) },
@@ -181,7 +189,7 @@ export const calendarLegendExtras = (options: {
 ];
 
 /** The instrument's own hue hatched with its measured ink: identity on the hue, stripes say reserved. */
-const engineeringPattern = (instrument: Instrument): PatternObject => ({
+const engineeringPattern = (instrument: ResourceInstrument): PatternObject => ({
   pattern: {
     path: { d: 'M 0 8 L 8 0', strokeWidth: 2.5 },
     width: 8,

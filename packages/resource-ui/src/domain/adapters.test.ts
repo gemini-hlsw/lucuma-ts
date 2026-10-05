@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
 
-import { toMountings, toPublishedSemesters } from './adapters';
+import { toInstrumentAvailability, toPublishedSemesters } from './adapters';
 
-type Block = Parameters<typeof toMountings>[0][number];
+type Block = Parameters<typeof toInstrumentAvailability>[0][number];
 
 /** The warning dedupes on `publishedName` in a set nothing clears, so each test needs a fresh name. */
 const block = (location: Block['location'], publishedName = 'GMOS-S'): Block => ({
@@ -15,7 +15,7 @@ const block = (location: Block['location'], publishedName = 'GMOS-S'): Block => 
   location,
 });
 
-describe(toMountings, () => {
+describe(toInstrumentAvailability, () => {
   let warn: MockInstance<typeof console.warn>;
 
   beforeEach(() => {
@@ -27,24 +27,30 @@ describe(toMountings, () => {
   });
 
   it('reads a PORT record as a port and no place', () => {
-    const [mounting] = toMountings([block({ __typename: 'InstrumentLocation', place: 'PORT', port: 3 })]);
+    const [instrumentBlock] = toInstrumentAvailability([
+      block({ __typename: 'InstrumentLocation', place: 'PORT', port: 3 }),
+    ]);
 
-    expect(mounting).toMatchObject({ port: 3, place: null });
+    expect(instrumentBlock).toMatchObject({ port: 3, place: null });
     expect(warn).not.toHaveBeenCalled();
   });
 
   it('reads any other place as a place and no port', () => {
-    const [mounting] = toMountings([block({ __typename: 'InstrumentLocation', place: 'LAB', port: null })]);
+    const [instrumentBlock] = toInstrumentAvailability([
+      block({ __typename: 'InstrumentLocation', place: 'LAB', port: null }),
+    ]);
 
-    expect(mounting).toMatchObject({ port: null, place: 'LAB' });
+    expect(instrumentBlock).toMatchObject({ port: null, place: 'LAB' });
     expect(warn).not.toHaveBeenCalled();
   });
 
   it('reads a PORT record with no port number as off-port, and says so', () => {
     // It must not throw - one bad record would empty a night - and must not pass silently.
-    const [mounting] = toMountings([block({ __typename: 'InstrumentLocation', place: 'PORT', port: null })]);
+    const [instrumentBlock] = toInstrumentAvailability([
+      block({ __typename: 'InstrumentLocation', place: 'PORT', port: null }),
+    ]);
 
-    expect(mounting).toMatchObject({ port: null, place: 'UNKNOWN' });
+    expect(instrumentBlock).toMatchObject({ port: null, place: 'UNKNOWN' });
     expect(warn).toHaveBeenCalledTimes(1);
     expect(String(warn.mock.calls[0]?.[0])).toContain('GMOS-S');
   });
@@ -52,9 +58,17 @@ describe(toMountings, () => {
   it('says it once per instrument, however many of its records are wrong', () => {
     // One line per broken instrument is a warning; one per record buries the console.
     const wrong = { __typename: 'InstrumentLocation', place: 'PORT', port: null } as const;
-    const mountings = toMountings([block(wrong, 'GNIRS'), block(wrong, 'GNIRS'), block(wrong, 'NIFS')]);
+    const instrumentAvailability = toInstrumentAvailability([
+      block(wrong, 'GNIRS'),
+      block(wrong, 'GNIRS'),
+      block(wrong, 'NIFS'),
+    ]);
 
-    expect(mountings.map((mounting) => mounting.place)).toEqual(['UNKNOWN', 'UNKNOWN', 'UNKNOWN']);
+    expect(instrumentAvailability.map((instrumentBlock) => instrumentBlock.place)).toEqual([
+      'UNKNOWN',
+      'UNKNOWN',
+      'UNKNOWN',
+    ]);
     expect(warn).toHaveBeenCalledTimes(2);
     expect(String(warn.mock.calls[0]?.[0])).toContain('GNIRS');
     expect(String(warn.mock.calls[1]?.[0])).toContain('NIFS');

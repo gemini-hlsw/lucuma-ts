@@ -2,7 +2,7 @@ import type { XAxisOptions } from 'highcharts';
 import { describe, expect, it } from 'vitest';
 
 import { observingNightInterval } from '@/domain/siteTime';
-import type { Closure } from '@/domain/types';
+import type { TelescopeAvailabilityBlock } from '@/domain/types';
 import { buildWeekTimeline } from '@/domain/weekTimeline';
 import { DENSE } from '@/features/timeline/timelineOptions';
 import { collectFontSizes } from '@/test/fontSizes';
@@ -21,8 +21,8 @@ const build = (nightsWithData?: ReadonlySet<string>) =>
   buildWeekTimeline({
     site: 'GS',
     firstNight: FIRST,
-    mountings: [],
-    closures: [],
+    instrumentAvailability: [],
+    telescopeAvailability: [],
     nightsWithData,
   });
 
@@ -107,7 +107,7 @@ describe('a telescope-wide closure across the week', () => {
     start: observingNightInterval('GS', '2026-11-16').start,
     end: observingNightInterval('GS', '2026-11-17').end,
   };
-  const shutdown: Closure = {
+  const shutdown: TelescopeAvailabilityBlock = {
     id: 'wide',
     availability: 'CLOSED',
     port: null,
@@ -120,8 +120,8 @@ describe('a telescope-wide closure across the week', () => {
       buildWeekTimeline({
         site: 'GS',
         firstNight: FIRST,
-        mountings: [],
-        closures: [shutdown],
+        instrumentAvailability: [],
+        telescopeAvailability: [shutdown],
         nightsWithData: undefined,
       }),
       'GS',

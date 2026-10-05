@@ -11,7 +11,14 @@ import {
   type TimelineNight,
   type TimelineRow,
 } from './timeline';
-import type { Closure, Interval, ModeBlock, Mounting, Site, TooBlock } from './types';
+import type {
+  InstrumentAvailabilityBlock,
+  Interval,
+  Site,
+  TelescopeAvailabilityBlock,
+  TelescopeModeBlock,
+  TooSupportBlock,
+} from './types';
 
 export interface TimelineMonth {
   readonly year: number;
@@ -60,21 +67,21 @@ export interface BuildSemesterTimelineOptions {
   readonly site: Site;
   readonly firstNight: string;
   readonly lastNight: string;
-  readonly mountings: readonly Mounting[];
-  readonly closures: readonly Closure[];
+  readonly instrumentAvailability: readonly InstrumentAvailabilityBlock[];
+  readonly telescopeAvailability: readonly TelescopeAvailabilityBlock[];
   /** The state rows head every month only when some records exist, like the night view. */
-  readonly tooBlocks?: readonly TooBlock[];
-  readonly modeBlocks?: readonly ModeBlock[];
+  readonly tooSupport?: readonly TooSupportBlock[];
+  readonly telescopeMode?: readonly TelescopeModeBlock[];
 }
 
 export const buildSemesterTimeline = ({
   site,
   firstNight,
   lastNight,
-  mountings,
-  closures,
-  tooBlocks = [],
-  modeBlocks = [],
+  instrumentAvailability,
+  telescopeAvailability,
+  tooSupport = [],
+  telescopeMode = [],
 }: BuildSemesterTimelineOptions): SemesterTimeline => {
   const nights: readonly TimelineNight[] = nightsFrom(firstNight, lastNight).map((observingNight) => {
     const eveningDate = addDays(observingNight, -1);
@@ -89,7 +96,10 @@ export const buildSemesterTimeline = ({
   });
 
   // The state rows join once, so every month and the block table's rows carry the same head.
-  const collected = [...collectStateRows(closures, tooBlocks, modeBlocks), ...collectBlocks({ mountings, closures })];
+  const collected = [
+    ...collectStateRows(telescopeAvailability, tooSupport, telescopeMode),
+    ...collectBlocks({ instrumentAvailability, telescopeAvailability }),
+  ];
 
   // Group by the evening date's month, so a column sits under the month the sheet prints it under.
   const byMonth = new Map<string, TimelineNight[]>();
@@ -112,7 +122,7 @@ export const buildSemesterTimeline = ({
       interval: bounds,
       nights: monthNights,
       rows: placeBlocks(collected, bounds),
-      bands: placeBands(closures, bounds),
+      bands: placeBands(telescopeAvailability, bounds),
     };
   });
 
@@ -122,7 +132,7 @@ export const buildSemesterTimeline = ({
     end: nights.at(-1)?.interval.end ?? 0,
   };
   const rows = placeBlocks(collected, wholeSemester);
-  const bands = placeBands(closures, wholeSemester);
+  const bands = placeBands(telescopeAvailability, wholeSemester);
 
   return { months, rows, bands, ...legendFor(rows, bands) };
 };

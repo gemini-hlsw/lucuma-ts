@@ -9,7 +9,7 @@ import { __unstable__loadDesignSystem } from 'tailwindcss';
 import tailwindTheme from 'tailwindcss/theme.css?raw';
 import { describe, expect, it } from 'vitest';
 
-import type { Instrument } from '@/domain/types';
+import type { ResourceInstrument } from '@/domain/types';
 import { DENSE, INSTRUMENT_LABEL, instrumentColor, instrumentInk, TICK } from '@/features/timeline/timelineOptions';
 import { contrastRatio, pixelOver } from '@/test/styleProbe';
 
@@ -99,7 +99,7 @@ describe('every custom property the code names', () => {
 
 describe('the ink chosen per instrument', () => {
   // Keyed by the enum, so an instrument added to the schema arrives here with its colour.
-  const instruments = Object.keys(INSTRUMENT_LABEL) as Instrument[];
+  const instruments = Object.keys(INSTRUMENT_LABEL) as ResourceInstrument[];
 
   it.each(instruments)('%s carries an ink that clears 4.5:1 on its own fill', (instrument) => {
     // Opaque hex either side, so compositing over black is the colour itself.

@@ -1,7 +1,7 @@
 import { portRowLabel } from './ports';
 import type { TimelineNight } from './timeline';
 import { nightAt, USAGE_LABEL } from './timeline';
-import type { Closure, Instrument, Mounting } from './types';
+import type { InstrumentAvailabilityBlock, ResourceInstrument, TelescopeAvailabilityBlock } from './types';
 
 /** INSTRUMENT also covers a usability change, not only an instrument swap. */
 export type CalendarNewsKind = 'INSTRUMENT' | 'CLOSED' | 'OPEN';
@@ -15,7 +15,7 @@ export interface CalendarNewsItem {
   /** The row the change is about; null for the telescope's own news. */
   readonly rowLabel: string | null;
   /** The incoming instrument, for the chip's hue; null for telescope news. */
-  readonly instrument: Instrument | null;
+  readonly instrument: ResourceInstrument | null;
   /** The closure reason or record note, for the tooltip. */
   readonly detail: string | null;
 }
@@ -24,8 +24,8 @@ interface RowBoundary {
   /** The port the change is on - the row the chip belongs to. */
   readonly port: number;
   readonly instant: number;
-  ending?: Mounting;
-  beginning?: Mounting;
+  ending?: InstrumentAvailabilityBlock;
+  beginning?: InstrumentAvailabilityBlock;
 }
 
 /** A swap names both instruments, a usability change the new usage, a one-sided boundary in or out. */
@@ -43,12 +43,12 @@ const phrase = ({ ending, beginning }: RowBoundary): string => {
 
 export const buildCalendarNews = ({
   nights,
-  mountings,
-  closures,
+  instrumentAvailability,
+  telescopeAvailability,
 }: {
   readonly nights: readonly TimelineNight[];
-  readonly mountings: readonly Mounting[];
-  readonly closures: readonly Closure[];
+  readonly instrumentAvailability: readonly InstrumentAvailabilityBlock[];
+  readonly telescopeAvailability: readonly TelescopeAvailabilityBlock[];
 }): readonly CalendarNewsItem[] => {
   const windowStart = nights[0]?.interval.start ?? 0;
   const windowEnd = nights.at(-1)?.interval.end ?? 0;
@@ -66,15 +66,15 @@ export const buildCalendarNews = ({
     return existing;
   };
   // Ports only: an instrument moving between storage places is inventory, not a night's headline.
-  for (const mounting of mountings) {
-    if (mounting.port === null) {
+  for (const instrumentBlock of instrumentAvailability) {
+    if (instrumentBlock.port === null) {
       continue;
     }
-    if (inside(mounting.interval.start)) {
-      boundaryAt(mounting.port, mounting.interval.start).beginning = mounting;
+    if (inside(instrumentBlock.interval.start)) {
+      boundaryAt(instrumentBlock.port, instrumentBlock.interval.start).beginning = instrumentBlock;
     }
-    if (inside(mounting.interval.end)) {
-      boundaryAt(mounting.port, mounting.interval.end).ending = mounting;
+    if (inside(instrumentBlock.interval.end)) {
+      boundaryAt(instrumentBlock.port, instrumentBlock.interval.end).ending = instrumentBlock;
     }
   }
   for (const boundary of boundaries.values()) {
@@ -94,23 +94,23 @@ export const buildCalendarNews = ({
   }
 
   // The closed nights are the squares' wash; these chips mark the instants.
-  for (const closure of closures) {
-    if (closure.port !== null || closure.availability !== 'CLOSED') {
+  for (const telescopeBlock of telescopeAvailability) {
+    if (telescopeBlock.port !== null || telescopeBlock.availability !== 'CLOSED') {
       continue;
     }
-    const begins = eveningOf(closure.interval.start);
-    if (inside(closure.interval.start) && begins !== null) {
+    const begins = eveningOf(telescopeBlock.interval.start);
+    if (inside(telescopeBlock.interval.start) && begins !== null) {
       items.push({
         eveningDate: begins,
         kind: 'CLOSED',
-        label: closure.reason ?? 'Closed',
+        label: telescopeBlock.reason ?? 'Closed',
         rowLabel: null,
         instrument: null,
-        detail: closure.reason,
+        detail: telescopeBlock.reason,
       });
     }
-    const reopens = eveningOf(closure.interval.end);
-    if (inside(closure.interval.end) && reopens !== null) {
+    const reopens = eveningOf(telescopeBlock.interval.end);
+    if (inside(telescopeBlock.interval.end) && reopens !== null) {
       items.push({
         eveningDate: reopens,
         kind: 'OPEN',

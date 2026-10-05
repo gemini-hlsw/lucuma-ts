@@ -29,7 +29,7 @@ const presetConfig = {
 /** `sort` is missing from `CodegenConfig`, hence the intersection. Alphabetising `TooSupport` breaks a scale. */
 const config: CodegenConfig & { sort: boolean } = {
   overwrite: true,
-  schema: './mock-server/schema.graphql',
+  schema: import.meta.resolve('@gemini-hlsw/lucuma-odb-schemas/resource'),
   ignoreNoDocuments: true,
   documents: ['src/gql/**/*.ts', 'src/**/*.tsx'],
   sort: false,
@@ -39,7 +39,7 @@ const config: CodegenConfig & { sort: boolean } = {
       config: sharedConfig,
       presetConfig,
     },
-    // The one schema every consumer reads: the mock server, the tests and the test Apollo client.
+    // The package schema with its `#import`s expanded, for the tests that build it in the browser.
     'src/gql/gen/schema.graphql': {
       plugins: ['./tasks/printSchemaPlugin.ts'],
     },

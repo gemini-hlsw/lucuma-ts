@@ -38,17 +38,25 @@ export default function NightPage(): JSX.Element {
   const interval = observingNightInterval(site, observingNight);
   const held = semesterHolding(semesters, site, observingNight);
 
-  const { mountings, closures, tooBlocks, modeBlocks, subsystemBlocks, loading, error, dataAvailable } =
-    useNightSchedule(site, observingNight, toApiInterval(interval));
+  const {
+    instrumentAvailability,
+    telescopeAvailability,
+    tooSupport,
+    telescopeMode,
+    telescopeSubsystemAvailability,
+    loading,
+    error,
+    dataAvailable,
+  } = useNightSchedule(site, observingNight, toApiInterval(interval));
 
   const night = buildNightTimeline({
     site,
     observingNight,
-    mountings,
-    closures,
-    tooBlocks,
-    modeBlocks,
-    subsystemBlocks,
+    instrumentAvailability,
+    telescopeAvailability,
+    tooSupport,
+    telescopeMode,
+    telescopeSubsystemAvailability,
   });
 
   const options = buildNightChartOptions({ night, site, now, timeDisplay });
@@ -131,9 +139,9 @@ export default function NightPage(): JSX.Element {
         <>
           <TimelineLegendBar
             legend={night}
-            telescope={telescopeLegendExtras(closures)}
-            mode={modeLegendExtras(modeBlocks)}
-            too={tooLegendExtras(tooBlocks)}
+            telescope={telescopeLegendExtras(telescopeAvailability)}
+            mode={modeLegendExtras(telescopeMode)}
+            too={tooLegendExtras(tooSupport)}
             sky={skyLegendExtras()}
             calendar={calendarLegendExtras({
               now: now !== null && now >= interval.start && now < interval.end && 'Now',

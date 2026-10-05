@@ -12,7 +12,5 @@
     "exactOptionalPropertyTypes": false,
     "noPropertyAccessFromIndexSignature": false
   },
-  "comment": "mock-server is included so tests can typecheck the shared mock core; server.ts is node-only and typechecked by tsconfig.node.json.",
-  "include": ["src", "mock-server"],
-  "exclude": ["mock-server/server.ts"]
+  "include": ["src"]
 }
