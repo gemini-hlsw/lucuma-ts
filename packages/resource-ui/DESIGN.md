@@ -380,8 +380,8 @@ the workflow into it, but keep masthead selections global and page controls loca
     site straight back, and a copied URL would open at the recipient's site, not the sender's.
   - **Semester is the semester page's.** Only /semester reads a semester, so its picker lives
     in that page's header beside Chart|Calendar, page-scoped through the URL with `month`
-    dropping alongside. Night, week and the finders derive what they need from the night they
-    report on. A stale `?semester=` elsewhere is unread, not scrubbed.
+    dropping alongside. Night and week derive what they need from the night they report on, the
+    finders from tonight. A stale `?semester=` elsewhere is unread, not scrubbed.
   - **Clock is the reader's.** Site time or UTC is a reading habit, not part of a shared link,
     so it lives in the menu under SETTINGS and persists per browser rather than in the URL.
     Page-scoped parameters live in the URL per page, defaults deleted rather than written.
@@ -389,8 +389,9 @@ the workflow into it, but keep masthead selections global and page controls loca
   the night in progress; the wordmark links home to it, and the night and week pages carry a
   Tonight button.
 - **The finder pages are site-scoped, never semester-scoped.** "Where is Zorro" is not a
-  semester question, and a piece's history does not restart in February. They report on the
-  night in the URL, over the site's whole recorded span; no semester decides what they can see.
+  semester question, and a piece's history does not restart in February. They report on
+  tonight, over the 400 days ending tonight (the longest window the Resource service accepts);
+  neither the semester nor the night in the URL decides what they show.
 - **The clock choice belongs to the reader, literally.** Site time and UTC are both real
   working zones; the choice picks the zone every clock time renders in, while observing-night
   labels and evening dates stay on the site's own calendar. It is a per-browser preference:

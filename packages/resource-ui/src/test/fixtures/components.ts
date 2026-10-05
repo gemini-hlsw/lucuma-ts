@@ -47,9 +47,8 @@ export const instrumentComponentAvailabilityBlock = ({
   component,
 });
 
-/** Pass the window from `siteSpan`: the browser asks for the site's whole record. */
 export const componentBrowser = (
-  variables: ComponentBrowserQueryVariables,
+  variables: ComponentBrowserQueryVariables | ((variables: ComponentBrowserQueryVariables) => boolean),
   data: Partial<ComponentBrowserQuery> = {},
 ): MockedResponseOf<typeof COMPONENT_BROWSER_QUERY> => ({
   request: { query: COMPONENT_BROWSER_QUERY, variables },

@@ -4,8 +4,8 @@ import { Dropdown } from 'primereact/dropdown';
 import { InputText } from 'primereact/inputtext';
 import { type JSX, useState } from 'react';
 
+import { RECENT_DAYS, useRecentSpan } from '@/app/useRecentSpan';
 import { useSelection } from '@/app/useSelection';
-import { useSiteSpan } from '@/app/useSiteSpan';
 import { useUrlParam } from '@/app/useUrlParam';
 import { FilterField } from '@/components/ui/FilterField';
 import { countedOption } from '@/components/ui/filterOptions';
@@ -31,7 +31,7 @@ import { InstrumentSwatch } from '@/features/timeline/InstrumentSwatch';
 import { INSTRUMENT_LABEL } from '@/features/timeline/timelineOptions';
 import { useComponentBrowser, usePublishedSemesters } from '@/gql/hooks';
 
-/** The piece's records over the site's whole span, with "Installed" resolved to where it was. */
+/** The piece's recent records, with "Installed" resolved to where it was. */
 function History({
   blocks,
   instrumentAvailability,
@@ -67,7 +67,7 @@ function History({
 }
 
 export default function ComponentsPage(): JSX.Element {
-  const { site, observingNight } = useSelection();
+  const { site, tonight } = useSelection();
   const { semesters, loading: loadingSets, error: setsError } = usePublishedSemesters();
   // The filters live in the URL, so "the R400 gratings at GS" is a sendable link.
   const [search, setSearch] = useUrlParam('q', '', { replace: true });
@@ -79,16 +79,15 @@ export default function ComponentsPage(): JSX.Element {
   // Which rows are open stays local: it is reading posture, not a finding.
   const [expanded, setExpanded] = useState<FinderRow[]>([]);
 
-  // The site's whole recorded span, not the semester: a piece's story does not restart in February.
-  const held = semesterHolding(semesters, site, observingNight);
-  const bounds = useSiteSpan();
+  const held = semesterHolding(semesters, site, tonight);
+  const bounds = useRecentSpan();
 
   const { components, componentAvailability, instrumentAvailability, loading, error } = useComponentBrowser(
     site,
     bounds,
   );
 
-  const night = observingNightInterval(site, observingNight);
+  const night = observingNightInterval(site, tonight);
 
   const rows = buildFinderRows({ components, blocks: componentAvailability, instrumentAvailability, night });
 
@@ -146,7 +145,7 @@ export default function ComponentsPage(): JSX.Element {
     <div className="min-w-0">
       <PageHeader title="Components" demo={held?.demo === true}>
         Where every instrument piece is on the night of {eveningLabel(firstEveningDate(site, night))}. Open a row for
-        its history.
+        its history over the past {RECENT_DAYS} days.
       </PageHeader>
 
       {failure !== undefined && <ErrorAlert what="the components" error={failure} />}

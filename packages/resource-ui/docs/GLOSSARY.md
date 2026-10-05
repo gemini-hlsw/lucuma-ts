@@ -6,7 +6,7 @@ are, and when.
 ## Language
 
 **Inventory**:
-Everything a site has ever recorded, of one kind (instruments or components), with the state of each one right now.
+Everything a site has recorded in the past 400 days, of one kind (instruments or components), with the state of each one right now.
 Always the present; a past date is read on one item's history, not on the inventory.
 _Avoid_: Finder, browser
 
