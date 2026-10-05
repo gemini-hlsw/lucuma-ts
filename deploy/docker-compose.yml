@@ -1,6 +1,8 @@
 services:
   database:
-    image: postgres:18
+    # Pinned to 17, which is what existing deployments use.
+    # A major bump needs a pg_dumpall/restore (or pg_upgrade).
+    image: postgres:17
     container_name: navigate-db
     restart: unless-stopped
     environment:
