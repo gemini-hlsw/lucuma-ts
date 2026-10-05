@@ -54,12 +54,15 @@ the clock toggle, finder scoping) are DESIGN.md's. The mechanics:
   URL, not written, and subordinate parameters drop in the same update: the calendar's month
   belongs to the calendar alone, so switching view or semester drops it.
 - **A navigation carries `site` and `night` and nothing else**, through
-  `app/carriedSelection.ts` - the one answer to what survives a link. Every other parameter
+  `app/carriedSelection.ts` - the one answer to what survives a link. A menu link to the
+  inventory carries `site` alone (`carries` in `SidebarMenu.ts`), since those pages answer for
+  tonight and never read a night. Every other parameter
   (`semester`, `month`, `view`, `q`, `instrument`, `type`, `location`) is one page's, and is
   dropped at the boundary rather than following the reader into a view that never reads it.
   This is react-router's own default for `to`; carrying more would be the hand-written
   override, so a new link needs no convention, only the helper where it wants site and night.
-- Site scoping for the finder pages comes from `app/useSiteSpan.ts`.
+- The finder pages' window comes from `app/useRecentSpan.ts`: the 400 days ending tonight, the longest
+  window the Resource service accepts.
 
 ## Auth mechanics
 
@@ -218,13 +221,13 @@ changing an operation or bumping the schema package, run `codegen`**; `prebuild`
 One request per page load; every view gets its whole window in one response, all range queries
 `clip: false`:
 
-| Operation            | What it reads                                                                                                           | Views                                                   |
-| -------------------- | ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
-| `PublishedSemesters` | `publishedSemesters`                                                                                                    | the shell's semester picker; every view's bounds        |
-| `SemesterSchedule`   | `instrumentAvailability`, `telescopeAvailability`, `tooSupport`, `telescopeMode`                                        | Semester; `/instruments`, over the site's recorded span |
-| `NightSchedule`      | `telescopeNight` (`dataAvailable` and the interval) plus those four and `telescopeSubsystemAvailability`                | Night                                                   |
-| `WeekSchedule`       | `telescopeNights` (per-night `dataAvailable`) plus the four of `SemesterSchedule` and `instrumentComponentAvailability` | Week                                                    |
-| `ComponentBrowser`   | `components`, `instrumentComponentAvailability`, `instrumentAvailability`                                               | `/components`, over the site's recorded span            |
+| Operation            | What it reads                                                                                                           | Views                                            |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| `PublishedSemesters` | `publishedSemesters`                                                                                                    | the shell's semester picker; every view's bounds |
+| `SemesterSchedule`   | `instrumentAvailability`, `telescopeAvailability`, `tooSupport`, `telescopeMode`                                        | Semester; `/instruments`, over the past 400 days |
+| `NightSchedule`      | `telescopeNight` (`dataAvailable` and the interval) plus those four and `telescopeSubsystemAvailability`                | Night                                            |
+| `WeekSchedule`       | `telescopeNights` (per-night `dataAvailable`) plus the four of `SemesterSchedule` and `instrumentComponentAvailability` | Week                                             |
+| `ComponentBrowser`   | `components`, `instrumentComponentAvailability`, `instrumentAvailability`                                               | `/components`, over the past 400 days            |
 
 ## Data flow
 

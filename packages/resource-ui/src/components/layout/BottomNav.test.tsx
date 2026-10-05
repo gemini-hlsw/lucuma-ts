@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { NAV_LINKS_FROM_GS_SEMESTER } from '@/test/fixtures/navLinks';
 import { renderApp } from '@/test/renderApp';
 
 import BottomNav from './BottomNav';
@@ -28,7 +29,7 @@ describe(BottomNav, () => {
     for (const item of ALL_ITEMS) {
       await expect
         .element(screen.getByRole('link', { name: item.label, exact: true }))
-        .toHaveAttribute('href', `${item.to}?site=GS&night=2026-09-14`);
+        .toHaveAttribute('href', NAV_LINKS_FROM_GS_SEMESTER[item.to]);
     }
   });
 

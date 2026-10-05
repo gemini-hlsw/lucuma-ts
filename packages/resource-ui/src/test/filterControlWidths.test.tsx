@@ -25,9 +25,10 @@ import { buildSemesterTimeline } from '@/domain/semesterTimeline';
 import { observingNightInterval } from '@/domain/siteTime';
 import type { InstrumentAvailabilityBlock, PublishedSemester } from '@/domain/types';
 import { SemesterCalendar } from '@/features/semester/SemesterCalendar';
-import { instrumentAvailabilityBlock, overNights } from '@/test/fixtures/blocks';
+import { instrumentAvailabilityBlock } from '@/test/fixtures/blocks';
 import { componentBrowser, instrumentComponent } from '@/test/fixtures/components';
-import { publishedSemester, publishedSemesters, semesterSchedule, siteSpan } from '@/test/fixtures/semester';
+import { publishedSemester, publishedSemesters, recentSpan, semesterSchedule } from '@/test/fixtures/semester';
+import { nightsFromTonight } from '@/test/fixtures/tonight';
 import { openDropdown, selectDropdownOption } from '@/test/helpers';
 import { renderApp } from '@/test/renderApp';
 import { ROOT_FONT_SIZE } from '@/test/styleProbe';
@@ -97,19 +98,19 @@ const CATALOG = [
 const openComponents = (element: ReactElement) =>
   renderApp({
     element,
-    route: '/components?site=GS&night=2025-10-15',
-    mocks: [publishedSemesters(GS_2025B), componentBrowser(siteSpan(GS_2025B), { components: CATALOG })],
+    route: '/components?site=GS',
+    mocks: [publishedSemesters(GS_2025B), componentBrowser(recentSpan('GS'), { components: CATALOG })],
   });
 
-const GN_WHOLE = overNights('GN', '2026-08-02', '2027-02-01');
+const GN_WHOLE = nightsFromTonight('GN', -60, 60);
 
 const openInstruments = () =>
   renderApp({
     element: <InstrumentsPage />,
-    route: '/instruments?site=GN&night=2026-09-26',
+    route: '/instruments?site=GN',
     mocks: [
       publishedSemesters(GN_2026B),
-      semesterSchedule(siteSpan(GN_2026B), {
+      semesterSchedule(recentSpan('GN'), {
         instrumentAvailability: [
           instrumentAvailabilityBlock({ instrument: 'GNIRS', port: 3, interval: GN_WHOLE }),
           instrumentAvailabilityBlock({ instrument: 'ALOPEKE', place: 'UNKNOWN', interval: GN_WHOLE }),

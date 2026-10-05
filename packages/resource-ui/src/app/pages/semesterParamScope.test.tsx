@@ -13,7 +13,8 @@ import { addDays } from '@/domain/semester';
 import { WEEK_NIGHTS } from '@/domain/weekTimeline';
 import { instrumentAvailabilityBlock, overNights } from '@/test/fixtures/blocks';
 import { componentBrowser, instrumentComponent } from '@/test/fixtures/components';
-import { publishedSemester, publishedSemesters, semesterSchedule, siteSpan } from '@/test/fixtures/semester';
+import { publishedSemester, publishedSemesters, recentSpan, semesterSchedule } from '@/test/fixtures/semester';
+import { nightsFromTonight } from '@/test/fixtures/tonight';
 import { renderApp } from '@/test/renderApp';
 
 import ComponentsPage from './ComponentsPage';
@@ -25,7 +26,7 @@ const NIGHT = '2025-11-14';
 const GS_2024B = publishedSemester({ site: 'GS', semester: '2024B' });
 const GS_2025B = publishedSemester({ site: 'GS', semester: '2025B' });
 const SEMESTERS = publishedSemesters(GS_2024B, GS_2025B);
-const GS_WHOLE = overNights('GS', '2024-08-02', '2026-02-01');
+const GS_WHOLE = nightsFromTonight('GS', -60, 60);
 
 /** The API takes an interval as plain start and end; a selected one carries its `__typename` too. */
 const asInput = ({ start, end }: { start: string; end: string }) => ({ start, end });
@@ -74,14 +75,14 @@ const WEEK_SCHEDULE: MockedResponseOf<typeof WEEK_SCHEDULE_QUERY> = {
   },
 };
 
-const INSTRUMENTS = semesterSchedule(siteSpan(GS_2024B, GS_2025B), {
+const INSTRUMENTS = semesterSchedule(recentSpan('GS'), {
   instrumentAvailability: [
     instrumentAvailabilityBlock({ instrument: 'GHOST', port: 1, interval: GS_WHOLE }),
     instrumentAvailabilityBlock({ instrument: 'GPI', place: 'BASE', usage: 'UNAVAILABLE', interval: GS_WHOLE }),
   ],
 });
 
-const COMPONENTS = componentBrowser(siteSpan(GS_2024B, GS_2025B), {
+const COMPONENTS = componentBrowser(recentSpan('GS'), {
   components: [instrumentComponent({ name: 'g' }), instrumentComponent({ id: 'k-gs-r', code: 'r_G0326', name: 'r' })],
 });
 
@@ -117,8 +118,8 @@ describe('the semester parameter outside /semester', () => {
     await expect.poll(() => stale.getByRole('heading', { level: 1 }).element().textContent).toBe(heading);
   });
 
-  it('scopes the finders to the site and the night, never to a semester', async () => {
-    // The finders report the site's whole record, so a semester in the URL must change nothing at all.
+  it('scopes the finders to the site alone, never to a semester or a night', async () => {
+    // The finders answer for tonight, so a semester or night in the URL must change nothing at all.
     const pages: { element: JSX.Element; testId: string; schedule: MockLink.MockedResponse }[] = [
       { element: <InstrumentsPage />, testId: 'instrument-table', schedule: INSTRUMENTS },
       { element: <ComponentsPage />, testId: 'component-table', schedule: COMPONENTS },
@@ -128,7 +129,7 @@ describe('the semester parameter outside /semester', () => {
       const rendered = async (search: string): Promise<string> => {
         const screen = await renderApp({
           element,
-          route: `/finder?site=GS&night=${NIGHT}${search}`,
+          route: `/finder?site=GS${search}`,
           mocks: [SEMESTERS, schedule],
         });
         const table = screen.getByTestId(testId);
@@ -139,7 +140,7 @@ describe('the semester parameter outside /semester', () => {
         return text;
       };
 
-      expect(await rendered('&semester=2024B')).toBe(await rendered(''));
+      expect(await rendered(`&semester=2024B&night=${NIGHT}`)).toBe(await rendered(''));
     }
   });
 });

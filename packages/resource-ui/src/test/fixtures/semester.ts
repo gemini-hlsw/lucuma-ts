@@ -2,8 +2,10 @@ import type { MockedResponseOf } from '@gemini-hlsw/lucuma-common-ui/testing';
 import type { PublishedSemestersQuery, SemesterScheduleQuery, SemesterScheduleQueryVariables } from '@gql/gen/graphql';
 import { PUBLISHED_SEMESTERS_QUERY, SEMESTER_SCHEDULE_QUERY } from '@gql/resource';
 
+import { RECENT_DAYS } from '@/app/useRecentSpan';
 import { addDays } from '@/domain/semester';
-import { SITE_NAMES } from '@/domain/types';
+import { DAY_MS } from '@/domain/siteTime';
+import { type Site, SITE_NAMES } from '@/domain/types';
 
 import { overNights } from './blocks';
 
@@ -51,12 +53,12 @@ export const semesterWindow = ({ site, nights }: PublishedSemesterRow): Semester
 
 /** Pass a semester to answer the window its page asks for, or explicit variables to pin that window. */
 export const semesterSchedule = (
-  window: PublishedSemesterRow | SemesterScheduleQueryVariables,
+  window: PublishedSemesterRow | SemesterScheduleQueryVariables | ReturnType<typeof recentSpan>,
   blocks: Partial<SemesterScheduleQuery> = {},
 ): MockedResponseOf<typeof SEMESTER_SCHEDULE_QUERY> => ({
   request: {
     query: SEMESTER_SCHEDULE_QUERY,
-    variables: 'nights' in window ? semesterWindow(window) : window,
+    variables: typeof window === 'function' || !('nights' in window) ? window : semesterWindow(window),
   },
   result: {
     data: {
@@ -69,15 +71,10 @@ export const semesterSchedule = (
   },
 });
 
-/** The window the finders ask for: the site's whole record. Pass one site's semesters in date order. */
-export const siteSpan = (
-  first: PublishedSemesterRow,
-  ...rest: PublishedSemesterRow[]
-): SemesterScheduleQueryVariables => {
-  const last = rest.at(-1) ?? first;
-  return {
-    site: first.site,
-    start: semesterWindow(first).start,
-    end: semesterWindow(last).end,
+/** Matches what the finders ask for, and refuses a window the Resource service would. */
+export const recentSpan =
+  (site: Site) =>
+  (variables: Pick<SemesterScheduleQueryVariables, 'site' | 'start' | 'end'>): boolean => {
+    const days = (Date.parse(variables.end) - Date.parse(variables.start)) / DAY_MS;
+    return variables.site === site && days > 0 && days <= RECENT_DAYS;
   };
-};

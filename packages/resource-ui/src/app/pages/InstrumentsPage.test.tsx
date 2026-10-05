@@ -1,28 +1,21 @@
 import type { InstrumentAvailabilityBlockItemFragment } from '@gql/gen/graphql';
 import { describe, expect, it } from 'vitest';
 
-import { instrumentAvailabilityBlock, overNights } from '@/test/fixtures/blocks';
-import {
-  publishedSemester,
-  type PublishedSemesterRow,
-  publishedSemesters,
-  semesterSchedule,
-  siteSpan,
-} from '@/test/fixtures/semester';
+import { instrumentAvailabilityBlock } from '@/test/fixtures/blocks';
+import { type PublishedSemesterRow, publishedSemesters, recentSpan, semesterSchedule } from '@/test/fixtures/semester';
+import { nightsFromTonight, semesterFromTonight } from '@/test/fixtures/tonight';
 import { openDropdown, selectDropdownOption } from '@/test/helpers';
 import { renderApp } from '@/test/renderApp';
 
 import InstrumentsPage from './InstrumentsPage';
 
-const GN_2026B = publishedSemester({ site: 'GN', semester: '2026B' });
-const GS_2025A = publishedSemester({ site: 'GS', semester: '2025A' });
-const GS_2025B = publishedSemester({ site: 'GS', semester: '2025B' });
-/** A gap away from GS 2025B, so a night in the gap has a "nearest" semester that must not lend it its flag. */
-const GS_2026B_DEMO = publishedSemester({ site: 'GS', semester: '2026B', demo: true });
+const GN_CURRENT = semesterFromTonight('GN', -90, 90);
+const GS_EARLIER = semesterFromTonight('GS', -270, -91);
+const GS_CURRENT = semesterFromTonight('GS', -90, 90);
 
-const GN_NIGHT = '/instruments?site=GN&night=2026-09-26';
-const GN_WHOLE = overNights('GN', '2026-08-02', '2027-02-01');
-const GS_WHOLE = overNights('GS', '2025-08-02', '2026-02-01');
+const GN_NIGHT = '/instruments?site=GN';
+const GN_WHOLE = nightsFromTonight('GN', -60, 60);
+const GS_WHOLE = nightsFromTonight('GS', -60, 60);
 
 const GNIRS = instrumentAvailabilityBlock({ instrument: 'GNIRS', port: 3, interval: GN_WHOLE });
 const MAROON_X = instrumentAvailabilityBlock({
@@ -44,24 +37,24 @@ const ACQ_CAM = instrumentAvailabilityBlock({
   usage: 'UNAVAILABLE',
   interval: GN_WHOLE,
 });
-/** Off Port 1 before late September, so the night holds no record for it. */
+/** Off Port 1 since before tonight, so tonight holds no record for it. */
 const IGRINS2_GONE = instrumentAvailabilityBlock({
   instrument: 'IGRINS2',
   port: 1,
-  interval: overNights('GN', '2026-08-02', '2026-09-10'),
+  interval: nightsFromTonight('GN', -60, -20),
 });
-/** Not available for the evenings of 6 to 17 August 2026, then back on Port 3. */
+/** Not available for twelve nights, then back on Port 3. */
 const GNIRS_SPLIT = [
   instrumentAvailabilityBlock({
     instrument: 'GNIRS',
     port: 3,
     usage: 'UNAVAILABLE',
-    interval: overNights('GN', '2026-08-07', '2026-08-18'),
+    interval: nightsFromTonight('GN', -50, -39),
   }),
-  instrumentAvailabilityBlock({ instrument: 'GNIRS', port: 3, interval: overNights('GN', '2026-08-19', '2027-02-01') }),
+  instrumentAvailabilityBlock({ instrument: 'GNIRS', port: 3, interval: nightsFromTonight('GN', -38, 60) }),
 ];
 
-/** The site's semesters in date order, and the blocks the schedule holds over their whole span. */
+/** The site's semesters in date order, and the blocks the schedule holds over the recent window. */
 const openInstruments = (
   route: string,
   semesters: readonly [PublishedSemesterRow, ...PublishedSemesterRow[]],
@@ -70,22 +63,32 @@ const openInstruments = (
   renderApp({
     element: <InstrumentsPage />,
     route,
-    mocks: [publishedSemesters(...semesters), semesterSchedule(siteSpan(...semesters), { instrumentAvailability })],
+    mocks: [
+      publishedSemesters(...semesters),
+      semesterSchedule(recentSpan(semesters[0].site), { instrumentAvailability }),
+    ],
   });
 
 describe(InstrumentsPage, () => {
   it('lists the site catalog with where each instrument is tonight', async () => {
-    const screen = await openInstruments(GN_NIGHT, [GN_2026B], [GNIRS]);
+    const screen = await openInstruments(GN_NIGHT, [GN_CURRENT], [GNIRS]);
 
     await expect.element(screen.getByText('GNIRS')).toBeVisible();
     await expect.element(screen.getByText('Port 3')).toBeVisible();
   });
 
+  it('answers for tonight whatever night the URL names', async () => {
+    const screen = await openInstruments(`${GN_NIGHT}&night=2024-01-01`, [GN_CURRENT], [GNIRS]);
+
+    await expect.element(screen.getByText('Port 3')).toBeVisible();
+    await expect.element(screen.getByText('Not recorded')).not.toBeInTheDocument();
+  });
+
   it('gives the record its own Note column rather than tucking it under the status', async () => {
     // Under the badge a note starts at a different x on every row, under no heading of its own.
     const screen = await openInstruments(
-      '/instruments?site=GS&night=2025-12-15',
-      [GS_2025B],
+      '/instruments?site=GS',
+      [GS_CURRENT],
       [
         instrumentAvailabilityBlock({
           instrument: 'GPI',
@@ -109,21 +112,21 @@ describe(InstrumentsPage, () => {
 
   it('shows an off-port run as on no port, never inventing a place for it', async () => {
     // The whole reason this page exists: the schedule views draw ports only.
-    const screen = await openInstruments(GN_NIGHT, [GN_2026B], [ALOPEKE]);
+    const screen = await openInstruments(GN_NIGHT, [GN_CURRENT], [ALOPEKE]);
 
     await expect.element(screen.getByText("'Alopeke").first()).toBeVisible();
     await expect.element(screen.getByText('Not on a port').first()).toBeVisible();
   });
 
   it('says nothing is recorded rather than reading an absence as unavailable', async () => {
-    const screen = await openInstruments(GN_NIGHT, [GN_2026B], [IGRINS2_GONE]);
+    const screen = await openInstruments(GN_NIGHT, [GN_CURRENT], [IGRINS2_GONE]);
 
     await expect.element(screen.getByText('IGRINS2')).toBeVisible();
     await expect.element(screen.getByText('Not recorded')).toBeVisible();
   });
 
   it('opens a row into the instrument runs, showing a usability window', async () => {
-    const screen = await openInstruments(GN_NIGHT, [GN_2026B], GNIRS_SPLIT);
+    const screen = await openInstruments(GN_NIGHT, [GN_CURRENT], GNIRS_SPLIT);
 
     await screen.getByRole('button', { name: /expand GNIRS/i }).click();
 
@@ -133,7 +136,7 @@ describe(InstrumentsPage, () => {
   });
 
   it('heads the runs with the same columns whether or not the records fill them', async () => {
-    const screen = await openInstruments(GN_NIGHT, [GN_2026B], GNIRS_SPLIT);
+    const screen = await openInstruments(GN_NIGHT, [GN_CURRENT], GNIRS_SPLIT);
     await screen.getByRole('button', { name: /expand GNIRS/i }).click();
 
     // Two expansions on one page must not disagree about what a column means.
@@ -144,7 +147,7 @@ describe(InstrumentsPage, () => {
   });
 
   it('counts the nights each run lasted, which is what a run list is read for', async () => {
-    const screen = await openInstruments(GN_NIGHT, [GN_2026B], GNIRS_SPLIT);
+    const screen = await openInstruments(GN_NIGHT, [GN_CURRENT], GNIRS_SPLIT);
     await screen.getByRole('button', { name: /expand GNIRS/i }).click();
 
     const runs = screen.getByTestId('instrument-runs');
@@ -152,7 +155,7 @@ describe(InstrumentsPage, () => {
   });
 
   it('search narrows across the tag and the published name', async () => {
-    const screen = await openInstruments(GN_NIGHT, [GN_2026B], [GNIRS, MAROON_X]);
+    const screen = await openInstruments(GN_NIGHT, [GN_CURRENT], [GNIRS, MAROON_X]);
     await expect.element(screen.getByText('GNIRS')).toBeVisible();
 
     await screen.getByLabelText('Search').fill('maroon');
@@ -162,23 +165,23 @@ describe(InstrumentsPage, () => {
   });
 
   it('is a sendable link: the search comes from the URL', async () => {
-    const screen = await openInstruments(`${GN_NIGHT}&q=gnirs`, [GN_2026B], [GNIRS, MAROON_X]);
+    const screen = await openInstruments(`${GN_NIGHT}&q=gnirs`, [GN_CURRENT], [GNIRS, MAROON_X]);
 
     await expect.element(screen.getByText('GNIRS')).toBeVisible();
     await expect.element(screen.getByText('Maroon-X').first()).not.toBeInTheDocument();
   });
 
   it('holds every instrument the site has recorded, not just this semester', async () => {
-    // Zorro sits out GS 2025B but is a GS instrument: a semester-scoped browser would say nothing.
+    // Zorro sits out this semester but is a GS instrument: a semester-scoped browser would say nothing.
     const screen = await openInstruments(
-      '/instruments?site=GS&night=2025-11-20',
-      [GS_2025A, GS_2025B],
+      '/instruments?site=GS',
+      [GS_EARLIER, GS_CURRENT],
       [
         instrumentAvailabilityBlock({
           instrument: 'CAL_ZORRO',
           publishedName: 'Zorro',
           port: 2,
-          interval: overNights('GS', '2025-03-01', '2025-04-01'),
+          interval: nightsFromTonight('GS', -250, -220),
         }),
       ],
     );
@@ -188,7 +191,7 @@ describe(InstrumentsPage, () => {
   });
 
   it('filters by location, counting what each choice buys', async () => {
-    const screen = await openInstruments(GN_NIGHT, [GN_2026B], [GNIRS, ALOPEKE]);
+    const screen = await openInstruments(GN_NIGHT, [GN_CURRENT], [GNIRS, ALOPEKE]);
     await expect.element(screen.getByText('GNIRS')).toBeVisible();
 
     await selectDropdownOption(screen, 'Location', 'Not on a port (1)');
@@ -200,7 +203,7 @@ describe(InstrumentsPage, () => {
   it('orders the location choices from the telescope outwards', async () => {
     const screen = await openInstruments(
       GN_NIGHT,
-      [GN_2026B],
+      [GN_CURRENT],
       [
         ALOPEKE,
         IGRINS2_GONE,
@@ -221,7 +224,7 @@ describe(InstrumentsPage, () => {
 
   it('holds the instruments GPP knows that the schedule never mounts', async () => {
     // The stored layer carries a storage place, never a port, which keeps it off the charts.
-    const screen = await openInstruments(GN_NIGHT, [GN_2026B], [NIRI, ACQ_CAM]);
+    const screen = await openInstruments(GN_NIGHT, [GN_CURRENT], [NIRI, ACQ_CAM]);
 
     await expect.element(screen.getByText('NIRI')).toBeVisible();
     await expect.element(screen.getByText('AcqCam')).toBeVisible();
@@ -230,8 +233,8 @@ describe(InstrumentsPage, () => {
 
   it('filters to a storage place, which is what a stored instrument has instead of a port', async () => {
     const screen = await openInstruments(
-      '/instruments?site=GS&night=2025-11-20',
-      [GS_2025B],
+      '/instruments?site=GS',
+      [GS_CURRENT],
       [
         instrumentAvailabilityBlock({ instrument: 'GPI', place: 'BASE', usage: 'UNAVAILABLE', interval: GS_WHOLE }),
         instrumentAvailabilityBlock({ instrument: 'GHOST', port: 1, interval: GS_WHOLE }),
@@ -246,7 +249,7 @@ describe(InstrumentsPage, () => {
   });
 
   it('is a sendable link: the location filter comes from the URL', async () => {
-    const screen = await openInstruments(`${GN_NIGHT}&location=Port+3`, [GN_2026B], [GNIRS, MAROON_X]);
+    const screen = await openInstruments(`${GN_NIGHT}&location=Port+3`, [GN_CURRENT], [GNIRS, MAROON_X]);
 
     await expect.element(screen.getByText('GNIRS')).toBeVisible();
     await expect.element(screen.getByText('Maroon-X').first()).not.toBeInTheDocument();
@@ -255,11 +258,11 @@ describe(InstrumentsPage, () => {
   it('answers per site - Gemini South holds its own instruments', async () => {
     const screen = await renderApp({
       element: <InstrumentsPage />,
-      route: '/instruments?site=GS&night=2025-11-20',
+      route: '/instruments?site=GS',
       mocks: [
-        publishedSemesters(GS_2025B, GN_2026B),
-        semesterSchedule(siteSpan(GN_2026B), { instrumentAvailability: [GNIRS] }),
-        semesterSchedule(siteSpan(GS_2025B), {
+        publishedSemesters(GS_CURRENT, GN_CURRENT),
+        semesterSchedule(recentSpan('GN'), { instrumentAvailability: [GNIRS] }),
+        semesterSchedule(recentSpan('GS'), {
           instrumentAvailability: [instrumentAvailabilityBlock({ instrument: 'GHOST', port: 1, interval: GS_WHOLE })],
         }),
       ],
@@ -270,15 +273,23 @@ describe(InstrumentsPage, () => {
   });
 
   it('does not wear a distant demo semester’s flag for a night the gap between semesters leaves uncovered', async () => {
-    // 2026-07-01 is nearer the demo semester, so a "nearest semester" fallback would borrow its flag.
-    const screen = await openInstruments('/instruments?site=GS&night=2026-07-01', [GS_2025B, GS_2026B_DEMO], []);
+    // Tonight is nearer the demo semester, so a "nearest semester" fallback would borrow its flag.
+    const screen = await openInstruments(
+      '/instruments?site=GS',
+      [semesterFromTonight('GS', -200, -30), semesterFromTonight('GS', 10, 190, { demo: true })],
+      [],
+    );
 
     await expect.element(screen.getByTestId('instrument-table')).toBeVisible();
     await expect.element(screen.getByTestId('synthetic-data-tag')).not.toBeInTheDocument();
   });
 
   it('flags a night the demo semester actually holds', async () => {
-    const screen = await openInstruments('/instruments?site=GS&night=2026-09-01', [GS_2025B, GS_2026B_DEMO], []);
+    const screen = await openInstruments(
+      '/instruments?site=GS',
+      [semesterFromTonight('GS', -200, -30), semesterFromTonight('GS', -10, 170, { demo: true })],
+      [],
+    );
 
     await expect.element(screen.getByTestId('instrument-table')).toBeVisible();
     await expect.element(screen.getByTestId('synthetic-data-tag')).toBeVisible();

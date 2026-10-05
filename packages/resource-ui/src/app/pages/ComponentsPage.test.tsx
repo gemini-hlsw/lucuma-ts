@@ -2,34 +2,29 @@ import type { ComponentBrowserQuery } from '@gql/gen/graphql';
 import { describe, expect, it } from 'vitest';
 import { page } from 'vitest/browser';
 
-import { instrumentAvailabilityBlock, overNights } from '@/test/fixtures/blocks';
+import { instrumentAvailabilityBlock } from '@/test/fixtures/blocks';
 import {
   componentBrowser,
   instrumentComponent,
   instrumentComponentAvailabilityBlock,
 } from '@/test/fixtures/components';
-import { publishedSemester, type PublishedSemesterRow, publishedSemesters, siteSpan } from '@/test/fixtures/semester';
+import { type PublishedSemesterRow, publishedSemesters, recentSpan } from '@/test/fixtures/semester';
+import { eveningsFromTonight, nightsFromTonight, semesterFromTonight } from '@/test/fixtures/tonight';
 import { openDropdown, selectDropdownOption } from '@/test/helpers';
 import { renderApp } from '@/test/renderApp';
 
 import ComponentsPage from './ComponentsPage';
 
-const GS_2024B = publishedSemester({ site: 'GS', semester: '2024B' });
-const GS_2025A = publishedSemester({ site: 'GS', semester: '2025A' });
-const GS_2025B = publishedSemester({ site: 'GS', semester: '2025B' });
-const GS_2026A = publishedSemester({ site: 'GS', semester: '2026A' });
-/** A gap away from GS 2025B, so a night in the gap has a "nearest" semester that must not lend it its flag. */
-const GS_2026B_DEMO = publishedSemester({ site: 'GS', semester: '2026B', demo: true });
+const GS_CURRENT = semesterFromTonight('GS', -90, 90);
 
-const OCTOBER = '/components?site=GS&night=2025-10-15';
-const DECEMBER = '/components?site=GS&night=2025-12-15';
-const GS_2025B_WHOLE = overNights('GS', '2025-08-02', '2026-02-01');
+const COMPONENTS = '/components?site=GS';
+const GS_WHOLE = nightsFromTonight('GS', -100, 60);
 
 const GMOS_S = instrumentAvailabilityBlock({
   instrument: 'GMOS',
   publishedName: 'GMOS-S',
   port: 3,
-  interval: GS_2025B_WHOLE,
+  interval: GS_WHOLE,
 });
 
 const MASK_011 = instrumentComponent({
@@ -82,52 +77,55 @@ const GHOST_SLIT = instrumentComponent({
 });
 
 const installed = (component: ReturnType<typeof instrumentComponent>) =>
-  instrumentComponentAvailabilityBlock({ component, interval: GS_2025B_WHOLE });
+  instrumentComponentAvailabilityBlock({ component, interval: GS_WHOLE });
 
 const FAILED = 'Failed; removed for repair';
-/** Installed until the evening of 18 November 2025, then in the lab for the rest of the semester. */
-const R400_RECORD = [
-  instrumentComponentAvailabilityBlock({ component: R400, interval: overNights('GS', '2025-08-02', '2025-11-19') }),
+/** Installed until the night before `failedAt`, then in the lab to the end of the record. */
+const r400Record = (failedAt: number) => [
+  instrumentComponentAvailabilityBlock({ component: R400, interval: nightsFromTonight('GS', -100, failedAt - 1) }),
   instrumentComponentAvailabilityBlock({
     component: R400,
     usage: 'UNAVAILABLE',
     location: 'LAB',
     note: FAILED,
-    interval: overNights('GS', '2025-11-20', '2026-02-01'),
+    interval: nightsFromTonight('GS', failedAt, 60),
   }),
 ];
+const R400_FAILED_AT = -20;
+const R400_RECORD = r400Record(R400_FAILED_AT);
+const R400_OUT = eveningsFromTonight('GS', R400_FAILED_AT, 60);
 
 const CATALOG = [MASK_011, MASK_012, G_FILTER, B1200, F2_K_SHORT, GSAOI_K_SHORT];
 
 const openComponents = (
   route: string,
   data: Partial<ComponentBrowserQuery>,
-  semesters: readonly [PublishedSemesterRow, ...PublishedSemesterRow[]] = [GS_2025B],
+  semesters: readonly [PublishedSemesterRow, ...PublishedSemesterRow[]] = [GS_CURRENT],
 ) =>
   renderApp({
     element: <ComponentsPage />,
     route,
-    mocks: [publishedSemesters(...semesters), componentBrowser(siteSpan(...semesters), data)],
+    mocks: [publishedSemesters(...semesters), componentBrowser(recentSpan(semesters[0].site), data)],
   });
 
 /** The failing R400 among the instrument blocks its "Installed" resolves against. */
-const openR400 = (route: string) =>
-  openComponents(route, {
+const openR400 = (record = R400_RECORD) =>
+  openComponents(COMPONENTS, {
     components: [R400],
-    instrumentComponentAvailability: R400_RECORD,
+    instrumentComponentAvailability: record,
     instrumentAvailability: [GMOS_S],
   });
 
 describe(ComponentsPage, () => {
   it('lists the site catalog with identity, one row per piece', async () => {
-    const screen = await openComponents(OCTOBER, { components: [MASK_011] });
+    const screen = await openComponents(COMPONENTS, { components: [MASK_011] });
 
     await expect.element(screen.getByText('Mask GS2026B-011')).toBeVisible();
     await expect.element(screen.getByText(/barcode 11002801/)).toBeVisible();
   });
 
   it('says where an installed piece is by joining its instrument - port and name', async () => {
-    const screen = await openComponents(OCTOBER, {
+    const screen = await openComponents(COMPONENTS, {
       components: [G_FILTER],
       instrumentComponentAvailability: [installed(G_FILTER)],
       instrumentAvailability: [GMOS_S],
@@ -137,20 +135,20 @@ describe(ComponentsPage, () => {
   });
 
   it('names the storage place for a spare', async () => {
-    const screen = await openComponents(OCTOBER, {
+    const screen = await openComponents(COMPONENTS, {
       components: [R831, B1200],
       instrumentComponentAvailability: [
         instrumentComponentAvailabilityBlock({
           component: R831,
           usage: 'UNAVAILABLE',
           location: 'LAB',
-          interval: GS_2025B_WHOLE,
+          interval: GS_WHOLE,
         }),
         instrumentComponentAvailabilityBlock({
           component: B1200,
           usage: 'UNAVAILABLE',
           location: 'BASE',
-          interval: GS_2025B_WHOLE,
+          interval: GS_WHOLE,
         }),
       ],
     });
@@ -160,7 +158,7 @@ describe(ComponentsPage, () => {
   });
 
   it('search narrows across name, code, barcode and alias', async () => {
-    const screen = await openComponents(OCTOBER, { components: [MASK_011, MASK_012] });
+    const screen = await openComponents(COMPONENTS, { components: [MASK_011, MASK_012] });
     await expect.element(screen.getByText('Mask GS2026B-011')).toBeVisible();
 
     await screen.getByLabelText('Search').fill('the long mask');
@@ -170,7 +168,7 @@ describe(ComponentsPage, () => {
   });
 
   it('is a sendable link: the filters come from the URL', async () => {
-    const screen = await openComponents(`${OCTOBER}&q=the+long+mask&instrument=GMOS`, {
+    const screen = await openComponents(`${COMPONENTS}&q=the+long+mask&instrument=GMOS`, {
       components: [MASK_011, MASK_012],
     });
 
@@ -182,21 +180,21 @@ describe(ComponentsPage, () => {
 
   /* `in` answers true for every `Object.prototype` key, so an unguarded lookup would show All over nothing. */
   it('reads instrument=toString as no filter at all, not as a filter matching nothing', async () => {
-    const screen = await openComponents(`${OCTOBER}&instrument=toString`, { components: [MASK_011, F2_K_SHORT] });
+    const screen = await openComponents(`${COMPONENTS}&instrument=toString`, { components: [MASK_011, F2_K_SHORT] });
 
     await expect.element(screen.getByText('Mask GS2026B-011')).toBeVisible();
     await expect.element(screen.getByText('K-short').first()).toBeVisible();
   });
 
   it('reads instrument=constructor as no filter at all', async () => {
-    const screen = await openComponents(`${OCTOBER}&instrument=constructor`, { components: [MASK_011, F2_K_SHORT] });
+    const screen = await openComponents(`${COMPONENTS}&instrument=constructor`, { components: [MASK_011, F2_K_SHORT] });
 
     await expect.element(screen.getByText('Mask GS2026B-011')).toBeVisible();
     await expect.element(screen.getByText('K-short').first()).toBeVisible();
   });
 
   it('guards the type filter the same way - both maps are plain objects', async () => {
-    const screen = await openComponents(`${OCTOBER}&type=hasOwnProperty`, { components: [MASK_011, B1200] });
+    const screen = await openComponents(`${COMPONENTS}&type=hasOwnProperty`, { components: [MASK_011, B1200] });
 
     // An FPU and a disperser: both types survive, so nothing was filtered.
     await expect.element(screen.getByText('Mask GS2026B-011')).toBeVisible();
@@ -204,13 +202,13 @@ describe(ComponentsPage, () => {
   });
 
   it('shows the failing piece installed before its failure', async () => {
-    const screen = await openR400('/components?site=GS&night=2025-09-01');
+    const screen = await openR400(r400Record(20));
 
     await expect.element(screen.getByRole('row', { name: /R400/ }).getByText('Port 3 · GMOS-S')).toBeVisible();
   });
 
   it('shows the failing piece in the lab after its failure, with the reason on the row', async () => {
-    const screen = await openR400(DECEMBER);
+    const screen = await openR400();
 
     const row = screen.getByRole('row', { name: /R400/ });
     await expect.element(row.getByText('Summit lab')).toBeVisible();
@@ -220,7 +218,7 @@ describe(ComponentsPage, () => {
   });
 
   it('gives the record its own Note column rather than tucking it under the status', async () => {
-    const screen = await openR400(DECEMBER);
+    const screen = await openR400();
 
     const table = screen.getByTestId('component-table');
     await expect.element(table.getByRole('columnheader', { name: 'Note' })).toBeVisible();
@@ -233,14 +231,14 @@ describe(ComponentsPage, () => {
   });
 
   it('says a stored piece with nothing wrong is a spare, not broken', async () => {
-    const screen = await openComponents(DECEMBER, {
+    const screen = await openComponents(COMPONENTS, {
       components: [R831],
       instrumentComponentAvailability: [
         instrumentComponentAvailabilityBlock({
           component: R831,
           usage: 'UNAVAILABLE',
           location: 'LAB',
-          interval: GS_2025B_WHOLE,
+          interval: GS_WHOLE,
         }),
       ],
     });
@@ -251,7 +249,7 @@ describe(ComponentsPage, () => {
   });
 
   it('groups the catalog by instrument instead of repeating an Instrument column', async () => {
-    const screen = await openComponents(OCTOBER, {
+    const screen = await openComponents(COMPONENTS, {
       components: [G_FILTER, MASK_011],
       instrumentComponentAvailability: [installed(G_FILTER)],
       instrumentAvailability: [GMOS_S],
@@ -262,46 +260,40 @@ describe(ComponentsPage, () => {
   });
 
   it('opens a row into the piece history, phrased in evening dates', async () => {
-    const screen = await openR400(DECEMBER);
+    const screen = await openR400();
 
     // PrimeReact labels the toggler with the row's dataKey.
     await screen.getByRole('button', { name: /expand k-gs-R400_G5325/i }).click();
 
     const history = screen.getByTestId('component-history');
     await expect.element(history).toBeVisible();
-    await expect.element(history.getByText('19 Nov 2025 - 31 Jan 2026')).toBeVisible();
+    await expect.element(history.getByText(R400_OUT)).toBeVisible();
     await expect.element(history.getByText(FAILED).first()).toBeVisible();
   });
 
-  it('carries the whole site record, not the semester the masthead happens to show', async () => {
+  it('carries records beyond the semester the masthead happens to show', async () => {
     const screen = await openComponents(
-      DECEMBER,
+      COMPONENTS,
       {
         components: [R400],
         instrumentComponentAvailability: [
-          instrumentComponentAvailabilityBlock({
-            component: R400,
-            interval: overNights('GS', '2024-08-24', '2025-11-19'),
-          }),
+          instrumentComponentAvailabilityBlock({ component: R400, interval: nightsFromTonight('GS', -390, -21) }),
           ...R400_RECORD.slice(1),
-          instrumentComponentAvailabilityBlock({
-            component: R400,
-            interval: overNights('GS', '2026-02-02', '2026-08-01'),
-          }),
+          instrumentComponentAvailabilityBlock({ component: R400, interval: nightsFromTonight('GS', 61, 120) }),
         ],
       },
-      [GS_2024B, GS_2025A, GS_2025B, GS_2026A],
+      [semesterFromTonight('GS', -400, -91), GS_CURRENT, semesterFromTonight('GS', 91, 270)],
     );
     await screen.getByRole('button', { name: /expand k-gs-R400_G5325/i }).click();
 
-    // Scoped to 2025B the history would say nothing about the cut; a piece's story spans the record.
+    // Scoped to the current semester the history would say nothing about the cut.
     const history = screen.getByTestId('component-history');
-    await expect.element(history.getByText(/23 Aug 2024/).first()).toBeVisible();
-    await expect.element(history.getByText(/31 Jul 2026/).first()).toBeVisible();
+    await expect.element(history.getByText(eveningsFromTonight('GS', -390, -21))).toBeVisible();
+    await expect.element(history.getByText(eveningsFromTonight('GS', 61, 120))).toBeVisible();
   });
 
   it('heads the history with its columns, so a reader need not infer them from position', async () => {
-    const screen = await openR400(DECEMBER);
+    const screen = await openR400();
     await screen.getByRole('button', { name: /expand k-gs-R400_G5325/i }).click();
 
     const history = screen.getByTestId('component-history');
@@ -311,7 +303,7 @@ describe(ComponentsPage, () => {
   });
 
   it('says where "Installed" was, resolving the span against the same instrument blocks the row uses', async () => {
-    const screen = await openR400(DECEMBER);
+    const screen = await openR400();
     await screen.getByRole('button', { name: /expand k-gs-R400_G5325/i }).click();
 
     // The block only says INSTALLED; the port comes from the instrument blocks already in hand.
@@ -321,15 +313,17 @@ describe(ComponentsPage, () => {
   });
 
   it('counts the nights a record covers, which is what "how long was it out" asks', async () => {
-    const screen = await openR400(DECEMBER);
+    const screen = await openR400();
     await screen.getByRole('button', { name: /expand k-gs-R400_G5325/i }).click();
 
     const history = screen.getByTestId('component-history');
-    await expect.element(history.getByRole('row', { name: /19 Nov 2025 - 31 Jan 2026/ })).toMatchTextContent('74');
+    await expect
+      .element(history.getByRole('row').filter({ hasText: R400_OUT }))
+      .toMatchTextContent(String(60 - R400_FAILED_AT + 1));
   });
 
   it('speaks the row status vocabulary in the history, never the bare enum', async () => {
-    const screen = await openR400(DECEMBER);
+    const screen = await openR400();
     await screen.getByRole('button', { name: /expand k-gs-R400_G5325/i }).click();
 
     const history = screen.getByTestId('component-history');
@@ -339,7 +333,7 @@ describe(ComponentsPage, () => {
   });
 
   it('filters by instrument', async () => {
-    const screen = await openComponents(OCTOBER, { components: CATALOG });
+    const screen = await openComponents(COMPONENTS, { components: CATALOG });
     // Both F2 and GSAOI carry a K-short; the instrument filter clears them all.
     await expect.element(screen.getByText('K-short').first()).toBeVisible();
 
@@ -350,7 +344,7 @@ describe(ComponentsPage, () => {
   });
 
   it('filters by component type', async () => {
-    const screen = await openComponents(OCTOBER, { components: CATALOG });
+    const screen = await openComponents(COMPONENTS, { components: CATALOG });
     await expect.element(screen.getByText('Mask GS2026B-011')).toBeVisible();
 
     await selectDropdownOption(screen, 'Type', 'Disperser (1)');
@@ -361,7 +355,7 @@ describe(ComponentsPage, () => {
   });
 
   it('organizes the instrument filter: sorted options carrying their counts', async () => {
-    const screen = await openComponents(OCTOBER, { components: [GSAOI_J, GHOST_SLIT, ...CATALOG] });
+    const screen = await openComponents(COMPONENTS, { components: [GSAOI_J, GHOST_SLIT, ...CATALOG] });
     await expect.element(screen.getByText('B1200').first()).toBeVisible();
 
     await openDropdown(screen, 'Instrument');
@@ -372,15 +366,21 @@ describe(ComponentsPage, () => {
   });
 
   it('does not wear a distant demo semester’s flag for a night the gap between semesters leaves uncovered', async () => {
-    // 2026-07-01 is nearer the demo semester, so a "nearest semester" fallback would borrow its flag.
-    const screen = await openComponents('/components?site=GS&night=2026-07-01', {}, [GS_2025B, GS_2026B_DEMO]);
+    // Tonight is nearer the demo semester, so a "nearest semester" fallback would borrow its flag.
+    const screen = await openComponents(COMPONENTS, {}, [
+      semesterFromTonight('GS', -200, -30),
+      semesterFromTonight('GS', 10, 190, { demo: true }),
+    ]);
 
     await expect.element(screen.getByTestId('component-table')).toBeVisible();
     await expect.element(screen.getByTestId('synthetic-data-tag')).not.toBeInTheDocument();
   });
 
   it('flags a night the demo semester actually holds', async () => {
-    const screen = await openComponents('/components?site=GS&night=2026-09-01', {}, [GS_2025B, GS_2026B_DEMO]);
+    const screen = await openComponents(COMPONENTS, {}, [
+      semesterFromTonight('GS', -200, -30),
+      semesterFromTonight('GS', -10, 170, { demo: true }),
+    ]);
 
     await expect.element(screen.getByTestId('component-table')).toBeVisible();
     await expect.element(screen.getByTestId('synthetic-data-tag')).toBeVisible();
