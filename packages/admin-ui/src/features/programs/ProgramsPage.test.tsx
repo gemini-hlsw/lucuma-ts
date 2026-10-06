@@ -47,6 +47,8 @@ const directorsTimeProgram = (): RawProgram => ({
   explicitStatus: null,
   defaultStatus: 'ACTIVE',
   tooActivationCeiling: 'NONE',
+  resourceCount: 0,
+  resourceLimit: 1000,
   allocations: [],
   goa: { __typename: 'GoaProperties', proprietaryMonths: 12, privateHeader: false },
   proposal: {
