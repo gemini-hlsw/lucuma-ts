@@ -137,7 +137,7 @@ export function ACHR({ disabled }: { disabled: boolean }) {
               variables: {
                 size: {
                   type: e.value as AcWindowSize,
-                  center: when(e.value !== 'FULL', () => ({ x: calParams?.acqCamX, y: calParams?.acqCamY })),
+                  center: when(e.value !== 'FULL' && calParams, (c) => ({ x: c.acqCamX, y: c.acqCamY })),
                 },
               },
             });
