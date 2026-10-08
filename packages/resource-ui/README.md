@@ -47,9 +47,9 @@ menu with an ORCID account. A session started on any other lucuma.xyz app is alr
 pnpm resource-ui codegen
 ```
 
-Regenerates the typed GraphQL operations and the expanded schema the tests read, both into
-`src/gql/gen/` (gitignored). Run it whenever an operation in `src/gql/` changes or the
-schema package is bumped. `prebuild` runs it automatically on build.
+Regenerates the typed GraphQL operations into `src/gql/gen/` (gitignored). Run it whenever an
+operation in `src/gql/` changes or the schema package is bumped. `prebuild` runs it automatically
+on build.
 
 ### Tests and checks
 

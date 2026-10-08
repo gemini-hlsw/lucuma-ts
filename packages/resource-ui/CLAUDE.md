@@ -75,8 +75,8 @@ view is empty under the sign-in toast.
   app reaches it - and `userAtom`, `isLoggedInAtom`, `sessionStatusAtom` - only through
   `@/components/atoms/auth`. **`app/preference.ts` is not for it**: a session is not a reader's
   habit and must not outlive the tab.
-- **`src/auth/session.ts` is the one session keeper** - a module-level controller over the shared
-  store (`components/atoms/store.ts`). It bootstraps from the SSO cookie, re-refreshes from the
+- **`src/auth/session.ts` is the one session keeper** - a module-level controller over the store it
+  is started with (`startSession(store)`). It bootstraps from the SSO cookie, re-refreshes from the
   token's own `exp`, keeps one request in flight, and backs off only when SSO is unreachable (30 s
   doubling to 16 min, with or without a token - the `SESSION_TIMINGS` defaults `startSession` takes,
   which tests shrink to tens of milliseconds to run on the real clock); a rejected refresh signs the
@@ -90,7 +90,7 @@ view is empty under the sign-in toast.
   while it runs; every other tab's keeper then signs out the same way without calling SSO, first
   setting `signedOutElsewhereAtom` so that tab's toast says where the logout happened. It
   announces again once the logout call settles, for a tab that loaded in between.
-  Non-React callers - the Apollo auth link, `signOut` - read the store directly rather than a hook.
+  Non-React callers - the Apollo links, `signOut` - take the store as an argument rather than a hook.
 - **`auth/AuthSession.tsx` starts that keeper once**, wrapped around `<App />` in `main.tsx`, and
   renders the app at once. The requests wait instead: `sessionHoldLink`, first in the live chain
   (`gql/ApolloConfigs.ts`), holds each one until `sessionCheckedAtom` is true, so none goes out
@@ -99,13 +99,14 @@ view is empty under the sign-in toast.
   check is bounded: `refreshSession` gives up on SSO after 10 s and reads the silence as
   `unreachable`, so a hung answer releases the requests signed out and the keeper's backoff and
   token-retention rules take over.
-- **Tests sign in through `renderApp`**: `renderApp({ token: fakeJwt(standardUser('staff')) })`
-  (`src/test/factories.ts`). Every test starts signed out because `src/test/setup.ts` resets the
-  session before it (it clears localStorage, then writes `odbTokenAtom` null - overwriting the
-  token in sessionStorage - and `sessionCheckedAtom` false on the shared store); each render then
-  hydrates the shared store (`components/atoms/store.ts`), the one `authLink` and `signOut` read,
-  with the token and `sessionCheckedAtom` on top of that. Two trees rendered in one test share that
-  session, and the later `renderApp` call sets it.
+- **Tests sign in through `renderWithContext`**: `renderWithContext(<Page />, { token: fakeJwt(standardUser('staff')) })`
+  (`src/test/factories.ts`). Each render gets a Jotai store of its own, hydrated with the token and
+  `sessionCheckedAtom`, the way ui's `renderWithContext` does. The keeper (`startSession(store)`),
+  `signOut(store)` and the links (`liveLink(store, transport)`) take the store as an argument;
+  components reach it through `useStore()`, so `AuthSession` and the Navbar hand the keeper and `signOut`
+  whichever store the tree provides - `main.tsx` provides the app's own (`components/atoms/store.ts`),
+  and `gql/ApolloConfigs.ts` builds `client` from that same store. `src/test/setup.ts` clears both
+  storages before each test, because `odbTokenAtom` reads sessionStorage the first time a store touches it.
 - **The SSO host is absolute in every environment** (`app/environment.ts`'s `ssoUri`) - the cookie
   flows cannot go through the dev-server proxy. Each SSO host admits origins under its own domain
   and refuses the rest: staging's `sso-test.gpp.gemini.edu` answers `gemini.edu` and not
@@ -189,10 +190,10 @@ Fixed structurally - do not undo it.
   clipped from the night projection and unclipped from the range queries (`clip: false` on every one), so a
   block is a projection onto a window rather than a record. A stable `id` lets Apollo normalize one window's
   answer onto another's and empty a scheduled night (empty chart, "no components tonight"). No block
-  type has an `id`; `domain/adapters.ts` makes row keys from
-  response position; `src/gql/cache.ts` sets `keyFields: false` on every `…Block` type as the second lock, and
-  `cache.test.ts` reads the schema so a new block type cannot quietly miss the list. `InstrumentComponent`
-  keeps its id and stays normalized, being identity-only.
+  type has an `id`; `domain/adapters.ts` makes row keys from response position; `src/gql/cache.ts` sets
+  `keyFields: false` on every `…Block` type as the second lock. No test holds that list to the schema any
+  more, so a new `…Block` type goes on it by hand. `NightPage.test.tsx` "keeps a revisited night intact" is
+  the behavioural pin. `InstrumentComponent` keeps its id and stays normalized, being identity-only.
 
 ## Commands
 
@@ -202,21 +203,21 @@ first-time `playwright install chromium`, and why `dev` shows the sign-in toast.
 ## GraphQL and codegen
 
 The schema is `@gemini-hlsw/lucuma-odb-schemas/resource`, read by codegen (`tasks/codegen.ts`) and
-by `@graphql-eslint` (`eslint.config.js`). Codegen writes the typed operations into `src/gql/gen/`
-and prints the expanded schema to `src/gql/gen/schema.graphql`, which the tests read. **After
-changing an operation or bumping the schema package, run `codegen`**; `prebuild` does it on build.
+by `@graphql-eslint` (`eslint.config.js`), which validates every document against it with the full
+rule set, `no-unused-variables` included (the rule codegen's own validation skips). Lint collects
+documents from the same globs as codegen, so no document can escape it. Codegen writes the typed
+operations into `src/gql/gen/`. **After changing an operation or bumping the schema package, run
+`codegen`**; `prebuild` does it on build.
 
-- Operations live in `src/gql/resource.ts`; hooks returning **domain models** (not raw fragments) in
-  `src/gql/hooks.ts`. Generated object types are reached as `import type * as Gql`, in the adapters
-  and hooks only.
+- Operations live in `src/gql/resource.ts`. A nested shape gets a fragment of its own, as in ui
+  (`InstrumentLocationItem`), and `src/gql/types.ts` re-exports each generated `XItemFragment` as `XItem`:
+  import fragment types from there (adapters, hooks, fixtures), never by their generated names. Hooks in
+  `src/gql/hooks.ts` return **domain models**, not fragments.
 - The client preset only emits types an operation selects. If a type is missing from `gen/`, the fix
   is an operation that selects it, not a hand-written duplicate.
-- `tasks/printSchemaPlugin.ts` is named by path, not as `schema-ast`, because the CLI resolves a
-  named plugin from its own install directory, which here lands on a copy built against graphql 17
-  whose type predicates answer false for this package's graphql 16 objects.
 - `require-selections` asks for an `id` wherever a type has one, which is why `InstrumentComponent`
   selections carry it. The `src/*/gen` entry in `eslint.config.shared.js`'s `globalIgnores` keeps the
-  generated schema out of the operation rules; narrowing it turns that file into forty lint errors.
+  generated code out of the operation rules, which would otherwise read every document a second time.
 
 One request per page load; every view gets its whole window in one response, all range queries
 `clip: false`:
@@ -272,21 +273,26 @@ other home.
 
 ## Testing
 
-Browser-mode Vitest (Playwright chromium). Pure functions get plain unit tests; pages get browser tests that
-mount through `src/test/renderApp.tsx` and drive real interactions with accessible queries
-(`getByRole`, `getByLabelText`). Pass `renderApp` its `mocks`, built per operation by `src/test/fixtures/`
-with only the **Blocks** the assertion depends on; a fixture must match the variables the page sends.
-`src/gql/resource.test.ts` validates every document against the schema. Link-chain tests (session
+Browser-mode Vitest (Playwright chromium). Pure functions get plain unit tests; components with behaviour
+of their own get browser tests beside their source; pages get browser tests that mount through
+`renderWithContext` (`src/test/render.tsx`) and drive real interactions with accessible queries
+(`getByRole`, `getByLabelText`). A page's own test never mounts the shell (`Layout` has its own tests, with
+stand-in children; only a test whose subject wraps the shell, `AuthSession`, mounts a page under it); where a
+page reacts to a preference, set it directly (`setClockPreference('utc')`). `renderWithContext` gives each
+render a fresh store, as ui's does. Every operation a page sends,
+`PublishedSemesters` included, is answered by a mock from `src/test/fixtures/`, whose row factories name
+the fields a row needs (`PickRequired<Row, 'instrument' | 'interval'>`) and default the rest, with only the
+**Blocks** the assertion depends on; a fixture must match the variables the page sends. Link-chain tests (session
 hold, auth header, toasts) run the real links ahead of canned answers through `src/test/linkClient.ts`.
 
 - **Every control whose press, toggle or hover changes what is displayed gets a browser test driving the real
   interaction.** Test both directions where they exist: what must change with the control (the night chart's
-  axis under the Site | UTC clock) _and_ what must not (the semester chart's geometry and fills across the same
-  toggle). Guard "must change" assertions non-empty first, so a blanked chart cannot pass as merely "different".
+  axis under the Site | UTC clock) _and_ what must not. Guard "must change" assertions non-empty first, so a
+  blanked chart cannot pass as merely "different".
 - **Anchor on fixture dates, never the wall clock.** Where a test must involve "now", derive it with the same
   function the page uses.
 - **PrimeReact overlays render into `document.body`**, outside the render container, so a Dropdown panel is
-  unreachable from `renderApp` locators. Drive dropdowns through `src/test/helpers.ts` (`openDropdown` /
+  unreachable from the render's locators. Drive dropdowns through `src/test/helpers.ts` (`openDropdown` /
   `selectDropdownOption`), which reaches the panel via `page`, scoped through `getByRole('listbox')` so the
   hidden native `<select>` mirror does not also match.
 - **The tests load no app stylesheet**: a test that needs styling to pass is testing the stylesheet.

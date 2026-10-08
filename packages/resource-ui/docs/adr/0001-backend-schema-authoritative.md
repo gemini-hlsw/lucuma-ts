@@ -4,8 +4,8 @@ resource-ui once owned the Resource API design in a hand-written `mock-server/sc
 mock server whose resolvers copied the backend's overlap, clip and night rules. Now that lucuma-odb ships the Resource
 service (gemini-hlsw/lucuma-odb#3050), the schema comes only from `@gemini-hlsw/lucuma-odb-schemas/resource`. Where the
 two disagree, the backend wins, and the frontend keeps no copy that could drift. The mock server is gone. Tests answer
-each operation with small per-test fixtures through Apollo's `MockedProvider`, as `ui` and `admin-ui` do, and one test
-validates every document against the package schema.
+each operation with small per-test fixtures through Apollo's `MockedProvider`, as `ui` and `admin-ui` do, and
+`@graphql-eslint` validates every document against the package schema.
 
 ## Considered Options
 
