@@ -4,26 +4,22 @@ import type { JSX } from 'react';
 
 import { Circle, CircleDot, Spinner, TriangleExclamation } from '@/components/Icons';
 
-/** Small status chip for a view's live query: loading, live, empty, or the
- *  error itself — the view never fakes data to cover a failure. */
+/** Small status chip for a view's live query: loading, incomplete, live, empty,
+ *  or the error itself — the view never fakes data to cover a failure. */
 export function DataSourceBadge({
   loading,
+  incomplete = false,
   error,
   empty,
-  failed = false,
 }: {
   loading: boolean;
+  /** The list stopped loading part-way: what is shown is only some of it. */
+  incomplete?: boolean;
   /** Present when the query failed (expired token, access denied, …). */
   error?: string;
   /** Whether the view has no rows to show. Also gates `error`: an error that
    *  arrived alongside data (a partial warning) is not treated as a failure. */
   empty?: boolean;
-  /** Set when the view knows a query failed outright, whatever the row count.
-   *  A view backed by more than one query has rows from the ones that
-   *  succeeded, so `empty` is false and the gate below would call it live — a
-   *  second query returning nothing is a failure the reader must see, not a
-   *  partial warning to swallow (sc-10520). */
-  failed?: boolean;
 }): JSX.Element {
   if (loading) {
     return (
@@ -32,11 +28,21 @@ export function DataSourceBadge({
       </span>
     );
   }
+  if (incomplete) {
+    return (
+      <span
+        className="ds-badge ds-warn"
+        title="Some of this list did not load, so only part of it is shown. Reload to try again."
+      >
+        <TriangleExclamation /> List incomplete
+      </span>
+    );
+  }
   // An error only means "failed" when it left the view with nothing to show.
   // With Apollo's errorPolicy 'all' (see ApolloConfigs), a query can return a
   // full result *alongside* a benign per-observation warning — that's still
   // live data, not a failure, so it must not win over the rows (sc-10153).
-  if (error !== undefined && (failed || empty !== false)) {
+  if (error !== undefined && empty !== false) {
     return (
       <span className="ds-badge ds-warn" title={error}>
         <TriangleExclamation /> {error}

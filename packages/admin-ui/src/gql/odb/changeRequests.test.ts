@@ -5,11 +5,11 @@ import { executionDigest } from '@/test/factories';
 import type { ChangeRequest } from '../types';
 import {
   type AdminChangeRequestsResult,
-  type AdminProgramObservationsResult,
   groupChangeRequestsByProgram,
   mapChangeRequests,
   observationsByIdFrom,
 } from './changeRequests';
+import type { ObservationItemFragment } from './gen/graphql';
 
 type RawRequest = AdminChangeRequestsResult['configurationRequests']['matches'][number];
 
@@ -140,7 +140,7 @@ describe('mapChangeRequests PI fallback', () => {
 
 describe(observationsByIdFrom, () => {
   it('keys observation rows by id, with coordinates, config, and conditions', () => {
-    const matches: AdminProgramObservationsResult['observations']['matches'] = [
+    const matches: ObservationItemFragment[] = [
       {
         __typename: 'Observation',
         id: 'o-9c5',
