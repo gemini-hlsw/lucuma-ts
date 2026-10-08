@@ -39,10 +39,6 @@ const config: CodegenConfig & { sort: boolean } = {
       config: sharedConfig,
       presetConfig,
     },
-    // The package schema with its `#import`s expanded, for the tests that build it in the browser.
-    'src/gql/gen/schema.graphql': {
-      plugins: ['./tasks/printSchemaPlugin.ts'],
-    },
   },
 };
 

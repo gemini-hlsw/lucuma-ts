@@ -9,6 +9,9 @@ import { reactRefresh } from 'eslint-plugin-react-refresh';
 
 import shared, { vitest } from '../../eslint.config.shared.js';
 
+// The globs `tasks/codegen.ts` collects documents from, so no document codegen compiles escapes lint.
+const documents = ['./src/gql/**/*.ts', './src/**/*.tsx'];
+
 export default defineConfig(
   ...shared,
   ...vitest,
@@ -18,11 +21,11 @@ export default defineConfig(
   reactHooks.configs.flat['recommended-latest'],
   reactRefresh.configs.vite(),
   {
-    files: [`./src/gql/*.{ts,tsx}`],
+    files: documents,
     processor: graphqlPlugin.processor,
   },
   {
-    files: [`./src/gql/**/*.graphql`],
+    files: ['./src/**/*.graphql'],
     languageOptions: {
       parser: graphqlPlugin.parser,
       parserOptions: {
@@ -30,7 +33,7 @@ export default defineConfig(
           projects: {
             resource: {
               schema: import.meta.resolve('@gemini-hlsw/lucuma-odb-schemas/resource'),
-              documents: [`./src/gql/*.{ts,tsx}`],
+              documents,
             },
           },
         },
