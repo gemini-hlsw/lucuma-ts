@@ -23,7 +23,7 @@ const GS_WHOLE = nightsFromTonight('GS', -100, 60);
 const GMOS_S = instrumentAvailabilityBlock({
   instrument: 'GMOS',
   publishedName: 'GMOS-S',
-  port: 3,
+  location: { port: 3 },
   interval: GS_WHOLE,
 });
 

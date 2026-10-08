@@ -27,8 +27,8 @@ const GN_2026B = publishedSemester({ site: 'GN', semester: '2026B' });
 const GS_2025B_WHOLE = overNights('GS', '2025-08-02', '2026-02-01');
 const GN_2026B_WHOLE = overNights('GN', '2026-08-02', '2027-02-01');
 
-const GHOST = instrumentAvailabilityBlock({ instrument: 'GHOST', port: 1, interval: GS_2025B_WHOLE });
-const GCAL = instrumentAvailabilityBlock({ instrument: 'GCAL', port: 2, interval: GS_2025B_WHOLE });
+const GHOST = instrumentAvailabilityBlock({ instrument: 'GHOST', location: { port: 1 }, interval: GS_2025B_WHOLE });
+const GCAL = instrumentAvailabilityBlock({ instrument: 'GCAL', location: { port: 2 }, interval: GS_2025B_WHOLE });
 
 const openSemester = (route: string, ...mocks: MockLink.MockedResponse[]) =>
   renderApp({ element: <SemesterPage />, route, mocks });
@@ -89,10 +89,10 @@ describe(SemesterPage, () => {
             instrumentAvailabilityBlock({
               instrument: 'GMOS',
               publishedName: 'GMOS-N',
-              port: 1,
+              location: { port: 1 },
               interval: GN_2026B_WHOLE,
             }),
-            instrumentAvailabilityBlock({ instrument: 'ALTAIR', port: 3, interval: GN_2026B_WHOLE }),
+            instrumentAvailabilityBlock({ instrument: 'ALTAIR', location: { port: 3 }, interval: GN_2026B_WHOLE }),
           ],
           telescopeAvailability: [
             telescopeAvailabilityBlock({ interval: overNights('GN', '2026-10-21', '2026-10-24') }),
@@ -115,7 +115,7 @@ describe(SemesterPage, () => {
           instrumentAvailability: [
             GHOST,
             GCAL,
-            instrumentAvailabilityBlock({ instrument: 'GMOS', port: 3, interval: GS_2025B_WHOLE }),
+            instrumentAvailabilityBlock({ instrument: 'GMOS', location: { port: 3 }, interval: GS_2025B_WHOLE }),
           ],
           telescopeMode: [telescopeModeBlock({ mode: 'QUEUE', interval: GS_2025B_WHOLE })],
         }),
@@ -187,7 +187,7 @@ describe(SemesterPage, () => {
         publishedSemesters(GN_2026B),
         semesterSchedule(GN_2026B, {
           instrumentAvailability: [
-            instrumentAvailabilityBlock({ instrument: 'GMOS', port: 1, interval: GN_2026B_WHOLE }),
+            instrumentAvailabilityBlock({ instrument: 'GMOS', location: { port: 1 }, interval: GN_2026B_WHOLE }),
           ],
         }),
       );
@@ -210,7 +210,7 @@ describe(SemesterPage, () => {
           instrumentAvailability: [
             instrumentAvailabilityBlock({
               instrument: 'F2',
-              port: 1,
+              location: { port: 1 },
               interval: overNights('GS', '2025-02-02', '2025-08-01'),
             }),
           ],
@@ -276,7 +276,7 @@ describe(SemesterPage, () => {
           instrumentAvailability: [
             instrumentAvailabilityBlock({
               instrument: 'GMOS',
-              port: 3,
+              location: { port: 3 },
               interval: overNights('GN', '2025-08-02', '2026-02-01'),
             }),
           ],
@@ -409,25 +409,25 @@ describe(SemesterPage, () => {
             instrumentAvailabilityBlock({
               instrument: 'ALTAIR',
               publishedName: 'Altair',
-              port: 3,
+              location: { port: 3 },
               interval: GN_2026B_WHOLE,
             }),
             instrumentAvailabilityBlock({
               instrument: 'GMOS',
               publishedName: 'GMOS-N',
-              port: 5,
+              location: { port: 5 },
               interval: GN_2026B_WHOLE,
             }),
             instrumentAvailabilityBlock({
               instrument: 'IGRINS2',
               publishedName: 'IGRINS-2',
-              port: 2,
+              location: { port: 2 },
               interval: overNights('GN', '2026-08-02', '2026-09-10'),
             }),
             instrumentAvailabilityBlock({
               instrument: 'MAROON_X',
               publishedName: 'MAROON-X',
-              port: 2,
+              location: { port: 2 },
               interval: overNights('GN', swap, '2027-02-01'),
             }),
           ],
@@ -446,7 +446,7 @@ describe(SemesterPage, () => {
         instrumentAvailabilityBlock({
           instrument: 'GNIRS',
           usage,
-          port: 1,
+          location: { port: 1 },
           interval: overNights('GN', firstNight, lastNight),
         });
       const screen = await openSemester(

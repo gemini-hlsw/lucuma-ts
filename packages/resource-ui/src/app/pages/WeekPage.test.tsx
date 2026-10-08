@@ -24,7 +24,7 @@ const GS_2024B = publishedSemester({ site: 'GS', semester: '2024B' });
 const GS_2025B = publishedSemester({ site: 'GS', semester: '2025B' });
 
 const GS_2025B_WHOLE = overNights('GS', '2025-08-02', '2026-02-01');
-const GHOST = instrumentAvailabilityBlock({ instrument: 'GHOST', port: 1, interval: GS_2025B_WHOLE });
+const GHOST = instrumentAvailabilityBlock({ instrument: 'GHOST', location: { port: 1 }, interval: GS_2025B_WHOLE });
 
 /** Stand in for the views a link opens: the subject is the jump, not what they draw. */
 const LINK_TARGETS = [
@@ -138,12 +138,12 @@ describe(WeekPage, () => {
     // A run ending inside the first week, so the two windows draw different bars.
     const ghost = instrumentAvailabilityBlock({
       instrument: 'GHOST',
-      port: 1,
+      location: { port: 1 },
       interval: overNights('GS', '2024-08-02', '2024-08-14'),
     });
     const gmos = instrumentAvailabilityBlock({
       instrument: 'GMOS',
-      port: 1,
+      location: { port: 1 },
       interval: overNights('GS', '2024-08-15', '2024-09-30'),
     });
     const screen = await openWeek(
@@ -250,7 +250,7 @@ describe(WeekPage, () => {
         {
           instrumentAvailability: [
             GHOST,
-            instrumentAvailabilityBlock({ instrument: 'GMOS', port: 3, interval: GS_2025B_WHOLE }),
+            instrumentAvailabilityBlock({ instrument: 'GMOS', location: { port: 3 }, interval: GS_2025B_WHOLE }),
           ],
         },
       ),

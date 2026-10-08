@@ -19,7 +19,14 @@ export const overNights = (site: Site, firstNight: string, lastNight: string): I
   end: new Date(observingNightInterval(site, lastNight).end).toISOString(),
 });
 
+export type PickRequired<T, K extends keyof T> = Pick<T, K> & Partial<Omit<T, '__typename' | K>>;
+
 type Placement = { readonly port: number } | { readonly place: Exclude<InstrumentLocationItem['place'], 'PORT'> };
+
+const instrumentLocation = (placement: Placement): InstrumentLocationItem =>
+  'port' in placement
+    ? { __typename: 'InstrumentLocation', place: 'PORT', port: placement.port }
+    : { __typename: 'InstrumentLocation', place: placement.place, port: null };
 
 export const instrumentAvailabilityBlock = ({
   instrument,
@@ -27,20 +34,17 @@ export const instrumentAvailabilityBlock = ({
   publishedName = instrument,
   usage = 'SCIENCE',
   note = null,
-  ...placement
-}: Pick<InstrumentAvailabilityBlockItem, 'instrument' | 'interval'> &
-  Partial<Pick<InstrumentAvailabilityBlockItem, 'publishedName' | 'usage' | 'note'>> &
-  Placement): InstrumentAvailabilityBlockItem => ({
+  location = { place: 'UNKNOWN' },
+}: PickRequired<Omit<InstrumentAvailabilityBlockItem, 'location'>, 'instrument' | 'interval'> & {
+  readonly location?: Placement;
+}): InstrumentAvailabilityBlockItem => ({
   __typename: 'InstrumentAvailabilityBlock',
   instrument,
   publishedName,
   usage,
   note,
   interval,
-  location:
-    'port' in placement
-      ? { __typename: 'InstrumentLocation', place: 'PORT', port: placement.port }
-      : { __typename: 'InstrumentLocation', place: placement.place, port: null },
+  location: instrumentLocation(location),
 });
 
 /** `port: null` is the whole telescope. */
@@ -49,8 +53,7 @@ export const telescopeAvailabilityBlock = ({
   availability = 'CLOSED',
   port = null,
   reason = null,
-}: Pick<TelescopeAvailabilityBlockItem, 'interval'> &
-  Partial<Omit<TelescopeAvailabilityBlockItem, '__typename' | 'interval'>>): TelescopeAvailabilityBlockItem => ({
+}: PickRequired<TelescopeAvailabilityBlockItem, 'interval'>): TelescopeAvailabilityBlockItem => ({
   __typename: 'TelescopeAvailabilityBlock',
   availability,
   port,
@@ -62,8 +65,7 @@ export const tooSupportBlock = ({
   interval,
   tooSupport = 'STANDARD',
   note = null,
-}: Pick<TooSupportBlockItem, 'interval'> &
-  Partial<Omit<TooSupportBlockItem, '__typename' | 'interval'>>): TooSupportBlockItem => ({
+}: PickRequired<TooSupportBlockItem, 'interval'>): TooSupportBlockItem => ({
   __typename: 'TooSupportBlock',
   tooSupport,
   note,
@@ -76,8 +78,7 @@ export const telescopeModeBlock = ({
   programReferences = [],
   partner = null,
   note = null,
-}: Pick<TelescopeModeBlockItem, 'interval'> &
-  Partial<Omit<TelescopeModeBlockItem, '__typename' | 'interval'>>): TelescopeModeBlockItem => ({
+}: PickRequired<TelescopeModeBlockItem, 'interval'>): TelescopeModeBlockItem => ({
   __typename: 'TelescopeModeBlock',
   mode,
   programReferences,
@@ -92,10 +93,10 @@ export const telescopeSubsystemAvailabilityBlock = ({
   usage = 'SCIENCE',
   powerSource = null,
   note = null,
-}: Pick<TelescopeSubsystemAvailabilityBlockItem, 'subsystem' | 'interval'> &
-  Partial<
-    Omit<TelescopeSubsystemAvailabilityBlockItem, '__typename' | 'subsystem' | 'interval'>
-  >): TelescopeSubsystemAvailabilityBlockItem => ({
+}: PickRequired<
+  TelescopeSubsystemAvailabilityBlockItem,
+  'subsystem' | 'interval'
+>): TelescopeSubsystemAvailabilityBlockItem => ({
   __typename: 'TelescopeSubsystemAvailabilityBlock',
   subsystem,
   usage,

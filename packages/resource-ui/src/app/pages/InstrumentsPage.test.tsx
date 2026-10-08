@@ -17,41 +17,49 @@ const GN_NIGHT = '/instruments?site=GN';
 const GN_WHOLE = nightsFromTonight('GN', -60, 60);
 const GS_WHOLE = nightsFromTonight('GS', -60, 60);
 
-const GNIRS = instrumentAvailabilityBlock({ instrument: 'GNIRS', port: 3, interval: GN_WHOLE });
+const GNIRS = instrumentAvailabilityBlock({ instrument: 'GNIRS', location: { port: 3 }, interval: GN_WHOLE });
 const MAROON_X = instrumentAvailabilityBlock({
   instrument: 'MAROON_X',
   publishedName: 'Maroon-X',
-  port: 5,
+  location: { port: 5 },
   interval: GN_WHOLE,
 });
-const ALOPEKE = instrumentAvailabilityBlock({ instrument: 'ALOPEKE', place: 'UNKNOWN', interval: GN_WHOLE });
+const ALOPEKE = instrumentAvailabilityBlock({
+  instrument: 'ALOPEKE',
+  location: { place: 'UNKNOWN' },
+  interval: GN_WHOLE,
+});
 const NIRI = instrumentAvailabilityBlock({
   instrument: 'NIRI',
-  place: 'LAB',
+  location: { place: 'LAB' },
   usage: 'UNAVAILABLE',
   interval: GN_WHOLE,
 });
 const ACQ_CAM = instrumentAvailabilityBlock({
   instrument: 'ACQ_CAM',
-  place: 'LAB',
+  location: { place: 'LAB' },
   usage: 'UNAVAILABLE',
   interval: GN_WHOLE,
 });
 /** Off Port 1 since before tonight, so tonight holds no record for it. */
 const IGRINS2_GONE = instrumentAvailabilityBlock({
   instrument: 'IGRINS2',
-  port: 1,
+  location: { port: 1 },
   interval: nightsFromTonight('GN', -60, -20),
 });
 /** Not available for twelve nights, then back on Port 3. */
 const GNIRS_SPLIT = [
   instrumentAvailabilityBlock({
     instrument: 'GNIRS',
-    port: 3,
+    location: { port: 3 },
     usage: 'UNAVAILABLE',
     interval: nightsFromTonight('GN', -50, -39),
   }),
-  instrumentAvailabilityBlock({ instrument: 'GNIRS', port: 3, interval: nightsFromTonight('GN', -38, 60) }),
+  instrumentAvailabilityBlock({
+    instrument: 'GNIRS',
+    location: { port: 3 },
+    interval: nightsFromTonight('GN', -38, 60),
+  }),
 ];
 
 /** The site's semesters in date order, and the blocks the schedule holds over the recent window. */
@@ -92,7 +100,7 @@ describe(InstrumentsPage, () => {
       [
         instrumentAvailabilityBlock({
           instrument: 'GPI',
-          place: 'BASE',
+          location: { place: 'BASE' },
           usage: 'UNAVAILABLE',
           note: 'Stored at the base facility',
           interval: GS_WHOLE,
@@ -180,7 +188,7 @@ describe(InstrumentsPage, () => {
         instrumentAvailabilityBlock({
           instrument: 'CAL_ZORRO',
           publishedName: 'Zorro',
-          port: 2,
+          location: { port: 2 },
           interval: nightsFromTonight('GS', -250, -220),
         }),
       ],
@@ -210,8 +218,8 @@ describe(InstrumentsPage, () => {
         NIRI,
         ACQ_CAM,
         GNIRS,
-        instrumentAvailabilityBlock({ instrument: 'ALTAIR', port: 3, interval: GN_WHOLE }),
-        instrumentAvailabilityBlock({ instrument: 'GMOS', port: 1, interval: GN_WHOLE }),
+        instrumentAvailabilityBlock({ instrument: 'ALTAIR', location: { port: 3 }, interval: GN_WHOLE }),
+        instrumentAvailabilityBlock({ instrument: 'GMOS', location: { port: 1 }, interval: GN_WHOLE }),
       ],
     );
     await expect.element(screen.getByText('GNIRS')).toBeVisible();
@@ -236,8 +244,13 @@ describe(InstrumentsPage, () => {
       '/instruments?site=GS',
       [GS_CURRENT],
       [
-        instrumentAvailabilityBlock({ instrument: 'GPI', place: 'BASE', usage: 'UNAVAILABLE', interval: GS_WHOLE }),
-        instrumentAvailabilityBlock({ instrument: 'GHOST', port: 1, interval: GS_WHOLE }),
+        instrumentAvailabilityBlock({
+          instrument: 'GPI',
+          location: { place: 'BASE' },
+          usage: 'UNAVAILABLE',
+          interval: GS_WHOLE,
+        }),
+        instrumentAvailabilityBlock({ instrument: 'GHOST', location: { port: 1 }, interval: GS_WHOLE }),
       ],
     );
     await expect.element(screen.getByText('GHOST')).toBeVisible();
@@ -263,7 +276,9 @@ describe(InstrumentsPage, () => {
         publishedSemesters(GS_CURRENT, GN_CURRENT),
         semesterSchedule(recentSpan('GN'), { instrumentAvailability: [GNIRS] }),
         semesterSchedule(recentSpan('GS'), {
-          instrumentAvailability: [instrumentAvailabilityBlock({ instrument: 'GHOST', port: 1, interval: GS_WHOLE })],
+          instrumentAvailability: [
+            instrumentAvailabilityBlock({ instrument: 'GHOST', location: { port: 1 }, interval: GS_WHOLE }),
+          ],
         }),
       ],
     });

@@ -32,7 +32,7 @@ const GN_2026B = publishedSemester({ site: 'GN', semester: '2026B' });
 
 const GHOST = instrumentAvailabilityBlock({
   instrument: 'GHOST',
-  port: 1,
+  location: { port: 1 },
   interval: overNights('GS', '2025-08-02', '2026-02-01'),
 });
 
@@ -409,11 +409,11 @@ describe(NightPage, () => {
         { site: 'GN', night: '2026-09-26' },
         {
           instrumentAvailability: [
-            instrumentAvailabilityBlock({ instrument: 'GMOS', port: 1, interval: night }),
+            instrumentAvailabilityBlock({ instrument: 'GMOS', location: { port: 1 }, interval: night }),
             instrumentAvailabilityBlock({
               instrument: 'ALOPEKE',
               publishedName: '`Alopeke',
-              place: 'FLOOR',
+              location: { place: 'FLOOR' },
               interval: night,
             }),
           ],

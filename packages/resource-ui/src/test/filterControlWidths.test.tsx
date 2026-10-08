@@ -112,9 +112,14 @@ const openInstruments = () =>
       publishedSemesters(GN_2026B),
       semesterSchedule(recentSpan('GN'), {
         instrumentAvailability: [
-          instrumentAvailabilityBlock({ instrument: 'GNIRS', port: 3, interval: GN_WHOLE }),
-          instrumentAvailabilityBlock({ instrument: 'ALOPEKE', place: 'UNKNOWN', interval: GN_WHOLE }),
-          instrumentAvailabilityBlock({ instrument: 'NIRI', place: 'BASE', usage: 'UNAVAILABLE', interval: GN_WHOLE }),
+          instrumentAvailabilityBlock({ instrument: 'GNIRS', location: { port: 3 }, interval: GN_WHOLE }),
+          instrumentAvailabilityBlock({ instrument: 'ALOPEKE', location: { place: 'UNKNOWN' }, interval: GN_WHOLE }),
+          instrumentAvailabilityBlock({
+            instrument: 'NIRI',
+            location: { place: 'BASE' },
+            usage: 'UNAVAILABLE',
+            interval: GN_WHOLE,
+          }),
         ],
       }),
     ],

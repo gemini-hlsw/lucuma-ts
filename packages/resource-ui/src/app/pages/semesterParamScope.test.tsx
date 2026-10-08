@@ -77,8 +77,13 @@ const WEEK_SCHEDULE: MockedResponseOf<typeof WEEK_SCHEDULE_QUERY> = {
 
 const INSTRUMENTS = semesterSchedule(recentSpan('GS'), {
   instrumentAvailability: [
-    instrumentAvailabilityBlock({ instrument: 'GHOST', port: 1, interval: GS_WHOLE }),
-    instrumentAvailabilityBlock({ instrument: 'GPI', place: 'BASE', usage: 'UNAVAILABLE', interval: GS_WHOLE }),
+    instrumentAvailabilityBlock({ instrument: 'GHOST', location: { port: 1 }, interval: GS_WHOLE }),
+    instrumentAvailabilityBlock({
+      instrument: 'GPI',
+      location: { place: 'BASE' },
+      usage: 'UNAVAILABLE',
+      interval: GS_WHOLE,
+    }),
   ],
 });
 
