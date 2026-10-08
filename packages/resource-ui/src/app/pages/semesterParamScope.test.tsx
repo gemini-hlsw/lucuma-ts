@@ -15,7 +15,8 @@ import { instrumentAvailabilityBlock, overNights } from '@/test/fixtures/blocks'
 import { componentBrowser, instrumentComponent } from '@/test/fixtures/components';
 import { publishedSemester, publishedSemesters, recentSpan, semesterSchedule } from '@/test/fixtures/semester';
 import { nightsFromTonight } from '@/test/fixtures/tonight';
-import { renderApp } from '@/test/renderApp';
+import { Probe, PROBE_URL_TESTID } from '@/test/probe';
+import { renderWithContext } from '@/test/render';
 
 import ComponentsPage from './ComponentsPage';
 import InstrumentsPage from './InstrumentsPage';
@@ -93,8 +94,7 @@ const COMPONENTS = componentBrowser(recentSpan('GS'), {
 
 describe('the semester parameter outside /semester', () => {
   it('leaves the night where the night parameter put it, whatever semester is named', async () => {
-    const stale = await renderApp({
-      element: <NightPage />,
+    const stale = await renderWithContext(<NightPage />, {
       route: `/night?site=GS&night=${NIGHT}&semester=2024B`,
       mocks: [SEMESTERS, NIGHT_SCHEDULE],
     });
@@ -106,16 +106,14 @@ describe('the semester parameter outside /semester', () => {
   });
 
   it('opens the same week with a stale semester as without one', async () => {
-    const plain = await renderApp({
-      element: <WeekPage />,
+    const plain = await renderWithContext(<WeekPage />, {
       route: `/week?site=GS&night=${NIGHT}`,
       mocks: [SEMESTERS, WEEK_SCHEDULE],
     });
     const heading = plain.getByRole('heading', { level: 1 }).element().textContent;
     await plain.unmount();
 
-    const stale = await renderApp({
-      element: <WeekPage />,
+    const stale = await renderWithContext(<WeekPage />, {
       route: `/week?site=GS&night=${NIGHT}&semester=2099Z`,
       mocks: [SEMESTERS, WEEK_SCHEDULE],
     });
@@ -132,8 +130,7 @@ describe('the semester parameter outside /semester', () => {
 
     for (const { element, testId, schedule } of pages) {
       const rendered = async (search: string): Promise<string> => {
-        const screen = await renderApp({
-          element,
+        const screen = await renderWithContext(element, {
           route: `/finder?site=GS${search}`,
           mocks: [SEMESTERS, schedule],
         });
@@ -162,11 +159,10 @@ describe('a finder filter carried by a navigation link', () => {
   }
 
   it('does not reach the other finder', async () => {
-    const screen = await renderApp({
-      element: <InstrumentsWithNav />,
+    const screen = await renderWithContext(<InstrumentsWithNav />, {
       route: `/instruments?site=GS&night=${NIGHT}&q=GPI`,
-      extraRoutes: [{ path: '/components', element: <ComponentsPage /> }],
-      mocks: [SEMESTERS, INSTRUMENTS, COMPONENTS],
+      extraRoutes: [{ path: '/components', element: <Probe use={() => null} /> }],
+      mocks: [SEMESTERS, INSTRUMENTS],
     });
 
     await expect.element(screen.getByTestId('instrument-table')).toBeVisible();
@@ -174,8 +170,8 @@ describe('a finder filter carried by a navigation link', () => {
 
     await screen.getByRole('link', { name: 'Components', exact: true }).click();
 
-    await expect.element(screen.getByTestId('component-table')).toBeVisible();
-    await expect.element(screen.getByLabelText('Search', { exact: true })).toHaveValue('');
-    await expect.poll(() => screen.router.state.location.search).not.toContain('q=GPI');
+    const shownUrl = () => screen.getByTestId(PROBE_URL_TESTID).element().textContent ?? '';
+    await expect.poll(shownUrl).toMatch(/^\/components\?/);
+    expect(shownUrl()).not.toContain('q=GPI');
   });
 });

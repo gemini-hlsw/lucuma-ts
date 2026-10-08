@@ -3,7 +3,7 @@ import { useLocation } from 'react-router';
 import { describe, expect, it } from 'vitest';
 
 import { Probe, PROBE_URL_TESTID } from '@/test/probe';
-import { renderApp } from '@/test/renderApp';
+import { renderWithContext } from '@/test/render';
 
 import { useOpenNight } from './useOpenNight';
 import { useSelection } from './useSelection';
@@ -34,21 +34,17 @@ const identityOf = (value: unknown): string => {
 };
 
 const openProbe = async (route: string) =>
-  renderApp({
-    route,
-    element: (
-      <Probe
-        use={() => ({ openNight: useOpenNight(), selection: useSelection() })}
-        readout={({ openNight }) => ({ identity: identityOf(openNight) })}
-        actions={({ openNight, selection }) => [
-          { label: 'open 2025-12-24', run: () => openNight('2025-12-24') },
-          { label: 'to GN', run: () => selection.setSite('GN') },
-        ]}
-      />
-    ),
-    extraRoutes: [{ path: '/night', element: <NightProbe /> }],
-    mocks: [],
-  });
+  renderWithContext(
+    <Probe
+      use={() => ({ openNight: useOpenNight(), selection: useSelection() })}
+      readout={({ openNight }) => ({ identity: identityOf(openNight) })}
+      actions={({ openNight, selection }) => [
+        { label: 'open 2025-12-24', run: () => openNight('2025-12-24') },
+        { label: 'to GN', run: () => selection.setSite('GN') },
+      ]}
+    />,
+    { route, extraRoutes: [{ path: '/night', element: <NightProbe /> }] },
+  );
 
 describe(useOpenNight, () => {
   it('lands on the night view at the night asked for', async () => {

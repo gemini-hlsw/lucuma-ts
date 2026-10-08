@@ -3,24 +3,21 @@ import { describe, expect, it } from 'vitest';
 import { DAY_MS, observingNightInterval, observingNightOf } from '@/domain/siteTime';
 import type { Site } from '@/domain/types';
 import { Probe } from '@/test/probe';
-import { renderApp } from '@/test/renderApp';
+import { renderWithContext } from '@/test/render';
 
 import { RECENT_DAYS, useRecentSpan } from './useRecentSpan';
 
 const openSpan = async (route: string) =>
-  renderApp({
-    route,
-    mocks: [],
-    element: (
-      <Probe
-        use={useRecentSpan}
-        readout={(span) => ({
-          end: span.end,
-          days: String((Date.parse(span.end) - Date.parse(span.start)) / DAY_MS),
-        })}
-      />
-    ),
-  });
+  renderWithContext(
+    <Probe
+      use={useRecentSpan}
+      readout={(span) => ({
+        end: span.end,
+        days: String((Date.parse(span.end) - Date.parse(span.start)) / DAY_MS),
+      })}
+    />,
+    { route },
+  );
 
 const tonightEnds = (site: Site): string =>
   new Date(observingNightInterval(site, observingNightOf(site, Date.now())).end).toISOString();

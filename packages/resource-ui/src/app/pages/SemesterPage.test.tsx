@@ -2,7 +2,7 @@ import type { MockLink } from '@apollo/client/testing';
 import { isNotNullish } from '@gemini-hlsw/lucuma-common-ui';
 import { describe, expect, it } from 'vitest';
 
-import Layout from '@/components/layout/Layout';
+import { setClockPreference } from '@/app/useClockPreference';
 import { buildSemesterTimeline } from '@/domain/semesterTimeline';
 import { buildMonthLines } from '@/features/semester/semesterMonthOptions';
 import {
@@ -12,9 +12,9 @@ import {
   telescopeModeBlock,
 } from '@/test/fixtures/blocks';
 import { publishedSemester, publishedSemesters, semesterSchedule } from '@/test/fixtures/semester';
-import { chooseClock, chooseSite, openDropdown, selectDropdownOption } from '@/test/helpers';
+import { act, openDropdown, selectDropdownOption } from '@/test/helpers';
 import { Probe, PROBE_URL_TESTID } from '@/test/probe';
-import { renderApp } from '@/test/renderApp';
+import { renderWithContext } from '@/test/render';
 
 import SemesterPage from './SemesterPage';
 
@@ -31,17 +31,7 @@ const GHOST = instrumentAvailabilityBlock({ instrument: 'GHOST', location: { por
 const GCAL = instrumentAvailabilityBlock({ instrument: 'GCAL', location: { port: 2 }, interval: GS_2025B_WHOLE });
 
 const openSemester = (route: string, ...mocks: MockLink.MockedResponse[]) =>
-  renderApp({ element: <SemesterPage />, route, mocks });
-
-/** The semester page inside the real shell, for the controls the masthead owns. */
-const openSemesterInShell = (route: string, ...mocks: MockLink.MockedResponse[]) =>
-  renderApp({
-    element: <Layout />,
-    route,
-    path: '/',
-    childRoutes: [{ path: 'semester', element: <SemesterPage /> }],
-    mocks,
-  });
+  renderWithContext(<SemesterPage />, { route, mocks });
 
 /** Stands in for the night view: the subject is the jump, not what the night draws. */
 const NIGHT_ROUTE = { path: '/night', element: <Probe use={() => null} /> };
@@ -129,7 +119,7 @@ describe(SemesterPage, () => {
           .querySelectorAll('path.highcharts-point:not(.schedule-ghost)');
       await expect.poll(() => september().length).toBeGreaterThan(0);
 
-      // The token, not the computed colour: renderApp loads no stylesheet, so var(--instrument-x) is inert.
+      // The token, not the computed colour: renderWithContext loads no stylesheet, so var(--instrument-x) is inert.
       const fills = new Set([...september()].map((mark) => mark.getAttribute('fill')));
 
       // The state rows head the chart in the routine neutral, never an instrument hue.
@@ -182,7 +172,7 @@ describe(SemesterPage, () => {
 
     it('survives a clock change without redrawing a single bar', async () => {
       // The chart speaks dates, so the toggle's re-render must leave every bar exactly where it was.
-      const screen = await openSemesterInShell(
+      const screen = await openSemester(
         '/semester?site=GN&semester=2026B',
         publishedSemesters(GN_2026B),
         semesterSchedule(GN_2026B, {
@@ -195,7 +185,7 @@ describe(SemesterPage, () => {
       await expect.poll(() => drawnBars().length).toBeGreaterThan(0);
       const before = drawnBars();
 
-      await chooseClock(screen, 'UTC');
+      await act(() => setClockPreference('utc'));
 
       await expect.poll(drawnBars).toBe(before);
     });
@@ -268,7 +258,7 @@ describe(SemesterPage, () => {
 
     it('redraws the cached semester when the site switches back, never an empty chart', async () => {
       // Both sites share the month keys, so the switch back updates mounted charts rather than remounting.
-      const screen = await openSemesterInShell(
+      const screen = await openSemester(
         '/semester?site=GS&semester=2025B',
         publishedSemesters(GS_2025B, GN_2025B),
         semesterSchedule(GS_2025B, { instrumentAvailability: [GHOST] }),
@@ -286,20 +276,19 @@ describe(SemesterPage, () => {
       await expect.poll(() => drawnBars().length).toBeGreaterThan(0);
       const southBars = drawnBars();
 
-      await chooseSite(screen, 'GN');
+      await screen.router.navigate('/semester?site=GN&semester=2025B');
       await expect.element(screen.getByText('Gemini North Semester 2025B', { exact: false })).toBeVisible();
       // Changed before non-empty: a blank chart also passes "changed".
       await expect.poll(drawnBars).not.toBe(southBars);
       await expect.poll(() => drawnBars().length).toBeGreaterThan(0);
 
-      await chooseSite(screen, 'GS');
+      await screen.router.navigate('/semester?site=GS&semester=2025B');
       await expect.element(screen.getByText('Gemini South Semester 2025B', { exact: false })).toBeVisible();
       await expect.poll(drawnBars).toBe(southBars);
     });
 
     it('opens the night view when a bar is clicked', async () => {
-      const screen = await renderApp({
-        element: <SemesterPage />,
+      const screen = await renderWithContext(<SemesterPage />, {
         route: '/semester?site=GS&semester=2025B',
         extraRoutes: [NIGHT_ROUTE],
         mocks: [publishedSemesters(GS_2025B), semesterSchedule(GS_2025B, { instrumentAvailability: [GHOST] })],
@@ -512,8 +501,7 @@ describe(SemesterPage, () => {
     });
 
     it('opens the night view when a night is clicked', async () => {
-      const screen = await renderApp({
-        element: <SemesterPage />,
+      const screen = await renderWithContext(<SemesterPage />, {
         route: '/semester?site=GS&semester=2025B',
         extraRoutes: [NIGHT_ROUTE],
         mocks: [publishedSemesters(GS_2025B), semesterSchedule(GS_2025B)],

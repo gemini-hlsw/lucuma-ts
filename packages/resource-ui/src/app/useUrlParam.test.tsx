@@ -1,26 +1,23 @@
 import { describe, expect, it } from 'vitest';
 
 import { Probe, PROBE_URL_TESTID } from '@/test/probe';
-import { renderApp } from '@/test/renderApp';
+import { renderWithContext } from '@/test/render';
 
 import { useUrlParam } from './useUrlParam';
 
 const openView = async (route: string, options?: Parameters<typeof useUrlParam>[2]) =>
-  renderApp({
-    route,
-    element: (
-      <Probe
-        use={() => useUrlParam('view', 'chart', options)}
-        readout={([value]) => ({ value })}
-        actions={([, set]) => [
-          { label: 'calendar', run: () => set('calendar') },
-          { label: 'chart', run: () => set('chart') },
-          { label: 'blank', run: () => set('') },
-        ]}
-      />
-    ),
-    mocks: [],
-  });
+  renderWithContext(
+    <Probe
+      use={() => useUrlParam('view', 'chart', options)}
+      readout={([value]) => ({ value })}
+      actions={([, set]) => [
+        { label: 'calendar', run: () => set('calendar') },
+        { label: 'chart', run: () => set('chart') },
+        { label: 'blank', run: () => set('') },
+      ]}
+    />,
+    { route },
+  );
 
 describe(useUrlParam, () => {
   it('reads the parameter the URL carries', async () => {

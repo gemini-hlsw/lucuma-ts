@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { PublishedSemester } from '@/domain/types';
-import { renderApp } from '@/test/renderApp';
+import { renderWithContext } from '@/test/render';
 
 import { SemesterTitleLink } from './SemesterTitleLink';
 
@@ -20,10 +20,8 @@ const semester = (
 describe(SemesterTitleLink, () => {
   it('opens the named semester, keeping the night and dropping every page-scoped parameter', async () => {
     const target = semester({ site: 'GS', semester: '2026B', title: 'GS 2026B' });
-    const screen = await renderApp({
-      element: <SemesterTitleLink semester={target} />,
+    const screen = await renderWithContext(<SemesterTitleLink semester={target} />, {
       route: '/night?site=GN&night=2026-09-14&q=GPI&view=calendar&month=2026-09',
-      mocks: [],
     });
 
     await expect
@@ -33,11 +31,7 @@ describe(SemesterTitleLink, () => {
 
   it("forces the semester's own site over one carried from the current URL", async () => {
     const target = semester({ site: 'GS', semester: '2026B', title: 'GS 2026B' });
-    const screen = await renderApp({
-      element: <SemesterTitleLink semester={target} />,
-      route: '/night?site=GN',
-      mocks: [],
-    });
+    const screen = await renderWithContext(<SemesterTitleLink semester={target} />, { route: '/night?site=GN' });
 
     await expect
       .element(screen.getByRole('link', { name: 'GS 2026B' }))

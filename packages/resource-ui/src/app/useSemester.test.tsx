@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import { publishedSemester, publishedSemesters } from '@/test/fixtures/semester';
 import { Probe } from '@/test/probe';
-import { renderApp } from '@/test/renderApp';
+import { renderWithContext } from '@/test/render';
 
 import { useSemester } from './useSemester';
 
@@ -18,19 +18,16 @@ const SEMESTERS = publishedSemesters(
 );
 
 const openSemester = async (route: string) =>
-  renderApp({
-    route,
-    mocks: [SEMESTERS],
-    element: (
-      <Probe
-        use={useSemester}
-        readout={({ semester, semestersForSite, loading }) => ({
-          semester: semester?.semester ?? (loading ? 'loading' : 'none'),
-          options: semestersForSite.map((entry) => entry.semester).join(','),
-        })}
-      />
-    ),
-  });
+  renderWithContext(
+    <Probe
+      use={useSemester}
+      readout={({ semester, semestersForSite, loading }) => ({
+        semester: semester?.semester ?? (loading ? 'loading' : 'none'),
+        options: semestersForSite.map((entry) => entry.semester).join(','),
+      })}
+    />,
+    { route, mocks: [SEMESTERS] },
+  );
 
 describe(useSemester, () => {
   it('takes the semester the URL names', async () => {

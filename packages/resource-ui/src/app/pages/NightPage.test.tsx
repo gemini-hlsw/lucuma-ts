@@ -5,7 +5,7 @@ import type { MockLink } from '@apollo/client/testing';
 import { describe, expect, it } from 'vitest';
 import { page } from 'vitest/browser';
 
-import Layout from '@/components/layout/Layout';
+import { setClockPreference } from '@/app/useClockPreference';
 import { observingNightOf } from '@/domain/siteTime';
 import {
   instrumentAvailabilityBlock,
@@ -17,9 +17,9 @@ import {
 } from '@/test/fixtures/blocks';
 import { nightSchedule } from '@/test/fixtures/night';
 import { publishedSemester, publishedSemesters } from '@/test/fixtures/semester';
-import { chooseClock } from '@/test/helpers';
+import { act } from '@/test/helpers';
 import { Probe, PROBE_URL_TESTID } from '@/test/probe';
-import { renderApp } from '@/test/renderApp';
+import { renderWithContext } from '@/test/render';
 
 import NightPage from './NightPage';
 
@@ -42,7 +42,7 @@ const SEMESTER_ROUTE = { path: '/semester', element: <Probe use={() => null} /> 
 const shownUrl = () => document.querySelector(`[data-testid="${PROBE_URL_TESTID}"]`)?.textContent ?? '';
 
 const openNight = (route: string, ...mocks: MockLink.MockedResponse[]) =>
-  renderApp({ element: <NightPage />, route, extraRoutes: [SEMESTER_ROUTE], mocks });
+  renderWithContext(<NightPage />, { route, extraRoutes: [SEMESTER_ROUTE], mocks });
 
 /** The ordinary night most tests open. */
 const openOrdinaryNight = (...more: MockLink.MockedResponse[]) =>
@@ -326,18 +326,9 @@ describe(NightPage, () => {
     await expect.element(screen.getByText('Gemini North Semester 2026B', { exact: false })).toBeVisible();
   });
 
-  it('moves the chart clock to UT from the menu', async () => {
+  it('moves the chart clock to UT when the clock preference changes', async () => {
     // The choice keeps the axis window, so the labels prove the in-place update took the new zone.
-    const screen = await renderApp({
-      element: <Layout />,
-      route: '/night?site=GS&night=2025-11-14',
-      path: '/',
-      childRoutes: [{ path: 'night', element: <NightPage /> }],
-      mocks: [
-        publishedSemesters(GS_2025B),
-        nightSchedule({ site: 'GS', night: '2025-11-14' }, { instrumentAvailability: [GHOST] }),
-      ],
-    });
+    const screen = await openOrdinaryNight();
     const labels = () =>
       [...document.querySelectorAll('[data-testid="night-timeline"] .highcharts-xaxis-labels text')]
         .map((tick) => tick.textContent ?? '')
@@ -345,7 +336,7 @@ describe(NightPage, () => {
     await expect.poll(() => labels().length).toBeGreaterThan(0);
     const siteLabels = labels();
 
-    await chooseClock(screen, 'UTC');
+    await act(() => setClockPreference('utc'));
 
     // Non-empty first: a blanked chart must not slip through as merely "different".
     await expect.element(screen.getByText('17:00 to 17:00 UTC', { exact: false })).toBeVisible();

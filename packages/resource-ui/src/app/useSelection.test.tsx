@@ -2,29 +2,26 @@ import { describe, expect, it } from 'vitest';
 
 import { observingNightOf } from '@/domain/siteTime';
 import { Probe, PROBE_URL_TESTID } from '@/test/probe';
-import { renderApp } from '@/test/renderApp';
+import { renderWithContext } from '@/test/render';
 
 import { useSelection } from './useSelection';
 
 const openSelection = async (route: string) =>
-  renderApp({
-    route,
-    element: (
-      <Probe
-        use={useSelection}
-        readout={(selection) => ({
-          site: selection.site,
-          night: selection.observingNight,
-          tonight: selection.tonight,
-        })}
-        actions={(selection) => [
-          { label: 'to GS', run: () => selection.setSite('GS') },
-          { label: 'tonight', run: selection.clearObservingNight },
-        ]}
-      />
-    ),
-    mocks: [],
-  });
+  renderWithContext(
+    <Probe
+      use={useSelection}
+      readout={(selection) => ({
+        site: selection.site,
+        night: selection.observingNight,
+        tonight: selection.tonight,
+      })}
+      actions={(selection) => [
+        { label: 'to GS', run: () => selection.setSite('GS') },
+        { label: 'tonight', run: selection.clearObservingNight },
+      ]}
+    />,
+    { route },
+  );
 
 describe(useSelection, () => {
   it('reads the whole selection out of the query string', async () => {

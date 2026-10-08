@@ -16,7 +16,7 @@ import { instrumentComponent, instrumentComponentAvailabilityBlock } from '@/tes
 import { publishedSemester, publishedSemesters } from '@/test/fixtures/semester';
 import { weekSchedule } from '@/test/fixtures/week';
 import { Probe, PROBE_URL_TESTID } from '@/test/probe';
-import { renderApp } from '@/test/renderApp';
+import { renderWithContext } from '@/test/render';
 
 import WeekPage from './WeekPage';
 
@@ -35,7 +35,7 @@ const LINK_TARGETS = [
 const shownUrl = () => document.querySelector(`[data-testid="${PROBE_URL_TESTID}"]`)?.textContent ?? '';
 
 const openWeek = (route: string, ...mocks: MockLink.MockedResponse[]) =>
-  renderApp({ element: <WeekPage />, route, extraRoutes: LINK_TARGETS, mocks });
+  renderWithContext(<WeekPage />, { route, extraRoutes: LINK_TARGETS, mocks });
 
 /** The ordinary week most tests open. */
 const openOrdinaryWeek = (...more: MockLink.MockedResponse[]) =>

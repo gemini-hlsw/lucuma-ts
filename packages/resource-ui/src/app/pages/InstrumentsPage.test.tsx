@@ -5,7 +5,7 @@ import { instrumentAvailabilityBlock } from '@/test/fixtures/blocks';
 import { type PublishedSemesterRow, publishedSemesters, recentSpan, semesterSchedule } from '@/test/fixtures/semester';
 import { nightsFromTonight, semesterFromTonight } from '@/test/fixtures/tonight';
 import { openDropdown, selectDropdownOption } from '@/test/helpers';
-import { renderApp } from '@/test/renderApp';
+import { renderWithContext } from '@/test/render';
 
 import InstrumentsPage from './InstrumentsPage';
 
@@ -68,8 +68,7 @@ const openInstruments = (
   semesters: readonly [PublishedSemesterRow, ...PublishedSemesterRow[]],
   instrumentAvailability: InstrumentAvailabilityBlockItem[],
 ) =>
-  renderApp({
-    element: <InstrumentsPage />,
+  renderWithContext(<InstrumentsPage />, {
     route,
     mocks: [
       publishedSemesters(...semesters),
@@ -269,8 +268,7 @@ describe(InstrumentsPage, () => {
   });
 
   it('answers per site - Gemini South holds its own instruments', async () => {
-    const screen = await renderApp({
-      element: <InstrumentsPage />,
+    const screen = await renderWithContext(<InstrumentsPage />, {
       route: '/instruments?site=GS',
       mocks: [
         publishedSemesters(GS_CURRENT, GN_CURRENT),

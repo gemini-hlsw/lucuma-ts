@@ -30,7 +30,7 @@ import { componentBrowser, instrumentComponent } from '@/test/fixtures/component
 import { publishedSemester, publishedSemesters, recentSpan, semesterSchedule } from '@/test/fixtures/semester';
 import { nightsFromTonight } from '@/test/fixtures/tonight';
 import { openDropdown, selectDropdownOption } from '@/test/helpers';
-import { renderApp } from '@/test/renderApp';
+import { renderWithContext } from '@/test/render';
 import { ROOT_FONT_SIZE } from '@/test/styleProbe';
 
 /** The reader's default and WCAG 1.4.4's 200% checkpoint - the two points a rem box has to hold at. */
@@ -96,8 +96,7 @@ const CATALOG = [
 ];
 
 const openComponents = (element: ReactElement) =>
-  renderApp({
-    element,
+  renderWithContext(element, {
     route: '/components?site=GS',
     mocks: [publishedSemesters(GS_2025B), componentBrowser(recentSpan('GS'), { components: CATALOG })],
   });
@@ -105,8 +104,7 @@ const openComponents = (element: ReactElement) =>
 const GN_WHOLE = nightsFromTonight('GN', -60, 60);
 
 const openInstruments = () =>
-  renderApp({
-    element: <InstrumentsPage />,
+  renderWithContext(<InstrumentsPage />, {
     route: '/instruments?site=GN',
     mocks: [
       publishedSemesters(GN_2026B),
@@ -191,8 +189,7 @@ describe('the filter and page controls a reader can grow past their own box', ()
 
   it.each(ROOTS)('keeps the Semester picker showing its own longest selected option at a %s root', async (root) => {
     document.documentElement.style.fontSize = root;
-    const screen = await renderApp({
-      element: <SemesterPage />,
+    const screen = await renderWithContext(<SemesterPage />, {
       route: '/semester?site=GS&semester=2025B',
       mocks: [publishedSemesters(GS_2025B, GS_2026B_DEMO), semesterSchedule(GS_2025B), semesterSchedule(GS_2026B_DEMO)],
     });

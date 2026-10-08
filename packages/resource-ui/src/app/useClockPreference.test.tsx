@@ -1,16 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import { Probe } from '@/test/probe';
-import { renderApp } from '@/test/renderApp';
+import { renderWithContext } from '@/test/render';
 
 import { setClockPreference, useClockPreference } from './useClockPreference';
 
 const openClock = async () =>
-  renderApp({
-    route: '/night?site=GS',
-    element: <Probe use={useClockPreference} readout={(clock) => ({ clock })} />,
-    mocks: [],
-  });
+  renderWithContext(<Probe use={useClockPreference} readout={(clock) => ({ clock })} />, { route: '/night?site=GS' });
 
 describe(useClockPreference, () => {
   it('starts on the site clock, which is what a reader at the telescope works in', async () => {

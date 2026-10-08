@@ -4,7 +4,7 @@ import '@/styles/main.css';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
 
-import { renderApp } from '@/test/renderApp';
+import { renderWithContext } from '@/test/render';
 import { contrastRatio, pixelOver } from '@/test/styleProbe';
 
 import Navbar from './Navbar';
@@ -13,7 +13,7 @@ const DESKTOP = { width: 1024, height: 768 };
 
 const renderAtDesktop = async () => {
   await page.viewport(DESKTOP.width, DESKTOP.height);
-  return renderApp({ element: <Navbar />, route: '/night?site=GS', mocks: [] });
+  return renderWithContext(<Navbar />, { route: '/night?site=GS' });
 };
 
 const centre = (rect: DOMRect): [number, number] => [rect.left + rect.width / 2, rect.top + rect.height / 2];
@@ -76,7 +76,7 @@ describe(Navbar, () => {
     [767, 'keeps it for screen readers only, as it does the name', false],
   ])('at %i px "Checking sign-in" %s', async (width, _where, drawn) => {
     await page.viewport(width, DESKTOP.height);
-    const screen = await renderApp({ element: <Navbar />, route: '/night?site=GS', sessionChecked: false, mocks: [] });
+    const screen = await renderWithContext(<Navbar />, { route: '/night?site=GS', sessionChecked: false });
 
     const control = screen.getByTestId('account-control');
     await expect.element(control).toHaveTextContent('Checking sign-in');

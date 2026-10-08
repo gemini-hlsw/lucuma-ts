@@ -11,7 +11,7 @@ import {
 import { type PublishedSemesterRow, publishedSemesters, recentSpan } from '@/test/fixtures/semester';
 import { eveningsFromTonight, nightsFromTonight, semesterFromTonight } from '@/test/fixtures/tonight';
 import { openDropdown, selectDropdownOption } from '@/test/helpers';
-import { renderApp } from '@/test/renderApp';
+import { renderWithContext } from '@/test/render';
 
 import ComponentsPage from './ComponentsPage';
 
@@ -102,8 +102,7 @@ const openComponents = (
   data: Partial<ComponentBrowserQuery>,
   semesters: readonly [PublishedSemesterRow, ...PublishedSemesterRow[]] = [GS_CURRENT],
 ) =>
-  renderApp({
-    element: <ComponentsPage />,
+  renderWithContext(<ComponentsPage />, {
     route,
     mocks: [publishedSemesters(...semesters), componentBrowser(recentSpan(semesters[0].site), data)],
   });

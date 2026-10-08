@@ -5,7 +5,7 @@ import { odbTokenAtom, sessionCheckedAtom, sessionStatusAtom, useSessionStatus }
 import { store } from '@/components/atoms/store';
 import { fakeJwt, standardUser } from '@/test/factories';
 import { Probe } from '@/test/probe';
-import { renderApp } from '@/test/renderApp';
+import { renderWithContext } from '@/test/render';
 import { ssoCall, ssoRefreshes, stubSso } from '@/test/sso';
 
 beforeEach(() => {
@@ -13,13 +13,11 @@ beforeEach(() => {
 });
 
 describe('session state between tests', () => {
-  it('signs a tree in through renderApp', async () => {
-    const screen = await renderApp({
-      route: '/',
-      token: fakeJwt(standardUser('staff')),
-      element: <Probe use={() => useSessionStatus()} readout={(status) => ({ status })} />,
-      mocks: [],
-    });
+  it('signs a tree in through renderWithContext on the module store', async () => {
+    const screen = await renderWithContext(
+      <Probe use={() => useSessionStatus()} readout={(status) => ({ status })} />,
+      { token: fakeJwt(standardUser('staff')), store },
+    );
 
     await expect.element(screen.getByTestId('probe-status')).toHaveTextContent('signed-in');
   });

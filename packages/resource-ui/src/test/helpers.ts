@@ -38,10 +38,7 @@ export async function openAppMenu(sut: LocatorSelectors): Promise<void> {
   await expect.element(page.getByRole('menuitem', { name: 'About Resource' })).toBeVisible();
 }
 
-/**
- * The clock is a menu choice now, so every test that moves it opens the menu the reader opens.
- * Choosing closes the menu, so a test asserting the new state must open it again.
- */
+/** Through the menu, as the reader does; choosing closes it, so a test asserting the new state reopens it. */
 export async function chooseClock(sut: LocatorSelectors, label: 'Site time' | 'UTC'): Promise<void> {
   await openAppMenu(sut);
   const choice = page.getByRole('menuitemradio', { name: `Clock: ${label}`, exact: true });

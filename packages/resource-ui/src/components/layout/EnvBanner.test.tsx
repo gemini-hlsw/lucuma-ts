@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import type * as EnvironmentModule from '@/app/environment';
 import { environmentLabel } from '@/app/environment';
-import { renderApp } from '@/test/renderApp';
+import { renderWithContext } from '@/test/render';
 
 import { EnvBanner } from './EnvBanner';
 
@@ -15,7 +15,7 @@ vi.mock('@/app/environment', async (importOriginal) => {
 
 describe(EnvBanner, () => {
   it('names the environment, so nobody mistakes this for production', async () => {
-    const screen = await renderApp({ element: <EnvBanner />, route: '/night', mocks: [] });
+    const screen = await renderWithContext(<EnvBanner />, { route: '/night' });
 
     await expect.element(screen.getByTestId('env-banner')).toHaveTextContent('Development');
   });
@@ -23,7 +23,7 @@ describe(EnvBanner, () => {
   it('renders nothing once the hostname is a production one', async () => {
     vi.mocked(environmentLabel).mockReturnValueOnce(null);
 
-    const screen = await renderApp({ element: <EnvBanner />, route: '/night', mocks: [] });
+    const screen = await renderWithContext(<EnvBanner />, { route: '/night' });
 
     await expect.element(screen.getByTestId('env-banner')).not.toBeInTheDocument();
     expect(screen.container.textContent).toBe('');
