@@ -39,7 +39,7 @@
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
-    "@gemini-hlsw/lucuma-odb-schemas": "0.101.0-32.2c70889",
+    "@gemini-hlsw/lucuma-odb-schemas": "0.102.0-1e66939",
     "@graphql-codegen/cli": "7.4.3",
     "@graphql-codegen/client-preset": "6.2.0",
     "@graphql-eslint/eslint-plugin": "4.4.1",
