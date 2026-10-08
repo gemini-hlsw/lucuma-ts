@@ -275,8 +275,7 @@ other home.
 Browser-mode Vitest (Playwright chromium). Pure functions get plain unit tests; pages get browser tests that
 mount through `src/test/renderApp.tsx` and drive real interactions with accessible queries
 (`getByRole`, `getByLabelText`). Pass `renderApp` its `mocks`, built per operation by `src/test/fixtures/`
-with only the **Blocks** the assertion depends on. A query no mock answers fails the test
-(`src/test/unansweredQueries.ts`), so a fixture must match the variables the page sends.
+with only the **Blocks** the assertion depends on; a fixture must match the variables the page sends.
 `src/gql/resource.test.ts` validates every document against the schema. Link-chain tests (session
 hold, auth header, toasts) run the real links ahead of canned answers through `src/test/linkClient.ts`.
 
