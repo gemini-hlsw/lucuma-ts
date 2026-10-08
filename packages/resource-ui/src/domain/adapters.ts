@@ -1,4 +1,13 @@
-import type * as Gql from '@gql/gen/graphql';
+import type { ComponentBrowserQuery, PublishedSemestersQuery } from '@gql/gen/graphql';
+import type {
+  InstrumentAvailabilityBlockItem,
+  InstrumentComponentAvailabilityBlockItem,
+  InstrumentLocationItem,
+  TelescopeAvailabilityBlockItem,
+  TelescopeModeBlockItem,
+  TelescopeSubsystemAvailabilityBlockItem,
+  TooSupportBlockItem,
+} from '@gql/types';
 
 import { addDays } from './semester';
 import type {
@@ -26,7 +35,7 @@ const toInterval = (interval: ApiInterval): { start: number; end: number } => ({
 /** Position in the response, not an identity; a prefix must be unique per combined rendering context. */
 const rowKey = (kind: string, index: number): string => `${kind}${String(index)}`;
 
-export const toPublishedSemesters = (data: Gql.PublishedSemestersQuery): readonly PublishedSemester[] =>
+export const toPublishedSemesters = (data: PublishedSemestersQuery): readonly PublishedSemester[] =>
   data.publishedSemesters.map((entry) => ({
     site: entry.site,
     semester: entry.semester,
@@ -45,7 +54,7 @@ const warnedInstruments = new Set<string>();
 
 /** The one place the port/place promise is checked; a contradictory record reads UNKNOWN, never throws. */
 const toLocation = (
-  location: Gql.InstrumentAvailabilityBlockItemFragment['location'],
+  location: InstrumentLocationItem,
   publishedName: string,
   interval: ApiInterval,
 ): { port: number | null; place: OffPortPlace | null } => {
@@ -67,7 +76,7 @@ const toLocation = (
 };
 
 export const toInstrumentAvailability = (
-  blocks: readonly Gql.InstrumentAvailabilityBlockItemFragment[],
+  blocks: readonly InstrumentAvailabilityBlockItem[],
 ): readonly InstrumentAvailabilityBlock[] =>
   blocks.map((block, index) => ({
     id: rowKey('ia', index),
@@ -80,7 +89,7 @@ export const toInstrumentAvailability = (
   }));
 
 export const toTelescopeAvailability = (
-  blocks: readonly Gql.TelescopeAvailabilityBlockItemFragment[],
+  blocks: readonly TelescopeAvailabilityBlockItem[],
 ): readonly TelescopeAvailabilityBlock[] =>
   blocks.map((block, index) => ({
     id: rowKey('ta', index),
@@ -90,7 +99,7 @@ export const toTelescopeAvailability = (
     reason: block.reason ?? null,
   }));
 
-export const toTooSupport = (blocks: readonly Gql.TooSupportBlockItemFragment[]): readonly TooSupportBlock[] =>
+export const toTooSupport = (blocks: readonly TooSupportBlockItem[]): readonly TooSupportBlock[] =>
   blocks.map((block, index) => ({
     id: rowKey('ts', index),
     tooSupport: block.tooSupport,
@@ -98,7 +107,7 @@ export const toTooSupport = (blocks: readonly Gql.TooSupportBlockItemFragment[])
     note: block.note ?? null,
   }));
 
-export const toTelescopeMode = (blocks: readonly Gql.TelescopeModeBlockItemFragment[]): readonly TelescopeModeBlock[] =>
+export const toTelescopeMode = (blocks: readonly TelescopeModeBlockItem[]): readonly TelescopeModeBlock[] =>
   blocks.map((block, index) => ({
     id: rowKey('tm', index),
     mode: block.mode,
@@ -109,7 +118,7 @@ export const toTelescopeMode = (blocks: readonly Gql.TelescopeModeBlockItemFragm
   }));
 
 export const toTelescopeSubsystemAvailability = (
-  blocks: readonly Gql.TelescopeSubsystemAvailabilityBlockItemFragment[],
+  blocks: readonly TelescopeSubsystemAvailabilityBlockItem[],
 ): readonly TelescopeSubsystemAvailabilityBlock[] =>
   blocks.map((block, index) => ({
     id: rowKey('tsa', index),
@@ -120,7 +129,7 @@ export const toTelescopeSubsystemAvailability = (
     note: block.note ?? null,
   }));
 
-export const toComponents = (data: Gql.ComponentBrowserQuery): readonly InstrumentComponent[] =>
+export const toComponents = (data: ComponentBrowserQuery): readonly InstrumentComponent[] =>
   data.components.map((component) => ({
     id: component.id,
     instrument: component.instrument,
@@ -139,9 +148,7 @@ export interface NightComponents {
 }
 
 /** The night view feeds the one finder rather than growing its own row shape. */
-export const toNightComponents = (
-  blocks: readonly Gql.InstrumentComponentAvailabilityBlockItemFragment[],
-): NightComponents => {
+export const toNightComponents = (blocks: readonly InstrumentComponentAvailabilityBlockItem[]): NightComponents => {
   const byId = new Map<string, InstrumentComponent>();
   for (const block of blocks) {
     byId.set(block.component.id, {
@@ -173,9 +180,7 @@ export const toNightComponents = (
   };
 };
 
-export const toComponentAvailability = (
-  data: Gql.ComponentBrowserQuery,
-): readonly InstrumentComponentAvailabilityBlock[] =>
+export const toComponentAvailability = (data: ComponentBrowserQuery): readonly InstrumentComponentAvailabilityBlock[] =>
   data.instrumentComponentAvailability.map((block, index) => ({
     id: rowKey('ica', index),
     componentId: block.component.id,

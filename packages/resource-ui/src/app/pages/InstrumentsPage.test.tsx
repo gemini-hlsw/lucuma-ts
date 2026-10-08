@@ -1,4 +1,4 @@
-import type { InstrumentAvailabilityBlockItemFragment } from '@gql/gen/graphql';
+import type { InstrumentAvailabilityBlockItem } from '@gql/types';
 import { describe, expect, it } from 'vitest';
 
 import { instrumentAvailabilityBlock } from '@/test/fixtures/blocks';
@@ -58,7 +58,7 @@ const GNIRS_SPLIT = [
 const openInstruments = (
   route: string,
   semesters: readonly [PublishedSemesterRow, ...PublishedSemesterRow[]],
-  instrumentAvailability: InstrumentAvailabilityBlockItemFragment[],
+  instrumentAvailability: InstrumentAvailabilityBlockItem[],
 ) =>
   renderApp({
     element: <InstrumentsPage />,

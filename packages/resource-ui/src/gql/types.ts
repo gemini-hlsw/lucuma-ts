@@ -1,0 +1,9 @@
+export type {
+  InstrumentAvailabilityBlockItemFragment as InstrumentAvailabilityBlockItem,
+  InstrumentComponentAvailabilityBlockItemFragment as InstrumentComponentAvailabilityBlockItem,
+  InstrumentLocationItemFragment as InstrumentLocationItem,
+  TelescopeAvailabilityBlockItemFragment as TelescopeAvailabilityBlockItem,
+  TelescopeModeBlockItemFragment as TelescopeModeBlockItem,
+  TelescopeSubsystemAvailabilityBlockItemFragment as TelescopeSubsystemAvailabilityBlockItem,
+  TooSupportBlockItemFragment as TooSupportBlockItem,
+} from './gen/graphql';

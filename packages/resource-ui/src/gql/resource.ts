@@ -1,5 +1,12 @@
 import { graphql } from './gen';
 
+export const INSTRUMENT_LOCATION_FRAGMENT = graphql(`
+  fragment InstrumentLocationItem on InstrumentLocation {
+    place
+    port
+  }
+`);
+
 export const INSTRUMENT_AVAILABILITY_BLOCK_FRAGMENT = graphql(`
   fragment InstrumentAvailabilityBlockItem on InstrumentAvailabilityBlock {
     instrument
@@ -11,8 +18,7 @@ export const INSTRUMENT_AVAILABILITY_BLOCK_FRAGMENT = graphql(`
       end
     }
     location {
-      place
-      port
+      ...InstrumentLocationItem
     }
   }
 `);
