@@ -8,10 +8,10 @@ description: >
   (4) managing local state with reactive variables,
   (5) troubleshooting Apollo Client errors or performance issues.
 license: MIT
-compatibility: React 18+, React 19 (Suspense/RSC). Works with Next.js, Vite, CRA, and other React frameworks.
+compatibility: React 18+, React 19 (Suspense/RSC). Works with Vite, CRA, and other client-side React apps.
 metadata:
   author: apollographql
-  version: '1.0.0'
+  version: "1.0.0"
 allowed-tools: Bash(npm:*) Bash(npx:*) Bash(node:*) Read Write Edit Glob Grep
 ---
 
@@ -21,22 +21,17 @@ Apollo Client is a comprehensive state management library for JavaScript that en
 
 ## Integration Guides
 
-Choose the integration guide that matches your application setup:
+This project is a client-side app. Use the client-side integration guide:
 
 - **[Client-Side Apps](references/integration-client.md)** - For client-side React applications without SSR (Vite, Create React App, etc.)
-- **[Next.js App Router](references/integration-nextjs.md)** - For Next.js applications using the App Router with React Server Components
-- **[React Router Framework Mode](references/integration-react-router.md)** - For React Router 7 applications with streaming SSR
-- **[TanStack Start](references/integration-tanstack-start.md)** - For TanStack Start applications with modern routing
-
-Each guide includes installation steps, configuration, and framework-specific patterns optimized for that environment.
 
 ## Quick Reference
 
 ### Basic Query
 
 ```tsx
-import { gql } from '@apollo/client';
-import { useQuery } from '@apollo/client/react';
+import { gql } from "@apollo/client";
+import { useQuery } from "@apollo/client/react";
 
 const GET_USER = gql`
   query GetUser($id: ID!) {
@@ -63,8 +58,8 @@ function UserProfile({ userId }: { userId: string }) {
 ### Basic Mutation
 
 ```tsx
-import { gql } from '@apollo/client';
-import { useMutation } from '@apollo/client/react';
+import { gql } from "@apollo/client";
+import { useMutation } from "@apollo/client/react";
 
 const CREATE_USER = gql`
   mutation CreateUser($input: CreateUserInput!) {
@@ -82,15 +77,15 @@ function CreateUserForm() {
     await createUser({ variables: { input: { name } } });
   };
 
-  return <button onClick={() => handleSubmit('John')}>Create User</button>;
+  return <button onClick={() => handleSubmit("John")}>Create User</button>;
 }
 ```
 
 ### Suspense Query
 
 ```tsx
-import { Suspense } from 'react';
-import { useSuspenseQuery } from '@apollo/client/react';
+import { Suspense } from "react";
+import { useSuspenseQuery } from "@apollo/client/react";
 
 function UserProfile({ userId }: { userId: string }) {
   const { data } = useSuspenseQuery(GET_USER, {

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { NAV_LINKS_FROM_GS_SEMESTER } from '@/test/fixtures/navLinks';
 import { renderApp } from '@/test/renderApp';
 
 import BottomNav from './BottomNav';
@@ -9,7 +10,7 @@ const ALL_ITEMS = SIDEBAR_MENU_SECTIONS.flatMap((section) => section.items);
 
 describe(BottomNav, () => {
   it('offers every destination as a real link in a named landmark', async () => {
-    const screen = await renderApp({ element: <BottomNav />, route: '/semester?site=GN&semester=2026B' });
+    const screen = await renderApp({ element: <BottomNav />, route: '/semester?site=GN&semester=2026B', mocks: [] });
 
     await expect.element(screen.getByRole('navigation', { name: /primary navigation/i })).toBeVisible();
     for (const item of ALL_ITEMS) {
@@ -22,17 +23,18 @@ describe(BottomNav, () => {
     const screen = await renderApp({
       element: <BottomNav />,
       route: '/semester?site=GS&semester=2026B&night=2026-09-14&view=calendar',
+      mocks: [],
     });
 
     for (const item of ALL_ITEMS) {
       await expect
         .element(screen.getByRole('link', { name: item.label, exact: true }))
-        .toHaveAttribute('href', `${item.to}?site=GS&night=2026-09-14`);
+        .toHaveAttribute('href', NAV_LINKS_FROM_GS_SEMESTER[item.to]);
     }
   });
 
   it('marks the current destination as the active one', async () => {
-    const screen = await renderApp({ element: <BottomNav />, route: '/semester?site=GN&semester=2026B' });
+    const screen = await renderApp({ element: <BottomNav />, route: '/semester?site=GN&semester=2026B', mocks: [] });
 
     await expect
       .element(screen.getByRole('link', { name: 'Semester', exact: true }))
@@ -41,7 +43,7 @@ describe(BottomNav, () => {
   });
 
   it('names every destination in words, never the icon alone', async () => {
-    const screen = await renderApp({ element: <BottomNav />, route: '/night?site=GN' });
+    const screen = await renderApp({ element: <BottomNav />, route: '/night?site=GN', mocks: [] });
 
     for (const item of ALL_ITEMS) {
       await expect.element(screen.getByText(item.label, { exact: true })).toBeVisible();

@@ -1,0 +1,4 @@
+/* Draw an accent bar on the row that holds a CurrentMarker, without hiding the selection highlight */
+.p-datatable .p-datatable-tbody > tr:has(.current-marker) > td:first-child {
+  box-shadow: inset 4px 0 0 var(--primary-color);
+}

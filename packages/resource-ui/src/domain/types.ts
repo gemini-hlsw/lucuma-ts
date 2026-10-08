@@ -1,10 +1,10 @@
 import type {
   ComponentLocation,
-  Instrument,
   InstrumentComponentType,
   InstrumentPlace,
   Partner,
   PowerSource,
+  ResourceInstrument,
   ResourceUsage,
   Site,
   TelescopeAvailability,
@@ -16,10 +16,10 @@ import type {
 // INSTALLED resolves through the instrument's own records, so a piece cannot claim a port it is not on.
 export type {
   ComponentLocation,
-  Instrument,
   InstrumentPlace,
   Partner,
   PowerSource,
+  ResourceInstrument,
   ResourceUsage,
   Site,
   TelescopeAvailability,
@@ -28,7 +28,7 @@ export type {
   TooSupport,
 };
 
-/** Exclusive with `Mounting.port`, so a phantom PORT place is unrepresentable off a port. */
+/** Exclusive with `InstrumentAvailabilityBlock.port`, so a phantom PORT place is unrepresentable off a port. */
 export type OffPortPlace = Exclude<InstrumentPlace, 'PORT'>;
 
 /** A fact about Gemini, not about the data: deriving it from the schedules left the control blank. */
@@ -47,9 +47,9 @@ export interface Interval {
 }
 
 /** `id` is the adapter's row key, not the API's: a block is a projection, so it carries no identity. */
-export interface Mounting {
+export interface InstrumentAvailabilityBlock {
   readonly id: string;
-  readonly instrument: Instrument;
+  readonly instrument: ResourceInstrument;
   /** The name exactly as the schedule prints it, e.g. "cal/ZORRO". */
   readonly publishedName: string;
   readonly usage: ResourceUsage;
@@ -62,7 +62,7 @@ export interface Mounting {
 }
 
 /** The workbook records "Open" as explicitly as "Closed", so both are facts. */
-export interface Closure {
+export interface TelescopeAvailabilityBlock {
   readonly id: string;
   readonly availability: TelescopeAvailability;
   /** The port this record is about, or null when it is the whole telescope. */
@@ -72,14 +72,14 @@ export interface Closure {
 }
 
 /** The ToO support level over a span. NONE is a recorded fact, not an absence. */
-export interface TooBlock {
+export interface TooSupportBlock {
   readonly id: string;
   readonly tooSupport: TooSupport;
   readonly interval: Interval;
   readonly note: string | null;
 }
 
-export interface ModeBlock {
+export interface TelescopeModeBlock {
   readonly id: string;
   readonly mode: TelescopeModeType;
   /** The programs a CLASSICAL or PRIORITY_VISITOR span is for, when any are named. */
@@ -90,7 +90,7 @@ export interface ModeBlock {
   readonly note: string | null;
 }
 
-export interface SubsystemBlock {
+export interface TelescopeSubsystemAvailabilityBlock {
   readonly id: string;
   readonly subsystem: TelescopeSubsystem;
   readonly usage: ResourceUsage;
@@ -127,9 +127,9 @@ export type ComponentUsage = ResourceUsage;
 export type ComponentType = InstrumentComponentType;
 
 /** An instrument piece's identity - the ICTD catalog half. */
-export interface ComponentRecord {
+export interface InstrumentComponent {
   readonly id: string;
-  readonly instrument: Instrument;
+  readonly instrument: ResourceInstrument;
   readonly componentType: ComponentType;
   readonly code: string;
   readonly name: string;
@@ -139,7 +139,7 @@ export interface ComponentRecord {
 }
 
 /** A span of a piece's life: where it was and whether it was usable. */
-export interface ComponentBlock {
+export interface InstrumentComponentAvailabilityBlock {
   readonly id: string;
   readonly componentId: string;
   readonly usage: ComponentUsage;

@@ -10,25 +10,18 @@ leaves this file with it.
 
 ## State of the package
 
-The v1 read surface is complete and waiting on its backend; PRODUCT.md names the five
-destinations it draws.
+The v1 read surface is complete; PRODUCT.md names the five destinations it draws.
 
-**The app reads one backend, over HTTP** - the live Resource service at `/resource/graphql`,
-which does not serve the v1 API yet. Every view is therefore empty under a sticky warning toast
-(the live link in `src/gql/ApolloConfigs.ts`): the expected state, in development and deployed
-alike.
+**The app reads one backend, over HTTP** - the live Resource service at `/resource/graphql`
+(gemini-hlsw/lucuma-odb#3050). In dev the vite proxy carries that path to the dev deployment,
+purely to sidestep CORS. Every data field needs an SSO Bearer token: without one the service
+answers "Field 'X' requires authentication.", and the app shows the sign-in toast
+(`src/gql/ApolloConfigs.ts`). Introspection works anonymously, and the GraphiQL playground is at
+https://lucuma-resource-dev.lucuma.xyz/resource/playground.html.
 
 **No data source runs in the client.** The app must never execute a GraphQL schema in the
-browser - that puts graphql-yoga, an executable schema and the SDL into a frontend bundle. Any
-data source it is given has to be reached over HTTP.
-
-**What is switchable is the dev server's proxy, never the app.** `RESOURCE_API=mock` (or
-`pnpm dev:mock`) points the vite proxy at the mock on :4000. The app makes one request to one
-path and does not care which process answers, so this needs no change to `ApolloConfigs.ts`: no
-control, no second link, no schema in the bundle.
-
-`mock-server/` is what the browser tests execute against, what codegen reads, and what :4000
-serves. The app is not a consumer of it.
+browser - that puts an executable schema and the SDL into a frontend bundle. There is no control
+to choose a backend and no second link.
 
 ## Selection and URL state
 
@@ -61,18 +54,22 @@ the clock toggle, finder scoping) are DESIGN.md's. The mechanics:
   URL, not written, and subordinate parameters drop in the same update: the calendar's month
   belongs to the calendar alone, so switching view or semester drops it.
 - **A navigation carries `site` and `night` and nothing else**, through
-  `app/carriedSelection.ts` - the one answer to what survives a link. Every other parameter
+  `app/carriedSelection.ts` - the one answer to what survives a link. A menu link to the
+  inventory carries `site` alone (`carries` in `SidebarMenu.ts`), since those pages answer for
+  tonight and never read a night. Every other parameter
   (`semester`, `month`, `view`, `q`, `instrument`, `type`, `location`) is one page's, and is
   dropped at the boundary rather than following the reader into a view that never reads it.
   This is react-router's own default for `to`; carrying more would be the hand-written
   override, so a new link needs no convention, only the helper where it wants site and night.
-- Site scoping for the finder pages comes from `app/useSiteSpan.ts`.
+- The finder pages' window comes from `app/useRecentSpan.ts`: the 400 days ending tonight, the longest
+  window the Resource service accepts.
 
 ## Auth mechanics
 
 The masthead says who is signed in and the app menu holds the login and the logout. No view is
 gated on a session - a signed-out reader can open every one - and what a session buys today is
-one header on every Resource request (`ENDPOINTS.md`, "The endpoint").
+the `Authorization: Bearer <JWT>` header every Resource data field requires; signed out, every
+view is empty under the sign-in toast.
 
 - **The token lives in common-ui's `odbTokenAtom`**, a sessionStorage-backed Jotai atom, and the
   app reaches it - and `userAtom`, `isLoggedInAtom`, `sessionStatusAtom` - only through
@@ -121,7 +118,7 @@ one header on every Resource request (`ENDPOINTS.md`, "The endpoint").
 ## The views
 
 **Do not give a view its own path from records to pixels.** Every view projects from the placed rows
-`domain/timeline.ts` produced, never from a `Mounting`, and both charts build on `domain/timeline.ts`
+`domain/timeline.ts` produced, never from an `InstrumentAvailabilityBlock`, and both charts build on `domain/timeline.ts`
 plus `features/timeline/`. A view supplies its own axis and its own way of phrasing a span - dates and
 nights for the semester and week, clock times for a night - and nothing else. Adding a fourth window
 should not mean copying any of it. The one deliberate exception is `domain/calendarNews.ts`, which
@@ -150,11 +147,6 @@ state for itself:
   would hide nothing. Both open a row into `components/ui/RecordHistoryTable.tsx`.
 - **A night no semester covers says what is covered** (`domain/coverage.ts`), and offers the nearest
   covered night. A demo semester never merges with a real one.
-- **Both quarantine boundaries are one file each** - `mock-server/storedInstruments.ts` for instruments
-  GPP knows but the schedule never mounts, `components.ts` for the synthetic piece catalog. Same three
-  rules: deterministic, anchored to the site's own recorded span, never deciding `dataAvailable`. Swap
-  the one file when real data arrives. Stored instruments carry **no port**, which is structurally what
-  keeps them off every schedule view.
 
 Three traps in the calendar, each of which has cost real time:
 
@@ -196,24 +188,46 @@ Fixed structurally - do not undo it.
 - **Availability blocks are contextual values, never cache entities.** The same block type comes back
   clipped from the night projection and unclipped from the range queries (`clip: false` on every one), so a
   block is a projection onto a window rather than a record. A stable `id` lets Apollo normalize one window's
-  answer onto another's and empty a scheduled night (empty chart, "no components tonight"). `ScheduleBlock`
-  has no `id`; `domain/adapters.ts` makes row keys from
-  response position; `src/gql/cache.ts` sets `keyFields: false` on every implementor as the second lock, and
-  `cache.test.ts` reads the SDL so a new implementor cannot quietly miss the list. `InstrumentComponent`
+  answer onto another's and empty a scheduled night (empty chart, "no components tonight"). No block
+  type has an `id`; `domain/adapters.ts` makes row keys from
+  response position; `src/gql/cache.ts` sets `keyFields: false` on every `…Block` type as the second lock, and
+  `cache.test.ts` reads the schema so a new block type cannot quietly miss the list. `InstrumentComponent`
   keeps its id and stays normalized, being identity-only.
 
 ## Commands
 
-**`README.md` is the command reference** - every script, the two-terminal mock setup, codegen, the
-first-time `playwright install chromium`, and why `dev` shows the failure toast. It is not repeated here.
+**`README.md` is the command reference** - every script, signing in locally, codegen, the
+first-time `playwright install chromium`, and why `dev` shows the sign-in toast. It is not repeated here.
 
-## GraphQL, the mock server and the schedule data
+## GraphQL and codegen
 
-**The `resource-ui-mock-and-codegen` skill carries these** - the codegen workflow and its eslint
-trap, the mock server's four rules, and the four judgment calls behind `mock-server/data/*.json`.
-Load it before changing the schema or a GraphQL operation, running codegen, starting or debugging
-the mock on :4000, or editing the schedule JSON. `mock-server/README.md` is the reference for the
-mock's own files; `ENDPOINTS.md` holds the API contract.
+The schema is `@gemini-hlsw/lucuma-odb-schemas/resource`, read by codegen (`tasks/codegen.ts`) and
+by `@graphql-eslint` (`eslint.config.js`). Codegen writes the typed operations into `src/gql/gen/`
+and prints the expanded schema to `src/gql/gen/schema.graphql`, which the tests read. **After
+changing an operation or bumping the schema package, run `codegen`**; `prebuild` does it on build.
+
+- Operations live in `src/gql/resource.ts`; hooks returning **domain models** (not raw fragments) in
+  `src/gql/hooks.ts`. Generated object types are reached as `import type * as Gql`, in the adapters
+  and hooks only.
+- The client preset only emits types an operation selects. If a type is missing from `gen/`, the fix
+  is an operation that selects it, not a hand-written duplicate.
+- `tasks/printSchemaPlugin.ts` is named by path, not as `schema-ast`, because the CLI resolves a
+  named plugin from its own install directory, which here lands on a copy built against graphql 17
+  whose type predicates answer false for this package's graphql 16 objects.
+- `require-selections` asks for an `id` wherever a type has one, which is why `InstrumentComponent`
+  selections carry it. The `src/*/gen` entry in `eslint.config.shared.js`'s `globalIgnores` keeps the
+  generated schema out of the operation rules; narrowing it turns that file into forty lint errors.
+
+One request per page load; every view gets its whole window in one response, all range queries
+`clip: false`:
+
+| Operation            | What it reads                                                                                                           | Views                                            |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| `PublishedSemesters` | `publishedSemesters`                                                                                                    | the shell's semester picker; every view's bounds |
+| `SemesterSchedule`   | `instrumentAvailability`, `telescopeAvailability`, `tooSupport`, `telescopeMode`                                        | Semester; `/instruments`, over the past 400 days |
+| `NightSchedule`      | `telescopeNight` (`dataAvailable` and the interval) plus those four and `telescopeSubsystemAvailability`                | Night                                            |
+| `WeekSchedule`       | `telescopeNights` (per-night `dataAvailable`) plus the four of `SemesterSchedule` and `instrumentComponentAvailability` | Week                                             |
+| `ComponentBrowser`   | `components`, `instrumentComponentAvailability`, `instrumentAvailability`                                               | `/components`, over the past 400 days            |
 
 ## Data flow
 
@@ -227,10 +241,10 @@ date math and chart builders pure; keep components focused on rendering and inte
 
 ## Non-negotiables
 
-**The API contract half of these lives in `ENDPOINTS.md`** ("Contracts the resolvers must keep"): half-open
-intervals, a block as a value rather than an entity, partial nights as first-class, I4 absence, clipping,
-`ResourceUsage` as one enum, and `location` as one total `place` with an optional `port`. Read it before
-changing the schema. What follows is the half that is this app's, plus the rules with no other home.
+**The API contract half of these is the backend's**: half-open intervals, a block as a value rather
+than an entity, partial nights as first-class, I4 absence and clipping are the Resource service's
+rules. What follows is the half that is this app's, plus the rules with no
+other home.
 
 - **Never put a `date` on a block.** Intervals only. The moment a `LocalDate` becomes a field, partial
   nights turn into a retrofit. (Referred to across the code as **the partial-night non-negotiable**.)
@@ -239,16 +253,14 @@ changing the schema. What follows is the half that is this app's, plus the rules
 - **`toLocation` in `domain/adapters.ts` is the only place the app re-checks the `place`/`port` pairing**,
   and a contradictory record reads as off-port/`UNKNOWN` with a dev-mode warning, never an error, because
   one bad record must not empty a night. Do not build a location literal at a call site, and do not push
-  the pair past the adapter: the domain model carries the exclusive form (`Mounting.port` xor
-  `Mounting.place`, whose type `OffPortPlace` excludes `PORT`).
+  the pair past the adapter: the domain model carries the exclusive form (`InstrumentAvailabilityBlock.port` xor
+  `InstrumentAvailabilityBlock.place`, whose type `OffPortPlace` excludes `PORT`).
 - **A record's port is its row; there is no row label.** `domain/ports.ts` renders the label from the port
   - do not reintroduce a display string the model can derive. The row set is `TELESCOPE_PORTS` unioned
     with any port the records name, so a quiet port keeps its blank row (blank says "nothing recorded"; a
     missing row would say the port does not exist) and a record on an unexpected port still draws.
 - **A block has no `id`**; row keys are the adapters'. `InstrumentComponent` keeps its id, being real
   hardware. The cache lock that enforces this is under "Gotchas" above.
-- **No new schema type without a requirement behind it**: a column in the workbook, a line in the
-  scheduler contract, or a request from Bryan or Andrew.
 - **One capability per commit**, with its tests. The message is one concise Conventional Commits
   subject that says what the commit did (`feat(resource-ui): sign in and out from the app menu`), no
   body unless it states a fact the diff cannot show. Fold fixes and test additions into the commit
@@ -261,8 +273,12 @@ changing the schema. What follows is the half that is this app's, plus the rules
 ## Testing
 
 Browser-mode Vitest (Playwright chromium). Pure functions get plain unit tests; pages get browser tests that
-mount against the mock via `src/test/renderApp.tsx` and drive real interactions with accessible queries
-(`getByRole`, `getByLabelText`).
+mount through `src/test/renderApp.tsx` and drive real interactions with accessible queries
+(`getByRole`, `getByLabelText`). Pass `renderApp` its `mocks`, built per operation by `src/test/fixtures/`
+with only the **Blocks** the assertion depends on. A query no mock answers fails the test
+(`src/test/unansweredQueries.ts`), so a fixture must match the variables the page sends.
+`src/gql/resource.test.ts` validates every document against the schema. Link-chain tests (session
+hold, auth header, toasts) run the real links ahead of canned answers through `src/test/linkClient.ts`.
 
 - **Every control whose press, toggle or hover changes what is displayed gets a browser test driving the real
   interaction.** Test both directions where they exist: what must change with the control (the night chart's
@@ -338,4 +354,9 @@ keyframes, third-party overrides).
 
 `lucuma-odb/resource/docs/` is authoritative for the v1 backend domain and API, with the v1 scope trims applied
 here: the schedule lifecycle, change log and restrictions are out of scope - every view reads the one published
-record, and editing was descoped from v1. When the two disagree, this file and the code win for this package.
+record, and editing was descoped from v1. When the backend schema and anything in this package disagree, the
+backend wins (ADR 0001).
+
+## Agent skills
+
+- Domain docs: glossary at `packages/resource-ui/docs/GLOSSARY.md`, ADRs in `packages/resource-ui/docs/adr/`. See `packages/resource-ui/docs/agents/domain.md`.

@@ -6,8 +6,16 @@ import { type JSX, useMemo } from 'react';
 
 import { Spinner, TriangleExclamation } from '@/components/Icons';
 import { friendlyError } from '@/gql/errors';
-import { type ConflictRow, type ConflictSource, matchConflicts, useConflictCandidates } from '@/gql/odb/conflicts';
+import {
+  type ConflictRow,
+  type ConflictSource,
+  conflictTargetLabel,
+  matchConflicts,
+  useConflictCandidates,
+  useConflictTargetNames,
+} from '@/gql/odb/conflicts';
 import { formatModeType } from '@/gql/odb/shared';
+import { exploreProgramUrl } from '@/lib/explore';
 
 /**
  * "Potential Conflicts" table (sc-9243): active programs planning equivalent
@@ -25,7 +33,15 @@ export function ConflictsTable({
   readonly sources: readonly ConflictSource[];
 }): JSX.Element {
   const { candidates, loading, error } = useConflictCandidates(sources);
-  const rows = useMemo(() => matchConflicts(sources, candidates), [sources, candidates]);
+  const matched = useMemo(() => matchConflicts(sources, candidates), [sources, candidates]);
+  const targetsById = useConflictTargetNames(matched);
+  // Fold the resolved target names into the rows so the DataTable's `value`
+  // identity changes when they arrive — a body closure over `targetsById`
+  // wouldn't repaint, since PrimeReact memoizes cells on the row value.
+  const rows = useMemo(
+    () => matched.map((r) => ({ ...r, target: conflictTargetLabel(r, targetsById) })),
+    [matched, targetsById],
+  );
 
   return (
     <section className="check-section">
@@ -54,10 +70,21 @@ export function ConflictsTable({
           headerTooltip="The selected request/observation this conflict applies to."
         />
         <Column
-          field="label"
-          header="ObsId"
+          header="Program ID"
           style={{ width: '14rem' }}
-          headerTooltip="The conflicting plan: a configuration request (program reference + request id) or a ToO program's observation reference."
+          headerTooltip="The conflicting plan: a configuration request (program reference + request id) or a ToO program's observation reference. The program reference links to Explore."
+          body={(r: ConflictRow) => (
+            <>
+              {r.programLabel ? (
+                <a href={exploreProgramUrl(r.programLabel)} target="_blank" rel="noreferrer">
+                  {r.programLabel}
+                </a>
+              ) : (
+                r.programId
+              )}{' '}
+              {r.detailLabel}
+            </>
+          )}
         />
         <Column
           field="status"
@@ -68,19 +95,19 @@ export function ConflictsTable({
         <Column
           field="target"
           header="Target"
-          headerTooltip="Target name where known — approved configurations carry only coordinates."
+          headerTooltip="Target name(s). A configuration request carries only coordinates, so its name comes from its applicable observations (sc-10159)."
         />
         <Column
+          field="ra"
           header="RA"
-          style={{ width: '7rem' }}
-          body={(r: ConflictRow) => r.raDeg?.toFixed(5) ?? '—'}
-          headerTooltip="Right ascension of the conflicting plan, degrees."
+          style={{ width: '9rem' }}
+          headerTooltip="Right ascension of the conflicting plan (HH:MM:SS.ss)."
         />
         <Column
+          field="dec"
           header="Dec"
-          style={{ width: '7rem' }}
-          body={(r: ConflictRow) => r.decDeg?.toFixed(5) ?? '—'}
-          headerTooltip="Declination of the conflicting plan, degrees."
+          style={{ width: '9rem' }}
+          headerTooltip="Declination of the conflicting plan (DD:MM:SS.s)."
         />
         <Column
           header="Sep"

@@ -1,6 +1,8 @@
 services:
   database:
-    image: postgres:18
+    # Pinned to 17, which is what existing deployments use.
+    # A major bump needs a pg_dumpall/restore (or pg_upgrade).
+    image: postgres:17
     container_name: navigate-db
     restart: unless-stopped
     environment:
@@ -24,7 +26,7 @@ services:
         max-size: '2m'
         max-file: '5'
   configs:
-    image: 'noirlab/gpp-nav-configs:latest'
+    image: 'noirlab/gpp-nav-configs:${NAVIGATE_TAG:?NAVIGATE_TAG is not set, run navigate update <tag>}'
     container_name: navigate-configs
     restart: unless-stopped
     environment:
@@ -43,7 +45,7 @@ services:
         max-size: '2m'
         max-file: '5'
   server:
-    image: 'noirlab/gpp-nav:latest'
+    image: 'noirlab/gpp-nav:${NAVIGATE_TAG:?NAVIGATE_TAG is not set, run navigate update <tag>}'
     container_name: navigate-server
     restart: unless-stopped
     network_mode: host

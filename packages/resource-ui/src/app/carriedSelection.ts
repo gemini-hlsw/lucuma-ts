@@ -3,6 +3,8 @@ import { isNotNullish } from '@gemini-hlsw/lucuma-common-ui';
 /** The app-scoped selection: every view reads both, so only these two survive a navigation. */
 export const CARRIED_PARAMS = ['site', 'night'] as const;
 
+export type CarriedParam = (typeof CARRIED_PARAMS)[number];
+
 /** The one answer to what a link carries; page-scoped parameters are dropped at the boundary. */
 export function carrySelection(params: URLSearchParams, keys: readonly string[] = CARRIED_PARAMS): URLSearchParams {
   const carried = new URLSearchParams();

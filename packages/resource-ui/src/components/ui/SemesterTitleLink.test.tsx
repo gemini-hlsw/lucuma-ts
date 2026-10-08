@@ -23,6 +23,7 @@ describe(SemesterTitleLink, () => {
     const screen = await renderApp({
       element: <SemesterTitleLink semester={target} />,
       route: '/night?site=GN&night=2026-09-14&q=GPI&view=calendar&month=2026-09',
+      mocks: [],
     });
 
     await expect
@@ -35,6 +36,7 @@ describe(SemesterTitleLink, () => {
     const screen = await renderApp({
       element: <SemesterTitleLink semester={target} />,
       route: '/night?site=GN',
+      mocks: [],
     });
 
     await expect

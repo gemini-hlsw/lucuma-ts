@@ -32,7 +32,7 @@ Fragments enable:
 ### Defining a Fragment
 
 ```typescript
-import { gql } from '@apollo/client';
+import { gql } from "@apollo/client";
 
 const USER_FRAGMENT = gql`
   fragment UserFields on User {
@@ -84,8 +84,8 @@ Fragment colocation is the practice of defining fragments in the same file as th
 The recommended pattern for colocating fragments with components:
 
 ```tsx
-import { gql, FragmentType } from '@apollo/client';
-import { useSuspenseFragment } from '@apollo/client/react';
+import { gql, FragmentType } from "@apollo/client";
+import { useSuspenseFragment } from "@apollo/client/react";
 
 // Fragment definition
 // This will be picked up by Codegen to create `UserCard_UserFragmentDoc` in `./fragments.generated.ts`.
@@ -103,14 +103,18 @@ if (false) {
 }
 
 // This has been created from above fragment definition by CodeGen and is a correctly typed `TypedDocumentNode`
-import { UserCard_UserFragmentDoc } from './fragments.generated.ts';
+import { UserCard_UserFragmentDoc } from "./fragments.generated.ts";
 
 // Component receives the (partially masked) parent object
-export function UserCard({ user }: { user: FragmentType<typeof UserCard_UserFragmentDoc> }) {
+export function UserCard({
+  user,
+}: {
+  user: FragmentType<typeof UserCard_UserFragmentDoc>;
+}) {
   // Creates a subscription to the fragment in the cache
   const { data } = useSuspenseFragment({
     fragment: UserCard_UserFragmentDoc,
-    fragmentName: 'UserCard_user',
+    fragmentName: "UserCard_user",
     from: user,
   });
 
@@ -150,7 +154,7 @@ Parent components compose child fragments to build complete queries:
 
 ```tsx
 // Child component
-import { gql } from '@apollo/client';
+import { gql } from "@apollo/client";
 
 if (false) {
   gql`
@@ -198,14 +202,18 @@ Apollo Client provides hooks to read fragment data within components. These hook
 For components using Suspense and concurrent features:
 
 ```tsx
-import { useSuspenseFragment } from '@apollo/client/react';
-import { FragmentType } from '@apollo/client';
-import { UserCard_UserFragmentDoc } from './fragments.generated';
+import { useSuspenseFragment } from "@apollo/client/react";
+import { FragmentType } from "@apollo/client";
+import { UserCard_UserFragmentDoc } from "./fragments.generated";
 
-function UserCard({ user }: { user: FragmentType<typeof UserCard_UserFragmentDoc> }) {
+function UserCard({
+  user,
+}: {
+  user: FragmentType<typeof UserCard_UserFragmentDoc>;
+}) {
   const { data } = useSuspenseFragment({
     fragment: UserCard_UserFragmentDoc,
-    fragmentName: 'UserCard_user',
+    fragmentName: "UserCard_user",
     from: user,
   });
 
@@ -218,14 +226,18 @@ function UserCard({ user }: { user: FragmentType<typeof UserCard_UserFragmentDoc
 For components not using Suspense:
 
 ```tsx
-import { useFragment } from '@apollo/client/react';
-import { FragmentType } from '@apollo/client';
-import { UserCard_UserFragmentDoc } from './fragments.generated';
+import { useFragment } from "@apollo/client/react";
+import { FragmentType } from "@apollo/client";
+import { UserCard_UserFragmentDoc } from "./fragments.generated";
 
-function UserCard({ user }: { user: FragmentType<typeof UserCard_UserFragmentDoc> }) {
+function UserCard({
+  user,
+}: {
+  user: FragmentType<typeof UserCard_UserFragmentDoc>;
+}) {
   const { data, complete } = useFragment({
     fragment: UserCard_UserFragmentDoc,
-    fragmentName: 'UserCard_user',
+    fragmentName: "UserCard_user",
     from: user,
   });
 
@@ -272,7 +284,7 @@ Data masking is a feature that prevents components from accessing data they didn
 Enable data masking when creating your Apollo Client:
 
 ```typescript
-import { ApolloClient, InMemoryCache } from '@apollo/client';
+import { ApolloClient, InMemoryCache } from "@apollo/client";
 
 const client = new ApolloClient({
   cache: new InMemoryCache(),
@@ -303,9 +315,13 @@ With data masking:
 
 ```tsx
 // ✅ With data masking - component can only access its fragment data
-import { UserCard_UserFragmentDoc } from './fragments.generated';
+import { UserCard_UserFragmentDoc } from "./fragments.generated";
 
-function UserCard({ user }: { user: FragmentType<typeof UserCard_UserFragmentDoc> }) {
+function UserCard({
+  user,
+}: {
+  user: FragmentType<typeof UserCard_UserFragmentDoc>;
+}) {
   const { data } = useSuspenseFragment({
     fragment: UserCard_UserFragmentDoc,
     from: user,
@@ -335,8 +351,8 @@ The fragment registry is an **alternative approach** to GraphQL Code Generator's
 ### Creating a Fragment Registry
 
 ```typescript
-import { ApolloClient, InMemoryCache } from '@apollo/client';
-import { createFragmentRegistry } from '@apollo/client/cache';
+import { ApolloClient, InMemoryCache } from "@apollo/client";
+import { createFragmentRegistry } from "@apollo/client/cache";
 
 export const fragmentRegistry = createFragmentRegistry();
 
@@ -352,8 +368,8 @@ const client = new ApolloClient({
 Register fragments after defining them:
 
 ```typescript
-import { gql } from '@apollo/client';
-import { fragmentRegistry } from './apollo/client';
+import { gql } from "@apollo/client";
+import { fragmentRegistry } from "./apollo/client";
 
 const USER_FRAGMENT = gql`
   fragment UserFields on User {
@@ -369,8 +385,8 @@ fragmentRegistry.register(USER_FRAGMENT);
 With colocated fragments:
 
 ```tsx
-import { fragmentRegistry } from '@/apollo/client';
-import { UserCard_UserFragmentDoc } from './fragments.generated';
+import { fragmentRegistry } from "@/apollo/client";
+import { UserCard_UserFragmentDoc } from "./fragments.generated";
 
 // Register the fragment globally
 fragmentRegistry.register(UserCard_UserFragmentDoc);
@@ -402,7 +418,7 @@ There are three approaches to make child fragments available in parent queries:
 3. **Manual interpolation**: Explicitly import and interpolate child fragments into parent fragments:
 
    ```typescript
-   import { CHILD_FRAGMENT } from './ChildComponent';
+   import { CHILD_FRAGMENT } from "./ChildComponent";
 
    const PARENT_FRAGMENT = gql`
      fragment Parent_data on Data {
@@ -447,14 +463,17 @@ GraphQL Code Generator produces typed fragment documents:
 ```typescript
 // Generated file: fragments.generated.ts
 export type UserCard_UserFragment = {
-  __typename: 'User';
+  __typename: "User";
   id: string;
   name: string;
   email: string;
   avatarUrl: string;
-} & { ' $fragmentName'?: 'UserCard_UserFragment' };
+} & { " $fragmentName"?: "UserCard_UserFragment" };
 
-export const UserCard_UserFragmentDoc: TypedDocumentNode<UserCard_UserFragment, never>;
+export const UserCard_UserFragmentDoc: TypedDocumentNode<
+  UserCard_UserFragment,
+  never
+>;
 ```
 
 ### Type-Safe Fragment Usage
@@ -462,10 +481,14 @@ export const UserCard_UserFragmentDoc: TypedDocumentNode<UserCard_UserFragment, 
 Use `FragmentType` to accept masked fragment data:
 
 ```tsx
-import { FragmentType } from '@apollo/client';
-import { UserCard_UserFragmentDoc } from './fragments.generated';
+import { FragmentType } from "@apollo/client";
+import { UserCard_UserFragmentDoc } from "./fragments.generated";
 
-function UserCard({ user }: { user: FragmentType<typeof UserCard_UserFragmentDoc> }) {
+function UserCard({
+  user,
+}: {
+  user: FragmentType<typeof UserCard_UserFragmentDoc>;
+}) {
   const { data } = useSuspenseFragment({
     fragment: UserCard_UserFragmentDoc,
     from: user,
@@ -481,7 +504,7 @@ function UserCard({ user }: { user: FragmentType<typeof UserCard_UserFragmentDoc
 TypeScript infers types from fragment documents automatically:
 
 ```tsx
-import { UserCard_UserFragmentDoc } from './fragments.generated';
+import { UserCard_UserFragmentDoc } from "./fragments.generated";
 
 // Types are inferred from the fragment
 const { data } = useSuspenseFragment({
@@ -592,11 +615,15 @@ Non-page components should use `useFragment` or `useSuspenseFragment`:
 
 ```tsx
 // ✅ Good: Component reads fragment data
-import { FragmentType } from '@apollo/client';
-import { useSuspenseFragment } from '@apollo/client/react';
-import { UserCard_UserFragmentDoc } from './fragments.generated';
+import { FragmentType } from "@apollo/client";
+import { useSuspenseFragment } from "@apollo/client/react";
+import { UserCard_UserFragmentDoc } from "./fragments.generated";
 
-function UserCard({ user }: { user: FragmentType<typeof UserCard_UserFragmentDoc> }) {
+function UserCard({
+  user,
+}: {
+  user: FragmentType<typeof UserCard_UserFragmentDoc>;
+}) {
   const { data } = useSuspenseFragment({
     fragment: UserCard_UserFragmentDoc,
     from: user,
@@ -744,9 +771,9 @@ Apollo Client's approach creates more efficient subscriptions:
 ### Example
 
 ```tsx
-import { FragmentType } from '@apollo/client';
-import { useSuspenseQuery, useSuspenseFragment } from '@apollo/client/react';
-import { UserCard_UserFragmentDoc } from './fragments.generated';
+import { FragmentType } from "@apollo/client";
+import { useSuspenseQuery, useSuspenseFragment } from "@apollo/client/react";
+import { UserCard_UserFragmentDoc } from "./fragments.generated";
 
 function ParentComponent() {
   const { data } = useSuspenseQuery(GET_USER);
@@ -758,7 +785,11 @@ function ParentComponent() {
   return <UserCard user={data.user} />;
 }
 
-function UserCard({ user }: { user: FragmentType<typeof UserCard_UserFragmentDoc> }) {
+function UserCard({
+  user,
+}: {
+  user: FragmentType<typeof UserCard_UserFragmentDoc>;
+}) {
   // Creates a cache subscription specifically for UserCard_user fields
   const { data } = useSuspenseFragment({
     fragment: UserCard_UserFragmentDoc,

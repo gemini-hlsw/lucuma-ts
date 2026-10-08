@@ -9,6 +9,7 @@ const openClock = async () =>
   renderApp({
     route: '/night?site=GS',
     element: <Probe use={useClockPreference} readout={(clock) => ({ clock })} />,
+    mocks: [],
   });
 
 describe(useClockPreference, () => {

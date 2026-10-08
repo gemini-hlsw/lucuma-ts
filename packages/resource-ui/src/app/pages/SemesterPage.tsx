@@ -50,10 +50,8 @@ export default function SemesterPage(): JSX.Element {
           end: toApiInterval(observingNightInterval(selected.site, selected.lastNight)).end,
         };
 
-  const { mountings, closures, tooBlocks, modeBlocks, loading, error } = useSemesterSchedule(
-    selected?.site ?? site,
-    bounds,
-  );
+  const { instrumentAvailability, telescopeAvailability, tooSupport, telescopeMode, loading, error } =
+    useSemesterSchedule(selected?.site ?? site, bounds);
 
   const timeline =
     selected === null
@@ -62,15 +60,15 @@ export default function SemesterPage(): JSX.Element {
           site: selected.site,
           firstNight: selected.firstNight,
           lastNight: selected.lastNight,
-          mountings,
-          closures,
-          tooBlocks,
-          modeBlocks,
+          instrumentAvailability,
+          telescopeAvailability,
+          tooSupport,
+          telescopeMode,
         });
 
-  const telescopeExtras = telescopeLegendExtras(closures);
-  const modeExtras = modeLegendExtras(modeBlocks);
-  const tooExtras = tooLegendExtras(tooBlocks);
+  const telescopeExtras = telescopeLegendExtras(telescopeAvailability);
+  const modeExtras = modeLegendExtras(telescopeMode);
+  const tooExtras = tooLegendExtras(tooSupport);
   // The calendar draws its own chrome and keys only hues, so it takes none of this.
   const semesterNights = timeline?.months.flatMap((month) => month.nights) ?? [];
   const calendarExtras = calendarLegendExtras({
@@ -178,8 +176,8 @@ export default function SemesterPage(): JSX.Element {
                 timeline={timeline}
                 semester={selected}
                 site={selected.site}
-                mountings={mountings}
-                closures={closures}
+                instrumentAvailability={instrumentAvailability}
+                telescopeAvailability={telescopeAvailability}
               />
             </>
           )}

@@ -40,7 +40,7 @@ import { advancePerRem, textWidth } from '@/test/styleProbe';
 
 /**
  * A closure's reason is the one label that is not drawn from an enum: it is freeform text on the
- * record (`Closure.reason`), and it reaches both a bar label and a band label through the same
+ * record (`TelescopeAvailabilityBlock.reason`), and it reaches both a bar label and a band label through the same
  * estimate. These are the workbook's own phrasings, so the bound is measured against the shape real
  * records take.
  */

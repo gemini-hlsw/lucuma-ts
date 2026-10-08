@@ -4,7 +4,7 @@ import { portRowLabel, TELESCOPE_PORTS } from './ports';
 import { buildSemesterTimeline } from './semesterTimeline';
 import { observingNightInterval } from './siteTime';
 import { clip, subtract } from './timeline';
-import type { Closure, Mounting } from './types';
+import type { InstrumentAvailabilityBlock, TelescopeAvailabilityBlock } from './types';
 
 const night = (label: string) => observingNightInterval('GS', label);
 
@@ -14,7 +14,9 @@ const span = (from: string, to: string) => ({ start: night(from).start, end: nig
 /** Every month draws the telescope's ports, whatever the semester holds. */
 const ROWS = TELESCOPE_PORTS.map(portRowLabel);
 
-const mounting = (over: Partial<Mounting> & Pick<Mounting, 'id' | 'port' | 'interval'>): Mounting => ({
+const instrumentBlock = (
+  over: Partial<InstrumentAvailabilityBlock> & Pick<InstrumentAvailabilityBlock, 'id' | 'port' | 'interval'>,
+): InstrumentAvailabilityBlock => ({
   instrument: 'GMOS',
   publishedName: 'GMOS',
   usage: 'SCIENCE',
@@ -23,20 +25,27 @@ const mounting = (over: Partial<Mounting> & Pick<Mounting, 'id' | 'port' | 'inte
   ...over,
 });
 
-const closure = (over: Partial<Closure> & Pick<Closure, 'id' | 'interval'>): Closure => ({
+const telescopeBlock = (
+  over: Partial<TelescopeAvailabilityBlock> & Pick<TelescopeAvailabilityBlock, 'id' | 'interval'>,
+): TelescopeAvailabilityBlock => ({
   availability: 'CLOSED',
   port: null,
   reason: null,
   ...over,
 });
 
-const build = (over: { mountings?: readonly Mounting[]; closures?: readonly Closure[] } = {}) =>
+const build = (
+  over: {
+    instrumentAvailability?: readonly InstrumentAvailabilityBlock[];
+    telescopeAvailability?: readonly TelescopeAvailabilityBlock[];
+  } = {},
+) =>
   buildSemesterTimeline({
     site: 'GS',
     firstNight: '2026-08-02',
     lastNight: '2027-02-01',
-    mountings: over.mountings ?? [],
-    closures: over.closures ?? [],
+    instrumentAvailability: over.instrumentAvailability ?? [],
+    telescopeAvailability: over.telescopeAvailability ?? [],
   });
 
 const rowIn = (timeline: ReturnType<typeof build>, monthLabel: string, row: string) =>
@@ -68,22 +77,22 @@ describe('closures at Gemini South', () => {
   // The sheet spells the phrase down the port rows one word at a time, plus a telescope-wide record.
   const SHUTDOWN = span('2026-08-02', '2026-08-07');
   const PUBLISHED_CLOSURES = [
-    closure({ id: 'wide', port: null, interval: SHUTDOWN, reason: 'Telescope Shutdown A&G Maintenance' }),
-    closure({ id: 'c1', port: 1, interval: SHUTDOWN, reason: null }),
-    closure({ id: 'c2', port: 2, interval: SHUTDOWN, reason: 'Telescope' }),
-    closure({ id: 'c3', port: 3, interval: SHUTDOWN, reason: 'Shutdown' }),
-    closure({ id: 'c5', port: 5, interval: SHUTDOWN, reason: 'Maintenance' }),
+    telescopeBlock({ id: 'wide', port: null, interval: SHUTDOWN, reason: 'Telescope Shutdown A&G Maintenance' }),
+    telescopeBlock({ id: 'c1', port: 1, interval: SHUTDOWN, reason: null }),
+    telescopeBlock({ id: 'c2', port: 2, interval: SHUTDOWN, reason: 'Telescope' }),
+    telescopeBlock({ id: 'c3', port: 3, interval: SHUTDOWN, reason: 'Shutdown' }),
+    telescopeBlock({ id: 'c5', port: 5, interval: SHUTDOWN, reason: 'Maintenance' }),
   ];
 
   it('draws the telescope-wide closure once, as a band with the whole phrase', () => {
-    const august = build({ closures: PUBLISHED_CLOSURES }).months[0];
+    const august = build({ telescopeAvailability: PUBLISHED_CLOSURES }).months[0];
 
     expect(august?.bands).toHaveLength(1);
     expect(august?.bands[0]?.label).toBe('Telescope Shutdown A&G Maintenance');
   });
 
   it('drops the per-port fragments the sheet spells down the rows', () => {
-    const timeline = build({ closures: PUBLISHED_CLOSURES });
+    const timeline = build({ telescopeAvailability: PUBLISHED_CLOSURES });
 
     // Port 2 says "Telescope" and Port 3 "Shutdown": per row that reads as though they were named so.
     for (const row of ROWS) {
@@ -94,9 +103,9 @@ describe('closures at Gemini South', () => {
   it('keeps the part of a port closure that outlasts the shutdown', () => {
     // A&G runs the whole semester on Port 4 and merely overlaps the shutdown.
     const timeline = build({
-      closures: [
+      telescopeAvailability: [
         ...PUBLISHED_CLOSURES,
-        closure({ id: 'ag', port: 4, interval: span('2026-08-02', '2027-02-01'), reason: 'A&G' }),
+        telescopeBlock({ id: 'ag', port: 4, interval: span('2026-08-02', '2027-02-01'), reason: 'A&G' }),
       ],
     });
     const august = rowIn(timeline, 'August 2026', 'Port 4');
@@ -109,7 +118,7 @@ describe('closures at Gemini South', () => {
   });
 
   it('reports the closure for the legend even though no row carries it', () => {
-    const timeline = build({ closures: PUBLISHED_CLOSURES });
+    const timeline = build({ telescopeAvailability: PUBLISHED_CLOSURES });
 
     expect(timeline.hasClosure).toBe(true);
     expect(timeline.instruments).toEqual([]);
@@ -120,15 +129,15 @@ describe('unknown bands', () => {
   it('lets an identified run win the span it shares with an unknown band', () => {
     // One row per port, so the named run keeps its whole span and the unknown keeps only its own.
     const timeline = build({
-      mountings: [
-        mounting({
+      instrumentAvailability: [
+        instrumentBlock({
           id: 'miq',
           port: 2,
           instrument: 'UNKNOWN',
           publishedName: 'Unknown',
           interval: span('2026-09-25', '2026-10-22'),
         }),
-        mounting({
+        instrumentBlock({
           id: 'alopeke',
           port: 2,
           instrument: 'ALOPEKE',
@@ -150,7 +159,7 @@ describe('unknown bands', () => {
 });
 
 describe('months', () => {
-  const GHOST = mounting({
+  const GHOST = instrumentBlock({
     id: 'ghost',
     port: 1,
     instrument: 'GHOST',
@@ -175,7 +184,7 @@ describe('months', () => {
   });
 
   it('clips a run to each month it crosses and says which edges are cut', () => {
-    const timeline = build({ mountings: [GHOST] });
+    const timeline = build({ instrumentAvailability: [GHOST] });
     const august = rowIn(timeline, 'August 2026', 'Port 1')?.blocks[0];
     const october = rowIn(timeline, 'October 2026', 'Port 1')?.blocks[0];
 
@@ -187,7 +196,7 @@ describe('months', () => {
   });
 
   it('keeps the run its own full span for the tooltip, whatever month it is drawn in', () => {
-    const october = rowIn(build({ mountings: [GHOST] }), 'October 2026', 'Port 1')?.blocks[0];
+    const october = rowIn(build({ instrumentAvailability: [GHOST] }), 'October 2026', 'Port 1')?.blocks[0];
 
     expect(october?.fullInterval).toEqual(GHOST.interval);
     expect(october?.nights).toBe(178);
@@ -195,16 +204,16 @@ describe('months', () => {
 
   it('leaves a row empty rather than inventing a state for it', () => {
     // I4: a gap means "not recorded", never "unavailable".
-    expect(rowIn(build({ mountings: [GHOST] }), 'August 2026', 'Port 3')?.blocks).toEqual([]);
+    expect(rowIn(build({ instrumentAvailability: [GHOST] }), 'August 2026', 'Port 3')?.blocks).toEqual([]);
   });
 });
 
 describe('the legend', () => {
   it('lists only the instruments actually drawn, in a stable order', () => {
     const timeline = build({
-      mountings: [
-        mounting({ id: 'a', port: 3, instrument: 'GMOS', interval: span('2026-08-08', '2026-08-20') }),
-        mounting({
+      instrumentAvailability: [
+        instrumentBlock({ id: 'a', port: 3, instrument: 'GMOS', interval: span('2026-08-08', '2026-08-20') }),
+        instrumentBlock({
           id: 'b',
           port: 1,
           instrument: 'GHOST',
@@ -222,8 +231,8 @@ describe('the legend', () => {
 
   it('treats a published ENGINEERING run as an instrument, because the sheet does', () => {
     const timeline = build({
-      mountings: [
-        mounting({
+      instrumentAvailability: [
+        instrumentBlock({
           id: 'eng',
           port: 3,
           instrument: 'ENGINEERING',
@@ -239,7 +248,9 @@ describe('the legend', () => {
 
   it('flags an unscheduled span separately from the instruments', () => {
     const timeline = build({
-      closures: [closure({ id: 'ag', port: 4, interval: span('2026-08-02', '2026-09-01'), reason: 'A&G' })],
+      telescopeAvailability: [
+        telescopeBlock({ id: 'ag', port: 4, interval: span('2026-08-02', '2026-09-01'), reason: 'A&G' }),
+      ],
     });
 
     expect(timeline.hasUnscheduled).toBe(true);

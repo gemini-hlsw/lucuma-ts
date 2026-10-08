@@ -7,5 +7,5 @@
     "exactOptionalPropertyTypes": false,
     "noPropertyAccessFromIndexSignature": false
   },
-  "include": ["mock-server", "tasks"]
+  "include": ["tasks"]
 }
