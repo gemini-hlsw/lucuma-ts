@@ -1,4 +1,6 @@
-import { describe, expect, it, vi } from 'vitest';
+import { createStore } from 'jotai';
+import type { Store } from 'jotai/vanilla/store';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { fakeJwt, standardUser } from '@/test/factories';
 
@@ -10,7 +12,12 @@ import {
   setToken,
   useSessionStatus,
 } from './auth';
-import { store } from './store';
+
+let store: Store;
+
+beforeEach(() => {
+  store = createStore();
+});
 
 describe(useSessionStatus, () => {
   it('reads checking before the session has been asked', () => {

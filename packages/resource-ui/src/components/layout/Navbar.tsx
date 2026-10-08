@@ -8,6 +8,7 @@ import {
 } from '@fortawesome/pro-regular-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { cn, displayName, type User } from '@gemini-hlsw/lucuma-common-ui';
+import { useStore } from 'jotai';
 import { Button } from 'primereact/button';
 import { Menu } from 'primereact/menu';
 import type { MenuItem } from 'primereact/menuitem';
@@ -110,6 +111,7 @@ export default function Navbar(): JSX.Element {
   const user = useUser();
   const signedOutElsewhere = useSignedOutElsewhere();
   const toast = useToast();
+  const store = useStore();
 
   const signedIn = status === 'signed-in';
   const accountLabel = accountLabelOf(status, user);
@@ -137,7 +139,7 @@ export default function Navbar(): JSX.Element {
     focusMenuButton();
     setAnnounceSignOut(true);
     signingOut.current = true;
-    void signOut().then(({ reachedSso }) => {
+    void signOut(store).then(({ reachedSso }) => {
       if (!reachedSso && signingOut.current) toast?.show(LOGOUT_UNREACHABLE_TOAST);
     });
   };

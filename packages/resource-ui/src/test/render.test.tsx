@@ -1,12 +1,12 @@
 import { displayName } from '@gemini-hlsw/lucuma-common-ui';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { page } from 'vitest/browser';
 
-import { signOut } from '@/auth/session';
-import { odbTokenAtom, useSessionStatus, useUser } from '@/components/atoms/auth';
-import { store } from '@/components/atoms/store';
+import { signOut, startSession } from '@/auth/session';
+import { odbTokenAtom, sessionCheckedAtom, useSessionStatus, useUser } from '@/components/atoms/auth';
 import { fakeJwt, standardUser } from '@/test/factories';
 import { Probe } from '@/test/probe';
-import { ssoLogout, stubSso } from '@/test/sso';
+import { ssoCalls, ssoLogout, stubSso } from '@/test/sso';
 
 import { renderWithContext } from './render';
 
@@ -24,32 +24,35 @@ const SESSION_PROBE = (
 const openProbe = (options: Parameters<typeof renderWithContext>[1]) => renderWithContext(SESSION_PROBE, options);
 
 describe(renderWithContext, () => {
-  it('signs the rendered tree in on the module store that authLink and signOut read', async () => {
-    const token = fakeJwt(standardUser('staff'));
-    const screen = await openProbe({ token, store });
-
-    await expect.element(screen.getByTestId('probe-user')).toHaveTextContent('Ada Lovelace');
-    await expect.element(screen.getByTestId('probe-status')).toHaveTextContent('signed-in');
-    expect(store.get(odbTokenAtom)).toBe(token);
-  });
-
-  it('signs a store of its own in by default, not the module store', async () => {
+  it('signs the rendered tree in on the store the keeper and signOut read', async () => {
     const token = fakeJwt(standardUser('staff'));
     const screen = await openProbe({ token });
-
+    await expect.element(screen.getByTestId('probe-user')).toHaveTextContent('Ada Lovelace');
     await expect.element(screen.getByTestId('probe-status')).toHaveTextContent('signed-in');
-    expect(screen.store).not.toBe(store);
     expect(screen.store.get(odbTokenAtom)).toBe(token);
+
+    const stop = startSession(screen.store);
+    expect(ssoCalls()).toHaveLength(0);
+    stop();
+
+    const signedOut = signOut(screen.store);
+    ssoLogout().answer({ status: 200 });
+    expect(await signedOut).toEqual({ reachedSso: true });
+
+    await expect.element(screen.getByTestId('probe-status')).toHaveTextContent('signed-out');
   });
 
-  it('sets a store rendered twice to the second render s values', async () => {
-    const first = await openProbe({ token: fakeJwt(standardUser('staff')), store });
-    await expect.element(first.getByTestId('probe-status')).toHaveTextContent('signed-in');
-    await first.unmount();
+  it('gives each tree rendered in one test a store of its own', async () => {
+    const signedIn = await openProbe({ token: fakeJwt(standardUser('staff')) });
+    const visitor = await openProbe({ token: null, sessionChecked: false });
 
-    const second = await openProbe({ token: null, store });
-
-    await expect.element(second.getByTestId('probe-status')).toHaveTextContent('signed-out');
+    const statusIn = (tree: { container: HTMLElement }) =>
+      page.elementLocator(tree.container).getByTestId('probe-status');
+    await expect.element(statusIn(signedIn)).toHaveTextContent('signed-in');
+    await expect.element(statusIn(visitor)).toHaveTextContent('checking');
+    expect(visitor.store).not.toBe(signedIn.store);
+    expect(visitor.store.get(odbTokenAtom)).toBeNull();
+    expect(signedIn.store.get(sessionCheckedAtom)).toBe(true);
   });
 
   it('renders signed out with no token', async () => {
@@ -63,16 +66,5 @@ describe(renderWithContext, () => {
     const screen = await openProbe({ sessionChecked: false });
 
     await expect.element(screen.getByTestId('probe-status')).toHaveTextContent('checking');
-  });
-
-  it('is signed out by a real signOut', async () => {
-    const screen = await openProbe({ token: fakeJwt(standardUser('staff')), store });
-    await expect.element(screen.getByTestId('probe-status')).toHaveTextContent('signed-in');
-
-    const signedOut = signOut();
-    ssoLogout().answer({ status: 200 });
-    expect(await signedOut).toEqual({ reachedSso: true });
-
-    await expect.element(screen.getByTestId('probe-status')).toHaveTextContent('signed-out');
   });
 });

@@ -1,3 +1,5 @@
+import type { Store } from 'jotai/vanilla/store';
+
 import {
   isLoggedInAtom,
   odbTokenAtom,
@@ -6,7 +8,6 @@ import {
   signedOutElsewhereAtom,
   tokenExpAtom,
 } from '@/components/atoms/auth';
-import { store } from '@/components/atoms/store';
 
 import { logout, REFRESH_TIMEOUT_MS, type RefreshResult, refreshSession } from './ssoClient';
 
@@ -37,6 +38,7 @@ let expiryTimer: ReturnType<typeof setTimeout> | undefined;
 let abortController: AbortController | undefined;
 let inFlight: Promise<void> | undefined;
 let unsubscribe: (() => void) | undefined;
+let onVisible: (() => void) | undefined;
 let channel: BroadcastChannel | undefined;
 let backoffMs = 0;
 let retryNotBefore = 0;
@@ -52,19 +54,22 @@ function clearTimers(): void {
   expiryTimer = undefined;
 }
 
-function armExpiry(): void {
+function armExpiry(store: Store): void {
   if (expiryTimer !== undefined) clearTimeout(expiryTimer);
   expiryTimer = undefined;
   if (store.get(odbTokenAtom) === null) return;
 
   const exp = store.get(tokenExpAtom);
-  expiryTimer = setTimeout(expireToken, Math.min(timings.maxTimerMs, Math.max(0, (exp?.getTime() ?? 0) - Date.now())));
+  expiryTimer = setTimeout(
+    () => expireToken(store),
+    Math.min(timings.maxTimerMs, Math.max(0, (exp?.getTime() ?? 0) - Date.now())),
+  );
 }
 
-function expireToken(): void {
+function expireToken(store: Store): void {
   const exp = store.get(tokenExpAtom);
   if (exp !== null && exp.getTime() > Date.now()) {
-    armExpiry();
+    armExpiry(store);
     return;
   }
   try {
@@ -74,9 +79,9 @@ function expireToken(): void {
   }
 }
 
-function arm(): void {
+function arm(store: Store): void {
   clearTimers();
-  armExpiry();
+  armExpiry(store);
 
   const now = Date.now();
   const exp = store.get(tokenExpAtom);
@@ -92,11 +97,11 @@ function arm(): void {
     Math.max(0, (refreshDueAt ?? 0) - now, (backoffDue ?? 0) - now, lastAttemptAt + timings.minIntervalMs - now),
   );
   timer = setTimeout(() => {
-    void refresh();
+    void refresh(store);
   }, delay);
 }
 
-function apply(result: RefreshResult): void {
+function apply(store: Store, result: RefreshResult): void {
   try {
     switch (result.kind) {
       case 'token': {
@@ -125,11 +130,11 @@ function apply(result: RefreshResult): void {
     }
   } finally {
     store.set(sessionCheckedAtom, true);
-    arm();
+    arm(store);
   }
 }
 
-function refresh(): Promise<void> {
+function refresh(store: Store): Promise<void> {
   if (inFlight !== undefined) return inFlight;
 
   const controller = new AbortController();
@@ -138,7 +143,7 @@ function refresh(): Promise<void> {
 
   const run = refreshSession(controller.signal, timings.refreshTimeoutMs)
     .then((result) => {
-      if (!controller.signal.aborted) apply(result);
+      if (!controller.signal.aborted) apply(store, result);
     })
     .catch((error: unknown) => {
       console.error('Session refresh: a subscriber of the token atom failed.', error);
@@ -168,12 +173,13 @@ function teardown(): void {
   cancel();
   unsubscribe?.();
   unsubscribe = undefined;
-  document.removeEventListener('visibilitychange', onVisibilityChange);
+  if (onVisible !== undefined) document.removeEventListener('visibilitychange', onVisible);
+  onVisible = undefined;
   channel?.close();
   channel = undefined;
 }
 
-function endSession(reason: string): void {
+function endSession(store: Store, reason: string): void {
   teardown();
   try {
     setToken(store, null);
@@ -183,48 +189,49 @@ function endSession(reason: string): void {
   store.set(sessionCheckedAtom, true);
 }
 
-function onSignedOutElsewhere(event: MessageEvent<unknown>): void {
+function onSignedOutElsewhere(store: Store, event: MessageEvent<unknown>): void {
   if (event.data !== SIGNED_OUT_MESSAGE) return;
   store.set(signedOutElsewhereAtom, true);
-  endSession('Sign out in another tab');
+  endSession(store, 'Sign out in another tab');
 }
 
-function onVisibilityChange(): void {
+function onVisibilityChange(store: Store): void {
   if (document.visibilityState !== 'visible') return;
   if (Date.now() - lastAttemptAt < timings.minIntervalMs) return;
   if (Date.now() < retryNotBefore) return;
   const exp = store.get(tokenExpAtom);
   if (exp !== null && Date.now() < exp.getTime() - timings.refreshAheadMs) return;
-  void refresh();
+  void refresh(store);
 }
 
-export function startSession(sessionTimings: SessionTimings = SESSION_TIMINGS): () => void {
+export function startSession(store: Store, sessionTimings: SessionTimings = SESSION_TIMINGS): () => void {
   if (unsubscribe !== undefined) teardown();
   timings = sessionTimings;
   sessionId += 1;
   const mySession = sessionId;
 
-  unsubscribe = store.sub(odbTokenAtom, arm);
-  document.addEventListener('visibilitychange', onVisibilityChange);
+  unsubscribe = store.sub(odbTokenAtom, () => arm(store));
+  onVisible = () => onVisibilityChange(store);
+  document.addEventListener('visibilitychange', onVisible);
   channel = new BroadcastChannel(SESSION_CHANNEL);
-  channel.addEventListener('message', onSignedOutElsewhere);
+  channel.addEventListener('message', (event) => onSignedOutElsewhere(store, event));
 
   if (store.get(isLoggedInAtom)) {
     store.set(sessionCheckedAtom, true);
   } else {
-    void refresh();
+    void refresh(store);
   }
-  arm();
+  arm(store);
 
   return () => {
     if (sessionId === mySession) teardown();
   };
 }
 
-export async function signOut(): Promise<{ reachedSso: boolean }> {
+export async function signOut(store: Store): Promise<{ reachedSso: boolean }> {
   const announced = channel !== undefined;
   channel?.postMessage(SIGNED_OUT_MESSAGE);
-  endSession('Sign out');
+  endSession(store, 'Sign out');
   try {
     await logout();
     return { reachedSso: true };

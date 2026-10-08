@@ -4,6 +4,7 @@ import { SetContextLink } from '@apollo/client/link/context';
 import { ErrorLink } from '@apollo/client/link/error';
 import { Observable } from '@apollo/client/utilities';
 import { isNotNullish, withAbsoluteUri } from '@gemini-hlsw/lucuma-common-ui';
+import type { Store } from 'jotai/vanilla/store';
 import type { ToastMessage } from 'primereact/toast';
 
 import { liveGraphqlEndpoint } from '@/app/environment';
@@ -46,8 +47,8 @@ const liveFailureToast = (error: unknown): ToastMessage => {
 /** Stays set after the reader closes the toast, so a failure that persists does not reopen it. */
 let standingFailure: ToastMessage | null = null;
 
-const showLiveFailure = (failure: ToastMessage): void => {
-  const toast = store.get(toastAtom);
+const showLiveFailure = (appStore: Store, failure: ToastMessage): void => {
+  const toast = appStore.get(toastAtom);
   if (toast === null || failure === standingFailure) {
     return;
   }
@@ -58,22 +59,22 @@ const showLiveFailure = (failure: ToastMessage): void => {
   standingFailure = failure;
 };
 
-const clearLiveFailure = (): void => {
+const clearLiveFailure = (appStore: Store): void => {
   if (standingFailure !== null) {
-    store.get(toastAtom)?.remove(standingFailure);
+    appStore.get(toastAtom)?.remove(standingFailure);
     standingFailure = null;
   }
 };
 
 /** Holds each request until the first session check settles, so none goes out before the bearer is known. */
-export const sessionHoldLink = (): ApolloLink =>
+export const sessionHoldLink = (appStore: Store): ApolloLink =>
   new ApolloLink(
     (operation, forward) =>
       new Observable<ApolloLink.Result>((observer) => {
         let forwarded: { unsubscribe: () => void } | undefined;
         let unsubscribe: (() => void) | undefined;
         const release = (): void => {
-          if (forwarded !== undefined || !store.get(sessionCheckedAtom)) {
+          if (forwarded !== undefined || !appStore.get(sessionCheckedAtom)) {
             return;
           }
           unsubscribe?.();
@@ -81,7 +82,7 @@ export const sessionHoldLink = (): ApolloLink =>
         };
         release();
         if (forwarded === undefined) {
-          unsubscribe = store.sub(sessionCheckedAtom, release);
+          unsubscribe = appStore.sub(sessionCheckedAtom, release);
         }
         return () => {
           unsubscribe?.();
@@ -90,24 +91,24 @@ export const sessionHoldLink = (): ApolloLink =>
       }),
   );
 
-export const authLink = (): ApolloLink =>
+export const authLink = (appStore: Store): ApolloLink =>
   new SetContextLink((prevContext) => {
-    const token = store.get(odbTokenAtom);
-    const exp = store.get(tokenExpAtom);
+    const token = appStore.get(odbTokenAtom);
+    const exp = appStore.get(tokenExpAtom);
     const signedIn = token !== null && exp !== null && exp.getTime() > Date.now();
     const prevHeaders = (prevContext.headers ?? {}) as Record<string, string>;
     return { headers: signedIn ? { ...prevHeaders, Authorization: `Bearer ${token}` } : prevHeaders };
   });
 
 /** Without it one transient failure pins its toast for good while every query behind it succeeds. */
-export const clearOnSuccessLink = (): ApolloLink =>
+export const clearOnSuccessLink = (appStore: Store): ApolloLink =>
   new ApolloLink(
     (operation, forward) =>
       new Observable<ApolloLink.Result>((observer) =>
         forward(operation).subscribe({
           next: (result) => {
             if (result.errors === undefined || result.errors.length === 0) {
-              clearLiveFailure();
+              clearLiveFailure(appStore);
             }
             observer.next(result);
           },
@@ -122,22 +123,25 @@ export const clearOnSuccessLink = (): ApolloLink =>
   );
 
 /** The live client's chain in front of `transport`, which is the HttpLink everywhere but a test. */
-export const liveLink = (transport: ApolloLink): ApolloLink =>
+export const liveLink = (appStore: Store, transport: ApolloLink): ApolloLink =>
   ApolloLink.from([
-    sessionHoldLink(),
-    authLink(),
-    clearOnSuccessLink(),
+    sessionHoldLink(appStore),
+    authLink(appStore),
+    clearOnSuccessLink(appStore),
     new ErrorLink(({ error }) => {
-      showLiveFailure(liveFailureToast(error));
+      showLiveFailure(appStore, liveFailureToast(error));
     }),
     transport,
   ]);
 
-export const client = new ApolloClient({
-  clientAwareness: {
-    name: 'resource-ui',
-    version: import.meta.env.FRONTEND_VERSION,
-  },
-  link: liveLink(new HttpLink({ uri: withAbsoluteUri(liveGraphqlEndpoint) })),
-  cache: buildCache(),
-});
+export const liveClient = (appStore: Store): ApolloClient =>
+  new ApolloClient({
+    clientAwareness: {
+      name: 'resource-ui',
+      version: import.meta.env.FRONTEND_VERSION,
+    },
+    link: liveLink(appStore, new HttpLink({ uri: withAbsoluteUri(liveGraphqlEndpoint) })),
+    cache: buildCache(),
+  });
+
+export const client = liveClient(store);

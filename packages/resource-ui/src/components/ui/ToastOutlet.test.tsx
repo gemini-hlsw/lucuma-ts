@@ -1,15 +1,15 @@
 import '@/styles/global.css';
 import '@/styles/main.css';
 
-import { Provider as JotaiProvider } from 'jotai';
+import { createStore, Provider as JotaiProvider } from 'jotai';
+import type { Store } from 'jotai/vanilla/store';
 import { PrimeReactProvider } from 'primereact/api';
 import type { ToastMessage } from 'primereact/toast';
 import { type ReactNode, useEffect } from 'react';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
 import { render } from 'vitest-browser-react';
 
-import { store } from '@/components/atoms/store';
 import { toastAtom, useToast } from '@/components/atoms/toast';
 import { contrastRatio, pixelOver } from '@/test/styleProbe';
 
@@ -35,6 +35,12 @@ function ShowOnHandle({ message }: { message: ToastMessage }) {
   }, [toast, message]);
   return null;
 }
+
+let store: Store;
+
+beforeEach(() => {
+  store = createStore();
+});
 
 const renderOutlet = (children?: ReactNode) =>
   render(

@@ -10,7 +10,6 @@ import { AuthSession } from '@/auth/AuthSession';
 import { SESSION_CHANNEL, SESSION_TIMINGS, SIGNED_OUT_MESSAGE, startSession } from '@/auth/session';
 import { signInUrl } from '@/auth/ssoClient';
 import { sessionCheckedAtom, setToken } from '@/components/atoms/auth';
-import { store } from '@/components/atoms/store';
 import { toastAtom } from '@/components/atoms/toast';
 import { ToastOutlet } from '@/components/ui/ToastOutlet';
 import { fakeJwt, standardUser } from '@/test/factories';
@@ -31,9 +30,7 @@ const NAVBAR_WITH_TOASTS = (
 
 const renderNavbar = async (route = '/') => renderWithContext(NAVBAR_WITH_TOASTS, { route });
 
-/** On the module store, which Logout's `signOut` and the session keeper write. */
-const renderSignedIn = async () =>
-  renderWithContext(NAVBAR_WITH_TOASTS, { token: fakeJwt(standardUser('staff')), store });
+const renderSignedIn = async () => renderWithContext(NAVBAR_WITH_TOASTS, { token: fakeJwt(standardUser('staff')) });
 
 const renderNavbarWithClock = async () =>
   renderWithContext(
@@ -531,7 +528,6 @@ describe(Navbar, () => {
     stubSso();
     await renderWithContext(<AuthSession timings={RENEW_AT_ONCE}>{NAVBAR_WITH_TOASTS}</AuthSession>, {
       token: fakeJwt(standardUser('staff'), 60),
-      store,
     });
 
     await expect.poll(() => ssoRefreshes()).toHaveLength(1);
@@ -551,7 +547,6 @@ describe(Navbar, () => {
     stubSso();
     const screen = await renderWithContext(<AuthSession>{NAVBAR_WITH_TOASTS}</AuthSession>, {
       token: fakeJwt(standardUser('staff')),
-      store,
     });
     const otherTab = new BroadcastChannel(SESSION_CHANNEL);
 
@@ -567,7 +562,7 @@ describe(Navbar, () => {
     setToken(screen.store, fakeJwt(standardUser('staff'), 60));
     await expect.element(toastNamed(SIGNED_OUT_ELSEWHERE)).not.toBeInTheDocument();
 
-    const stop = startSession(RENEW_AT_ONCE);
+    const stop = startSession(screen.store, RENEW_AT_ONCE);
     try {
       await expect.poll(() => ssoRefreshes()).toHaveLength(1);
       ssoRefreshes()[0]?.answer({ status: 403 });
@@ -619,7 +614,6 @@ describe(Navbar, () => {
     stubSso();
     await renderWithContext(<AuthSession>{NAVBAR_WITH_TOASTS}</AuthSession>, {
       token: fakeJwt(standardUser('staff')),
-      store,
     });
     const otherTab = new BroadcastChannel(SESSION_CHANNEL);
     // A channel delivers to its listeners in the order they opened, so this one hears the message after the session keeper has.

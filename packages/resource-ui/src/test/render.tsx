@@ -4,7 +4,6 @@ import { MockedProvider } from '@apollo/client/testing/react';
 import type { WritableAtom } from 'jotai';
 import { createStore, Provider } from 'jotai';
 import { useHydrateAtoms } from 'jotai/utils';
-import type { Store } from 'jotai/vanilla/store';
 import { PrimeReactProvider } from 'primereact/api';
 import type { PropsWithChildren, ReactElement } from 'react';
 import { createMemoryRouter, RouterProvider } from 'react-router';
@@ -32,8 +31,6 @@ interface RenderOptions<T> {
   readonly initialValues?: InferAtomTuples<T>;
   readonly token?: string | null;
   readonly sessionChecked?: boolean;
-  /** The module store, for a tree that `signOut` or the session keeper must reach. */
-  readonly store?: Store;
 }
 
 /** The router comes back too: a memory router keeps its own history, and window.history would not. */
@@ -55,7 +52,7 @@ export async function renderWithContext<T extends AtomTuples>(ui: ReactElement, 
     initialEntries: [route],
   });
 
-  const store = options.store ?? createStore();
+  const store = createStore();
   // The token atom writes sessionStorage, which a test may deny, so `setToken` sets it outside React and swallows the refusal.
   setToken(store, token);
   const given: AtomTuples = options.initialValues ?? [];
@@ -64,16 +61,13 @@ export async function renderWithContext<T extends AtomTuples>(ui: ReactElement, 
     [signedOutElsewhereAtom, false],
   ];
   const initialValues = [...defaults.filter(([atom]) => !given.some(([chosen]) => chosen === atom)), ...given];
-  // `useHydrateAtoms` hydrates an atom once per store, so a store that outlives this render is set directly.
-  const hydrate = options.store === undefined;
-  if (!hydrate) for (const [atom, ...args] of initialValues) store.set(atom, ...args);
 
   const cache = buildCache();
 
   const result = await render(
     <PrimeReactProvider>
       <Provider store={store}>
-        <HydrateAtoms initialValues={hydrate ? initialValues : []}>
+        <HydrateAtoms initialValues={initialValues}>
           <MockedProvider
             cache={cache}
             mocks={mocks.map((mock) => ({ ...mock, maxUsageCount: mock.maxUsageCount ?? Infinity }))}

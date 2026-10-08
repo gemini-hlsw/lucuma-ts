@@ -1,7 +1,7 @@
+import { createStore } from 'jotai';
 import { describe, expect, it } from 'vitest';
 
 import { odbTokenAtom, tokenExpAtom, userAtom } from '@/components/atoms/auth';
-import { store } from '@/components/atoms/store';
 
 import { fakeJwt, standardUser } from './factories';
 
@@ -10,6 +10,7 @@ describe(fakeJwt, () => {
     ['Zoë', 'a Latin name with a diacritic'],
     ['李', 'a CJK name'],
   ])('decodes a token for a givenName of %s (%s)', (givenName) => {
+    const store = createStore();
     const user = standardUser('pi');
     const token = fakeJwt({ ...user, profile: { ...user.profile, profile: { ...user.profile.profile, givenName } } });
 

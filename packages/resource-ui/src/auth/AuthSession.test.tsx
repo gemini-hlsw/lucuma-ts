@@ -4,7 +4,8 @@ import type { MockLink } from '@apollo/client/testing';
 import { Observable } from '@apollo/client/utilities';
 import type { MockedResponseOf } from '@gemini-hlsw/lucuma-common-ui/testing';
 import type { PublishedSemestersQuery } from '@gql/gen/graphql';
-import { Provider as JotaiProvider } from 'jotai';
+import { createStore, Provider as JotaiProvider } from 'jotai';
+import type { Store } from 'jotai/vanilla/store';
 import { PrimeReactProvider } from 'primereact/api';
 import { type JSX, type ReactNode, StrictMode } from 'react';
 import { createMemoryRouter, RouterProvider } from 'react-router';
@@ -13,7 +14,6 @@ import { render } from 'vitest-browser-react';
 
 import NightPage from '@/app/pages/NightPage';
 import { isLoggedInAtom, odbTokenAtom, sessionCheckedAtom, sessionStatusAtom, setToken } from '@/components/atoms/auth';
-import { store } from '@/components/atoms/store';
 import { toastAtom } from '@/components/atoms/toast';
 import Layout from '@/components/layout/Layout';
 import { ToastOutlet } from '@/components/ui/ToastOutlet';
@@ -100,10 +100,12 @@ const MARKED: MockLink.MockedResponse = {
   result: { data: { __typename: 'Query' } },
 };
 
+let store: Store;
+
 const capturingApollo = (after?: ApolloLink) => {
   const { link, sent: authorizations } = captureHeader('Authorization');
   return {
-    client: createLinkClient(liveLink(after === undefined ? link : ApolloLink.from([link, after])), [
+    client: createLinkClient(liveLink(store, after === undefined ? link : ApolloLink.from([link, after])), [
       NO_SEMESTERS,
       EMPTY_NIGHT,
       MARKED,
@@ -205,6 +207,7 @@ const fakeTimeouts = (): void => {
 };
 
 beforeEach(() => {
+  store = createStore();
   stubSso();
 });
 

@@ -1,20 +1,20 @@
 import { ApolloClient, ApolloLink, gql } from '@apollo/client';
 import { Observable } from '@apollo/client/utilities';
-import { Provider as JotaiProvider } from 'jotai';
+import { createStore, Provider as JotaiProvider } from 'jotai';
+import type { Store } from 'jotai/vanilla/store';
 import { PrimeReactProvider } from 'primereact/api';
 import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
 import { page } from 'vitest/browser';
 import { render } from 'vitest-browser-react';
 
 import { odbTokenAtom, sessionCheckedAtom } from '@/components/atoms/auth';
-import { store } from '@/components/atoms/store';
 import { toastAtom } from '@/components/atoms/toast';
 import { ToastOutlet } from '@/components/ui/ToastOutlet';
 import { fakeJwt, standardUser } from '@/test/factories';
 import { act } from '@/test/helpers';
 import { captureHeader, createLinkClient } from '@/test/linkClient';
 
-import { authLink, client, liveLink, sessionHoldLink } from './ApolloConfigs';
+import { authLink, liveClient, liveLink, sessionHoldLink } from './ApolloConfigs';
 import { buildCache } from './cache';
 
 const QUERY = gql`
@@ -39,9 +39,15 @@ const ANSWERS = [
 const TOKEN = fakeJwt(standardUser('staff'));
 const UNDECODABLE_TOKEN = 'header.payload.signature';
 
+let store: Store;
+
+beforeEach(() => {
+  store = createStore();
+});
+
 const headerSent = async (name: string, context?: ApolloLink.OperationContext): Promise<string | null | undefined> => {
   const capture = captureHeader(name);
-  const linkClient = createLinkClient(ApolloLink.from([authLink(), capture.link]), ANSWERS);
+  const linkClient = createLinkClient(ApolloLink.from([authLink(store), capture.link]), ANSWERS);
   await linkClient.query({ query: QUERY, context });
   return capture.sent[0];
 };
@@ -90,7 +96,10 @@ describe(sessionHoldLink, () => {
       return forward(operation);
     });
     const capture = captureHeader('Authorization');
-    const linkClient = createLinkClient(ApolloLink.from([enter, sessionHoldLink(), authLink(), capture.link]), ANSWERS);
+    const linkClient = createLinkClient(
+      ApolloLink.from([enter, sessionHoldLink(store), authLink(store), capture.link]),
+      ANSWERS,
+    );
     return { linkClient, sent: capture.sent, entered };
   };
 
@@ -122,11 +131,13 @@ describe(sessionHoldLink, () => {
   });
 });
 
-describe("the live client's request chain", () => {
+describe(liveClient, () => {
   let fetchSpy: MockInstance<typeof fetch>;
+  let client: ApolloClient;
 
   beforeEach(() => {
     store.set(sessionCheckedAtom, true);
+    client = liveClient(store);
     fetchSpy = vi.spyOn(window, 'fetch').mockImplementation(() =>
       Promise.resolve(
         new Response(JSON.stringify({ data: { publishedSemesters: [] } }), {
@@ -184,14 +195,11 @@ describe(liveLink, () => {
   const refused = answering({ data: null, errors: [{ message: 'Access denied.' }] });
 
   let answer: Answer = served;
-  const liveClient = new ApolloClient({
-    link: liveLink(new ApolloLink(() => new Observable<ApolloLink.Result>((observer) => answer(observer)))),
-    cache: buildCache(),
-  });
+  let answeringClient: ApolloClient;
 
   const ask = async (next: Answer): Promise<void> => {
     answer = next;
-    await liveClient.query({ query: QUERY, fetchPolicy: 'no-cache' }).catch(() => undefined);
+    await answeringClient.query({ query: QUERY, fetchPolicy: 'no-cache' }).catch(() => undefined);
   };
 
   const summaries = (): (string | null)[] =>
@@ -199,6 +207,10 @@ describe(liveLink, () => {
 
   beforeEach(async () => {
     store.set(sessionCheckedAtom, true);
+    answeringClient = new ApolloClient({
+      link: liveLink(store, new ApolloLink(() => new Observable<ApolloLink.Result>((observer) => answer(observer)))),
+      cache: buildCache(),
+    });
     await render(
       <PrimeReactProvider>
         <JotaiProvider store={store}>
