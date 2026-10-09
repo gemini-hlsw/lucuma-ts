@@ -28,7 +28,7 @@
     "@gemini-hlsw/lucuma-common-ui": "workspace:*",
     "@gemini-hlsw/lucuma-core": "0.261.0",
     "@gemini-hlsw/lucuma-apps-schemas": "0.177.2-20261007-7380e140",
-    "@gemini-hlsw/lucuma-odb-schemas": "0.102.0-1e66939",
+    "@gemini-hlsw/lucuma-odb-schemas": "0.102.0-ea572f8",
     "@gemini-hlsw/lucuma-ui-css": "0.176.0",
     "@gemini-hlsw/navigate-configs": "workspace:*",
     "@graphql-codegen/cli": "7.4.3",
