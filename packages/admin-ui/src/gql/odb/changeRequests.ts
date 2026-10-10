@@ -4,7 +4,7 @@
  */
 import { skipToken, useMutation, useQuery } from '@apollo/client/react';
 import { parseNumber } from '@gemini-hlsw/lucuma-common-ui';
-import { useCallback, useEffect } from 'react';
+import { useCallback } from 'react';
 
 import type {
   ChangeRequest,
@@ -14,9 +14,10 @@ import type {
   ProgramWithChangeRequests,
   Site,
 } from '../types';
+import { useAllPages } from '../useAllPages';
 import type { DocumentType } from './gen';
 import { graphql } from './gen';
-import type { Instrument } from './gen/graphql';
+import type { Instrument, ObservationItemFragment } from './gen/graphql';
 import { formatConditions, formatDec, formatRa, isScienceObservation, mapObservationRow } from './shared';
 
 export const CHANGE_REQUESTS_QUERY = graphql(`
@@ -136,40 +137,15 @@ export function mapChangeRequests(raw: AdminChangeRequestsResult): ChangeRequest
 /** The change-requests list — cached rows render immediately, refreshed in
  *  background. Follows the ODB's `hasMore` cursor to the last page (sc-9604)
  *  so no request is ever dropped by a page limit; the returned `data` grows as
- *  pages arrive and `loading` stays true until the final page is in. */
+ *  pages arrive and `loading` stays true until the final page is in; `incomplete`
+ *  says a page could not be had (`useAllPages`). */
 export function useChangeRequests() {
   const result = useQuery(CHANGE_REQUESTS_QUERY, {
     variables: { offset: null },
     fetchPolicy: 'cache-and-network',
     notifyOnNetworkStatusChange: true,
   });
-
-  const { data, fetchMore } = result;
-
-  // Walk the remaining pages: each fetchMore appends the next page's matches
-  // (merged via updateQuery, since the cache has no field policy for this list),
-  // using the last loaded id as the cursor, until the ODB reports no more.
-  useEffect(() => {
-    if (!data?.configurationRequests.hasMore || fetchMore === undefined) return;
-    const matches = data.configurationRequests.matches;
-    const cursor = matches[matches.length - 1]?.id;
-    if (cursor === undefined) return;
-    void fetchMore({
-      variables: { offset: cursor },
-      updateQuery: (prev, { fetchMoreResult }) => ({
-        configurationRequests: {
-          ...fetchMoreResult.configurationRequests,
-          matches: [...prev.configurationRequests.matches, ...fetchMoreResult.configurationRequests.matches],
-        },
-      }),
-    });
-  }, [data, fetchMore]);
-
-  return {
-    ...result,
-    // Not settled until every page is in, so callers don't render a partial set.
-    loading: result.loading || (data?.configurationRequests.hasMore ?? false),
-  };
+  return useAllPages(result, 'configurationRequests');
 }
 
 /*
@@ -192,10 +168,7 @@ export const PROGRAM_OBSERVATIONS_QUERY = graphql(`
   }
 `);
 
-export type AdminProgramObservationsResult = DocumentType<typeof PROGRAM_OBSERVATIONS_QUERY>;
-type ObservationMatch = AdminProgramObservationsResult['observations']['matches'][number];
-
-export function observationsByIdFrom(matches: readonly ObservationMatch[]): ReadonlyMap<string, ObservationRow> {
+export function observationsByIdFrom(matches: readonly ObservationItemFragment[]): ReadonlyMap<string, ObservationRow> {
   // Science observations only — calibration ("system") observations aren't
   // part of the requested science and shouldn't appear or be duplicate-checked
   // (sc-9591).
@@ -204,11 +177,13 @@ export function observationsByIdFrom(matches: readonly ObservationMatch[]): Read
 
 /** Load every observation in `programId`, following the ODB's `hasMore` cursor
  *  so no page limit can silently drop rows. Returns the accumulated matches once
- *  the last page has loaded; `loading` stays true until then. Skipped when no
+ *  the last page has loaded; `loading` stays true until then, and `incomplete` says
+ *  a page could not be had. Skipped when no
  *  program is selected. */
 export function useProgramObservations(programId: string | null): {
-  matches: readonly ObservationMatch[];
+  matches: readonly ObservationItemFragment[];
   loading: boolean;
+  incomplete: boolean;
 } {
   const result = useQuery(
     PROGRAM_OBSERVATIONS_QUERY,
@@ -220,32 +195,8 @@ export function useProgramObservations(programId: string | null): {
       : { variables: { programId, offset: null }, notifyOnNetworkStatusChange: true, errorPolicy: 'all' },
   );
 
-  const { data, fetchMore } = result;
-
-  // Walk the remaining pages: each fetchMore appends the next page's matches
-  // (merged via updateQuery, since the cache has no field policy for this list),
-  // using the last loaded id as the cursor, until the ODB reports no more.
-  useEffect(() => {
-    if (!data?.observations.hasMore || fetchMore === undefined) return;
-    const matches = data.observations.matches;
-    const cursor = matches[matches.length - 1]?.id;
-    if (cursor === undefined) return;
-    void fetchMore({
-      variables: { offset: cursor },
-      updateQuery: (prev, { fetchMoreResult }) => ({
-        observations: {
-          ...fetchMoreResult.observations,
-          matches: [...prev.observations.matches, ...fetchMoreResult.observations.matches],
-        },
-      }),
-    });
-  }, [data, fetchMore]);
-
-  return {
-    matches: data?.observations.matches ?? [],
-    // Not settled until every page is in, so callers don't render a partial set.
-    loading: result.loading || (data?.observations.hasMore ?? false),
-  };
+  const { data, loading, incomplete } = useAllPages(result, 'observations');
+  return { matches: data?.observations.matches ?? [], loading, incomplete };
 }
 
 /** Resolve the requests and write the reviewer's response to `feedback`.

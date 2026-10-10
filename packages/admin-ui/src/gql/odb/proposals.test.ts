@@ -1,11 +1,10 @@
+import { print } from 'graphql';
 import { describe, expect, it } from 'vitest';
 
 import { executionDigest } from '@/test/factories';
 
-import type { GroupElementItemFragment, ObservationItemFragment } from './gen/graphql';
-import { type AdminProposalsResult, mapProposals, semesterOfReference } from './proposals';
-
-type RawProgram = AdminProposalsResult['programs']['matches'][number];
+import type { GroupElementItemFragment, ObservationItemFragment, ProposalItemFragment } from './gen/graphql';
+import { mapProposals, PROPOSALS_QUERY, semesterOfReference } from './proposals';
 
 function observation(id: string, targetName: string, hours: number | null): ObservationItemFragment {
   return {
@@ -31,7 +30,7 @@ function observation(id: string, targetName: string, hours: number | null): Obse
   };
 }
 
-function specialProgram(overrides: Partial<RawProgram>): RawProgram {
+function specialProgram(overrides: Partial<ProposalItemFragment>): ProposalItemFragment {
   return {
     __typename: 'Program',
     id: 'p-110',
@@ -58,34 +57,37 @@ function specialProgram(overrides: Partial<RawProgram>): RawProgram {
   };
 }
 
+describe('PROPOSALS_QUERY', () => {
+  // Without this the ODB costs every program's observations and the tab times
+  // out (sc-10520). A mocked link would match the query either way, so pin it.
+  it("asks the ODB for Director's Time and Poor Weather calls only", () => {
+    expect(print(PROPOSALS_QUERY)).toContain(
+      'WHERE: {proposal: {call: {gemini: {type: {IN: [DIRECTORS_TIME, POOR_WEATHER]}}}}}',
+    );
+  });
+});
+
 describe(mapProposals, () => {
   it('projects only special-subtype proposals, with abstract + observation rows', () => {
-    const out = mapProposals({
-      programs: {
-        __typename: 'ProgramSelectResult',
-        hasMore: false,
-        matches: [
-          specialProgram({
-            observations: {
-              __typename: 'ObservationSelectResult',
-              matches: [
-                observation('o-1db', 'Gaia DR2 2342904698625661824', 0.4),
-                observation('o-459a', 'HIP 3320', null),
-              ],
-            },
-          }),
-          // Not a special subtype (a regular Queue proposal) — excluded.
-          specialProgram({
-            id: 'p-999',
-            proposal: {
-              __typename: 'Proposal',
-              reference: null,
-              gemini: { __typename: 'Queue', scienceSubtype: 'QUEUE' },
-            },
-          }),
-        ],
-      },
-    });
+    const out = mapProposals([
+      specialProgram({
+        observations: {
+          __typename: 'ObservationSelectResult',
+          matches: [observation('o-1db', 'Gaia DR2 2342904698625661824', 0.4), observation('o-459a', 'HIP 3320', null)],
+        },
+      }),
+      // A regular Queue proposal — excluded even if the ODB's call filter
+      // let it through, since the call's type and the proposal's subtype are
+      // separate fields.
+      specialProgram({
+        id: 'p-999',
+        proposal: {
+          __typename: 'Proposal',
+          reference: null,
+          gemini: { __typename: 'Queue', scienceSubtype: 'QUEUE' },
+        },
+      }),
+    ]);
     expect(out.length).toBe(1);
     const p = out[0];
     expect(p?.id).toBe('p-110');
@@ -129,18 +131,12 @@ describe(mapProposals, () => {
     // The science observation's own digest is 0.27h, but it sits in a telluric
     // group whose combined estimate is 0.53h — that total is its Time.
     const science = { ...observation('o-sci', 'NGC 4038', 0.27), groupId: 'g-tel' };
-    const [p] = mapProposals({
-      programs: {
-        __typename: 'ProgramSelectResult',
-        hasMore: false,
-        matches: [
-          specialProgram({
-            observations: { __typename: 'ObservationSelectResult', matches: [science] },
-            allGroupElements: [telluricGroup],
-          }),
-        ],
-      },
-    });
+    const [p] = mapProposals([
+      specialProgram({
+        observations: { __typename: 'ObservationSelectResult', matches: [science] },
+        allGroupElements: [telluricGroup],
+      }),
+    ]);
     expect(p?.observations[0]).toMatchObject({ id: 'o-sci', hours: 0.5 });
   });
 });

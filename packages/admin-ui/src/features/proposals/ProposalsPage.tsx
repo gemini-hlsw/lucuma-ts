@@ -79,8 +79,8 @@ const BLANK_AWARD: AwardDraft = {
  */
 export default function ProposalsPage(): JSX.Element {
   const toast = useToast();
-  const { data, loading, error, refetch } = useProposals();
-  const proposals = useMemo(() => (data ? mapProposals(data) : EMPTY), [data]);
+  const { data, loading, incomplete, error, refetch } = useProposals();
+  const proposals = useMemo(() => (data ? mapProposals(data.programs.matches) : EMPTY), [data]);
   const [setProposalStatus, { loading: settingStatus }] = useSetProposalStatus();
   const [setAllocations, { loading: settingAllocations }] = useSetAllocations();
   const [updateProgram, { loading: updatingProgram }] = useUpdateProgram();
@@ -192,7 +192,14 @@ export default function ProposalsPage(): JSX.Element {
     <ReviewView<ReviewProposal>
       title="Proposals"
       blurb="Review & respond to Director’s Time and Poor Weather proposals."
-      badge={<DataSourceBadge loading={loading} error={error && friendlyError(error)} empty={items.length === 0} />}
+      badge={
+        <DataSourceBadge
+          loading={loading}
+          incomplete={incomplete}
+          error={error && friendlyError(error)}
+          empty={items.length === 0}
+        />
+      }
       controls={controls}
       resolving={resolving}
       items={items}
