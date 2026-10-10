@@ -240,8 +240,8 @@ importers:
   packages/admin-ui:
     devDependencies:
       '@apollo/client':
-        specifier: 4.3.2
-        version: 4.3.2(graphql-ws@6.3.0(graphql@16.14.2)(ws@8.22.0))(graphql@16.14.2)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(rxjs@7.8.2)
+        specifier: 4.3.3
+        version: 4.3.3(graphql-ws@6.3.0(graphql@16.14.2)(ws@8.22.0))(graphql@16.14.2)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(rxjs@7.8.2)
       '@eslint/js':
         specifier: 10.0.1
         version: 10.0.1(eslint@10.12.0(jiti@2.7.0)(supports-color@10.2.2))
@@ -391,8 +391,8 @@ importers:
         version: 3.7.0
     devDependencies:
       '@apollo/client':
-        specifier: 4.3.2
-        version: 4.3.2(graphql-ws@6.3.0(graphql@16.14.2)(ws@8.22.0))(graphql@16.14.2)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(rxjs@7.8.2)
+        specifier: 4.3.3
+        version: 4.3.3(graphql-ws@6.3.0(graphql@16.14.2)(ws@8.22.0))(graphql@16.14.2)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(rxjs@7.8.2)
       '@eslint/js':
         specifier: 10.0.1
         version: 10.0.1(eslint@10.12.0(jiti@2.7.0)(supports-color@10.2.2))
@@ -508,8 +508,8 @@ importers:
         specifier: 1.26.0
         version: 1.26.0(graphql@17.0.2)
       graphql-yoga:
-        specifier: 5.24.2
-        version: 5.24.2(graphql@17.0.2)
+        specifier: 5.24.4
+        version: 5.24.4(graphql@17.0.2)
       prisma:
         specifier: 7.10.0
         version: 7.10.0(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(@typescript/typescript6@6.0.2)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
@@ -605,8 +605,8 @@ importers:
   packages/resource-ui:
     dependencies:
       '@apollo/client':
-        specifier: 4.3.2
-        version: 4.3.2(graphql-ws@6.3.0(graphql@16.14.2)(ws@8.22.0))(graphql@16.14.2)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(rxjs@7.8.2)
+        specifier: 4.3.3
+        version: 4.3.3(graphql-ws@6.3.0(graphql@16.14.2)(ws@8.22.0))(graphql@16.14.2)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(rxjs@7.8.2)
       '@fortawesome/fontawesome-svg-core':
         specifier: 7.3.1
         version: 7.3.1
@@ -759,8 +759,8 @@ importers:
   packages/ui:
     devDependencies:
       '@apollo/client':
-        specifier: 4.3.2
-        version: 4.3.2(graphql-ws@6.3.0(graphql@16.14.2)(ws@8.22.0))(graphql@16.14.2)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(rxjs@7.8.2)
+        specifier: 4.3.3
+        version: 4.3.3(graphql-ws@6.3.0(graphql@16.14.2)(ws@8.22.0))(graphql@16.14.2)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(rxjs@7.8.2)
       '@eslint/js':
         specifier: 10.0.1
         version: 10.0.1(eslint@10.12.0(jiti@2.7.0)(supports-color@10.2.2))
@@ -917,8 +917,8 @@ importers:
 
 packages:
 
-  '@apollo/client@4.3.2':
-    resolution: {integrity: sha512-ra6f8NhP4b5Wznw6VpRGOGF6Q6a8rORToQeIx5BMC5Rc7mRVZ9wCN+01ynIZPjmlGPNif2Lqt0LRD+futfNgIw==}
+  '@apollo/client@4.3.3':
+    resolution: {integrity: sha512-wMfOUaFKLgNsu0OMCg50gfhEHTV9/GyO7DxQvut7iSBUoePy0kvll3oWeY8KVPRfnVhYEzcwPJ/Jwz4uSe3fQA==}
     peerDependencies:
       graphql: ^16.0.0 || ^17.0.0
       graphql-ws: ^5.5.5 || ^6.0.3
@@ -3991,8 +3991,8 @@ packages:
       ws:
         optional: true
 
-  graphql-yoga@5.24.2:
-    resolution: {integrity: sha512-pQoCb4BjDF3ZccHugxm84EQcG4d0qK+r11hFylB4AncvIp1r6PZ450mLRwCv+5c7884/ppPJQPWdnIAIXSCQUA==}
+  graphql-yoga@5.24.4:
+    resolution: {integrity: sha512-jnpLm2g9BfnP18VKL+Yao8YRQYgDjXdAkFgZso/tnKFcRcAtOeUKLDVc1XnYiE3uooXzfIQzsvpKR+fC3we4QA==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
       graphql: ^15.2.0 || ^16.0.0 || ^17.0.0
@@ -5909,7 +5909,7 @@ packages:
 
 snapshots:
 
-  '@apollo/client@4.3.2(graphql-ws@6.3.0(graphql@16.14.2)(ws@8.22.0))(graphql@16.14.2)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(rxjs@7.8.2)':
+  '@apollo/client@4.3.3(graphql-ws@6.3.0(graphql@16.14.2)(ws@8.22.0))(graphql@16.14.2)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(rxjs@7.8.2)':
     dependencies:
       '@graphql-typed-document-node/core': 3.2.0(graphql@16.14.2)
       '@wry/caches': 1.0.1
@@ -9773,13 +9773,13 @@ snapshots:
     optionalDependencies:
       ws: 8.22.0
 
-  graphql-yoga@5.24.2(graphql@17.0.2):
+  graphql-yoga@5.24.4(graphql@17.0.2):
     dependencies:
       '@envelop/core': 5.6.1
       '@envelop/instrumentation': 1.0.1
       '@graphql-tools/executor': 2.0.3(graphql@17.0.2)
       '@graphql-tools/schema': 10.1.3(graphql@17.0.2)
-      '@graphql-tools/utils': 11.2.2(graphql@17.0.2)
+      '@graphql-tools/utils': 12.0.3(graphql@17.0.2)
       '@graphql-yoga/logger': 2.0.2
       '@graphql-yoga/subscription': 5.1.1
       '@whatwg-node/fetch': 0.10.13
