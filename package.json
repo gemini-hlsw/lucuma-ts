@@ -3,7 +3,7 @@
   "description": "Monorepo for navigate typescript projects",
   "version": "1.0.0",
   "type": "module",
-  "packageManager": "pnpm@12.8.2",
+  "packageManager": "pnpm@12.10.1",
   "license": "BSD-3-Clause",
   "private": true,
   "repository": {
