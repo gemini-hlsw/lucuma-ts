@@ -21,7 +21,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@apollo/client": "4.3.1",
+    "@apollo/client": "4.3.2",
     "@fortawesome/fontawesome-svg-core": "7.3.1",
     "@fortawesome/pro-regular-svg-icons": "7.3.1",
     "@fortawesome/react-fontawesome": "3.5.0",
@@ -40,8 +40,8 @@
   "devDependencies": {
     "@eslint/js": "10.0.1",
     "@gemini-hlsw/lucuma-odb-schemas": "0.102.0-ea572f8",
-    "@graphql-codegen/cli": "7.4.3",
-    "@graphql-codegen/client-preset": "6.2.0",
+    "@graphql-codegen/cli": "7.4.5",
+    "@graphql-codegen/client-preset": "6.2.2",
     "@graphql-eslint/eslint-plugin": "4.4.1",
     "@graphql-typed-document-node/core": "3.2.0",
     "@rolldown/plugin-babel": "0.2.4",

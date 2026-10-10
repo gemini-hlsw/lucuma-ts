@@ -36,13 +36,13 @@
     "graphql": "17.0.2",
     "graphql-parse-resolve-info": "4.14.1",
     "graphql-scalars": "1.26.0",
-    "graphql-yoga": "5.24.1",
+    "graphql-yoga": "5.24.2",
     "prisma": "7.10.0"
   },
   "devDependencies": {
-    "@eddeee888/gcg-typescript-resolver-files": "0.19.0",
+    "@eddeee888/gcg-typescript-resolver-files": "0.20.0",
     "@eslint/js": "10.0.1",
-    "@graphql-codegen/cli": "7.4.3",
+    "@graphql-codegen/cli": "7.4.5",
     "@graphql-eslint/eslint-plugin": "4.4.1",
     "@testcontainers/postgresql": "12.2.0",
     "@tsconfig/strictest": "2.0.8",
