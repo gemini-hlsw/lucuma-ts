@@ -65,7 +65,7 @@
     "eslint-plugin-simple-import-sort": "14.0.0",
     "globals": "17.13.0",
     "graphql": "16.14.2",
-    "playwright": "1.62.1",
+    "playwright": "1.64.0",
     "sass": "1.105.1",
     "tailwindcss": "4.3.3",
     "typescript": "npm:@typescript/typescript6@6.0.2",
