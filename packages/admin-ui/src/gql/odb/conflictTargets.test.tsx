@@ -17,6 +17,7 @@ function row(overrides: Partial<ConflictRow> = {}): ConflictRow {
     detailLabel: 'x-9',
     programId: 'p-1',
     requestId: 'x-9',
+    observationId: null,
     status: 'Requested',
     target: '—',
     applicableObservations: [],
@@ -124,7 +125,7 @@ describe(useConflictTargetNames, () => {
     await expect.element(screen.getByTestId('count')).toHaveTextContent('2');
   });
 
-  it('does not query at all when no row has applicable observations (ToO rows carry their own name)', async () => {
+  it('does not query at all when no row has applicable observations (observation rows carry their own name)', async () => {
     // An unmatched query fails quietly in Apollo's mock link, so asserting on
     // what renders cannot tell a skipped query from a failed one. Instead, mock
     // the empty-id query and have it answer with a name: the hook must never
