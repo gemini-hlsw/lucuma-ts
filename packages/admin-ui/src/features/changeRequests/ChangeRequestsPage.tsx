@@ -1,20 +1,13 @@
 import './ChangeRequestsPage.css';
 
 import { cn } from '@gemini-hlsw/lucuma-common-ui';
-import { Button } from 'primereact/button';
 import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
 import { Dropdown } from 'primereact/dropdown';
-import { InputTextarea } from 'primereact/inputtextarea';
-import { OverlayPanel } from 'primereact/overlaypanel';
-import { type JSX, useMemo, useRef, useState } from 'react';
+import { type JSX, useMemo, useState } from 'react';
 
-import { ConflictsTable } from '@/components/ConflictsTable';
 import { DataSourceBadge } from '@/components/DataSourceBadge';
-import { DuplicatesTable } from '@/components/DuplicatesTable';
-import { Check, PaperPlane, XMark } from '@/components/Icons';
 import { Tile } from '@/components/Tile';
-import { useToast } from '@/components/toastContext';
 import { friendlyError } from '@/gql/errors';
 import {
   groupChangeRequestsByProgram,
@@ -24,16 +17,10 @@ import {
   useProgramObservations,
   useResolveChangeRequests,
 } from '@/gql/odb/changeRequests';
-import { formatUtcMinute, joinTargetNames } from '@/gql/odb/shared';
-import type {
-  ChangeRequest,
-  ConfigurationRequestStatus,
-  ObservationRow,
-  ProgramCrStatus,
-  Site,
-  TimingWindowRow,
-} from '@/gql/types';
+import type { ChangeRequest, ConfigurationRequestStatus, ProgramCrStatus, Site } from '@/gql/types';
 import { exploreProgramUrl } from '@/lib/explore';
+
+import { ConfigurationRequestReview } from '../review/ConfigurationRequestReview';
 
 const EMPTY: ChangeRequest[] = [];
 
@@ -43,15 +30,6 @@ const STATUS_COLOR: Record<ProgramCrStatus, string> = {
   Open: 'cr-status-open',
   Mixed: 'cr-status-mixed',
 };
-
-const CR_STATUS_ICON: Record<ConfigurationRequestStatus, string> = {
-  REQUESTED: 'cr-dot-open',
-  APPROVED: 'cr-dot-approved',
-  DENIED: 'cr-dot-denied',
-  WITHDRAWN: 'cr-dot-denied',
-};
-
-type Decision = 'APPROVED' | 'DENIED';
 
 /** "Show everything" sentinel for the facet dropdowns. A real string, not
  *  null: PrimeReact's Dropdown hands back the whole option object for
@@ -72,7 +50,6 @@ const ALL = 'ALL';
  * status dot.
  */
 export default function ChangeRequestsPage(): JSX.Element {
-  const toast = useToast();
   const { data, loading, error } = useChangeRequests();
   const requests = useMemo(() => (data ? mapChangeRequests(data) : EMPTY), [data]);
   const { resolve, loading: saving } = useResolveChangeRequests();
@@ -114,77 +91,6 @@ export default function ChangeRequestsPage(): JSX.Element {
   // N+1 nor a giant id-list query.
   const { matches: programObservations } = useProgramObservations(selectedProgram?.programId ?? null);
   const observationsById = useMemo(() => observationsByIdFrom(programObservations), [programObservations]);
-  const visibleRequests = useMemo<VisibleRequest[]>(
-    () =>
-      programRequests.map((r) => ({
-        ...r,
-        observations: r.observationIds
-          .map((id) => observationsById.get(id))
-          .filter((o): o is ObservationRow => o !== undefined),
-      })),
-    [programRequests, observationsById],
-  );
-
-  // DataTable's own checkbox-selection column (a body-template Checkbox never
-  // repainted its checkmark — memoized cells; Andy's "checkmark never appears").
-  const [selectedIds, setSelectedIds] = useState<ReadonlySet<string>>(new Set());
-  const selectedRequests = visibleRequests.filter((r) => selectedIds.has(r.id));
-
-  // Scheduling windows for one request are shown on demand in an overlay,
-  // grouped by the observation they belong to (sc-9621). A single panel is
-  // reused; the click target sets which request's windows it shows.
-  const windowsPanel = useRef<OverlayPanel>(null);
-  const [windowsOf, setWindowsOf] = useState<readonly WindowGroup[]>([]);
-
-  const [response, setResponse] = useState('');
-  const [decision, setDecision] = useState<Decision | null>(null);
-
-  // The effective selection can change without a click — e.g. a facet change
-  // hides the selected program and the view falls back to the first one.
-  // Reset the per-program review state whenever it changes, however it
-  // changes, so a drafted decision/response can never carry over to a
-  // different program.
-  const [reviewedProgramId, setReviewedProgramId] = useState<string | null>(null);
-  if ((selectedProgram?.programId ?? null) !== reviewedProgramId) {
-    setReviewedProgramId(selectedProgram?.programId ?? null);
-    setSelectedIds(new Set());
-    setDecision(null);
-    setResponse('');
-  }
-
-  function boilerplate(items: readonly ChangeRequest[], next: Decision): string {
-    const pi = items[0]?.pi ?? 'PI';
-    const ids = items.map((r) => r.id).join(', ');
-    return next === 'APPROVED'
-      ? `Dear ${pi},\n\nThanks for submitting a change request. Your requested changes (${ids}) have been approved and applied to the affected observations.\n\nRegards,\nGemini Science Operations`
-      : `Dear ${pi},\n\nThanks for submitting a change request. Your requested changes (${ids}) have been denied. Please contact your contact scientist to discuss alternatives.\n\nRegards,\nGemini Science Operations`;
-  }
-
-  function choose(next: Decision): void {
-    setDecision(next);
-    setResponse(boilerplate(selectedRequests, next));
-  }
-
-  async function confirm(): Promise<void> {
-    if (!decision || selectedRequests.length === 0) return;
-    const ids = selectedRequests.map((r) => r.id);
-    try {
-      // Choosing a decision seeds the boilerplate, so an empty box means the
-      // reviewer cleared it deliberately: resolve without writing a response,
-      // which leaves any note already stored on the request intact.
-      const trimmed = response.trim();
-      await resolve(ids, decision, trimmed === '' ? null : trimmed);
-      toast.success(
-        decision === 'APPROVED' ? 'Change requests approved' : 'Change requests denied',
-        `${ids.length} request${ids.length === 1 ? '' : 's'} in ${selectedProgram?.programReference ?? ''}`,
-      );
-      setSelectedIds(new Set());
-      setDecision(null);
-      setResponse('');
-    } catch (err) {
-      toast.error('Update failed', friendlyError(err));
-    }
-  }
 
   const tileControls = (
     <>
@@ -270,7 +176,10 @@ export default function ChangeRequestsPage(): JSX.Element {
       </Tile>
 
       {selectedProgram && (
-        <Tile
+        <ConfigurationRequestReview
+          requests={programRequests}
+          programLabel={selectedProgram.programId}
+          programReference={selectedProgram.programReference}
           title={`Change Requests in ${selectedProgram.programId}`}
           controls={
             <Dropdown
@@ -286,192 +195,14 @@ export default function ChangeRequestsPage(): JSX.Element {
               title="Filter the requests below by their individual status."
             />
           }
-          flush
-        >
-          <DataTable
-            value={visibleRequests}
-            dataKey="id"
-            className="cr-table"
-            selectionMode="checkbox"
-            selection={selectedRequests}
-            onSelectionChange={(e) => setSelectedIds(new Set(e.value.map((r) => r.id)))}
-          >
-            <Column selectionMode="multiple" style={{ width: '2.5rem' }} />
-            <Column field="id" header="ID" sortable style={{ width: '6rem' }} />
-            <Column
-              header="Received"
-              style={{ width: '10rem' }}
-              body={(r: ChangeRequest) => formatUtcMinute(r.createdAt)}
-              headerTooltip="When the PI submitted the change request (UTC)."
-            />
-            <Column
-              header="Target"
-              style={{ width: '9rem' }}
-              body={(r: VisibleRequest) => joinTargetNames(r.observations.map((o) => o.target))}
-              headerTooltip="Target name(s) of the request's applicable observations. A configuration request carries only coordinates, so the names come from those observations (sc-10159)."
-            />
-            <Column field="ra" header="RA" style={{ width: '9rem' }} />
-            <Column field="dec" header="Dec" style={{ width: '9rem' }} />
-            <Column field="instrument" header="Config" style={{ width: '7rem' }} />
-            <Column field="conditions" header="Conditions" style={{ width: '9rem' }} />
-            <Column
-              header="Observations"
-              style={{ width: '8rem' }}
-              body={(r: ChangeRequest) => r.observationIds.join(', ') || '—'}
-            />
-            <Column
-              header="Windows"
-              style={{ width: '6rem' }}
-              headerTooltip="Scheduling windows across this request's observations. Click the count to see each window."
-              body={(r: VisibleRequest) => {
-                const groups = windowGroups(r.observations);
-                const total = groups.reduce((n, g) => n + g.windows.length, 0);
-                if (total === 0) return <span className="cr-untracked">none</span>;
-                return (
-                  <Button
-                    link
-                    className="cr-windows-link"
-                    label={String(total)}
-                    onClick={(e) => {
-                      setWindowsOf(groups);
-                      windowsPanel.current?.toggle(e);
-                    }}
-                  />
-                );
-              }}
-            />
-            <Column
-              header="Justification"
-              body={(r: ChangeRequest) => truncate(r.justification, 60)}
-              headerTooltip="The PI's justification for the change."
-            />
-            <Column
-              header="Status"
-              style={{ width: '5rem' }}
-              body={(r: ChangeRequest) => {
-                const note = r.feedback;
-                const label =
-                  r.status === 'REQUESTED'
-                    ? 'Pending'
-                    : r.status === 'APPROVED'
-                      ? 'Approved'
-                      : r.status === 'DENIED'
-                        ? 'Denied'
-                        : 'Withdrawn';
-                return (
-                  <span
-                    className={cn('cr-dot', CR_STATUS_ICON[r.status])}
-                    title={note ? `${label} — reviewer response: ${note}` : label}
-                  />
-                );
-              }}
-              // Staff may leave feedback before resolving, so this is not
-              // limited to resolved requests.
-              headerTooltip="Hover a request's status to see the response sent to the PI, when one has been given."
-            />
-          </DataTable>
-        </Tile>
+          observationsById={observationsById}
+          resetKey={selectedProgram.programId}
+          saving={saving}
+          onResolve={resolve}
+        />
       )}
-
-      {selectedProgram && selectedRequests.length > 0 && (
-        <Tile title={`Selected Change Requests in ${selectedProgram.programId}`}>
-          <p className="cr-selected-ids">{selectedRequests.map((r) => r.id).join(', ')}</p>
-
-          <ConflictsTable title="Potential Conflicts of the Selected Change Requests" sources={selectedRequests} />
-
-          <DuplicatesTable
-            title="Potential Duplicate Observations of the Selected Change Requests"
-            sources={selectedRequests}
-          />
-
-          <InputTextarea
-            className={cn('cr-response', !decision && 'is-disabled')}
-            rows={5}
-            placeholder="Choose Approve or Deny to seed a response to the PI…"
-            value={response}
-            disabled={!decision}
-            title="The message sent to the PI, covering all selected change requests. Pre-filled with boilerplate; edit freely before confirming."
-            onChange={(e) => setResponse(e.target.value)}
-          />
-
-          <div className="cr-actions">
-            <Button
-              label="Deny"
-              icon={<XMark />}
-              severity="danger"
-              outlined={decision !== 'DENIED'}
-              tooltip="Mark every selected change request as denied and seed a decline response."
-              tooltipOptions={{ position: 'top' }}
-              onClick={() => choose('DENIED')}
-            />
-            <Button
-              label="Approve"
-              icon={<Check />}
-              severity="success"
-              outlined={decision !== 'APPROVED'}
-              tooltip="Mark every selected change request as approved and seed an approval response."
-              tooltipOptions={{ position: 'top' }}
-              onClick={() => choose('APPROVED')}
-            />
-            <span
-              title={
-                decision
-                  ? 'Record the decision via updateConfigurationRequests, then reload from the ODB.'
-                  : 'Choose Approve or Deny first.'
-              }
-            >
-              <Button
-                label="Confirm"
-                icon={<PaperPlane />}
-                disabled={!decision || saving}
-                loading={saving}
-                onClick={() => void confirm()}
-              />
-            </span>
-          </div>
-        </Tile>
-      )}
-
-      <OverlayPanel ref={windowsPanel} className="cr-windows-panel">
-        {windowsOf.length === 0 ? (
-          <p className="cr-untracked">No scheduling windows.</p>
-        ) : (
-          windowsOf.map((g) => (
-            <div key={g.observationId} className="cr-windows-group">
-              <span className="cr-windows-obs">{g.observationId}</span>
-              <ul className="cr-windows-list">
-                {g.windows.map((w, i) => (
-                  <li key={i} className={w.inclusion === 'EXCLUDE' ? 'cr-window-exclude' : undefined}>
-                    {w.label}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))
-        )}
-      </OverlayPanel>
     </>
   );
-}
-
-interface WindowGroup {
-  readonly observationId: string;
-  readonly windows: readonly TimingWindowRow[];
-}
-
-/** Carries the observations alongside the request because several columns
- *  (Target, Observations, Windows) describe the request through them — the
- *  request itself holds only a configuration and coordinates. */
-type VisibleRequest = ChangeRequest & { readonly observations: readonly ObservationRow[] };
-
-/** Group a request's resolved observations by id, keeping only those that
- *  actually have scheduling windows (sc-9621). */
-function windowGroups(observations: readonly ObservationRow[]): readonly WindowGroup[] {
-  return observations.filter((o) => o.windows.length > 0).map((o) => ({ observationId: o.id, windows: o.windows }));
-}
-
-function truncate(s: string, n: number): string {
-  return s.length > n ? `${s.slice(0, n)}…` : s;
 }
 
 /** Pull the semester token out of a program reference ("G-2027B-1234-Q" →

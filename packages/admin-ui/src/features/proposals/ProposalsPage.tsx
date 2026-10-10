@@ -24,6 +24,7 @@ import {
 import { matchesQuery } from '@/lib/search';
 
 import { type Decision, type ReviewColumn, type ReviewItem, ReviewView } from '../review/ReviewView';
+import { ProposalConfigurationRequests } from './ProposalConfigurationRequests';
 
 /** A proposal is "resolved" once a decision has been recorded. */
 type ReviewProposal = Proposal & ReviewItem;
@@ -211,6 +212,7 @@ export default function ProposalsPage(): JSX.Element {
             <dd>{SPECIAL_PROPOSAL_TYPE_LABEL[p.type]}</dd>
           </dl>
           <p className="review-abstract">{p.abstract}</p>
+          <ProposalConfigurationRequests programId={p.id} programLabel={p.reference} />
         </>
       )}
       renderExtra={(p, decision) =>
