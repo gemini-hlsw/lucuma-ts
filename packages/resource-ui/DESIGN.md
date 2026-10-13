@@ -113,7 +113,7 @@ same commit, and vice versa.
 **Creative North Star: "One Observatory Console"**
 
 Resource is one console among the GPP applications, and it must feel like it: a reader coming
-from Explore (https://explore-dev.lucuma.xyz/) stays in the same dark, dense, matter-of-fact
+from Explore (https://explore-dev.gemini.edu/) stays in the same dark, dense, matter-of-fact
 world. The chrome was measured from the running Explore application - the surface ladder, the
 white-opacity text ladder, the action green, the lightgreen identity accent - and those
 measured values are recorded here as tokens. Continuity is a floor, not a ceiling: where

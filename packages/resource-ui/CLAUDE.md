@@ -17,7 +17,7 @@ The v1 read surface is complete; PRODUCT.md names the five destinations it draws
 purely to sidestep CORS. Every data field needs an SSO Bearer token: without one the service
 answers "Field 'X' requires authentication.", and the app shows the sign-in toast
 (`src/gql/ApolloConfigs.ts`). Introspection works anonymously, and the GraphiQL playground is at
-https://lucuma-resource-dev.lucuma.xyz/resource/playground.html.
+https://resource-api-dev.gemini.edu/resource/playground.html.
 
 **No data source runs in the client.** The app must never execute a GraphQL schema in the
 browser - that puts an executable schema and the SDL into a frontend bundle. There is no control
@@ -81,7 +81,7 @@ view is empty under the sign-in toast.
   doubling to 16 min, with or without a token - the `SESSION_TIMINGS` defaults `startSession` takes,
   which tests shrink to tens of milliseconds to run on the real clock); a rejected refresh signs the
   reader out and arms no timer, though refocusing the tab still asks SSO for the cookie once 30 s
-  have passed since the last attempt, which is how a session started in another lucuma.xyz tab gets
+  have passed since the last attempt, which is how a session started in another gemini.edu tab gets
   picked up; a token leaves the store when its `exp` passes, at once if it is restored or arrives
   expired (with a console warning when SSO issued it that way), and the auth link also checks `exp`
   itself because a sleeping tab fires that timer late; `signOut` tears the keeper down whether or
@@ -112,7 +112,7 @@ view is empty under the sign-in toast.
   `resource-staging.lucuma.xyz`, so staging reads signed out until that host is admitted, and
   neither host answers a `localhost` origin, so `pnpm resource-ui dev` reads signed out (the
   blocked refresh takes the unreachable path and retries on its backoff). `dev:https` with
-  `local.lucuma.xyz` aliased in `/etc/hosts` is the way in (README, "Signing in locally"): the
+  `local.gemini.edu` aliased in `/etc/hosts` is the way in (README, "Signing in locally"): the
   name is admitted, and https is what lets the browser send the `SameSite=Strict` cookie.
 
 ## The views

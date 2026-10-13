@@ -141,7 +141,7 @@ assumption is recorded so it can be corrected, not defended.
 
 ## Brand Commitments
 
-- **Resource is chrome-continuous with Explore** (https://explore-dev.lucuma.xyz/, browsable as
+- **Resource is chrome-continuous with Explore** (https://explore-dev.gemini.edu/, browsable as
   guest). It is one of the GPP applications, and a reader moving between them should feel one
   continuous product: the same dark visual language and the same colour scheme, above all the
   same green accent. The chrome was measured from the running Explore application rather than

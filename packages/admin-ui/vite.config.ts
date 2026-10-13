@@ -54,7 +54,7 @@ export default defineConfig({
     buildVersionFile(),
   ],
   server: {
-    allowedHosts: ['localhost', '.lucuma.xyz', '.gemini.edu'],
+    allowedHosts: ['localhost', '.gemini.edu'],
     proxy: {
       // Admin talks to two GraphQL services: the ODB for Programs / Proposals /
       // Change Requests / Calls for Proposals, and SSO for the Users view's
@@ -65,7 +65,7 @@ export default defineConfig({
         secure: true,
       },
       '/sso-graphql': {
-        target: 'https://sso-dev.gpp.lucuma.xyz',
+        target: 'https://sso-dev.gpp.gemini.edu',
         changeOrigin: true,
         secure: true,
         rewrite: (path) => path.replace(/^\/sso-graphql/, '/graphql'),

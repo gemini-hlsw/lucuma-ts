@@ -411,7 +411,7 @@ export function createServerConfiguration(overrides?: OverridePartial<ServerConf
     __typename: 'ServerConfiguration',
     site: 'GN',
     odbUri: 'https://lucuma-postgres-odb-dev.herokuapp.com/odb',
-    ssoUri: 'https://sso-dev.gpp.lucuma.xyz',
+    ssoUri: 'https://sso-dev.gpp.gemini.edu',
     ...overrides,
   };
 }
