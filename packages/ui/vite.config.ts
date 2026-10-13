@@ -69,7 +69,7 @@ export default defineConfig(({ mode }) => ({
     },
   },
   server: {
-    allowedHosts: ['localhost', '.lucuma.xyz', '.gemini.edu'],
+    allowedHosts: ['localhost', '.gemini.edu'],
     host: '0.0.0.0',
     proxy: {
       '^/navigate/graphql': {
@@ -77,7 +77,7 @@ export default defineConfig(({ mode }) => ({
         changeOrigin: true,
       },
       '^/db': {
-        target: 'http://navigate.lucuma.xyz:4000',
+        target: 'http://navigate.gemini.edu:4000',
         changeOrigin: true,
       },
       '^/navigate/ws': {
@@ -106,8 +106,7 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
     babel({ presets: [reactCompilerPreset()], exclude: /[/\\](node_modules|common-ui)[/\\]/ }),
-    mode === 'development' &&
-      mkcert({ hosts: ['localhost', 'local.lucuma.xyz', 'navigate.lucuma.xyz', 'navigate.gemini.edu'] }),
+    mode === 'development' && mkcert({ hosts: ['localhost', 'local.gemini.edu', 'navigate.gemini.edu'] }),
     mode === 'production' && buildVersionFile(),
     tailwindcss(),
   ],

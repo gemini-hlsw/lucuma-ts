@@ -9,7 +9,7 @@ describe(exploreProgramUrl, () => {
     // Tests run on localhost, which resolves to the local-dev entry — its
     // Explore is the dev deployment, never production (see environments.ts).
     expect(exploreProgramUrl('G-2026B-0298-P')).toBe(`${CURRENT_ENV.exploreUri}/G-2026B-0298-P`);
-    expect(exploreProgramUrl('G-2026B-0298-P')).toBe('https://explore-dev.lucuma.xyz/G-2026B-0298-P');
+    expect(exploreProgramUrl('G-2026B-0298-P')).toBe('https://explore-dev.gemini.edu/G-2026B-0298-P');
   });
 
   it('leaves an ordinary reference label untouched', () => {

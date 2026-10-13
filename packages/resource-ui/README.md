@@ -25,21 +25,21 @@ Every data field needs an SSO sign-in, so signed out, `dev` shows an amber sign-
 and every view is empty. Signing in from a local dev server takes the setup below.
 
 To try queries by hand, the service's GraphiQL playground is at
-https://lucuma-resource-dev.lucuma.xyz/resource/playground.html.
+https://resource-api-dev.gemini.edu/resource/playground.html.
 
 ### Signing in locally
 
-The dev SSO admits any `lucuma.xyz` origin and refuses `localhost`, and its session cookie is
+The dev SSO admits any `gemini.edu` origin and refuses `localhost`, and its session cookie is
 `SameSite=Strict`, which the browser sends only from an https page on that domain. So give the
 dev server such a name and serve it over https:
 
 ```bash
-sudo sh -c 'echo "127.0.0.1 local.lucuma.xyz" >> /etc/hosts'   # once
+sudo sh -c 'echo "127.0.0.1 local.gemini.edu" >> /etc/hosts'   # once
 pnpm resource-ui dev:https                                         # RESOURCE_HTTPS=1 vite, self-signed
 ```
 
-Open https://local.lucuma.xyz:5173 (accept the certificate once), then sign in from the app
-menu with an ORCID account. A session started on any other lucuma.xyz app is already there.
+Open https://local.gemini.edu:5173 (accept the certificate once), then sign in from the app
+menu with an ORCID account. A session started on any other gemini.edu app is already there.
 
 ### Codegen
 
