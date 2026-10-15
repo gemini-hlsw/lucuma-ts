@@ -2,12 +2,12 @@
 import { cn } from '@gemini-hlsw/lucuma-common-ui';
 import type { JSX } from 'react';
 
-import type { Instrument } from '@/domain/types';
+import type { ResourceInstrument } from '@/domain/types';
 
 import { INSTRUMENT_LABEL, instrumentColor } from './timelineOptions';
 
 interface InstrumentSwatchProps {
-  readonly instrument: Instrument;
+  readonly instrument: ResourceInstrument;
   /** Shown small beside it, so "GMOS GMOS-N" reads as one instrument with two names. */
   readonly publishedName?: string;
   readonly children?: JSX.Element | string | false;

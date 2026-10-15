@@ -9,6 +9,7 @@ import { createContext, useContext } from 'react';
 export interface ToastApi {
   success: (summary: string, detail?: string) => void;
   info: (summary: string, detail?: string) => void;
+  warn: (summary: string, detail?: string) => void;
   error: (summary: string, detail?: string) => void;
 }
 

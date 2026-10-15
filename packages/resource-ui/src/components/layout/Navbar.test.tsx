@@ -1,3 +1,5 @@
+import type { MockedResponseOf } from '@gemini-hlsw/lucuma-common-ui/testing';
+import { NIGHT_SCHEDULE_QUERY } from '@gql/resource';
 import type { ToastMessage } from 'primereact/toast';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { type LocatorSelectors, page, userEvent } from 'vitest/browser';
@@ -13,7 +15,10 @@ import { sessionCheckedAtom, setToken } from '@/components/atoms/auth';
 import { store } from '@/components/atoms/store';
 import { toastAtom } from '@/components/atoms/toast';
 import { ToastOutlet } from '@/components/ui/ToastOutlet';
+import { observingNightInterval } from '@/domain/siteTime';
+import { toApiInterval } from '@/gql/hooks';
 import { fakeJwt, standardUser } from '@/test/factories';
+import { publishedSemester, publishedSemesters } from '@/test/fixtures/semester';
 import { act, chooseClock, chooseSite, openAppMenu } from '@/test/helpers';
 import { renderApp, type RenderedApp } from '@/test/renderApp';
 import { ssoCall, ssoRefreshes, stubSso } from '@/test/sso';
@@ -28,10 +33,44 @@ const NAVBAR_WITH_TOASTS = (
   </>
 );
 
-const renderNavbar = async (route = '/') => renderApp({ element: NAVBAR_WITH_TOASTS, route });
+const renderNavbar = async (route = '/') => renderApp({ element: NAVBAR_WITH_TOASTS, route, mocks: [] });
 
 const renderSignedIn = async () =>
-  renderApp({ element: NAVBAR_WITH_TOASTS, route: '/', token: fakeJwt(standardUser('staff')) });
+  renderApp({ element: NAVBAR_WITH_TOASTS, route: '/', token: fakeJwt(standardUser('staff')), mocks: [] });
+
+const NIGHT = '2026-11-14';
+
+/** The night page inside the real shell, with nothing recorded: the subject is the clock its header prints. */
+const NIGHT_SCHEDULE: MockedResponseOf<typeof NIGHT_SCHEDULE_QUERY> = {
+  request: {
+    query: NIGHT_SCHEDULE_QUERY,
+    variables: { site: 'GS', night: NIGHT, ...toApiInterval(observingNightInterval('GS', NIGHT)) },
+  },
+  result: {
+    data: {
+      telescopeNight: {
+        __typename: 'TelescopeNight',
+        observingNight: NIGHT,
+        dataAvailable: false,
+        interval: { __typename: 'TimestampInterval', ...toApiInterval(observingNightInterval('GS', NIGHT)) },
+      },
+      instrumentAvailability: [],
+      telescopeAvailability: [],
+      tooSupport: [],
+      telescopeMode: [],
+      telescopeSubsystemAvailability: [],
+    },
+  },
+};
+
+const openNightInShell = async () =>
+  renderApp({
+    element: <Layout />,
+    route: `/night?site=GS&night=${NIGHT}`,
+    path: '/',
+    childRoutes: [{ path: 'night', element: <NightPage /> }],
+    mocks: [publishedSemesters(publishedSemester({ site: 'GS', semester: '2026B' })), NIGHT_SCHEDULE],
+  });
 
 const SESSION_ENDED = 'Your session ended';
 const LOGOUT_UNREACHABLE = 'Logout did not reach SSO';
@@ -223,12 +262,7 @@ describe(Navbar, () => {
   });
 
   it('switches every clock in the app to UT', async () => {
-    const screen = await renderApp({
-      element: <Layout />,
-      route: '/night?site=GS&night=2026-11-14',
-      path: '/',
-      childRoutes: [{ path: 'night', element: <NightPage /> }],
-    });
+    const screen = await openNightInShell();
     await expect.element(screen.getByText('14:00 to 14:00 site time', { exact: false })).toBeVisible();
 
     await chooseClock(screen, 'UTC');
@@ -236,12 +270,7 @@ describe(Navbar, () => {
   });
 
   it('switches the clock from the keyboard, the row being the whole control', async () => {
-    const screen = await renderApp({
-      element: <Layout />,
-      route: '/night?site=GS&night=2026-11-14',
-      path: '/',
-      childRoutes: [{ path: 'night', element: <NightPage /> }],
-    });
+    const screen = await openNightInShell();
     await expect.element(screen.getByText('14:00 to 14:00 site time', { exact: false })).toBeVisible();
 
     await openAppMenu(screen);
@@ -251,12 +280,7 @@ describe(Navbar, () => {
   });
 
   it('operates the clock from the keyboard - the spike kept menu-native navigation for exactly this', async () => {
-    const screen = await renderApp({
-      element: <Layout />,
-      route: '/night?site=GS&night=2026-11-14',
-      path: '/',
-      childRoutes: [{ path: 'night', element: <NightPage /> }],
-    });
+    const screen = await openNightInShell();
     await expect.element(screen.getByText('14:00 to 14:00 site time', { exact: false })).toBeVisible();
 
     await openAppMenu(screen);
@@ -377,7 +401,7 @@ describe(Navbar, () => {
   it.each([['{Tab}'], ['{Shift>}{Tab}{/Shift}']])(
     'closes the menu on %s and hands focus back to the button, so the tab sequence continues from it',
     async (keys) => {
-      const screen = await renderApp({ element: <Layout />, route: '/night?site=GS' });
+      const screen = await renderApp({ element: <Layout />, route: '/night?site=GS', mocks: [] });
       const menuButton = screen.getByRole('button', { name: 'Menu' }).element();
 
       await openAppMenu(screen);
@@ -441,7 +465,7 @@ describe(Navbar, () => {
   ])(
     'names the account and offers only the auth item that applies when %s',
     async (_state, options, label, title, item) => {
-      const screen = await renderApp({ element: <Navbar />, route: '/', ...options });
+      const screen = await renderApp({ element: <Navbar />, route: '/', ...options, mocks: [] });
 
       const account = screen.getByTestId('account-control');
       await expect.element(account).toHaveTextContent(label);
@@ -537,6 +561,7 @@ describe(Navbar, () => {
       element: <AuthSession timings={RENEW_AT_ONCE}>{NAVBAR_WITH_TOASTS}</AuthSession>,
       route: '/',
       token: fakeJwt(standardUser('staff'), 60),
+      mocks: [],
     });
 
     await expect.poll(() => ssoRefreshes()).toHaveLength(1);
@@ -558,6 +583,7 @@ describe(Navbar, () => {
       element: <AuthSession>{NAVBAR_WITH_TOASTS}</AuthSession>,
       route: '/',
       token: fakeJwt(standardUser('staff')),
+      mocks: [],
     });
     const otherTab = new BroadcastChannel(SESSION_CHANNEL);
 
@@ -588,7 +614,7 @@ describe(Navbar, () => {
     ['from the first render', { token: null, sessionChecked: true }],
     ['once the first check settles', { token: null, sessionChecked: false }],
   ])('shows no session-ended notice to a visitor signed out %s', async (_when, options) => {
-    const screen = await renderApp({ element: NAVBAR_WITH_TOASTS, route: '/', ...options });
+    const screen = await renderApp({ element: NAVBAR_WITH_TOASTS, route: '/', ...options, mocks: [] });
 
     await act(() => {
       screen.store.set(sessionCheckedAtom, true);
@@ -627,6 +653,7 @@ describe(Navbar, () => {
       element: <AuthSession>{NAVBAR_WITH_TOASTS}</AuthSession>,
       route: '/',
       token: fakeJwt(standardUser('staff')),
+      mocks: [],
     });
     const otherTab = new BroadcastChannel(SESSION_CHANNEL);
     // A channel delivers to its listeners in the order they opened, so this one hears the message after the session keeper has.

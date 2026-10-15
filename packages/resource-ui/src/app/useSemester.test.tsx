@@ -1,14 +1,26 @@
 /** `resolveSemester`'s own rules are unit-tested in `domain/coverage.test.ts`. */
 import { describe, expect, it } from 'vitest';
 
+import { publishedSemester, publishedSemesters } from '@/test/fixtures/semester';
 import { Probe } from '@/test/probe';
 import { renderApp } from '@/test/renderApp';
 
 import { useSemester } from './useSemester';
 
+/** Shuffled, so the date order the picker lists is the hook's own doing. */
+const SEMESTERS = publishedSemesters(
+  publishedSemester({ site: 'GN', semester: '2026B' }),
+  publishedSemester({ site: 'GS', semester: '2025B' }),
+  publishedSemester({ site: 'GS', semester: '2024B' }),
+  publishedSemester({ site: 'GN', semester: '2025B' }),
+  publishedSemester({ site: 'GS', semester: '2026A' }),
+  publishedSemester({ site: 'GS', semester: '2025A' }),
+);
+
 const openSemester = async (route: string) =>
   renderApp({
     route,
+    mocks: [SEMESTERS],
     element: (
       <Probe
         use={useSemester}
@@ -49,6 +61,6 @@ describe(useSemester, () => {
   it('follows the site, so switching it re-offers that site s own semesters', async () => {
     const screen = await openSemester('/semester?site=GN');
 
-    await expect.element(screen.getByTestId('probe-options')).toHaveTextContent('2024B,2025A,2025B,2026A,2026B');
+    await expect.element(screen.getByTestId('probe-options')).toHaveTextContent('2025B,2026B');
   });
 });

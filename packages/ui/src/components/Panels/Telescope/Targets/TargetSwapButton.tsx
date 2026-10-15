@@ -112,7 +112,7 @@ export function TargetSwapButton({
     }
   };
 
-  if (guiderTargets.length === 1 || data?.onSwappedTarget)
+  if (guiderTargets.length <= 1 || data?.onSwappedTarget)
     return (
       <Button
         disabled={disabled}

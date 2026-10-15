@@ -178,7 +178,7 @@ export function BotSubsystems({ canEdit }: { canEdit: boolean }) {
         disabled={!canEdit}
         loading={loading}
         style={{ gridArea: 'g51' }}
-        label="Park"
+        label="Close"
         data-testid="park-shutters"
       />
       <label

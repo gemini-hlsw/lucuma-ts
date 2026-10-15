@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { buildNightTimeline } from '@/domain/nightTimeline';
 import { portRowLabel, TELESCOPE_PORTS } from '@/domain/ports';
 import { observingNightInterval } from '@/domain/siteTime';
-import type { Closure, Mounting } from '@/domain/types';
+import type { InstrumentAvailabilityBlock, TelescopeAvailabilityBlock } from '@/domain/types';
 import { buildTimelinePoints, DENSE, readerPx, TICK, type TimelinePoint } from '@/features/timeline/timelineOptions';
 import { collectFontSizes } from '@/test/fontSizes';
 
@@ -24,7 +24,9 @@ const interval = observingNightInterval('GS', NIGHT);
 const ROWS = TELESCOPE_PORTS.map(portRowLabel);
 const HOUR = 3_600_000;
 
-const mounting = (over: Partial<Mounting> & Pick<Mounting, 'id' | 'port' | 'interval'>): Mounting => ({
+const instrumentBlock = (
+  over: Partial<InstrumentAvailabilityBlock> & Pick<InstrumentAvailabilityBlock, 'id' | 'port' | 'interval'>,
+): InstrumentAvailabilityBlock => ({
   instrument: 'GMOS',
   publishedName: 'GMOS',
   usage: 'SCIENCE',
@@ -33,8 +35,8 @@ const mounting = (over: Partial<Mounting> & Pick<Mounting, 'id' | 'port' | 'inte
   ...over,
 });
 
-const build = (mountings: readonly Mounting[] = []) =>
-  buildNightTimeline({ site: 'GS', observingNight: NIGHT, mountings, closures: [] });
+const build = (instrumentAvailability: readonly InstrumentAvailabilityBlock[] = []) =>
+  buildNightTimeline({ site: 'GS', observingNight: NIGHT, instrumentAvailability, telescopeAvailability: [] });
 
 describe('clock and duration labels', () => {
   it('reads the clock in the site zone, not the browser one', () => {
@@ -70,7 +72,7 @@ describe('describing a block', () => {
   const describe_ = nightDescriber('GS', interval, 'site');
 
   it('says "all night" rather than a span, when nothing changes', () => {
-    const block = build([mounting({ id: 'a', port: 3, interval })]).rows[2]?.blocks[0];
+    const block = build([instrumentBlock({ id: 'a', port: 3, interval })]).rows[2]?.blocks[0];
 
     // A night is 23 or 25 hours either side of a DST change, so a duration would be noise.
     expect(describe_.range(block!)).toBe('all night');
@@ -78,7 +80,7 @@ describe('describing a block', () => {
 
   it('gives clock times for a block that covers only part of the night', () => {
     const partial = build([
-      mounting({
+      instrumentBlock({
         id: 'a',
         port: 3,
         interval: { start: interval.start + 6 * HOUR, end: interval.start + 9 * HOUR },
@@ -91,7 +93,7 @@ describe('describing a block', () => {
 
   it('phrases the same block in UT under the masthead UTC clock', () => {
     const partial = build([
-      mounting({
+      instrumentBlock({
         id: 'a',
         port: 3,
         interval: { start: interval.start + 6 * HOUR, end: interval.start + 9 * HOUR },
@@ -184,8 +186,8 @@ describe('the chart', () => {
     const night = buildNightTimeline({
       site: 'GS',
       observingNight: NIGHT,
-      mountings: [mounting({ id: 'a', port: 3, interval })],
-      closures: [{ id: 'wide', availability: 'CLOSED', port: null, reason: 'Shutdown', interval }],
+      instrumentAvailability: [instrumentBlock({ id: 'a', port: 3, interval })],
+      telescopeAvailability: [{ id: 'wide', availability: 'CLOSED', port: null, reason: 'Shutdown', interval }],
     });
     const options = buildNightChartOptions({ night, site: 'GS', now: interval.start + HOUR, timeDisplay: 'site' });
 
@@ -204,10 +206,10 @@ describe('the telescope-state header band', () => {
   const stateNight = buildNightTimeline({
     site: 'GS',
     observingNight: NIGHT,
-    mountings: [mounting({ id: 'g1', port: 2, interval })],
-    closures: [],
-    modeBlocks: [{ id: 'm1', mode: 'PRIORITY_VISITOR', programReferences: [], partner: null, interval, note: null }],
-    tooBlocks: [{ id: 't1', tooSupport: 'STANDARD', interval, note: null }],
+    instrumentAvailability: [instrumentBlock({ id: 'g1', port: 2, interval })],
+    telescopeAvailability: [],
+    telescopeMode: [{ id: 'm1', mode: 'PRIORITY_VISITOR', programReferences: [], partner: null, interval, note: null }],
+    tooSupport: [{ id: 't1', tooSupport: 'STANDARD', interval, note: null }],
   });
   const options = buildNightChartOptions({
     night: stateNight,
@@ -221,7 +223,7 @@ describe('the telescope-state header band', () => {
   it('names each group above its bars, at full bar size', () => {
     // A heading row over the state rows and one over the subjects, not an axis break.
     expect(yAxis.categories).toEqual(['Telescope', 'Mode', 'ToO', 'Instruments', ...ROWS]);
-    // The fixture's one mounting is on Port 2 - category index 5 here.
+    // The fixture's one instrument block is on Port 2 - category index 5 here.
     expect(data.some((bar) => bar.y === 0 || bar.y === 3)).toBe(false);
     expect(data.some((bar) => bar.y === 5)).toBe(true);
     // The heading rows are real height, not squeezed out of the rows.
@@ -258,12 +260,12 @@ describe('the telescope-state header band', () => {
 });
 
 describe('instrument usability treatments', () => {
-  const pointFor = (usage: Mounting['usage']) => {
+  const pointFor = (usage: InstrumentAvailabilityBlock['usage']) => {
     const night = buildNightTimeline({
       site: 'GS',
       observingNight: NIGHT,
-      mountings: [mounting({ id: 'a', port: 3, usage, interval })],
-      closures: [],
+      instrumentAvailability: [instrumentBlock({ id: 'a', port: 3, usage, interval })],
+      telescopeAvailability: [],
     });
     return buildTimelinePoints(night.rows, nightDescriber('GS', interval, 'site'))[0];
   };
@@ -293,21 +295,28 @@ describe('instrument usability treatments', () => {
 });
 
 describe('a port closure on the night', () => {
-  const closure = (over: Partial<Closure> & Pick<Closure, 'id' | 'interval'>): Closure => ({
+  const telescopeBlock = (
+    over: Partial<TelescopeAvailabilityBlock> & Pick<TelescopeAvailabilityBlock, 'id' | 'interval'>,
+  ): TelescopeAvailabilityBlock => ({
     availability: 'CLOSED',
     port: 3,
     reason: null,
     ...over,
   });
 
-  const pointsFor = (closures: readonly Closure[]) => {
-    const night = buildNightTimeline({ site: 'GS', observingNight: NIGHT, mountings: [], closures });
+  const pointsFor = (telescopeAvailability: readonly TelescopeAvailabilityBlock[]) => {
+    const night = buildNightTimeline({
+      site: 'GS',
+      observingNight: NIGHT,
+      instrumentAvailability: [],
+      telescopeAvailability,
+    });
     return buildTimelinePoints(night.rows, nightDescriber('GS', interval, 'site'));
   };
 
   it('draws as the hollow absence every view gives it - the Telescope row owns the red', () => {
     // A port-scoped span is not the telescope closing, and painting it red says otherwise.
-    const half = closure({
+    const half = telescopeBlock({
       id: 'c1',
       reason: 'Baffle inspection',
       interval: { start: interval.start, end: interval.start + 12 * HOUR },
@@ -320,14 +329,14 @@ describe('a port closure on the night', () => {
   });
 
   it('names an unreasoned span as the shared absence label', () => {
-    const bare = closure({ id: 'c2', interval });
+    const bare = telescopeBlock({ id: 'c2', interval });
 
     expect(pointsFor([bare])[0]?.custom.label).toBe('No instrument scheduled');
   });
 });
 
 describe('a telescope-wide closure on the night', () => {
-  const shutdown: Closure = {
+  const shutdown: TelescopeAvailabilityBlock = {
     id: 'wide',
     availability: 'CLOSED',
     port: null,
@@ -337,7 +346,12 @@ describe('a telescope-wide closure on the night', () => {
   };
 
   const closureBand = () => {
-    const night = buildNightTimeline({ site: 'GS', observingNight: NIGHT, mountings: [], closures: [shutdown] });
+    const night = buildNightTimeline({
+      site: 'GS',
+      observingNight: NIGHT,
+      instrumentAvailability: [],
+      telescopeAvailability: [shutdown],
+    });
     const { xAxis } = buildNightChartOptions({ night, site: 'GS', now: null, timeDisplay: 'site' });
     if (xAxis === undefined || Array.isArray(xAxis)) {
       throw new Error('expected a single x axis');

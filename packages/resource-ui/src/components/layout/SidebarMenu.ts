@@ -7,11 +7,15 @@ import {
   faTelescope,
 } from '@fortawesome/pro-regular-svg-icons';
 
+import type { CarriedParam } from '@/app/carriedSelection';
+
 export interface SidebarMenuItem {
   label: string;
   to: string;
   icon?: IconDefinition;
   disabled?: boolean;
+  /** The selection the link carries, when the destination reads less than the default. */
+  carries?: readonly CarriedParam[];
 }
 
 interface SidebarMenuSection {
@@ -32,8 +36,8 @@ export const SIDEBAR_MENU_SECTIONS: SidebarMenuSection[] = [
   {
     label: 'Inventory',
     items: [
-      { label: 'Instruments', to: '/instruments', icon: faTelescope },
-      { label: 'Components', to: '/components', icon: faBoxesStacked },
+      { label: 'Instruments', to: '/instruments', icon: faTelescope, carries: ['site'] },
+      { label: 'Components', to: '/components', icon: faBoxesStacked, carries: ['site'] },
     ],
   },
 ];

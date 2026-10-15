@@ -23,7 +23,7 @@ import { moonPhaseLabel } from '@/domain/moon';
 import { addDays } from '@/domain/semester';
 import type { SemesterTimeline as Timeline } from '@/domain/semesterTimeline';
 import type { TimelineNight } from '@/domain/timeline';
-import type { Closure, Mounting, PublishedSemester, Site } from '@/domain/types';
+import type { InstrumentAvailabilityBlock, PublishedSemester, Site, TelescopeAvailabilityBlock } from '@/domain/types';
 import { MoonDisc } from '@/features/calendar/MoonDisc';
 import { instrumentColor, instrumentInk, stateFill, stateFillInk } from '@/features/timeline/timelineOptions';
 
@@ -71,10 +71,10 @@ const monthKeyOf = (date: Date): string => `${String(date.getFullYear()).padStar
 // Mutable return: react-big-calendar's `events` prop rejects readonly arrays.
 const buildEvents = (
   nights: readonly TimelineNight[],
-  mountings: readonly Mounting[],
-  closures: readonly Closure[],
+  instrumentAvailability: readonly InstrumentAvailabilityBlock[],
+  telescopeAvailability: readonly TelescopeAvailabilityBlock[],
 ): NightEvent[] =>
-  buildCalendarNews({ nights, mountings, closures }).map((item) => ({
+  buildCalendarNews({ nights, instrumentAvailability, telescopeAvailability }).map((item) => ({
     title: item.label,
     start: localDateOf(item.eveningDate),
     end: localDateOf(addDays(item.eveningDate, 1)),
@@ -112,15 +112,15 @@ export function SemesterCalendar({
   timeline,
   semester,
   site,
-  mountings,
-  closures,
+  instrumentAvailability,
+  telescopeAvailability,
 }: {
   timeline: Timeline;
   semester: PublishedSemester;
   site: Site;
   /** The raw records the news projection reads (`domain/calendarNews.ts`). */
-  mountings: readonly Mounting[];
-  closures: readonly Closure[];
+  instrumentAvailability: readonly InstrumentAvailabilityBlock[];
+  telescopeAvailability: readonly TelescopeAvailabilityBlock[];
 }): JSX.Element {
   const nights = timeline.months.flatMap((month) => month.nights);
 
@@ -150,8 +150,8 @@ export function SemesterCalendar({
         nights={nights}
         calendarNights={calendarNights}
         firstEvening={first}
-        mountings={mountings}
-        closures={closures}
+        instrumentAvailability={instrumentAvailability}
+        telescopeAvailability={telescopeAvailability}
       />
     </div>
   );
@@ -162,15 +162,15 @@ function MonthCalendar({
   nights,
   calendarNights,
   firstEvening,
-  mountings,
-  closures,
+  instrumentAvailability,
+  telescopeAvailability,
 }: {
   timeline: Timeline;
   nights: readonly TimelineNight[];
   calendarNights: readonly CalendarNight[];
   firstEvening: string;
-  mountings: readonly Mounting[];
-  closures: readonly Closure[];
+  instrumentAvailability: readonly InstrumentAvailabilityBlock[];
+  telescopeAvailability: readonly TelescopeAvailabilityBlock[];
 }): JSX.Element {
   const byEvening = new Map(calendarNights.map((night) => [night.eveningDate, night]));
 
@@ -195,7 +195,7 @@ function MonthCalendar({
   };
 
   // The chips are semester-wide facts; react-big-calendar shows the month's.
-  const events = buildEvents(nights, mountings, closures);
+  const events = buildEvents(nights, instrumentAvailability, telescopeAvailability);
 
   const openNightView = useOpenNight();
   const openNight = (evening: string): void => {

@@ -2,11 +2,11 @@ import { describe, expect, it } from 'vitest';
 
 import { buildFinderRows, historyOf, matchesComponent } from './componentFinder';
 import { observingNightInterval } from './siteTime';
-import type { ComponentBlock, ComponentRecord, Mounting } from './types';
+import type { InstrumentAvailabilityBlock, InstrumentComponent, InstrumentComponentAvailabilityBlock } from './types';
 
 const night = observingNightInterval('GS', '2026-10-15');
 
-const piece = (over: Partial<ComponentRecord> = {}): ComponentRecord => ({
+const piece = (over: Partial<InstrumentComponent> = {}): InstrumentComponent => ({
   id: 'k-gs-R400_G5325',
   instrument: 'GMOS',
   componentType: 'DISPERSER',
@@ -17,7 +17,7 @@ const piece = (over: Partial<ComponentRecord> = {}): ComponentRecord => ({
   ...over,
 });
 
-const block = (over: Partial<ComponentBlock> = {}): ComponentBlock => ({
+const block = (over: Partial<InstrumentComponentAvailabilityBlock> = {}): InstrumentComponentAvailabilityBlock => ({
   id: 'b1',
   componentId: 'k-gs-R400_G5325',
   usage: 'SCIENCE',
@@ -27,7 +27,7 @@ const block = (over: Partial<ComponentBlock> = {}): ComponentBlock => ({
   ...over,
 });
 
-const mounting: Mounting = {
+const instrumentBlock: InstrumentAvailabilityBlock = {
   id: 'm1',
   instrument: 'GMOS',
   publishedName: 'GMOS',
@@ -38,8 +38,10 @@ const mounting: Mounting = {
   note: null,
 };
 
-const rowsOf = (blocks: readonly ComponentBlock[], mountings: readonly Mounting[] = [mounting]) =>
-  buildFinderRows({ components: [piece()], blocks, mountings, night });
+const rowsOf = (
+  blocks: readonly InstrumentComponentAvailabilityBlock[],
+  instrumentAvailability: readonly InstrumentAvailabilityBlock[] = [instrumentBlock],
+) => buildFinderRows({ components: [piece()], blocks, instrumentAvailability, night });
 
 describe('where a piece is', () => {
   it('resolves INSTALLED through the instrument, so the port comes from one source', () => {

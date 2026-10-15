@@ -12,6 +12,7 @@ export function ToastProvider({ children }: { children: ReactNode }): JSX.Elemen
     () => ({
       success: (summary, detail) => ref.current?.show({ severity: 'success', summary, detail, life: 3000 }),
       info: (summary, detail) => ref.current?.show({ severity: 'info', summary, detail, life: 3000 }),
+      warn: (summary, detail) => ref.current?.show({ severity: 'warn', summary, detail, life: 5000 }),
       error: (summary, detail) => ref.current?.show({ severity: 'error', summary, detail, life: 5000 }),
     }),
     [],

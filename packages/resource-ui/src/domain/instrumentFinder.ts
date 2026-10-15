@@ -1,7 +1,7 @@
 import { overlaps, transitionsOf } from './interval';
 import { STORAGE_PLACE_LABEL } from './places';
 import { portRowLabel } from './ports';
-import type { Instrument, Interval, Mounting, OffPortPlace, ResourceUsage } from './types';
+import type { InstrumentAvailabilityBlock, Interval, OffPortPlace, ResourceInstrument, ResourceUsage } from './types';
 
 export type InstrumentWhere =
   | { readonly kind: 'PORT'; readonly port: number }
@@ -11,7 +11,7 @@ export type InstrumentWhere =
   | { readonly kind: 'NOT_RECORDED' };
 
 export interface InstrumentRow {
-  readonly instrument: Instrument;
+  readonly instrument: ResourceInstrument;
   /** The name the schedule prints, e.g. "GMOS-S" - what the row label shows. */
   readonly publishedName: string;
   readonly where: InstrumentWhere;
@@ -25,30 +25,35 @@ export interface InstrumentRow {
   readonly transitions: readonly number[];
 }
 
-// Unreachable: `Mounting` types `place` and `port` independently, so the compiler cannot see they are exclusive.
-const whereOf = (mounting: Mounting): InstrumentWhere =>
-  mounting.port === null
-    ? { kind: 'OFF_PORT', place: mounting.place ?? 'UNKNOWN' }
-    : { kind: 'PORT', port: mounting.port };
+// Unreachable: `InstrumentAvailabilityBlock` types `place` and `port` independently, so the compiler cannot see they are exclusive.
+const whereOf = (instrumentBlock: InstrumentAvailabilityBlock): InstrumentWhere =>
+  instrumentBlock.port === null
+    ? { kind: 'OFF_PORT', place: instrumentBlock.place ?? 'UNKNOWN' }
+    : { kind: 'PORT', port: instrumentBlock.port };
 
 export interface BuildInstrumentRowsOptions {
-  /** Every mounting over the window - the browser's whole subject. */
-  readonly mountings: readonly Mounting[];
+  /** Every instrument block over the window - the browser's whole subject. */
+  readonly instrumentAvailability: readonly InstrumentAvailabilityBlock[];
   readonly night: Interval;
 }
 
 /** Driven by the records, not the enum: a site lists what its schedule holds, not permanently blank rows. */
-export const buildInstrumentRows = ({ mountings, night }: BuildInstrumentRowsOptions): readonly InstrumentRow[] => {
-  const instruments = [...new Set(mountings.map((mounting) => mounting.instrument))].sort((a, b) => a.localeCompare(b));
+export const buildInstrumentRows = ({
+  instrumentAvailability,
+  night,
+}: BuildInstrumentRowsOptions): readonly InstrumentRow[] => {
+  const instruments = [...new Set(instrumentAvailability.map((instrumentBlock) => instrumentBlock.instrument))].sort(
+    (a, b) => a.localeCompare(b),
+  );
 
   return instruments.map((instrument) => {
-    const runs = mountings.filter((mounting) => mounting.instrument === instrument);
+    const runs = instrumentAvailability.filter((instrumentBlock) => instrumentBlock.instrument === instrument);
     const tonight = runs
-      .filter((mounting) => overlaps(mounting.interval, night))
+      .filter((instrumentBlock) => overlaps(instrumentBlock.interval, night))
       .sort((a, b) => a.interval.start - b.interval.start);
     // The night's last record decides, as the component finder does.
     const deciding = tonight.at(-1);
-    const named = runs.find((mounting) => mounting.publishedName !== '')?.publishedName ?? instrument;
+    const named = runs.find((instrumentBlock) => instrumentBlock.publishedName !== '')?.publishedName ?? instrument;
 
     if (deciding === undefined) {
       return {
@@ -98,7 +103,8 @@ const whereLabel = (where: InstrumentWhere): string => {
 };
 
 /** Where one record puts an instrument: its port, or the place it is stored. */
-export const mountingLocationLabel = (mounting: Mounting): string => whereLabel(whereOf(mounting));
+export const instrumentLocationLabel = (instrumentBlock: InstrumentAvailabilityBlock): string =>
+  whereLabel(whereOf(instrumentBlock));
 
 export const locationLabel = (row: InstrumentRow): string => whereLabel(row.where);
 
@@ -119,9 +125,12 @@ export const locationOptions = (rows: readonly InstrumentRow[]): readonly { labe
 };
 
 /** An instrument's runs over the window, oldest first - the row expansion. */
-export const runsOf = (instrument: Instrument, mountings: readonly Mounting[]): readonly Mounting[] =>
-  mountings
-    .filter((mounting) => mounting.instrument === instrument)
+export const runsOf = (
+  instrument: ResourceInstrument,
+  instrumentAvailability: readonly InstrumentAvailabilityBlock[],
+): readonly InstrumentAvailabilityBlock[] =>
+  instrumentAvailability
+    .filter((instrumentBlock) => instrumentBlock.instrument === instrument)
     .sort((a, b) => a.interval.start - b.interval.start);
 
 /** Case-insensitive match on the enum tag or the name the schedule prints. */

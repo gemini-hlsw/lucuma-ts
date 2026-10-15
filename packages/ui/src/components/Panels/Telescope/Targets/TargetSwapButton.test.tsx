@@ -225,7 +225,7 @@ describe(TargetSwapButton, () => {
           },
         );
 
-        await expect.element(sut.getByRole('button')).toHaveTextContent('Point to Base');
+        await expect.element(sut.getByRole('button')).toMatchTextContent('Point to Base');
         await expect.element(sut.getByRole('button')).toHaveClass('p-button-danger');
 
         await userEvent.click(sut.getByRole('button'));

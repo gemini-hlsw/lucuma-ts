@@ -14,6 +14,7 @@ import { displayName, type StandardRole } from '@/auth/user';
 import { odbTokenAtom, useIsLoggedIn, useUser } from '@/components/atoms/auth';
 import { Bars, Copy, SignOut } from '@/components/Icons';
 import { useToast } from '@/components/toastContext';
+import { VersionCheck } from '@/components/VersionCheck';
 
 /** Environment → the version-string suffix, matching Explore's scheme. The
  *  complete set of environment names (satisfies Record) so a new environment is
@@ -221,6 +222,8 @@ export default function Layout(): JSX.Element {
           <Outlet />
         </main>
       </div>
+
+      <VersionCheck />
     </div>
   );
 }

@@ -12,7 +12,7 @@ services:
     container_name: navigate-server
     environment:
       - SITE=GN
-      - EXTERNAL_BASE_URL=http://navigate.lucuma.xyz:9070
+      - EXTERNAL_BASE_URL=http://navigate.gemini.edu:9070
       - PROXY_BASE_URI=http://configs:4000
       - SSO_SERVICE_JWT=${LUCUMA_REFRESH_TOKEN}
       - PORT=9070

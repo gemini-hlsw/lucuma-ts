@@ -2,27 +2,27 @@ import { useQuery } from '@apollo/client/react';
 
 import {
   type NightComponents,
-  toClosures,
-  toComponentBlocks,
+  toComponentAvailability,
   toComponents,
-  toModeBlocks,
-  toMountings,
+  toInstrumentAvailability,
   toNightComponents,
   toPublishedSemesters,
-  toSubsystemBlocks,
-  toTooBlocks,
+  toTelescopeAvailability,
+  toTelescopeMode,
+  toTelescopeSubsystemAvailability,
+  toTooSupport,
 } from '@/domain/adapters';
 import type {
-  Closure,
-  ComponentBlock,
-  ComponentRecord,
+  InstrumentAvailabilityBlock,
+  InstrumentComponent,
+  InstrumentComponentAvailabilityBlock,
   Interval,
-  ModeBlock,
-  Mounting,
   PublishedSemester,
   Site,
-  SubsystemBlock,
-  TooBlock,
+  TelescopeAvailabilityBlock,
+  TelescopeModeBlock,
+  TelescopeSubsystemAvailabilityBlock,
+  TooSupportBlock,
 } from '@/domain/types';
 
 import {
@@ -40,20 +40,20 @@ export interface PublishedSemestersResult {
 }
 
 /** The four lists every schedule query selects. Typed off the adapters, so a signature change lands here. */
-const toScheduleBlocks = (
+const toSchedule = (
   data:
     | {
-        readonly instrumentAvailability?: Parameters<typeof toMountings>[0];
-        readonly telescopeAvailability?: Parameters<typeof toClosures>[0];
-        readonly tooSupport?: Parameters<typeof toTooBlocks>[0];
-        readonly telescopeMode?: Parameters<typeof toModeBlocks>[0];
+        readonly instrumentAvailability?: Parameters<typeof toInstrumentAvailability>[0];
+        readonly telescopeAvailability?: Parameters<typeof toTelescopeAvailability>[0];
+        readonly tooSupport?: Parameters<typeof toTooSupport>[0];
+        readonly telescopeMode?: Parameters<typeof toTelescopeMode>[0];
       }
     | undefined,
-): Pick<ScheduleResult, 'mountings' | 'closures' | 'tooBlocks' | 'modeBlocks'> => ({
-  mountings: toMountings(data?.instrumentAvailability ?? []),
-  closures: toClosures(data?.telescopeAvailability ?? []),
-  tooBlocks: toTooBlocks(data?.tooSupport ?? []),
-  modeBlocks: toModeBlocks(data?.telescopeMode ?? []),
+): Pick<ScheduleResult, 'instrumentAvailability' | 'telescopeAvailability' | 'tooSupport' | 'telescopeMode'> => ({
+  instrumentAvailability: toInstrumentAvailability(data?.instrumentAvailability ?? []),
+  telescopeAvailability: toTelescopeAvailability(data?.telescopeAvailability ?? []),
+  tooSupport: toTooSupport(data?.tooSupport ?? []),
+  telescopeMode: toTelescopeMode(data?.telescopeMode ?? []),
 });
 
 /** Every site + semester Resource holds, for the picker. */
@@ -64,11 +64,11 @@ export const usePublishedSemesters = (): PublishedSemestersResult => {
 };
 
 export interface ScheduleResult {
-  readonly mountings: readonly Mounting[];
-  readonly closures: readonly Closure[];
+  readonly instrumentAvailability: readonly InstrumentAvailabilityBlock[];
+  readonly telescopeAvailability: readonly TelescopeAvailabilityBlock[];
   /** ToO support and telescope mode records over the window, unclipped. */
-  readonly tooBlocks: readonly TooBlock[];
-  readonly modeBlocks: readonly ModeBlock[];
+  readonly tooSupport: readonly TooSupportBlock[];
+  readonly telescopeMode: readonly TelescopeModeBlock[];
   readonly loading: boolean;
   readonly error: Error | undefined;
 }
@@ -89,12 +89,12 @@ const EMPTY_INTERVAL: ApiInterval = { start: '', end: '' };
 /** `skip` covers the first render, before the picker has resolved which semester is shown. */
 export const useSemesterSchedule = (site: Site, bounds: ApiInterval | null): ScheduleResult => {
   const { data, loading, error } = useQuery(SEMESTER_SCHEDULE_QUERY, {
-    variables: { site, interval: bounds ?? EMPTY_INTERVAL },
+    variables: { site, ...(bounds ?? EMPTY_INTERVAL) },
     skip: bounds === null,
   });
 
-  const { mountings, closures, tooBlocks, modeBlocks } = toScheduleBlocks(data);
-  return { mountings, closures, tooBlocks, modeBlocks, loading, error };
+  const { instrumentAvailability, telescopeAvailability, tooSupport, telescopeMode } = toSchedule(data);
+  return { instrumentAvailability, telescopeAvailability, tooSupport, telescopeMode, loading, error };
 };
 
 export interface NightScheduleResult extends ScheduleResult {
@@ -103,7 +103,7 @@ export interface NightScheduleResult extends ScheduleResult {
   /** The night's interval as the API resolved it, for checking against ours. */
   readonly apiInterval: ApiInterval | undefined;
   /** Subsystem records over the night - PWFS1, PWFS2, LGS from the workbook. */
-  readonly subsystemBlocks: readonly SubsystemBlock[];
+  readonly telescopeSubsystemAvailability: readonly TelescopeSubsystemAvailabilityBlock[];
 }
 
 const NO_COMPONENTS: NightComponents = { components: [], blocks: [] };
@@ -111,21 +111,21 @@ const NO_COMPONENTS: NightComponents = { components: [], blocks: [] };
 /** One night: its records, and whether anything is recorded for it at all. */
 export const useNightSchedule = (site: Site, observingNight: string, bounds: ApiInterval): NightScheduleResult => {
   const { data, loading, error } = useQuery(NIGHT_SCHEDULE_QUERY, {
-    variables: { site, night: observingNight, interval: bounds },
+    variables: { site, night: observingNight, ...bounds },
   });
 
-  const { mountings, closures, tooBlocks, modeBlocks } = toScheduleBlocks(data);
-  const subsystemBlocks = toSubsystemBlocks(data?.telescopeSubsystemAvailability ?? []);
+  const { instrumentAvailability, telescopeAvailability, tooSupport, telescopeMode } = toSchedule(data);
+  const telescopeSubsystemAvailability = toTelescopeSubsystemAvailability(data?.telescopeSubsystemAvailability ?? []);
   return {
-    mountings,
-    closures,
+    instrumentAvailability,
+    telescopeAvailability,
     loading,
     error,
     dataAvailable: data?.telescopeNight.dataAvailable,
     apiInterval: data?.telescopeNight.interval,
-    tooBlocks,
-    modeBlocks,
-    subsystemBlocks,
+    tooSupport,
+    telescopeMode,
+    telescopeSubsystemAvailability,
   };
 };
 
@@ -144,20 +144,20 @@ export const useWeekSchedule = (
   bounds: ApiInterval,
 ): WeekScheduleResult => {
   const { data, loading, error } = useQuery(WEEK_SCHEDULE_QUERY, {
-    variables: { site, nights, interval: bounds },
+    variables: { site, nightsStart: nights.start, nightsEnd: nights.end, ...bounds },
   });
 
-  const { mountings, closures, tooBlocks, modeBlocks } = toScheduleBlocks(data);
+  const { instrumentAvailability, telescopeAvailability, tooSupport, telescopeMode } = toSchedule(data);
   const nightsWithData = new Set(
     (data?.telescopeNights ?? []).filter((night) => night.dataAvailable).map((night) => night.observingNight),
   );
   const nightComponents = data === undefined ? NO_COMPONENTS : toNightComponents(data.instrumentComponentAvailability);
 
   return {
-    mountings,
-    closures,
-    tooBlocks,
-    modeBlocks,
+    instrumentAvailability,
+    telescopeAvailability,
+    tooSupport,
+    telescopeMode,
     loading,
     error,
     nightsWithData,
@@ -167,23 +167,23 @@ export const useWeekSchedule = (
 };
 
 export interface ComponentBrowserResult {
-  readonly components: readonly ComponentRecord[];
-  readonly componentBlocks: readonly ComponentBlock[];
-  readonly mountings: readonly Mounting[];
+  readonly components: readonly InstrumentComponent[];
+  readonly componentAvailability: readonly InstrumentComponentAvailabilityBlock[];
+  readonly instrumentAvailability: readonly InstrumentAvailabilityBlock[];
   readonly loading: boolean;
   readonly error: Error | undefined;
 }
 
-/** One round trip: catalog, records over the window, and the mountings INSTALLED resolves against. */
+/** One round trip: catalog, records over the window, and the instrument blocks INSTALLED resolves against. */
 export const useComponentBrowser = (site: Site, interval: ApiInterval | null): ComponentBrowserResult => {
   const { data, loading, error } = useQuery(COMPONENT_BROWSER_QUERY, {
-    variables: { site, interval: interval ?? EMPTY_INTERVAL },
+    variables: { site, ...(interval ?? EMPTY_INTERVAL) },
     skip: interval === null,
   });
 
   const components = data === undefined ? [] : toComponents(data);
-  const componentBlocks = data === undefined ? [] : toComponentBlocks(data);
-  const mountings = data === undefined ? [] : toMountings(data.instrumentAvailability);
+  const componentAvailability = data === undefined ? [] : toComponentAvailability(data);
+  const instrumentAvailability = data === undefined ? [] : toInstrumentAvailability(data.instrumentAvailability);
 
-  return { components, componentBlocks, mountings, loading, error };
+  return { components, componentAvailability, instrumentAvailability, loading, error };
 };

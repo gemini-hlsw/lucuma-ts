@@ -3,6 +3,7 @@
 
 enum GuidingType {
   NORMAL
+  OFF
 }
 
 enum BaffleMode {
@@ -75,9 +76,9 @@ type Mutation {
     selectedP1Target: Int
     selectedP2Target: Int
     selectedGuiderTarget: Int
-    oiGuidingType: GuidingType!
-    p1GuidingType: GuidingType!
-    p2GuidingType: GuidingType!
+    oiGuidingType: GuidingType
+    p1GuidingType: GuidingType
+    p2GuidingType: GuidingType
     obsTitle: String
     obsId: ObservationId
     obsInstrument: Instrument

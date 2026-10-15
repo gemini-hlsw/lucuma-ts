@@ -4,8 +4,8 @@ import { Dropdown } from 'primereact/dropdown';
 import { InputText } from 'primereact/inputtext';
 import { type JSX, useState } from 'react';
 
+import { RECENT_DAYS, useRecentSpan } from '@/app/useRecentSpan';
 import { useSelection } from '@/app/useSelection';
-import { useSiteSpan } from '@/app/useSiteSpan';
 import { useUrlParam } from '@/app/useUrlParam';
 import { FilterField } from '@/components/ui/FilterField';
 import { countedOption } from '@/components/ui/filterOptions';
@@ -18,30 +18,36 @@ import { WhereCell } from '@/components/ui/WhereCell';
 import { buildFinderRows, type FinderRow, historyOf, matchesComponent, whereOf } from '@/domain/componentFinder';
 import { semesterHolding } from '@/domain/coverage';
 import { eveningLabel, eveningRange, firstEveningDate, nightCount, observingNightInterval } from '@/domain/siteTime';
-import type { ComponentBlock, ComponentType, Instrument, Mounting, Site } from '@/domain/types';
+import type {
+  ComponentType,
+  InstrumentAvailabilityBlock,
+  InstrumentComponentAvailabilityBlock,
+  ResourceInstrument,
+  Site,
+} from '@/domain/types';
 import { ComponentIdentityCell, StatusCell } from '@/features/components/componentCells';
 import { componentStatus, componentWhere, TYPE_LABEL, whereLabel } from '@/features/components/componentLabels';
 import { InstrumentSwatch } from '@/features/timeline/InstrumentSwatch';
 import { INSTRUMENT_LABEL } from '@/features/timeline/timelineOptions';
 import { useComponentBrowser, usePublishedSemesters } from '@/gql/hooks';
 
-/** The piece's records over the site's whole span, with "Installed" resolved to where it was. */
+/** The piece's recent records, with "Installed" resolved to where it was. */
 function History({
   blocks,
-  mountings,
+  instrumentAvailability,
   instrument,
   site,
 }: {
-  blocks: readonly ComponentBlock[];
-  mountings: readonly Mounting[];
-  instrument: Instrument;
+  blocks: readonly InstrumentComponentAvailabilityBlock[];
+  instrumentAvailability: readonly InstrumentAvailabilityBlock[];
+  instrument: ResourceInstrument;
   site: Site;
 }): JSX.Element {
   const rows = blocks.map((block) => ({
     id: block.id,
     dates: eveningRange(site, block.interval),
     nights: nightCount(site, block.interval),
-    where: whereLabel(whereOf(instrument, block, mountings, block.interval)),
+    where: whereLabel(whereOf(instrument, block, instrumentAvailability, block.interval)),
     status: componentStatus(block.usage, block.location !== 'INSTALLED', block.note) ?? {
       label: 'Not recorded',
       tone: 'muted' as const,
@@ -61,27 +67,29 @@ function History({
 }
 
 export default function ComponentsPage(): JSX.Element {
-  const { site, observingNight } = useSelection();
+  const { site, tonight } = useSelection();
   const { semesters, loading: loadingSets, error: setsError } = usePublishedSemesters();
   // The filters live in the URL, so "the R400 gratings at GS" is a sendable link.
   const [search, setSearch] = useUrlParam('q', '', { replace: true });
   const [instrumentParam, setInstrumentParam] = useUrlParam('instrument', '', { replace: true });
   const [typeParam, setTypeParam] = useUrlParam('type', '', { replace: true });
   // `Object.hasOwn`, not `in`: `in` answers true for `toString` and `__proto__`, leaving All over an empty table.
-  const instrument = Object.hasOwn(INSTRUMENT_LABEL, instrumentParam) ? (instrumentParam as Instrument) : null;
+  const instrument = Object.hasOwn(INSTRUMENT_LABEL, instrumentParam) ? (instrumentParam as ResourceInstrument) : null;
   const componentType = Object.hasOwn(TYPE_LABEL, typeParam) ? (typeParam as ComponentType) : null;
   // Which rows are open stays local: it is reading posture, not a finding.
   const [expanded, setExpanded] = useState<FinderRow[]>([]);
 
-  // The site's whole recorded span, not the semester: a piece's story does not restart in February.
-  const held = semesterHolding(semesters, site, observingNight);
-  const bounds = useSiteSpan();
+  const held = semesterHolding(semesters, site, tonight);
+  const bounds = useRecentSpan();
 
-  const { components, componentBlocks, mountings, loading, error } = useComponentBrowser(site, bounds);
+  const { components, componentAvailability, instrumentAvailability, loading, error } = useComponentBrowser(
+    site,
+    bounds,
+  );
 
-  const night = observingNightInterval(site, observingNight);
+  const night = observingNightInterval(site, tonight);
 
-  const rows = buildFinderRows({ components, blocks: componentBlocks, mountings, night });
+  const rows = buildFinderRows({ components, blocks: componentAvailability, instrumentAvailability, night });
 
   const visible = rows.filter(
     (row) =>
@@ -91,7 +99,7 @@ export default function ComponentsPage(): JSX.Element {
   );
 
   // Every option carries its catalog count, and a type nothing has is not offered at all.
-  const instrumentCounts = new Map<Instrument, number>();
+  const instrumentCounts = new Map<ResourceInstrument, number>();
   for (const component of components) {
     instrumentCounts.set(component.instrument, (instrumentCounts.get(component.instrument) ?? 0) + 1);
   }
@@ -107,7 +115,7 @@ export default function ComponentsPage(): JSX.Element {
     .filter((value) => typeCounts.has(value))
     .map((value) => countedOption(value, TYPE_LABEL[value], typeCounts.get(value) ?? 0));
 
-  const groupSummaries = new Map<Instrument, { total: number; installed: number }>();
+  const groupSummaries = new Map<ResourceInstrument, { total: number; installed: number }>();
   for (const row of visible) {
     const entry = groupSummaries.get(row.component.instrument) ?? { total: 0, installed: 0 };
     entry.total += 1;
@@ -137,7 +145,7 @@ export default function ComponentsPage(): JSX.Element {
     <div className="min-w-0">
       <PageHeader title="Components" demo={held?.demo === true}>
         Where every instrument piece is on the night of {eveningLabel(firstEveningDate(site, night))}. Open a row for
-        its history.
+        its history over the past {RECENT_DAYS} days.
       </PageHeader>
 
       {failure !== undefined && <ErrorAlert what="the components" error={failure} />}
@@ -203,8 +211,8 @@ export default function ComponentsPage(): JSX.Element {
           }}
           rowExpansionTemplate={(row: FinderRow) => (
             <History
-              blocks={historyOf(row.component.id, componentBlocks)}
-              mountings={mountings}
+              blocks={historyOf(row.component.id, componentAvailability)}
+              instrumentAvailability={instrumentAvailability}
               instrument={row.component.instrument}
               site={site}
             />

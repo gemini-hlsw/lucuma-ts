@@ -71,6 +71,40 @@ describe(`${Instrument.name} modal`, () => {
       createInstrumentConfig({ createdAt: now }),
     );
   });
+
+  describe('loaded instrument', () => {
+    async function renderAndShowInstruments(loadedInstrument: InstrumentConfig) {
+      const loadedInstrumentMock = {
+        ...getInstrumentMock,
+        result: { data: { instrument: loadedInstrument } },
+      } satisfies MockedResponseOf<typeof GET_INSTRUMENT>;
+      const sut = await renderWithContext(<Instrument />, {
+        mocks: mocks.map((m) => (m === getInstrumentMock ? loadedInstrumentMock : m)),
+        initialValues: [[importInstrumentAtom, true]],
+      });
+      await selectDropdownOption(sut, 'Select instrument', 'GMOS_NORTH');
+      await selectDropdownOption(sut, 'Select port', '3');
+      await expect.element(rowWithComment('OIWFS configuration')).toBeVisible();
+    }
+
+    const rowWithComment = (comment: string) => page.getByRole('dialog').getByRole('row').filter({ hasText: comment });
+
+    it('should mark the saved instrument that is loaded as current', async () => {
+      await renderAndShowInstruments(createInstrumentConfig({ pk: 1, createdAt }));
+
+      await expect.element(rowWithComment('Initial configuration').getByText('Current', { exact: true })).toBeVisible();
+      await expect
+        .element(rowWithComment('OIWFS configuration').getByText('Current', { exact: true }))
+        .not.toBeInTheDocument();
+    });
+
+    it('should not mark a saved instrument as current when the loaded one is temporary', async () => {
+      // Same parameters as the 'OIWFS configuration' row, but the temporary instrument is a separate entry
+      await renderAndShowInstruments(createInstrumentConfig({ pk: 99, wfs: 'OIWFS', isTemporary: true, createdAt }));
+
+      await expect.element(page.getByRole('dialog').getByText('Current', { exact: true })).not.toBeInTheDocument();
+    });
+  });
 });
 
 const getConfigurationMock = {
@@ -165,6 +199,7 @@ const getInstrumentsMock = {
         createInstrumentConfig({
           pk: 2,
           wfs: 'OIWFS',
+          comment: 'OIWFS configuration',
           createdAt: '2025-10-13T09:44:57.930Z',
         }),
       ],

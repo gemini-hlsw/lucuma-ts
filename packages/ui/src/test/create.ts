@@ -13,6 +13,7 @@ import type {
   Mechanism,
   MechSystemState,
   NonsiderealTarget,
+  OdbObservation,
   ProperMotion,
   ProperMotionDeclination,
   ProperMotionRA,
@@ -82,6 +83,37 @@ export function createConfiguration(overrides?: OverridePartial<Configuration>):
     deployableBaffle: null,
     fpu: null,
     __typename: 'Configuration',
+    ...overrides,
+  };
+}
+
+export function createObservation(overrides?: OverridePartial<OdbObservation>): OdbObservation {
+  return {
+    id: 'o-1',
+    title: 'Observation',
+    subtitle: null,
+    instrument: 'GMOS_NORTH',
+    reference: { label: 'G-2025B-0001-Q-0001', __typename: 'ObservationReference' },
+    program: {
+      id: 'p-1',
+      pi: {
+        id: 'm-1',
+        user: {
+          id: 'u-1',
+          profile: { givenName: 'Ada', familyName: 'Lovelace', __typename: 'UserProfile' },
+          __typename: 'User',
+        },
+        __typename: 'ProgramUser',
+      },
+      __typename: 'Program',
+    },
+    targetEnvironment: {
+      firstScienceTarget: null,
+      blindOffsetTarget: null,
+      asterism: [],
+      __typename: 'TargetEnvironment',
+    },
+    __typename: 'Observation',
     ...overrides,
   };
 }
@@ -379,7 +411,7 @@ export function createServerConfiguration(overrides?: OverridePartial<ServerConf
     __typename: 'ServerConfiguration',
     site: 'GN',
     odbUri: 'https://lucuma-postgres-odb-dev.herokuapp.com/odb',
-    ssoUri: 'https://sso-dev.gpp.lucuma.xyz',
+    ssoUri: 'https://sso-dev.gpp.gemini.edu',
     ...overrides,
   };
 }

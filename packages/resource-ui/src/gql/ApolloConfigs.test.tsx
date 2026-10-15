@@ -12,7 +12,7 @@ import { toastAtom } from '@/components/atoms/toast';
 import { ToastOutlet } from '@/components/ui/ToastOutlet';
 import { fakeJwt, standardUser } from '@/test/factories';
 import { act } from '@/test/helpers';
-import { captureHeader, createMockApollo } from '@/test/mockClient';
+import { captureHeader, createLinkClient } from '@/test/linkClient';
 
 import { authLink, client, liveLink, sessionHoldLink } from './ApolloConfigs';
 import { buildCache } from './cache';
@@ -31,13 +31,18 @@ const FOLLOW_UP = gql`
   }
 `;
 
+const ANSWERS = [
+  { request: { query: QUERY }, result: { data: { publishedSemesters: [] } } },
+  { request: { query: FOLLOW_UP }, result: { data: { __typename: 'Query' } } },
+];
+
 const TOKEN = fakeJwt(standardUser('staff'));
 const UNDECODABLE_TOKEN = 'header.payload.signature';
 
 const headerSent = async (name: string, context?: ApolloLink.OperationContext): Promise<string | null | undefined> => {
   const capture = captureHeader(name);
-  const mock = createMockApollo(ApolloLink.from([authLink(), capture.link]));
-  await mock.client.query({ query: QUERY, context });
+  const linkClient = createLinkClient(ApolloLink.from([authLink(), capture.link]), ANSWERS);
+  await linkClient.query({ query: QUERY, context });
   return capture.sent[0];
 };
 
@@ -85,14 +90,14 @@ describe(sessionHoldLink, () => {
       return forward(operation);
     });
     const capture = captureHeader('Authorization');
-    const mock = createMockApollo(ApolloLink.from([enter, sessionHoldLink(), authLink(), capture.link]));
-    return { mock, sent: capture.sent, entered };
+    const linkClient = createLinkClient(ApolloLink.from([enter, sessionHoldLink(), authLink(), capture.link]), ANSWERS);
+    return { linkClient, sent: capture.sent, entered };
   };
 
   it('holds a request until the session check settles, then sends it with the bearer the check found', async () => {
-    const { mock, sent, entered } = heldApollo();
+    const { linkClient, sent, entered } = heldApollo();
 
-    const answered = mock.client.query({ query: QUERY });
+    const answered = linkClient.query({ query: QUERY });
     await expect.poll(() => entered).toEqual(['AuthHeaderProbe']);
     expect(sent).toEqual([]);
 
@@ -104,13 +109,13 @@ describe(sessionHoldLink, () => {
   });
 
   it('sends nothing for a request dropped while it was held', async () => {
-    const { mock, sent, entered } = heldApollo();
-    const subscription = mock.client.watchQuery({ query: QUERY }).subscribe(() => undefined);
+    const { linkClient, sent, entered } = heldApollo();
+    const subscription = linkClient.watchQuery({ query: QUERY }).subscribe(() => undefined);
     await expect.poll(() => entered).toEqual(['AuthHeaderProbe']);
     subscription.unsubscribe();
 
     store.set(sessionCheckedAtom, true);
-    await mock.client.query({ query: FOLLOW_UP, fetchPolicy: 'network-only' });
+    await linkClient.query({ query: FOLLOW_UP, fetchPolicy: 'network-only' });
 
     expect(entered).toEqual(['AuthHeaderProbe', 'FollowUp']);
     expect(sent).toEqual([null]);
@@ -171,7 +176,11 @@ describe(liveLink, () => {
   const unreachable: Answer = (observer) => {
     observer.error(new Error('Failed to fetch'));
   };
-  const notServed = answering({ data: null, errors: [{ message: 'Cannot query field "publishedSemesters"' }] });
+  const failed = answering({ data: null, errors: [{ message: 'Cannot query field "publishedSemesters"' }] });
+  const unauthenticated = answering({
+    data: null,
+    errors: [{ message: "Field 'publishedSemesters' requires authentication." }],
+  });
   const refused = answering({ data: null, errors: [{ message: 'Access denied.' }] });
 
   let answer: Answer = served;
@@ -207,11 +216,8 @@ describe(liveLink, () => {
 
   it.each([
     { cause: 'no answer', next: unreachable, summary: 'The live server could not be reached.' },
-    {
-      cause: 'a schema without the v1 fields',
-      next: notServed,
-      summary: 'The live server does not serve this version of the Resource API yet.',
-    },
+    { cause: 'any other server error', next: failed, summary: 'The live server answered with an error.' },
+    { cause: 'a missing sign-in', next: unauthenticated, summary: 'The live server could not verify your sign-in.' },
     { cause: 'a refused bearer', next: refused, summary: 'The live server could not verify your sign-in.' },
   ])('shows a warning for $cause', async ({ next, summary }) => {
     await ask(next);
@@ -220,9 +226,13 @@ describe(liveLink, () => {
     expect(document.querySelector('.p-toast-message-warn')).not.toBeNull();
   });
 
-  it('withdraws the warning on the next answer without errors', async () => {
-    await ask(unreachable);
-    await expect.poll(summaries).toEqual(['The live server could not be reached.']);
+  it.each([
+    { cause: 'no answer', next: unreachable, summary: 'The live server could not be reached.' },
+    { cause: 'a server error', next: failed, summary: 'The live server answered with an error.' },
+    { cause: 'a missing sign-in', next: unauthenticated, summary: 'The live server could not verify your sign-in.' },
+  ])('withdraws the warning for $cause on the next answer without errors', async ({ next, summary }) => {
+    await ask(next);
+    await expect.poll(summaries).toEqual([summary]);
 
     await ask(served);
 

@@ -1,0 +1,7 @@
+-- AlterEnum
+ALTER TYPE "GuidingType" ADD VALUE 'OFF';
+
+-- AlterTable
+ALTER TABLE "Configuration" ALTER COLUMN "oiGuidingType" SET DEFAULT 'NORMAL',
+ALTER COLUMN "p1GuidingType" SET DEFAULT 'NORMAL',
+ALTER COLUMN "p2GuidingType" SET DEFAULT 'NORMAL';

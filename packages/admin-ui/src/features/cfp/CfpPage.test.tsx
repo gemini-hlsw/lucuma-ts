@@ -43,14 +43,16 @@ const existingCall = (): AdminCfpsResult['callsForProposals']['matches'][number]
   subaru: null,
 });
 
-const cfpsMock = (): MockedResponseOf<typeof CFPS_QUERY> => ({
+const cfpsMock = (
+  matches: AdminCfpsResult['callsForProposals']['matches'] = [existingCall()],
+): MockedResponseOf<typeof CFPS_QUERY> => ({
   request: { query: CFPS_QUERY, variables: { offset: null } },
   maxUsageCount: Infinity,
   result: {
     data: {
       callsForProposals: {
         __typename: 'CallsForProposalsSelectResult',
-        matches: [existingCall()],
+        matches,
         hasMore: false,
       },
     },
@@ -72,5 +74,29 @@ describe(CfpPage, () => {
     // kept its state, and the abandoned draft stayed on screen.
     await userEvent.click(screen.getByRole('button', { name: 'New' }));
     await expect.element(screen.getByRole('textbox', { name: 'Title' })).toHaveValue('');
+  });
+
+  it('leaves nothing selected when the selected call is deselected — sc-10137', async () => {
+    const screen = await renderWithContext(<CfpPage />, { token: STAFF_TOKEN, mocks: [cfpsMock()] });
+
+    // The first row auto-selects on load, so the editor shows its title.
+    const title = screen.getByRole('textbox', { name: 'Title' });
+    await expect.element(title).toHaveValue('An existing call');
+
+    // Re-clicking the selected row deselects it; the editor must go away rather
+    // than snapping back to the first row.
+    await userEvent.click(screen.getByRole('cell', { name: 'An existing call' }));
+    await expect.element(title).not.toBeInTheDocument();
+  });
+
+  it('never selects a call the filters hide — sc-10137', async () => {
+    // The ODB lists the soft-deleted call first; the default facet hides it.
+    const hidden = { ...existingCall(), id: 'c-99', title: 'A hidden call', existence: 'DELETED' as const };
+    const screen = await renderWithContext(<CfpPage />, {
+      token: STAFF_TOKEN,
+      mocks: [cfpsMock([hidden, existingCall()])],
+    });
+
+    await expect.element(screen.getByRole('textbox', { name: 'Title' })).toHaveValue('An existing call');
   });
 });

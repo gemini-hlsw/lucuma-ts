@@ -3,14 +3,16 @@ import { describe, expect, it } from 'vitest';
 import { portRowLabel, TELESCOPE_PORTS } from './ports';
 import { observingNightInterval } from './siteTime';
 import { nightAt } from './timeline';
-import type { Closure, Mounting } from './types';
+import type { InstrumentAvailabilityBlock, TelescopeAvailabilityBlock } from './types';
 import { buildWeekTimeline, WEEK_NIGHTS, weekNightLabels } from './weekTimeline';
 
 const FIRST = '2026-11-14';
 /** Every week draws the telescope's ports, whatever the seven nights hold. */
 const ROWS = TELESCOPE_PORTS.map(portRowLabel);
 
-const mounting = (over: Partial<Mounting> & Pick<Mounting, 'id' | 'port' | 'interval'>): Mounting => ({
+const instrumentBlock = (
+  over: Partial<InstrumentAvailabilityBlock> & Pick<InstrumentAvailabilityBlock, 'id' | 'port' | 'interval'>,
+): InstrumentAvailabilityBlock => ({
   instrument: 'GMOS',
   publishedName: 'GMOS',
   usage: 'SCIENCE',
@@ -21,16 +23,16 @@ const mounting = (over: Partial<Mounting> & Pick<Mounting, 'id' | 'port' | 'inte
 
 const build = (
   over: {
-    mountings?: readonly Mounting[];
-    closures?: readonly Closure[];
+    instrumentAvailability?: readonly InstrumentAvailabilityBlock[];
+    telescopeAvailability?: readonly TelescopeAvailabilityBlock[];
     nightsWithData?: ReadonlySet<string> | undefined;
   } = {},
 ) =>
   buildWeekTimeline({
     site: 'GS',
     firstNight: FIRST,
-    mountings: over.mountings ?? [],
-    closures: over.closures ?? [],
+    instrumentAvailability: over.instrumentAvailability ?? [],
+    telescopeAvailability: over.telescopeAvailability ?? [],
     nightsWithData: 'nightsWithData' in over ? over.nightsWithData : undefined,
   });
 
@@ -82,8 +84,8 @@ describe('runs across the week', () => {
   it('draws a run spanning the week as one block, not seven', () => {
     // The blocks come unclipped for this reason: a per-night projection returns seven seams.
     const week = build({
-      mountings: [
-        mounting({
+      instrumentAvailability: [
+        instrumentBlock({
           id: 'ghost',
           port: 1,
           instrument: 'GHOST',
@@ -110,10 +112,10 @@ describe('the telescope-state rows', () => {
     const week = buildWeekTimeline({
       site: 'GS',
       firstNight: FIRST,
-      mountings: [],
-      closures: [{ id: 'a1', availability: 'OPEN', port: null, interval: span, reason: null }],
-      tooBlocks: [{ id: 't1', tooSupport: 'NONE', interval: span, note: null }],
-      modeBlocks: [{ id: 'm1', mode: 'QUEUE', programReferences: [], partner: null, interval: span, note: null }],
+      instrumentAvailability: [],
+      telescopeAvailability: [{ id: 'a1', availability: 'OPEN', port: null, interval: span, reason: null }],
+      tooSupport: [{ id: 't1', tooSupport: 'NONE', interval: span, note: null }],
+      telescopeMode: [{ id: 'm1', mode: 'QUEUE', programReferences: [], partner: null, interval: span, note: null }],
       nightsWithData: undefined,
     });
 

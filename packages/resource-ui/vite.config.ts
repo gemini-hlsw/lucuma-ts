@@ -42,25 +42,16 @@ export default defineConfig({
     tsconfigPaths: true,
   },
   plugins: [
-    ...(process.env.RESOURCE_HTTPS === '1' ? [basicSsl({ domains: ['local.lucuma.xyz'] })] : []),
+    ...(process.env.RESOURCE_HTTPS === '1' ? [basicSsl({ domains: ['local.gemini.edu'] })] : []),
     react(),
     babel({ presets: [reactCompilerPreset()], exclude: /[/\\](node_modules|common-ui)[/\\]/ }),
     tailwindcss(),
   ],
   server: {
     ...(process.env.RESOURCE_HTTPS === '1' ? { host: '127.0.0.1' } : {}),
-    allowedHosts: ['localhost', '.lucuma.xyz', '.gemini.edu'],
+    allowedHosts: ['localhost', '.gemini.edu'],
     proxy: {
-      /* The real service by default; `RESOURCE_API=mock` swaps the proxy target, never the app. */
-      '/resource/graphql':
-        process.env.RESOURCE_API === 'mock'
-          ? {
-              // Yoga serves `/graphql`; the app asks for `/resource/graphql`.
-              target: 'http://localhost:4000',
-              changeOrigin: true,
-              rewrite: (path: string) => path.replace(/^\/resource\/graphql/, '/graphql'),
-            }
-          : { target: 'https://lucuma-resource-dev.lucuma.xyz', changeOrigin: true },
+      '/resource/graphql': { target: 'https://resource-api-dev.gemini.edu', changeOrigin: true },
     },
   },
   test: {

@@ -3,15 +3,15 @@ import { type MoonPhase, moonPhaseAt } from './moon';
 import { portRowLabel } from './ports';
 import type { TimelineNight } from './timeline';
 import type {
-  Closure,
-  ComponentBlock,
   ComponentLocation,
-  ComponentRecord,
   ComponentUsage,
+  InstrumentAvailabilityBlock,
+  InstrumentComponent,
+  InstrumentComponentAvailabilityBlock,
   Interval,
   MoonEvent,
-  Mounting,
   Site,
+  TelescopeAvailabilityBlock,
 } from './types';
 
 /** One night's briefing entry: the sky, and whether anything is recorded. */
@@ -106,7 +106,7 @@ export type WeekChange =
   | {
       readonly kind: 'COMPONENT';
       readonly instant: number;
-      readonly component: ComponentRecord;
+      readonly component: InstrumentComponent;
       /** The state the piece enters at this instant. */
       readonly location: ComponentLocation;
       readonly usage: ComponentUsage;
@@ -115,66 +115,66 @@ export type WeekChange =
 
 export interface BuildWeekChangesOptions {
   readonly interval: Interval;
-  readonly mountings: readonly Mounting[];
-  readonly closures: readonly Closure[];
-  readonly componentBlocks: readonly ComponentBlock[];
-  readonly components: readonly ComponentRecord[];
+  readonly instrumentAvailability: readonly InstrumentAvailabilityBlock[];
+  readonly telescopeAvailability: readonly TelescopeAvailabilityBlock[];
+  readonly componentAvailability: readonly InstrumentComponentAvailabilityBlock[];
+  readonly components: readonly InstrumentComponent[];
 }
 
 /** "Nothing recorded" is not a state a change can announce (I4), so only entered states are listed. */
 export const buildWeekChanges = ({
   interval,
-  mountings,
-  closures,
-  componentBlocks,
+  instrumentAvailability,
+  telescopeAvailability,
+  componentAvailability,
   components,
 }: BuildWeekChangesOptions): readonly WeekChange[] => {
   const inside = (instant: number): boolean => instant > interval.start && instant < interval.end;
   const changes: WeekChange[] = [];
 
   // Ports only: a stored instrument changing shelf is not a change to the week's observing.
-  for (const mounting of mountings) {
-    if (mounting.port === null) {
+  for (const instrumentBlock of instrumentAvailability) {
+    if (instrumentBlock.port === null) {
       continue;
     }
-    const rowLabel = portRowLabel(mounting.port);
-    if (inside(mounting.interval.start)) {
+    const rowLabel = portRowLabel(instrumentBlock.port);
+    if (inside(instrumentBlock.interval.start)) {
       changes.push({
         kind: 'RUN_BEGINS',
-        instant: mounting.interval.start,
-        label: mounting.publishedName,
+        instant: instrumentBlock.interval.start,
+        label: instrumentBlock.publishedName,
         rowLabel,
-        note: mounting.note,
+        note: instrumentBlock.note,
       });
     }
-    if (inside(mounting.interval.end)) {
+    if (inside(instrumentBlock.interval.end)) {
       changes.push({
         kind: 'RUN_ENDS',
-        instant: mounting.interval.end,
-        label: mounting.publishedName,
+        instant: instrumentBlock.interval.end,
+        label: instrumentBlock.publishedName,
         rowLabel,
         note: null,
       });
     }
   }
 
-  for (const closure of closures) {
+  for (const telescopeBlock of telescopeAvailability) {
     // Only a closure beginning or ending is a change; the records carry explicit Open spans too.
-    if (closure.availability !== 'CLOSED') {
+    if (telescopeBlock.availability !== 'CLOSED') {
       continue;
     }
-    const label = closure.reason ?? (closure.port === null ? 'Telescope closed' : 'Closed');
-    const rowLabel = closure.port === null ? null : portRowLabel(closure.port);
-    if (inside(closure.interval.start)) {
-      changes.push({ kind: 'CLOSURE_BEGINS', instant: closure.interval.start, label, rowLabel });
+    const label = telescopeBlock.reason ?? (telescopeBlock.port === null ? 'Telescope closed' : 'Closed');
+    const rowLabel = telescopeBlock.port === null ? null : portRowLabel(telescopeBlock.port);
+    if (inside(telescopeBlock.interval.start)) {
+      changes.push({ kind: 'CLOSURE_BEGINS', instant: telescopeBlock.interval.start, label, rowLabel });
     }
-    if (inside(closure.interval.end)) {
-      changes.push({ kind: 'CLOSURE_ENDS', instant: closure.interval.end, label, rowLabel });
+    if (inside(telescopeBlock.interval.end)) {
+      changes.push({ kind: 'CLOSURE_ENDS', instant: telescopeBlock.interval.end, label, rowLabel });
     }
   }
 
   const byId = new Map(components.map((component) => [component.id, component]));
-  for (const block of componentBlocks) {
+  for (const block of componentAvailability) {
     const component = byId.get(block.componentId);
     if (component !== undefined && inside(block.interval.start)) {
       changes.push({

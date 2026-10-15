@@ -75,7 +75,7 @@ export function LightPath() {
 
   async function onClick(
     newLightPath: string,
-    from: LightSource | null | undefined,
+    from: LightSource,
     instrument: Instrument,
     lightSinkVariant: LightSinkVariant | null | undefined,
   ) {

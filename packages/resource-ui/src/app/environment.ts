@@ -5,12 +5,12 @@ export interface Environment {
   readonly versionSuffix: 'DEV' | 'STAGING';
 }
 
-const DEV_SSO_URI = 'https://sso-dev.gpp.lucuma.xyz';
+const DEV_SSO_URI = 'https://sso-dev.gpp.gemini.edu';
 
 const ENVIRONMENTS = {
-  'resource-dev.lucuma.xyz': {
+  'resource-dev.gemini.edu': {
     name: 'development',
-    graphqlEndpoint: 'https://lucuma-resource-dev.lucuma.xyz/resource/graphql',
+    graphqlEndpoint: 'https://resource-api-dev.gemini.edu/resource/graphql',
     ssoUri: DEV_SSO_URI,
     versionSuffix: 'DEV',
   },

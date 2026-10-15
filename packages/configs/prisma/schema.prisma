@@ -21,9 +21,9 @@ model Configuration {
   selectedP1Target     Int?
   selectedP2Target     Int?
   selectedGuiderTarget Int?
-  oiGuidingType        GuidingType
-  p1GuidingType        GuidingType
-  p2GuidingType        GuidingType
+  oiGuidingType        GuidingType       @default(NORMAL)
+  p1GuidingType        GuidingType       @default(NORMAL)
+  p2GuidingType        GuidingType       @default(NORMAL)
   obsTitle             String?
   obsId                String?
   obsInstrument        String?
@@ -32,11 +32,12 @@ model Configuration {
   baffleMode           BaffleMode        @default(AUTO)
   centralBaffle        CentralBaffle?
   deployableBaffle     DeployableBaffle?
-  fpu Fpu?
+  fpu                  Fpu?
 }
 
 enum GuidingType {
   NORMAL
+  OFF
 }
 
 enum BaffleMode {
