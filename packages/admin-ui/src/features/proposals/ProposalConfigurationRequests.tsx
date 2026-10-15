@@ -27,19 +27,30 @@ export function ProposalConfigurationRequests({
   readonly programId: string;
   readonly programLabel: string;
 }): JSX.Element | null {
-  const { requests, partial, error: requestsError } = useProgramConfigurationRequests(programId);
+  const {
+    requests,
+    partial,
+    incomplete: requestsIncomplete,
+    error: requestsError,
+  } = useProgramConfigurationRequests(programId);
   // Every observation of the program, paged like the Change Requests tab, so a
   // request's Target and Windows resolve however many observations there are.
-  const { matches: observations, error: observationsError } = useProgramObservations(programId);
+  const {
+    matches: observations,
+    error: observationsError,
+    incomplete: observationsIncomplete,
+  } = useProgramObservations(programId);
   const observationsById = useMemo(() => observationsByIdFrom(observations), [observations]);
   // Refetch this program's requests — not the Change Requests list — so the
   // resolved statuses reload in place.
   const { resolve, loading: saving } = useResolveChangeRequests(PROGRAM_CONFIGURATION_REQUESTS_QUERY);
 
-  if (requestsError) {
+  // A walk that cannot finish leaves only some of the requests: say so, rather than show them as all.
+  if (requestsError || requestsIncomplete) {
     return (
       <p className="check-error">
-        <TriangleExclamation /> Could not load this proposal’s configuration requests: {friendlyError(requestsError)}
+        <TriangleExclamation /> Could not load this proposal’s configuration requests
+        {requestsError ? <>: {friendlyError(requestsError)}</> : '.'}
       </p>
     );
   }
@@ -53,10 +64,10 @@ export function ProposalConfigurationRequests({
       <h3 className="review-obs-title">Configuration Requests</h3>
       {/* With errorPolicy 'all' a benign per-observation warning arrives alongside
           good data, so only an error with nothing loaded counts as a failure. */}
-      {observationsError && observations.length === 0 && (
+      {(observationsIncomplete || (observationsError && observations.length === 0)) && (
         <p className="check-error">
-          <TriangleExclamation /> Could not load the program’s observations, so Target and Windows may be blank:{' '}
-          {friendlyError(observationsError)}
+          <TriangleExclamation /> Could not load the program’s observations, so Target and Windows may be blank
+          {observationsError ? <>: {friendlyError(observationsError)}</> : '.'}
         </p>
       )}
       <ConfigurationRequestReview

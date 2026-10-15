@@ -170,6 +170,37 @@ describe(ProposalConfigurationRequests, () => {
     await expect.element(screen.getByText(/Could not load this proposal’s configuration requests/)).toBeVisible();
   });
 
+  it('says so, and stops asking, when a page of requests repeats and the walk cannot move on', async () => {
+    // The ODB can answer a cursor with a page that ends on the cursor itself and still say hasMore (sc-10723).
+    const page = (offset: string | null): MockedResponseOf<typeof PROGRAM_CONFIGURATION_REQUESTS_QUERY> => ({
+      request: { query: PROGRAM_CONFIGURATION_REQUESTS_QUERY, variables: { programId: 'p-1', offset } },
+      result: {
+        data: {
+          configurationRequests: {
+            __typename: 'ConfigurationRequestSelectResult',
+            matches: [rawRequest('REQUESTED')],
+            hasMore: true,
+          },
+        },
+      },
+    });
+    // One answer for each cursor: a walk that asked again would meet "no more mocked responses" and fail the test.
+    const screen = await render([page(null), page('x-9'), observationsMock()]);
+    await expect.element(screen.getByText(/Could not load this proposal’s configuration requests\./)).toBeVisible();
+  });
+
+  it('says so when the observations that name Target and Windows cannot all be loaded', async () => {
+    const obsPage = (offset: string | null, hasMore: boolean): MockedResponseOf<typeof PROGRAM_OBSERVATIONS_QUERY> => ({
+      request: { query: PROGRAM_OBSERVATIONS_QUERY, variables: { programId: 'p-1', offset } },
+      result: { data: { observations: { __typename: 'ObservationSelectResult', matches: [], hasMore } } },
+    });
+    // A first page with no rows that claims more leaves the walk no cursor to ask from.
+    const screen = await render([requestsMock([rawRequest('REQUESTED')]), obsPage(null, true)]);
+    await expect
+      .element(screen.getByText(/Could not load the program’s observations, so Target and Windows may be blank/))
+      .toBeVisible();
+  });
+
   it('keeps the review on screen while the requests reload after a decision', async () => {
     // The reload is slow enough to be caught mid-flight.
     const slowReload = { ...requestsMock([rawRequest('APPROVED', 'Reloaded from the ODB.')]), delay: 300 };

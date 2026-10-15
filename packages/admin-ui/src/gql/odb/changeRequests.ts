@@ -5,7 +5,7 @@
 import { skipToken, useMutation, useQuery } from '@apollo/client/react';
 import { isNullish, parseNumber } from '@gemini-hlsw/lucuma-common-ui';
 import type { DocumentNode } from 'graphql';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo } from 'react';
 
 import type {
   ChangeRequest,
@@ -183,9 +183,11 @@ export const PROGRAM_CONFIGURATION_REQUESTS_QUERY = graphql(`
   }
 `);
 
-/** The selected program's requests, following `hasMore` to the last page like
- *  the other walks here, so none is dropped by a page limit. `loading` stays
- *  true until every page is in. Skipped when no program is selected. */
+/** The selected program's requests, following `hasMore` to the last page with
+ *  `useAllPages`, like the other walks here, so none is dropped by a page limit.
+ *  `partial` is true while pages are still to come, and stays true if the walk
+ *  cannot finish (`incomplete`), so a partial list never passes for the whole set.
+ *  Skipped when no program is selected. */
 export function useProgramConfigurationRequests(programId: string | null) {
   const result = useQuery(
     PROGRAM_CONFIGURATION_REQUESTS_QUERY,
@@ -195,39 +197,9 @@ export function useProgramConfigurationRequests(programId: string | null) {
         // later must not show requests that were resolved in the meantime.
         { variables: { programId, offset: null }, fetchPolicy: 'cache-and-network', notifyOnNetworkStatusChange: true },
   );
-  const { data, fetchMore } = result;
-  // A later page that fails to load is reported like the first: left alone, the
-  // list would stay truncated with nothing to say so. Tagged with the pages it
-  // failed on, so it lapses when a fresh load replaces them (a reload after a
-  // resolve, another program, a return to this one) and the walk is tried again.
-  const [walkFailure, setWalkFailure] = useState<{ data: typeof data; error: Error } | null>(null);
-
-  useEffect(() => {
-    if (!data?.configurationRequests.hasMore || fetchMore === undefined) return;
-    const matches = data.configurationRequests.matches;
-    const cursor = matches[matches.length - 1]?.id;
-    if (isNullish(cursor)) return;
-    fetchMore({
-      variables: { offset: cursor },
-      updateQuery: (prev, { fetchMoreResult }) => ({
-        configurationRequests: {
-          ...fetchMoreResult.configurationRequests,
-          matches: [...prev.configurationRequests.matches, ...fetchMoreResult.configurationRequests.matches],
-        },
-      }),
-    }).catch((err: unknown) => {
-      setWalkFailure({ data, error: err instanceof Error ? err : new Error(String(err)) });
-    });
-  }, [data, fetchMore]);
-
+  const { data, loading, incomplete, error } = useAllPages(result, 'configurationRequests');
   const requests = useMemo(() => (data ? mapConfigurationRequests(data.configurationRequests.matches) : []), [data]);
-  return {
-    requests,
-    error: result.error ?? (walkFailure?.data === data ? walkFailure?.error : undefined),
-    /** More pages are still to come: what is in `requests` is not yet the whole set. */
-    partial: data?.configurationRequests.hasMore ?? false,
-    loading: result.loading || (data?.configurationRequests.hasMore ?? false),
-  };
+  return { requests, error, loading, incomplete, partial: data?.configurationRequests.hasMore ?? false };
 }
 
 /*
