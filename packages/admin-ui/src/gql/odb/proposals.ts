@@ -4,63 +4,85 @@
  * token can see.
  */
 import { useMutation, useQuery } from '@apollo/client/react';
-import { useEffect } from 'react';
 
 import type { Proposal, SpecialProposalType } from '../types';
-import type { DocumentType } from './gen';
+import { useAllPages } from '../useAllPages';
 import { graphql } from './gen';
-import type { ScienceSubtype } from './gen/graphql';
+import type { ProposalItemFragment, ScienceSubtype } from './gen/graphql';
 import { isScienceObservation, mapObservationRow, telluricGroupHours } from './shared';
 
+/** One special-type proposal's program row: who proposed what, with the
+ *  observations and telluric groups whose estimates the Time column sums. */
+export const PROPOSAL_ITEM_FRAGMENT = graphql(`
+  fragment ProposalItem on Program {
+    id
+    name
+    description
+    proposalStatus
+    pi {
+      id
+      user {
+        id
+        profile {
+          givenName
+          familyName
+        }
+      }
+    }
+    proposal {
+      reference {
+        label
+      }
+      gemini {
+        scienceSubtype
+      }
+    }
+    # A special proposal has a handful of observations, never near a page
+    # limit, so this inner list needs no cursor of its own.
+    observations(LIMIT: 200) {
+      matches {
+        ...ObservationItem
+      }
+    }
+    # System telluric groups whose combined time rolls into their science
+    # observation's "Time" (sc-9598).
+    allGroupElements {
+      ...GroupElementItem
+    }
+  }
+`);
+
+/** Only Director's Time and Poor Weather proposals, selected by the ODB.
+ *
+ *  Selecting them here is what keeps the tab alive: asked for every program,
+ *  the ODB costs every observation of each and the request outlasts the
+ *  router's limit, so the tab died with "the ODB is unreachable" (sc-10520).
+ *
+ *  There is no science-subtype filter on `WhereProposal`; the one on
+ *  `WhereProgram.reference` only matches programs whose proposal was accepted, and
+ *  the pending ones are what an admin acts on. So this filters on the call's type.
+ *  That reaches the same proposals only while a proposal's subtype follows its
+ *  call: one with no call, or filed under another call type, is not selected, and
+ *  `mapProposals` cannot bring it back. (On dev the two agree: 55 programs, and the
+ *  accepted ones found by subtype are a subset.)
+ *
+ *  Paged via the OFFSET cursor (sc-9589) so a page cap cannot truncate the list;
+ *  `useAllPages` follows `hasMore` to the end. Past a single page the ODB's cursor
+ *  can skip rows without any sign of it (see `useAllPages`); this list is far below
+ *  that. */
 export const PROPOSALS_QUERY = graphql(`
   query AdminProposals($offset: ProgramId) {
-    # Paged via the OFFSET cursor (sc-9589): the special-type filter runs
-    # client-side (in mapProposals), so a fixed LIMIT truncated the program
-    # list *before* filtering — dropping Director's Time / Poor Weather
-    # proposals past the first page. useProposals follows hasMore to the end.
-    programs(OFFSET: $offset) {
+    programs(
+      WHERE: { proposal: { call: { gemini: { type: { IN: [DIRECTORS_TIME, POOR_WEATHER] } } } } }
+      OFFSET: $offset
+    ) {
       matches {
-        id
-        name
-        description
-        proposalStatus
-        pi {
-          id
-          user {
-            id
-            profile {
-              givenName
-              familyName
-            }
-          }
-        }
-        proposal {
-          reference {
-            label
-          }
-          gemini {
-            scienceSubtype
-          }
-        }
-        # A special proposal has a handful of observations, never near a page
-        # limit, so this inner list needs no cursor of its own.
-        observations(LIMIT: 200) {
-          matches {
-            ...ObservationItem
-          }
-        }
-        # System telluric groups whose combined time rolls into their science
-        # observation's "Time" (sc-9598).
-        allGroupElements {
-          ...GroupElementItem
-        }
+        ...ProposalItem
       }
       hasMore
     }
   }
 `);
-
-export type AdminProposalsResult = DocumentType<typeof PROPOSALS_QUERY>;
 
 const SPECIAL_SUBTYPES: Partial<Record<ScienceSubtype, SpecialProposalType>> = {
   DIRECTORS_TIME: 'DIRECTORS_TIME',
@@ -68,11 +90,14 @@ const SPECIAL_SUBTYPES: Partial<Record<ScienceSubtype, SpecialProposalType>> = {
 };
 
 /** Map programs that carry a special-type proposal into the Proposals view.
- *  A submitted-at timestamp has no ODB field (the same genuine gap as the
- *  Change Requests "received" timestamp) — omitted rather than faked. */
-export function mapProposals(raw: AdminProposalsResult): Proposal[] {
+ *  The query selects by call type, which is not the proposal's subtype, so the
+ *  subtype is checked again here and a proposal under one of those calls with
+ *  another subtype is dropped. A submitted-at timestamp has no ODB field (the
+ *  same genuine gap as the Change Requests "received" timestamp) — omitted
+ *  rather than faked. */
+export function mapProposals(programs: readonly ProposalItemFragment[]): Proposal[] {
   const out: Proposal[] = [];
-  for (const p of raw.programs.matches) {
+  for (const p of programs) {
     const subtype = p.proposal?.gemini?.scienceSubtype;
     const type = subtype ? SPECIAL_SUBTYPES[subtype] : undefined;
     if (!p.proposal || !type) continue; // special proposals only
@@ -110,32 +135,7 @@ export function useProposals() {
     errorPolicy: 'all',
   });
 
-  const { data, fetchMore } = result;
-
-  // Walk the remaining pages: each fetchMore appends the next page's matches
-  // (merged via updateQuery, since the cache has no field policy for this list),
-  // using the last loaded id as the cursor, until the ODB reports no more.
-  useEffect(() => {
-    if (!data?.programs.hasMore || fetchMore === undefined) return;
-    const matches = data.programs.matches;
-    const cursor = matches[matches.length - 1]?.id;
-    if (cursor === undefined) return;
-    void fetchMore({
-      variables: { offset: cursor },
-      updateQuery: (prev, { fetchMoreResult }) => ({
-        programs: {
-          ...fetchMoreResult.programs,
-          matches: [...prev.programs.matches, ...fetchMoreResult.programs.matches],
-        },
-      }),
-    });
-  }, [data, fetchMore]);
-
-  return {
-    ...result,
-    // Not settled until every page is in, so callers don't render a partial set.
-    loading: result.loading || (data?.programs.hasMore ?? false),
-  };
+  return useAllPages(result, 'programs');
 }
 
 export const SET_PROPOSAL_STATUS_MUTATION = graphql(`

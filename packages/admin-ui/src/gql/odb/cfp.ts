@@ -9,11 +9,11 @@
  */
 import { useMutation, useQuery } from '@apollo/client/react';
 import { parseNumber } from '@gemini-hlsw/lucuma-common-ui';
-import { useEffect } from 'react';
 
 import { currentSemester } from '@/lib/semester';
 
 import type { CallForProposals, CfpDetails, Observatory, SiteCoordinateLimits } from '../types';
+import { useAllPages } from '../useAllPages';
 import type { DocumentType } from './gen';
 import { graphql } from './gen';
 import type { CallForProposalsItemFragment, CallForProposalsPropertiesInput, SiteLimitFragment } from './gen/graphql';
@@ -114,35 +114,11 @@ export const CFPS_QUERY = graphql(`
 /** The calls list — cached rows render immediately, refreshed in background.
  *  Follows the ODB's `hasMore` cursor to the last page so no call is dropped by
  *  a page limit; the returned `data` grows as pages arrive and `loading` stays
- *  true until the final page is in (mirrors useProposals / useChangeRequests). */
+ *  true until the final page is in; `incomplete` says a page could not be had
+ *  (`useAllPages`). */
 export function useCfps() {
   const result = useQuery(CFPS_QUERY, { variables: { offset: null }, fetchPolicy: 'cache-and-network' });
-  const { data, fetchMore } = result;
-
-  // Walk the remaining pages: each fetchMore appends the next page's matches
-  // (merged via updateQuery, since the cache has no field policy for this list),
-  // using the last loaded id as the cursor, until the ODB reports no more.
-  useEffect(() => {
-    if (!data?.callsForProposals.hasMore || fetchMore === undefined) return;
-    const matches = data.callsForProposals.matches;
-    const cursor = matches[matches.length - 1]?.id;
-    if (cursor === undefined) return;
-    void fetchMore({
-      variables: { offset: cursor },
-      updateQuery: (prev, { fetchMoreResult }) => ({
-        callsForProposals: {
-          ...fetchMoreResult.callsForProposals,
-          matches: [...prev.callsForProposals.matches, ...fetchMoreResult.callsForProposals.matches],
-        },
-      }),
-    });
-  }, [data, fetchMore]);
-
-  return {
-    ...result,
-    // Not settled until every page is in, so callers don't render a partial set.
-    loading: result.loading || (data?.callsForProposals.hasMore ?? false),
-  };
+  return useAllPages(result, 'callsForProposals');
 }
 
 export type AdminCfpsResult = DocumentType<typeof CFPS_QUERY>;

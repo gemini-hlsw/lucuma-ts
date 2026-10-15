@@ -87,7 +87,7 @@ function sortByLabel(label: (c: CallForProposals) => string) {
  */
 export default function CfpPage(): JSX.Element {
   const toast = useToast();
-  const { data, loading, error } = useCfps();
+  const { data, loading, incomplete, error } = useCfps();
   const cfps = useMemo(() => (data ? mapCfps(data) : EMPTY_CFPS), [data]);
   const [updateCfp, { loading: updating }] = useUpdateCfp();
   const [createCfp, { loading: creating }] = useCreateCfp();
@@ -157,7 +157,12 @@ export default function CfpPage(): JSX.Element {
         flush
         controls={
           <>
-            <DataSourceBadge loading={loading} error={error && friendlyError(error)} empty={cfps.length === 0} />
+            <DataSourceBadge
+              loading={loading}
+              incomplete={incomplete}
+              error={error && friendlyError(error)}
+              empty={cfps.length === 0}
+            />
             <Dropdown
               value={openFilter}
               options={[...OPEN_FILTER_OPTIONS]}
