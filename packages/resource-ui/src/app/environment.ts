@@ -1,8 +1,8 @@
 export interface Environment {
-  readonly name: 'development' | 'staging';
+  readonly name: 'development' | 'staging' | 'production';
   readonly graphqlEndpoint: string;
   readonly ssoUri: string;
-  readonly versionSuffix: 'DEV' | 'STAGING';
+  readonly versionSuffix: 'DEV' | 'STAGING' | 'PRODUCTION';
 }
 
 const DEV_SSO_URI = 'https://sso-dev.gpp.gemini.edu';
@@ -14,11 +14,17 @@ const ENVIRONMENTS = {
     ssoUri: DEV_SSO_URI,
     versionSuffix: 'DEV',
   },
-  'resource-staging.lucuma.xyz': {
+  'resource-test.gemini.edu': {
     name: 'staging',
-    graphqlEndpoint: 'https://lucuma-resource-staging.lucuma.xyz/resource/graphql',
+    graphqlEndpoint: 'https://resource-api-test.gemini.edu/resource/graphql',
     ssoUri: 'https://sso-test.gpp.gemini.edu',
     versionSuffix: 'STAGING',
+  },
+  'resource.gemini.edu': {
+    name: 'production',
+    graphqlEndpoint: 'https://resource-api.gemini.edu/resource/graphql',
+    ssoUri: 'https://sso.gpp.gemini.edu',
+    versionSuffix: 'PRODUCTION',
   },
   localhost: {
     name: 'development',

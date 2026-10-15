@@ -12,7 +12,7 @@ import { AboutResource } from './AboutResource';
 
 vi.mock('@/app/environment', async (importOriginal) => {
   const actual = await importOriginal<typeof EnvironmentModule>();
-  const staging = actual.environmentFor('resource-staging.lucuma.xyz');
+  const staging = actual.environmentFor('resource-test.gemini.edu');
   return { ...actual, CURRENT_ENV: staging, liveGraphqlEndpoint: staging.graphqlEndpoint };
 });
 

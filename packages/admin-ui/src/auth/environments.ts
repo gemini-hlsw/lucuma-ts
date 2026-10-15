@@ -61,7 +61,7 @@ const LOCAL_DEV: Environment = {
 
 const environments = {
   'admin-dev.gemini.edu': DEV,
-  'admin-staging.lucuma.xyz': STAGING,
+  'admin-test.gemini.edu': STAGING,
   'admin.gemini.edu': PRODUCTION,
   localhost: LOCAL_DEV,
 } satisfies Record<string, Environment>;

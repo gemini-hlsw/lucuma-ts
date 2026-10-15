@@ -10,7 +10,7 @@ describe(environmentFor, () => {
     expect(dev.odbUri).toBe('https://lucuma-postgres-odb-dev.herokuapp.com/odb');
     expect(dev.exploreUri).toBe('https://explore-dev.gemini.edu');
 
-    const staging = environmentFor('admin-staging.lucuma.xyz');
+    const staging = environmentFor('admin-test.gemini.edu');
     expect(staging.name).toBe('staging');
     expect(staging.ssoUri).toBe('https://sso-test.gpp.gemini.edu');
     expect(staging.odbUri).toBe('https://lucuma-postgres-odb-staging.herokuapp.com/odb');

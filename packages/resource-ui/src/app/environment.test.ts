@@ -13,9 +13,9 @@ describe(environmentFor, () => {
   });
 
   it('reads the staging deployment off its own hostname', () => {
-    expect(environmentFor('resource-staging.lucuma.xyz')).toEqual({
+    expect(environmentFor('resource-test.gemini.edu')).toEqual({
       name: 'staging',
-      graphqlEndpoint: 'https://lucuma-resource-staging.lucuma.xyz/resource/graphql',
+      graphqlEndpoint: 'https://resource-api-test.gemini.edu/resource/graphql',
       ssoUri: 'https://sso-test.gpp.gemini.edu',
       versionSuffix: 'STAGING',
     });
@@ -42,6 +42,6 @@ describe(environmentLabel, () => {
   });
 
   it('names the staging serving as its own environment', () => {
-    expect(environmentLabel('resource-staging.lucuma.xyz')).toBe('Staging');
+    expect(environmentLabel('resource-test.gemini.edu')).toBe('Staging');
   });
 });
