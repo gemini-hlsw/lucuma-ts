@@ -164,7 +164,14 @@ export function createTcsConfigInput(
   calParams: Pick<CalParams, 'baffleVisible' | 'baffleNearIR'>,
   configuration: Pick<
     Configuration,
-    'baffleMode' | 'centralBaffle' | 'deployableBaffle' | 'fpu' | 'oiGuidingType' | 'p1GuidingType' | 'p2GuidingType'
+    | 'baffleMode'
+    | 'centralBaffle'
+    | 'deployableBaffle'
+    | 'fpu'
+    | 'oiGuidingType'
+    | 'p1GuidingType'
+    | 'p2GuidingType'
+    | 'obsReference'
   >,
 ): TcsConfigInput {
   const rotatorInput = createRotatorTrackingInput(rotator);
@@ -186,6 +193,7 @@ export function createTcsConfigInput(
     oiwfs: when(oiTarget, (t) => createGuiderConfig(t, configuration.oiGuidingType)),
     pwfs1: when(p1Target, (t) => createGuiderConfig(t, configuration.p1GuidingType)),
     pwfs2: when(p2Target, (t) => createGuiderConfig(t, configuration.p2GuidingType)),
+    programLabel: configuration.obsReference,
     lightSinkVariant,
   };
 }
