@@ -17,6 +17,7 @@ import { SearchInput } from '@/components/SearchInput';
 import { Tile } from '@/components/Tile';
 import { TimeAwardsGrid } from '@/components/TimeAwardsGrid';
 import { useToast } from '@/components/toastContext';
+import { useRowSelection } from '@/components/useRowSelection';
 import { friendlyError } from '@/gql/errors';
 import {
   allocationsInput,
@@ -185,11 +186,7 @@ export default function ProgramsPage(): JSX.Element {
     [programs],
   );
 
-  const [programId, setProgramId] = useState<string | null>(null);
-  const original = useMemo(
-    () => filteredPrograms.find((p) => p.id === programId) ?? filteredPrograms[0],
-    [filteredPrograms, programId],
-  );
+  const [original, setProgramId] = useRowSelection(filteredPrograms, 'id');
 
   const tileControls = (
     <>

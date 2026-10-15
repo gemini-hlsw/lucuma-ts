@@ -121,14 +121,15 @@ const resolveExpecting = (feedback: string): MockedResponseOf<typeof RESOLVE_WIT
   },
 });
 
-/** Drives the review flow the way a reviewer does: pick the program, tick its
- *  one request, choose Deny. Returns the response box, seeded with boilerplate.
+/** Drives the review flow the way a reviewer does: tick the one request of the
+ *  program selected on load, choose Deny. Returns the response box, seeded with
+ *  boilerplate. The program row is deliberately not clicked — it is already
+ *  selected, so a click would deselect it (sc-10137).
  *
  *  The request's checkbox is found by the label PrimeReact gives it, which
  *  names the row, rather than by position — so neither the select-all box in
  *  the header nor a column reorder can silently point this somewhere else. */
 async function denyDraft(screen: Awaited<ReturnType<typeof renderWithContext>>) {
-  await userEvent.click(screen.getByRole('row', { name: /G-2027B-0172-Q/ }).first());
   await userEvent.click(screen.getByLabelText('Row Selected x-1').and(screen.getByRole('checkbox')).last());
   await userEvent.click(screen.getByRole('button', { name: 'Deny', exact: true }));
   return screen.getByRole('textbox', { name: /message sent to the PI/ });
@@ -170,5 +171,21 @@ describe(ChangeRequestsPage, () => {
     await userEvent.fill(box, note);
     await userEvent.click(screen.getByRole('button', { name: /Confirm/ }));
     await expect.element(screen.getByText(/Change requests denied/)).toBeInTheDocument();
+  });
+
+  it('leaves nothing selected when the selected program is deselected — sc-10137', async () => {
+    const screen = await renderWithContext(<ChangeRequestsPage />, {
+      token: STAFF_TOKEN,
+      mocks: [requests(), observations(), conflicts()],
+    });
+
+    // The first program auto-selects on load, so its requests tile is shown.
+    const programTile = screen.getByText('Change Requests in p-1');
+    await expect.element(programTile).toBeInTheDocument();
+
+    // Re-clicking the selected row deselects it; the tile must go away rather
+    // than snapping back to the first program.
+    await userEvent.click(screen.getByRole('row', { name: /G-2027B-0172-Q/ }).first());
+    await expect.element(programTile).not.toBeInTheDocument();
   });
 });
