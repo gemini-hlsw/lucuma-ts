@@ -15,11 +15,22 @@ echo "INSTALLING NAVIGATE"
 echo 
 
 # Download scripts
+RAW_URL=https://raw.githubusercontent.com/gemini-hlsw/navigate-ts/refs/heads/main/deploy
+
+# download <file> <mode>
+# docker-compose.yml and navigate.sh are kept read-only so they are not edited on the
+# server (install overwrites them). Download to a temp file and move it over, since curl
+# can't write to the read-only file directly.
+download() {
+  curl -fsSL "$RAW_URL/$1" >"$1.tmp" || { echo "ERROR: could not download $1"; rm -f "$1.tmp"; exit 1; }
+  mv -f "$1.tmp" "$1"
+  chmod "$2" "$1"
+}
+
 echo "Downloading scripts"
-curl https://raw.githubusercontent.com/gemini-hlsw/navigate-ts/refs/heads/main/deploy/docker-compose.yml >docker-compose.yml
-curl https://raw.githubusercontent.com/gemini-hlsw/navigate-ts/refs/heads/main/deploy/navigate.sh >navigate.sh
-curl https://raw.githubusercontent.com/gemini-hlsw/navigate-ts/refs/heads/main/deploy/template-env >template-env
-chmod +x navigate.sh
+download docker-compose.yml 444
+download navigate.sh 555
+download template-env 644
 echo
 
 # Require the creation of an .env file using the template-env, unless it exists.
@@ -58,7 +69,7 @@ echo
 # Creating symbolic link to run navigate as a command
 echo "Creating symbolic link to run navigate as a command"
 mkdir -p ~/bin
-ln -s ~/navigate/navigate.sh ~/bin/navigate
+ln -sf ~/navigate/navigate.sh ~/bin/navigate
 echo "Navigate command installed"
 echo "For more information run"
 echo "  >> ${bold}navigate help${normal}"

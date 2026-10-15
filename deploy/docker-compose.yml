@@ -1,8 +1,8 @@
 services:
   database:
-    # Pinned to 17, which is what existing deployments use.
+    # Major version comes from .env: it must match the data already in the volume.
     # A major bump needs a pg_dumpall/restore (or pg_upgrade).
-    image: postgres:17
+    image: 'postgres:${POSTGRES_VERSION:?POSTGRES_VERSION is not set, add it to .env (see template-env)}'
     container_name: navigate-db
     restart: unless-stopped
     environment:
@@ -52,6 +52,7 @@ services:
     volumes:
       - ${CONFIG_DIR}:/opt/docker/conf/local/
       - ${LOGS_DIR}:/gemsoft/var/log/navigate/
+      - ${EPHEMERIDES_DIR:?EPHEMERIDES_DIR is not set, add it to .env (see template-env)}:/ephemerides/
     ports:
       - '${NAVIGATE_EXPOSE_PORT}:7070'
       - 5064:5064
