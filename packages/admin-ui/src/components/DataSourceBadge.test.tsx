@@ -23,6 +23,23 @@ describe(DataSourceBadge, () => {
     await expect.element(noData.getByText('Token expired or invalid — sign in again.')).toBeInTheDocument();
   });
 
+  it('says so when a list stopped loading part-way, even though rows are showing', async () => {
+    const partial = await renderWithContext(<DataSourceBadge loading={false} incomplete={true} empty={false} />);
+    await expect.element(partial.getByText('List incomplete')).toBeInTheDocument();
+    expect(partial.container.textContent).not.toContain('Live data');
+  });
+
+  it('still reads as loading while a list is incomplete, and outranks an error', async () => {
+    const loading = await renderWithContext(<DataSourceBadge loading={true} incomplete={true} />);
+    await expect.element(loading.getByText('Loading…')).toBeInTheDocument();
+
+    const withError = await renderWithContext(
+      <DataSourceBadge loading={false} incomplete={true} error="Boom" empty={true} />,
+    );
+    await expect.element(withError.getByText('List incomplete')).toBeInTheDocument();
+    expect(withError.container.textContent).not.toContain('Boom');
+  });
+
   it('reads as loading, empty, or live for the non-error states', async () => {
     const loading = await renderWithContext(<DataSourceBadge loading={true} />);
     await expect.element(loading.getByText('Loading…')).toBeInTheDocument();

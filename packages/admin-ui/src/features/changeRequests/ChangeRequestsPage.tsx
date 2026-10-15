@@ -73,7 +73,7 @@ const ALL = 'ALL';
  */
 export default function ChangeRequestsPage(): JSX.Element {
   const toast = useToast();
-  const { data, loading, error } = useChangeRequests();
+  const { data, loading, incomplete, error } = useChangeRequests();
   const requests = useMemo(() => (data ? mapChangeRequests(data) : EMPTY), [data]);
   const { resolve, loading: saving } = useResolveChangeRequests();
   const programs = useMemo(() => groupChangeRequestsByProgram(requests), [requests]);
@@ -112,7 +112,9 @@ export default function ChangeRequestsPage(): JSX.Element {
   // (paginated — see useProgramObservations) and indexing by id, then looking
   // each request's ids up below. One program-scoped fetch, not a per-request
   // N+1 nor a giant id-list query.
-  const { matches: programObservations } = useProgramObservations(selectedProgram?.programId ?? null);
+  const { matches: programObservations, incomplete: observationsIncomplete } = useProgramObservations(
+    selectedProgram?.programId ?? null,
+  );
   const observationsById = useMemo(() => observationsByIdFrom(programObservations), [programObservations]);
   const visibleRequests = useMemo<VisibleRequest[]>(
     () =>
@@ -216,7 +218,12 @@ export default function ChangeRequestsPage(): JSX.Element {
         onChange={(e) => setStatusFilter(e.value as ProgramCrStatus | typeof ALL)}
         title="Facet the programs by their synthesized change-request status."
       />
-      <DataSourceBadge loading={loading} error={error && friendlyError(error)} empty={programs.length === 0} />
+      <DataSourceBadge
+        loading={loading}
+        incomplete={incomplete || observationsIncomplete}
+        error={error && friendlyError(error)}
+        empty={programs.length === 0}
+      />
     </>
   );
 

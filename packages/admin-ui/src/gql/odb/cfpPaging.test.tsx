@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { describe, expect, it } from 'vitest';
 
 import { fakeJwt, standardUser } from '@/test/factories';
@@ -58,11 +59,12 @@ const page = (offset: string | null, matches: RawCfp[], hasMore: boolean): Mocke
 
 /** Renders the call ids the hook has loaded, plus its loading flag. */
 function Harness() {
-  const { data, loading } = useCfps();
+  const { data, loading, incomplete } = useCfps();
   const ids = data?.callsForProposals.matches.map((m) => m.id).join(',') ?? '';
   return (
     <div>
       <span data-testid="loading">{String(loading)}</span>
+      <span data-testid="incomplete">{String(incomplete)}</span>
       <span data-testid="ids">{ids}</span>
     </div>
   );
@@ -77,6 +79,39 @@ describe(useCfps, () => {
       mocks: [page(null, [cfp('c-1'), cfp('c-2')], true), page('c-2', [cfp('c-3'), cfp('c-new')], false)],
     });
     await expect.element(screen.getByTestId('ids')).toHaveTextContent('c-1,c-2,c-3,c-new');
+    await expect.element(screen.getByTestId('loading')).toHaveTextContent('false');
+  });
+
+  it('never reports a partial set as loaded', async () => {
+    const committed: string[] = [];
+    function Recorder() {
+      const { data, loading } = useCfps();
+      const ids = data?.callsForProposals.matches.map((m) => m.id).join(',') ?? '';
+      useEffect(() => {
+        committed.push(`${ids}|${String(loading)}`);
+      });
+      return <span data-testid="ids">{ids}</span>;
+    }
+    const screen = await renderWithContext(<Recorder />, {
+      token: STAFF_TOKEN,
+      mocks: [page(null, [cfp('c-1'), cfp('c-2')], true), page('c-2', [cfp('c-3')], false)],
+    });
+    await expect.element(screen.getByTestId('ids')).toHaveTextContent('c-1,c-2,c-3');
+    // useCfps does not ask Apollo to report network status, so between the first
+    // page arriving and the second being requested nothing but the hook says the
+    // list is unfinished. A page that rendered then would pick "the first call"
+    // from half the list.
+    expect(committed).not.toContain('c-1,c-2|false');
+    expect(committed.at(-1)).toBe('c-1,c-2,c-3|false');
+  });
+
+  it('reports an incomplete list when a page is rejected (the default errorPolicy rejects it)', async () => {
+    const screen = await renderWithContext(<Harness />, {
+      token: STAFF_TOKEN,
+      mocks: [page(null, [cfp('c-1'), cfp('c-2')], true), { ...page('c-2', [], false), error: new Error('timed out') }],
+    });
+    await expect.element(screen.getByTestId('incomplete')).toHaveTextContent('true');
+    await expect.element(screen.getByTestId('ids')).toHaveTextContent('c-1,c-2');
     await expect.element(screen.getByTestId('loading')).toHaveTextContent('false');
   });
 
