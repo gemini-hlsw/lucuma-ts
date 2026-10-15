@@ -14,6 +14,7 @@ import { DataSourceBadge } from '@/components/DataSourceBadge';
 import { CircleCheck, CircleXMark, Copy, Plus, Upload, XMark } from '@/components/Icons';
 import { Tile } from '@/components/Tile';
 import { useToast } from '@/components/toastContext';
+import { useRowSelection } from '@/components/useRowSelection';
 import { friendlyError } from '@/gql/errors';
 import {
   blankCall,
@@ -108,9 +109,7 @@ export default function CfpPage(): JSX.Element {
     [cfps, observatoryFilter, openFilter],
   );
 
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const activeId = selectedId ?? cfps[0]?.id ?? '';
-  const original = useMemo(() => cfps.find((c) => c.id === activeId) ?? cfps[0], [cfps, activeId]);
+  const [original, setSelectedId] = useRowSelection(visibleCfps, 'id');
 
   // A brand-new call being drafted before it's created (sc-10136). While set,
   // the editor shows this blank draft with a Create button instead of the

@@ -21,6 +21,8 @@ const STAFF_TOKEN = fakeJwt(standardUser('staff'));
 // The table defaults to the current semester (sc-9582), so the fixture has to
 // sit in it — derived, not hardcoded, so this can't rot at the semester turn.
 const REFERENCE = `G-${currentSemester()}-0397-D`;
+const SECOND_REFERENCE = `G-${currentSemester()}-0398-Q`;
+const THIRD_REFERENCE = `G-${currentSemester()}-0499-Q`;
 
 type RawProgram = AdminProgramsResult['programs']['matches'][number];
 
@@ -76,9 +78,9 @@ const queueProgram = (): RawProgram => ({
   },
 });
 
-const matchesMock = (match: RawProgram): MockedResponseOf<typeof PROGRAMS_QUERY> => ({
+const matchesMock = (...matches: RawProgram[]): MockedResponseOf<typeof PROGRAMS_QUERY> => ({
   request: { query: PROGRAMS_QUERY },
-  result: { data: { programs: { __typename: 'ProgramSelectResult', matches: [match] } } },
+  result: { data: { programs: { __typename: 'ProgramSelectResult', matches } } },
   maxUsageCount: Number.POSITIVE_INFINITY,
 });
 
@@ -263,6 +265,68 @@ describe(ProgramsPage, () => {
       expect(width(dropdown.parentElement)).toBe(reference);
       expect(width(dropdown)).toBe(reference);
     }
+  });
+
+  it('leaves nothing selected when the selected program is deselected — sc-10137', async () => {
+    const screen = await renderWithContext(<ProgramsPage />, { token: STAFF_TOKEN, mocks: [programsMock()] });
+
+    // The first row auto-selects on load, so the editor is open on it.
+    const editorField = screen.getByRole('textbox', { name: 'Class', exact: true });
+    await expect.element(editorField).toBeInTheDocument();
+
+    // Re-clicking the selected row deselects it; the editor must close rather
+    // than snapping back to the first row.
+    await userEvent.click(screen.getByRole('cell', { name: REFERENCE }));
+    await expect.element(editorField).not.toBeInTheDocument();
+  });
+
+  it('falls back to the first shown program when a filter hides the selected one — sc-10137', async () => {
+    const program = (id: string, label: string): RawProgram => ({
+      ...queueProgram(),
+      id,
+      reference: { __typename: 'ScienceProgramReference', label },
+    });
+    const screen = await renderWithContext(<ProgramsPage />, {
+      token: STAFF_TOKEN,
+      mocks: [
+        matchesMock(directorsTimeProgram(), program('p-1533', SECOND_REFERENCE), program('p-1534', THIRD_REFERENCE)),
+      ],
+    });
+
+    await userEvent.click(screen.getByRole('cell', { name: THIRD_REFERENCE }));
+    await expect.element(screen.getByText(`Selected Program · ${THIRD_REFERENCE}`)).toBeInTheDocument();
+
+    // Filtering the selected program out, with two programs left, moves the
+    // editor to the first of them — never to a row the user can't see, and not
+    // to an empty panel (only an explicit deselect empties it).
+    await userEvent.fill(screen.getByPlaceholder('Filter reference, PI, or title'), '-039');
+    await expect.element(screen.getByRole('cell', { name: SECOND_REFERENCE })).toBeInTheDocument();
+    await expect.element(screen.getByText(`Selected Program · ${REFERENCE}`)).toBeInTheDocument();
+  });
+
+  it('keeps nothing selected through a filter change after a deselect — sc-10137', async () => {
+    const second: RawProgram = {
+      ...queueProgram(),
+      reference: { __typename: 'ScienceProgramReference', label: SECOND_REFERENCE },
+    };
+    const screen = await renderWithContext(<ProgramsPage />, {
+      token: STAFF_TOKEN,
+      mocks: [matchesMock(directorsTimeProgram(), second)],
+    });
+    const anyEditor = screen.getByText(/^Selected Program · /);
+    await expect.element(anyEditor).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('cell', { name: REFERENCE }));
+    await expect.element(anyEditor).not.toBeInTheDocument();
+
+    // A deselect is the user's choice, not a missing selection: a filter that
+    // changes the rows must not quietly reselect the first remaining one. The
+    // deselected row disappearing proves the filter has applied before the
+    // editor is checked.
+    await userEvent.fill(screen.getByPlaceholder('Filter reference, PI, or title'), SECOND_REFERENCE);
+    await expect.element(screen.getByRole('cell', { name: REFERENCE })).not.toBeInTheDocument();
+    await expect.element(screen.getByRole('cell', { name: SECOND_REFERENCE })).toBeInTheDocument();
+    await expect.element(anyEditor).not.toBeInTheDocument();
   });
 });
 

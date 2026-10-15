@@ -15,6 +15,7 @@ import { DuplicatesTable } from '@/components/DuplicatesTable';
 import { Check, PaperPlane, XMark } from '@/components/Icons';
 import { Tile } from '@/components/Tile';
 import { useToast } from '@/components/toastContext';
+import { useRowSelection } from '@/components/useRowSelection';
 import { friendlyError } from '@/gql/errors';
 import {
   groupChangeRequestsByProgram,
@@ -97,9 +98,7 @@ export default function ChangeRequestsPage(): JSX.Element {
     [programs, semester, site, statusFilter],
   );
 
-  const [selectedProgramId, setSelectedProgramId] = useState<string | null>(null);
-  const selectedProgram =
-    filteredPrograms.find((p) => p.programId === selectedProgramId) ?? filteredPrograms[0] ?? null;
+  const [selectedProgram, setSelectedProgramId] = useRowSelection(filteredPrograms, 'programId');
 
   const [crStatusFilter, setCrStatusFilter] = useState<ConfigurationRequestStatus | typeof ALL>(ALL);
   const programRequests = useMemo(
