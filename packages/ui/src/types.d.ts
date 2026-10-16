@@ -30,6 +30,7 @@ export type {
   GmosSouthBuiltinFpu,
   BrightnessIntegratedItemFragment as OdbBandBrightness,
   ObservationItemFragment as OdbObservation,
+  SiderealItemFragment as OdbSidereal,
   SourceProfileItemFragment as OdbSourceProfile,
   TargetItemFragment as OdbTarget,
   VisitorItemFragment as Visitor,

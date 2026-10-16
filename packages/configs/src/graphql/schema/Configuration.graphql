@@ -57,6 +57,7 @@ type Configuration {
   obsInstrument: Instrument
   obsSubtitle: String
   obsReference: String
+  programLabel: String
   baffleMode: BaffleMode!
   "Only when baffleMode is MANUAL"
   centralBaffle: CentralBaffle
@@ -84,6 +85,7 @@ type Mutation {
     obsInstrument: Instrument
     obsSubtitle: String
     obsReference: String
+    programLabel: String
     baffleMode: BaffleMode!
     centralBaffle: CentralBaffle
     deployableBaffle: DeployableBaffle
@@ -105,6 +107,7 @@ type Mutation {
     obsInstrument: Instrument
     obsSubtitle: String
     obsReference: String
+    programLabel: String
     baffleMode: BaffleMode
     centralBaffle: CentralBaffle
     deployableBaffle: DeployableBaffle

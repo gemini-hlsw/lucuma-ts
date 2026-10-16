@@ -3,7 +3,7 @@ import { GET_OBSERVATIONS_BY_STATE } from '@gql/odb/Observation';
 import type { MockedResponseOf } from '@gql/util';
 import { page } from 'vitest/browser';
 
-import { createConfiguration, createObservation } from '@/test/create';
+import { createConfiguration, createObservation, createOdbObservationReference } from '@/test/create';
 import { renderWithContext } from '@/test/render';
 
 import { ObservationTable } from './ObservationTable';
@@ -54,12 +54,12 @@ const getObservationsMock = {
           createObservation({
             id: 'o-1',
             title: 'First observation',
-            reference: { label: 'G-2025B-0001-Q-0001', __typename: 'ObservationReference' },
+            reference: createOdbObservationReference({ label: 'G-2025B-0001-Q-0001' }),
           }),
           createObservation({
             id: 'o-2',
             title: 'Second observation',
-            reference: { label: 'G-2025B-0001-Q-0002', __typename: 'ObservationReference' },
+            reference: createOdbObservationReference({ label: 'G-2025B-0001-Q-0002' }),
           }),
         ],
       },
