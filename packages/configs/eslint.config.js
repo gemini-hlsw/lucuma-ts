@@ -12,7 +12,7 @@ export default defineConfig(
   {
     files: ['src/integration/**/*.test.ts'],
     rules: {
-      'vitest/no-standalone-expect': ['error', { additionalTestBlockFunctions: ['test'] }],
+      'vitest/no-standalone-expect': ['error', { additionalTestBlockFunctions: ['test', 'test.for'] }],
     },
   },
   {
