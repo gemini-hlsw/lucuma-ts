@@ -60,8 +60,8 @@ describe(useImportObservation, () => {
         observation: {
           id: 'o-2e5',
           instrument: 'GMOS_NORTH',
-          reference: 'G-2025B-0571-Q-0003',
-          programLabel: 'G-2025B-0571',
+          reference: 'G-2026B-ENG-GMOSN-01-0003',
+          programLabel: 'G-2026B-ENG-GMOSN-01',
           subtitle: null,
           title: 'Mayall V',
           fpu: null,
@@ -244,8 +244,10 @@ const mayallVBlind = createOdbTarget({
 const selectedObservation = createObservation({
   id: 'o-2e5',
   title: 'Mayall V',
-  reference: createOdbObservationReference({ label: 'G-2025B-0571-Q-0003' }),
-  program: createOdbProgram({ reference: { label: 'G-2025B-0571', __typename: 'ScienceProgramReference' } }),
+  reference: createOdbObservationReference({ label: 'G-2026B-ENG-GMOSN-01-0003' }),
+  program: createOdbProgram({
+    reference: { label: 'G-2026B-ENG-GMOSN-01', __typename: 'EngineeringProgramReference' },
+  }),
   targetEnvironment: createOdbTargetEnvironment({ firstScienceTarget: mayallV }),
 });
 
