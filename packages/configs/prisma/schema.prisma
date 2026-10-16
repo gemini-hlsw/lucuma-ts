@@ -29,6 +29,7 @@ model Configuration {
   obsInstrument        String?
   obsSubtitle          String?
   obsReference         String?
+  programLabel         String?
   baffleMode           BaffleMode        @default(AUTO)
   centralBaffle        CentralBaffle?
   deployableBaffle     DeployableBaffle?

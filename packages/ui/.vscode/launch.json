@@ -8,7 +8,7 @@
       "name": "Launch Chrome",
       "request": "launch",
       "type": "chrome",
-      "url": "https://local.lucuma.xyz:5173",
+      "url": "https://local.gemini.edu:5173",
       "webRoot": "${workspaceFolder}"
     },
     {

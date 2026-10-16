@@ -8,6 +8,22 @@ command_exists() {
   command -v "$1" >/dev/null 2>&1
 }
 
+# A stale copy of this script would miss files added since it was downloaded, so refuse to
+# run unless it matches the one on main. $(...) strips trailing newlines on both sides.
+INSTALL_URL=https://raw.githubusercontent.com/gemini-hlsw/lucuma-ts/refs/heads/main/deploy/install.sh
+if LATEST_INSTALL=$(curl -sSf "$INSTALL_URL"); then
+    if [ "$LATEST_INSTALL" != "$(cat "${BASH_SOURCE[0]}")" ]; then
+        echo "This install.sh is out of date. Download the current one and run it instead:"
+        echo
+        echo "    curl $INSTALL_URL >install.sh"
+        echo "    chmod +x install.sh"
+        echo "    ./install.sh"
+        exit 1
+    fi
+else
+    echo "WARNING: Could not check whether install.sh is up to date. Continuing with this copy."
+fi
+
 mkdir -p ~/navigate
 cd ~/navigate
 
@@ -15,11 +31,22 @@ echo "INSTALLING NAVIGATE"
 echo 
 
 # Download scripts
+RAW_URL=https://raw.githubusercontent.com/gemini-hlsw/navigate-ts/refs/heads/main/deploy
+
+# download <file> <mode>
+# docker-compose.yml and navigate.sh are kept read-only so they are not edited on the
+# server (install overwrites them). Download to a temp file and move it over, since curl
+# can't write to the read-only file directly.
+download() {
+  curl -fsSL "$RAW_URL/$1" >"$1.tmp" || { echo "ERROR: could not download $1"; rm -f "$1.tmp"; exit 1; }
+  mv -f "$1.tmp" "$1"
+  chmod "$2" "$1"
+}
+
 echo "Downloading scripts"
-curl https://raw.githubusercontent.com/gemini-hlsw/navigate-ts/refs/heads/main/deploy/docker-compose.yml >docker-compose.yml
-curl https://raw.githubusercontent.com/gemini-hlsw/navigate-ts/refs/heads/main/deploy/navigate.sh >navigate.sh
-curl https://raw.githubusercontent.com/gemini-hlsw/navigate-ts/refs/heads/main/deploy/template-env >template-env
-chmod +x navigate.sh
+download docker-compose.yml 444
+download navigate.sh 555
+download template-env 644
 echo
 
 # Require the creation of an .env file using the template-env, unless it exists.
@@ -58,7 +85,7 @@ echo
 # Creating symbolic link to run navigate as a command
 echo "Creating symbolic link to run navigate as a command"
 mkdir -p ~/bin
-ln -s ~/navigate/navigate.sh ~/bin/navigate
+ln -sf ~/navigate/navigate.sh ~/bin/navigate
 echo "Navigate command installed"
 echo "For more information run"
 echo "  >> ${bold}navigate help${normal}"

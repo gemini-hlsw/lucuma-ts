@@ -1,5 +1,5 @@
 import { isLoggedInAtom, odbTokenAtom } from '@gemini-hlsw/lucuma-common-ui';
-import { atom, type createStore, useAtomValue } from 'jotai';
+import { atom, type Store, useAtomValue } from 'jotai';
 
 export {
   decodedTokenPayloadAtom,
@@ -32,7 +32,7 @@ export const sessionStatusAtom = atom<SessionStatus>((get) => {
 
 export const useSessionStatus = () => useAtomValue(sessionStatusAtom);
 
-export function setToken(store: ReturnType<typeof createStore>, token: string | null): void {
+export function setToken(store: Store, token: string | null): void {
   if (token !== null) store.set(signedOutElsewhereAtom, false);
   try {
     store.set(odbTokenAtom, token);

@@ -1,6 +1,6 @@
 import type { OdbTokenPayload } from '@gemini-hlsw/lucuma-common-ui';
+import type { Store } from 'jotai';
 import { createStore } from 'jotai';
-import type { Store } from 'jotai/vanilla/store';
 
 import type { GuestUser, ServiceUser, StandardUser } from '@/auth/user';
 

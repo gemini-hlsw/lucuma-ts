@@ -26,10 +26,10 @@ export interface Environment {
 
 const DEV: Environment = {
   name: 'development',
-  ssoUri: 'https://sso-dev.gpp.lucuma.xyz',
+  ssoUri: 'https://sso-dev.gpp.gemini.edu',
   odbUri: 'https://lucuma-postgres-odb-dev.herokuapp.com/odb',
-  ssoGraphqlUri: 'https://sso-dev.gpp.lucuma.xyz/graphql',
-  exploreUri: 'https://explore-dev.lucuma.xyz',
+  ssoGraphqlUri: 'https://sso-dev.gpp.gemini.edu/graphql',
+  exploreUri: 'https://explore-dev.gemini.edu',
 };
 
 const STAGING: Environment = {
@@ -60,8 +60,8 @@ const LOCAL_DEV: Environment = {
 };
 
 const environments = {
-  'admin-dev.lucuma.xyz': DEV,
-  'admin-staging.lucuma.xyz': STAGING,
+  'admin-dev.gemini.edu': DEV,
+  'admin-test.gemini.edu': STAGING,
   'admin.gemini.edu': PRODUCTION,
   localhost: LOCAL_DEV,
 } satisfies Record<string, Environment>;

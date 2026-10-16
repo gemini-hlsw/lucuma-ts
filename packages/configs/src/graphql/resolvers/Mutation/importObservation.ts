@@ -58,18 +58,19 @@ export const importObservation: NonNullable<MutationResolvers['importObservation
     const configurationData: ConfigurationUpdateInput = {
       obsId: observation.id,
       obsTitle: observation.title,
-      obsSubtitle: observation.subtitle,
-      obsReference: observation.reference,
-      obsInstrument: observation.instrument,
+      obsSubtitle: observation.subtitle ?? null,
+      obsReference: observation.reference ?? null,
+      programLabel: observation.programLabel ?? null,
+      obsInstrument: observation.instrument ?? null,
       baffleMode: 'AUTO',
       centralBaffle: null,
       deployableBaffle: null,
-      selectedTarget,
-      selectedOiTarget,
-      selectedP1Target,
-      selectedP2Target,
-      selectedGuiderTarget,
-      fpu: observation.fpu,
+      selectedTarget: selectedTarget ?? null,
+      selectedOiTarget: selectedOiTarget ?? null,
+      selectedP1Target: selectedP1Target ?? null,
+      selectedP2Target: selectedP2Target ?? null,
+      selectedGuiderTarget: selectedGuiderTarget ?? null,
+      fpu: observation.fpu ?? null,
     };
 
     //

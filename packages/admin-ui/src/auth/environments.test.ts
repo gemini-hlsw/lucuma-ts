@@ -4,13 +4,13 @@ import { environmentFor } from './environments';
 
 describe(environmentFor, () => {
   it('resolves each deployed admin host to its own services', () => {
-    const dev = environmentFor('admin-dev.lucuma.xyz');
+    const dev = environmentFor('admin-dev.gemini.edu');
     expect(dev.name).toBe('development');
-    expect(dev.ssoUri).toBe('https://sso-dev.gpp.lucuma.xyz');
+    expect(dev.ssoUri).toBe('https://sso-dev.gpp.gemini.edu');
     expect(dev.odbUri).toBe('https://lucuma-postgres-odb-dev.herokuapp.com/odb');
-    expect(dev.exploreUri).toBe('https://explore-dev.lucuma.xyz');
+    expect(dev.exploreUri).toBe('https://explore-dev.gemini.edu');
 
-    const staging = environmentFor('admin-staging.lucuma.xyz');
+    const staging = environmentFor('admin-test.gemini.edu');
     expect(staging.name).toBe('staging');
     expect(staging.ssoUri).toBe('https://sso-test.gpp.gemini.edu');
     expect(staging.odbUri).toBe('https://lucuma-postgres-odb-staging.herokuapp.com/odb');
@@ -34,7 +34,7 @@ describe(environmentFor, () => {
       expect(env.odbUri).toBe('/odb');
       expect(env.ssoGraphqlUri).toBe('/sso-graphql');
       // Explore is a separate deployed app, not proxied — local dev links to dev.
-      expect(env.exploreUri).toBe('https://explore-dev.lucuma.xyz');
+      expect(env.exploreUri).toBe('https://explore-dev.gemini.edu');
     }
   });
 });

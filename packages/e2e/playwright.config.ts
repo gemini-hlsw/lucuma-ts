@@ -23,7 +23,7 @@ export default defineConfig({
   use: {
     /* Base URL to use in actions like `await page.goto('/')`. */
     // Use the docker-compose service URL in CI, or the local URL when running locally.
-    baseURL: process.env.CI ? 'http://navigate.lucuma.xyz:9070' : 'https://navigate.lucuma.xyz:5173',
+    baseURL: process.env.CI ? 'http://navigate.gemini.edu:9070' : 'https://navigate.gemini.edu:5173',
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
@@ -40,7 +40,7 @@ export default defineConfig({
   /* Run your local dev server before starting the tests */
   // webServer: {
   //   command: 'cd ../ui && pnpm dev',
-  //   url: 'https://navigate.lucuma.xyz:5173',
+  //   url: 'https://navigate.gemini.edu:5173',
   //   reuseExistingServer: true,
   // },
 });

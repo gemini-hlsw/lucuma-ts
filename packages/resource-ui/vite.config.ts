@@ -42,16 +42,16 @@ export default defineConfig({
     tsconfigPaths: true,
   },
   plugins: [
-    ...(process.env.RESOURCE_HTTPS === '1' ? [basicSsl({ domains: ['local.lucuma.xyz'] })] : []),
+    ...(process.env.RESOURCE_HTTPS === '1' ? [basicSsl({ domains: ['local.gemini.edu'] })] : []),
     react(),
     babel({ presets: [reactCompilerPreset()], exclude: /[/\\](node_modules|common-ui)[/\\]/ }),
     tailwindcss(),
   ],
   server: {
     ...(process.env.RESOURCE_HTTPS === '1' ? { host: '127.0.0.1' } : {}),
-    allowedHosts: ['localhost', '.lucuma.xyz', '.gemini.edu'],
+    allowedHosts: ['localhost', '.gemini.edu'],
     proxy: {
-      '/resource/graphql': { target: 'https://lucuma-resource-dev.lucuma.xyz', changeOrigin: true },
+      '/resource/graphql': { target: 'https://resource-api-dev.gemini.edu', changeOrigin: true },
     },
   },
   test: {

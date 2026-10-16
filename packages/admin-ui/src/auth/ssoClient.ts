@@ -3,7 +3,7 @@
  * (@gemini-hlsw/lucuma-common-ui/sso); this module binds it to the Admin
  * environment's SSO origin so callers don't pass it every time. The SSO session
  * cookie is scoped to its own domain, so these flows complete on the deployed
- * hosts and on any *.lucuma.xyz dev alias, but not from bare localhost (see the
+ * hosts and on any *.gemini.edu dev alias, but not from bare localhost (see the
  * README).
  */
 import * as sso from '@gemini-hlsw/lucuma-common-ui/sso';

@@ -120,4 +120,4 @@ When writing Vitest tests:
 
 CI (`.github/workflows/ci.yml`) builds/lints/tests only changed packages (`...[origin/main]...` filters), runs the Playwright e2e job against a docker stack, and on tag push builds & publishes two docker images: `noirlab/gpp-nav-configs` (configs) and `noirlab/gpp-nav` (server + UI static files).
 
-On a push to `main`, two further jobs deploy the standalone UIs to Firebase Hosting when their package (or a dependency) changed: `deploy-resource` publishes resource-ui to https://resource-dev.lucuma.xyz, and `deploy-admin` publishes admin-ui to https://admin-dev.lucuma.xyz. Each is gated by a package-specific `ci:set-deploy-flag` script, so a change to one can't trigger the other's deploy.
+On a push to `main`, two further jobs deploy the standalone UIs to Firebase Hosting when their package (or a dependency) changed: `deploy-resource` publishes resource-ui to https://resource-dev.gemini.edu, and `deploy-admin` publishes admin-ui to https://admin-dev.gemini.edu. Each is gated by a package-specific `ci:set-deploy-flag` script, so a change to one can't trigger the other's deploy.

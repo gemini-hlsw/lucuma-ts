@@ -20,7 +20,7 @@ import type { MockedResponseOf } from '@gql/util';
 import type { Locator } from 'vitest/browser';
 import { userEvent } from 'vitest/browser';
 
-import { createMechanism, createTelescopeState } from '@/test/create';
+import { createEnclosureState, createMechanism, createTelescopeState } from '@/test/create';
 import { operationOutcome, selectDropdownOption } from '@/test/helpers';
 import { type RenderResultWithStore, renderWithContext } from '@/test/render';
 import type { EnclosureState } from '@/types';
@@ -271,7 +271,7 @@ const telescopeStateMock = (enclosure?: Partial<EnclosureState>) =>
       variables: {},
     },
     maxUsageCount: Infinity,
-    result: { data: { telescopeState: createTelescopeState({ enclosure }) } },
+    result: { data: { telescopeState: createTelescopeState({ enclosure: createEnclosureState(enclosure) }) } },
   }) satisfies MockedResponseOf<typeof GET_TELESCOPE_STATE>;
 
 // The subscription never emits, so the query result is what the panel shows

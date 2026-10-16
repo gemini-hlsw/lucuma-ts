@@ -24,6 +24,9 @@ export const OBSERVATION_FRAGMENT = graphql(`
           }
         }
       }
+      reference {
+        label
+      }
     }
     targetEnvironment {
       firstScienceTarget {

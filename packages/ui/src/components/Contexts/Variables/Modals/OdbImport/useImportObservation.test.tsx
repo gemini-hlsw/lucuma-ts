@@ -9,7 +9,22 @@ import type { MockedResponseOf } from '@gql/util';
 import { describe, expect, it, type Mock } from 'vitest';
 import { renderHook, type RenderHookResult } from 'vitest-browser-react';
 
-import { createConfiguration, createGuideLoop, createRotator } from '@/test/create';
+import {
+  createConfiguration,
+  createDeclination,
+  createGuideLoop,
+  createObservation,
+  createOdbObservationReference,
+  createOdbProgram,
+  createOdbSidereal,
+  createOdbTarget,
+  createOdbTargetEnvironment,
+  createProperMotion,
+  createProperMotionDeclination,
+  createProperMotionRA,
+  createRightAscension,
+  createRotator,
+} from '@/test/create';
 import type { OdbObservation } from '@/types';
 
 import { useImportObservation } from './useImportObservation';
@@ -45,7 +60,8 @@ describe(useImportObservation, () => {
         observation: {
           id: 'o-2e5',
           instrument: 'GMOS_NORTH',
-          reference: 'G-2025B-0571-Q-0003',
+          reference: 'G-2026B-ENG-GMOSN-01-0003',
+          programLabel: 'G-2026B-ENG-GMOSN-01',
           subtitle: null,
           title: 'Mayall V',
           fpu: null,
@@ -203,167 +219,45 @@ describe(useImportObservation, () => {
   });
 });
 
-const selectedObservation: OdbObservation = {
-  __typename: 'Observation',
+const mayallRa = createRightAscension({ hms: '00:50:09.964808', degrees: 12.541520033333333 });
+
+const mayallV = createOdbTarget({
+  id: 't-60d',
+  name: 'Mayall V',
+  sidereal: createOdbSidereal({
+    ra: mayallRa,
+    dec: createDeclination({ dms: '+41:41:01.034928', degrees: 41.683620813333334 }),
+    parallax: { microarcseconds: 0, __typename: 'Parallax' },
+    radialVelocity: { centimetersPerSecond: -33200000, __typename: 'RadialVelocity' },
+  }),
+});
+
+const mayallVBlind = createOdbTarget({
+  id: 't-60e',
+  name: 'Mayall V Blind',
+  sidereal: createOdbSidereal({
+    ra: mayallRa,
+    dec: createDeclination({ dms: '+41:41:00.000000', degrees: 41.68333333333333 }),
+  }),
+});
+
+const selectedObservation = createObservation({
   id: 'o-2e5',
   title: 'Mayall V',
-  subtitle: null,
-  instrument: 'GMOS_NORTH',
-  reference: {
-    label: 'G-2025B-0571-Q-0003',
-    __typename: 'ObservationReference',
-  },
-  program: {
-    id: 'p-11d',
-    pi: {
-      id: 'm-14f',
-      user: {
-        id: 'u-7ea',
-        profile: {
-          givenName: 'Bryan',
-          familyName: 'Miller',
-          __typename: 'UserProfile',
-        },
-        __typename: 'User',
-      },
-      __typename: 'ProgramUser',
-    },
-    __typename: 'Program',
-  },
-  targetEnvironment: {
-    firstScienceTarget: {
-      id: 't-60d',
-      name: 'Mayall V',
-      sidereal: {
-        epoch: 'J2000.000',
-        ra: {
-          hms: '00:50:09.964808',
-          degrees: 12.541520033333333,
-          __typename: 'RightAscension',
-        },
-        dec: {
-          dms: '+41:41:01.034928',
-          degrees: 41.683620813333334,
-          __typename: 'Declination',
-        },
-        properMotion: null,
-        parallax: {
-          microarcseconds: 0,
-          __typename: 'Parallax',
-        },
-        radialVelocity: {
-          centimetersPerSecond: -33200000,
-          __typename: 'RadialVelocity',
-        },
-        __typename: 'Sidereal',
-      },
-      sourceProfile: {
-        point: null,
-        __typename: 'SourceProfile',
-      },
-      nonsidereal: null,
-      __typename: 'Target',
-    },
-    blindOffsetTarget: null,
-    asterism: [],
-    __typename: 'TargetEnvironment',
-  },
-};
+  reference: createOdbObservationReference({ label: 'G-2026B-ENG-GMOSN-01-0003' }),
+  program: createOdbProgram({
+    reference: { label: 'G-2026B-ENG-GMOSN-01', __typename: 'EngineeringProgramReference' },
+  }),
+  targetEnvironment: createOdbTargetEnvironment({ firstScienceTarget: mayallV }),
+});
 
 const selectedObservationWithBlindOffset: OdbObservation = {
   ...selectedObservation,
-  targetEnvironment: {
-    ...selectedObservation.targetEnvironment,
-    blindOffsetTarget: {
-      id: 't-60e',
-      name: 'Mayall V Blind',
-      sidereal: {
-        epoch: 'J2000.000',
-        ra: {
-          hms: '00:50:09.964808',
-          degrees: 12.541520033333333,
-          __typename: 'RightAscension',
-        },
-        dec: {
-          dms: '+41:41:00.000000',
-          degrees: 41.68333333333333,
-          __typename: 'Declination',
-        },
-        properMotion: null,
-        parallax: null,
-        radialVelocity: null,
-        __typename: 'Sidereal',
-      },
-      sourceProfile: {
-        point: null,
-        __typename: 'SourceProfile',
-      },
-      nonsidereal: null,
-      __typename: 'Target',
-    },
-    asterism: [
-      {
-        id: 't-60d',
-        name: 'Mayall V',
-        sidereal: {
-          epoch: 'J2000.000',
-          ra: {
-            hms: '00:50:09.964808',
-            degrees: 12.541520033333333,
-            __typename: 'RightAscension',
-          },
-          dec: {
-            dms: '+41:41:01.034928',
-            degrees: 41.683620813333334,
-            __typename: 'Declination',
-          },
-          properMotion: null,
-          parallax: {
-            microarcseconds: 0,
-            __typename: 'Parallax',
-          },
-          radialVelocity: {
-            centimetersPerSecond: -33200000,
-            __typename: 'RadialVelocity',
-          },
-          __typename: 'Sidereal',
-        },
-        sourceProfile: {
-          point: null,
-          __typename: 'SourceProfile',
-        },
-        nonsidereal: null,
-        __typename: 'Target',
-      },
-      {
-        id: 't-60e',
-        name: 'Mayall V Blind',
-        sidereal: {
-          epoch: 'J2000.000',
-          ra: {
-            hms: '00:50:09.964808',
-            degrees: 12.541520033333333,
-            __typename: 'RightAscension',
-          },
-          dec: {
-            dms: '+41:41:00.000000',
-            degrees: 41.68333333333333,
-            __typename: 'Declination',
-          },
-          properMotion: null,
-          parallax: null,
-          radialVelocity: null,
-          __typename: 'Sidereal',
-        },
-        sourceProfile: {
-          point: null,
-          __typename: 'SourceProfile',
-        },
-        nonsidereal: null,
-        __typename: 'Target',
-      },
-    ],
-  },
+  targetEnvironment: createOdbTargetEnvironment({
+    firstScienceTarget: mayallV,
+    blindOffsetTarget: mayallVBlind,
+    asterism: [mayallV, mayallVBlind],
+  }),
 };
 
 const mocks = [
@@ -481,46 +375,20 @@ const mocks = [
                 {
                   probe: 'GMOS_OIWFS',
                   name: 'Gaia DR3 375250953351514624',
-                  sidereal: {
+                  sidereal: createOdbSidereal({
                     epoch: 'J2025.763',
-                    ra: {
-                      hms: '00:49:59.315742',
-                      degrees: 12.497148925,
-                      __typename: 'RightAscension',
-                    },
-                    dec: {
-                      dms: '+41:41:50.177420',
-                      degrees: 41.697271505555555,
-                      __typename: 'Declination',
-                    },
-                    properMotion: {
-                      ra: {
-                        microarcsecondsPerYear: 1121,
-                        __typename: 'ProperMotionRA',
-                      },
-                      dec: {
-                        microarcsecondsPerYear: -6810,
-                        __typename: 'ProperMotionDeclination',
-                      },
-                      __typename: 'ProperMotion',
-                    },
-                    parallax: null,
-                    radialVelocity: {
-                      centimetersPerSecond: 0,
-                      __typename: 'RadialVelocity',
-                    },
-                    __typename: 'Sidereal',
-                  },
+                    ra: createRightAscension({ hms: '00:49:59.315742', degrees: 12.497148925 }),
+                    dec: createDeclination({ dms: '+41:41:50.177420', degrees: 41.697271505555555 }),
+                    properMotion: createProperMotion({
+                      ra: createProperMotionRA({ microarcsecondsPerYear: 1121 }),
+                      dec: createProperMotionDeclination({ microarcsecondsPerYear: -6810 }),
+                    }),
+                    radialVelocity: { centimetersPerSecond: 0, __typename: 'RadialVelocity' },
+                  }),
                   sourceProfile: {
                     point: {
                       bandNormalized: {
-                        brightnesses: [
-                          {
-                            band: 'GAIA_RP',
-                            value: '13.935516',
-                            __typename: 'BandBrightnessIntegrated',
-                          },
-                        ],
+                        brightnesses: [{ band: 'GAIA_RP', value: '13.935516', __typename: 'BandBrightnessIntegrated' }],
                         __typename: 'BandNormalizedIntegrated',
                       },
                       __typename: 'SpectralDefinitionIntegrated',
@@ -569,29 +437,7 @@ const guideEnvironmentWithBasePositionMock = {
             __typename: 'BasePosition',
             type: 'EXPLICIT_BASE',
             name: 'Mayall V',
-            sidereal: {
-              __typename: 'Sidereal',
-              epoch: 'J2000.000',
-              ra: {
-                __typename: 'RightAscension',
-                hms: '00:50:09.964808',
-                degrees: 12.541520033333333,
-              },
-              dec: {
-                __typename: 'Declination',
-                dms: '+41:41:01.034928',
-                degrees: 41.683620813333334,
-              },
-              properMotion: null,
-              parallax: {
-                __typename: 'Parallax',
-                microarcseconds: 0,
-              },
-              radialVelocity: {
-                __typename: 'RadialVelocity',
-                centimetersPerSecond: -33200000,
-              },
-            },
+            sidereal: mayallV.sidereal,
             nonsidereal: null,
             coordinates: null,
           },
@@ -632,16 +478,8 @@ const guideEnvironmentWithCoordinateOnlyBasePositionMock = {
             nonsidereal: null,
             coordinates: {
               __typename: 'Coordinates',
-              ra: {
-                __typename: 'RightAscension',
-                hms: '00:45:00.000000',
-                degrees: 11.25,
-              },
-              dec: {
-                __typename: 'Declination',
-                dms: '+40:45:00.000000',
-                degrees: 40.75,
-              },
+              ra: createRightAscension({ hms: '00:45:00.000000', degrees: 11.25 }),
+              dec: createDeclination({ dms: '+40:45:00.000000', degrees: 40.75 }),
             },
           },
           guideEnvironment: {
