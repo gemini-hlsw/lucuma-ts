@@ -80,11 +80,11 @@ export const CHANGE_REQUESTS_QUERY = graphql(`
   query AdminChangeRequests($offset: ConfigurationRequestId) {
     # Only requests on accepted programs (sc-9601) — a change request against a
     # merely-submitted proposal isn't actionable here. Mirrors the Programs
-    # query's proposalStatus filter. Paged via the OFFSET cursor (sc-9604):
+    # query's proposalStatus filter. Paged via the OFFSET_AT cursor (sc-9604):
     # a single fixed LIMIT silently dropped requests past the first page — a
     # newly-submitted one, landing at the tail, went missing — so
     # useChangeRequests follows hasMore to the end.
-    configurationRequests(WHERE: { program: { proposalStatus: { EQ: ACCEPTED } } }, OFFSET: $offset) {
+    configurationRequests(WHERE: { program: { proposalStatus: { EQ: ACCEPTED } } }, OFFSET_AT: $offset) {
       matches {
         ...ConfigurationRequestItem
       }
@@ -174,7 +174,7 @@ export function useChangeRequests() {
  *  than under every program of the Proposals query, which already walks them all. */
 export const PROGRAM_CONFIGURATION_REQUESTS_QUERY = graphql(`
   query AdminProgramConfigurationRequests($programId: ProgramId!, $offset: ConfigurationRequestId) {
-    configurationRequests(WHERE: { program: { id: { EQ: $programId } } }, OFFSET: $offset) {
+    configurationRequests(WHERE: { program: { id: { EQ: $programId } } }, OFFSET_AT: $offset) {
       matches {
         ...ConfigurationRequestItem
       }
@@ -205,7 +205,7 @@ export function useProgramConfigurationRequests(programId: string | null) {
 /*
  * A ConfigurationRequest carries only observation ids (applicableObservations),
  * so the page resolves them to rows. We fetch the selected program's
- * observations page-by-page (WHERE program + OFFSET cursor, following the
+ * observations page-by-page (WHERE program + OFFSET_AT cursor, following the
  * pagination pattern in explore's ProgramSummaryQueries) rather than sending one
  * `id: { IN: [...] }` list: a program with thousands of observations would blow
  * past Postgres's 32,767 bind-parameter limit and the ODB would 500. Paging
@@ -213,7 +213,7 @@ export function useProgramConfigurationRequests(programId: string | null) {
  */
 export const PROGRAM_OBSERVATIONS_QUERY = graphql(`
   query AdminProgramObservations($programId: ProgramId!, $offset: ObservationId) {
-    observations(WHERE: { program: { id: { EQ: $programId } } }, OFFSET: $offset) {
+    observations(WHERE: { program: { id: { EQ: $programId } } }, OFFSET_AT: $offset) {
       matches {
         ...ObservationItem
       }

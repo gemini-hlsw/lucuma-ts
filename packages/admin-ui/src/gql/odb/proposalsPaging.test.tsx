@@ -67,7 +67,7 @@ describe(useProposals, () => {
   it('keeps one row per program when a page repeats the previous page’s last row', async () => {
     const screen = await renderWithContext(<Harness />, {
       token: STAFF_TOKEN,
-      // The ODB's OFFSET is inclusive: the second page opens with p-2 again.
+      // The ODB's OFFSET_AT is inclusive: the second page opens with p-2 again.
       mocks: [page(null, [dd('p-1'), dd('p-2')], true), page('p-2', [dd('p-2'), dd('p-3')], false)],
     });
     await expect.element(screen.getByTestId('ids')).toHaveTextContent('p-1,p-2,p-3');

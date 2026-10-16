@@ -66,7 +66,7 @@ export const PROPOSAL_ITEM_FRAGMENT = graphql(`
  *  `mapProposals` cannot bring it back. (On dev the two agree: 55 programs, and the
  *  accepted ones found by subtype are a subset.)
  *
- *  Paged via the OFFSET cursor (sc-9589) so a page cap cannot truncate the list;
+ *  Paged via the OFFSET_AT cursor (sc-9589) so a page cap cannot truncate the list;
  *  `useAllPages` follows `hasMore` to the end. Past a single page the ODB's cursor
  *  can skip rows without any sign of it (see `useAllPages`); this list is far below
  *  that. */
@@ -74,7 +74,7 @@ export const PROPOSALS_QUERY = graphql(`
   query AdminProposals($offset: ProgramId) {
     programs(
       WHERE: { proposal: { call: { gemini: { type: { IN: [DIRECTORS_TIME, POOR_WEATHER] } } } } }
-      OFFSET: $offset
+      OFFSET_AT: $offset
     ) {
       matches {
         ...ProposalItem

@@ -19,7 +19,7 @@ type FetchMore<R> = (options: {
 type PageKey<R> = { [K in keyof R]: R[K] extends Page ? K : never }[keyof R];
 
 /**
- * Folds the next page into the one held. The ODB's OFFSET is inclusive, so a
+ * Folds the next page into the one held. The ODB's OFFSET_AT is inclusive, so a
  * page repeats the previous page's last row; keeping each id once leaves one row
  * per item.
  *
