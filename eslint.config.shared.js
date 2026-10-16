@@ -2,6 +2,7 @@
 
 import eslint from '@eslint/js';
 import vitestPlugin from '@vitest/eslint-plugin';
+import { defaultConditionNames } from 'eslint-import-resolver-typescript';
 import { importX } from 'eslint-plugin-import-x';
 import simpleImportSort from 'eslint-plugin-simple-import-sort';
 import { defineConfig, globalIgnores } from 'eslint/config';
@@ -30,6 +31,14 @@ export default defineConfig(
   ...configs.strictTypeChecked,
   importX.flatConfigs.recommended,
   importX.flatConfigs.typescript,
+  {
+    settings: {
+      // jotai 3 ships its real typings under the `types@>=5.5` export condition and points plain `types` at a
+      // single "TS 5.5 required" stub. Without this condition the resolver maps every jotai entry point
+      // (`jotai`, `jotai/utils`, ...) to that stub, and `import-x/no-duplicates` reports them as duplicates.
+      'import-x/resolver': { typescript: { conditionNames: ['types@>=5.5', ...defaultConditionNames] } },
+    },
+  },
   {
     files: ['**/*.ts', '**/*.tsx'],
     languageOptions: {

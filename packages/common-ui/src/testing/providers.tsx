@@ -1,9 +1,8 @@
 import type { MockLink } from '@apollo/client/testing';
 import { MockedProvider } from '@apollo/client/testing/react';
-import type { WritableAtom } from 'jotai';
+import type { Store, WritableAtom } from 'jotai';
 import { createStore, Provider as JotaiProvider } from 'jotai';
 import { useHydrateAtoms } from 'jotai/utils';
-import type { Store } from 'jotai/vanilla/store';
 import type { PropsWithChildren } from 'react';
 
 /**
