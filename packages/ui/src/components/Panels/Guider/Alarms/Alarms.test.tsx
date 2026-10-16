@@ -3,7 +3,7 @@ import { GET_GUIDE_ALARMS, UPDATE_GUIDE_ALARM } from '@gql/configs/GuideAlarm';
 import { GUIDE_QUALITY_QUERY, GUIDE_QUALITY_SUBSCRIPTION } from '@gql/server/GuideQuality';
 import { GUIDE_STATE_QUERY, GUIDE_STATE_SUBSCRIPTION } from '@gql/server/GuideState';
 import type { MockedResponseOf } from '@gql/util';
-import type { Store } from 'jotai/vanilla/store';
+import type { Store } from 'jotai';
 import { page, userEvent } from 'vitest/browser';
 
 import { guideAlarmSoundAtom } from '@/components/atoms/alarm';
