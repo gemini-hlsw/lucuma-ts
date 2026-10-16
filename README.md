@@ -23,6 +23,8 @@ A running docker service is required to install navigate, the user installing na
 
 After running the install.sh script, the `navigate` command will be enabled to `start`, `stop` and `update` the cluster. For more information try the command `navigate help`.
 
+Always `update` to the release tag announced on Slack by the latest promotion (e.g. `v0.16.21`). Deploying `latest` is refused unless `--force` is given: it is not a promoted version and may be incompatible with the other systems of the environment. The servers cannot reach github.com, so the refusal prints a `curl` command to run elsewhere that looks the promoted tag up in the GitHub deployment records.
+
 This snippet can be used in order to run the `install.sh` script.
 
 ```bash
