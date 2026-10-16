@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { userEvent } from 'vitest/browser';
 
-import { CONFLICTS_QUERY } from '@/gql/odb/conflicts';
+import { CONFLICTS_QUERY, similarModeTypes } from '@/gql/odb/conflicts';
 import type { ChangeRequest } from '@/gql/types';
 import { type MockedResponseOf, renderWithContext } from '@/test/render';
 
@@ -39,7 +39,10 @@ function request(id: string, overrides: Partial<ChangeRequest> = {}): ChangeRequ
 const emptyConflicts = (): MockedResponseOf<typeof CONFLICTS_QUERY> => ({
   request: {
     query: CONFLICTS_QUERY,
-    variables: { modeTypes: ['GMOS_NORTH_LONG_SLIT'], today: dateToLocalObservingNight(new Date()) },
+    variables: {
+      modeTypes: [...similarModeTypes('GMOS_NORTH_LONG_SLIT')].sort(),
+      today: dateToLocalObservingNight(new Date()),
+    },
   },
   maxUsageCount: Infinity,
   result: {

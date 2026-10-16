@@ -1,5 +1,8 @@
 import type { StandardUser, User } from '@/auth/user';
 import type { ObservationItemFragment } from '@/gql/odb/gen/graphql';
+import { USERS_QUERY } from '@/gql/sso/roster';
+
+import type { MockedResponseOf } from './render';
 
 /** The `execution.digest` selection of an observation fixture: a settled digest
  *  reporting `hours` of program time, or null (calculation pending / failed). */
@@ -47,3 +50,11 @@ export function fakeJwt(user: User, expiresInSeconds = 600): string {
   const payload = encode({ 'lucuma-user': user, exp: Math.floor(Date.now() / 1000) + expiresInSeconds });
   return `${header}.${payload}.signature`;
 }
+
+/** An answer for the user roster that pages load for their contact-scientist pickers, for tests that do
+ *  not look at it: without one the query has no mocked response (see unansweredQueries.ts). */
+export const emptyRosterMock = (): MockedResponseOf<typeof USERS_QUERY> => ({
+  request: { query: USERS_QUERY },
+  result: { data: { users: { __typename: 'UserSelectResult', hasMore: false, matches: [] } } },
+  maxUsageCount: Number.POSITIVE_INFINITY,
+});
