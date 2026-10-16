@@ -4,7 +4,12 @@ import { fakeJwt, standardUser } from '@/test/factories';
 import { type MockedResponseOf, renderWithContext } from '@/test/render';
 
 import type { AdminChangeRequestsResult } from './changeRequests';
-import { CHANGE_REQUESTS_QUERY, useChangeRequests } from './changeRequests';
+import {
+  CHANGE_REQUESTS_QUERY,
+  PROGRAM_CONFIGURATION_REQUESTS_QUERY,
+  useChangeRequests,
+  useProgramConfigurationRequests,
+} from './changeRequests';
 
 const STAFF_TOKEN = fakeJwt(standardUser('staff'));
 
@@ -82,6 +87,48 @@ describe(useChangeRequests, () => {
       mocks: [page(null, [cr('x-1', 'p-1')], false)],
     });
     await expect.element(screen.getByTestId('ids')).toHaveTextContent('x-1');
+    await expect.element(screen.getByTestId('loading')).toHaveTextContent('false');
+  });
+});
+
+describe(useProgramConfigurationRequests, () => {
+  const programPage = (
+    offset: string | null,
+    matches: RawRequest[],
+    hasMore: boolean,
+  ): MockedResponseOf<typeof PROGRAM_CONFIGURATION_REQUESTS_QUERY> => ({
+    request: { query: PROGRAM_CONFIGURATION_REQUESTS_QUERY, variables: { programId: 'p-1', offset } },
+    result: { data: { configurationRequests: { __typename: 'ConfigurationRequestSelectResult', matches, hasMore } } },
+  });
+
+  function ProgramHarness() {
+    const { requests, loading } = useProgramConfigurationRequests('p-1');
+    return (
+      <div>
+        <span data-testid="loading">{String(loading)}</span>
+        <span data-testid="ids">{requests.map((r) => r.id).join(',')}</span>
+      </div>
+    );
+  }
+
+  it('settles at once when the first page is the last', async () => {
+    const screen = await renderWithContext(<ProgramHarness />, {
+      token: STAFF_TOKEN,
+      mocks: [programPage(null, [cr('x-1', 'p-1')], false)],
+    });
+    await expect.element(screen.getByTestId('ids')).toHaveTextContent('x-1');
+    await expect.element(screen.getByTestId('loading')).toHaveTextContent('false');
+  });
+
+  it('follows hasMore so a request past the first page is not dropped', async () => {
+    const screen = await renderWithContext(<ProgramHarness />, {
+      token: STAFF_TOKEN,
+      mocks: [
+        programPage(null, [cr('x-1', 'p-1'), cr('x-2', 'p-1')], true),
+        programPage('x-2', [cr('x-3', 'p-1')], false),
+      ],
+    });
+    await expect.element(screen.getByTestId('ids')).toHaveTextContent('x-1,x-2,x-3');
     await expect.element(screen.getByTestId('loading')).toHaveTextContent('false');
   });
 });
