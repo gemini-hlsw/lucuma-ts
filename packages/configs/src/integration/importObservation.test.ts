@@ -85,7 +85,7 @@ describe('importObservation', () => {
             title: 'obs title 2',
             subtitle: 'obs subtitle 2',
             reference: 'ref-456',
-            programLabel: 'prog-456',
+            programLabel: 'G-2026B-ENG-GMOSS-01',
             instrument: 'GMOS_SOUTH',
           },
           targets: {
@@ -157,7 +157,7 @@ describe('importObservation', () => {
       obsId: 'o-456',
       obsInstrument: 'GMOS_SOUTH',
       obsReference: 'ref-456',
-      programLabel: 'prog-456',
+      programLabel: 'G-2026B-ENG-GMOSS-01',
       obsSubtitle: 'obs subtitle 2',
       obsTitle: 'obs title 2',
       oiGuidingType: 'NORMAL',
