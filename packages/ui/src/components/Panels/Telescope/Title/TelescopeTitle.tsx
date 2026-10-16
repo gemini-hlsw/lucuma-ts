@@ -46,13 +46,13 @@ export function TelescopeTitle({ prevPanel, nextPanel }: ParamsInterface) {
       toast?.show({
         severity: 'success',
         summary: 'Observation reimported',
-        detail: `Observation ${data.observation.id} (ref ${configuration.obsReference}) has been reimported successfully.`,
+        detail: `Observation ${data.observation.id} (ref ${configuration.obsReference ?? 'unknown'}) has been reimported successfully.`,
       });
     } else {
       toast?.show({
         severity: 'error',
         summary: 'Reimport failed',
-        detail: `Observation ${configuration?.obsId} (ref ${configuration.obsReference}) could not be found in the ODB.`,
+        detail: `Observation ${configuration?.obsId} (ref ${configuration.obsReference ?? 'unknown'}) could not be found in the ODB.`,
       });
     }
   }

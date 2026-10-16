@@ -152,7 +152,7 @@ describe(TargetSwapButton, () => {
           instrument: 'GMOS_NORTH',
           lightSinkVariant: undefined,
           oiwfs: undefined,
-          programLabel: 'G-2025A-ENG-GMOSN-01-0004',
+          programLabel: 'G-2025A-ENG-GMOSN-01',
           pwfs1: undefined,
           pwfs2: undefined,
           rotator: {

@@ -80,6 +80,7 @@ export function useImportObservation() {
               title: selectedObservation.title,
               subtitle: selectedObservation.subtitle,
               reference: selectedObservation.reference?.label,
+              programLabel: selectedObservation.program.reference?.label,
               instrument: obsWithWavelength.data?.executionConfig?.instrument,
               fpu,
             },
