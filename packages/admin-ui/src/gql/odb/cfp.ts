@@ -99,10 +99,10 @@ export const CFPS_QUERY = graphql(`
     # includeDeleted so DELETED (invisible) calls are fetchable — the
     # "Invisible" facet (sc-9612) needs them; visibility is filtered client-side
     # from each call's existence (WhereCallForProposals has no existence field).
-    # Paged via the OFFSET cursor: a single fixed LIMIT would hide calls past it
+    # Paged via the OFFSET_AT cursor: a single fixed LIMIT would hide calls past it
     # — including a newly-created one, which then couldn't be selected after
     # New → Create (sc-10136). useCfps follows hasMore to the last page.
-    callsForProposals(OFFSET: $offset, includeDeleted: true) {
+    callsForProposals(OFFSET_AT: $offset, includeDeleted: true) {
       matches {
         ...CallForProposalsItem
       }
