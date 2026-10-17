@@ -1,7 +1,7 @@
 import { useSetAtom } from 'jotai';
 import { useEffect, useRef } from 'react';
 
-import { odbTokenAtom, useOdbTokenValue, useTokenExp, useUser } from '@/components/atoms/auth';
+import { odbTokenAtom, useOdbTokenValue, useSigningOut, useTokenExp, useUser } from '@/components/atoms/auth';
 import { useToast } from '@/components/toastContext';
 
 import { EXPIRATION_ANTICIPATION_SECONDS } from './environments';
@@ -21,14 +21,16 @@ export function AuthSession(): null {
   const token = useOdbTokenValue();
   const user = useUser();
   const exp = useTokenExp();
+  const signingOut = useSigningOut();
   const setToken = useSetAtom(odbTokenAtom);
   // Guard so the role auto-switch happens once per token, not per render.
   const switchedFor = useRef<string | null>(null);
 
-  // Silent bootstrap: with no live session, try the refresh-token cookie once.
+  // Silent bootstrap: with no live session, try the refresh-token cookie once. Not while signing out: until
+  // SSO has answered the logout the cookie is still in the browser and would sign the user straight back in.
   const isLoggedIn = user !== null && exp !== null && exp > new Date();
   useEffect(() => {
-    if (isLoggedIn) return;
+    if (isLoggedIn || signingOut) return;
     const controller = new AbortController();
     void sso.refreshToken(controller.signal).then((fresh) => {
       if (fresh && !controller.signal.aborted) setToken(fresh);
@@ -36,7 +38,7 @@ export function AuthSession(): null {
     return () => {
       controller.abort();
     };
-  }, [isLoggedIn, setToken]);
+  }, [isLoggedIn, signingOut, setToken]);
 
   // Proactive refresh: check every second; refresh shortly before expiry.
   // Guard against overlapping attempts and back off after a failure so a
