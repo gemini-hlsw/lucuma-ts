@@ -11,7 +11,7 @@ import {
 } from '@/gql/odb/programs';
 import type { Program } from '@/gql/types';
 import { currentSemester } from '@/lib/semester';
-import { fakeJwt, standardUser } from '@/test/factories';
+import { emptyRosterMock, fakeJwt, standardUser } from '@/test/factories';
 import { type MockedResponseOf, renderWithContext } from '@/test/render';
 
 import ProgramsPage from './ProgramsPage';
@@ -129,7 +129,7 @@ function limitRecorder(limit: number): {
 async function openEditor(resourceCount: number, resourceLimit: number, extra: readonly unknown[] = []) {
   const screen = await renderWithContext(<ProgramsPage />, {
     token: STAFF_TOKEN,
-    mocks: [programsMock(resourceCount, resourceLimit), ...(extra as never[])],
+    mocks: [programsMock(resourceCount, resourceLimit), emptyRosterMock(), ...(extra as never[])],
   });
   await expect.element(screen.getByText('Resources Used')).toBeInTheDocument();
   return screen;
