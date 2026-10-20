@@ -159,7 +159,7 @@ export function useObservationById() {
 
 export const GET_OBSERVATIONS_BY_STATE = graphql(`
   # eslint-disable @graphql-eslint/selection-set-depth
-  query ObservationsByState($states: [ObservationWorkflowState!]!, $site: Site!, $date: Date!, $offset: ObservationId) {
+  query ObservationsByState($states: [ObservationWorkflowState!]!, $site: Site!, $date: Date!, $after: ObservationId) {
     observations(
       WHERE: {
         workflow: { workflowState: { IN: $states } }
@@ -167,7 +167,7 @@ export const GET_OBSERVATIONS_BY_STATE = graphql(`
         program: { AND: [{ activeStart: { LTE: $date } }, { activeEnd: { GTE: $date } }] }
         reference: { IS_NULL: false }
       }
-      OFFSET: $offset
+      OFFSET_AFTER: $after
     ) {
       matches {
         ...ObservationItem
@@ -181,7 +181,7 @@ export const GET_OBSERVATIONS_BY_STATE = graphql(`
  * Fetches every observation matching the given state, site and date.
  *
  * The ODB returns at most 1000 matches per request, so while the result reports `hasMore` the remaining pages are
- * fetched (starting at the last received id) and appended to the result. `loading` stays true until all pages arrive.
+ * fetched (starting after the last received id) and appended to the result. `loading` stays true until all pages arrive.
  */
 export function useObservationsByState(options: OptionsOf<typeof GET_OBSERVATIONS_BY_STATE>) {
   const result = useQuery(
@@ -204,21 +204,14 @@ export function useObservationsByState(options: OptionsOf<typeof GET_OBSERVATION
     if (isNullish(lastId)) return;
 
     void fetchMore({
-      variables: { offset: lastId },
-      updateQuery: (previous, { fetchMoreResult }) => {
-        // OFFSET is inclusive, so the first match of the next page repeats the last one already received
-        const known = new Set(previous.observations.matches.map((o) => o.id));
-        return {
-          ...fetchMoreResult,
-          observations: {
-            ...fetchMoreResult.observations,
-            matches: [
-              ...previous.observations.matches,
-              ...fetchMoreResult.observations.matches.filter((o) => !known.has(o.id)),
-            ],
-          },
-        };
-      },
+      variables: { after: lastId },
+      updateQuery: (previous, { fetchMoreResult }) => ({
+        ...fetchMoreResult,
+        observations: {
+          ...fetchMoreResult.observations,
+          matches: [...previous.observations.matches, ...fetchMoreResult.observations.matches],
+        },
+      }),
     });
   }, [observations, fetchMore]);
 
