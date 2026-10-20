@@ -27,6 +27,22 @@ describe(ObservationTable, () => {
       .element(rowWithTitle('First observation').getByText('Current', { exact: true }))
       .not.toBeInTheDocument();
   });
+
+  it('should load every page of observations when the ODB reports more matches', async () => {
+    await renderWithContext(
+      <ObservationTable
+        selectedObservation={null}
+        setSelectedObservation={vi.fn()}
+        onImport={vi.fn()}
+        loading={false}
+      />,
+      { mocks: [getConfigurationMock, getFirstPageMock, getSecondPageMock] },
+    );
+
+    await expect.element(rowWithTitle('Third observation')).toBeVisible();
+    await expect.element(rowWithTitle('First observation')).toBeVisible();
+    expect(rowWithTitle('Second observation').elements()).toHaveLength(1);
+  });
 });
 
 const getConfigurationMock = {
@@ -62,6 +78,46 @@ const getObservationsMock = {
             reference: createOdbObservationReference({ label: 'G-2025B-0001-Q-0002' }),
           }),
         ],
+        hasMore: false,
+      },
+    },
+  },
+} satisfies MockedResponseOf<typeof GET_OBSERVATIONS_BY_STATE>;
+
+const getFirstPageMock = {
+  request: {
+    query: GET_OBSERVATIONS_BY_STATE,
+    variables: (vars) => !vars.offset,
+  },
+  result: {
+    data: {
+      observations: {
+        __typename: 'ObservationSelectResult',
+        matches: [
+          createObservation({ id: 'o-1', title: 'First observation' }),
+          createObservation({ id: 'o-2', title: 'Second observation' }),
+        ],
+        hasMore: true,
+      },
+    },
+  },
+} satisfies MockedResponseOf<typeof GET_OBSERVATIONS_BY_STATE>;
+
+const getSecondPageMock = {
+  request: {
+    query: GET_OBSERVATIONS_BY_STATE,
+    variables: (vars) => vars.offset === 'o-2',
+  },
+  result: {
+    data: {
+      observations: {
+        __typename: 'ObservationSelectResult',
+        // OFFSET is inclusive, so the page starts with the last observation of the previous one
+        matches: [
+          createObservation({ id: 'o-2', title: 'Second observation' }),
+          createObservation({ id: 'o-3', title: 'Third observation' }),
+        ],
+        hasMore: false,
       },
     },
   },

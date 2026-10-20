@@ -1,5 +1,7 @@
 import { skipToken, useLazyQuery, useQuery } from '@apollo/client/react';
+import { isNullish } from '@gemini-hlsw/lucuma-common-ui';
 import type { OptionsOf } from '@gql/util';
+import { useEffect } from 'react';
 
 import { graphql } from './gen';
 
@@ -157,7 +159,7 @@ export function useObservationById() {
 
 export const GET_OBSERVATIONS_BY_STATE = graphql(`
   # eslint-disable @graphql-eslint/selection-set-depth
-  query ObservationsByState($states: [ObservationWorkflowState!]!, $site: Site!, $date: Date!) {
+  query ObservationsByState($states: [ObservationWorkflowState!]!, $site: Site!, $date: Date!, $offset: ObservationId) {
     observations(
       WHERE: {
         workflow: { workflowState: { IN: $states } }
@@ -165,16 +167,24 @@ export const GET_OBSERVATIONS_BY_STATE = graphql(`
         program: { AND: [{ activeStart: { LTE: $date } }, { activeEnd: { GTE: $date } }] }
         reference: { IS_NULL: false }
       }
+      OFFSET: $offset
     ) {
       matches {
         ...ObservationItem
       }
+      hasMore
     }
   }
 `);
 
+/**
+ * Fetches every observation matching the given state, site and date.
+ *
+ * The ODB returns at most 1000 matches per request, so while the result reports `hasMore` the remaining pages are
+ * fetched (starting at the last received id) and appended to the result. `loading` stays true until all pages arrive.
+ */
 export function useObservationsByState(options: OptionsOf<typeof GET_OBSERVATIONS_BY_STATE>) {
-  return useQuery(
+  const result = useQuery(
     GET_OBSERVATIONS_BY_STATE,
     options === skipToken
       ? skipToken
@@ -184,6 +194,35 @@ export function useObservationsByState(options: OptionsOf<typeof GET_OBSERVATION
           fetchPolicy: 'cache-and-network',
         },
   );
+
+  const { fetchMore } = result;
+  const observations = result.data?.observations;
+  const hasMore = observations?.hasMore ?? false;
+
+  useEffect(() => {
+    const lastId = observations?.hasMore ? observations.matches.at(-1)?.id : undefined;
+    if (isNullish(lastId)) return;
+
+    void fetchMore({
+      variables: { offset: lastId },
+      updateQuery: (previous, { fetchMoreResult }) => {
+        // OFFSET is inclusive, so the first match of the next page repeats the last one already received
+        const known = new Set(previous.observations.matches.map((o) => o.id));
+        return {
+          ...fetchMoreResult,
+          observations: {
+            ...fetchMoreResult.observations,
+            matches: [
+              ...previous.observations.matches,
+              ...fetchMoreResult.observations.matches.filter((o) => !known.has(o.id)),
+            ],
+          },
+        };
+      },
+    });
+  }, [observations, fetchMore]);
+
+  return { ...result, loading: result.loading || hasMore };
 }
 
 export const GET_GUIDE_ENVIRONMENT = graphql(`
