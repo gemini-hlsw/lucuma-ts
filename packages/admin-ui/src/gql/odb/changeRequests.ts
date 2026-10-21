@@ -3,7 +3,7 @@
  * program → request master-detail — see ChangeRequestsPage.
  */
 import { skipToken, useMutation, useQuery } from '@apollo/client/react';
-import { isNullish, parseNumber } from '@gemini-hlsw/lucuma-common-ui';
+import { isNullish, parseNumber, useAllPages } from '@gemini-hlsw/lucuma-common-ui';
 import type { DocumentNode } from 'graphql';
 import { useCallback, useMemo } from 'react';
 
@@ -15,7 +15,6 @@ import type {
   ProgramWithChangeRequests,
   Site,
 } from '../types';
-import { useAllPages } from '../useAllPages';
 import type { DocumentType } from './gen';
 import { graphql } from './gen';
 import type { Instrument, ObservationItemFragment } from './gen/graphql';

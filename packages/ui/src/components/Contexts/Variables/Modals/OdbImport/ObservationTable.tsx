@@ -12,6 +12,7 @@ import { DataTable } from 'primereact/datatable';
 import { IconField } from 'primereact/iconfield';
 import { InputIcon } from 'primereact/inputicon';
 import { InputText } from 'primereact/inputtext';
+import { Message } from 'primereact/message';
 import { MultiSelect } from 'primereact/multiselect';
 import { useState } from 'react';
 
@@ -100,7 +101,11 @@ export function ObservationTable({ selectedObservation, setSelectedObservation, 
     ),
   );
 
-  const { data, loading: observationsLoading } = useObservationsByState({
+  const {
+    data,
+    loading: observationsLoading,
+    incomplete,
+  } = useObservationsByState({
     variables: {
       date: observingNight,
       site,
@@ -150,6 +155,12 @@ export function ObservationTable({ selectedObservation, setSelectedObservation, 
         optionLabel="header"
         placeholder="Select columns"
       />
+      {when(incomplete, () => (
+        <Message
+          severity="warn"
+          text="Could not load every observation from the ODB. Reopen this dialog to try again."
+        />
+      ))}
     </div>
   );
 

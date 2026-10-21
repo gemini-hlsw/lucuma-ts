@@ -43,6 +43,21 @@ describe(ObservationTable, () => {
     await expect.element(rowWithTitle('First observation')).toBeVisible();
     await expect.element(rowWithTitle('Second observation')).toBeVisible();
   });
+
+  it('should warn that the list is incomplete when a later page fails', async () => {
+    await renderWithContext(
+      <ObservationTable
+        selectedObservation={null}
+        setSelectedObservation={vi.fn()}
+        onImport={vi.fn()}
+        loading={false}
+      />,
+      { mocks: [getConfigurationMock, getFirstPageMock, getSecondPageErrorMock] },
+    );
+
+    await expect.element(page.getByText(/could not load every observation/i)).toBeVisible();
+    await expect.element(rowWithTitle('First observation')).toBeVisible();
+  });
 });
 
 const getConfigurationMock = {
@@ -87,7 +102,7 @@ const getObservationsMock = {
 const getFirstPageMock = {
   request: {
     query: GET_OBSERVATIONS_BY_STATE,
-    variables: (vars) => !vars.after,
+    variables: (vars) => !vars.offset,
   },
   result: {
     data: {
@@ -106,7 +121,7 @@ const getFirstPageMock = {
 const getSecondPageMock = {
   request: {
     query: GET_OBSERVATIONS_BY_STATE,
-    variables: (vars) => vars.after === 'o-2',
+    variables: (vars) => vars.offset === 'o-2',
   },
   result: {
     data: {
@@ -117,4 +132,9 @@ const getSecondPageMock = {
       },
     },
   },
+} satisfies MockedResponseOf<typeof GET_OBSERVATIONS_BY_STATE>;
+
+const getSecondPageErrorMock = {
+  request: getSecondPageMock.request,
+  error: new Error('ODB unavailable'),
 } satisfies MockedResponseOf<typeof GET_OBSERVATIONS_BY_STATE>;

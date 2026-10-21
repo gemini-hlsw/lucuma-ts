@@ -4,4 +4,5 @@ export * from './components/NumberInput.tsx';
 export * from './functions.ts';
 export * from './hooks.ts';
 export * from './types.ts';
+export * from './useAllPages.ts';
 export * from './version.ts';
