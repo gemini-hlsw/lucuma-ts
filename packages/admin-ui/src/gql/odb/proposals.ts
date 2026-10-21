@@ -4,9 +4,9 @@
  * token can see.
  */
 import { useMutation, useQuery } from '@apollo/client/react';
+import { useAllPages } from '@gemini-hlsw/lucuma-common-ui';
 
 import type { Proposal, SpecialProposalType } from '../types';
-import { useAllPages } from '../useAllPages';
 import { graphql } from './gen';
 import type { ProposalItemFragment, ScienceSubtype } from './gen/graphql';
 import { isScienceObservation, mapObservationRow, telluricGroupHours } from './shared';

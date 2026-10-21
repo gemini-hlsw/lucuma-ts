@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { mergePage } from './useAllPages';
+import { mergePage } from './useAllPages.ts';
 
 const page = (ids: string[], hasMore: boolean) => ({ matches: ids.map((id) => ({ id })), hasMore });
 

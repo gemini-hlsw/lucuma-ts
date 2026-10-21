@@ -8,12 +8,11 @@
  * the matching block back in CallForProposalsPropertiesInput.
  */
 import { useMutation, useQuery } from '@apollo/client/react';
-import { parseNumber } from '@gemini-hlsw/lucuma-common-ui';
+import { parseNumber, useAllPages } from '@gemini-hlsw/lucuma-common-ui';
 
 import { currentSemester } from '@/lib/semester';
 
 import type { CallForProposals, CfpDetails, Observatory, SiteCoordinateLimits } from '../types';
-import { useAllPages } from '../useAllPages';
 import type { DocumentType } from './gen';
 import { graphql } from './gen';
 import type { CallForProposalsItemFragment, CallForProposalsPropertiesInput, SiteLimitFragment } from './gen/graphql';
