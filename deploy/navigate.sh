@@ -58,9 +58,8 @@ case "$option" in
         fi
 
         SITE=$(grep -E '^SITE=' "$NAVIGATE_DIR/.env" 2>/dev/null | tail -1 | cut -d= -f2- | tr -d '"'"'"' ')
-        ENVIRONMENT="${SITE%-*}"
-        case "$ENVIRONMENT" in
-            staging|production) ;;
+        case "$SITE" in
+            staging-gn|staging-gs|production-gn|production-gs) ENVIRONMENT="${SITE%-*}" ;;
             *)
                 echo "ERROR: Cannot determine the environment of this server from SITE [$SITE] in $NAVIGATE_DIR/.env."
                 echo "  SITE must be one of staging-gn, staging-gs, production-gn or production-gs."
