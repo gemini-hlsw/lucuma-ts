@@ -11,7 +11,7 @@ import {
   UPDATE_PROPOSAL_TYPE_MUTATION,
 } from '@/gql/odb/programs';
 import { currentSemester } from '@/lib/semester';
-import { fakeJwt, standardUser } from '@/test/factories';
+import { emptyRosterMock, fakeJwt, standardUser } from '@/test/factories';
 import { type MockedResponseOf, renderWithContext } from '@/test/render';
 
 import ProgramsPage from './ProgramsPage';
@@ -126,7 +126,10 @@ describe(ProgramsPage, () => {
     // The editor can only build the Queue and Classical arms of the oneOf, so
     // editing these on any other subtype would send the wrong arm and be
     // rejected. Read-only is the honest state until there is a type-aware input.
-    const screen = await renderWithContext(<ProgramsPage />, { token: STAFF_TOKEN, mocks: [programsMock()] });
+    const screen = await renderWithContext(<ProgramsPage />, {
+      token: STAFF_TOKEN,
+      mocks: [programsMock(), emptyRosterMock()],
+    });
     await expect.element(screen.getByRole('spinbutton', { name: /Minimum Time/ })).toBeDisabled();
     await expect.element(screen.getByRole('checkbox', { name: /Consider for Band 3/ })).toBeDisabled();
     // The ToO ceiling belongs to the program, not the proposal type, so it stays
@@ -146,6 +149,7 @@ describe(ProgramsPage, () => {
       token: STAFF_TOKEN,
       mocks: [
         programsMock(),
+        emptyRosterMock(),
         {
           request: {
             query: UPDATE_PROGRAM_MUTATION,
@@ -183,6 +187,7 @@ describe(ProgramsPage, () => {
       token: STAFF_TOKEN,
       mocks: [
         queueMock(),
+        emptyRosterMock(),
         {
           request: {
             query: UPDATE_PROGRAM_MUTATION,
@@ -235,7 +240,10 @@ describe(ProgramsPage, () => {
     ['gated', programsMock, true],
     ['editable', queueMock, false],
   ])('keeps the wrapped controls flush with the rest of the form (%s)', async (_case, mock, gated) => {
-    const screen = await renderWithContext(<ProgramsPage />, { token: STAFF_TOKEN, mocks: [mock()] });
+    const screen = await renderWithContext(<ProgramsPage />, {
+      token: STAFF_TOKEN,
+      mocks: [mock(), emptyRosterMock()],
+    });
     // Also pins the fixture: a Queue program that rendered gated would measure
     // the wrong case and quietly pass.
     const classField = screen.getByRole('textbox', { name: 'Class', exact: true });
@@ -268,7 +276,10 @@ describe(ProgramsPage, () => {
   });
 
   it('leaves nothing selected when the selected program is deselected — sc-10137', async () => {
-    const screen = await renderWithContext(<ProgramsPage />, { token: STAFF_TOKEN, mocks: [programsMock()] });
+    const screen = await renderWithContext(<ProgramsPage />, {
+      token: STAFF_TOKEN,
+      mocks: [programsMock(), emptyRosterMock()],
+    });
 
     // The first row auto-selects on load, so the editor is open on it.
     const editorField = screen.getByRole('textbox', { name: 'Class', exact: true });
@@ -290,6 +301,7 @@ describe(ProgramsPage, () => {
       token: STAFF_TOKEN,
       mocks: [
         matchesMock(directorsTimeProgram(), program('p-1533', SECOND_REFERENCE), program('p-1534', THIRD_REFERENCE)),
+        emptyRosterMock(),
       ],
     });
 
@@ -311,7 +323,7 @@ describe(ProgramsPage, () => {
     };
     const screen = await renderWithContext(<ProgramsPage />, {
       token: STAFF_TOKEN,
-      mocks: [matchesMock(directorsTimeProgram(), second)],
+      mocks: [matchesMock(directorsTimeProgram(), second), emptyRosterMock()],
     });
     const anyEditor = screen.getByText(/^Selected Program · /);
     await expect.element(anyEditor).toBeInTheDocument();
