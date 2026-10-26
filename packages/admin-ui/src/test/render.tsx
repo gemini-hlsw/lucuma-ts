@@ -16,7 +16,7 @@ export type { MockedResponseOf } from '@gemini-hlsw/lucuma-common-ui/testing';
  * Render helper for Admin tests: common-ui's Jotai + Apollo core wrapped in the
  * providers this app needs (PrimeReact, toasts, a memory router). Pass GraphQL
  * `mocks` to drive Apollo-backed components and `token` to render as a signed-in
- * user (build one with test/factories.ts's fakeJwt).
+ * user (build one with fakeJwt from @gemini-hlsw/lucuma-common-ui/testing).
  */
 export function renderWithContext(
   ui: ReactElement,

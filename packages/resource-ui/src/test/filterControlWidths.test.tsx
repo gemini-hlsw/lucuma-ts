@@ -12,6 +12,7 @@
 import '@/styles/global.css';
 import '@/styles/main.css';
 
+import { openDropdown, selectDropdownOption } from '@gemini-hlsw/lucuma-common-ui/testing';
 import type { ReactElement } from 'react';
 import { MemoryRouter } from 'react-router';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
@@ -29,7 +30,6 @@ import { instrumentAvailabilityBlock } from '@/test/fixtures/blocks';
 import { componentBrowser, instrumentComponent } from '@/test/fixtures/components';
 import { publishedSemester, publishedSemesters, recentSpan, semesterSchedule } from '@/test/fixtures/semester';
 import { nightsFromTonight } from '@/test/fixtures/tonight';
-import { openDropdown, selectDropdownOption } from '@/test/helpers';
 import { renderApp } from '@/test/renderApp';
 import { ROOT_FONT_SIZE } from '@/test/styleProbe';
 
@@ -47,12 +47,12 @@ afterEach(() => {
 
 /** Opens `label`, reads every rendered option, selects whichever is longest, and leaves it chosen. */
 async function selectLongestOption(sut: LocatorSelectors, label: string): Promise<void> {
-  await openDropdown(sut, label);
+  await openDropdown(sut, { label });
   const longest = [...document.querySelectorAll('[role="option"]')]
     .map((option) => option.textContent ?? '')
     .reduce((a, b) => (b.length > a.length ? b : a));
-  await openDropdown(sut, label); // the panel is open; a second click is how the helper closes it
-  await selectDropdownOption(sut, label, longest);
+  await openDropdown(sut, { label }); // Closes the panel. selectDropdownOption opens it again.
+  await selectDropdownOption(sut, { label }, longest);
 }
 
 /** The element PrimeReact actually clips text against - never the `.p-dropdown` wrapper around it. */

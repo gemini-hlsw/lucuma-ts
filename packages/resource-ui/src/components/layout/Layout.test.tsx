@@ -5,10 +5,10 @@
 import '@/styles/global.css';
 import '@/styles/main.css';
 
+import { fakeJwt, namedUser } from '@gemini-hlsw/lucuma-common-ui/testing';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
 
-import { fakeJwt, namedUser } from '@/test/factories';
 import { chooseClock, chooseSite, openAppMenu } from '@/test/helpers';
 import { renderApp, type RenderedApp } from '@/test/renderApp';
 import { contrastRatio, pixelOver, resolvedSize, ROOT_FONT_SIZE } from '@/test/styleProbe';

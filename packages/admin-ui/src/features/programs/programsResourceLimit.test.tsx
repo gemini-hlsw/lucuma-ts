@@ -1,3 +1,4 @@
+import { fakeJwt, standardUser } from '@gemini-hlsw/lucuma-common-ui/testing';
 import { describe, expect, it } from 'vitest';
 import { userEvent } from 'vitest/browser';
 
@@ -11,7 +12,7 @@ import {
 } from '@/gql/odb/programs';
 import type { Program } from '@/gql/types';
 import { currentSemester } from '@/lib/semester';
-import { fakeJwt, standardUser } from '@/test/factories';
+import { emptyRoster } from '@/test/factories';
 import { type MockedResponseOf, renderWithContext } from '@/test/render';
 
 import ProgramsPage from './ProgramsPage';
@@ -129,7 +130,7 @@ function limitRecorder(limit: number): {
 async function openEditor(resourceCount: number, resourceLimit: number, extra: readonly unknown[] = []) {
   const screen = await renderWithContext(<ProgramsPage />, {
     token: STAFF_TOKEN,
-    mocks: [programsMock(resourceCount, resourceLimit), ...(extra as never[])],
+    mocks: [emptyRoster(), programsMock(resourceCount, resourceLimit), ...(extra as never[])],
   });
   await expect.element(screen.getByText('Resources Used')).toBeInTheDocument();
   return screen;

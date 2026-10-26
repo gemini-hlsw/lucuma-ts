@@ -1,3 +1,4 @@
+import { selectDropdownOption } from '@gemini-hlsw/lucuma-common-ui/testing';
 import { GET_CONFIGURATION, UPDATE_CONFIGURATION } from '@gql/configs/Configuration';
 import {
   GET_DISTINCT_INSTRUMENTS,
@@ -12,7 +13,6 @@ import { page, userEvent } from 'vitest/browser';
 
 import { importInstrumentAtom } from '@/components/atoms/instrument';
 import { createConfiguration, createInstrumentConfig } from '@/test/create';
-import { selectDropdownOption } from '@/test/helpers';
 import { renderWithContext } from '@/test/render';
 import type { Configuration, InstrumentConfig } from '@/types';
 

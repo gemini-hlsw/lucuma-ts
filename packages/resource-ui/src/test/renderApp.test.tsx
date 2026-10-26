@@ -1,10 +1,10 @@
 import { displayName } from '@gemini-hlsw/lucuma-common-ui';
+import { fakeJwt, standardUser } from '@gemini-hlsw/lucuma-common-ui/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { signOut } from '@/auth/session';
 import { odbTokenAtom, useSessionStatus, useUser } from '@/components/atoms/auth';
 import { store } from '@/components/atoms/store';
-import { fakeJwt, standardUser } from '@/test/factories';
 import { Probe } from '@/test/probe';
 import { ssoLogout, stubSso } from '@/test/sso';
 

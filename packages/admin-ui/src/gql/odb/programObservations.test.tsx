@@ -1,8 +1,9 @@
+import { fakeJwt, standardUser } from '@gemini-hlsw/lucuma-common-ui/testing';
 import { useState } from 'react';
 import { describe, expect, it } from 'vitest';
 import { userEvent } from 'vitest/browser';
 
-import { executionDigest, fakeJwt, standardUser } from '@/test/factories';
+import { executionDigest } from '@/test/factories';
 import { type MockedResponseOf, renderWithContext } from '@/test/render';
 
 import { PROGRAM_OBSERVATIONS_QUERY, useProgramObservations } from './changeRequests';

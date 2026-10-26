@@ -4,6 +4,7 @@ import type { MockLink } from '@apollo/client/testing';
 import { Observable } from '@apollo/client/utilities';
 import { toastAtom } from '@gemini-hlsw/lucuma-common-ui';
 import type { MockedResponseOf } from '@gemini-hlsw/lucuma-common-ui/testing';
+import { fakeJwt, standardUser } from '@gemini-hlsw/lucuma-common-ui/testing';
 import type { PublishedSemestersQuery } from '@gql/gen/graphql';
 import { Provider as JotaiProvider } from 'jotai';
 import { PrimeReactProvider } from 'primereact/api';
@@ -20,8 +21,6 @@ import { ToastOutlet } from '@/components/ui/ToastOutlet';
 import { liveLink } from '@/gql/ApolloConfigs';
 import { usePublishedSemesters } from '@/gql/hooks';
 import { NIGHT_SCHEDULE_QUERY, PUBLISHED_SEMESTERS_QUERY } from '@/gql/resource';
-import { fakeJwt, standardUser } from '@/test/factories';
-import { act } from '@/test/helpers';
 import { captureHeader, createLinkClient } from '@/test/linkClient';
 import { ssoCalls, ssoRefreshes, stubSso } from '@/test/sso';
 
@@ -396,9 +395,9 @@ describe(AuthSession, () => {
     fakeTimeouts();
     const screen = await renderShell();
 
-    await act(() => vi.advanceTimersByTimeAsync(9_999));
+    await vi.advanceTimersByTimeAsync(9_999);
 
-    expect(screen.getByTestId('account-control').element()).toHaveTextContent('Checking sign-in');
+    await expect.element(screen.getByTestId('account-control')).toHaveTextContent('Checking sign-in');
     expect(screen.getByText(NIGHT_LOADING).element()).toBeVisible();
     expect(screen.operations).toEqual([]);
   });
@@ -426,13 +425,13 @@ describe(AuthSession, () => {
       const screen = await renderShell();
       expect(screen.getByTestId('account-control').element()).toHaveTextContent('Checking sign-in');
 
-      await act(() => vi.advanceTimersByTimeAsync(9_000));
-      await act(() => {
-        const settled = pendingRefresh();
-        ssoRefreshes()[0]?.answer({ body: fakeJwt(standardUser('staff')) });
-        return settled;
-      });
-      await act(() => vi.advanceTimersByTimeAsync(60_000));
+      await vi.advanceTimersByTimeAsync(9_000);
+
+      const p = pendingRefresh();
+      ssoRefreshes()[0]?.answer({ body: fakeJwt(standardUser('staff')) });
+      await p;
+
+      await vi.advanceTimersByTimeAsync(60_000);
 
       expect(screen.getByTestId('account-control').element()).toHaveTextContent('Ada Lovelace');
     } finally {

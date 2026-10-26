@@ -1,5 +1,6 @@
 import { toastAtom, VERSION_SUFFIX } from '@gemini-hlsw/lucuma-common-ui';
 import type { MockedResponseOf } from '@gemini-hlsw/lucuma-common-ui/testing';
+import { fakeJwt, standardUser } from '@gemini-hlsw/lucuma-common-ui/testing';
 import { NIGHT_SCHEDULE_QUERY } from '@gql/resource';
 import type { ToastMessage } from 'primereact/toast';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -17,9 +18,8 @@ import { store } from '@/components/atoms/store';
 import { ToastOutlet } from '@/components/ui/ToastOutlet';
 import { observingNightInterval } from '@/domain/siteTime';
 import { toApiInterval } from '@/gql/hooks';
-import { fakeJwt, standardUser } from '@/test/factories';
 import { publishedSemester, publishedSemesters } from '@/test/fixtures/semester';
-import { act, chooseClock, chooseSite, openAppMenu } from '@/test/helpers';
+import { chooseClock, chooseSite, openAppMenu } from '@/test/helpers';
 import { renderApp, type RenderedApp } from '@/test/renderApp';
 import { ssoCall, ssoRefreshes, stubSso } from '@/test/sso';
 
@@ -616,11 +616,9 @@ describe(Navbar, () => {
   ])('shows no session-ended notice to a visitor signed out %s', async (_when, options) => {
     const screen = await renderApp({ element: NAVBAR_WITH_TOASTS, route: '/', ...options, mocks: [] });
 
-    await act(() => {
-      screen.store.set(sessionCheckedAtom, true);
-    });
+    screen.store.set(sessionCheckedAtom, true);
 
-    expect(screen.getByTestId('account-control').element()).toHaveTextContent('Not signed in');
+    await expect.element(screen.getByTestId('account-control')).toHaveTextContent('Not signed in');
     expect(noticesShowing()).toEqual([]);
   });
 
@@ -639,11 +637,11 @@ describe(Navbar, () => {
     stubSso();
     const screen = await renderSignedIn();
 
-    await act(() => end(screen));
-    expect(noticesShowing()).toContainEqual(expect.stringContaining(summary));
-    await act(() => vi.advanceTimersByTimeAsync(TEN_MINUTES));
+    end(screen);
+    await expect.poll(noticesShowing).toContainEqual(expect.stringContaining(summary));
+    await vi.advanceTimersByTimeAsync(TEN_MINUTES);
 
-    expect(noticesShowing()).toContainEqual(expect.stringContaining(summary));
+    await expect.poll(noticesShowing).toContainEqual(expect.stringContaining(summary));
   });
 
   it(`keeps "${SIGNED_OUT_ELSEWHERE}" on screen ten minutes on`, async () => {
@@ -664,9 +662,9 @@ describe(Navbar, () => {
 
     try {
       otherTab.postMessage(SIGNED_OUT_MESSAGE);
-      await act(() => delivered);
-      expect(noticesShowing()).toContainEqual(expect.stringContaining(SIGNED_OUT_ELSEWHERE));
-      await act(() => vi.advanceTimersByTimeAsync(TEN_MINUTES));
+      await delivered;
+      await expect.poll(noticesShowing).toContainEqual(expect.stringContaining(SIGNED_OUT_ELSEWHERE));
+      await vi.advanceTimersByTimeAsync(TEN_MINUTES);
 
       expect(noticesShowing()).toContainEqual(expect.stringContaining(SIGNED_OUT_ELSEWHERE));
     } finally {
@@ -680,8 +678,8 @@ describe(Navbar, () => {
     [
       'when SSO fails only after the reader signed in again',
       '',
-      async (screen: RenderedApp) => {
-        await act(() => setToken(screen.store, fakeJwt(standardUser('staff'))));
+      (screen: RenderedApp) => {
+        setToken(screen.store, fakeJwt(standardUser('staff')));
         ssoCall(0).fail();
       },
     ],
@@ -690,11 +688,11 @@ describe(Navbar, () => {
     stubSso();
     const screen = await renderSignedIn();
 
-    await act(() => logOutAtOnce(screen));
-    await settle(screen);
-    await act(() => vi.advanceTimersByTimeAsync(0));
+    await logOutAtOnce(screen);
+    settle(screen);
+    await vi.advanceTimersByTimeAsync(0);
 
-    expect(screen.getByRole('status').element().textContent).toBe(announcement);
+    await expect.element(screen.getByRole('status')).toHaveTextContent(announcement);
     expect(noticesShowing()).toEqual([]);
   });
 

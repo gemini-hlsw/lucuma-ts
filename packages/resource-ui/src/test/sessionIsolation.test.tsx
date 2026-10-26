@@ -1,9 +1,9 @@
+import { fakeJwt, standardUser } from '@gemini-hlsw/lucuma-common-ui/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { pendingRefresh, startSession } from '@/auth/session';
 import { odbTokenAtom, sessionCheckedAtom, sessionStatusAtom, useSessionStatus } from '@/components/atoms/auth';
 import { store } from '@/components/atoms/store';
-import { fakeJwt, standardUser } from '@/test/factories';
 import { Probe } from '@/test/probe';
 import { renderApp } from '@/test/renderApp';
 import { ssoCall, ssoRefreshes, stubSso } from '@/test/sso';

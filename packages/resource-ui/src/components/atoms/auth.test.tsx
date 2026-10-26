@@ -1,6 +1,5 @@
+import { fakeJwt, standardUser } from '@gemini-hlsw/lucuma-common-ui/testing';
 import { describe, expect, it, vi } from 'vitest';
-
-import { fakeJwt, standardUser } from '@/test/factories';
 
 import {
   isLoggedInAtom,

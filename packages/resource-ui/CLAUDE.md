@@ -100,7 +100,7 @@ view is empty under the sign-in toast.
   `unreachable`, so a hung answer releases the requests signed out and the keeper's backoff and
   token-retention rules take over.
 - **Tests sign in through `renderApp`**: `renderApp({ token: fakeJwt(standardUser('staff')) })`
-  (`src/test/factories.ts`). Every test starts signed out because `src/test/setup.ts` resets the
+  (`@gemini-hlsw/lucuma-common-ui/testing`). Every test starts signed out because `src/test/setup.ts` resets the
   session before it (it clears localStorage, then writes `odbTokenAtom` null - overwriting the
   token in sessionStorage - and `sessionCheckedAtom` false on the shared store); each render then
   hydrates the shared store (`components/atoms/store.ts`), the one `authLink` and `signOut` read,
@@ -280,7 +280,7 @@ Browser-mode Vitest (Playwright chromium). Pure functions get plain unit tests; 
 mount through `src/test/renderApp.tsx` and drive real interactions with accessible queries
 (`getByRole`, `getByLabelText`). Pass `renderApp` its `mocks`, built per operation by `src/test/fixtures/`
 with only the **Blocks** the assertion depends on. A query no mock answers fails the test
-(`src/test/unansweredQueries.ts`), so a fixture must match the variables the page sends.
+(`failOnUnansweredQueries`, registered by common-ui's shared `test/setup.ts`), so a fixture must match the variables the page sends.
 `src/gql/resource.test.ts` validates every document against the schema. Link-chain tests (session
 hold, auth header, toasts) run the real links ahead of canned answers through `src/test/linkClient.ts`.
 
@@ -291,8 +291,8 @@ hold, auth header, toasts) run the real links ahead of canned answers through `s
 - **Anchor on fixture dates, never the wall clock.** Where a test must involve "now", derive it with the same
   function the page uses.
 - **PrimeReact overlays render into `document.body`**, outside the render container, so a Dropdown panel is
-  unreachable from `renderApp` locators. Drive dropdowns through `src/test/helpers.ts` (`openDropdown` /
-  `selectDropdownOption`), which reaches the panel via `page`, scoped through `getByRole('listbox')` so the
+  unreachable from `renderApp` locators. Drive dropdowns through `openDropdown` /
+  `selectDropdownOption` from `@gemini-hlsw/lucuma-common-ui/testing` (find one by `{ label }`), which reaches the panel via `page`, scoped through `getByRole('listbox')` so the
   hidden native `<select>` mirror does not also match.
 - **The tests load no app stylesheet**: a test that needs styling to pass is testing the stylesheet.
   A test whose subject is behaviour the stylesheet decides - a breakpoint, a contrast swap, a pixel

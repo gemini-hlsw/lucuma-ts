@@ -1,7 +1,7 @@
+import { fakeJwt, standardUser } from '@gemini-hlsw/lucuma-common-ui/testing';
 import { useEffect, useState } from 'react';
 import { describe, expect, it } from 'vitest';
 
-import { fakeJwt, standardUser } from '@/test/factories';
 import { type MockedResponseOf, renderWithContext } from '@/test/render';
 
 import { SET_PROGRAM_RESOURCE_LIMIT_MUTATION, useSetProgramResourceLimit } from './programs';

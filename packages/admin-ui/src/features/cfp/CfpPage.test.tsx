@@ -1,9 +1,9 @@
+import { fakeJwt, standardUser } from '@gemini-hlsw/lucuma-common-ui/testing';
 import { describe, expect, it } from 'vitest';
 import { userEvent } from 'vitest/browser';
 
 import type { AdminCfpsResult } from '@/gql/odb/cfp';
 import { CFPS_QUERY } from '@/gql/odb/cfp';
-import { fakeJwt, standardUser } from '@/test/factories';
 import { type MockedResponseOf, renderWithContext } from '@/test/render';
 
 import CfpPage from './CfpPage';

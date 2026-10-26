@@ -1,10 +1,9 @@
+import { fakeJwt, standardUser } from '@gemini-hlsw/lucuma-common-ui/testing';
 import { useEffect, useState } from 'react';
 import { describe, expect, it } from 'vitest';
 
-import { fakeJwt, standardUser } from '@/test/factories';
 import { type MockedResponseOf, renderWithContext } from '@/test/render';
 
-import type { DocumentType } from './gen';
 import { ADD_PROGRAM_USER_MUTATION, LINK_USER_MUTATION, useAssignContactScientists } from './programs';
 
 const STAFF_TOKEN = fakeJwt(standardUser('staff'));
@@ -28,9 +27,8 @@ const addOk = (programUserId: string): MockedResponseOf<typeof ADD_PROGRAM_USER_
 const addWithoutId = (): MockedResponseOf<typeof ADD_PROGRAM_USER_MUTATION> => ({
   request: { query: ADD_PROGRAM_USER_MUTATION, variables: { programId: 'p-1' } },
   // No data and no error: `res.data?.…` yields undefined, which is precisely
-  // what the old `if (programUserId)` guard swallowed. The schema types the
-  // payload as non-null, so the absent case has to be cast in.
-  result: { data: undefined as unknown as DocumentType<typeof ADD_PROGRAM_USER_MUTATION> },
+  // what the old `if (programUserId)` guard swallowed
+  result: { data: null },
 });
 
 const linkOk = (programUserId: string, userId: string): MockedResponseOf<typeof LINK_USER_MUTATION> => ({

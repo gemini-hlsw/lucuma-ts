@@ -1,10 +1,10 @@
+import { openDropdown, selectDropdownOption } from '@gemini-hlsw/lucuma-common-ui/testing';
 import type { InstrumentAvailabilityBlockItemFragment } from '@gql/gen/graphql';
 import { describe, expect, it } from 'vitest';
 
 import { instrumentAvailabilityBlock } from '@/test/fixtures/blocks';
 import { type PublishedSemesterRow, publishedSemesters, recentSpan, semesterSchedule } from '@/test/fixtures/semester';
 import { nightsFromTonight, semesterFromTonight } from '@/test/fixtures/tonight';
-import { openDropdown, selectDropdownOption } from '@/test/helpers';
 import { renderApp } from '@/test/renderApp';
 
 import InstrumentsPage from './InstrumentsPage';
@@ -194,7 +194,7 @@ describe(InstrumentsPage, () => {
     const screen = await openInstruments(GN_NIGHT, [GN_CURRENT], [GNIRS, ALOPEKE]);
     await expect.element(screen.getByText('GNIRS')).toBeVisible();
 
-    await selectDropdownOption(screen, 'Location', 'Not on a port (1)');
+    await selectDropdownOption(screen, { label: 'Location' }, 'Not on a port (1)');
 
     await expect.element(screen.getByText("'Alopeke").first()).toBeVisible();
     await expect.element(screen.getByText('GNIRS')).not.toBeInTheDocument();
@@ -216,7 +216,7 @@ describe(InstrumentsPage, () => {
     );
     await expect.element(screen.getByText('GNIRS')).toBeVisible();
 
-    await openDropdown(screen, 'Location');
+    await openDropdown(screen, { label: 'Location' });
 
     const options = [...document.querySelectorAll('[role="option"]')].map((option) => option.textContent ?? '');
     expect(options).toEqual(['Port 1 (1)', 'Port 3 (2)', 'Summit lab (2)', 'Not on a port (1)', 'Not recorded (1)']);
@@ -242,7 +242,7 @@ describe(InstrumentsPage, () => {
     );
     await expect.element(screen.getByText('GHOST')).toBeVisible();
 
-    await selectDropdownOption(screen, 'Location', 'Base facility (1)');
+    await selectDropdownOption(screen, { label: 'Location' }, 'Base facility (1)');
 
     await expect.element(screen.getByText('GPI')).toBeVisible();
     await expect.element(screen.getByText('GHOST')).not.toBeInTheDocument();

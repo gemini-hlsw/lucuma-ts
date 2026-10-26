@@ -1,6 +1,7 @@
 import { ApolloClient, ApolloLink, gql } from '@apollo/client';
 import { Observable } from '@apollo/client/utilities';
 import { toastAtom } from '@gemini-hlsw/lucuma-common-ui';
+import { fakeJwt, standardUser } from '@gemini-hlsw/lucuma-common-ui/testing';
 import { Provider as JotaiProvider } from 'jotai';
 import { PrimeReactProvider } from 'primereact/api';
 import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
@@ -10,8 +11,6 @@ import { render } from 'vitest-browser-react';
 import { odbTokenAtom, sessionCheckedAtom } from '@/components/atoms/auth';
 import { store } from '@/components/atoms/store';
 import { ToastOutlet } from '@/components/ui/ToastOutlet';
-import { fakeJwt, standardUser } from '@/test/factories';
-import { act } from '@/test/helpers';
 import { captureHeader, createLinkClient } from '@/test/linkClient';
 
 import { authLink, client, liveLink, sessionHoldLink } from './ApolloConfigs';
@@ -241,12 +240,12 @@ describe(liveLink, () => {
 
   it('keeps the warning up past the default toast life', async () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
-    await act(() => ask(unreachable));
-    expect(summaries()).toEqual(['The live server could not be reached.']);
+    await ask(unreachable);
+    await expect.poll(summaries).toEqual(['The live server could not be reached.']);
 
     // A timed removal takes two timers, each with its own commit: the life's end, then the exit transition.
-    await act(() => vi.advanceTimersByTimeAsync(10_000));
-    await act(() => vi.advanceTimersByTimeAsync(10_000));
+    await vi.advanceTimersByTimeAsync(10_000);
+    await vi.advanceTimersByTimeAsync(10_000);
 
     expect(summaries()).toEqual(['The live server could not be reached.']);
   });
@@ -256,15 +255,15 @@ describe(liveLink, () => {
     await expect.poll(summaries).toEqual(['The live server could not be reached.']);
     const warning = document.querySelector('.p-toast-message');
 
-    await act(() => ask(unreachable));
-    expect(summaries()).toEqual(['The live server could not be reached.']);
+    await ask(unreachable);
+    await expect.poll(summaries).toEqual(['The live server could not be reached.']);
     expect(warning?.isConnected).toBe(true);
 
     await page.getByRole('button', { name: 'Close' }).click();
     await expect.poll(summaries).toEqual([]);
 
-    await act(() => ask(unreachable));
-    expect(summaries()).toEqual([]);
+    await ask(unreachable);
+    await expect.poll(summaries).toEqual([]);
 
     await ask(served);
     await ask(unreachable);

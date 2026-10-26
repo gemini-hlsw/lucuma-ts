@@ -1,3 +1,5 @@
+import type { MockLink } from '@apollo/client/testing';
+import { fakeJwt, standardUser } from '@gemini-hlsw/lucuma-common-ui/testing';
 import { describe, expect, it } from 'vitest';
 import { userEvent } from 'vitest/browser';
 
@@ -11,7 +13,7 @@ import {
   UPDATE_PROPOSAL_TYPE_MUTATION,
 } from '@/gql/odb/programs';
 import { currentSemester } from '@/lib/semester';
-import { fakeJwt, standardUser } from '@/test/factories';
+import { emptyRoster } from '@/test/factories';
 import { type MockedResponseOf, renderWithContext } from '@/test/render';
 
 import ProgramsPage from './ProgramsPage';
@@ -87,6 +89,9 @@ const matchesMock = (...matches: RawProgram[]): MockedResponseOf<typeof PROGRAMS
 const programsMock = (): MockedResponseOf<typeof PROGRAMS_QUERY> => matchesMock(directorsTimeProgram());
 const queueMock = (): MockedResponseOf<typeof PROGRAMS_QUERY> => matchesMock(queueProgram());
 
+const renderPage = (...mocks: MockLink.MockedResponse[]) =>
+  renderWithContext(<ProgramsPage />, { token: STAFF_TOKEN, mocks: [emptyRoster(), ...mocks] });
+
 /** Records whether the proposal-type mutation went out at all. Sending it on a
  *  Director's Time program is the bug: the input is a oneOf, so the block
  *  rewrites the proposal as Queue and the ODB rejects it against the DD call. */
@@ -126,7 +131,7 @@ describe(ProgramsPage, () => {
     // The editor can only build the Queue and Classical arms of the oneOf, so
     // editing these on any other subtype would send the wrong arm and be
     // rejected. Read-only is the honest state until there is a type-aware input.
-    const screen = await renderWithContext(<ProgramsPage />, { token: STAFF_TOKEN, mocks: [programsMock()] });
+    const screen = await renderPage(programsMock());
     await expect.element(screen.getByRole('spinbutton', { name: /Minimum Time/ })).toBeDisabled();
     await expect.element(screen.getByRole('checkbox', { name: /Consider for Band 3/ })).toBeDisabled();
     // The ToO ceiling belongs to the program, not the proposal type, so it stays
@@ -142,27 +147,24 @@ describe(ProgramsPage, () => {
     // mutation must not go out at all.
     const rec = proposalTypeRecorder();
     const draft = { ...mapped(), proprietaryMonths: 13 };
-    const screen = await renderWithContext(<ProgramsPage />, {
-      token: STAFF_TOKEN,
-      mocks: [
-        programsMock(),
-        {
-          request: {
-            query: UPDATE_PROGRAM_MUTATION,
-            variables: { programId: 'p-1532', set: programPropertiesInput(draft, mapped()) },
-          },
-          result: {
-            data: {
-              updatePrograms: {
-                __typename: 'UpdateProgramsResult',
-                programs: [{ __typename: 'Program', id: 'p-1532' }],
-              },
+    const screen = await renderPage(
+      programsMock(),
+      {
+        request: {
+          query: UPDATE_PROGRAM_MUTATION,
+          variables: { programId: 'p-1532', set: programPropertiesInput(draft, mapped()) },
+        },
+        result: {
+          data: {
+            updatePrograms: {
+              __typename: 'UpdateProgramsResult',
+              programs: [{ __typename: 'Program', id: 'p-1532' }],
             },
           },
         },
-        rec.mock,
-      ],
-    });
+      },
+      rec.mock,
+    );
 
     const months = screen.getByRole('spinbutton', { name: /Proprietary Period/ });
     await expect.element(months).toHaveValue('12');
@@ -179,43 +181,40 @@ describe(ProgramsPage, () => {
     let sent = false;
     const original = mapped(queueProgram());
     const draft = { ...original, minPercentTime: 50 };
-    const screen = await renderWithContext(<ProgramsPage />, {
-      token: STAFF_TOKEN,
-      mocks: [
-        queueMock(),
-        {
-          request: {
-            query: UPDATE_PROGRAM_MUTATION,
-            variables: { programId: 'p-1533', set: programPropertiesInput(draft, original) },
-          },
-          result: {
-            data: {
-              updatePrograms: {
-                __typename: 'UpdateProgramsResult',
-                programs: [{ __typename: 'Program', id: 'p-1533' }],
-              },
+    const screen = await renderPage(
+      queueMock(),
+      {
+        request: {
+          query: UPDATE_PROGRAM_MUTATION,
+          variables: { programId: 'p-1533', set: programPropertiesInput(draft, original) },
+        },
+        result: {
+          data: {
+            updatePrograms: {
+              __typename: 'UpdateProgramsResult',
+              programs: [{ __typename: 'Program', id: 'p-1533' }],
             },
           },
         },
-        {
-          request: {
-            query: UPDATE_PROPOSAL_TYPE_MUTATION,
-            variables: { programId: 'p-1533', gemini: proposalTypeInput(draft) },
-          },
-          result: () => {
-            sent = true;
-            return {
-              data: {
-                updateProposal: {
-                  __typename: 'UpdateProposalResult',
-                  proposal: { __typename: 'Proposal', category: null },
-                },
-              },
-            };
-          },
+      },
+      {
+        request: {
+          query: UPDATE_PROPOSAL_TYPE_MUTATION,
+          variables: { programId: 'p-1533', gemini: proposalTypeInput(draft) },
         },
-      ],
-    });
+        result: () => {
+          sent = true;
+          return {
+            data: {
+              updateProposal: {
+                __typename: 'UpdateProposalResult',
+                proposal: { __typename: 'Proposal', category: null },
+              },
+            },
+          };
+        },
+      },
+    );
 
     const minimum = screen.getByRole('spinbutton', { name: /Minimum Time/ });
     await expect.element(minimum).toHaveValue('80');
@@ -235,7 +234,7 @@ describe(ProgramsPage, () => {
     ['gated', programsMock, true],
     ['editable', queueMock, false],
   ])('keeps the wrapped controls flush with the rest of the form (%s)', async (_case, mock, gated) => {
-    const screen = await renderWithContext(<ProgramsPage />, { token: STAFF_TOKEN, mocks: [mock()] });
+    const screen = await renderPage(mock());
     // Also pins the fixture: a Queue program that rendered gated would measure
     // the wrong case and quietly pass.
     const classField = screen.getByRole('textbox', { name: 'Class', exact: true });
@@ -268,7 +267,7 @@ describe(ProgramsPage, () => {
   });
 
   it('leaves nothing selected when the selected program is deselected — sc-10137', async () => {
-    const screen = await renderWithContext(<ProgramsPage />, { token: STAFF_TOKEN, mocks: [programsMock()] });
+    const screen = await renderPage(programsMock());
 
     // The first row auto-selects on load, so the editor is open on it.
     const editorField = screen.getByRole('textbox', { name: 'Class', exact: true });
@@ -286,12 +285,9 @@ describe(ProgramsPage, () => {
       id,
       reference: { __typename: 'ScienceProgramReference', label },
     });
-    const screen = await renderWithContext(<ProgramsPage />, {
-      token: STAFF_TOKEN,
-      mocks: [
-        matchesMock(directorsTimeProgram(), program('p-1533', SECOND_REFERENCE), program('p-1534', THIRD_REFERENCE)),
-      ],
-    });
+    const screen = await renderPage(
+      matchesMock(directorsTimeProgram(), program('p-1533', SECOND_REFERENCE), program('p-1534', THIRD_REFERENCE)),
+    );
 
     await userEvent.click(screen.getByRole('cell', { name: THIRD_REFERENCE }));
     await expect.element(screen.getByText(`Selected Program · ${THIRD_REFERENCE}`)).toBeInTheDocument();
@@ -309,10 +305,7 @@ describe(ProgramsPage, () => {
       ...queueProgram(),
       reference: { __typename: 'ScienceProgramReference', label: SECOND_REFERENCE },
     };
-    const screen = await renderWithContext(<ProgramsPage />, {
-      token: STAFF_TOKEN,
-      mocks: [matchesMock(directorsTimeProgram(), second)],
-    });
+    const screen = await renderPage(matchesMock(directorsTimeProgram(), second));
     const anyEditor = screen.getByText(/^Selected Program · /);
     await expect.element(anyEditor).toBeInTheDocument();
 
