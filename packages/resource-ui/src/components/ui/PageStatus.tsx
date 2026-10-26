@@ -1,5 +1,4 @@
-import { faLayerGroup } from '@fortawesome/pro-regular-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { LayerGroup } from '@gemini-hlsw/lucuma-common-ui';
 import type { JSX, ReactNode } from 'react';
 
 /** The message is the error's own, verbatim: a failure a reader cannot quote cannot be reported. */
@@ -15,8 +14,7 @@ export function Loading({ what }: { what: string }): JSX.Element {
   return (
     <div className="flex animate-loader-appear flex-col items-center gap-3 py-10 text-xs text-foreground-secondary motion-reduce:animate-none">
       {/* The Resource mark, not type: the words beneath it say what is loading, and its hop says the wait is live. */}
-      <FontAwesomeIcon
-        icon={faLayerGroup}
+      <LayerGroup
         size="3x"
         widthAuto
         aria-hidden="true"

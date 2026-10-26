@@ -1,11 +1,11 @@
 import './AuthGate.css';
 
+import { Lock, SignIn, SignOut } from '@gemini-hlsw/lucuma-common-ui';
 import { useSetAtom } from 'jotai';
 import { Button } from 'primereact/button';
 import type { JSX, ReactNode } from 'react';
 
 import { odbTokenAtom, useCanAccessAdmin, useIsLoggedIn, useUser } from '@/components/atoms/auth';
-import { Lock, SignIn, SignOut } from '@/components/Icons';
 
 import * as sso from './ssoClient';
 import { currentAccess } from './user';

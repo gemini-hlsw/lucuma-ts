@@ -1,10 +1,10 @@
 import './checkTables.css';
 
+import { Spinner, TriangleExclamation } from '@gemini-hlsw/lucuma-common-ui';
 import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
 import { type JSX, useMemo } from 'react';
 
-import { Spinner, TriangleExclamation } from '@/components/Icons';
 import { friendlyError } from '@/gql/errors';
 import {
   type ConflictRow,

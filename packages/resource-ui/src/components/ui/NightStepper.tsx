@@ -1,7 +1,6 @@
+import { ChevronLeft, ChevronRight } from '@gemini-hlsw/lucuma-common-ui';
 import { Button } from 'primereact/button';
 import { type JSX, useId } from 'react';
-
-import { ChevronLeft, ChevronRight } from './Icons';
 
 interface NightStepperProps {
   /** The ISO date the input shows - a night label, or an evening. */

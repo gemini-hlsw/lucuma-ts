@@ -1,6 +1,6 @@
 import './Layout.css';
 
-import { cn, VERSION_SUFFIX } from '@gemini-hlsw/lucuma-common-ui';
+import { Bars, cn, Copy, SignOut, VERSION_SUFFIX } from '@gemini-hlsw/lucuma-common-ui';
 import { useSetAtom } from 'jotai';
 import { Dialog } from 'primereact/dialog';
 import { Dropdown } from 'primereact/dropdown';
@@ -12,7 +12,6 @@ import { CURRENT_ENV } from '@/auth/environments';
 import * as sso from '@/auth/ssoClient';
 import { displayName, type StandardRole } from '@/auth/user';
 import { odbTokenAtom, useIsLoggedIn, useUser } from '@/components/atoms/auth';
-import { Bars, Copy, SignOut } from '@/components/Icons';
 import { useToast } from '@/components/toastContext';
 import { VersionCheck } from '@/components/VersionCheck';
 

@@ -44,7 +44,7 @@ export default defineConfig({
   plugins: [
     ...(process.env.RESOURCE_HTTPS === '1' ? [basicSsl({ domains: ['local.gemini.edu'] })] : []),
     react(),
-    babel({ presets: [reactCompilerPreset()], exclude: /[/\\](node_modules|common-ui)[/\\]/ }),
+    babel({ presets: [reactCompilerPreset()], exclude: /[/\\](node_modules)[/\\]/ }),
     tailwindcss(),
   ],
   server: {

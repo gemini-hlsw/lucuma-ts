@@ -1,5 +1,5 @@
 import { skipToken } from '@apollo/client/react';
-import { formatDateTime, when } from '@gemini-hlsw/lucuma-common-ui';
+import { CircleCheck, CircleXMark, formatDateTime, Trash, when } from '@gemini-hlsw/lucuma-common-ui';
 import {
   useConfiguredInstrument,
   useDeleteInstrument,
@@ -19,7 +19,6 @@ import { useMountEffect } from 'primereact/hooks';
 import { MultiSelect } from 'primereact/multiselect';
 import { useRef, useState } from 'react';
 
-import { CircleCheck, CircleXMark, Trash } from '@/components/Icons';
 import type { InstrumentConfig } from '@/types';
 
 import { CurrentMarker } from '../CurrentMarker';

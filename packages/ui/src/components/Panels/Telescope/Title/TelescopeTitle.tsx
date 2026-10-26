@@ -1,5 +1,5 @@
 import { useImportObservation } from '@Contexts/Variables/Modals/OdbImport/useImportObservation';
-import { isNullish } from '@gemini-hlsw/lucuma-common-ui';
+import { isNullish, List } from '@gemini-hlsw/lucuma-common-ui';
 import { dateToLocalObservingNight } from '@gemini-hlsw/lucuma-core';
 import { useConfiguration } from '@gql/configs/Configuration';
 import { useObservationById } from '@gql/odb/Observation';
@@ -11,7 +11,6 @@ import { Divider } from 'primereact/divider';
 import { useCanEdit } from '@/components/atoms/auth';
 import { useSetCatalogVisible } from '@/components/atoms/catalog';
 import { useSetOdbVisible } from '@/components/atoms/odb';
-import { List } from '@/components/Icons';
 import { useToast } from '@/Helpers/toast';
 
 interface ParamsInterface {

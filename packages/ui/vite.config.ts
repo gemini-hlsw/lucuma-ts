@@ -105,7 +105,7 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react(),
-    babel({ presets: [reactCompilerPreset()], exclude: /[/\\](node_modules|common-ui)[/\\]/ }),
+    babel({ presets: [reactCompilerPreset()], exclude: /[/\\](node_modules)[/\\]/ }),
     mode === 'development' && mkcert({ hosts: ['localhost', 'local.gemini.edu', 'navigate.gemini.edu'] }),
     mode === 'production' && buildVersionFile(),
     tailwindcss(),

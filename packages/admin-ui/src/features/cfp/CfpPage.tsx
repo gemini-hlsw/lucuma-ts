@@ -1,6 +1,6 @@
 import './CfpPage.css';
 
-import { NumberInput } from '@gemini-hlsw/lucuma-common-ui';
+import { CircleCheck, CircleXMark, Copy, NumberInput, Plus, Upload, XMark } from '@gemini-hlsw/lucuma-common-ui';
 import { Button } from 'primereact/button';
 import { Checkbox } from 'primereact/checkbox';
 import { Column, type ColumnSortEvent } from 'primereact/column';
@@ -11,7 +11,6 @@ import { SplitButton } from 'primereact/splitbutton';
 import { Fragment, type JSX, useMemo, useState } from 'react';
 
 import { DataSourceBadge } from '@/components/DataSourceBadge';
-import { CircleCheck, CircleXMark, Copy, Plus, Upload, XMark } from '@/components/Icons';
 import { Tile } from '@/components/Tile';
 import { useToast } from '@/components/toastContext';
 import { useRowSelection } from '@/components/useRowSelection';

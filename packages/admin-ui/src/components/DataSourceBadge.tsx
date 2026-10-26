@@ -1,8 +1,7 @@
 import './DataSourceBadge.css';
 
+import { Circle, CircleDot, Spinner, TriangleExclamation } from '@gemini-hlsw/lucuma-common-ui';
 import type { JSX } from 'react';
-
-import { Circle, CircleDot, Spinner, TriangleExclamation } from '@/components/Icons';
 
 /** Small status chip for a view's live query: loading, incomplete, live, empty,
  *  or the error itself — the view never fakes data to cover a failure. */

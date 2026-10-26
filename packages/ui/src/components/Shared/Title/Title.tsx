@@ -1,9 +1,7 @@
-import { cn } from '@gemini-hlsw/lucuma-common-ui';
+import { ChevronLeft, ChevronRight, cn } from '@gemini-hlsw/lucuma-common-ui';
 import { OverlayPanel } from 'primereact/overlaypanel';
 import type { MouseEventHandler } from 'react';
 import { useRef } from 'react';
-
-import { ChevronLeft, ChevronRight } from '@/components/Icons';
 
 type ParamsInterface = React.PropsWithChildren<{
   title: React.ReactNode;
