@@ -1,4 +1,5 @@
-import { useQuery } from '@apollo/client/react';
+import { skipToken, useQuery } from '@apollo/client/react';
+import { isNullish } from '@gemini-hlsw/lucuma-common-ui';
 
 import {
   type NightComponents,
@@ -84,14 +85,16 @@ export const toApiInterval = (interval: Interval): ApiInterval => ({
   end: new Date(interval.end).toISOString(),
 });
 
-const EMPTY_INTERVAL: ApiInterval = { start: '', end: '' };
-
 /** `skip` covers the first render, before the picker has resolved which semester is shown. */
 export const useSemesterSchedule = (site: Site, bounds: ApiInterval | null): ScheduleResult => {
-  const { data, loading, error } = useQuery(SEMESTER_SCHEDULE_QUERY, {
-    variables: { site, ...(bounds ?? EMPTY_INTERVAL) },
-    skip: bounds === null,
-  });
+  const { data, loading, error } = useQuery(
+    SEMESTER_SCHEDULE_QUERY,
+    isNullish(bounds)
+      ? skipToken
+      : {
+          variables: { site, ...bounds },
+        },
+  );
 
   const { instrumentAvailability, telescopeAvailability, tooSupport, telescopeMode } = toSchedule(data);
   return { instrumentAvailability, telescopeAvailability, tooSupport, telescopeMode, loading, error };
@@ -176,10 +179,14 @@ export interface ComponentBrowserResult {
 
 /** One round trip: catalog, records over the window, and the instrument blocks INSTALLED resolves against. */
 export const useComponentBrowser = (site: Site, interval: ApiInterval | null): ComponentBrowserResult => {
-  const { data, loading, error } = useQuery(COMPONENT_BROWSER_QUERY, {
-    variables: { site, ...(interval ?? EMPTY_INTERVAL) },
-    skip: interval === null,
-  });
+  const { data, loading, error } = useQuery(
+    COMPONENT_BROWSER_QUERY,
+    isNullish(interval)
+      ? skipToken
+      : {
+          variables: { site, ...interval },
+        },
+  );
 
   const components = data === undefined ? [] : toComponents(data);
   const componentAvailability = data === undefined ? [] : toComponentAvailability(data);
