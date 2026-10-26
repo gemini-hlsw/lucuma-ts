@@ -8,12 +8,14 @@ describe(environmentFor, () => {
     expect(dev.name).toBe('development');
     expect(dev.ssoUri).toBe('https://sso-dev.gpp.gemini.edu');
     expect(dev.odbUri).toBe('https://lucuma-postgres-odb-dev.herokuapp.com/odb');
+    expect(dev.ssoGraphqlUri).toBe('https://sso-dev.gpp.gemini.edu/graphql');
     expect(dev.exploreUri).toBe('https://explore-dev.gemini.edu');
 
     const staging = environmentFor('admin-test.gemini.edu');
     expect(staging.name).toBe('staging');
     expect(staging.ssoUri).toBe('https://sso-test.gpp.gemini.edu');
     expect(staging.odbUri).toBe('https://lucuma-postgres-odb-staging.herokuapp.com/odb');
+    expect(staging.ssoGraphqlUri).toBe('https://sso-test.gpp.gemini.edu/graphql');
     // explore-test.gemini.edu is STAGING in Explore's own environments.conf.json;
     // a host it doesn't list falls through to that app's DEVELOPMENT entry.
     expect(staging.exploreUri).toBe('https://explore-test.gemini.edu');

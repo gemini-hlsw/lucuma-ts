@@ -1,3 +1,4 @@
+import { VERSION_SUFFIX } from '@gemini-hlsw/lucuma-common-ui';
 import type { MockedResponseOf } from '@gemini-hlsw/lucuma-common-ui/testing';
 import { NIGHT_SCHEDULE_QUERY } from '@gql/resource';
 import type { ToastMessage } from 'primereact/toast';
@@ -334,7 +335,7 @@ describe(Navbar, () => {
 
     const dialog = page.getByTestId('about-resource');
     await expect.element(dialog).toBeVisible();
-    await expect.element(dialog.getByText(new RegExp(`.+-${CURRENT_ENV.versionSuffix}$`, 'u'))).toBeVisible();
+    await expect.element(dialog.getByText(new RegExp(`.+-${VERSION_SUFFIX[CURRENT_ENV.name]}$`, 'u'))).toBeVisible();
     await expect.element(dialog.getByText('/resource/graphql', { exact: false })).toBeVisible();
 
     await userEvent.keyboard('{Escape}');

@@ -51,10 +51,41 @@ describe(guestLogin, () => {
 });
 
 describe(signInUrl, () => {
-  it('builds the stage1 URL with the state parameter', () => {
-    const url = new URL(signInUrl(SSO, 'https://app.example.test/page'));
+  const APP = 'https://app.example.test';
+  const stateOf = (returnTo: string, origin = APP) =>
+    new URL(signInUrl(SSO, returnTo, origin)).searchParams.get('state');
+
+  it('sends SSO back to a same-origin page, as an absolute URL', () => {
+    const url = new URL(signInUrl(SSO, '/night?site=GN', APP));
+
+    expect(url.origin).toBe(SSO);
     expect(url.pathname).toBe('/auth/v1/stage1');
-    expect(url.searchParams.get('state')).toBe('https://app.example.test/page');
+    expect(url.searchParams.get('state')).toBe(`${APP}/night?site=GN`);
+  });
+
+  it('keeps an absolute return URL on the same origin', () => {
+    expect(stateOf(`${APP}/programs#p1`)).toBe(`${APP}/programs#p1`);
+  });
+
+  it.each(['https://phish.example/steal', '//phish.example/steal', 'http://app.example.test/page'])(
+    'falls back to the app root rather than returning to %s',
+    (returnTo) => {
+      expect(stateOf(returnTo)).toBe(`${APP}/`);
+    },
+  );
+
+  it('falls back to the app root when the return URL does not parse', () => {
+    expect(stateOf('http://[bad')).toBe(`${APP}/`);
+  });
+
+  it('guards against the current page origin by default', () => {
+    const url = new URL(signInUrl(SSO, '//phish.example/steal'));
+
+    expect(url.searchParams.get('state')).toBe(`${window.location.origin}/`);
+  });
+
+  it('compares origins, not the path the origin argument may carry', () => {
+    expect(stateOf('/login', `${APP}/`)).toBe(`${APP}/login`);
   });
 });
 
