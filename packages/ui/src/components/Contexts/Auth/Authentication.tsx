@@ -1,11 +1,10 @@
+import { useToastApi } from '@gemini-hlsw/lucuma-common-ui';
 import { subSeconds } from 'date-fns';
 import { useInterval, useMountEffect } from 'primereact/hooks';
-import type { ToastMessage } from 'primereact/toast';
 import { useEffect } from 'react';
 
 import { useRefreshToken, useSetRole } from '@/auth/hooks';
 import { useTokenExp, useUser } from '@/components/atoms/auth';
-import { useToast } from '@/Helpers/toast';
 
 const expirationAnticipationSeconds = 30;
 
@@ -15,7 +14,7 @@ const expirationAnticipationSeconds = 30;
 export function Authentication() {
   const exp = useTokenExp();
   const user = useUser();
-  const toast = useToast();
+  const toast = useToastApi();
 
   const refreshToken = useRefreshToken();
   const setRole = useSetRole();
@@ -41,28 +40,19 @@ export function Authentication() {
 
   // If the user has staff role available, switch to it
   useEffect(() => {
-    let toastMessage: ToastMessage | null = null;
-
     if (user?.type === 'standard' && user.role.type !== 'staff') {
       const staffRole = user.otherRoles.find((role) => role.type === 'staff');
       if (staffRole) {
         console.log('Switching to staff role');
         void setRole(staffRole);
       } else {
-        toastMessage = {
-          severity: 'warn',
-          summary: 'Warning',
-          detail: `You are not a staff user (${user.role.type}). Some functionality might be unavailable.`,
-        };
-        toast?.show(toastMessage);
+        return toast.warn(
+          'Warning',
+          `You are not a staff user (${user.role.type}). Some functionality might be unavailable.`,
+        );
       }
     }
-
-    return () => {
-      if (toastMessage) {
-        toast?.remove(toastMessage);
-      }
-    };
+    return;
   }, [user, setRole, toast]);
 
   return <></>;

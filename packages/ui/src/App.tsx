@@ -1,7 +1,7 @@
 import { ApolloProvider } from '@apollo/client/react';
 import { Authentication } from '@Contexts/Auth/Authentication';
 import { Modals } from '@Contexts/Variables/Modals/Modals';
-import { when } from '@gemini-hlsw/lucuma-common-ui';
+import { ToastOutlet, when } from '@gemini-hlsw/lucuma-common-ui';
 import { client } from '@gql/ApolloConfigs';
 import { useServerConfiguration } from '@gql/server/ServerConfiguration';
 import { Provider as AtomProvider } from 'jotai';
@@ -16,7 +16,6 @@ import Layout from './components/Layout/Layout';
 import Login from './components/Login/Login';
 import { SolarProgress } from './components/SolarProgress';
 import { VersionManager } from './components/VersionManager/VersionManager';
-import { ToastProvider } from './Helpers/ToastProvider';
 
 const router = createBrowserRouter([
   { path: '/', Component: Layout, children: [{ index: true, Component: Home }] },
@@ -35,16 +34,15 @@ export function App() {
   return (
     <AtomProvider store={store}>
       <ApolloProvider client={client}>
-        <ToastProvider>
-          <Suspense fallback={<SolarProgress />}>
-            <ServerConfigGate>
-              <Authentication />
-              <Modals />
-              <RouterProvider router={router} useTransitions />
-              <VersionManager />
-            </ServerConfigGate>
-          </Suspense>
-        </ToastProvider>
+        <ToastOutlet />
+        <Suspense fallback={<SolarProgress />}>
+          <ServerConfigGate>
+            <Authentication />
+            <Modals />
+            <RouterProvider router={router} useTransitions />
+            <VersionManager />
+          </ServerConfigGate>
+        </Suspense>
       </ApolloProvider>
     </AtomProvider>
   );

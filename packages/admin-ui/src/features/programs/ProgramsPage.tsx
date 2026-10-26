@@ -1,6 +1,13 @@
 import './ProgramsPage.css';
 
-import { isNotNullish, NumberInput, TriangleExclamation, Upload, XMark } from '@gemini-hlsw/lucuma-common-ui';
+import {
+  isNotNullish,
+  NumberInput,
+  TriangleExclamation,
+  Upload,
+  useToastApi,
+  XMark,
+} from '@gemini-hlsw/lucuma-common-ui';
 import { AutoComplete } from 'primereact/autocomplete';
 import { Button } from 'primereact/button';
 import { Checkbox } from 'primereact/checkbox';
@@ -15,7 +22,6 @@ import { DataSourceBadge } from '@/components/DataSourceBadge';
 import { SearchInput } from '@/components/SearchInput';
 import { Tile } from '@/components/Tile';
 import { TimeAwardsGrid } from '@/components/TimeAwardsGrid';
-import { useToast } from '@/components/toastContext';
 import { useRowSelection } from '@/components/useRowSelection';
 import { friendlyError } from '@/gql/errors';
 import {
@@ -76,7 +82,7 @@ const EMPTY_PROGRAMS: Program[] = [];
  * the ODB.
  */
 export default function ProgramsPage(): JSX.Element {
-  const toast = useToast();
+  const toast = useToastApi();
   const { data, loading, error, refetch } = usePrograms();
   const programs = useMemo(() => (data ? mapPrograms(data) : EMPTY_PROGRAMS), [data]);
 

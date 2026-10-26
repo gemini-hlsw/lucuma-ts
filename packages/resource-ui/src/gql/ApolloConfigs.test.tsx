@@ -1,5 +1,6 @@
 import { ApolloClient, ApolloLink, gql } from '@apollo/client';
 import { Observable } from '@apollo/client/utilities';
+import { toastAtom } from '@gemini-hlsw/lucuma-common-ui';
 import { Provider as JotaiProvider } from 'jotai';
 import { PrimeReactProvider } from 'primereact/api';
 import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
@@ -8,7 +9,6 @@ import { render } from 'vitest-browser-react';
 
 import { odbTokenAtom, sessionCheckedAtom } from '@/components/atoms/auth';
 import { store } from '@/components/atoms/store';
-import { toastAtom } from '@/components/atoms/toast';
 import { ToastOutlet } from '@/components/ui/ToastOutlet';
 import { fakeJwt, standardUser } from '@/test/factories';
 import { act } from '@/test/helpers';

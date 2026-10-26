@@ -1,6 +1,6 @@
 import './ConfigurationRequestReview.css';
 
-import { Check, cn, isNotNullish, isNullish, PaperPlane, XMark } from '@gemini-hlsw/lucuma-common-ui';
+import { Check, cn, isNotNullish, isNullish, PaperPlane, useToastApi, XMark } from '@gemini-hlsw/lucuma-common-ui';
 import { Button } from 'primereact/button';
 import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
@@ -11,7 +11,6 @@ import { type JSX, type ReactNode, useLayoutEffect, useMemo, useRef, useState } 
 import { ConflictsTable } from '@/components/ConflictsTable';
 import { DuplicatesTable } from '@/components/DuplicatesTable';
 import { Tile } from '@/components/Tile';
-import { useToast } from '@/components/toastContext';
 import { friendlyError } from '@/gql/errors';
 import { formatUtcMinute, joinTargetNames } from '@/gql/odb/shared';
 import type { ChangeRequest, ConfigurationRequestStatus, ObservationRow, TimingWindowRow } from '@/gql/types';
@@ -121,7 +120,7 @@ export function ConfigurationRequestReview({
    *  draft; the outcome is reported here, so callers need not. */
   readonly onResolve: (ids: readonly string[], status: Decision, response: string | null) => Promise<unknown>;
 }): JSX.Element {
-  const toast = useToast();
+  const toast = useToastApi();
 
   const [selectedIds, setSelectedIds] = useState<ReadonlySet<string>>(new Set());
   const [decision, setDecision] = useState<Decision | null>(null);

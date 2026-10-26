@@ -1,4 +1,4 @@
-import { formatDateTime, when } from '@gemini-hlsw/lucuma-common-ui';
+import { formatDateTime, useToast, when } from '@gemini-hlsw/lucuma-common-ui';
 import { useRevertCalParams } from '@gql/configs/CalParams';
 import { CommentConfirmButton } from '@Shared/CommentConfirmButton';
 import { Button } from 'primereact/button';
@@ -7,7 +7,6 @@ import { lazy, startTransition, Suspense, useState } from 'react';
 
 import { useCanEdit } from '@/components/atoms/auth';
 import { useCalParamsHistoryVisible } from '@/components/atoms/calparams';
-import { useToast } from '@/Helpers/toast';
 import type { CalParams } from '@/types';
 
 import { ModalSolarProgress } from '../ModalSolarProgress';

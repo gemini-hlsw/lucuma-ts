@@ -3,13 +3,12 @@ import { CombinedGraphQLErrors } from '@apollo/client/errors';
 import { SetContextLink } from '@apollo/client/link/context';
 import { ErrorLink } from '@apollo/client/link/error';
 import { Observable } from '@apollo/client/utilities';
-import { isNotNullish, withAbsoluteUri } from '@gemini-hlsw/lucuma-common-ui';
+import { isNotNullish, toastAtom, withAbsoluteUri } from '@gemini-hlsw/lucuma-common-ui';
 import type { ToastMessage } from 'primereact/toast';
 
 import { liveGraphqlEndpoint } from '@/app/environment';
 import { odbTokenAtom, sessionCheckedAtom, tokenExpAtom } from '@/components/atoms/auth';
 import { store } from '@/components/atoms/store';
-import { toastAtom } from '@/components/atoms/toast';
 
 import { buildCache } from './cache';
 

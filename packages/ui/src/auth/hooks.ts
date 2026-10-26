@@ -1,10 +1,10 @@
+import { useToastApi } from '@gemini-hlsw/lucuma-common-ui';
 import * as sso from '@gemini-hlsw/lucuma-common-ui/sso';
 import { useServerConfigValue } from '@gql/server/ServerConfiguration';
 import { useCallback, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 
 import { useSetOdbToken } from '@/components/atoms/auth';
-import { useToast } from '@/Helpers/toast';
 
 import type { StandardRole } from './user';
 
@@ -60,7 +60,7 @@ export function useRefreshToken() {
 
 export function useSetRole() {
   const refreshToken = useRefreshToken();
-  const toast = useToast();
+  const toast = useToastApi();
   const { ssoUri } = useServerConfigValue();
 
   const setRole = useCallback(
@@ -71,11 +71,10 @@ export function useSetRole() {
         // the token atom the rest of the app reads.
         await refreshToken();
       } catch (error) {
-        toast?.show({
-          severity: 'error',
-          summary: 'Error',
-          detail: `Error while switching to role ${role.type}.\n${error instanceof Error ? error.message : String(error)}`,
-        });
+        toast.error(
+          'Error',
+          `Error while switching to role ${role.type}.\n${error instanceof Error ? error.message : String(error)}`,
+        );
       }
     },
     [refreshToken, toast, ssoUri],
@@ -94,7 +93,7 @@ interface LocationInterface {
  * Hook to login as a guest.
  */
 export function useGuestLogin() {
-  const toast = useToast();
+  const toast = useToastApi();
   const setToken = useSetOdbToken();
   const { state: locationState } = useLocation() as { state: LocationInterface };
 
@@ -105,21 +104,13 @@ export function useGuestLogin() {
     const token = await sso.guestLogin(ssoUri);
 
     if (!token) {
-      toast?.show({
-        severity: 'error',
-        summary: 'Login Error',
-        detail: 'Error while logging in as guest',
-      });
+      toast.error('Login Error', 'Error while logging in as guest');
       return;
     }
     setToken(token);
 
     const from = locationState?.from?.pathname ?? '/';
-    toast?.show({
-      severity: 'success',
-      summary: 'Login Success',
-      detail: 'Logged in as guest',
-    });
+    toast.success('Login Success', 'Logged in as guest');
     await navigate(from, { replace: true });
   }, [locationState, navigate, setToken, ssoUri, toast]);
 

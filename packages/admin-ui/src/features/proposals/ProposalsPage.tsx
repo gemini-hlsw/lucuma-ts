@@ -1,4 +1,4 @@
-import { isNotNullish, type Labelled, NumberInput } from '@gemini-hlsw/lucuma-common-ui';
+import { isNotNullish, type Labelled, NumberInput, useToastApi } from '@gemini-hlsw/lucuma-common-ui';
 import { AutoComplete } from 'primereact/autocomplete';
 import { Dropdown } from 'primereact/dropdown';
 import { InputText } from 'primereact/inputtext';
@@ -7,7 +7,6 @@ import { type JSX, useMemo, useState } from 'react';
 import { DataSourceBadge } from '@/components/DataSourceBadge';
 import { SearchInput } from '@/components/SearchInput';
 import { TimeAwardsGrid } from '@/components/TimeAwardsGrid';
-import { useToast } from '@/components/toastContext';
 import { friendlyError } from '@/gql/errors';
 import type { ProgramPropertiesInput } from '@/gql/odb/gen/graphql';
 import { allocationsInput, useAssignContactScientists, useSetAllocations, useUpdateProgram } from '@/gql/odb/programs';
@@ -79,7 +78,7 @@ const BLANK_AWARD: AwardDraft = {
  * records NOT_ACCEPTED.
  */
 export default function ProposalsPage(): JSX.Element {
-  const toast = useToast();
+  const toast = useToastApi();
   const { data, loading, incomplete, error, refetch } = useProposals();
   const proposals = useMemo(() => (data ? mapProposals(data.programs.matches) : EMPTY), [data]);
   const [setProposalStatus, { loading: settingStatus }] = useSetProposalStatus();

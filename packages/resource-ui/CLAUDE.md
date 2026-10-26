@@ -175,11 +175,15 @@ these components are DESIGN.md's; this table is the ownership map.
 | `siteTime.eveningLabel` / `eveningRange` | The one evening formatter. Style is a parameter (`dayMonth`, `dayMonthYear`, `weekdayDayMonth`) because that choice is about what the page already says, never about what the date means.                                                                                                                                                                                |
 
 - **Toasts go through the one PrimeReact `Toast` that `ToastOutlet` mounts in `main.tsx`.**
-  `useToast()`, or `store.get(toastAtom)` outside React, returns its handle, null until it mounts.
-  Show a module-level `ToastMessage` constant with string `summary` and `detail` (the live-server
-  failure toasts carry a summary alone), and withdraw it
-  with `remove(thatConstant)`: PrimeReact removes by deep equality. What a toast says and looks
-  like is DESIGN.md's ("Toasts").
+  `useToastApi()` from `@gemini-hlsw/lucuma-common-ui` is the default in components and hooks:
+  `toast.error(summary, detail?)`, one method per severity, each returning a function that removes
+  that toast, so `useEffect(() => toast.error(...), [toast])` withdraws it on cleanup. Use
+  `useToast()` (the raw handle, null until the outlet mounts) only for options the API lacks
+  (`sticky`, `closable`), `clear` or `replace`. Code outside React uses
+  `store.get(toastAtom)`. For a toast that several places show or withdraw, keep a module-level
+  `ToastMessage` constant with string `summary` and `detail` (the live-server failure toasts carry a
+  summary alone) and withdraw it with `remove(thatConstant)`: PrimeReact removes by deep equality.
+  What a toast says and looks like is DESIGN.md's ("Toasts").
 
 ## Gotchas that cost real debugging
 
