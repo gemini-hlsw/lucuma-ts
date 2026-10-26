@@ -2,7 +2,7 @@ import { type ApolloClient, ApolloLink, gql } from '@apollo/client';
 import { ApolloProvider } from '@apollo/client/react';
 import type { MockLink } from '@apollo/client/testing';
 import { Observable } from '@apollo/client/utilities';
-import { toastAtom } from '@gemini-hlsw/lucuma-common-ui';
+import { SESSION_TIMINGS, type SessionTimings, toastAtom } from '@gemini-hlsw/lucuma-common-ui';
 import type { MockedResponseOf } from '@gemini-hlsw/lucuma-common-ui/testing';
 import { fakeJwt, standardUser } from '@gemini-hlsw/lucuma-common-ui/testing';
 import type { PublishedSemestersQuery } from '@gql/gen/graphql';
@@ -25,7 +25,7 @@ import { captureHeader, createLinkClient } from '@/test/linkClient';
 import { ssoCalls, ssoRefreshes, stubSso } from '@/test/sso';
 
 import { AuthSession } from './AuthSession';
-import { pendingRefresh, SESSION_TIMINGS, type SessionTimings } from './session';
+import { session } from './session';
 
 function SemesterCount({ testId = 'semesters' }: { testId?: string }): JSX.Element {
   const { semesters, loading } = usePublishedSemesters();
@@ -216,7 +216,7 @@ describe(AuthSession, () => {
 
     const token = fakeJwt(standardUser('staff'));
     surviving[0]?.answer({ body: token });
-    await pendingRefresh();
+    await session.pendingRefresh();
 
     expect(store.get(odbTokenAtom)).toBe(token);
     expect(store.get(isLoggedInAtom)).toBe(true);
@@ -243,7 +243,7 @@ describe(AuthSession, () => {
 
     const token = fakeJwt(standardUser('staff'));
     survivingSsoCall()?.answer({ body: token });
-    await pendingRefresh();
+    await session.pendingRefresh();
 
     await expect.element(screen.getByTestId('semesters')).not.toHaveTextContent('loading');
     expect(authorizations).toEqual([`Bearer ${token}`]);
@@ -260,7 +260,7 @@ describe(AuthSession, () => {
     expect(authorizations).toEqual([]);
 
     settle();
-    await pendingRefresh();
+    await session.pendingRefresh();
 
     await expect.element(screen.getByTestId('semesters')).not.toHaveTextContent('loading');
     expect(store.get(sessionStatusAtom)).toBe('signed-out');
@@ -315,10 +315,10 @@ describe(AuthSession, () => {
         <SemesterCount testId="stranded" />
       </ApolloProvider>,
     );
-    const session = await renderInSession(stranded.client, null);
+    const rendered = await renderInSession(stranded.client, null);
     await expect.element(probe.getByTestId('stranded')).not.toHaveTextContent('loading');
     expect(stranded.authorizations).toEqual([`Bearer ${token}`]);
-    await session.unmount();
+    await rendered.unmount();
 
     const { screen, authorizations } = await renderAuthSession(<SemesterCount />);
     await expect.element(screen.getByTestId('semesters')).not.toHaveTextContent('loading');
@@ -350,7 +350,7 @@ describe(AuthSession, () => {
     expect(screen.operations).toEqual([]);
 
     const token = fakeJwt(standardUser('staff'));
-    const settled = pendingRefresh();
+    const settled = session.pendingRefresh();
     ssoRefreshes()[0]?.answer({ body: token });
     await settled;
 
@@ -364,7 +364,7 @@ describe(AuthSession, () => {
     const screen = await renderShell({ after: deniesAnonymous });
     await expect.element(screen.getByText(NIGHT_LOADING)).toBeVisible();
 
-    const settled = pendingRefresh();
+    const settled = session.pendingRefresh();
     ssoRefreshes()[0]?.answer({ body: fakeJwt(standardUser('staff')) });
     await settled;
     await expect.element(screen.getByText(NIGHT_LOADING)).not.toBeInTheDocument();
@@ -422,7 +422,7 @@ describe(AuthSession, () => {
 
       await vi.advanceTimersByTimeAsync(9_000);
 
-      const p = pendingRefresh();
+      const p = session.pendingRefresh();
       ssoRefreshes()[0]?.answer({ body: fakeJwt(standardUser('staff')) });
       await p;
 

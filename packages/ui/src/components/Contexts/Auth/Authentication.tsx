@@ -1,59 +1,33 @@
-import { useToastApi } from '@gemini-hlsw/lucuma-common-ui';
-import { subSeconds } from 'date-fns';
-import { useInterval, useMountEffect } from 'primereact/hooks';
+import { planRoleSwitch, useSessionKeeper, useToastApi } from '@gemini-hlsw/lucuma-common-ui';
 import { useEffect } from 'react';
 
-import { useRefreshToken, useSetRole } from '@/auth/hooks';
-import { useTokenExp, useUser } from '@/components/atoms/auth';
-
-const expirationAnticipationSeconds = 30;
+import { NAVIGATE_ROLES, useSession } from '@/auth/session';
+import { useUser } from '@/components/atoms/auth';
 
 /**
- * Authentication component that handles token expiration and refresh.
+ * Keeps the SSO session alive through the shared keeper (auth/session.ts).
+ * Switches a user to the staff role. Warns a user who has no staff role.
  */
 export function Authentication() {
-  const exp = useTokenExp();
   const user = useUser();
   const toast = useToastApi();
 
-  const refreshToken = useRefreshToken();
-  const setRole = useSetRole();
-
-  // On mount, check if the token is expired and refresh it if necessary
-  useMountEffect(() => {
-    if (!exp) {
-      console.log('No token on mount, refreshing');
-      void refreshToken();
-    }
+  useSessionKeeper(useSession(), {
+    onRoleSwitch: (outcome) => {
+      if (outcome.kind !== 'failed') return;
+      toast.error('Error', `Error while switching to role ${outcome.role.type}.\n${outcome.error.message}`);
+    },
   });
 
-  // Afterwards, check every second if the token is about to expire
-  useInterval(async () => {
-    if (exp) {
-      const expDate = subSeconds(exp, expirationAnticipationSeconds);
-      if (expDate < new Date()) {
-        console.log('Refreshing token');
-        await refreshToken();
-      }
-    }
-  }, 1000);
-
-  // If the user has staff role available, switch to it
   useEffect(() => {
-    if (user?.type === 'standard' && user.role.type !== 'staff') {
-      const staffRole = user.otherRoles.find((role) => role.type === 'staff');
-      if (staffRole) {
-        console.log('Switching to staff role');
-        void setRole(staffRole);
-      } else {
-        return toast.warn(
-          'Warning',
-          `You are not a staff user (${user.role.type}). Some functionality might be unavailable.`,
-        );
-      }
-    }
-    return;
-  }, [user, setRole, toast]);
+    const plan = planRoleSwitch(user, NAVIGATE_ROLES);
+    if (plan.kind !== 'unavailable') return;
+
+    return toast.warn(
+      'Warning',
+      `You are not a staff user (${plan.active.type}). Some functionality might be unavailable.`,
+    );
+  }, [user, toast]);
 
   return <></>;
 }

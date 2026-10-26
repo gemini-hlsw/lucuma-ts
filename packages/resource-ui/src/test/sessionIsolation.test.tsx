@@ -1,7 +1,7 @@
 import { fakeJwt, standardUser } from '@gemini-hlsw/lucuma-common-ui/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { pendingRefresh, startSession } from '@/auth/session';
+import { session } from '@/auth/session';
 import { odbTokenAtom, sessionCheckedAtom, sessionStatusAtom, useSessionStatus } from '@/components/atoms/auth';
 import { store } from '@/components/atoms/store';
 import { Probe } from '@/test/probe';
@@ -25,12 +25,12 @@ describe('session state between tests', () => {
   });
 
   it('starts the next test signed out, so a bootstrap asks SSO', async () => {
-    const stop = startSession();
+    const stop = session.start();
 
     expect(store.get(sessionCheckedAtom)).toBe(false);
     expect(ssoRefreshes()).toHaveLength(1);
 
-    const settled = pendingRefresh();
+    const settled = session.pendingRefresh();
     ssoCall(0).answer({ status: 403 });
     await settled;
 

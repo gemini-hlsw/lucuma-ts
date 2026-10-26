@@ -2,7 +2,7 @@ import { displayName } from '@gemini-hlsw/lucuma-common-ui';
 import { fakeJwt, standardUser } from '@gemini-hlsw/lucuma-common-ui/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { signOut } from '@/auth/session';
+import { session } from '@/auth/session';
 import { odbTokenAtom, useSessionStatus, useUser } from '@/components/atoms/auth';
 import { store } from '@/components/atoms/store';
 import { Probe } from '@/test/probe';
@@ -54,7 +54,7 @@ describe(renderApp, () => {
     const screen = await openProbe({ token: fakeJwt(standardUser('staff')) });
     await expect.element(screen.getByTestId('probe-status')).toHaveTextContent('signed-in');
 
-    const signedOut = signOut();
+    const signedOut = session.signOut();
     ssoLogout().answer({ status: 200 });
     expect(await signedOut).toEqual({ reachedSso: true });
 
