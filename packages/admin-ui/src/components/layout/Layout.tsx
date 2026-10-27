@@ -11,6 +11,7 @@ import { useTheme } from '@/app/useTheme';
 import { CURRENT_ENV } from '@/auth/environments';
 import * as sso from '@/auth/ssoClient';
 import { displayName, type StandardRole } from '@/auth/user';
+import { useSignOut } from '@/auth/useSignOut';
 import { odbTokenAtom, useIsLoggedIn, useUser } from '@/components/atoms/auth';
 import { Bars, Copy, SignOut } from '@/components/Icons';
 import { useToast } from '@/components/toastContext';
@@ -88,16 +89,9 @@ export default function Layout(): JSX.Element {
     }
   };
 
-  // Drop the local token first — that alone signs the app out — then end the
-  // SSO session, reporting a failure (the cookie expires on its own).
-  const signOut = async (): Promise<void> => {
-    setToken(null);
-    try {
-      await sso.logout();
-    } catch (err) {
-      toast.error('Sign-out incomplete', err instanceof Error ? err.message : String(err));
-    }
-  };
+  const signOut = useSignOut((err) => {
+    toast.error('Sign-out incomplete', err.message);
+  });
 
   const copyVersion = async (): Promise<void> => {
     try {
