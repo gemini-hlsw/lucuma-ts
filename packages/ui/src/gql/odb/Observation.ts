@@ -39,6 +39,7 @@ export const OBSERVATION_FRAGMENT = graphql(`
       asterism {
         ...TargetItem
       }
+      useBlindOffset
     }
   }
 `);
