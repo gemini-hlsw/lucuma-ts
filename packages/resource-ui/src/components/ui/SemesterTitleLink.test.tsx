@@ -22,7 +22,7 @@ describe(SemesterTitleLink, () => {
     const target = semester({ site: 'GS', semester: '2026B', title: 'GS 2026B' });
     const screen = await renderApp({
       element: <SemesterTitleLink semester={target} />,
-      route: '/night?site=GN&night=2026-09-14&q=GPI&view=calendar&month=2026-09',
+      route: '/night?site=GN&night=2026-09-14&q=GPI',
       mocks: [],
     });
 

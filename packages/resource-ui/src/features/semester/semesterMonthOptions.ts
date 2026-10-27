@@ -46,7 +46,6 @@ export const buildMonthBands = (month: TimelineMonth): XAxisPlotBandsOptions[] =
   ...month.bands.map((band) => closureBandPlotBand(band, 0.75)),
 ];
 
-/** The week starts on Sunday, so the chart and the calendar cannot sit a night apart. */
 export const buildMonthLines = (month: TimelineMonth): XAxisPlotLinesOptions[] =>
   month.nights.map((night) => {
     const startsWeek = new Date(`${night.eveningDate}T00:00:00Z`).getUTCDay() === 0;

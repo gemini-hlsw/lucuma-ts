@@ -4,15 +4,12 @@ import type { JSX } from 'react';
 import { useNow } from '@/app/useNow';
 import { useSelection } from '@/app/useSelection';
 import { useSemester } from '@/app/useSemester';
-import { useUrlParam } from '@/app/useUrlParam';
 import { LabelledControl } from '@/components/ui/LabelledControl';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { ErrorAlert, Loading } from '@/components/ui/PageStatus';
-import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { buildSemesterTimeline } from '@/domain/semesterTimeline';
 import { observingNightInterval } from '@/domain/siteTime';
 import { SemesterBlockTable } from '@/features/semester/SemesterBlockTable';
-import { SemesterCalendar, SemesterCalendarLegend } from '@/features/semester/SemesterCalendar';
 import { SemesterTimeline, SemesterTimelineLegend } from '@/features/semester/SemesterTimeline';
 import {
   calendarLegendExtras,
@@ -22,14 +19,6 @@ import {
 } from '@/features/timeline/timelineOptions';
 import { toApiInterval, useSemesterSchedule } from '@/gql/hooks';
 
-/** Not fallbacks for each other: both project from the same placed blocks, so neither can drift. */
-type View = 'chart' | 'calendar';
-
-const VIEW_OPTIONS = [
-  { label: 'Chart', value: 'chart' as const },
-  { label: 'Calendar', value: 'calendar' as const },
-];
-
 /** The semester runs for months, so the "today" marker needs no fine tick. */
 const NOW_TICK_MS = 5 * 60_000;
 
@@ -37,8 +26,6 @@ const NOW_TICK_MS = 5 * 60_000;
 export default function SemesterPage(): JSX.Element {
   const { site } = useSelection();
   const { semester: selected, semestersForSite, setSemester, loading: loadingSets, error: setsError } = useSemester();
-  const [viewParam, setView] = useUrlParam('view', 'chart', { clears: ['month'] });
-  const view: View = viewParam === 'calendar' ? viewParam : 'chart';
   const now = useNow(NOW_TICK_MS);
 
   const bounds =
@@ -69,7 +56,6 @@ export default function SemesterPage(): JSX.Element {
   const telescopeExtras = telescopeLegendExtras(telescopeAvailability);
   const modeExtras = modeLegendExtras(telescopeMode);
   const tooExtras = tooLegendExtras(tooSupport);
-  // The calendar draws its own chrome and keys only hues, so it takes none of this.
   const semesterNights = timeline?.months.flatMap((month) => month.nights) ?? [];
   const calendarExtras = calendarLegendExtras({
     weekend: true,
@@ -87,50 +73,40 @@ export default function SemesterPage(): JSX.Element {
         title={selected?.title ?? 'Semester schedule'}
         demo={selected?.demo === true}
         actions={
-          <>
-            <LabelledControl
-              label="Semester"
-              className="flex min-w-0 flex-col gap-1"
-              labelClassName="text-xs font-semibold tracking-wider text-foreground uppercase"
-            >
-              {(id) => (
-                <Dropdown
-                  inputId={id}
-                  name="semester"
-                  value={selected?.semester ?? null}
-                  // Says why it is empty rather than looking broken.
-                  placeholder="None"
-                  // The demo flag stays on the option: synthetic records must never pass for real ones.
-                  options={semestersForSite.map((entry) => ({
-                    label: entry.demo ? `${entry.semester} (demo)` : entry.semester,
-                    value: entry.semester,
-                  }))}
-                  onChange={(event) => {
-                    setSemester(event.value as string);
-                  }}
-                  className="xp-page-select w-[9.5rem] max-w-full"
-                  pt={{
-                    // The native select mirrors the combobox for form submission; unnamed in the
-                    // accessibility tree it is a second, anonymous control saying the same thing.
-                    // On the select itself, not its wrapper: PrimeReact gives that wrapper's key to
-                    // the readonly input too, and hiding that would erase the only keyboard stop.
-                    select: { 'aria-hidden': true },
-                    // Stock PrimeReact points this at `dropdownItem_-1` whenever the un-roled root is
-                    // focused with no option active - an id that never exists, on an element with no role.
-                    root: { 'aria-activedescendant': undefined },
-                  }}
-                />
-              )}
-            </LabelledControl>
-            <SegmentedControl
-              value={view}
-              options={VIEW_OPTIONS}
-              onChange={setView}
-              ariaLabel="View"
-              size="sm"
-              testId="semester-view"
-            />
-          </>
+          <LabelledControl
+            label="Semester"
+            className="flex min-w-0 flex-col gap-1"
+            labelClassName="text-xs font-semibold tracking-wider text-foreground uppercase"
+          >
+            {(id) => (
+              <Dropdown
+                inputId={id}
+                name="semester"
+                value={selected?.semester ?? null}
+                // Says why it is empty rather than looking broken.
+                placeholder="None"
+                // The demo flag stays on the option: synthetic records must never pass for real ones.
+                options={semestersForSite.map((entry) => ({
+                  label: entry.demo ? `${entry.semester} (demo)` : entry.semester,
+                  value: entry.semester,
+                }))}
+                onChange={(event) => {
+                  setSemester(event.value as string);
+                }}
+                className="xp-page-select w-[9.5rem] max-w-full"
+                pt={{
+                  // The native select mirrors the combobox for form submission; unnamed in the
+                  // accessibility tree it is a second, anonymous control saying the same thing.
+                  // On the select itself, not its wrapper: PrimeReact gives that wrapper's key to
+                  // the readonly input too, and hiding that would erase the only keyboard stop.
+                  select: { 'aria-hidden': true },
+                  // Stock PrimeReact points this at `dropdownItem_-1` whenever the un-roled root is
+                  // focused with no option active - an id that never exists, on an element with no role.
+                  root: { 'aria-activedescendant': undefined },
+                }}
+              />
+            )}
+          </LabelledControl>
         }
       >
         {selected === null
@@ -153,34 +129,14 @@ export default function SemesterPage(): JSX.Element {
             caption={`${selected.site} ${selected.semester} schedule, one row per block`}
           />
 
-          {view === 'chart' && (
-            <>
-              <SemesterTimelineLegend
-                legend={timeline}
-                telescope={telescopeExtras}
-                mode={modeExtras}
-                too={tooExtras}
-                calendar={calendarExtras}
-              />
-              <SemesterTimeline timeline={timeline} site={selected.site} now={now} />
-            </>
-          )}
-
-          {view === 'calendar' && (
-            <>
-              {/* Chips carry their words, so the calendar keys only the hues and the closure. */}
-              <SemesterCalendarLegend
-                legend={{ ...timeline, hasUnscheduled: false, hasEngineeringUse: false, hasUnavailable: false }}
-              />
-              <SemesterCalendar
-                timeline={timeline}
-                semester={selected}
-                site={selected.site}
-                instrumentAvailability={instrumentAvailability}
-                telescopeAvailability={telescopeAvailability}
-              />
-            </>
-          )}
+          <SemesterTimelineLegend
+            legend={timeline}
+            telescope={telescopeExtras}
+            mode={modeExtras}
+            too={tooExtras}
+            calendar={calendarExtras}
+          />
+          <SemesterTimeline timeline={timeline} site={selected.site} now={now} />
         </>
       )}
     </div>

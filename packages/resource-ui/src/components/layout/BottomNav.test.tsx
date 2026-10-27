@@ -22,7 +22,7 @@ describe(BottomNav, () => {
   it('carries the site and the night alone, so a view switch keeps the date and drops page state', async () => {
     const screen = await renderApp({
       element: <BottomNav />,
-      route: '/semester?site=GS&semester=2026B&night=2026-09-14&view=calendar',
+      route: '/semester?site=GS&semester=2026B&night=2026-09-14&q=GPI',
       mocks: [],
     });
 

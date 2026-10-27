@@ -1,4 +1,4 @@
-/** The link each menu destination gets from `/semester?site=GS&semester=2026B&night=2026-09-14&view=calendar`. */
+/** The link each menu destination gets from `/semester?site=GS&semester=2026B&night=2026-09-14&q=GPI`. */
 export const NAV_LINKS_FROM_GS_SEMESTER: Record<string, string> = {
   '/semester': '/semester?site=GS&night=2026-09-14',
   '/week': '/week?site=GS&night=2026-09-14',

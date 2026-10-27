@@ -9,7 +9,6 @@ import { EmptyPanel } from '@/components/ui/PageStatus';
 import { displayTimeZone, eveningLabel, type TimeDisplay, zoneFormatters } from '@/domain/siteTime';
 import type { Site } from '@/domain/types';
 import type { WeekChange, WeekNightFacts } from '@/domain/weekBriefing';
-import { MoonDisc } from '@/features/calendar/MoonDisc';
 import { LOCATION_LABEL } from '@/features/components/componentLabels';
 import { INSTRUMENT_LABEL } from '@/features/timeline/timelineOptions';
 
@@ -42,12 +41,9 @@ export function WeekNightStrip({ facts }: { facts: readonly WeekNightFacts[] }):
               openNight(fact.observingNight);
             }}
           >
-            <div className="flex items-center justify-between gap-2">
-              {/* A card is found by its weekday, and seven of them span one month or two. */}
-              <span className={cn('font-semibold', fact.isHoliday ? 'text-warning' : 'text-foreground')}>
-                {eveningLabel(fact.eveningDate, 'weekdayDayMonth')}
-              </span>
-              <MoonDisc phase={fact.moon} size={14} />
+            {/* A card is found by its weekday, and seven of them span one month or two. */}
+            <div className={cn('font-semibold', fact.isHoliday ? 'text-warning' : 'text-foreground')}>
+              {eveningLabel(fact.eveningDate, 'weekdayDayMonth')}
             </div>
             <div className="mt-1 text-foreground-secondary">
               {fact.darkHours === null ? 'No astronomical night' : `${fact.darkHours.toFixed(1)} h dark`}

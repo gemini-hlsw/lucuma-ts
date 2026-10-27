@@ -35,7 +35,7 @@ the clock toggle, finder scoping) are DESIGN.md's. The mechanics:
     parameter written back when absent (a replace, so Back is unaffected) - DESIGN.md says why
     a remembered default cannot be left implicit the way every other default is.
   - **Semester** is `app/useSemester.ts`, which owns the page-scoped `semester` param through
-    `useUrlParam` (clearing `month`) and resolves it with `domain/coverage.ts`'s
+    `useUrlParam` and resolves it with `domain/coverage.ts`'s
     `resolveSemester`. Only /semester may call it. Pages needing the night's own semester -
     the demo flag above all - use `semesterHolding`, which returns null outside coverage
     rather than reaching for the nearest.
@@ -48,16 +48,15 @@ the clock toggle, finder scoping) are DESIGN.md's. The mechanics:
   back, notifies every subscriber, and holds the session's own choice in a closure so a denied
   write costs the choice its persistence rather than its effect. Tests start with no habit -
   `src/test/setup.ts` clears storage and fires the storage event that invalidates that closure.
-- **Every night-shaped thing opens its night view through `app/useOpenNight.ts`** - calendar
-  squares, week cards, chart bars all route through the one hook.
+- **Every night-shaped thing opens its night view through `app/useOpenNight.ts`** - week
+  cards and chart bars both route through the one hook.
 - **Page-scoped parameters go through `app/useUrlParam.ts`.** Defaults are deleted from the
-  URL, not written, and subordinate parameters drop in the same update: the calendar's month
-  belongs to the calendar alone, so switching view or semester drops it.
+  URL, not written.
 - **A navigation carries `site` and `night` and nothing else**, through
   `app/carriedSelection.ts` - the one answer to what survives a link. A menu link to the
   inventory carries `site` alone (`carries` in `SidebarMenu.ts`), since those pages answer for
   tonight and never read a night. Every other parameter
-  (`semester`, `month`, `view`, `q`, `instrument`, `type`, `location`) is one page's, and is
+  (`semester`, `q`, `instrument`, `type`, `location`) is one page's, and is
   dropped at the boundary rather than following the reader into a view that never reads it.
   This is react-router's own default for `to`; carrying more would be the hand-written
   override, so a new link needs no convention, only the helper where it wants site and night.
@@ -121,19 +120,17 @@ view is empty under the sign-in toast.
 `domain/timeline.ts` produced, never from an `InstrumentAvailabilityBlock`, and both charts build on `domain/timeline.ts`
 plus `features/timeline/`. A view supplies its own axis and its own way of phrasing a span - dates and
 nights for the semester and week, clock times for a night - and nothing else. Adding a fourth window
-should not mean copying any of it. The one deliberate exception is `domain/calendarNews.ts`, which
-reads raw records because its subject is the records' own boundaries rather than placed spans.
+should not mean copying any of it.
 
-| View              | What it draws                                                                                             | Its module                                    |
-| ----------------- | --------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
-| Night             | the chart alone, plus PWFS1/PWFS2/LGS subsystem rows no other view shows                                  | `features/night/`                             |
-| Week              | the run chart, plus `WeekNightStrip` (a card per night, each one a button onto it) and `WeekChangesTable` | `domain/weekBriefing.ts`                      |
-| Semester chart    | an xrange per month: how long a run lasts                                                                 | `features/semester/`                          |
-| Semester calendar | night chrome plus single-evening critical-event chips                                                     | `domain/calendarNews.ts`, `calendarNights.ts` |
-| `/instruments`    | a row per instrument the site's records name, expanding into its runs                                     | `domain/instrumentFinder.ts`                  |
-| `/components`     | the ICTD half: the piece catalog grouped by instrument, expanding into its history                        | `domain/componentFinder.ts`                   |
+| View           | What it draws                                                                                             | Its module                   |
+| -------------- | --------------------------------------------------------------------------------------------------------- | ---------------------------- |
+| Night          | the chart alone, plus PWFS1/PWFS2/LGS subsystem rows no other view shows                                  | `features/night/`            |
+| Week           | the run chart, plus `WeekNightStrip` (a card per night, each one a button onto it) and `WeekChangesTable` | `domain/weekBriefing.ts`     |
+| Semester       | an xrange per month: how long a run lasts                                                                 | `features/semester/`         |
+| `/instruments` | a row per instrument the site's records name, expanding into its runs                                     | `domain/instrumentFinder.ts` |
+| `/components`  | the ICTD half: the piece catalog grouped by instrument, expanding into its history                        | `domain/componentFinder.ts`  |
 
-What each view may draw and how (calendar chips, change-feed rules, subsystem rows, legend
+What each view may draw and how (change-feed rules, subsystem rows, legend
 order, colour and treatment) is specified in DESIGN.md. Structural rules the code does not
 state for itself:
 
@@ -147,13 +144,6 @@ state for itself:
   would hide nothing. Both open a row into `components/ui/RecordHistoryTable.tsx`.
 - **A night no semester covers says what is covered** (`domain/coverage.ts`), and offers the nearest
   covered night. A demo semester never merges with a real one.
-
-Three traps in the calendar, each of which has cost real time:
-
-- A square is the **evening** a night begins, not the night's label, or it sits a day off the grid.
-- All-day event **ends are exclusive** (local midnight after the last evening) or bars draw a day short.
-- The calendar's height is **inline in the component**, not in `global.css` - the browser tests do not
-  load the app stylesheet, and the height decides the week-row geometry.
 
 ## Shared modules
 
@@ -240,7 +230,7 @@ GraphQL response → **pure adapters** (`src/domain/adapters.ts`) → **UI domai
 components never touch generated fragment shapes.
 
 `src/domain/` holds the pure modules - date, interval and semester math, the sky (`moon.ts`, `sun.ts`), the
-timeline and calendar projections, the two finders, the week briefing - each with unit tests beside it. Keep
+timeline projections, the two finders, the week briefing - each with unit tests beside it. Keep
 date math and chart builders pure; keep components focused on rendering and interaction.
 
 ## Non-negotiables

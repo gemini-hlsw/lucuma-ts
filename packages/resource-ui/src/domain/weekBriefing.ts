@@ -1,6 +1,7 @@
-import { brightnessOf, darkHoursOf, type LunarBrightness } from './calendarNights';
 import { type MoonPhase, moonPhaseAt } from './moon';
 import { portRowLabel } from './ports';
+import { observingNightInterval } from './siteTime';
+import { nightSunTimes } from './sun';
 import type { TimelineNight } from './timeline';
 import type {
   ComponentLocation,
@@ -22,13 +23,21 @@ export interface WeekNightFacts {
   readonly isWeekend: boolean;
   readonly isHoliday: boolean;
   readonly moon: MoonPhase;
-  readonly brightness: LunarBrightness;
   /** New or full, when the published sheet prints one against this evening. */
   readonly publishedMoon: MoonEvent['phase'] | null;
   /** Hours of astronomical night; null when the sun never clears -18 degrees. */
   readonly darkHours: number | null;
   readonly dataAvailable: boolean;
 }
+
+const MS_PER_HOUR = 3_600_000;
+
+const darkHoursOf = (site: Site, observingNight: string): number | null => {
+  const { duskAstronomical, dawnAstronomical } = nightSunTimes(site, observingNightInterval(site, observingNight));
+  return duskAstronomical === null || dawnAstronomical === null
+    ? null
+    : (dawnAstronomical - duskAstronomical) / MS_PER_HOUR;
+};
 
 export interface BuildWeekNightFactsOptions {
   readonly site: Site;
@@ -48,7 +57,7 @@ export const buildWeekNightFacts = ({
   const publishedMoon = new Map(moonEvents.map((event) => [event.date, event.phase]));
 
   return nights.map((night) => {
-    // Sampled mid-night, same as the calendar, so the phase belongs to the night the column names.
+    // Sampled mid-night, so the phase belongs to the night the column names.
     const moon = moonPhaseAt((night.interval.start + night.interval.end) / 2);
     return {
       observingNight: night.observingNight,
@@ -56,7 +65,6 @@ export const buildWeekNightFacts = ({
       isWeekend: night.isWeekend,
       isHoliday: holidaySet.has(night.eveningDate),
       moon,
-      brightness: brightnessOf(moon.fraction),
       publishedMoon: publishedMoon.get(night.eveningDate) ?? null,
       darkHours: darkHoursOf(site, night.observingNight),
       dataAvailable: night.dataAvailable,

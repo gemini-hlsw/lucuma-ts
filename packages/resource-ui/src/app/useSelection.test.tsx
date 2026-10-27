@@ -48,13 +48,13 @@ describe(useSelection, () => {
     await expect.element(screen.getByTestId('probe-site')).toHaveTextContent('GN');
   });
 
-  it('keeps the calendar month across a site change, since both sites cover the same months', async () => {
-    const screen = await openSelection('/semester?site=GN&month=2026-11');
+  it('keeps the semester across a site change, since both sites publish the same semesters', async () => {
+    const screen = await openSelection('/semester?site=GN&semester=2026B');
 
     await screen.getByRole('button', { name: 'to GS' }).click();
 
     await expect.element(screen.getByTestId(PROBE_URL_TESTID)).toMatchTextContent('site=GS');
-    await expect.element(screen.getByTestId(PROBE_URL_TESTID)).toMatchTextContent('month=2026-11');
+    await expect.element(screen.getByTestId(PROBE_URL_TESTID)).toMatchTextContent('semester=2026B');
   });
 
   it('drops the night from the URL for Tonight, rather than writing today into it', async () => {

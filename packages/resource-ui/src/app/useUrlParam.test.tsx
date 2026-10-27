@@ -60,14 +60,6 @@ describe(useUrlParam, () => {
     await expect.element(screen.getByTestId(PROBE_URL_TESTID)).toHaveTextContent('/semester');
   });
 
-  it('clears its subordinate parameters in the same update, never leaving a half-changed URL', async () => {
-    const screen = await openView('/semester?view=calendar&month=2026-11', { clears: ['month'] });
-
-    await screen.getByRole('button', { name: 'chart' }).click();
-
-    await expect.element(screen.getByTestId(PROBE_URL_TESTID)).toHaveTextContent('/semester');
-  });
-
   it('pushes history by default, so the back button undoes a view switch', async () => {
     const screen = await openView('/semester');
 

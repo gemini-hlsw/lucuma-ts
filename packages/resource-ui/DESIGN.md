@@ -199,11 +199,10 @@ Text is a white-opacity ladder (Material dark), not a grey ramp:
   read as "identity unresolved". Where an unknown run coincides with a named one, the named
   run wins the shared span.
 - **Amber**: unknown/warning accents, one family end to end, named as `--color-warning` (the
-  weight a warning word takes on the canvas: the calendar's and the week cards' "holiday",
+  weight a warning word takes on the canvas: the week cards' "holiday",
   the PrimeReact warning tags) plus a panel triplet `--color-warning-fill` / `-edge` / `-ink`
-  for the warn toast. Amber warns; it never celebrates. Two exceptions stay
-  raw: the calendar's holiday day-inset ring, which is a date accent rather than a warning,
-  and Cal-Zorro's identity hue, which happens to share the family.
+  for the warn toast. Amber warns; it never celebrates. One exception stays
+  raw: Cal-Zorro's identity hue, which happens to share the family.
 - **Block ink** (`#fff` / `#0a0a0a`): bar labels take whichever of light or dark clears
   4.5:1 on the fill.
 
@@ -229,7 +228,7 @@ is the plain bar; Engineering-use the same hue hatched; Not-available hollow wit
 the outline and a muted label - visually distinct from the ghost, and never red. Absence is
 drawn hollow (`schedule-ghost`), never as another identity colour, and never red either.
 
-**A Gap Is a Gap.** Empty cells, empty calendar squares, and unrecorded spans stay empty.
+**A Gap Is a Gap.** Empty cells and unrecorded spans stay empty.
 "Not recorded" must never be styled as "closed" or "unavailable" (invariant I4).
 
 ## Typography
@@ -289,8 +288,8 @@ for the chart options, which need the number rather than the `var()` - a label m
 never draws.
 
 **Below Body, hierarchy is weight, case and tracking - never a smaller size.** Micro-labels -
-the environment banner, page-header control captions (SEMESTER), legend section names, calendar
-weekday headers, chart gutter group headings, the phone bar, the calendar chip - are Dense set
+the environment banner, page-header control captions (SEMESTER), legend section names, chart
+gutter group headings, the phone bar - are Dense set
 uppercase with 0.05em tracking (`tracking-wider`), and semibold or bold where their neighbours
 are not. Butterick gives 0.05-0.12em for all-caps and Bringhurst 0.05-0.10em, so 0.05em is the
 floor rather than a preference. That dress is what separates them, so **set a micro-label in
@@ -334,18 +333,15 @@ extending or fixing, rather than trusting any prose list to stay complete.
 
 Three patterns stand:
 
-- **Foreground dimmed by opacity in CSS:** `.rbc-off-range` takes an out-of-month date number
-  to 0.35, below the muted step. The square is chrome, so this reads as decoration rather than
-  a tone violation, but it is an opacity dim and not a step on the ladder.
 - **Muted carrying information at any size:** `text-foreground-muted` on text that is a
-  fact's only rendering - the semester calendar's empty message, the About
+  fact's only rendering - the About
   dialog's Endpoint caption (its value reads at Secondary) and its version line, and their kin.
   A note, an empty message, a "not recorded" where-reading and a history row's status word are
   the pattern already at Secondary; copy those. Grep `text-foreground-muted`; whatever is not
   genuinely decorative, a disabled affordance or a duplicate belongs to this set.
 - **A fixed px size on a box that holds text:** the masthead and banner heights, the 28px control
-  line, and the 196px sidebar column. The words do not grow their box. The bottom bar, the calendar
-  height and the filter and page controls are already on the right side of the rule, being
+  line, and the 196px sidebar column. The words do not grow their box. The bottom bar
+  and the filter and page controls are already on the right side of the rule, being
   `min-height` and rem. A new fixed box is a bug, not a precedent.
 
 Each fix lands as its own change. The pattern descriptions define the set; no instance list
@@ -376,8 +372,7 @@ the workflow into it, but keep masthead selections global and page controls loca
     Deleted, Back off a site change would pop the parameter and the memory would put the same
     site straight back, and a copied URL would open at the recipient's site, not the sender's.
   - **Semester is the semester page's.** Only /semester reads a semester, so its picker lives
-    in that page's header beside Chart|Calendar, page-scoped through the URL with `month`
-    dropping alongside. Night and week derive what they need from the night they report on, the
+    in that page's header, page-scoped through the URL. Night and week derive what they need from the night they report on, the
     finders from tonight. A stale `?semester=` elsewhere is unread, not scrubbed.
   - **Clock is the reader's.** Site time or UTC is a reading habit, not part of a shared link,
     so it lives in the menu under SETTINGS and persists per browser rather than in the URL.
@@ -493,9 +488,9 @@ another, move it up the ladder.
 
 ## Shapes
 
-Rectangles, small radii, 1px borders. Controls and panels round at 4px; calendar chips at
+Rectangles, small radii, 1px borders. Controls and panels round at 4px; legend swatches at
 2px; chart tooltips at 6px; nothing pill-shaped,
-nothing circular except status dots and moon-phase icons. Form
+nothing circular except status dots. Form
 language for schedule data is exact: bars are rectangles whose edges are facts (half-open
 intervals - an end is exclusive; the deliberate 3px corner radius softens a corner without
 moving one), so bars must never be given rounding or padding that would move an edge off
@@ -530,9 +525,8 @@ Nothing else may be an image.
 Five states, stated once here because they are the app's and not any one component's. A section
 below adds only what is particular to its component.
 
-- **Focus.** Every interactive element shows a visible action-green focus indicator, using one of
-  the two shared treatments - the calendar events' 2px outline offset 1px, or `FOCUS_RING` (a 2px
-  inset ring, `components/ui/styles.ts`). The ring is the green's **light** step
+- **Focus.** Every interactive element shows a visible action-green focus indicator, using
+  `FOCUS_RING` (a 2px inset ring, `components/ui/styles.ts`). The ring is the green's **light** step
   (`--color-gpp-light`): the base green measures 2.91:1 against the translucent green an active
   nav item fills with, under 1.4.11's 3:1 floor for a UI part, where the light step measures
   3.35:1 and gains contrast everywhere else too. A segmented control takes that same light green
@@ -583,11 +577,11 @@ the masthead and the phone bar today.
   `size` prop, so it alone is given the menu glyphs' box, 1.25em by 1em, as utilities, and the
   icon column stays aligned.
 
-### Segmented controls (view/clock toggles)
+### Segmented controls (the site toggle)
 
 Idle segments are surface-on-subtle with secondary text; the selected segment takes the shared
 Selected treatment and the shared focus **outline**, both under Interaction states. Compact
-variant (`seg-sm`) for chart-corner toggles.
+variant (`seg-sm`) for the masthead's site toggle.
 
 ### Page-header selects
 
@@ -703,15 +697,9 @@ phrasing of a span, nothing else.
 - **Legend:** one section per state row, then Instruments, then Sky and Calendar where a
   view supplies them - six, in that order. The neutrals repeat across rows, so a repeated
   grey is keyed under the row it belongs to; a section with no keys does not render.
-- **The calendar draws no run bars, ever** - single-evening chips only, for critical events
-  (a port's instrument changing, the telescope closing with its reason, reopening). Of the
-  state record it draws only the telescope closures (the wash and its chips); Mode and ToO
-  spans do not reach the calendar at all - routine values every week would bury the runs.
-  A window-edge boundary is furniture, not news. Empty squares stay empty. More news kinds
-  are expected over time.
-- **Change feeds** (week changes table, calendar news) read ports only: a shelf change is
+- **The week changes table** reads ports only: a shelf change is
   inventory, not a night's headline; a boundary on the window's edge is not a change.
-- **Every night-shaped thing opens its night view** - calendar squares, week cards, chart bars
+- **Every night-shaped thing opens its night view** - week cards and chart bars
   route onto `/night`. What each of those must show on focus, and which of them still falls
   short, is Interaction states above.
 

@@ -20,8 +20,7 @@ interface SemesterSelection {
  */
 export function useSemester(): SemesterSelection {
   const { site, observingNight } = useSelection();
-  // The month names a page of one semester's calendar, so it cannot survive a semester change.
-  const [requested, setSemester] = useUrlParam('semester', '', { clears: ['month'] });
+  const [requested, setSemester] = useUrlParam('semester', '');
   const { semesters, loading, error } = usePublishedSemesters();
 
   return {

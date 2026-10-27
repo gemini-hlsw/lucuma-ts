@@ -47,7 +47,7 @@ adding one must never mean restructuring the others:
 | -------------- | ----------------------------------------------------------------- |
 | `/night`       | What is mounted, and what the telescope is doing, for one night   |
 | `/week`        | Seven nights on one continuous axis, and what changed across them |
-| `/semester`    | How long each run lasts, as a chart or as a calendar              |
+| `/semester`    | How long each run lasts, month by month                           |
 | `/instruments` | Where a named instrument is tonight, and its run history          |
 | `/components`  | Where a named piece of hardware is, and its history               |
 
@@ -118,13 +118,12 @@ as `UNKNOWN` with its text carried alongside: a lookup question, not an error.
 
 Each is open; none is scheduled. Anything built here needs a reason recorded beside it.
 
-- **A visible "List" as a third view toggle.** A screen-reader block table already backs the
+- **A visible "List" view on the semester page.** A screen-reader block table already backs the
   semester chart, so exposing a list there is nearly free - but it adds a mode, and the
   night and week views would first need their tables built.
 - **A retry affordance on the load-failure toast**, which is message-only today.
 - **A components table on the night view.** If it returns it should answer a question
   `/components` cannot.
-- **"Jump to current month"** in the calendar, when the viewed semester holds today.
 
 ### Open with operations
 

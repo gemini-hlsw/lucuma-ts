@@ -149,7 +149,7 @@ describe(Navbar, () => {
   });
 
   it('links the wordmark to tonight, dropping the deep-linked night', async () => {
-    const screen = await renderNavbar('/semester?site=GS&night=2026-11-14&view=calendar');
+    const screen = await renderNavbar('/semester?site=GS&night=2026-11-14&q=GPI');
 
     const brand = screen.getByRole('link', { name: 'Resource', exact: false });
     await expect.element(brand).toHaveAttribute('href', '/night?site=GS');

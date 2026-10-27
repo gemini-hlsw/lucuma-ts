@@ -1,11 +1,8 @@
 import type { MockLink } from '@apollo/client/testing';
-import { isNotNullish } from '@gemini-hlsw/lucuma-common-ui';
 import { openDropdown, selectDropdownOption } from '@gemini-hlsw/lucuma-common-ui/testing';
 import { describe, expect, it } from 'vitest';
 
 import Layout from '@/components/layout/Layout';
-import { buildSemesterTimeline } from '@/domain/semesterTimeline';
-import { buildMonthLines } from '@/features/semester/semesterMonthOptions';
 import {
   instrumentAvailabilityBlock,
   overNights,
@@ -56,6 +53,17 @@ const drawnBars = () =>
 
 describe(SemesterPage, () => {
   describe('the chart', () => {
+    it("opens an old calendar link on that semester's timeline", async () => {
+      const screen = await openSemester(
+        '/semester?site=GS&semester=2025B&view=calendar&month=2025-11',
+        publishedSemesters(GS_2025B),
+        semesterSchedule(GS_2025B),
+      );
+
+      await expect.element(screen.getByText('Gemini South Semester 2025B', { exact: false })).toBeVisible();
+      await expect.element(screen.getByRole('region', { name: 'November 2025' })).toBeVisible();
+    });
+
     it('opens on the chart, one block per month', async () => {
       const screen = await openSemester(
         '/semester?site=GS&semester=2025B',
@@ -250,23 +258,6 @@ describe(SemesterPage, () => {
       expect(stop.closest('[aria-hidden="true"]')).toBeNull();
     });
 
-    it('picks a semester without leaving the view it was picked from', async () => {
-      const screen = await openSemester(
-        '/semester?site=GS&semester=2025B&view=calendar',
-        publishedSemesters(GS_2025A, GS_2025B),
-        semesterSchedule(GS_2025B),
-        semesterSchedule(GS_2025A),
-      );
-      await expect.element(screen.getByTestId('semester-calendar')).toBeVisible();
-
-      await selectDropdownOption(screen, { label: 'Semester' }, '2025A');
-
-      // What must change, and what must not: the window moves, the chosen view stays chosen.
-      await expect.element(screen.getByRole('button', { name: 'Open night beginning 2025-02-14' })).toBeVisible();
-      await expect.element(screen.getByTestId('semester-calendar')).toBeVisible();
-      await expect.element(screen.getByTestId('semester-timeline')).not.toBeInTheDocument();
-    });
-
     it('redraws the cached semester when the site switches back, never an empty chart', async () => {
       // Both sites share the month keys, so the switch back updates mounted charts rather than remounting.
       const screen = await openSemesterInShell(
@@ -318,231 +309,6 @@ describe(SemesterPage, () => {
     });
   });
 
-  describe('the calendar', () => {
-    const showCalendar = async (screen: Awaited<ReturnType<typeof openSemester>>) => {
-      await screen.getByRole('button', { name: 'Calendar' }).click();
-      await expect.element(screen.getByTestId('semester-calendar')).toBeVisible();
-    };
-
-    const openGs2025B = (query = '') =>
-      openSemester(
-        `/semester?site=GS&semester=2025B${query}`,
-        publishedSemesters(GS_2025B),
-        semesterSchedule(GS_2025B),
-      );
-
-    it('opens on the month the semester starts in, not on today', async () => {
-      const screen = await openGs2025B();
-      await showCalendar(screen);
-
-      await expect.element(screen.getByRole('button', { name: 'Open night beginning 2025-08-14' })).toBeVisible();
-    });
-
-    it('is a sendable link: view and month come from the URL', async () => {
-      const screen = await openGs2025B('&view=calendar&month=2025-11');
-
-      await expect.element(screen.getByTestId('semester-calendar')).toBeVisible();
-      await expect.element(screen.getByRole('button', { name: 'Open night beginning 2025-11-14' })).toBeVisible();
-    });
-
-    it('drops the month when leaving the calendar - a chart link carries just the semester', async () => {
-      const screen = await openGs2025B('&view=calendar&month=2025-11');
-      await expect.element(screen.getByRole('button', { name: 'Open night beginning 2025-11-14' })).toBeVisible();
-
-      await screen.getByRole('button', { name: 'Chart' }).click();
-      await expect.element(screen.getByTestId('semester-timeline')).toBeVisible();
-      await screen.getByRole('button', { name: 'Calendar' }).click();
-
-      // The chart link had no month to carry, so returning starts from the semester's first month.
-      await expect.element(screen.getByRole('button', { name: 'Open night beginning 2025-08-14' })).toBeVisible();
-    });
-
-    it('drops the month when the semester changes - it named a page of the old one', async () => {
-      const screen = await openSemester(
-        '/semester?site=GS&semester=2025B&view=calendar&month=2025-11',
-        publishedSemesters(GS_2025A, GS_2025B),
-        semesterSchedule(GS_2025B),
-        semesterSchedule(GS_2025A),
-      );
-      await expect.element(screen.getByRole('button', { name: 'Open night beginning 2025-11-14' })).toBeVisible();
-
-      await selectDropdownOption(screen, { label: 'Semester' }, '2025A');
-      await expect.element(screen.getByRole('button', { name: 'Open night beginning 2025-02-14' })).toBeVisible();
-
-      // November belonged to the link that named it, not to the semester control.
-      await selectDropdownOption(screen, { label: 'Semester' }, '2025B');
-      await expect.element(screen.getByRole('button', { name: 'Open night beginning 2025-08-14' })).toBeVisible();
-    });
-
-    it('reads an unknown month parameter as the first month, never an empty grid', async () => {
-      // A stale month from another semester must not strand the reader outside it.
-      const screen = await openGs2025B('&view=calendar&month=1999-01');
-
-      await expect.element(screen.getByRole('button', { name: 'Open night beginning 2025-08-14' })).toBeVisible();
-    });
-
-    it('jumps straight to any month from the picker', async () => {
-      const screen = await openGs2025B();
-      await showCalendar(screen);
-
-      await selectDropdownOption(screen, { label: 'Month' }, 'January 2026');
-
-      // A January-only night proves the grid moved with the picker.
-      await expect.element(screen.getByRole('button', { name: 'Open night beginning 2026-01-15' })).toBeVisible();
-    });
-
-    it('shows the moon and the length of the night, which no other view carries', async () => {
-      const screen = await openGs2025B();
-      await showCalendar(screen);
-
-      await expect.element(screen.getByTestId('moon-disc').first()).toBeVisible();
-      await expect.element(screen.getByText(/^\d+\.\d h$/).first()).toBeVisible();
-    });
-
-    it('draws the news as single-evening chips, never the steady run bars', async () => {
-      // Altair and GMOS-N run the whole semester and are furniture; drawing them here would bury the news.
-      const swap = '2026-09-11';
-      const screen = await openSemester(
-        '/semester?site=GN&semester=2026B&view=calendar&month=2026-09',
-        publishedSemesters(GN_2026B),
-        semesterSchedule(GN_2026B, {
-          instrumentAvailability: [
-            instrumentAvailabilityBlock({
-              instrument: 'ALTAIR',
-              publishedName: 'Altair',
-              port: 3,
-              interval: GN_2026B_WHOLE,
-            }),
-            instrumentAvailabilityBlock({
-              instrument: 'GMOS',
-              publishedName: 'GMOS-N',
-              port: 5,
-              interval: GN_2026B_WHOLE,
-            }),
-            instrumentAvailabilityBlock({
-              instrument: 'IGRINS2',
-              publishedName: 'IGRINS-2',
-              port: 2,
-              interval: overNights('GN', '2026-08-02', '2026-09-10'),
-            }),
-            instrumentAvailabilityBlock({
-              instrument: 'MAROON_X',
-              publishedName: 'MAROON-X',
-              port: 2,
-              interval: overNights('GN', swap, '2027-02-01'),
-            }),
-          ],
-        }),
-      );
-      const calendar = screen.getByTestId('semester-calendar');
-
-      await expect.element(calendar.getByText('IGRINS-2 → MAROON-X').first()).toBeVisible();
-      await expect.element(calendar.getByText('Altair')).not.toBeInTheDocument();
-      await expect.element(calendar.getByText('GMOS-N')).not.toBeInTheDocument();
-    });
-
-    it('chips a usability change by the new usage - the restriction is the news', async () => {
-      // A Not Available spell starting and ending inside the semester: one chip for each edge.
-      const gnirs = (usage: 'SCIENCE' | 'UNAVAILABLE', firstNight: string, lastNight: string) =>
-        instrumentAvailabilityBlock({
-          instrument: 'GNIRS',
-          usage,
-          port: 1,
-          interval: overNights('GN', firstNight, lastNight),
-        });
-      const screen = await openSemester(
-        '/semester?site=GN&semester=2026B&view=calendar&month=2026-09',
-        publishedSemesters(GN_2026B),
-        semesterSchedule(GN_2026B, {
-          instrumentAvailability: [
-            gnirs('SCIENCE', '2026-08-02', '2026-09-08'),
-            gnirs('UNAVAILABLE', '2026-09-09', '2026-09-20'),
-            gnirs('SCIENCE', '2026-09-21', '2027-02-01'),
-          ],
-        }),
-      );
-      const calendar = screen.getByTestId('semester-calendar');
-
-      await expect.element(calendar.getByText('GNIRS: Not available').first()).toBeVisible();
-      await expect.element(calendar.getByText('GNIRS: Science').first()).toBeVisible();
-    });
-
-    it('chips the telescope closing and reopening, with the closed squares washed', async () => {
-      // The closure sits strictly inside the semester, so both edges are news; the span itself is wash.
-      const screen = await openSemester(
-        '/semester?site=GN&semester=2026B&view=calendar&month=2026-10',
-        publishedSemesters(GN_2026B),
-        semesterSchedule(GN_2026B, {
-          telescopeAvailability: [
-            telescopeAvailabilityBlock({ interval: overNights('GN', '2026-10-21', '2026-10-24') }),
-          ],
-        }),
-      );
-      const calendar = screen.getByTestId('semester-calendar');
-
-      await expect.element(calendar.getByText('Closed').first()).toBeVisible();
-      await expect.element(calendar.getByText('Open').first()).toBeVisible();
-      expect(document.querySelectorAll('.rbc-day-bg.night-closed').length).toBeGreaterThan(0);
-    });
-
-    it('will not page out of the semester, where an empty grid would read as closed', async () => {
-      const screen = await openGs2025B();
-      await showCalendar(screen);
-
-      await expect.element(screen.getByRole('button', { name: 'Previous month' })).toBeDisabled();
-    });
-
-    it('carries the closure reason on the closed square itself, not just its header', async () => {
-      const screen = await openSemester(
-        '/semester?site=GS&semester=2024B&view=calendar',
-        publishedSemesters(GS_2024B),
-        semesterSchedule(GS_2024B, {
-          telescopeAvailability: [
-            telescopeAvailabilityBlock({ reason: 'Shutdown', interval: overNights('GS', '2024-08-02', '2024-08-16') }),
-          ],
-        }),
-      );
-      await expect.element(screen.getByRole('button', { name: 'Open night beginning 2024-08-02' })).toBeVisible();
-
-      // A closed square is mostly wash, so hovering anywhere on it must still surface the reason.
-      const closed = [...document.querySelectorAll('.rbc-day-bg.night-closed')];
-      expect(closed.length).toBeGreaterThan(0);
-      for (const square of closed) {
-        expect(square.getAttribute('title')).toContain('Shutdown');
-      }
-    });
-
-    it('opens the night view when a night is clicked', async () => {
-      const screen = await renderApp({
-        element: <SemesterPage />,
-        route: '/semester?site=GS&semester=2025B',
-        extraRoutes: [NIGHT_ROUTE],
-        mocks: [publishedSemesters(GS_2025B), semesterSchedule(GS_2025B)],
-      });
-      await showCalendar(screen);
-
-      // The whole square is the link; the date header is its accessible name.
-      await screen.getByRole('button', { name: 'Open night beginning 2025-08-14' }).click();
-
-      await expect.poll(shownUrl).toMatch(/^\/night\?.*night=2025-08-15/);
-    });
-
-    it('replaces the chart rather than joining it', async () => {
-      const screen = await openGs2025B();
-      await showCalendar(screen);
-
-      await expect.element(screen.getByTestId('semester-timeline')).not.toBeInTheDocument();
-    });
-
-    it('keeps the block table, which is the reading for every view', async () => {
-      const screen = await openGs2025B();
-      await showCalendar(screen);
-
-      await expect.element(screen.getByTestId('semester-block-table')).toBeInTheDocument();
-    });
-  });
-
-  /** Not a view, so it must be present whichever picture is drawn. */
   describe('the block table', () => {
     it('states a run once, with its extent, rather than once per night', async () => {
       const screen = await openSemester(
@@ -571,61 +337,6 @@ describe(SemesterPage, () => {
       await expect
         .element(screen.getByTestId('semester-block-table').getByRole('row', { name: /Whole telescope/ }))
         .toBeInTheDocument();
-    });
-  });
-
-  /** Chart and calendar each derive the week boundary themselves, so a one-night drift is possible. */
-  describe('the week boundary both views draw', () => {
-    const EVENING_PREFIX = 'Open night beginning ';
-
-    /** The evening date a calendar square opens, or null for one outside the semester. */
-    const eveningOf = (cell: Element): string | null =>
-      cell
-        .querySelector(`[aria-label^="${EVENING_PREFIX}"]`)
-        ?.getAttribute('aria-label')
-        ?.slice(EVENING_PREFIX.length) ?? null;
-
-    it('emphasises the nights the calendar puts in its first column', async () => {
-      const screen = await openSemester(
-        '/semester?site=GS&semester=2025B&view=calendar&month=2025-11',
-        publishedSemesters(GS_2025B),
-        semesterSchedule(GS_2025B),
-      );
-      await expect.element(screen.getByRole('button', { name: 'Open night beginning 2025-11-14' })).toBeVisible();
-
-      // Only the evening dates matter here, so it needs no records.
-      const november = buildSemesterTimeline({
-        site: 'GS',
-        firstNight: '2025-11-02',
-        lastNight: '2025-12-01',
-        instrumentAvailability: [],
-        telescopeAvailability: [],
-      }).months[0]!;
-      const monthEvenings = new Set(november.nights.map((night) => night.eveningDate));
-
-      const lines = buildMonthLines(november);
-      const chartWeekStarts = new Set(
-        november.nights
-          .filter((night) =>
-            lines.some((line) => line.value === night.interval.start && line.color === 'var(--schedule-week-line)'),
-          )
-          .map((night) => night.eveningDate),
-      );
-
-      // The grid reaches into neighbouring months, hence the restriction to the evenings this chart drew.
-      const cells = [...document.querySelectorAll('.rbc-date-cell')];
-      expect(cells.length % 7).toBe(0);
-      const calendarWeekStarts = new Set(
-        cells
-          .filter((_, index) => index % 7 === 0)
-          .map(eveningOf)
-          .filter(isNotNullish)
-          .filter((evening) => monthEvenings.has(evening)),
-      );
-
-      // Non-empty first: two empty sets agree about nothing.
-      expect(calendarWeekStarts.size).toBeGreaterThan(3);
-      expect(chartWeekStarts).toEqual(calendarWeekStarts);
     });
   });
 
