@@ -1,5 +1,6 @@
 import type { MockLink } from '@apollo/client/testing';
 import { isNotNullish } from '@gemini-hlsw/lucuma-common-ui';
+import { openDropdown, selectDropdownOption } from '@gemini-hlsw/lucuma-common-ui/testing';
 import { describe, expect, it } from 'vitest';
 
 import Layout from '@/components/layout/Layout';
@@ -12,7 +13,7 @@ import {
   telescopeModeBlock,
 } from '@/test/fixtures/blocks';
 import { publishedSemester, publishedSemesters, semesterSchedule } from '@/test/fixtures/semester';
-import { chooseClock, chooseSite, openDropdown, selectDropdownOption } from '@/test/helpers';
+import { chooseClock, chooseSite } from '@/test/helpers';
 import { Probe, PROBE_URL_TESTID } from '@/test/probe';
 import { renderApp } from '@/test/renderApp';
 
@@ -221,11 +222,11 @@ describe(SemesterPage, () => {
       await expect.poll(bars).toBeGreaterThan(0);
 
       // Semester A's evenings run February to July, so February is its first region.
-      await selectDropdownOption(screen, 'Semester', '2025A');
+      await selectDropdownOption(screen, { label: 'Semester' }, '2025A');
       await expect.element(screen.getByRole('region', { name: 'February 2025' })).toBeVisible();
       await expect.poll(bars).toBeGreaterThan(0);
 
-      await selectDropdownOption(screen, 'Semester', '2025B');
+      await selectDropdownOption(screen, { label: 'Semester' }, '2025B');
       await expect.element(screen.getByRole('region', { name: 'August 2025' })).toBeVisible();
       await expect.poll(bars).toBeGreaterThan(0);
     });
@@ -258,7 +259,7 @@ describe(SemesterPage, () => {
       );
       await expect.element(screen.getByTestId('semester-calendar')).toBeVisible();
 
-      await selectDropdownOption(screen, 'Semester', '2025A');
+      await selectDropdownOption(screen, { label: 'Semester' }, '2025A');
 
       // What must change, and what must not: the window moves, the chosen view stays chosen.
       await expect.element(screen.getByRole('button', { name: 'Open night beginning 2025-02-14' })).toBeVisible();
@@ -365,11 +366,11 @@ describe(SemesterPage, () => {
       );
       await expect.element(screen.getByRole('button', { name: 'Open night beginning 2025-11-14' })).toBeVisible();
 
-      await selectDropdownOption(screen, 'Semester', '2025A');
+      await selectDropdownOption(screen, { label: 'Semester' }, '2025A');
       await expect.element(screen.getByRole('button', { name: 'Open night beginning 2025-02-14' })).toBeVisible();
 
       // November belonged to the link that named it, not to the semester control.
-      await selectDropdownOption(screen, 'Semester', '2025B');
+      await selectDropdownOption(screen, { label: 'Semester' }, '2025B');
       await expect.element(screen.getByRole('button', { name: 'Open night beginning 2025-08-14' })).toBeVisible();
     });
 
@@ -384,7 +385,7 @@ describe(SemesterPage, () => {
       const screen = await openGs2025B();
       await showCalendar(screen);
 
-      await selectDropdownOption(screen, 'Month', 'January 2026');
+      await selectDropdownOption(screen, { label: 'Month' }, 'January 2026');
 
       // A January-only night proves the grid moved with the picker.
       await expect.element(screen.getByRole('button', { name: 'Open night beginning 2026-01-15' })).toBeVisible();
@@ -675,7 +676,7 @@ describe(SemesterPage, () => {
       const screen = await openWithOneDemo();
       await expect.element(screen.getByText('Gemini South Semester 2025B', { exact: false })).toBeVisible();
 
-      await openDropdown(screen, 'Semester');
+      await openDropdown(screen, { label: 'Semester' });
 
       const options = [...document.querySelectorAll('[role="option"]')].map((option) => option.textContent ?? '');
       expect(options).toEqual(['2025B', '2026B (demo)']);
@@ -686,7 +687,7 @@ describe(SemesterPage, () => {
       await expect.element(screen.getByText('Gemini South Semester 2025B', { exact: false })).toBeVisible();
       await expect.element(screen.getByTestId('synthetic-data-tag')).not.toBeInTheDocument();
 
-      await selectDropdownOption(screen, 'Semester', '2026B (demo)');
+      await selectDropdownOption(screen, { label: 'Semester' }, '2026B (demo)');
 
       await expect.element(screen.getByText('Gemini South Semester 2026B', { exact: false })).toBeVisible();
       await expect.element(screen.getByTestId('synthetic-data-tag')).toBeVisible();

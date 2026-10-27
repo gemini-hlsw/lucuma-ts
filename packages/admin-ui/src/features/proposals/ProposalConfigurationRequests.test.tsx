@@ -1,4 +1,5 @@
 import type { MockLink } from '@apollo/client/testing';
+import { fakeJwt, standardUser } from '@gemini-hlsw/lucuma-common-ui/testing';
 import { dateToLocalObservingNight } from '@gemini-hlsw/lucuma-core';
 import { describe, expect, it } from 'vitest';
 import { userEvent } from 'vitest/browser';
@@ -9,7 +10,6 @@ import {
   RESOLVE_WITH_FEEDBACK_MUTATION,
 } from '@/gql/odb/changeRequests';
 import { CONFLICTS_QUERY, similarModeTypes } from '@/gql/odb/conflicts';
-import { fakeJwt, standardUser } from '@/test/factories';
 import { type MockedResponseOf, renderWithContext } from '@/test/render';
 
 import { ProposalConfigurationRequests } from './ProposalConfigurationRequests';

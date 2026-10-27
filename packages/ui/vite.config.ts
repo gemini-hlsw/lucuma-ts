@@ -115,7 +115,6 @@ export default defineConfig(({ mode }) => ({
     clearMocks: true,
     globals: true,
     setupFiles: [
-      'src/gql/dev-messages.ts',
       '@gemini-hlsw/lucuma-common-ui/test/setup.ts',
       '@gemini-hlsw/lucuma-common-ui/test/disable-animations.css',
     ],

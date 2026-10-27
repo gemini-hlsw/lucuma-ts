@@ -1,3 +1,4 @@
+import { selectDropdownOption } from '@gemini-hlsw/lucuma-common-ui/testing';
 import { CAL_PARAMS } from '@gql/configs/CalParams';
 import { GET_CONFIGURATION, UPDATE_CONFIGURATION } from '@gql/configs/Configuration';
 import { GET_INSTRUMENT } from '@gql/configs/Instrument';
@@ -14,7 +15,6 @@ import {
   createRotator,
   createTarget,
 } from '@/test/create';
-import { selectDropdownOption } from '@/test/helpers';
 import { type RenderResultWithStore, renderWithContext } from '@/test/render';
 import type { Configuration } from '@/types';
 

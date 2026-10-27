@@ -1,3 +1,4 @@
+import { openDropdown, selectDropdownOption } from '@gemini-hlsw/lucuma-common-ui/testing';
 import type { ComponentBrowserQuery } from '@gql/gen/graphql';
 import { describe, expect, it } from 'vitest';
 import { page } from 'vitest/browser';
@@ -10,7 +11,6 @@ import {
 } from '@/test/fixtures/components';
 import { type PublishedSemesterRow, publishedSemesters, recentSpan } from '@/test/fixtures/semester';
 import { eveningsFromTonight, nightsFromTonight, semesterFromTonight } from '@/test/fixtures/tonight';
-import { openDropdown, selectDropdownOption } from '@/test/helpers';
 import { renderApp } from '@/test/renderApp';
 
 import ComponentsPage from './ComponentsPage';
@@ -337,7 +337,7 @@ describe(ComponentsPage, () => {
     // Both F2 and GSAOI carry a K-short; the instrument filter clears them all.
     await expect.element(screen.getByText('K-short').first()).toBeVisible();
 
-    await selectDropdownOption(screen, 'Instrument', 'GMOS (4)');
+    await selectDropdownOption(screen, { label: 'Instrument' }, 'GMOS (4)');
 
     await expect.element(screen.getByText('K-short')).not.toBeInTheDocument();
     await expect.element(screen.getByText('B1200').first()).toBeVisible();
@@ -347,7 +347,7 @@ describe(ComponentsPage, () => {
     const screen = await openComponents(COMPONENTS, { components: CATALOG });
     await expect.element(screen.getByText('Mask GS2026B-011')).toBeVisible();
 
-    await selectDropdownOption(screen, 'Type', 'Disperser (1)');
+    await selectDropdownOption(screen, { label: 'Type' }, 'Disperser (1)');
 
     // Masks are FPUs and clear out; the gratings stay.
     await expect.element(screen.getByText('Mask GS2026B-011')).not.toBeInTheDocument();
@@ -358,7 +358,7 @@ describe(ComponentsPage, () => {
     const screen = await openComponents(COMPONENTS, { components: [GSAOI_J, GHOST_SLIT, ...CATALOG] });
     await expect.element(screen.getByText('B1200').first()).toBeVisible();
 
-    await openDropdown(screen, 'Instrument');
+    await openDropdown(screen, { label: 'Instrument' });
 
     await expect.element(page.getByRole('option', { name: 'GHOST (1)' })).toBeVisible();
     const options = [...document.querySelectorAll('[role="option"]')].map((option) => option.textContent ?? '');

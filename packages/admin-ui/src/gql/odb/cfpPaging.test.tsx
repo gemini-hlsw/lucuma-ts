@@ -1,7 +1,7 @@
+import { fakeJwt, standardUser } from '@gemini-hlsw/lucuma-common-ui/testing';
 import { useEffect } from 'react';
 import { describe, expect, it } from 'vitest';
 
-import { fakeJwt, standardUser } from '@/test/factories';
 import { type MockedResponseOf, renderWithContext } from '@/test/render';
 
 import type { AdminCfpsResult } from './cfp';

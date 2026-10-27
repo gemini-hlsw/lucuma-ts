@@ -1,14 +1,11 @@
-/* eslint-disable react-refresh/only-export-components */
 import type { MockLink } from '@apollo/client/testing';
-import { MockedProvider } from '@apollo/client/testing/react';
+import { AtomsAndApollo, type AtomTuples, type InferAtomTuples } from '@gemini-hlsw/lucuma-common-ui/testing';
 import { makeCache } from '@gql/ApolloConfigs';
 import { GET_SLEW_FLAGS } from '@gql/configs/SlewFlags';
 import { SERVER_CONFIGURATION } from '@gql/server/ServerConfiguration';
 import type { MockedResponseOf } from '@gql/util';
-import type { WritableAtom } from 'jotai';
-import { createStore, Provider } from 'jotai';
-import { useHydrateAtoms } from 'jotai/utils';
-import type { PropsWithChildren, ReactElement } from 'react';
+import { createStore } from 'jotai';
+import type { ReactElement } from 'react';
 import type { ComponentRenderOptions } from 'vitest-browser-react';
 import { render } from 'vitest-browser-react';
 
@@ -24,18 +21,11 @@ interface CreateOptions<T> {
   serverConfig?: OverridePartial<ServerConfiguration>;
 }
 
-function HydrateAtoms<T extends AtomTuples>({
-  initialValues,
-  children,
-}: PropsWithChildren<{ initialValues: InferAtomTuples<T> }>) {
-  useHydrateAtoms(initialValues);
-  return children;
-}
-
 export type RenderResultWithStore = Awaited<ReturnType<typeof renderWithContext>>;
 
 /**
- * Render the given UI with the given atoms hydrated, and sets up ApolloProvider with the given mocks
+ * Renders the UI with the given atoms hydrated and the given Apollo mocks.
+ * Mocks answer every time unless they set `maxUsageCount`.
  */
 export async function renderWithContext<T extends AtomTuples>(
   ui: ReactElement,
@@ -58,19 +48,17 @@ export async function renderWithContext<T extends AtomTuples>(
   });
 
   const renderResult = await render(
-    <Provider store={store}>
-      <HydrateAtoms initialValues={initialValues}>
-        <MockedProvider
-          cache={cache}
-          mocks={[...mocks, ...(createOptions.mocks ?? [])]?.map((m) => ({
-            ...m,
-            maxUsageCount: m.maxUsageCount ?? Infinity,
-          }))}
-        >
-          {ui}
-        </MockedProvider>
-      </HydrateAtoms>
-    </Provider>,
+    <AtomsAndApollo
+      store={store}
+      initialValues={initialValues}
+      cache={cache}
+      mocks={[...mocks, ...(createOptions.mocks ?? [])].map((mock) => ({
+        ...mock,
+        maxUsageCount: mock.maxUsageCount ?? Number.POSITIVE_INFINITY,
+      }))}
+    >
+      {ui}
+    </AtomsAndApollo>,
     options,
   );
 
@@ -120,22 +108,3 @@ const mocks: MockLink.MockedResponse[] = [
     },
   } satisfies MockedResponseOf<typeof GET_SLEW_FLAGS>,
 ];
-
-// Some typescript magic here 🧙
-// Basically it allows the `initialValues` array to be type-safe with its values
-// Copied from an internal Jotai type
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AnyWritableAtom = WritableAtom<unknown, any[], unknown>;
-
-type AtomTuples = (readonly [AnyWritableAtom, ...unknown[]])[];
-
-type InferAtomTuples<T> = {
-  [K in keyof T]: T[K] extends readonly [infer A, ...infer Rest]
-    ? A extends WritableAtom<unknown, infer Args, unknown>
-      ? Rest extends Args
-        ? readonly [A, ...Rest]
-        : never
-      : T[K]
-    : never;
-};

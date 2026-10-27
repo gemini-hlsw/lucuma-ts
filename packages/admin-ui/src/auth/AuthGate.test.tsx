@@ -1,6 +1,6 @@
+import { fakeJwt, standardUser } from '@gemini-hlsw/lucuma-common-ui/testing';
 import { describe, expect, it } from 'vitest';
 
-import { fakeJwt, standardUser } from '@/test/factories';
 import { renderWithContext } from '@/test/render';
 
 import { AuthGate } from './AuthGate';

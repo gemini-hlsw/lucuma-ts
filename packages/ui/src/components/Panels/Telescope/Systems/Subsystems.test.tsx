@@ -1,4 +1,5 @@
 import type { MockLink } from '@apollo/client/testing';
+import { selectDropdownOption } from '@gemini-hlsw/lucuma-common-ui/testing';
 import { GET_MECHANISM } from '@gql/configs/Mechanism';
 import {
   ECS_DOME_PARK_MUTATION,
@@ -21,7 +22,7 @@ import type { Locator } from 'vitest/browser';
 import { userEvent } from 'vitest/browser';
 
 import { createEnclosureState, createMechanism, createTelescopeState } from '@/test/create';
-import { operationOutcome, selectDropdownOption } from '@/test/helpers';
+import { operationOutcome } from '@/test/helpers';
 import { type RenderResultWithStore, renderWithContext } from '@/test/render';
 import type { EnclosureState } from '@/types';
 

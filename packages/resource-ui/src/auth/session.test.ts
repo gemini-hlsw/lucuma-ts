@@ -1,8 +1,8 @@
+import { fakeJwt, standardUser } from '@gemini-hlsw/lucuma-common-ui/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { isLoggedInAtom, odbTokenAtom, sessionCheckedAtom, sessionStatusAtom } from '@/components/atoms/auth';
 import { store } from '@/components/atoms/store';
-import { fakeJwt, standardUser } from '@/test/factories';
 import {
   type PendingSsoCall,
   ssoCall as call,

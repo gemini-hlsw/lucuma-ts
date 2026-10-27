@@ -1,6 +1,5 @@
+import { standardUser } from '@gemini-hlsw/lucuma-common-ui/testing';
 import { describe, expect, it } from 'vitest';
-
-import { standardUser } from '@/test/factories';
 
 import { canAccessAdmin, type User } from './user';
 
