@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-09-22",
+  "generatedAt": "2026-10-26",
   "title": "Design System: Resource",
   "extensions": {
     "colorMeta": {
@@ -225,12 +225,6 @@
           "source": "src/components/ui/styles.ts"
         },
         {
-          "name": "calendar event outline",
-          "appliesTo": "react-big-calendar events",
-          "css": "outline: 2px solid var(--color-gpp, hsl(122deg 39% 49%)); outline-offset: 1px;",
-          "source": "src/styles/global.css"
-        },
-        {
           "name": "segmented control outline",
           "appliesTo": ".p-selectbutton .p-button",
           "css": "outline: 2px solid var(--color-gpp-light, hsl(122deg 39% 55%)); outline-offset: -2px;",
@@ -239,7 +233,7 @@
         }
       ],
       "contrast": "The light green step, not the base one. The base green measures 2.91:1 against the translucent green an active nav item fills with, under WCAG 1.4.11’s 3:1 floor for a UI part; the light step measures 3.35:1.",
-      "shortfalls": "Week cards ride the browser-default ring, and chart bars are mouse-only with no keyboard path to a bar’s open-night action."
+      "shortfalls": "Chart bars are mouse-only with no keyboard path to a bar’s open-night action."
     },
     "unmappedTokens": [
       {
@@ -314,8 +308,8 @@
       "name": "Segmented Control",
       "kind": "nav",
       "refersTo": "segment-idle",
-      "description": "View and clock toggles. The selected segment raises its surface and carries a 2px inset action-green underline; a green fill would compete with the real action.",
-      "html": "<div class=\"ds-seg\" role=\"group\" aria-label=\"View\"><button class=\"ds-seg-btn\" type=\"button\">Chart</button><button class=\"ds-seg-btn ds-seg-btn-on\" type=\"button\" aria-pressed=\"true\">Calendar</button></div>",
+      "description": "The masthead's site toggle. The selected segment raises its surface and carries a 2px inset action-green underline; a green fill would compete with the real action.",
+      "html": "<div class=\"ds-seg\" role=\"group\" aria-label=\"Site\"><button class=\"ds-seg-btn\" type=\"button\">GN</button><button class=\"ds-seg-btn ds-seg-btn-on\" type=\"button\" aria-pressed=\"true\">GS</button></div>",
       "css": ".ds-seg { display: inline-flex; }.ds-seg-btn { font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif; font-size: var(--text-xs, 0.75rem); line-height: 1rem; min-height: 24px; padding: 2.8px 7.7px; background: var(--color-surface, #1e1e1e); border: 1px solid var(--color-subtle, #454545); color: var(--color-foreground-secondary, rgb(255 255 255 / 60%)); font-weight: 500; cursor: pointer; } .ds-seg-btn:first-child { border-radius: 4px 0 0 4px; } .ds-seg-btn:last-child { border-radius: 0 4px 4px 0; border-left: none; } .ds-seg-btn:not(.ds-seg-btn-on):hover { background: var(--color-surface-raised, #414141); color: var(--color-foreground, rgb(255 255 255 / 87%)); } .ds-seg-btn-on { background: var(--color-surface-raised, #414141); color: var(--color-foreground, rgb(255 255 255 / 87%)); font-weight: 600; box-shadow: inset 0 -2px 0 0 var(--color-gpp, hsl(122deg 39% 49%)); } .ds-seg-btn:focus-visible { outline: 2px solid var(--color-gpp-light, hsl(122deg 39% 55%)); outline-offset: -2px; }"
     },
     {
@@ -351,7 +345,7 @@
   ],
   "narrative": {
     "northStar": "One Observatory Console",
-    "overview": "Resource is one console among the GPP applications, and it must feel like it: a reader coming from Explore (https://explore-dev.gemini.edu/) stays in the same dark, dense, matter-of-fact world. The chrome was measured from the running Explore application - the surface ladder, the white-opacity text ladder, the action green, the lightgreen identity accent - and those measured values are recorded here as tokens. Continuity is a floor, not a ceiling: where Resource can achieve clearer hierarchy, stronger accessibility, better interaction design, or more efficient use of space than Explore, it does, without breaking the family resemblance.\n\nThe surface is an information-dense engineering dashboard for experts - astronomers, night operations, staff - who scan, compare, and monitor the same views repeatedly. Density wins ties: condensed is correct here, airy is not. The interface recedes behind the record; colour is spent on identity and alarm, never on decoration. Today every view reads; mutations, auth, and a telescope scheduler builder are coming, so every pattern below is chosen to survive the arrival of editing (see Future Readiness).",
+    "overview": "Resource is one console among the GPP applications, and it must feel like it: a reader coming from Explore (https://explore-dev.gemini.edu/) stays in the same dark, dense, matter-of-fact world. The chrome was measured from the running Explore application - the surface ladder, the white-opacity text ladder, the action green, the lightgreen identity accent - and those measured values are recorded here as tokens. Continuity is a floor, not a ceiling: where Resource can achieve clearer hierarchy, stronger accessibility, better interaction design, or more efficient use of space than Explore, it does, without breaking the family resemblance.\n\nThe surface is an information-dense engineering dashboard for experts - astronomers, night operations, staff - who scan, compare, and monitor the same views repeatedly. Density wins ties: condensed is correct here, airy is not. The interface recedes behind the record; colour is spent on identity and alarm, never on decoration. Today every view reads; mutations and a telescope scheduler builder are coming, so every pattern below is chosen to survive the arrival of editing (see Future Readiness).",
     "keyCharacteristics": [
       "Dark-first and only: black canvas, tonal layering, no glare, minimal chrome.",
       "Dense: type and the boxes that hold it in rem so a reader can scale them, spacing in px so it does not.",
@@ -382,7 +376,7 @@
       },
       {
         "name": "A Gap Is a Gap",
-        "body": "Empty cells, empty calendar squares, and unrecorded spans stay empty. \"Not recorded\" must never be styled as \"closed\" or \"unavailable\" (invariant I4).",
+        "body": "Empty cells and unrecorded spans stay empty. \"Not recorded\" must never be styled as \"closed\" or \"unavailable\" (invariant I4).",
         "section": "colors"
       },
       {
@@ -407,12 +401,12 @@
       },
       {
         "name": "The One-Library Rule",
-        "body": "Every component is PrimeReact's: buttons, dialogs, menus, tables, inputs and overlays come from `primereact/*` and take the lucuma-ui theme, always. A hand-written element that imitates a component PrimeReact ships is not an option; plain HTML with Tailwind is for what PrimeReact has no component for - a caption, a live region, a line of text - never for a look-alike control.",
+        "body": "Every component is PrimeReact's: buttons, dialogs, menus, tables, inputs and overlays come from `primereact/*` and take the lucuma-ui theme, always. A hand-written element that imitates a component PrimeReact ships is not an option, whatever it would save in overrides; plain HTML with Tailwind is for what PrimeReact has no component for - a caption, a live region, a line of text - and never for a look-alike control.",
         "section": "components"
       },
       {
         "name": "The One-Glyph-Set Rule",
-        "body": "Every icon or glyph is a FontAwesome icon rendered through `FontAwesomeIcon`, sized by FontAwesome's own `size` prop: no inline SVG, no PrimeIcons. The one image is the ORCID iD logo on the login item (`src/assets/orcid-logo.svg`, the file navigate-ui's login page renders), shown in ORCID's own green rather than the theme's ink, because the mark identifies the sign-in provider and is used as ORCID publishes it. Nothing else may be an image.",
+        "body": "Every icon or glyph is a FontAwesome icon rendered through the project's `FontAwesomeIcon`, sized by FontAwesome's own `size` prop: no inline SVG, no PrimeIcons. The one image is the ORCID iD logo on the login item (`src/assets/orcid-logo.svg`, the file navigate-ui's login page renders), shown in ORCID's own green rather than the theme's ink, because the mark identifies the sign-in provider and is used as ORCID publishes it. Nothing else may be an image.",
         "section": "components"
       }
     ],

@@ -10,7 +10,6 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { EmptyPanel, ErrorAlert, Loading } from '@/components/ui/PageStatus';
 import { SemesterTitleLink } from '@/components/ui/SemesterTitleLink';
 import { coverageRanges, nearestCoveredNight, semesterHolding } from '@/domain/coverage';
-import { moonPhaseAt, moonPhaseLabel } from '@/domain/moon';
 import { buildNightTimeline } from '@/domain/nightTimeline';
 import { addDays } from '@/domain/semester';
 import { observingNightInterval } from '@/domain/siteTime';
@@ -19,7 +18,6 @@ import { TimelineChart, TimelineLegendBar } from '@/features/timeline/TimelineCh
 import {
   calendarLegendExtras,
   modeLegendExtras,
-  skyLegendExtras,
   telescopeLegendExtras,
   tooLegendExtras,
 } from '@/features/timeline/timelineOptions';
@@ -62,7 +60,6 @@ export default function NightPage(): JSX.Element {
   const options = buildNightChartOptions({ night, site, now, timeDisplay });
 
   const failure = setsError ?? error;
-  const moon = moonPhaseLabel(moonPhaseAt((interval.start + interval.end) / 2));
   const busy = loadingSets || loading;
 
   // Only read on the no-data path; cheap enough not to gate on it.
@@ -90,7 +87,7 @@ export default function NightPage(): JSX.Element {
         }
       >
         {clockLabel(interval.start, site, timeDisplay)} to {clockLabel(interval.end, site, timeDisplay)}{' '}
-        {timeDisplay === 'utc' ? 'UTC' : 'site time'}, labelled by the date it ends. {moon}.
+        {timeDisplay === 'utc' ? 'UTC' : 'site time'}, labelled by the date it ends.
         {when(held, (held) => (
           <>
             {' '}
@@ -142,7 +139,6 @@ export default function NightPage(): JSX.Element {
             telescope={telescopeLegendExtras(telescopeAvailability)}
             mode={modeLegendExtras(telescopeMode)}
             too={tooLegendExtras(tooSupport)}
-            sky={skyLegendExtras()}
             calendar={calendarLegendExtras({
               now: now !== null && now >= interval.start && now < interval.end && 'Now',
             })}

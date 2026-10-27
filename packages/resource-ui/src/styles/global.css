@@ -165,11 +165,7 @@
   --schedule-band-edge: rgb(231 0 11 / 70%);
   --schedule-closed: #b91c1c;
 
-  /* Over the bars, not behind: a bar covers the whole night, so a band behind it is invisible. */
-  --night-daylight-wash: rgb(255 190 90 / 28%);
-  --night-twilight-wash: rgb(255 190 90 / 11%);
-
-  /* A hole in the record: a dark veil, deliberately nothing like the sun's golden wash. */
+  /* A hole in the record: a dark veil. */
   --schedule-no-data: rgb(10 10 10 / 78%);
 
   /* Night lines are faint on purpose: at thirty a month they are a texture, not a grid. */

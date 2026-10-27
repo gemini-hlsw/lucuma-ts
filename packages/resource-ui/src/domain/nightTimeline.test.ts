@@ -245,14 +245,3 @@ describe('the telescope-state rows', () => {
     expect(night.hasUnscheduled).toBe(false);
   });
 });
-
-describe('the sun', () => {
-  it('finds the night dark between dusk and dawn', () => {
-    const { sun } = build();
-
-    expect(sun.sunset).not.toBeNull();
-    expect(sun.sunrise).not.toBeNull();
-    expect(sun.duskAstronomical).toBeGreaterThan(sun.sunset ?? 0);
-    expect(sun.dawnAstronomical).toBeLessThan(sun.sunrise ?? 0);
-  });
-});

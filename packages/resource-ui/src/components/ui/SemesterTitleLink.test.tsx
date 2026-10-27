@@ -9,8 +9,6 @@ const semester = (
   over: Partial<PublishedSemester> & Pick<PublishedSemester, 'site' | 'semester' | 'title'>,
 ): PublishedSemester => ({
   version: null,
-  holidays: [],
-  moonEvents: [],
   demo: false,
   firstNight: '2026-08-02',
   lastNight: '2027-02-01',

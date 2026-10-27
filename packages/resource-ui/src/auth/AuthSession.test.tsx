@@ -41,9 +41,7 @@ const ONE_SEMESTER: PublishedSemestersQuery = {
       title: 'Gemini South Semester 2025B',
       version: null,
       demo: false,
-      holidays: [],
       nights: { __typename: 'DateInterval', start: '2025-08-02', end: '2026-02-02' },
-      moonEvents: [],
     },
   ],
 };

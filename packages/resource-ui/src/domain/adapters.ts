@@ -36,8 +36,6 @@ export const toPublishedSemesters = (data: Gql.PublishedSemestersQuery): readonl
     // The API states a semester's nights half-open; the domain reads them inclusively.
     firstNight: entry.nights.start,
     lastNight: addDays(entry.nights.end, -1),
-    holidays: entry.holidays,
-    moonEvents: entry.moonEvents.map((event) => ({ date: event.date, phase: event.phase })),
   }));
 
 /** Never cleared: a session that fixes the server and refetches gets silence, the wanted direction. */

@@ -118,10 +118,7 @@ describe(WeekPage, () => {
       ),
     );
 
-    await expect
-      .element(screen.getByRole('button', { name: 'Open night beginning 2025-11-15' }).getByText('not recorded'))
-      .toBeVisible();
-    await expect.poll(() => [...document.querySelectorAll('[data-testid="week-night-facts"] .p-tag')].length).toBe(1);
+    await expect.poll(() => screen.getByTestId('week-timeline').getByText('not recorded').elements().length).toBe(1);
   });
 
   it('steps a whole week at a time', async () => {
@@ -198,15 +195,6 @@ describe(WeekPage, () => {
     await expect.element(screen.getByText('Nights beginning 2025-11-20 to 2025-11-26')).toBeVisible();
   });
 
-  it('briefs each night: dark hours, moon, and the week’s totals', async () => {
-    const screen = await openOrdinaryWeek();
-
-    await expect.poll(() => document.querySelectorAll('[data-testid="week-night-facts"]').length).toBe(7);
-    await expect.element(screen.getByText('h dark', { exact: false }).first()).toBeVisible();
-    await expect.element(screen.getByText('% moon', { exact: false }).first()).toBeVisible();
-    await expect.element(screen.getByText('h of astronomical dark', { exact: false })).toBeVisible();
-  });
-
   it('lists what changes this week, with the clock time of a mid-night change', async () => {
     const screen = await openWeekOfR400Failure();
 
@@ -233,11 +221,10 @@ describe(WeekPage, () => {
     await expect.element(screen.getByTestId('week-changes')).not.toBeInTheDocument();
   });
 
-  it('keys the chrome as well as the data: the sky it paints and the weekends it shades', async () => {
+  it('keys the chrome as well as the data: the weekends it shades', async () => {
     const screen = await openOrdinaryWeek();
     const legend = screen.getByLabelText('Legend');
 
-    await expect.element(legend.getByRole('group', { name: 'Sky' }).getByText('Daylight')).toBeVisible();
     await expect.element(legend.getByRole('group', { name: 'Calendar' }).getByText('Weekend')).toBeVisible();
   });
 
@@ -259,15 +246,6 @@ describe(WeekPage, () => {
 
     await expect.element(legend.getByText('GHOST')).toBeVisible();
     await expect.element(legend.getByText('GMOS')).toBeVisible();
-  });
-
-  it('opens the night view from a facts card', async () => {
-    const screen = await openOrdinaryWeek();
-
-    // The card headed "Thu 13" is the night labelled the 14th; the whole card is the link.
-    await screen.getByRole('button', { name: 'Open night beginning 2025-11-13' }).click();
-
-    await expect.poll(shownUrl).toBe('/night?site=GS&night=2025-11-14');
   });
 
   it('opens the night view from the chart', async () => {

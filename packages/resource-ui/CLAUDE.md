@@ -48,8 +48,8 @@ the clock toggle, finder scoping) are DESIGN.md's. The mechanics:
   back, notifies every subscriber, and holds the session's own choice in a closure so a denied
   write costs the choice its persistence rather than its effect. Tests start with no habit -
   `src/test/setup.ts` clears storage and fires the storage event that invalidates that closure.
-- **Every night-shaped thing opens its night view through `app/useOpenNight.ts`** - week
-  cards and chart bars both route through the one hook.
+- **Every night-shaped thing opens its night view through `app/useOpenNight.ts`** - chart
+  bars on the week and semester charts both route through the one hook.
 - **Page-scoped parameters go through `app/useUrlParam.ts`.** Defaults are deleted from the
   URL, not written.
 - **A navigation carries `site` and `night` and nothing else**, through
@@ -122,13 +122,13 @@ plus `features/timeline/`. A view supplies its own axis and its own way of phras
 nights for the semester and week, clock times for a night - and nothing else. Adding a fourth window
 should not mean copying any of it.
 
-| View           | What it draws                                                                                             | Its module                   |
-| -------------- | --------------------------------------------------------------------------------------------------------- | ---------------------------- |
-| Night          | the chart alone, plus PWFS1/PWFS2/LGS subsystem rows no other view shows                                  | `features/night/`            |
-| Week           | the run chart, plus `WeekNightStrip` (a card per night, each one a button onto it) and `WeekChangesTable` | `domain/weekBriefing.ts`     |
-| Semester       | an xrange per month: how long a run lasts                                                                 | `features/semester/`         |
-| `/instruments` | a row per instrument the site's records name, expanding into its runs                                     | `domain/instrumentFinder.ts` |
-| `/components`  | the ICTD half: the piece catalog grouped by instrument, expanding into its history                        | `domain/componentFinder.ts`  |
+| View           | What it draws                                                                      | Its module                   |
+| -------------- | ---------------------------------------------------------------------------------- | ---------------------------- |
+| Night          | the chart alone, plus PWFS1/PWFS2/LGS subsystem rows no other view shows           | `features/night/`            |
+| Week           | the run chart, plus `WeekChangesTable`                                             | `domain/weekBriefing.ts`     |
+| Semester       | an xrange per month: how long a run lasts                                          | `features/semester/`         |
+| `/instruments` | a row per instrument the site's records name, expanding into its runs              | `domain/instrumentFinder.ts` |
+| `/components`  | the ICTD half: the piece catalog grouped by instrument, expanding into its history | `domain/componentFinder.ts`  |
 
 What each view may draw and how (change-feed rules, subsystem rows, legend
 order, colour and treatment) is specified in DESIGN.md. Structural rules the code does not
@@ -229,8 +229,8 @@ GraphQL response → **pure adapters** (`src/domain/adapters.ts`) → **UI domai
 (`src/domain/types.ts`) → components. All null handling and timestamp parsing lives in the adapters;
 components never touch generated fragment shapes.
 
-`src/domain/` holds the pure modules - date, interval and semester math, the sky (`moon.ts`, `sun.ts`), the
-timeline projections, the two finders, the week briefing - each with unit tests beside it. Keep
+`src/domain/` holds the pure modules - date, interval and semester math, the
+timeline projections, the two finders, the week's changes - each with unit tests beside it. Keep
 date math and chart builders pure; keep components focused on rendering and interaction.
 
 ## Non-negotiables

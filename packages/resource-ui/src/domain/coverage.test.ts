@@ -9,8 +9,6 @@ const semester = (
   site: 'GS',
   title: over.semester,
   version: null,
-  holidays: [],
-  moonEvents: [],
   demo: false,
   ...over,
 });

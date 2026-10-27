@@ -33,8 +33,6 @@ export const publishedSemester = ({
   version: null,
   demo: false,
   nights: semesterNights(semester),
-  holidays: [],
-  moonEvents: [],
   ...overrides,
 });
 

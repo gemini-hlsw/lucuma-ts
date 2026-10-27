@@ -1,8 +1,4 @@
-import { type MoonPhase, moonPhaseAt } from './moon';
 import { portRowLabel } from './ports';
-import { observingNightInterval } from './siteTime';
-import { nightSunTimes } from './sun';
-import type { TimelineNight } from './timeline';
 import type {
   ComponentLocation,
   ComponentUsage,
@@ -10,88 +6,8 @@ import type {
   InstrumentComponent,
   InstrumentComponentAvailabilityBlock,
   Interval,
-  MoonEvent,
-  Site,
   TelescopeAvailabilityBlock,
 } from './types';
-
-/** One night's briefing entry: the sky, and whether anything is recorded. */
-export interface WeekNightFacts {
-  readonly observingNight: string;
-  /** The evening the night begins on - what the chart heads the column with. */
-  readonly eveningDate: string;
-  readonly isWeekend: boolean;
-  readonly isHoliday: boolean;
-  readonly moon: MoonPhase;
-  /** New or full, when the published sheet prints one against this evening. */
-  readonly publishedMoon: MoonEvent['phase'] | null;
-  /** Hours of astronomical night; null when the sun never clears -18 degrees. */
-  readonly darkHours: number | null;
-  readonly dataAvailable: boolean;
-}
-
-const MS_PER_HOUR = 3_600_000;
-
-const darkHoursOf = (site: Site, observingNight: string): number | null => {
-  const { duskAstronomical, dawnAstronomical } = nightSunTimes(site, observingNightInterval(site, observingNight));
-  return duskAstronomical === null || dawnAstronomical === null
-    ? null
-    : (dawnAstronomical - duskAstronomical) / MS_PER_HOUR;
-};
-
-export interface BuildWeekNightFactsOptions {
-  readonly site: Site;
-  /** The week timeline's own nights, so the strip and the chart cannot disagree. */
-  readonly nights: readonly TimelineNight[];
-  readonly holidays: readonly string[];
-  readonly moonEvents: readonly MoonEvent[];
-}
-
-export const buildWeekNightFacts = ({
-  site,
-  nights,
-  holidays,
-  moonEvents,
-}: BuildWeekNightFactsOptions): readonly WeekNightFacts[] => {
-  const holidaySet = new Set(holidays);
-  const publishedMoon = new Map(moonEvents.map((event) => [event.date, event.phase]));
-
-  return nights.map((night) => {
-    // Sampled mid-night, so the phase belongs to the night the column names.
-    const moon = moonPhaseAt((night.interval.start + night.interval.end) / 2);
-    return {
-      observingNight: night.observingNight,
-      eveningDate: night.eveningDate,
-      isWeekend: night.isWeekend,
-      isHoliday: holidaySet.has(night.eveningDate),
-      moon,
-      publishedMoon: publishedMoon.get(night.eveningDate) ?? null,
-      darkHours: darkHoursOf(site, night.observingNight),
-      dataAvailable: night.dataAvailable,
-    };
-  });
-};
-
-/** The header's one-glance numbers: total dark, and where the moon is going. */
-export interface WeekSummary {
-  /** Sum over the nights that have an astronomical night at all. */
-  readonly totalDarkHours: number;
-  readonly moonStart: MoonPhase;
-  readonly moonEnd: MoonPhase;
-}
-
-export const summarizeWeek = (facts: readonly WeekNightFacts[]): WeekSummary | null => {
-  const first = facts[0];
-  const last = facts.at(-1);
-  if (first === undefined || last === undefined) {
-    return null;
-  }
-  return {
-    totalDarkHours: facts.reduce((sum, fact) => sum + (fact.darkHours ?? 0), 0),
-    moonStart: first.moon,
-    moonEnd: last.moon,
-  };
-};
 
 /** A boundary exactly at the window's edge is not a change: a run from last week merely continues. */
 export type WeekChange =

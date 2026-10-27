@@ -199,10 +199,9 @@ Text is a white-opacity ladder (Material dark), not a grey ramp:
   read as "identity unresolved". Where an unknown run coincides with a named one, the named
   run wins the shared span.
 - **Amber**: unknown/warning accents, one family end to end, named as `--color-warning` (the
-  weight a warning word takes on the canvas: the week cards' "holiday",
-  the PrimeReact warning tags) plus a panel triplet `--color-warning-fill` / `-edge` / `-ink`
-  for the warn toast. Amber warns; it never celebrates. One exception stays
-  raw: Cal-Zorro's identity hue, which happens to share the family.
+  weight a warning word takes on the canvas: the PrimeReact warning tags) plus a panel
+  triplet `--color-warning-fill` / `-edge` / `-ink` for the warn toast. Amber warns; it
+  never celebrates. One exception stays raw: Cal-Zorro's identity hue, which happens to share the family.
 - **Block ink** (`#fff` / `#0a0a0a`): bar labels take whichever of light or dark clears
   4.5:1 on the fill.
 
@@ -255,14 +254,14 @@ Section and Display, so 20px would be a step with no role. Line heights tighten 
 Tailwind's remaining steps are switched off in `@theme`, which is what keeps a seventh size from
 arriving as `text-xl`. Every role below body size is a token, so a call site says the role:
 
-| Token                       | Size            | Role, and the rule for using it                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| --------------------------- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `--text-2xl` / `text-2xl`   | 1.5rem (24px)   | **Display** (600). The single glanceable fact a destination exists to answer, at most one per page, read from a step back rather than at the keyboard. A destination with no such fact does not reach for it.                                                                                                                                                                                                                                                                              |
-| `--text-lg` / `text-lg`     | 1.125rem (18px) | **Section** (600). Head a section within a destination, where a page has more than one and the reader has to find the right one. Never a substitute for Title, which names the destination itself.                                                                                                                                                                                                                                                                                         |
-| `--text-base` / `text-base` | 1rem (16px)     | **Title** (600). Name the destination the reader is on, once per page, in `PageHeader`, and nothing else. Exactly one element on a page may carry it.                                                                                                                                                                                                                                                                                                                                      |
-| `--text-sm` / `text-sm`     | 0.875rem (14px) | **Body** (400). Set anything a reader reads as words - table cells, controls, prose, messages, empty states - at this, and reach for it by default. It is set once on `body`, so an unclassed surface inherits it rather than the root.                                                                                                                                                                                                                                                    |
-| `--text-xs` / `text-xs`     | 0.75rem (12px)  | **Dense** (400-700). The chrome's own size and every dense data surface - buttons, page selects, the masthead right cluster, sidebar links, segmented controls, chart annotations, table captions, night card metadata. Pack a surface tighter than Body only where the reader is scanning rather than reading, and never go smaller. The weight is the call site's, since a chart label and a button want different emphasis at the one size. **This is the floor for informative text.** |
-| `--text-2xs` / `text-2xs`   | 0.625rem (10px) | **Tick** (400). Number an axis tick - the day numbers on the semester chart, the hour times on the night chart. Nothing else may take it, ever.                                                                                                                                                                                                                                                                                                                                            |
+| Token                       | Size            | Role, and the rule for using it                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| --------------------------- | --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--text-2xl` / `text-2xl`   | 1.5rem (24px)   | **Display** (600). The single glanceable fact a destination exists to answer, at most one per page, read from a step back rather than at the keyboard. A destination with no such fact does not reach for it.                                                                                                                                                                                                                                                         |
+| `--text-lg` / `text-lg`     | 1.125rem (18px) | **Section** (600). Head a section within a destination, where a page has more than one and the reader has to find the right one. Never a substitute for Title, which names the destination itself.                                                                                                                                                                                                                                                                    |
+| `--text-base` / `text-base` | 1rem (16px)     | **Title** (600). Name the destination the reader is on, once per page, in `PageHeader`, and nothing else. Exactly one element on a page may carry it.                                                                                                                                                                                                                                                                                                                 |
+| `--text-sm` / `text-sm`     | 0.875rem (14px) | **Body** (400). Set anything a reader reads as words - table cells, controls, prose, messages, empty states - at this, and reach for it by default. It is set once on `body`, so an unclassed surface inherits it rather than the root.                                                                                                                                                                                                                               |
+| `--text-xs` / `text-xs`     | 0.75rem (12px)  | **Dense** (400-700). The chrome's own size and every dense data surface - buttons, page selects, the masthead right cluster, sidebar links, segmented controls, chart annotations, table captions. Pack a surface tighter than Body only where the reader is scanning rather than reading, and never go smaller. The weight is the call site's, since a chart label and a button want different emphasis at the one size. **This is the floor for informative text.** |
+| `--text-2xs` / `text-2xs`   | 0.625rem (10px) | **Tick** (400). Number an axis tick - the day numbers on the semester chart, the hour times on the night chart. Nothing else may take it, ever.                                                                                                                                                                                                                                                                                                                       |
 
 Tick is the one step below the floor, and it earns the exception by carrying nothing: a tick number
 is a scale marker, scanned rather than read, one or two characters, and redundant with the axis it
@@ -496,7 +495,7 @@ intervals - an end is exclusive; the deliberate 3px corner radius softens a corn
 moving one), so bars must never be given rounding or padding that would move an edge off
 its time. Meaning rides on fill treatment: solid =
 recorded use, hatched = engineering use, hollow dashed outline = absence, translucent wash =
-closure band or daylight. A 1px `rgb(255 255 255 / 12%)` border separates adjacent blocks
+closure band. A 1px `rgb(255 255 255 / 12%)` border separates adjacent blocks
 that share a hue.
 
 ## Components
@@ -548,10 +547,10 @@ below adds only what is particular to its component.
   `aria-current="page"`, set by the router rather than by hand, so the highlight cannot drift from
   what is announced.
 
-**Shipped shortfalls, queued like the type deviations:** week cards ride the browser-default ring,
-chart bars are mouse-only with no keyboard path to a bar's open-night action (nights stay reachable
-through the date controls until bars get a focusable treatment), and `FOCUS_RING` is worn only by
-the masthead and the phone bar today.
+**Shipped shortfalls, queued like the type deviations:** chart bars are mouse-only with no
+keyboard path to a bar's open-night action (nights stay reachable through the date controls
+until bars get a focusable treatment), and `FOCUS_RING` is worn only by the masthead and the
+phone bar today.
 
 ### Buttons
 
@@ -694,14 +693,13 @@ phrasing of a span, nothing else.
   neutral, and print their state in words - no legend section, because a colour key would
   key no distinction, and no appearance on the wide views, where three semester-constant
   rows per month would bury the runs.
-- **Legend:** one section per state row, then Instruments, then Sky and Calendar where a
-  view supplies them - six, in that order. The neutrals repeat across rows, so a repeated
+- **Legend:** one section per state row, then Instruments, then Calendar where a
+  view supplies it - five, in that order. The neutrals repeat across rows, so a repeated
   grey is keyed under the row it belongs to; a section with no keys does not render.
 - **The week changes table** reads ports only: a shelf change is
   inventory, not a night's headline; a boundary on the window's edge is not a change.
-- **Every night-shaped thing opens its night view** - week cards and chart bars
-  route onto `/night`. What each of those must show on focus, and which of them still falls
-  short, is Interaction states above.
+- **Every night-shaped thing opens its night view** - chart bars route onto `/night`.
+  What a bar must show on focus, and how it still falls short, is Interaction states above.
 
 ### Navigation (sidebar and phone bar)
 

@@ -157,12 +157,11 @@ describe(NightPage, () => {
     await expect.element(screen.getByText('GHOST').first()).toBeVisible();
   });
 
-  it('states the night in the site clock, with its moon', async () => {
+  it('states the night in the site clock', async () => {
     const screen = await openOrdinaryNight();
 
     // 14:00 to 14:00 at Cerro Pachon, whatever zone the reader is in.
     await expect.element(screen.getByText('14:00 to 14:00 site time', { exact: false })).toBeVisible();
-    await expect.element(screen.getByText('illuminated', { exact: false })).toBeVisible();
   });
 
   it('says no schedule reaches a night outside every published semester', async () => {
@@ -426,20 +425,11 @@ describe(NightPage, () => {
     await expect.element(chart.getByText('`Alopeke')).not.toBeInTheDocument();
   });
 
-  it('keys the sky it paints - the washes are the largest thing on the chart', async () => {
-    const screen = await openOrdinaryNight();
-    const sky = screen.getByLabelText('Legend').getByRole('group', { name: 'Sky' });
-
-    await expect.element(sky.getByText('Daylight')).toBeVisible();
-    await expect.element(sky.getByText('Twilight')).toBeVisible();
-  });
-
-  it('keeps a bar hoverable beneath the sun wash, so the tooltip still comes', async () => {
+  it('shows a bar’s tooltip on hover', async () => {
     const screen = await openOrdinaryNight();
     await expect.element(screen.getByTestId('night-timeline')).toBeVisible();
     await expect.poll(() => document.querySelector('[data-testid="night-timeline"] .highcharts-point')).not.toBeNull();
 
-    // The daylight wash is drawn over the bars, so it must be pointer-transparent or it eats the tooltip.
     const bar = document.querySelector('[data-testid="night-timeline"] .highcharts-point');
     await page.elementLocator(bar!).hover({ position: { x: 6, y: 8 } });
 

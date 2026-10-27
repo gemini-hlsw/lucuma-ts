@@ -2,7 +2,6 @@ import type { Options, XAxisPlotBandsOptions, XAxisPlotLinesOptions } from 'high
 
 import { midpoint } from '@/domain/interval';
 import { SITE_TIME_ZONES, zoneFormatters } from '@/domain/siteTime';
-import { nightSunTimes } from '@/domain/sun';
 import type { TimelineNight } from '@/domain/timeline';
 import type { Site } from '@/domain/types';
 import type { WeekTimeline } from '@/domain/weekTimeline';
@@ -14,7 +13,6 @@ import {
   MARKER_LINE_Z,
   MUTED_LABEL,
   readerPx,
-  WASH_Z,
   WEEK_LINE_Z,
 } from '@/features/timeline/timelineOptions';
 
@@ -30,8 +28,7 @@ export const nightLabel = (night: TimelineNight, site: Site): string =>
 /** Labels sit at each night's midpoint; the boundaries are the plot lines. */
 export const weekTickPositions = (week: WeekTimeline): number[] => week.nights.map((night) => midpoint(night.interval));
 
-/** The sun wash goes over the bars: a band behind a bar spanning the night would never be seen. */
-export const buildWeekBands = (week: WeekTimeline, site: Site): XAxisPlotBandsOptions[] => [
+export const buildWeekBands = (week: WeekTimeline): XAxisPlotBandsOptions[] => [
   ...week.nights
     .filter((night) => night.isWeekend)
     .map((night) => ({
@@ -40,17 +37,6 @@ export const buildWeekBands = (week: WeekTimeline, site: Site): XAxisPlotBandsOp
       color: 'var(--schedule-weekend)',
       className: 'schedule-weekend',
     })),
-  ...week.nights.flatMap((night) => {
-    const sun = nightSunTimes(site, night.interval);
-    const wash = (from: number | null, to: number | null, color: string, className: string) =>
-      from === null || to === null || to <= from ? [] : [{ from, to, color, className, zIndex: WASH_Z }];
-    return [
-      ...wash(night.interval.start, sun.sunset, 'var(--night-daylight-wash)', 'night-daylight'),
-      ...wash(sun.sunset, sun.duskAstronomical, 'var(--night-twilight-wash)', 'night-twilight'),
-      ...wash(sun.dawnAstronomical, sun.sunrise, 'var(--night-twilight-wash)', 'night-twilight'),
-      ...wash(sun.sunrise, night.interval.end, 'var(--night-daylight-wash)', 'night-daylight'),
-    ];
-  }),
   // I4 made visible: a night with nothing recorded is hatched, not drawn as an empty telescope.
   ...week.nights
     .filter((night) => !night.dataAvailable)
@@ -117,7 +103,7 @@ export const buildWeekChartOptions = ({ week, site, now }: WeekChartModel): Opti
         style: MUTED_LABEL,
         y: readerPx(1.125),
       },
-      plotBands: buildWeekBands(week, site),
+      plotBands: buildWeekBands(week),
       plotLines: [
         ...buildWeekLines(week),
         ...(showsNow

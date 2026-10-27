@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { InstrumentAvailabilityBlock, InstrumentComponent, InstrumentComponentAvailabilityBlock } from './types';
-import { buildWeekChanges, buildWeekNightFacts, summarizeWeek } from './weekBriefing';
+import { buildWeekChanges } from './weekBriefing';
 import { buildWeekTimeline } from './weekTimeline';
 
 /** `nightsWithData: undefined` leaves every night of the week recorded. */
@@ -11,53 +11,6 @@ const week = buildWeekTimeline({
   instrumentAvailability: [],
   telescopeAvailability: [],
   nightsWithData: undefined,
-});
-
-describe('the nightly facts', () => {
-  it('carries one entry per night, in the chart’s own order', () => {
-    const facts = buildWeekNightFacts({ site: 'GS', nights: week.nights, holidays: [], moonEvents: [] });
-
-    expect(facts.map((fact) => fact.observingNight)).toEqual([
-      '2026-11-22',
-      '2026-11-23',
-      '2026-11-24',
-      '2026-11-25',
-      '2026-11-26',
-      '2026-11-27',
-      '2026-11-28',
-    ]);
-    // A November night at Cerro Pachon has real dark, but summer is closing in.
-    for (const fact of facts) {
-      expect(fact.darkHours).toBeGreaterThan(4);
-      expect(fact.darkHours).toBeLessThan(12);
-    }
-  });
-
-  it('marks holidays and printed moon dates by the evening a night begins', () => {
-    const facts = buildWeekNightFacts({
-      site: 'GS',
-      nights: week.nights,
-      // The night labelled the 22nd begins on the evening of the 21st.
-      holidays: ['2026-11-21'],
-      moonEvents: [{ date: '2026-11-24', phase: 'FULL' }],
-    });
-
-    expect(facts[0]?.isHoliday).toBe(true);
-    expect(facts[1]?.isHoliday).toBe(false);
-    expect(facts.find((fact) => fact.eveningDate === '2026-11-24')?.publishedMoon).toBe('FULL');
-  });
-
-  it('sums the dark and brackets the moon for the header', () => {
-    const facts = buildWeekNightFacts({ site: 'GS', nights: week.nights, holidays: [], moonEvents: [] });
-    const summary = summarizeWeek(facts);
-
-    expect(summary?.totalDarkHours).toBeCloseTo(
-      facts.reduce((sum, fact) => sum + (fact.darkHours ?? 0), 0),
-      6,
-    );
-    expect(summary?.moonStart).toEqual(facts[0]?.moon);
-    expect(summary?.moonEnd).toEqual(facts.at(-1)?.moon);
-  });
 });
 
 describe('the changes list', () => {

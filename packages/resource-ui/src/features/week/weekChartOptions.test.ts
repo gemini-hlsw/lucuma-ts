@@ -56,22 +56,9 @@ describe('night headings', () => {
   });
 });
 
-describe('the sun across the week', () => {
-  it('washes every night, so the usable hours read as seven separate windows', () => {
-    const bands = buildWeekBands(build(), 'GS');
-    const daylight = bands.filter((band) => band.className === 'night-daylight');
-
-    // Two daylight stretches per night - before sunset and after sunrise.
-    expect(daylight).toHaveLength(14);
-    for (const band of daylight) {
-      expect(band.zIndex).toBe(5);
-    }
-  });
-});
-
 describe('nights with nothing recorded', () => {
   it('hatches an un-entered night and names it', () => {
-    const bands = buildWeekBands(build(new Set(['2026-11-14'])), 'GS');
+    const bands = buildWeekBands(build(new Set(['2026-11-14'])));
     const missing = bands.filter((band) => band.className === 'week-no-data');
 
     expect(missing).toHaveLength(6);
@@ -79,7 +66,7 @@ describe('nights with nothing recorded', () => {
   });
 
   it('hatches nothing while the answer is still in flight', () => {
-    const bands = buildWeekBands(build(undefined), 'GS');
+    const bands = buildWeekBands(build(undefined));
 
     expect(bands.filter((band) => band.className === 'week-no-data')).toEqual([]);
   });
@@ -124,7 +111,6 @@ describe('a telescope-wide closure across the week', () => {
         telescopeAvailability: [shutdown],
         nightsWithData: undefined,
       }),
-      'GS',
     ).find((band) => band.className === 'schedule-closure-band');
 
   it('spans only the nights it closes', () => {

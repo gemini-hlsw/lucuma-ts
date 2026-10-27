@@ -100,11 +100,6 @@ export const PUBLISHED_SEMESTERS_QUERY = graphql(`
         start
         end
       }
-      holidays
-      moonEvents {
-        date
-        phase
-      }
     }
   }
 `);

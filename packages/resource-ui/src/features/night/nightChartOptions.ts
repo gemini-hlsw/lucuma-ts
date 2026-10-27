@@ -1,8 +1,7 @@
-import type { Options, XAxisPlotBandsOptions, XAxisPlotLinesOptions } from 'highcharts';
+import type { Options, XAxisPlotLinesOptions } from 'highcharts';
 
 import type { NightTimeline } from '@/domain/nightTimeline';
 import { displayTimeZone, type TimeDisplay, zoneFormatters } from '@/domain/siteTime';
-import type { NightSunTimes } from '@/domain/sun';
 import type { TimelineBlock } from '@/domain/timeline';
 import type { Site } from '@/domain/types';
 import {
@@ -10,11 +9,9 @@ import {
   buildTimelineChart,
   closureBandPlotBand,
   MARKER_LINE_Z,
-  MUTED_LABEL,
   MUTED_TICK,
   NOW_LABEL,
   readerPx,
-  WASH_Z,
   WEEK_LINE_Z,
 } from '@/features/timeline/timelineOptions';
 
@@ -46,53 +43,6 @@ export const nightDescriber = (site: Site, night: NightTimeline['interval'], dis
       : `${clockLabel(block.interval.start, site, display)} to ${clockLabel(block.interval.end, site, display)}`,
   length: (block: TimelineBlock) => durationLabel(block.interval.end - block.interval.start),
 });
-
-/** Drawn over the bars: a bar spans the whole night, so a band behind it would be invisible. */
-export const buildSunBands = (interval: NightTimeline['interval'], sun: NightSunTimes): XAxisPlotBandsOptions[] => {
-  const bands: XAxisPlotBandsOptions[] = [];
-  const wash = (from: number, to: number, color: string, className: string): void => {
-    if (to > from) {
-      bands.push({ from, to, color, className, zIndex: WASH_Z });
-    }
-  };
-  if (sun.sunset !== null) {
-    wash(interval.start, sun.sunset, 'var(--night-daylight-wash)', 'night-daylight');
-  }
-  if (sun.sunset !== null && sun.duskAstronomical !== null) {
-    wash(sun.sunset, sun.duskAstronomical, 'var(--night-twilight-wash)', 'night-twilight');
-  }
-  if (sun.dawnAstronomical !== null && sun.sunrise !== null) {
-    wash(sun.dawnAstronomical, sun.sunrise, 'var(--night-twilight-wash)', 'night-twilight');
-  }
-  if (sun.sunrise !== null) {
-    wash(sun.sunrise, interval.end, 'var(--night-daylight-wash)', 'night-daylight');
-  }
-  return bands;
-};
-
-const sunLine = (value: number, text: string): XAxisPlotLinesOptions => ({
-  value,
-  color: 'var(--timeline-axis)',
-  width: 1,
-  dashStyle: 'Dash',
-  zIndex: MARKER_LINE_Z,
-  className: 'night-sun-line',
-  label: {
-    text,
-    // Highcharts rotates a plot-line label 90 degrees by default, which turns "sunset" on its side.
-    rotation: 0,
-    align: 'left',
-    x: 4,
-    y: readerPx(0.75),
-    style: MUTED_LABEL,
-  },
-});
-
-/** Sunset and sunrise as marked lines; the twilight edges are the band edges. */
-const buildSunLines = (sun: NightSunTimes): XAxisPlotLinesOptions[] => [
-  ...(sun.sunset === null ? [] : [sunLine(sun.sunset, 'sunset')]),
-  ...(sun.sunrise === null ? [] : [sunLine(sun.sunrise, 'sunrise')]),
-];
 
 /** A partial night is two abutting bars, which is easy to miss; the line names the seam. */
 export const buildTransitionLines = (transitions: readonly number[]): XAxisPlotLinesOptions[] =>
@@ -141,13 +91,9 @@ export const buildNightChartOptions = ({ night, site, now, timeDisplay }: NightC
         style: MUTED_TICK,
         y: readerPx(1.125),
       },
-      plotBands: [
-        ...buildSunBands(night.interval, night.sun),
-        ...night.bands.map((band) => closureBandPlotBand(band, 0.875)),
-      ],
+      plotBands: [...night.bands.map((band) => closureBandPlotBand(band, 0.875))],
       plotLines: [
         ...buildTransitionLines(night.transitions),
-        ...buildSunLines(night.sun),
         ...(showsNow
           ? [
               {

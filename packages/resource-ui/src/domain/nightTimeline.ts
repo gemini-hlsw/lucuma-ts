@@ -1,5 +1,4 @@
 import { observingNightInterval } from './siteTime';
-import { type NightSunTimes, nightSunTimes } from './sun';
 import {
   collectBlocks,
   collectStateRows,
@@ -26,7 +25,6 @@ export interface NightTimeline extends TimelineLegend {
   readonly interval: Interval;
   readonly rows: readonly TimelineRow[];
   readonly bands: readonly TimelineBand[];
-  readonly sun: NightSunTimes;
   /** Empty while the sheets stay whole-night granular; populated the moment a partial night lands. */
   readonly transitions: readonly number[];
 }
@@ -83,7 +81,6 @@ export const buildNightTimeline = ({
     interval,
     rows,
     bands,
-    sun: nightSunTimes(site, interval),
     transitions: transitionsIn(rows, interval),
     ...legendFor(rows, bands),
   };

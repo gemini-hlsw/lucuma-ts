@@ -10,7 +10,6 @@ import { collectFontSizes } from '@/test/fontSizes';
 
 import {
   buildNightChartOptions,
-  buildSunBands,
   buildTransitionLines,
   clockLabel,
   durationLabel,
@@ -104,39 +103,6 @@ describe('describing a block', () => {
   });
 });
 
-describe('the sun wash', () => {
-  it('paints over the bars, not behind them', () => {
-    const bands = buildSunBands(interval, build().sun);
-
-    expect(bands.length).toBeGreaterThan(0);
-    for (const band of bands) {
-      expect(band.zIndex).toBe(5);
-    }
-  });
-
-  it('washes daylight harder than twilight', () => {
-    const bands = buildSunBands(interval, build().sun);
-    const daylight = bands.filter((band) => band.className === 'night-daylight');
-    const twilight = bands.filter((band) => band.className === 'night-twilight');
-
-    expect(daylight).toHaveLength(2);
-    expect(twilight).toHaveLength(2);
-    expect(daylight[0]?.color).toBe('var(--night-daylight-wash)');
-    expect(twilight[0]?.color).toBe('var(--night-twilight-wash)');
-  });
-
-  it('leaves the dark hours unwashed', () => {
-    const { sun } = build();
-    const bands = buildSunBands(interval, sun);
-    const covered = bands.some(
-      (band) =>
-        Number(band.from) <= (sun.duskAstronomical ?? 0) + HOUR && Number(band.to) >= (sun.dawnAstronomical ?? 0),
-    );
-
-    expect(covered).toBe(false);
-  });
-});
-
 /** The chart's single x axis; the builder never produces the array form. */
 const axisOf = (now: number | null = null): XAxisOptions => {
   const { xAxis } = buildNightChartOptions({ night: build(), site: 'GS', now, timeDisplay: 'site' });
@@ -169,16 +135,6 @@ describe('the chart', () => {
     expect(lines).toEqual([
       { value: changeover, color: 'var(--schedule-week-line)', width: 1, zIndex: 2, className: 'night-transition' },
     ]);
-  });
-
-  it('prints sunset and sunrise upright', () => {
-    const sunLines = plotLines().filter((line) => line.className === 'night-sun-line');
-
-    // Rotation 0: Highcharts turns a plot-line label on its side by default.
-    expect(sunLines).toHaveLength(2);
-    for (const line of sunLines) {
-      expect(line.label?.rotation).toBe(0);
-    }
   });
 
   it('sets every chart label at Data-small but the hour ticks, which are the tick tier', () => {

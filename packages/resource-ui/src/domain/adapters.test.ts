@@ -85,8 +85,6 @@ const semesterEntry = (nights: SemesterEntry['nights']): SemesterEntry => ({
   version: null,
   demo: false,
   nights,
-  holidays: [],
-  moonEvents: [],
 });
 
 describe(toPublishedSemesters, () => {

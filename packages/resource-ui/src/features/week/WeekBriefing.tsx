@@ -1,14 +1,12 @@
-import { cn, when } from '@gemini-hlsw/lucuma-common-ui';
+import { when } from '@gemini-hlsw/lucuma-common-ui';
 import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
-import { Tag } from 'primereact/tag';
 import type { JSX } from 'react';
 
-import { useOpenNight } from '@/app/useOpenNight';
 import { EmptyPanel } from '@/components/ui/PageStatus';
-import { displayTimeZone, eveningLabel, type TimeDisplay, zoneFormatters } from '@/domain/siteTime';
+import { displayTimeZone, type TimeDisplay, zoneFormatters } from '@/domain/siteTime';
 import type { Site } from '@/domain/types';
-import type { WeekChange, WeekNightFacts } from '@/domain/weekBriefing';
+import type { WeekChange } from '@/domain/weekBriefing';
 import { LOCATION_LABEL } from '@/features/components/componentLabels';
 import { INSTRUMENT_LABEL } from '@/features/timeline/timelineOptions';
 
@@ -23,47 +21,6 @@ const whenFormat = zoneFormatters('en-GB', {
 
 const whenLabel = (instant: number, site: Site, display: TimeDisplay): string =>
   whenFormat(displayTimeZone(site, display)).format(new Date(instant));
-
-export function WeekNightStrip({ facts }: { facts: readonly WeekNightFacts[] }): JSX.Element {
-  const openNight = useOpenNight();
-
-  return (
-    <section aria-label="Nights at a glance" className="mt-5">
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
-        {facts.map((fact) => (
-          <button
-            key={fact.observingNight}
-            type="button"
-            data-testid="week-night-facts"
-            aria-label={`Open night beginning ${fact.eveningDate}`}
-            className="cursor-pointer rounded border border-subtle bg-surface p-2 text-left text-xs transition-colors hover:bg-surface-raised/40"
-            onClick={() => {
-              openNight(fact.observingNight);
-            }}
-          >
-            {/* A card is found by its weekday, and seven of them span one month or two. */}
-            <div className={cn('font-semibold', fact.isHoliday ? 'text-warning' : 'text-foreground')}>
-              {eveningLabel(fact.eveningDate, 'weekdayDayMonth')}
-            </div>
-            <div className="mt-1 text-foreground-secondary">
-              {fact.darkHours === null ? 'No astronomical night' : `${fact.darkHours.toFixed(1)} h dark`}
-            </div>
-            <div className="text-foreground-secondary">{Math.round(fact.moon.fraction * 100)}% moon</div>
-            {(fact.publishedMoon !== null || fact.isHoliday || !fact.dataAvailable) && (
-              <div className="mt-1 flex flex-wrap gap-1">
-                {when(fact.publishedMoon, (publishedMoon) => (
-                  <Tag value={publishedMoon === 'NEW' ? 'new moon' : 'full moon'} />
-                ))}
-                {fact.isHoliday && <Tag value="holiday" severity="warning" />}
-                {!fact.dataAvailable && <Tag value="not recorded" severity="secondary" />}
-              </div>
-            )}
-          </button>
-        ))}
-      </div>
-    </section>
-  );
-}
 
 const whatLabel = (change: WeekChange): string => {
   switch (change.kind) {

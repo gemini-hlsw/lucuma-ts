@@ -153,12 +153,6 @@ export const tooLegendExtras = (tooSupport: readonly TooSupportBlock[]): LegendE
     swatch: { backgroundColor: tooColor(too) },
   }));
 
-/** Naming the washes is what stops a reader taking the largest painted areas for schedule facts. */
-export const skyLegendExtras = (): LegendExtra[] => [
-  { key: 'daylight', label: 'Daylight', swatch: { backgroundColor: 'var(--night-daylight-wash)' } },
-  { key: 'twilight', label: 'Twilight', swatch: { backgroundColor: 'var(--night-twilight-wash)' } },
-];
-
 export const calendarLegendExtras = (options: {
   readonly weekend?: boolean;
   readonly now?: string | false;
@@ -446,12 +440,11 @@ export const closureBandPlotBand = (band: TimelineBand, labelYRem: number): XAxi
 
 /*
  * Every chart's stacking order, bottom to top: night lines are texture under the week lines that
- * group them; the sun washes cover both; the heading mask hides all three where a heading row runs;
- * a band labelled in that row has to clear the mask; the now marker clears everything.
+ * group them; the heading mask hides both where a heading row runs; a band labelled in that row has
+ * to clear the mask; the now marker clears everything.
  */
 export const NIGHT_LINE_Z = 1;
 export const WEEK_LINE_Z = 2;
-export const WASH_Z = 5;
 const HEADING_MASK_Z = 6;
 export const LABELLED_BAND_Z = 8;
 export const MARKER_LINE_Z = 9;

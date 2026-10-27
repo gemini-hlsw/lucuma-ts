@@ -136,7 +136,7 @@ export interface WeekScheduleResult extends ScheduleResult {
   readonly nightsWithData: ReadonlySet<string>;
   /** Whether the answer has arrived, so an empty set is not read as "none". */
   readonly nightsResolved: boolean;
-  /** Component records over the window, for the briefing's changes list. */
+  /** Component records over the window, for the week's changes list. */
   readonly nightComponents: NightComponents;
 }
 
