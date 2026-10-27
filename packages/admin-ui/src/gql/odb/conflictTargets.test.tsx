@@ -11,12 +11,10 @@ const STAFF_TOKEN = fakeJwt(standardUser('staff'));
 /** A conflict row; only the fields the target lookup reads matter here. */
 function row(overrides: Partial<ConflictRow> = {}): ConflictRow {
   return {
-    sourceId: 'x-1',
-    key: 'x-1:p-1:x-9',
+    key: 'p-1:x-9',
     programLabel: 'G-2027B-0057-Q',
     detailLabel: 'x-9',
     programId: 'p-1',
-    requestId: 'x-9',
     observationId: null,
     status: 'Requested',
     target: '—',
@@ -105,7 +103,7 @@ describe(useConflictTargetNames, () => {
       <Harness
         rows={[
           row({ applicableObservations: ['o-2', 'o-1'] }),
-          row({ sourceId: 'x-2', key: 'x-2:p-1:x-9', applicableObservations: ['o-1'] }),
+          row({ key: 'p-1:x-9-again', applicableObservations: ['o-1'] }),
         ]}
       />,
       {

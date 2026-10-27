@@ -1,11 +1,10 @@
-import { dateToLocalObservingNight } from '@gemini-hlsw/lucuma-core';
 import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { userEvent } from 'vitest/browser';
 
-import { CONFLICTS_QUERY, similarModeTypes } from '@/gql/odb/conflicts';
 import type { ChangeRequest } from '@/gql/types';
-import { type MockedResponseOf, renderWithContext } from '@/test/render';
+import { emptyConflicts } from '@/test/conflicts';
+import { renderWithContext } from '@/test/render';
 
 import { ConfigurationRequestReview } from './ConfigurationRequestReview';
 
@@ -36,23 +35,6 @@ function request(id: string, overrides: Partial<ChangeRequest> = {}): ChangeRequ
 
 /** The conflict check runs once a request is selected; an empty result keeps the
  *  sub-table quiet so the test can focus on the approve/deny flow. */
-const emptyConflicts = (): MockedResponseOf<typeof CONFLICTS_QUERY> => ({
-  request: {
-    query: CONFLICTS_QUERY,
-    variables: {
-      modeTypes: [...similarModeTypes('GMOS_NORTH_LONG_SLIT')].sort(),
-      today: dateToLocalObservingNight(new Date()),
-    },
-  },
-  maxUsageCount: Infinity,
-  result: {
-    data: {
-      configurationRequests: { __typename: 'ConfigurationRequestSelectResult', matches: [] },
-      observations: { __typename: 'ObservationSelectResult', matches: [] },
-    },
-  },
-});
-
 async function setup(onResolve = vi.fn().mockResolvedValue(true)) {
   const screen = await renderWithContext(
     <ConfigurationRequestReview
@@ -63,7 +45,7 @@ async function setup(onResolve = vi.fn().mockResolvedValue(true)) {
       saving={false}
       onResolve={onResolve}
     />,
-    { mocks: [emptyConflicts()] },
+    { mocks: emptyConflicts() },
   );
   return { screen, onResolve };
 }
@@ -138,7 +120,7 @@ describe(ConfigurationRequestReview, () => {
         </>
       );
     }
-    const screen = await renderWithContext(<Harness />, { mocks: [emptyConflicts()] });
+    const screen = await renderWithContext(<Harness />, { mocks: emptyConflicts() });
 
     await userEvent.click(screen.getByRole('checkbox', { name: 'Row Selected cr-1' }).last());
     await expect.element(screen.getByRole('button', { name: 'Approve' })).toBeVisible();
@@ -158,7 +140,7 @@ describe(ConfigurationRequestReview, () => {
         saving={false}
         onResolve={vi.fn().mockResolvedValue(true)}
       />,
-      { mocks: [emptyConflicts()] },
+      { mocks: emptyConflicts() },
     );
     await userEvent.click(screen.getByRole('checkbox', { name: 'Row Selected cr-1' }).last());
     await userEvent.click(screen.getByRole('button', { name: 'Deny' }));
@@ -186,7 +168,7 @@ describe(ConfigurationRequestReview, () => {
         </>
       );
     }
-    const screen = await renderWithContext(<Harness />, { mocks: [emptyConflicts()] });
+    const screen = await renderWithContext(<Harness />, { mocks: emptyConflicts() });
 
     // Start a resolve for the first program, move to the second, and start a draft there.
     await userEvent.click(screen.getByRole('checkbox', { name: 'Row Selected cr-1' }).last());
@@ -224,7 +206,7 @@ describe(ConfigurationRequestReview, () => {
         </>
       );
     }
-    const screen = await renderWithContext(<Harness />, { mocks: [emptyConflicts()] });
+    const screen = await renderWithContext(<Harness />, { mocks: emptyConflicts() });
 
     // Start a resolve, go to the other program and back, and start a new draft.
     await userEvent.click(screen.getByRole('checkbox', { name: 'Row Selected cr-1' }).last());
