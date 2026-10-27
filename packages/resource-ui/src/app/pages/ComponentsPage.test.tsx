@@ -9,13 +9,11 @@ import {
   instrumentComponent,
   instrumentComponentAvailabilityBlock,
 } from '@/test/fixtures/components';
-import { type PublishedSemesterRow, publishedSemesters, recentSpan } from '@/test/fixtures/semester';
-import { eveningsFromTonight, nightsFromTonight, semesterFromTonight } from '@/test/fixtures/tonight';
+import { recentSpan } from '@/test/fixtures/semester';
+import { eveningsFromTonight, nightsFromTonight } from '@/test/fixtures/tonight';
 import { renderApp } from '@/test/renderApp';
 
 import ComponentsPage from './ComponentsPage';
-
-const GS_CURRENT = semesterFromTonight('GS', -90, 90);
 
 const COMPONENTS = '/components?site=GS';
 const GS_WHOLE = nightsFromTonight('GS', -100, 60);
@@ -97,15 +95,11 @@ const R400_OUT = eveningsFromTonight('GS', R400_FAILED_AT, 60);
 
 const CATALOG = [MASK_011, MASK_012, G_FILTER, B1200, F2_K_SHORT, GSAOI_K_SHORT];
 
-const openComponents = (
-  route: string,
-  data: Partial<ComponentBrowserQuery>,
-  semesters: readonly [PublishedSemesterRow, ...PublishedSemesterRow[]] = [GS_CURRENT],
-) =>
+const openComponents = (route: string, data: Partial<ComponentBrowserQuery>) =>
   renderApp({
     element: <ComponentsPage />,
     route,
-    mocks: [publishedSemesters(...semesters), componentBrowser(recentSpan(semesters[0].site), data)],
+    mocks: [componentBrowser(recentSpan('GS'), data)],
   });
 
 /** The failing R400 among the instrument blocks its "Installed" resolves against. */
@@ -272,18 +266,14 @@ describe(ComponentsPage, () => {
   });
 
   it('carries records beyond the semester the masthead happens to show', async () => {
-    const screen = await openComponents(
-      COMPONENTS,
-      {
-        components: [R400],
-        instrumentComponentAvailability: [
-          instrumentComponentAvailabilityBlock({ component: R400, interval: nightsFromTonight('GS', -390, -21) }),
-          ...R400_RECORD.slice(1),
-          instrumentComponentAvailabilityBlock({ component: R400, interval: nightsFromTonight('GS', 61, 120) }),
-        ],
-      },
-      [semesterFromTonight('GS', -400, -91), GS_CURRENT, semesterFromTonight('GS', 91, 270)],
-    );
+    const screen = await openComponents(COMPONENTS, {
+      components: [R400],
+      instrumentComponentAvailability: [
+        instrumentComponentAvailabilityBlock({ component: R400, interval: nightsFromTonight('GS', -390, -21) }),
+        ...R400_RECORD.slice(1),
+        instrumentComponentAvailabilityBlock({ component: R400, interval: nightsFromTonight('GS', 61, 120) }),
+      ],
+    });
     await screen.getByRole('button', { name: /expand k-gs-R400_G5325/i }).click();
 
     // Scoped to the current semester the history would say nothing about the cut.
@@ -363,26 +353,5 @@ describe(ComponentsPage, () => {
     await expect.element(page.getByRole('option', { name: 'GHOST (1)' })).toBeVisible();
     const options = [...document.querySelectorAll('[role="option"]')].map((option) => option.textContent ?? '');
     expect(options).toEqual(['F2 (1)', 'GHOST (1)', 'GMOS (4)', 'GSAOI (2)']);
-  });
-
-  it('does not wear a distant demo semester’s flag for a night the gap between semesters leaves uncovered', async () => {
-    // Tonight is nearer the demo semester, so a "nearest semester" fallback would borrow its flag.
-    const screen = await openComponents(COMPONENTS, {}, [
-      semesterFromTonight('GS', -200, -30),
-      semesterFromTonight('GS', 10, 190, { demo: true }),
-    ]);
-
-    await expect.element(screen.getByTestId('component-table')).toBeVisible();
-    await expect.element(screen.getByTestId('synthetic-data-tag')).not.toBeInTheDocument();
-  });
-
-  it('flags a night the demo semester actually holds', async () => {
-    const screen = await openComponents(COMPONENTS, {}, [
-      semesterFromTonight('GS', -200, -30),
-      semesterFromTonight('GS', -10, 170, { demo: true }),
-    ]);
-
-    await expect.element(screen.getByTestId('component-table')).toBeVisible();
-    await expect.element(screen.getByTestId('synthetic-data-tag')).toBeVisible();
   });
 });

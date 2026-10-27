@@ -5,7 +5,7 @@ import { PUBLISHED_SEMESTERS_QUERY, SEMESTER_SCHEDULE_QUERY } from '@gql/resourc
 import { RECENT_DAYS } from '@/app/useRecentSpan';
 import { addDays } from '@/domain/semester';
 import { DAY_MS } from '@/domain/siteTime';
-import { type Site, SITE_NAMES } from '@/domain/types';
+import type { Site } from '@/domain/types';
 
 import { overNights } from './blocks';
 
@@ -29,9 +29,6 @@ export const publishedSemester = ({
   __typename: 'PublishedSemester',
   site,
   semester,
-  title: `${SITE_NAMES[site]} Semester ${semester}`,
-  version: null,
-  demo: false,
   nights: semesterNights(semester),
   ...overrides,
 });

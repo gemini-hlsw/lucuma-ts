@@ -19,6 +19,7 @@ import SemesterPage from './SemesterPage';
 const GS_2024B = publishedSemester({ site: 'GS', semester: '2024B' });
 const GS_2025A = publishedSemester({ site: 'GS', semester: '2025A' });
 const GS_2025B = publishedSemester({ site: 'GS', semester: '2025B' });
+const GS_2026B = publishedSemester({ site: 'GS', semester: '2026B' });
 const GN_2025B = publishedSemester({ site: 'GN', semester: '2025B' });
 const GN_2026B = publishedSemester({ site: 'GN', semester: '2026B' });
 
@@ -60,7 +61,7 @@ describe(SemesterPage, () => {
         semesterSchedule(GS_2025B),
       );
 
-      await expect.element(screen.getByText('Gemini South Semester 2025B', { exact: false })).toBeVisible();
+      await expect.element(screen.getByRole('heading', { name: 'Semester 2025B' })).toBeVisible();
       await expect.element(screen.getByRole('region', { name: 'November 2025' })).toBeVisible();
     });
 
@@ -71,7 +72,7 @@ describe(SemesterPage, () => {
         semesterSchedule(GS_2025B),
       );
 
-      await expect.element(screen.getByText('Gemini South Semester 2025B', { exact: false })).toBeVisible();
+      await expect.element(screen.getByRole('heading', { name: 'Semester 2025B' })).toBeVisible();
       await expect.element(screen.getByTestId('semester-timeline')).toBeVisible();
       await expect.element(screen.getByRole('region', { name: 'August 2025' })).toBeVisible();
       await expect.element(screen.getByRole('region', { name: 'January 2026' })).toBeVisible();
@@ -185,7 +186,7 @@ describe(SemesterPage, () => {
         semesterSchedule(GN_2026B),
       );
 
-      await expect.element(screen.getByText('Gemini North Semester 2026B', { exact: false })).toBeVisible();
+      await expect.element(screen.getByRole('heading', { name: 'Semester 2026B' })).toBeVisible();
       await expect.element(screen.getByRole('region', { name: 'August 2026' })).toBeVisible();
     });
 
@@ -274,18 +275,18 @@ describe(SemesterPage, () => {
           ],
         }),
       );
-      await expect.element(screen.getByText('Gemini South Semester 2025B', { exact: false })).toBeVisible();
+      await expect.element(screen.getByRole('table', { name: 'GS 2025B schedule', exact: false })).toBeInTheDocument();
       await expect.poll(() => drawnBars().length).toBeGreaterThan(0);
       const southBars = drawnBars();
 
       await chooseSite(screen, 'GN');
-      await expect.element(screen.getByText('Gemini North Semester 2025B', { exact: false })).toBeVisible();
+      await expect.element(screen.getByRole('table', { name: 'GN 2025B schedule', exact: false })).toBeInTheDocument();
       // Changed before non-empty: a blank chart also passes "changed".
       await expect.poll(drawnBars).not.toBe(southBars);
       await expect.poll(() => drawnBars().length).toBeGreaterThan(0);
 
       await chooseSite(screen, 'GS');
-      await expect.element(screen.getByText('Gemini South Semester 2025B', { exact: false })).toBeVisible();
+      await expect.element(screen.getByRole('table', { name: 'GS 2025B schedule', exact: false })).toBeInTheDocument();
       await expect.poll(drawnBars).toBe(southBars);
     });
 
@@ -367,41 +368,24 @@ describe(SemesterPage, () => {
         semesterSchedule(GS_2025A),
       );
 
-      await expect.element(screen.getByText('Gemini South Semester 2025A', { exact: false })).toBeVisible();
+      await expect.element(screen.getByRole('heading', { name: 'Semester 2025A' })).toBeVisible();
     });
   });
 
-  describe('the demo suffix', () => {
-    /** One real GS semester and one synthetic, so the picker's "(demo)" suffix has something to prove. */
-    const GS_2026B_DEMO = publishedSemester({ site: 'GS', semester: '2026B', demo: true });
+  it('lists the semesters by plain name, and titles the page with the one picked', async () => {
+    const screen = await openSemester(
+      '/semester?site=GS&semester=2025B',
+      publishedSemesters(GS_2025B, GS_2026B),
+      semesterSchedule(GS_2025B),
+      semesterSchedule(GS_2026B),
+    );
+    await expect.element(screen.getByRole('heading', { name: 'Semester 2025B' })).toBeVisible();
 
-    const openWithOneDemo = (...mocks: MockLink.MockedResponse[]) =>
-      openSemester(
-        '/semester?site=GS&semester=2025B',
-        publishedSemesters(GS_2025B, GS_2026B_DEMO),
-        semesterSchedule(GS_2025B),
-        ...mocks,
-      );
+    await openDropdown(screen, { label: 'Semester' });
+    const options = [...document.querySelectorAll('[role="option"]')].map((option) => option.textContent ?? '');
+    expect(options).toEqual(['2025B', '2026B']);
 
-    it('flags a synthetic option in the picker without marking the real one beside it', async () => {
-      const screen = await openWithOneDemo();
-      await expect.element(screen.getByText('Gemini South Semester 2025B', { exact: false })).toBeVisible();
-
-      await openDropdown(screen, { label: 'Semester' });
-
-      const options = [...document.querySelectorAll('[role="option"]')].map((option) => option.textContent ?? '');
-      expect(options).toEqual(['2025B', '2026B (demo)']);
-    });
-
-    it('carries the demo tag through once picked', async () => {
-      const screen = await openWithOneDemo(semesterSchedule(GS_2026B_DEMO));
-      await expect.element(screen.getByText('Gemini South Semester 2025B', { exact: false })).toBeVisible();
-      await expect.element(screen.getByTestId('synthetic-data-tag')).not.toBeInTheDocument();
-
-      await selectDropdownOption(screen, { label: 'Semester' }, '2026B (demo)');
-
-      await expect.element(screen.getByText('Gemini South Semester 2026B', { exact: false })).toBeVisible();
-      await expect.element(screen.getByTestId('synthetic-data-tag')).toBeVisible();
-    });
+    await selectDropdownOption(screen, { label: 'Semester' }, '2026B');
+    await expect.element(screen.getByRole('heading', { name: 'Semester 2026B' })).toBeVisible();
   });
 });

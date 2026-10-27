@@ -16,19 +16,10 @@ import {
   tooSupportBlock,
 } from '@/test/fixtures/blocks';
 import { nightSchedule } from '@/test/fixtures/night';
-import { publishedSemester, publishedSemesters } from '@/test/fixtures/semester';
 import { chooseClock } from '@/test/helpers';
-import { Probe, PROBE_URL_TESTID } from '@/test/probe';
 import { renderApp } from '@/test/renderApp';
 
 import NightPage from './NightPage';
-
-const GS_2024B = publishedSemester({ site: 'GS', semester: '2024B' });
-const GS_2025A = publishedSemester({ site: 'GS', semester: '2025A' });
-const GS_2025B = publishedSemester({ site: 'GS', semester: '2025B' });
-const GS_2026A = publishedSemester({ site: 'GS', semester: '2026A' });
-const GS_2026B = publishedSemester({ site: 'GS', semester: '2026B' });
-const GN_2026B = publishedSemester({ site: 'GN', semester: '2026B' });
 
 const GHOST = instrumentAvailabilityBlock({
   instrument: 'GHOST',
@@ -36,19 +27,13 @@ const GHOST = instrumentAvailabilityBlock({
   interval: overNights('GS', '2025-08-02', '2026-02-01'),
 });
 
-/** Stands in for the semester view: the subject is the link, not what the semester draws. */
-const SEMESTER_ROUTE = { path: '/semester', element: <Probe use={() => null} /> };
-
-const shownUrl = () => document.querySelector(`[data-testid="${PROBE_URL_TESTID}"]`)?.textContent ?? '';
-
 const openNight = (route: string, ...mocks: MockLink.MockedResponse[]) =>
-  renderApp({ element: <NightPage />, route, extraRoutes: [SEMESTER_ROUTE], mocks });
+  renderApp({ element: <NightPage />, route, mocks });
 
 /** The ordinary night most tests open. */
 const openOrdinaryNight = (...more: MockLink.MockedResponse[]) =>
   openNight(
     '/night?site=GS&night=2025-11-14',
-    publishedSemesters(GS_2025B),
     nightSchedule({ site: 'GS', night: '2025-11-14' }, { instrumentAvailability: [GHOST] }),
     ...more,
   );
@@ -64,7 +49,6 @@ describe(NightPage, () => {
       const shutdown = overNights('GS', '2024-08-02', '2024-08-16');
       const screen = await openNight(
         '/night?site=GS&night=2024-08-05',
-        publishedSemesters(GS_2024B),
         nightSchedule(
           { site: 'GS', night: '2024-08-05' },
           {
@@ -85,7 +69,6 @@ describe(NightPage, () => {
       const night = overNights('GN', '2026-08-27', '2026-08-27');
       const screen = await openNight(
         '/night?site=GN&night=2026-08-27',
-        publishedSemesters(GN_2026B),
         nightSchedule(
           { site: 'GN', night: '2026-08-27' },
           {
@@ -107,7 +90,6 @@ describe(NightPage, () => {
       // Open for the first night only: the second night is a gap in the telescope's record.
       const screen = await openNight(
         '/night?site=GS&night=2025-11-15',
-        publishedSemesters(GS_2025B),
         nightSchedule(
           { site: 'GS', night: '2025-11-15' },
           {
@@ -132,7 +114,6 @@ describe(NightPage, () => {
     it('says nothing is recorded, rather than drawing an empty chart', async () => {
       const screen = await openNight(
         '/night?site=GS&night=2025-11-14',
-        publishedSemesters(GS_2025B),
         nightSchedule({ site: 'GS', night: '2025-11-14' }, { dataAvailable: false }),
       );
 
@@ -164,62 +145,30 @@ describe(NightPage, () => {
     await expect.element(screen.getByText('14:00 to 14:00 site time', { exact: false })).toBeVisible();
   });
 
-  it('says no schedule reaches a night outside every published semester', async () => {
+  it('says nothing is recorded for a night no published semester covers', async () => {
     const screen = await openNight(
       '/night?site=GS&night=2030-01-01',
-      publishedSemesters(GS_2025B),
       nightSchedule({ site: 'GS', night: '2030-01-01' }, { dataAvailable: false }),
     );
 
-    await expect.element(screen.getByText('No published schedule covers this night', { exact: false })).toBeVisible();
-    await expect.element(screen.getByTestId('night-timeline')).not.toBeInTheDocument();
-    // One answer, not two: the not-recorded panel says something else entirely about the same night.
-    await expect
-      .element(screen.getByText('Nothing is recorded for this night', { exact: false }))
-      .not.toBeInTheDocument();
-  });
-
-  it('says what is covered instead of dead-ending, and offers the nearest covered night', async () => {
-    const screen = await openNight(
-      '/night?site=GS&night=2030-01-01',
-      publishedSemesters(GS_2024B, GS_2025A, GS_2025B, GS_2026A),
-      nightSchedule({ site: 'GS', night: '2030-01-01' }, { dataAvailable: false }),
-      nightSchedule({ site: 'GS', night: '2026-08-01' }),
-    );
-
-    await expect
-      .element(screen.getByText('Published nights at GS run 2024-08-02 to 2026-08-01', { exact: false }))
-      .toBeVisible();
-
-    await screen.getByRole('button', { name: 'Open the nearest covered night, 2026-08-01' }).click();
-    await expect.element(screen.getByText('Night of 2026-08-01')).toBeVisible();
-    await expect.element(screen.getByTestId('night-timeline')).toBeVisible();
+    await expect.element(screen.getByText('Nothing is recorded for this night', { exact: false })).toBeVisible();
+    await expect.element(screen.getByRole('button', { name: /nearest covered night/ })).not.toBeInTheDocument();
   });
 
   it('draws no timeline when the night query fails, rather than an empty one beside the alert', async () => {
-    // The page knows 2025B holds this night while knowing nothing about the night itself.
-    const screen = await openNight('/night?site=GS&night=2025-11-14', publishedSemesters(GS_2025B), {
+    const screen = await openNight('/night?site=GS&night=2025-11-14', {
       request: nightSchedule({ site: 'GS', night: '2025-11-14' }).request,
       error: new Error('the Resource service did not answer'),
     });
 
     // Settle on the failure first, so the absences below are read after the query resolved.
     await expect.element(screen.getByRole('alert')).toMatchTextContent('the Resource service did not answer');
-    await expect.element(screen.getByText('Gemini South Semester 2025B', { exact: false })).toBeVisible();
 
     await expect.element(screen.getByTestId('night-timeline')).not.toBeInTheDocument();
     // A query that never arrived is not a recorded absence, and must not be reported as one.
     await expect
       .element(screen.getByText('Nothing is recorded for this night', { exact: false }))
       .not.toBeInTheDocument();
-  });
-
-  it('links the semester it belongs to - the reverse of the calendar click-through', async () => {
-    const screen = await openOrdinaryNight();
-
-    await screen.getByRole('link', { name: 'Gemini South Semester 2025B', exact: false }).click();
-
-    await expect.poll(shownUrl).toBe('/semester?site=GS&night=2025-11-14&semester=2025B');
   });
 
   it('jumps back to the night in progress from a deep link', async () => {
@@ -264,7 +213,6 @@ describe(NightPage, () => {
     // A closed night bordering an open one, so the two windows draw different bars.
     const screen = await openNight(
       '/night?site=GS&night=2024-08-16',
-      publishedSemesters(GS_2024B),
       nightSchedule(
         { site: 'GS', night: '2024-08-16' },
         {
@@ -318,11 +266,11 @@ describe(NightPage, () => {
   it('draws a Gemini North night against that site’s schedule', async () => {
     const screen = await openNight(
       '/night?site=GN&night=2026-11-14',
-      publishedSemesters(GS_2026B, GN_2026B),
       nightSchedule({ site: 'GN', night: '2026-11-14' }),
     );
 
-    await expect.element(screen.getByText('Gemini North Semester 2026B', { exact: false })).toBeVisible();
+    await expect.element(screen.getByText('Night of 2026-11-14')).toBeVisible();
+    await expect.element(screen.getByTestId('night-timeline')).toBeVisible();
   });
 
   it('moves the chart clock to UT from the menu', async () => {
@@ -332,10 +280,7 @@ describe(NightPage, () => {
       route: '/night?site=GS&night=2025-11-14',
       path: '/',
       childRoutes: [{ path: 'night', element: <NightPage /> }],
-      mocks: [
-        publishedSemesters(GS_2025B),
-        nightSchedule({ site: 'GS', night: '2025-11-14' }, { instrumentAvailability: [GHOST] }),
-      ],
+      mocks: [nightSchedule({ site: 'GS', night: '2025-11-14' }, { instrumentAvailability: [GHOST] })],
     });
     const labels = () =>
       [...document.querySelectorAll('[data-testid="night-timeline"] .highcharts-xaxis-labels text')]
@@ -356,7 +301,6 @@ describe(NightPage, () => {
     const night = overNights('GS', '2025-11-14', '2025-11-14');
     const screen = await openNight(
       '/night?site=GS&night=2025-11-14',
-      publishedSemesters(GS_2025B),
       nightSchedule(
         { site: 'GS', night: '2025-11-14' },
         {
@@ -379,7 +323,6 @@ describe(NightPage, () => {
   it('reads an available laser as available, not as not available', async () => {
     const screen = await openNight(
       '/night?site=GN&night=2026-08-27',
-      publishedSemesters(GN_2026B),
       nightSchedule(
         { site: 'GN', night: '2026-08-27' },
         {
@@ -403,7 +346,6 @@ describe(NightPage, () => {
     const night = overNights('GN', '2026-09-26', '2026-09-26');
     const screen = await openNight(
       '/night?site=GN&night=2026-09-26',
-      publishedSemesters(GN_2026B),
       nightSchedule(
         { site: 'GN', night: '2026-09-26' },
         {
@@ -442,7 +384,6 @@ describe(NightPage, () => {
     it('is 14:00 to 14:00 Chilean summer time for a November night at Gemini South', async () => {
       const screen = await openNight(
         '/night?site=GS&night=2026-11-14',
-        publishedSemesters(GS_2026B),
         nightSchedule({
           site: 'GS',
           night: '2026-11-14',
@@ -458,7 +399,6 @@ describe(NightPage, () => {
       // Chile springs forward inside the night labelled 2026-09-06: 14:00 at UTC-4 to 14:00 at UTC-3.
       const screen = await openNight(
         '/night?site=GS&night=2026-09-06',
-        publishedSemesters(GS_2026B),
         nightSchedule({
           site: 'GS',
           night: '2026-09-06',

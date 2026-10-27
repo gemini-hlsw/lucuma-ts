@@ -18,7 +18,6 @@ import { store } from '@/components/atoms/store';
 import { ToastOutlet } from '@/components/ui/ToastOutlet';
 import { observingNightInterval } from '@/domain/siteTime';
 import { toApiInterval } from '@/gql/hooks';
-import { publishedSemester, publishedSemesters } from '@/test/fixtures/semester';
 import { chooseClock, chooseSite, openAppMenu } from '@/test/helpers';
 import { renderApp, type RenderedApp } from '@/test/renderApp';
 import { ssoCall, ssoRefreshes, stubSso } from '@/test/sso';
@@ -69,7 +68,7 @@ const openNightInShell = async () =>
     route: `/night?site=GS&night=${NIGHT}`,
     path: '/',
     childRoutes: [{ path: 'night', element: <NightPage /> }],
-    mocks: [publishedSemesters(publishedSemester({ site: 'GS', semester: '2026B' })), NIGHT_SCHEDULE],
+    mocks: [NIGHT_SCHEDULE],
   });
 
 const SESSION_ENDED = 'Your session ended';

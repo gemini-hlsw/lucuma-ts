@@ -103,10 +103,6 @@ export interface TelescopeSubsystemAvailabilityBlock {
 export interface PublishedSemester {
   readonly site: Site;
   readonly semester: string;
-  readonly title: string;
-  readonly version: string | null;
-  /** True for a synthetic schedule that was never published - the pickers must say so. */
-  readonly demo: boolean;
   /** Both ends inclusive; the API states the range half-open and `toPublishedSemesters` converts. */
   readonly firstNight: string;
   readonly lastNight: string;

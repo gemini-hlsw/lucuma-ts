@@ -16,7 +16,6 @@ import { RecordHistoryTable } from '@/components/ui/RecordHistoryTable';
 import { type RecordStatus, StatusTag } from '@/components/ui/StatusTag';
 import { EXPANDER_COLUMN_STYLE } from '@/components/ui/styles';
 import { WhereCell, type WhereReading } from '@/components/ui/WhereCell';
-import { semesterHolding } from '@/domain/coverage';
 import {
   buildInstrumentRows,
   instrumentLocationLabel,
@@ -31,7 +30,7 @@ import { USAGE_LABEL } from '@/domain/timeline';
 import type { InstrumentAvailabilityBlock, ResourceUsage, Site } from '@/domain/types';
 import { InstrumentSwatch } from '@/features/timeline/InstrumentSwatch';
 import { INSTRUMENT_LABEL } from '@/features/timeline/timelineOptions';
-import { usePublishedSemesters, useSemesterSchedule } from '@/gql/hooks';
+import { useSemesterSchedule } from '@/gql/hooks';
 
 /** One function, so a run cannot wear one status in the table and another under it. */
 const usageStatus = (usage: ResourceUsage): RecordStatus => ({
@@ -72,12 +71,10 @@ function Runs({ runs, site }: { runs: readonly InstrumentAvailabilityBlock[]; si
 
 export default function InstrumentsPage(): JSX.Element {
   const { site, tonight } = useSelection();
-  const { semesters, loading: loadingSets, error: setsError } = usePublishedSemesters();
   const [search, setSearch] = useUrlParam('q', '', { replace: true });
   const [location, setLocation] = useUrlParam('location', '', { replace: true });
   const [expanded, setExpanded] = useState<InstrumentRow[]>([]);
 
-  const held = semesterHolding(semesters, site, tonight);
   const bounds = useRecentSpan();
 
   const { instrumentAvailability, loading, error } = useSemesterSchedule(site, bounds);
@@ -91,17 +88,16 @@ export default function InstrumentsPage(): JSX.Element {
     .sort((a, b) => INSTRUMENT_LABEL[a.instrument].localeCompare(INSTRUMENT_LABEL[b.instrument]));
 
   const onTelescope = rows.filter((row) => row.where.kind === 'PORT').length;
-  const failure = setsError ?? error;
 
   return (
     <div className="min-w-0">
-      <PageHeader title="Instruments" demo={held?.demo === true}>
+      <PageHeader title="Instruments">
         Every instrument {site} has recorded in the past {RECENT_DAYS} days, and where it is on the night of{' '}
         {eveningLabel(firstEveningDate(site, night))}. {onTelescope} of {rows.length} on the telescope. Open a row for
         its runs.
       </PageHeader>
 
-      {failure !== undefined && <ErrorAlert what="the instruments" error={failure} />}
+      {error !== undefined && <ErrorAlert what="the instruments" error={error} />}
 
       <div className="mb-3 flex flex-wrap items-end gap-3">
         <FilterField label="Search">
@@ -134,9 +130,9 @@ export default function InstrumentsPage(): JSX.Element {
         </FilterField>
       </div>
 
-      {(loading || loadingSets) && <Loading what="the instruments" />}
+      {loading && <Loading what="the instruments" />}
 
-      {!loading && !loadingSets && (
+      {!loading && (
         <DataTable
           value={[...visible]}
           dataKey="instrument"

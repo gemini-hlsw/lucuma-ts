@@ -371,8 +371,9 @@ the workflow into it, but keep masthead selections global and page controls loca
     Deleted, Back off a site change would pop the parameter and the memory would put the same
     site straight back, and a copied URL would open at the recipient's site, not the sender's.
   - **Semester is the semester page's.** Only /semester reads a semester, so its picker lives
-    in that page's header, page-scoped through the URL. Night and week derive what they need from the night they report on, the
-    finders from tonight. A stale `?semester=` elsewhere is unread, not scrubbed.
+    in that page's header, page-scoped through the URL, and lists each semester by its plain name.
+    Night and week read no semester at all, and the finders answer for tonight. A stale
+    `?semester=` elsewhere is unread, not scrubbed.
   - **Clock is the reader's.** Site time or UTC is a reading habit, not part of a shared link,
     so it lives in the menu under SETTINGS and persists per browser rather than in the URL.
     Page-scoped parameters live in the URL per page, defaults deleted rather than written.

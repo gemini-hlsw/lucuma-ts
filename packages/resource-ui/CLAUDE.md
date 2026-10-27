@@ -35,10 +35,8 @@ the clock toggle, finder scoping) are DESIGN.md's. The mechanics:
     parameter written back when absent (a replace, so Back is unaffected) - DESIGN.md says why
     a remembered default cannot be left implicit the way every other default is.
   - **Semester** is `app/useSemester.ts`, which owns the page-scoped `semester` param through
-    `useUrlParam` and resolves it with `domain/coverage.ts`'s
-    `resolveSemester`. Only /semester may call it. Pages needing the night's own semester -
-    the demo flag above all - use `semesterHolding`, which returns null outside coverage
-    rather than reaching for the nearest.
+    `useUrlParam` and resolves it with `domain/coverage.ts`'s `resolveSemester`. Only /semester
+    may call it, and no other page reads the published semesters at all.
   - **Clock** is `app/useClockPreference.ts`, built on `app/preference.ts`: a
     `useSyncExternalStore` over `localStorage`, so every reader re-renders on a write from any
     tree. It is not in the URL. `displayTimeZone` in `domain/siteTime.ts` is still the one zone
@@ -142,8 +140,8 @@ state for itself:
 - **The two browser pages are deliberately not shared.** The shapes diverge - grouped subheaders against
   a flat list, two filters against one, different expansions - and a `FinderPage` taking a dozen props
   would hide nothing. Both open a row into `components/ui/RecordHistoryTable.tsx`.
-- **A night no semester covers says what is covered** (`domain/coverage.ts`), and offers the nearest
-  covered night. A demo semester never merges with a real one.
+- **The Night page's content depends on its night query alone**: loading, error, nothing recorded
+  (`dataAvailable` false), or the chart. Whether a semester covers the night does not enter it.
 
 ## Shared modules
 
@@ -156,7 +154,7 @@ these components are DESIGN.md's; this table is the ownership map.
 | Module                                   | What it owns                                                                                                                                                                                                                                                                                                                                                             |
 | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `WhereCell`                              | A `WhereReading`: coarse presence (on the telescope / off it / not recorded), the place in words, and the change tag. `componentLabels.componentWhere` and `InstrumentsPage.instrumentWhere` map onto it, one line each.                                                                                                                                                 |
-| `PageHeader`                             | Every destination's title, synthetic flag, subtitle and right-hand controls slot.                                                                                                                                                                                                                                                                                        |
+| `PageHeader`                             | Every destination's title, subtitle and right-hand controls slot.                                                                                                                                                                                                                                                                                                        |
 | `PageStatus`                             | The three page-state components (`ErrorAlert`, `Loading`, `EmptyPanel`); which state may look like what is DESIGN.md's.                                                                                                                                                                                                                                                  |
 | `NightStepper`                           | The Tonight / arrows / date toolbar, its chrome, aria labels and cleared-input guard. The page owns the date vocabulary.                                                                                                                                                                                                                                                 |
 | `LabelledControl`                        | Binds a caption to its control **by id**, as a render prop, so the caller decides which prop carries it (`id` on an input, `inputId` on a PrimeReact Dropdown). It must not wrap the control: implicit labelling only reaches a labelable element, and a label wrapping a Dropdown named nothing and swallowed the control's words into the name ("Instrument All All"). |
@@ -217,7 +215,7 @@ One request per page load; every view gets its whole window in one response, all
 
 | Operation            | What it reads                                                                                                           | Views                                            |
 | -------------------- | ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
-| `PublishedSemesters` | `publishedSemesters`                                                                                                    | the shell's semester picker; every view's bounds |
+| `PublishedSemesters` | `publishedSemesters`: `site`, `semester` and the night span only                                                        | Semester: its picker and its window              |
 | `SemesterSchedule`   | `instrumentAvailability`, `telescopeAvailability`, `tooSupport`, `telescopeMode`                                        | Semester; `/instruments`, over the past 400 days |
 | `NightSchedule`      | `telescopeNight` (`dataAvailable` and the interval) plus those four and `telescopeSubsystemAvailability`                | Night                                            |
 | `WeekSchedule`       | `telescopeNights` (per-night `dataAvailable`) plus the four of `SemesterSchedule` and `instrumentComponentAvailability` | Week                                             |

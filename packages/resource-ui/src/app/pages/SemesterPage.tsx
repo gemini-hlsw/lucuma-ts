@@ -70,8 +70,7 @@ export default function SemesterPage(): JSX.Element {
   return (
     <div className="min-w-0">
       <PageHeader
-        title={selected?.title ?? 'Semester schedule'}
-        demo={selected?.demo === true}
+        title={selected === null ? 'Semester schedule' : `Semester ${selected.semester}`}
         actions={
           <LabelledControl
             label="Semester"
@@ -85,11 +84,7 @@ export default function SemesterPage(): JSX.Element {
                 value={selected?.semester ?? null}
                 // Says why it is empty rather than looking broken.
                 placeholder="None"
-                // The demo flag stays on the option: synthetic records must never pass for real ones.
-                options={semestersForSite.map((entry) => ({
-                  label: entry.demo ? `${entry.semester} (demo)` : entry.semester,
-                  value: entry.semester,
-                }))}
+                options={semestersForSite.map((entry) => entry.semester)}
                 onChange={(event) => {
                   setSemester(event.value as string);
                 }}
@@ -112,7 +107,6 @@ export default function SemesterPage(): JSX.Element {
         {selected === null
           ? 'Choose a site and semester.'
           : `Nights ${selected.firstNight} to ${selected.lastNight}. Columns are headed by the date each night begins, as published.`}
-        {typeof selected?.version === 'string' && ` Published version: ${selected.version}.`}
       </PageHeader>
 
       {failure !== undefined && <ErrorAlert what="the schedule" error={failure} />}
@@ -122,7 +116,6 @@ export default function SemesterPage(): JSX.Element {
       {timeline !== null && selected !== null && !loading && (
         <>
           {/* One row per block, which is the fact, not one per night, which is the drawing. */}
-          {/* The heading already carries the published title; a caption echoing it says it twice. */}
           <SemesterBlockTable
             timeline={timeline}
             site={selected.site}

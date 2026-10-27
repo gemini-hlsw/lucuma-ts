@@ -93,9 +93,6 @@ export const PUBLISHED_SEMESTERS_QUERY = graphql(`
     publishedSemesters {
       site
       semester
-      title
-      version
-      demo
       nights {
         start
         end

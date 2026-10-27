@@ -102,9 +102,10 @@ the app.
 **Nothing is gated on data.** No destination is hidden or disabled because a schedule is
 missing; gating on whether a schedule exists strands the reader on one view.
 
-**Synthetic data must never pass for real.** A semester whose schedule was never published is
-marked as demo wherever it is chosen and wherever its pages are read, and a demo semester never
-merges with a real one.
+**Every semester is real.** The app reads the live Resource service, so every semester it lists
+is a published one and no page marks one as demo. Only the Semester page reads the list of
+semesters; every other view asks about its own window alone, and a night with nothing recorded
+says so whether or not a semester covers it.
 
 **A gap means "not recorded", never "unavailable"** (invariant **I4**). This is the product's
 central honesty commitment: the absence of a record is the absence of a record, and no view may

@@ -13,7 +13,7 @@ import { addDays } from '@/domain/semester';
 import { WEEK_NIGHTS } from '@/domain/weekTimeline';
 import { instrumentAvailabilityBlock, overNights } from '@/test/fixtures/blocks';
 import { componentBrowser, instrumentComponent } from '@/test/fixtures/components';
-import { publishedSemester, publishedSemesters, recentSpan, semesterSchedule } from '@/test/fixtures/semester';
+import { recentSpan, semesterSchedule } from '@/test/fixtures/semester';
 import { nightsFromTonight } from '@/test/fixtures/tonight';
 import { renderApp } from '@/test/renderApp';
 
@@ -23,9 +23,6 @@ import NightPage from './NightPage';
 import WeekPage from './WeekPage';
 
 const NIGHT = '2025-11-14';
-const GS_2024B = publishedSemester({ site: 'GS', semester: '2024B' });
-const GS_2025B = publishedSemester({ site: 'GS', semester: '2025B' });
-const SEMESTERS = publishedSemesters(GS_2024B, GS_2025B);
 const GS_WHOLE = nightsFromTonight('GS', -60, 60);
 
 /** The API takes an interval as plain start and end; a selected one carries its `__typename` too. */
@@ -91,20 +88,17 @@ describe('the semester parameter outside /semester', () => {
     const stale = await renderApp({
       element: <NightPage />,
       route: `/night?site=GS&night=${NIGHT}&semester=2024B`,
-      mocks: [SEMESTERS, NIGHT_SCHEDULE],
+      mocks: [NIGHT_SCHEDULE],
     });
 
-    // 2024B does not hold this night; the page still reports the night it was asked for,
-    // and names the semester that really holds it.
     await expect.element(stale.getByText(`Night of ${NIGHT}`)).toBeVisible();
-    await expect.element(stale.getByRole('link', { name: /2025B/ })).toBeVisible();
   });
 
   it('opens the same week with a stale semester as without one', async () => {
     const plain = await renderApp({
       element: <WeekPage />,
       route: `/week?site=GS&night=${NIGHT}`,
-      mocks: [SEMESTERS, WEEK_SCHEDULE],
+      mocks: [WEEK_SCHEDULE],
     });
     const heading = plain.getByRole('heading', { level: 1 }).element().textContent;
     await plain.unmount();
@@ -112,7 +106,7 @@ describe('the semester parameter outside /semester', () => {
     const stale = await renderApp({
       element: <WeekPage />,
       route: `/week?site=GS&night=${NIGHT}&semester=2099Z`,
-      mocks: [SEMESTERS, WEEK_SCHEDULE],
+      mocks: [WEEK_SCHEDULE],
     });
 
     await expect.poll(() => stale.getByRole('heading', { level: 1 }).element().textContent).toBe(heading);
@@ -130,7 +124,7 @@ describe('the semester parameter outside /semester', () => {
         const screen = await renderApp({
           element,
           route: `/finder?site=GS${search}`,
-          mocks: [SEMESTERS, schedule],
+          mocks: [schedule],
         });
         const table = screen.getByTestId(testId);
         await expect.element(table).toBeVisible();
@@ -161,7 +155,7 @@ describe('a finder filter carried by a navigation link', () => {
       element: <InstrumentsWithNav />,
       route: `/instruments?site=GS&night=${NIGHT}&q=GPI`,
       extraRoutes: [{ path: '/components', element: <ComponentsPage /> }],
-      mocks: [SEMESTERS, INSTRUMENTS, COMPONENTS],
+      mocks: [INSTRUMENTS, COMPONENTS],
     });
 
     await expect.element(screen.getByTestId('instrument-table')).toBeVisible();

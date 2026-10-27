@@ -7,13 +7,11 @@ import { useOpenNight } from '@/app/useOpenNight';
 import { useSelection } from '@/app/useSelection';
 import { NightStepper } from '@/components/ui/NightStepper';
 import { PageHeader } from '@/components/ui/PageHeader';
-import { EmptyPanel, ErrorAlert, Loading } from '@/components/ui/PageStatus';
-import { SemesterTitleLink } from '@/components/ui/SemesterTitleLink';
+import { ErrorAlert, Loading } from '@/components/ui/PageStatus';
 import { addDays } from '@/domain/semester';
 import { nightAt } from '@/domain/timeline';
-import type { PublishedSemester, Site } from '@/domain/types';
 import { buildWeekChanges } from '@/domain/weekBriefing';
-import { buildWeekTimeline, WEEK_NIGHTS, weekNightLabels } from '@/domain/weekTimeline';
+import { buildWeekTimeline, WEEK_NIGHTS } from '@/domain/weekTimeline';
 import { TimelineChart, TimelineLegendBar } from '@/features/timeline/TimelineChart';
 import {
   calendarLegendExtras,
@@ -23,29 +21,15 @@ import {
 } from '@/features/timeline/timelineOptions';
 import { WeekChangesTable } from '@/features/week/WeekBriefing';
 import { buildWeekChartOptions } from '@/features/week/weekChartOptions';
-import { toApiInterval, usePublishedSemesters, useWeekSchedule } from '@/gql/hooks';
+import { toApiInterval, useWeekSchedule } from '@/gql/hooks';
 
 /** A week is long enough that the marker needs no fine tick. */
 const NOW_TICK_MS = 5 * 60_000;
 
-/** Any published semester overlapping the week: the title link and the demo tag. */
-const semesterOverlapping = (
-  semesters: readonly PublishedSemester[],
-  site: Site,
-  nights: readonly string[],
-): PublishedSemester | undefined =>
-  semesters.find(
-    (entry) => entry.site === site && nights.some((night) => entry.firstNight <= night && night <= entry.lastNight),
-  );
-
 export default function WeekPage(): JSX.Element {
   const { site, observingNight, tonight, setObservingNight, clearObservingNight } = useSelection();
   const timeDisplay = useClockPreference();
-  const { semesters, loading: loadingSets, error: setsError } = usePublishedSemesters();
   const now = useNow(NOW_TICK_MS);
-
-  const nightLabels = weekNightLabels(observingNight);
-  const held = semesterOverlapping(semesters, site, nightLabels);
 
   // The page speaks evening dates; the observing-night labels stay in the URL.
   const firstEvening = addDays(observingNight, -1);
@@ -95,8 +79,6 @@ export default function WeekPage(): JSX.Element {
     components: nightComponents.components,
   });
 
-  const failure = setsError ?? error;
-  const busy = loadingSets || loading;
   const step = (days: number): void => {
     setObservingNight(addDays(observingNight, days));
   };
@@ -113,7 +95,6 @@ export default function WeekPage(): JSX.Element {
     <div className="min-w-0">
       <PageHeader
         title={`Nights beginning ${firstEvening} to ${lastEvening}`}
-        demo={held?.demo === true}
         actions={
           <NightStepper
             value={firstEvening}
@@ -131,23 +112,15 @@ export default function WeekPage(): JSX.Element {
       >
         Seven observing nights, each 14:00 to 14:00 site time. Columns are headed by the date each night begins, as
         published.
-        {when(held, (held) => (
-          <>
-            {' '}
-            <SemesterTitleLink semester={held} />.
-          </>
-        ))}
       </PageHeader>
 
-      {when(failure, (failure) => (
-        <ErrorAlert what="the week" error={failure} />
+      {when(error, (error) => (
+        <ErrorAlert what="the week" error={error} />
       ))}
 
-      {busy && <Loading what="the week" />}
+      {loading && <Loading what="the week" />}
 
-      {!busy && held === undefined && <EmptyPanel>No published schedule covers these nights at {site}.</EmptyPanel>}
-
-      {!busy && held !== undefined && (
+      {!loading && (
         <>
           <TimelineLegendBar
             legend={week}

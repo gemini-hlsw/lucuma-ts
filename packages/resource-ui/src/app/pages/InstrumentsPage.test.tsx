@@ -2,16 +2,13 @@ import { openDropdown, selectDropdownOption } from '@gemini-hlsw/lucuma-common-u
 import type { InstrumentAvailabilityBlockItemFragment } from '@gql/gen/graphql';
 import { describe, expect, it } from 'vitest';
 
+import type { Site } from '@/domain/types';
 import { instrumentAvailabilityBlock } from '@/test/fixtures/blocks';
-import { type PublishedSemesterRow, publishedSemesters, recentSpan, semesterSchedule } from '@/test/fixtures/semester';
-import { nightsFromTonight, semesterFromTonight } from '@/test/fixtures/tonight';
+import { recentSpan, semesterSchedule } from '@/test/fixtures/semester';
+import { nightsFromTonight } from '@/test/fixtures/tonight';
 import { renderApp } from '@/test/renderApp';
 
 import InstrumentsPage from './InstrumentsPage';
-
-const GN_CURRENT = semesterFromTonight('GN', -90, 90);
-const GS_EARLIER = semesterFromTonight('GS', -270, -91);
-const GS_CURRENT = semesterFromTonight('GS', -90, 90);
 
 const GN_NIGHT = '/instruments?site=GN';
 const GN_WHOLE = nightsFromTonight('GN', -60, 60);
@@ -54,31 +51,28 @@ const GNIRS_SPLIT = [
   instrumentAvailabilityBlock({ instrument: 'GNIRS', port: 3, interval: nightsFromTonight('GN', -38, 60) }),
 ];
 
-/** The site's semesters in date order, and the blocks the schedule holds over the recent window. */
+/** The blocks the site's schedule holds over the recent window. */
 const openInstruments = (
   route: string,
-  semesters: readonly [PublishedSemesterRow, ...PublishedSemesterRow[]],
+  site: Site,
   instrumentAvailability: InstrumentAvailabilityBlockItemFragment[],
 ) =>
   renderApp({
     element: <InstrumentsPage />,
     route,
-    mocks: [
-      publishedSemesters(...semesters),
-      semesterSchedule(recentSpan(semesters[0].site), { instrumentAvailability }),
-    ],
+    mocks: [semesterSchedule(recentSpan(site), { instrumentAvailability })],
   });
 
 describe(InstrumentsPage, () => {
   it('lists the site catalog with where each instrument is tonight', async () => {
-    const screen = await openInstruments(GN_NIGHT, [GN_CURRENT], [GNIRS]);
+    const screen = await openInstruments(GN_NIGHT, 'GN', [GNIRS]);
 
     await expect.element(screen.getByText('GNIRS')).toBeVisible();
     await expect.element(screen.getByText('Port 3')).toBeVisible();
   });
 
   it('answers for tonight whatever night the URL names', async () => {
-    const screen = await openInstruments(`${GN_NIGHT}&night=2024-01-01`, [GN_CURRENT], [GNIRS]);
+    const screen = await openInstruments(`${GN_NIGHT}&night=2024-01-01`, 'GN', [GNIRS]);
 
     await expect.element(screen.getByText('Port 3')).toBeVisible();
     await expect.element(screen.getByText('Not recorded')).not.toBeInTheDocument();
@@ -86,19 +80,15 @@ describe(InstrumentsPage, () => {
 
   it('gives the record its own Note column rather than tucking it under the status', async () => {
     // Under the badge a note starts at a different x on every row, under no heading of its own.
-    const screen = await openInstruments(
-      '/instruments?site=GS',
-      [GS_CURRENT],
-      [
-        instrumentAvailabilityBlock({
-          instrument: 'GPI',
-          place: 'BASE',
-          usage: 'UNAVAILABLE',
-          note: 'Stored at the base facility',
-          interval: GS_WHOLE,
-        }),
-      ],
-    );
+    const screen = await openInstruments('/instruments?site=GS', 'GS', [
+      instrumentAvailabilityBlock({
+        instrument: 'GPI',
+        place: 'BASE',
+        usage: 'UNAVAILABLE',
+        note: 'Stored at the base facility',
+        interval: GS_WHOLE,
+      }),
+    ]);
 
     const table = screen.getByTestId('instrument-table');
     await expect.element(table.getByRole('columnheader', { name: 'Note' })).toBeVisible();
@@ -112,21 +102,21 @@ describe(InstrumentsPage, () => {
 
   it('shows an off-port run as on no port, never inventing a place for it', async () => {
     // The whole reason this page exists: the schedule views draw ports only.
-    const screen = await openInstruments(GN_NIGHT, [GN_CURRENT], [ALOPEKE]);
+    const screen = await openInstruments(GN_NIGHT, 'GN', [ALOPEKE]);
 
     await expect.element(screen.getByText("'Alopeke").first()).toBeVisible();
     await expect.element(screen.getByText('Not on a port').first()).toBeVisible();
   });
 
   it('says nothing is recorded rather than reading an absence as unavailable', async () => {
-    const screen = await openInstruments(GN_NIGHT, [GN_CURRENT], [IGRINS2_GONE]);
+    const screen = await openInstruments(GN_NIGHT, 'GN', [IGRINS2_GONE]);
 
     await expect.element(screen.getByText('IGRINS2')).toBeVisible();
     await expect.element(screen.getByText('Not recorded')).toBeVisible();
   });
 
   it('opens a row into the instrument runs, showing a usability window', async () => {
-    const screen = await openInstruments(GN_NIGHT, [GN_CURRENT], GNIRS_SPLIT);
+    const screen = await openInstruments(GN_NIGHT, 'GN', GNIRS_SPLIT);
 
     await screen.getByRole('button', { name: /expand GNIRS/i }).click();
 
@@ -136,7 +126,7 @@ describe(InstrumentsPage, () => {
   });
 
   it('heads the runs with the same columns whether or not the records fill them', async () => {
-    const screen = await openInstruments(GN_NIGHT, [GN_CURRENT], GNIRS_SPLIT);
+    const screen = await openInstruments(GN_NIGHT, 'GN', GNIRS_SPLIT);
     await screen.getByRole('button', { name: /expand GNIRS/i }).click();
 
     // Two expansions on one page must not disagree about what a column means.
@@ -147,7 +137,7 @@ describe(InstrumentsPage, () => {
   });
 
   it('counts the nights each run lasted, which is what a run list is read for', async () => {
-    const screen = await openInstruments(GN_NIGHT, [GN_CURRENT], GNIRS_SPLIT);
+    const screen = await openInstruments(GN_NIGHT, 'GN', GNIRS_SPLIT);
     await screen.getByRole('button', { name: /expand GNIRS/i }).click();
 
     const runs = screen.getByTestId('instrument-runs');
@@ -155,7 +145,7 @@ describe(InstrumentsPage, () => {
   });
 
   it('search narrows across the tag and the published name', async () => {
-    const screen = await openInstruments(GN_NIGHT, [GN_CURRENT], [GNIRS, MAROON_X]);
+    const screen = await openInstruments(GN_NIGHT, 'GN', [GNIRS, MAROON_X]);
     await expect.element(screen.getByText('GNIRS')).toBeVisible();
 
     await screen.getByLabelText('Search').fill('maroon');
@@ -165,7 +155,7 @@ describe(InstrumentsPage, () => {
   });
 
   it('is a sendable link: the search comes from the URL', async () => {
-    const screen = await openInstruments(`${GN_NIGHT}&q=gnirs`, [GN_CURRENT], [GNIRS, MAROON_X]);
+    const screen = await openInstruments(`${GN_NIGHT}&q=gnirs`, 'GN', [GNIRS, MAROON_X]);
 
     await expect.element(screen.getByText('GNIRS')).toBeVisible();
     await expect.element(screen.getByText('Maroon-X').first()).not.toBeInTheDocument();
@@ -173,25 +163,21 @@ describe(InstrumentsPage, () => {
 
   it('holds every instrument the site has recorded, not just this semester', async () => {
     // Zorro sits out this semester but is a GS instrument: a semester-scoped browser would say nothing.
-    const screen = await openInstruments(
-      '/instruments?site=GS',
-      [GS_EARLIER, GS_CURRENT],
-      [
-        instrumentAvailabilityBlock({
-          instrument: 'CAL_ZORRO',
-          publishedName: 'Zorro',
-          port: 2,
-          interval: nightsFromTonight('GS', -250, -220),
-        }),
-      ],
-    );
+    const screen = await openInstruments('/instruments?site=GS', 'GS', [
+      instrumentAvailabilityBlock({
+        instrument: 'CAL_ZORRO',
+        publishedName: 'Zorro',
+        port: 2,
+        interval: nightsFromTonight('GS', -250, -220),
+      }),
+    ]);
 
     await expect.element(screen.getByText('Zorro').first()).toBeVisible();
     await expect.element(screen.getByText('Not recorded')).toBeVisible();
   });
 
   it('filters by location, counting what each choice buys', async () => {
-    const screen = await openInstruments(GN_NIGHT, [GN_CURRENT], [GNIRS, ALOPEKE]);
+    const screen = await openInstruments(GN_NIGHT, 'GN', [GNIRS, ALOPEKE]);
     await expect.element(screen.getByText('GNIRS')).toBeVisible();
 
     await selectDropdownOption(screen, { label: 'Location' }, 'Not on a port (1)');
@@ -201,19 +187,15 @@ describe(InstrumentsPage, () => {
   });
 
   it('orders the location choices from the telescope outwards', async () => {
-    const screen = await openInstruments(
-      GN_NIGHT,
-      [GN_CURRENT],
-      [
-        ALOPEKE,
-        IGRINS2_GONE,
-        NIRI,
-        ACQ_CAM,
-        GNIRS,
-        instrumentAvailabilityBlock({ instrument: 'ALTAIR', port: 3, interval: GN_WHOLE }),
-        instrumentAvailabilityBlock({ instrument: 'GMOS', port: 1, interval: GN_WHOLE }),
-      ],
-    );
+    const screen = await openInstruments(GN_NIGHT, 'GN', [
+      ALOPEKE,
+      IGRINS2_GONE,
+      NIRI,
+      ACQ_CAM,
+      GNIRS,
+      instrumentAvailabilityBlock({ instrument: 'ALTAIR', port: 3, interval: GN_WHOLE }),
+      instrumentAvailabilityBlock({ instrument: 'GMOS', port: 1, interval: GN_WHOLE }),
+    ]);
     await expect.element(screen.getByText('GNIRS')).toBeVisible();
 
     await openDropdown(screen, { label: 'Location' });
@@ -224,7 +206,7 @@ describe(InstrumentsPage, () => {
 
   it('holds the instruments GPP knows that the schedule never mounts', async () => {
     // The stored layer carries a storage place, never a port, which keeps it off the charts.
-    const screen = await openInstruments(GN_NIGHT, [GN_CURRENT], [NIRI, ACQ_CAM]);
+    const screen = await openInstruments(GN_NIGHT, 'GN', [NIRI, ACQ_CAM]);
 
     await expect.element(screen.getByText('NIRI')).toBeVisible();
     await expect.element(screen.getByText('AcqCam')).toBeVisible();
@@ -232,14 +214,10 @@ describe(InstrumentsPage, () => {
   });
 
   it('filters to a storage place, which is what a stored instrument has instead of a port', async () => {
-    const screen = await openInstruments(
-      '/instruments?site=GS',
-      [GS_CURRENT],
-      [
-        instrumentAvailabilityBlock({ instrument: 'GPI', place: 'BASE', usage: 'UNAVAILABLE', interval: GS_WHOLE }),
-        instrumentAvailabilityBlock({ instrument: 'GHOST', port: 1, interval: GS_WHOLE }),
-      ],
-    );
+    const screen = await openInstruments('/instruments?site=GS', 'GS', [
+      instrumentAvailabilityBlock({ instrument: 'GPI', place: 'BASE', usage: 'UNAVAILABLE', interval: GS_WHOLE }),
+      instrumentAvailabilityBlock({ instrument: 'GHOST', port: 1, interval: GS_WHOLE }),
+    ]);
     await expect.element(screen.getByText('GHOST')).toBeVisible();
 
     await selectDropdownOption(screen, { label: 'Location' }, 'Base facility (1)');
@@ -249,7 +227,7 @@ describe(InstrumentsPage, () => {
   });
 
   it('is a sendable link: the location filter comes from the URL', async () => {
-    const screen = await openInstruments(`${GN_NIGHT}&location=Port+3`, [GN_CURRENT], [GNIRS, MAROON_X]);
+    const screen = await openInstruments(`${GN_NIGHT}&location=Port+3`, 'GN', [GNIRS, MAROON_X]);
 
     await expect.element(screen.getByText('GNIRS')).toBeVisible();
     await expect.element(screen.getByText('Maroon-X').first()).not.toBeInTheDocument();
@@ -260,7 +238,6 @@ describe(InstrumentsPage, () => {
       element: <InstrumentsPage />,
       route: '/instruments?site=GS',
       mocks: [
-        publishedSemesters(GS_CURRENT, GN_CURRENT),
         semesterSchedule(recentSpan('GN'), { instrumentAvailability: [GNIRS] }),
         semesterSchedule(recentSpan('GS'), {
           instrumentAvailability: [instrumentAvailabilityBlock({ instrument: 'GHOST', port: 1, interval: GS_WHOLE })],
@@ -270,28 +247,5 @@ describe(InstrumentsPage, () => {
 
     await expect.element(screen.getByText('GHOST')).toBeVisible();
     await expect.element(screen.getByText('GNIRS')).not.toBeInTheDocument();
-  });
-
-  it('does not wear a distant demo semester’s flag for a night the gap between semesters leaves uncovered', async () => {
-    // Tonight is nearer the demo semester, so a "nearest semester" fallback would borrow its flag.
-    const screen = await openInstruments(
-      '/instruments?site=GS',
-      [semesterFromTonight('GS', -200, -30), semesterFromTonight('GS', 10, 190, { demo: true })],
-      [],
-    );
-
-    await expect.element(screen.getByTestId('instrument-table')).toBeVisible();
-    await expect.element(screen.getByTestId('synthetic-data-tag')).not.toBeInTheDocument();
-  });
-
-  it('flags a night the demo semester actually holds', async () => {
-    const screen = await openInstruments(
-      '/instruments?site=GS',
-      [semesterFromTonight('GS', -200, -30), semesterFromTonight('GS', -10, 170, { demo: true })],
-      [],
-    );
-
-    await expect.element(screen.getByTestId('instrument-table')).toBeVisible();
-    await expect.element(screen.getByTestId('synthetic-data-tag')).toBeVisible();
   });
 });

@@ -13,24 +13,17 @@ import {
   tooSupportBlock,
 } from '@/test/fixtures/blocks';
 import { instrumentComponent, instrumentComponentAvailabilityBlock } from '@/test/fixtures/components';
-import { publishedSemester, publishedSemesters } from '@/test/fixtures/semester';
 import { weekSchedule } from '@/test/fixtures/week';
 import { Probe, PROBE_URL_TESTID } from '@/test/probe';
 import { renderApp } from '@/test/renderApp';
 
 import WeekPage from './WeekPage';
 
-const GS_2024B = publishedSemester({ site: 'GS', semester: '2024B' });
-const GS_2025B = publishedSemester({ site: 'GS', semester: '2025B' });
-
 const GS_2025B_WHOLE = overNights('GS', '2025-08-02', '2026-02-01');
 const GHOST = instrumentAvailabilityBlock({ instrument: 'GHOST', port: 1, interval: GS_2025B_WHOLE });
 
 /** Stand in for the views a link opens: the subject is the jump, not what they draw. */
-const LINK_TARGETS = [
-  { path: '/night', element: <Probe use={() => null} /> },
-  { path: '/semester', element: <Probe use={() => null} /> },
-];
+const LINK_TARGETS = [{ path: '/night', element: <Probe use={() => null} /> }];
 
 const shownUrl = () => document.querySelector(`[data-testid="${PROBE_URL_TESTID}"]`)?.textContent ?? '';
 
@@ -41,7 +34,6 @@ const openWeek = (route: string, ...mocks: MockLink.MockedResponse[]) =>
 const openOrdinaryWeek = (...more: MockLink.MockedResponse[]) =>
   openWeek(
     '/week?site=GS&night=2025-11-14',
-    publishedSemesters(GS_2025B),
     weekSchedule({ site: 'GS', night: '2025-11-14' }, { instrumentAvailability: [GHOST] }),
     ...more,
   );
@@ -65,7 +57,6 @@ const R400_FAILS = instrumentComponentAvailabilityBlock({
 const openWeekOfR400Failure = () =>
   openWeek(
     '/week?site=GS&night=2025-11-20',
-    publishedSemesters(GS_2025B),
     weekSchedule({ site: 'GS', night: '2025-11-20' }, { instrumentComponentAvailability: [R400_FAILS] }),
   );
 
@@ -90,7 +81,6 @@ describe(WeekPage, () => {
   it('heads the chart with the telescope-state rows, their values keyed in sections', async () => {
     const screen = await openWeek(
       '/week?site=GS&night=2025-11-14',
-      publishedSemesters(GS_2025B),
       weekSchedule(
         { site: 'GS', night: '2025-11-14' },
         {
@@ -111,7 +101,6 @@ describe(WeekPage, () => {
   it('marks the night the backend holds nothing for as not recorded, and only that night', async () => {
     const screen = await openWeek(
       '/week?site=GS&night=2025-11-14',
-      publishedSemesters(GS_2025B),
       weekSchedule(
         { site: 'GS', night: '2025-11-14' },
         { instrumentAvailability: [GHOST], withoutData: ['2025-11-16'] },
@@ -145,7 +134,6 @@ describe(WeekPage, () => {
     });
     const screen = await openWeek(
       '/week?site=GS&night=2024-08-12',
-      publishedSemesters(GS_2024B),
       weekSchedule({ site: 'GS', night: '2024-08-12' }, { instrumentAvailability: [ghost, gmos] }),
       weekSchedule({ site: 'GS', night: '2024-08-19' }, { instrumentAvailability: [gmos] }),
     );
@@ -161,14 +149,6 @@ describe(WeekPage, () => {
     await screen.getByRole('button', { name: 'Previous week' }).click();
     await expect.element(screen.getByText('Nights beginning 2024-08-11 to 2024-08-17')).toBeVisible();
     await expect.poll(chartBars).toBe(homeBars);
-  });
-
-  it('links the semester it belongs to - the reverse of the calendar click-through', async () => {
-    const screen = await openOrdinaryWeek();
-
-    await screen.getByRole('link', { name: 'Gemini South Semester 2025B', exact: false }).click();
-
-    await expect.poll(shownUrl).toBe('/semester?site=GS&night=2025-11-14&semester=2025B');
   });
 
   it('jumps back to the week that starts tonight from a deep link', async () => {
@@ -231,7 +211,6 @@ describe(WeekPage, () => {
   it('keys the colours to the instruments the week actually holds', async () => {
     const screen = await openWeek(
       '/week?site=GS&night=2025-11-14',
-      publishedSemesters(GS_2025B),
       weekSchedule(
         { site: 'GS', night: '2025-11-14' },
         {
@@ -260,21 +239,12 @@ describe(WeekPage, () => {
     await expect.poll(shownUrl).toMatch(/^\/night\?site=GS&night=2025-11-(1[4-9]|20)$/);
   });
 
-  it('keeps the tag off a published week', async () => {
-    const screen = await openOrdinaryWeek();
-
-    await expect.element(screen.getByTestId('week-timeline')).toBeVisible();
-    await expect.element(screen.getByTestId('synthetic-data-tag')).not.toBeInTheDocument();
-  });
-
-  it('says so when no published schedule reaches the week', async () => {
+  it('draws a week the backend holds nothing for as seven nights not recorded', async () => {
     const screen = await openWeek(
       '/week?site=GS&night=2030-01-01',
-      publishedSemesters(GS_2025B),
       weekSchedule({ site: 'GS', night: '2030-01-01' }, { withoutData: weekOf('2030-01-01') }),
     );
 
-    await expect.element(screen.getByText('No published schedule covers these nights', { exact: false })).toBeVisible();
-    await expect.element(screen.getByTestId('week-timeline')).not.toBeInTheDocument();
+    await expect.poll(() => screen.getByTestId('week-timeline').getByText('not recorded').elements().length).toBe(7);
   });
 });
