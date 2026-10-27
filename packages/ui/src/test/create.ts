@@ -126,6 +126,7 @@ export const createOdbTargetEnvironment = makeCreateHelper<OdbTargetEnvironment>
   firstScienceTarget: null,
   blindOffsetTarget: null,
   asterism: [],
+  useBlindOffset: false,
   __typename: 'TargetEnvironment',
 }));
 

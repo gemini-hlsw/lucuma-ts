@@ -256,7 +256,8 @@ const selectedObservationWithBlindOffset: OdbObservation = {
   targetEnvironment: createOdbTargetEnvironment({
     firstScienceTarget: mayallV,
     blindOffsetTarget: mayallVBlind,
-    asterism: [mayallV, mayallVBlind],
+    useBlindOffset: true,
+    asterism: [mayallV],
   }),
 };
 
