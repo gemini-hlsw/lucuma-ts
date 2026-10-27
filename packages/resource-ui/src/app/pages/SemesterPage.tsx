@@ -104,11 +104,7 @@ export default function SemesterPage(): JSX.Element {
             )}
           </LabelledControl>
         }
-      >
-        {selected === null
-          ? 'Choose a site and semester.'
-          : `Nights ${selected.firstNight} to ${selected.lastNight}. Columns are headed by the date each night begins, as published.`}
-      </PageHeader>
+      />
 
       {failure !== undefined && <ErrorAlert what="the schedule" error={failure} />}
 

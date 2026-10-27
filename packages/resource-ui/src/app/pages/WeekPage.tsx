@@ -1,7 +1,6 @@
 import { when } from '@gemini-hlsw/lucuma-common-ui';
 import type { JSX } from 'react';
 
-import { useClockPreference } from '@/app/useClockPreference';
 import { useNow } from '@/app/useNow';
 import { useOpenNight } from '@/app/useOpenNight';
 import { useSelection } from '@/app/useSelection';
@@ -11,7 +10,6 @@ import { EmptyPanel, ErrorAlert, Loading } from '@/components/ui/PageStatus';
 import { toApiInterval } from '@/domain/adapters';
 import { addDays } from '@/domain/semester';
 import { nightAt } from '@/domain/timeline';
-import { buildWeekChanges } from '@/domain/weekChanges';
 import { buildWeekTimeline, WEEK_NIGHTS } from '@/domain/weekTimeline';
 import { TimelineChart, TimelineLegendBar } from '@/features/timeline/TimelineChart';
 import {
@@ -20,7 +18,6 @@ import {
   telescopeLegendExtras,
   tooLegendExtras,
 } from '@/features/timeline/timelineOptions';
-import { WeekChangesTable } from '@/features/week/WeekChangesTable';
 import { buildWeekChartOptions } from '@/features/week/weekChartOptions';
 import { useWeekSchedule } from '@/gql/hooks';
 
@@ -29,7 +26,6 @@ const NOW_TICK_MS = 5 * 60_000;
 
 export default function WeekPage(): JSX.Element {
   const { site, observingNight, tonight, setObservingNight, clearObservingNight } = useSelection();
-  const timeDisplay = useClockPreference();
   const now = useNow(NOW_TICK_MS);
 
   // The page speaks evening dates; the observing-night labels stay in the URL.
@@ -57,7 +53,6 @@ export default function WeekPage(): JSX.Element {
     error,
     nightsWithData,
     nightsResolved,
-    nightComponents,
   } = useWeekSchedule(site, nights, bounds);
 
   const week = buildWeekTimeline({
@@ -71,14 +66,6 @@ export default function WeekPage(): JSX.Element {
   });
 
   const options = buildWeekChartOptions({ week, site, now });
-
-  const changes = buildWeekChanges({
-    interval: week.interval,
-    instrumentAvailability,
-    telescopeAvailability,
-    componentAvailability: nightComponents.blocks,
-    components: nightComponents.components,
-  });
 
   const nothingRecorded = week.nights.every((night) => !night.dataAvailable);
 
@@ -112,10 +99,7 @@ export default function WeekPage(): JSX.Element {
             isTonight={observingNight === tonight}
           />
         }
-      >
-        Seven observing nights, each 14:00 to 14:00 site time. Columns are headed by the date each night begins, as
-        published.
-      </PageHeader>
+      />
 
       {when(error, (error) => (
         <ErrorAlert what="the week" error={error} />
@@ -145,7 +129,6 @@ export default function WeekPage(): JSX.Element {
             testId="week-timeline"
             onInstantClick={openNightAt}
           />
-          <WeekChangesTable changes={changes} site={site} timeDisplay={timeDisplay} />
         </>
       )}
     </div>

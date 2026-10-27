@@ -4,7 +4,7 @@ import { Dropdown } from 'primereact/dropdown';
 import { InputText } from 'primereact/inputtext';
 import { type JSX, useState } from 'react';
 
-import { RECENT_DAYS, useRecentSpan } from '@/app/useRecentSpan';
+import { useRecentSpan } from '@/app/useRecentSpan';
 import { useSelection } from '@/app/useSelection';
 import { useUrlParam } from '@/app/useUrlParam';
 import { FilterField } from '@/components/ui/FilterField';
@@ -16,7 +16,7 @@ import { RecordHistoryTable } from '@/components/ui/RecordHistoryTable';
 import { EXPANDER_COLUMN_STYLE } from '@/components/ui/styles';
 import { WhereCell } from '@/components/ui/WhereCell';
 import { buildFinderRows, type FinderRow, historyOf, matchesComponent, whereOf } from '@/domain/componentFinder';
-import { eveningLabel, eveningRange, firstEveningDate, nightCount, observingNightInterval } from '@/domain/siteTime';
+import { eveningRange, nightCount, observingNightInterval } from '@/domain/siteTime';
 import type {
   ComponentType,
   InstrumentAvailabilityBlock,
@@ -138,10 +138,7 @@ export default function ComponentsPage(): JSX.Element {
 
   return (
     <div className="min-w-0">
-      <PageHeader title="Components">
-        Where every instrument piece is on the night of {eveningLabel(firstEveningDate(site, night))}. Open a row for
-        its history over the past {RECENT_DAYS} days.
-      </PageHeader>
+      <PageHeader title="Components" />
 
       {error !== undefined && <ErrorAlert what="the components" error={error} />}
 

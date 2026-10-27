@@ -2,7 +2,6 @@ import type { MockLink } from '@apollo/client/testing';
 import { describe, expect, it } from 'vitest';
 import { page } from 'vitest/browser';
 
-import { setClockPreference } from '@/app/useClockPreference';
 import { addDays } from '@/domain/semester';
 import { observingNightOf } from '@/domain/siteTime';
 import {
@@ -12,7 +11,6 @@ import {
   telescopeModeBlock,
   tooSupportBlock,
 } from '@/test/fixtures/blocks';
-import { instrumentComponent, instrumentComponentAvailabilityBlock } from '@/test/fixtures/components';
 import { weekSchedule } from '@/test/fixtures/week';
 import { Probe, PROBE_URL_TESTID } from '@/test/probe';
 import { renderApp } from '@/test/renderApp';
@@ -45,28 +43,12 @@ const chartBars = () =>
     .map((point) => `${point.getAttribute('d') ?? ''}#${point.getAttribute('fill') ?? ''}`)
     .join('|');
 
-/** The R400 leaves its slot for the summit lab at 00:00 site time inside the night labelled 2025-11-20. */
-const R400_FAILS = instrumentComponentAvailabilityBlock({
-  component: instrumentComponent({ name: 'R400' }),
-  location: 'LAB',
-  usage: 'UNAVAILABLE',
-  note: 'Failed; removed for repair',
-  interval: { __typename: 'TimestampInterval', start: '2025-11-20T03:00:00.000Z', end: '2026-01-15T17:00:00.000Z' },
-});
-
-const openWeekOfR400Failure = () =>
-  openWeek(
-    '/week?site=GS&night=2025-11-20',
-    weekSchedule({ site: 'GS', night: '2025-11-20' }, { instrumentComponentAvailability: [R400_FAILS] }),
-  );
-
 describe(WeekPage, () => {
   it('draws seven nights from the one asked for', async () => {
     const screen = await openOrdinaryWeek();
 
-    // The URL carries the night label; the page speaks the evening each night begins, and says so.
+    // The URL carries the night label; the page speaks the evening each night begins.
     await expect.element(screen.getByText('Nights beginning 2025-11-13 to 2025-11-19')).toBeVisible();
-    await expect.element(screen.getByText('headed by the date each night begins', { exact: false })).toBeVisible();
     await expect.element(screen.getByTestId('week-timeline')).toBeVisible();
   });
 
@@ -175,32 +157,6 @@ describe(WeekPage, () => {
     await expect.element(screen.getByText('Nights beginning 2025-11-20 to 2025-11-26')).toBeVisible();
   });
 
-  it('lists what changes this week, with the clock time of a mid-night change', async () => {
-    const screen = await openWeekOfR400Failure();
-
-    const changes = screen.getByTestId('week-changes');
-    await expect.element(changes.getByText('R400 to Summit lab')).toBeVisible();
-    await expect.element(changes.getByText('Failed; removed for repair')).toBeVisible();
-    await expect.element(changes.getByText('00:00', { exact: false })).toBeVisible();
-  });
-
-  it('phrases the change instants in UT when the reader keeps the UT clock', async () => {
-    // The same R400 failure: 00:00 at the site is 03:00 UT in November (UTC-3).
-    setClockPreference('utc');
-    const screen = await openWeekOfR400Failure();
-
-    const changes = screen.getByTestId('week-changes');
-    await expect.element(changes.getByText('03:00', { exact: false })).toBeVisible();
-  });
-
-  it('says so plainly when nothing changes all week', async () => {
-    // Every run carries straight through the week, so no record begins or ends inside it.
-    const screen = await openOrdinaryWeek();
-
-    await expect.element(screen.getByText('Nothing changes this week', { exact: false })).toBeVisible();
-    await expect.element(screen.getByTestId('week-changes')).not.toBeInTheDocument();
-  });
-
   it('keys the chrome as well as the data: the weekends it shades', async () => {
     const screen = await openOrdinaryWeek();
     const legend = screen.getByLabelText('Legend');
@@ -248,6 +204,5 @@ describe(WeekPage, () => {
     await expect.element(screen.getByText('Nothing is recorded for this week.')).toBeVisible();
     await expect.element(screen.getByTestId('week-timeline')).not.toBeInTheDocument();
     await expect.element(screen.getByLabelText('Legend')).not.toBeInTheDocument();
-    await expect.element(screen.getByText('Nothing changes this week', { exact: false })).not.toBeInTheDocument();
   });
 });

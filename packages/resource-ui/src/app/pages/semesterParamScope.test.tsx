@@ -65,7 +65,6 @@ const WEEK_SCHEDULE: MockedResponseOf<typeof WEEK_SCHEDULE_QUERY> = {
       telescopeNights: [],
       instrumentAvailability: [],
       telescopeAvailability: [],
-      instrumentComponentAvailability: [],
       tooSupport: [],
       telescopeMode: [],
     },

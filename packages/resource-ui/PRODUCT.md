@@ -43,13 +43,13 @@ The destinations all draw the one published record. Today there are five; the se
 expected to grow - more paths, more endpoints, more ways of seeing the same record - and
 adding one must never mean restructuring the others:
 
-| Destination    | The question it answers                                           |
-| -------------- | ----------------------------------------------------------------- |
-| `/night`       | What is mounted, and what the telescope is doing, for one night   |
-| `/week`        | Seven nights on one continuous axis, and what changed across them |
-| `/semester`    | How long each run lasts, month by month                           |
-| `/instruments` | Where a named instrument is tonight, and its run history          |
-| `/components`  | Where a named piece of hardware is, and its history               |
+| Destination    | The question it answers                                         |
+| -------------- | --------------------------------------------------------------- |
+| `/night`       | What is mounted, and what the telescope is doing, for one night |
+| `/week`        | Seven nights on one continuous axis                             |
+| `/semester`    | How long each run lasts, month by month                         |
+| `/instruments` | Where a named instrument is tonight, and its run history        |
+| `/components`  | Where a named piece of hardware is, and its history             |
 
 Success is that a reader trusts what they see: no view claims a fact the record does not carry,
 and no gap is decorated to look like an answer.

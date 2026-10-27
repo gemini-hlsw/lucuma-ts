@@ -352,7 +352,7 @@ masthead (surface, 1px subtle bottom border) carries four things and no more: th
 account name and menu. A fixed-width
 (196px) sidebar groups navigation under uppercase section labels (SCHEDULE: Semester, Week,
 Night; INVENTORY: Instruments, Components). The remaining viewport is the workspace: one
-scroll container, `PageHeader` (title, subtitle, right-hand controls slot), then content at
+scroll container, `PageHeader` (title, right-hand controls slot), then content at
 full width. This structure is the starting point, not a law - if a future workflow (the
 scheduler builder above all) needs a different frame, change the frame rather than forcing
 the workflow into it, but keep masthead selections global and page controls local.
@@ -693,8 +693,6 @@ phrasing of a span, nothing else.
 - **Legend:** one section per state row, then Instruments, then Calendar where a
   view supplies it - five, in that order. The neutrals repeat across rows, so a repeated
   grey is keyed under the row it belongs to; a section with no keys does not render.
-- **The week changes table** reads ports only: a shelf change is
-  inventory, not a night's headline; a boundary on the window's edge is not a change.
 - **Every night-shaped thing opens its night view** - chart bars route onto `/night`.
   What a bar must show on focus, and how it still falls short, is Interaction states above.
 

@@ -3,11 +3,9 @@ import { isNullish } from '@gemini-hlsw/lucuma-common-ui';
 
 import {
   type ApiInterval,
-  type NightComponents,
   toComponentAvailability,
   toComponents,
   toInstrumentAvailability,
-  toNightComponents,
   toPublishedSemesters,
   toTelescopeAvailability,
   toTelescopeMode,
@@ -98,8 +96,6 @@ export interface NightScheduleResult extends ScheduleResult {
   readonly telescopeSubsystemAvailability: readonly TelescopeSubsystemAvailabilityBlock[];
 }
 
-const NO_COMPONENTS: NightComponents = { components: [], blocks: [] };
-
 /** One night: its records, and whether anything is recorded for it at all. */
 export const useNightSchedule = (site: Site, observingNight: string, bounds: ApiInterval): NightScheduleResult => {
   const { data, loading, error } = useQuery(NIGHT_SCHEDULE_QUERY, {
@@ -125,8 +121,6 @@ export interface WeekScheduleResult extends ScheduleResult {
   readonly nightsWithData: ReadonlySet<string>;
   /** Whether the answer has arrived, so an empty set is not read as "none". */
   readonly nightsResolved: boolean;
-  /** Component records over the window, for the week's changes list. */
-  readonly nightComponents: NightComponents;
 }
 
 /** A week of nights: the runs crossing them, and which nights are entered. */
@@ -143,7 +137,6 @@ export const useWeekSchedule = (
   const nightsWithData = new Set(
     (data?.telescopeNights ?? []).filter((night) => night.dataAvailable).map((night) => night.observingNight),
   );
-  const nightComponents = data === undefined ? NO_COMPONENTS : toNightComponents(data.instrumentComponentAvailability);
 
   return {
     instrumentAvailability,
@@ -154,7 +147,6 @@ export const useWeekSchedule = (
     error,
     nightsWithData,
     nightsResolved: data !== undefined,
-    nightComponents,
   };
 };
 

@@ -73,10 +73,7 @@ export default function NightPage(): JSX.Element {
             isTonight={observingNight === tonight}
           />
         }
-      >
-        {clockLabel(interval.start, site, timeDisplay)} to {clockLabel(interval.end, site, timeDisplay)}{' '}
-        {timeDisplay === 'utc' ? 'UTC' : 'site time'}, labelled by the date it ends.
-      </PageHeader>
+      />
 
       {when(error, (error) => (
         <ErrorAlert what="the night" error={error} />

@@ -133,48 +133,6 @@ export const toComponents = (data: Gql.ComponentBrowserQuery): readonly Instrume
     aliases: component.aliases,
   }));
 
-/** The night projection's component blocks, with the identity of each piece lifted out beside them. */
-export interface NightComponents {
-  /** The pieces recorded tonight, deduplicated, in catalog order. */
-  readonly components: readonly InstrumentComponent[];
-  readonly blocks: readonly InstrumentComponentAvailabilityBlock[];
-}
-
-/** The night view feeds the one finder rather than growing its own row shape. */
-export const toNightComponents = (
-  blocks: readonly Gql.InstrumentComponentAvailabilityBlockItemFragment[],
-): NightComponents => {
-  const byId = new Map<string, InstrumentComponent>();
-  for (const block of blocks) {
-    byId.set(block.component.id, {
-      id: block.component.id,
-      instrument: block.component.instrument,
-      componentType: block.component.componentType,
-      code: block.component.code,
-      name: block.component.name,
-      barcode: block.component.barcode ?? null,
-      aliases: block.component.aliases,
-    });
-  }
-  const components = [...byId.values()].sort(
-    (a, b) =>
-      a.instrument.localeCompare(b.instrument) ||
-      a.componentType.localeCompare(b.componentType) ||
-      a.name.localeCompare(b.name),
-  );
-  return {
-    components,
-    blocks: blocks.map((block, index) => ({
-      id: rowKey('ica', index),
-      componentId: block.component.id,
-      usage: block.usage,
-      location: block.location,
-      interval: toInterval(block.interval),
-      note: block.note ?? null,
-    })),
-  };
-};
-
 export const toComponentAvailability = (
   data: Gql.ComponentBrowserQuery,
 ): readonly InstrumentComponentAvailabilityBlock[] =>

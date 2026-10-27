@@ -16,7 +16,7 @@ import {
   tooSupportBlock,
 } from '@/test/fixtures/blocks';
 import { nightSchedule } from '@/test/fixtures/night';
-import { chooseClock } from '@/test/helpers';
+import { chooseClock, nightAxisLabels } from '@/test/helpers';
 import { renderApp } from '@/test/renderApp';
 
 import NightPage from './NightPage';
@@ -125,9 +125,9 @@ describe(NightPage, () => {
   it('reads an unknown stored clock as the site clock, never as UT or blank', async () => {
     // Storage is shared with whatever wrote it last, including an older build of this app.
     localStorage.setItem('resource.clock', 'zulu');
-    const screen = await openOrdinaryNight();
+    await openOrdinaryNight();
 
-    await expect.element(screen.getByText('14:00 to 14:00 site time', { exact: false })).toBeVisible();
+    await expect.poll(() => nightAxisLabels()[0]).toBe('14:00');
   });
 
   it('draws the night, one row per published port', async () => {
@@ -138,11 +138,11 @@ describe(NightPage, () => {
     await expect.element(screen.getByText('GHOST').first()).toBeVisible();
   });
 
-  it('states the night in the site clock', async () => {
-    const screen = await openOrdinaryNight();
+  it('draws the night in the site clock', async () => {
+    await openOrdinaryNight();
 
     // 14:00 to 14:00 at Cerro Pachon, whatever zone the reader is in.
-    await expect.element(screen.getByText('14:00 to 14:00 site time', { exact: false })).toBeVisible();
+    await expect.poll(() => nightAxisLabels()[0]).toBe('14:00');
   });
 
   it('says nothing is recorded for a night no published semester covers', async () => {
@@ -281,17 +281,13 @@ describe(NightPage, () => {
       childRoutes: [{ path: 'night', element: <NightPage /> }],
       mocks: [nightSchedule({ site: 'GS', night: '2025-11-14' }, { instrumentAvailability: [GHOST] })],
     });
-    const labels = () =>
-      [...document.querySelectorAll('[data-testid="night-timeline"] .highcharts-xaxis-labels text')]
-        .map((tick) => tick.textContent ?? '')
-        .join('|');
+    const labels = () => nightAxisLabels().join('|');
     await expect.poll(() => labels().length).toBeGreaterThan(0);
     const siteLabels = labels();
 
     await chooseClock(screen, 'UTC');
 
     // Non-empty first: a blanked chart must not slip through as merely "different".
-    await expect.element(screen.getByText('17:00 to 17:00 UTC', { exact: false })).toBeVisible();
     await expect.poll(() => labels().length).toBeGreaterThan(0);
     await expect.poll(labels).not.toBe(siteLabels);
   });

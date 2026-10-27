@@ -125,7 +125,7 @@ window's nights, and `timelineOptions.ts` holds the pieces every chart composes 
 | View           | What it draws                                                                      | Its module                   |
 | -------------- | ---------------------------------------------------------------------------------- | ---------------------------- |
 | Night          | the chart alone, plus PWFS1/PWFS2/LGS subsystem rows no other view shows           | `features/night/`            |
-| Week           | the run chart, plus `WeekChangesTable`                                             | `domain/weekChanges.ts`      |
+| Week           | the run chart alone                                                                | `features/week/`             |
 | Semester       | an xrange per month: how long a run lasts                                          | `features/semester/`         |
 | `/instruments` | a row per instrument the site's records name, expanding into its runs              | `domain/instrumentFinder.ts` |
 | `/components`  | the ICTD half: the piece catalog grouped by instrument, expanding into its history | `domain/componentFinder.ts`  |
@@ -156,7 +156,7 @@ these components are DESIGN.md's; this table is the ownership map.
 | Module                                   | What it owns                                                                                                                                                                                                                                                                                                                                                             |
 | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `WhereCell`                              | A `WhereReading`: coarse presence (on the telescope / off it / not recorded), the place in words, and the change tag. `componentLabels.componentWhere` and `InstrumentsPage.instrumentWhere` map onto it, one line each.                                                                                                                                                 |
-| `PageHeader`                             | Every destination's title, subtitle and right-hand controls slot.                                                                                                                                                                                                                                                                                                        |
+| `PageHeader`                             | Every destination's title and right-hand controls slot.                                                                                                                                                                                                                                                                                                                  |
 | `PageStatus`                             | The three page-state components (`ErrorAlert`, `Loading`, `EmptyPanel`); which state may look like what is DESIGN.md's.                                                                                                                                                                                                                                                  |
 | `NightStepper`                           | The Tonight / arrows / date toolbar, its chrome, aria labels and cleared-input guard. The page owns the date vocabulary.                                                                                                                                                                                                                                                 |
 | `LabelledControl`                        | Binds a caption to its control **by id**, as a render prop, so the caller decides which prop carries it (`id` on an input, `inputId` on a PrimeReact Dropdown). It must not wrap the control: implicit labelling only reaches a labelable element, and a label wrapping a Dropdown named nothing and swallowed the control's words into the name ("Instrument All All"). |
@@ -232,7 +232,7 @@ GraphQL response → **pure adapters** (`src/domain/adapters.ts`) → **UI domai
 components never touch generated fragment shapes.
 
 `src/domain/` holds the pure modules - date, interval and semester math, the
-timeline projections, the two finders, the week's changes - each with unit tests beside it. Keep
+timeline projections, the two finders - each with unit tests beside it. Keep
 date math and chart builders pure; keep components focused on rendering and interaction.
 
 ## Non-negotiables

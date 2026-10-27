@@ -4,7 +4,7 @@ import { Dropdown } from 'primereact/dropdown';
 import { InputText } from 'primereact/inputtext';
 import { type JSX, useState } from 'react';
 
-import { RECENT_DAYS, useRecentSpan } from '@/app/useRecentSpan';
+import { useRecentSpan } from '@/app/useRecentSpan';
 import { useSelection } from '@/app/useSelection';
 import { useUrlParam } from '@/app/useUrlParam';
 import { FilterField } from '@/components/ui/FilterField';
@@ -25,7 +25,7 @@ import {
   matchesInstrument,
   runsOf,
 } from '@/domain/instrumentFinder';
-import { eveningLabel, eveningRange, firstEveningDate, nightCount, observingNightInterval } from '@/domain/siteTime';
+import { eveningRange, nightCount, observingNightInterval } from '@/domain/siteTime';
 import { USAGE_LABEL } from '@/domain/timeline';
 import type { InstrumentAvailabilityBlock, ResourceUsage, Site } from '@/domain/types';
 import { INSTRUMENT_LABEL } from '@/features/timeline/instruments';
@@ -87,15 +87,9 @@ export default function InstrumentsPage(): JSX.Element {
     .filter((row) => matchesInstrument(row, search) && (location === '' || locationLabel(row) === location))
     .sort((a, b) => INSTRUMENT_LABEL[a.instrument].localeCompare(INSTRUMENT_LABEL[b.instrument]));
 
-  const onTelescope = rows.filter((row) => row.where.kind === 'PORT').length;
-
   return (
     <div className="min-w-0">
-      <PageHeader title="Instruments">
-        Every instrument {site} has recorded in the past {RECENT_DAYS} days, and where it is on the night of{' '}
-        {eveningLabel(firstEveningDate(site, night))}. {onTelescope} of {rows.length} on the telescope. Open a row for
-        its runs.
-      </PageHeader>
+      <PageHeader title="Instruments" />
 
       {error !== undefined && <ErrorAlert what="the instruments" error={error} />}
 
