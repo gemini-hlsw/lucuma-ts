@@ -1,5 +1,5 @@
+import type { Store } from 'jotai';
 import { createStore } from 'jotai';
-import type { Store } from 'jotai/vanilla/store';
 
 import { themeAtom } from './theme';
 

@@ -80,6 +80,7 @@ export function useImportObservation() {
               title: selectedObservation.title,
               subtitle: selectedObservation.subtitle,
               reference: selectedObservation.reference?.label,
+              programLabel: selectedObservation.program.reference?.label,
               instrument: obsWithWavelength.data?.executionConfig?.instrument,
               fpu,
             },
@@ -135,11 +136,12 @@ function createBaseTargets(
 ): TargetInput[] {
   const targetEnvironment = observation.targetEnvironment;
 
-  const asterism = targetEnvironment.asterism;
-  const fallbackTargets = [targetEnvironment.blindOffsetTarget, targetEnvironment.firstScienceTarget].filter(
-    isNotNullish,
-  );
-  const sourceTargets = asterism.length > 0 ? asterism : fallbackTargets;
+  // The blind offset target is never part of the asterism; duplicates are skipped below
+  const sourceTargets = [
+    when(targetEnvironment.useBlindOffset, () => targetEnvironment.blindOffsetTarget),
+    ...targetEnvironment.asterism,
+    targetEnvironment.firstScienceTarget,
+  ].filter(isNotNullish);
 
   const matchingBaseTarget = when(basePosition, (base) =>
     sourceTargets.find((target) => isSameBaseTarget(base, target)),

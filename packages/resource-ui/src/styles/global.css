@@ -1,7 +1,7 @@
 @import 'tailwindcss';
 
 @theme {
-  /* Measured from explore-dev.lucuma.xyz; re-measure against Explore before changing one. */
+  /* Measured from explore-dev.gemini.edu; re-measure against Explore before changing one. */
 
   /* Explore's "Add an observation" button, mapped onto PrimeReact's --primary-color in shell.css. */
   --color-gpp: hsl(122deg 39% 49%);

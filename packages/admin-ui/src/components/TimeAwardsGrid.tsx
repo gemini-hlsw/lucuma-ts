@@ -1,11 +1,10 @@
 import './TimeAwardsGrid.css';
 
-import { NumberInput } from '@gemini-hlsw/lucuma-common-ui';
+import { CirclePlus, CircleXMark, NumberInput, Plus } from '@gemini-hlsw/lucuma-common-ui';
 import { Button } from 'primereact/button';
 import { Dropdown } from 'primereact/dropdown';
 import { type JSX, useMemo, useState } from 'react';
 
-import { CirclePlus, CircleXMark, Plus } from '@/components/Icons';
 import {
   type Allocation,
   BAND_LABEL,

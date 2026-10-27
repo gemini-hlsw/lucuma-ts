@@ -1,6 +1,6 @@
 import './ReviewView.css';
 
-import { cn } from '@gemini-hlsw/lucuma-common-ui';
+import { Check, CircleCheck, cn, PaperPlane, XMark } from '@gemini-hlsw/lucuma-common-ui';
 import { Button } from 'primereact/button';
 import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
@@ -9,12 +9,12 @@ import { type JSX, type ReactNode, useState } from 'react';
 
 import { ConflictsTable } from '@/components/ConflictsTable';
 import { DuplicatesTable } from '@/components/DuplicatesTable';
-import { Check, CircleCheck, PaperPlane, XMark } from '@/components/Icons';
 import { Tile } from '@/components/Tile';
+import { useRowSelection } from '@/components/useRowSelection';
 import type { ObservationRow } from '@/gql/types';
 
-/** Minimal shape both Proposals and Change Requests satisfy, so this view can
- *  render either. Each page supplies the type-specific bits via props. */
+/** Minimal shape a reviewed item satisfies. Proposals is the only page that
+ *  renders this view; it supplies the type-specific bits via props. */
 export interface ReviewItem {
   readonly id: string;
   readonly resolved: boolean;
@@ -92,14 +92,7 @@ export function ReviewView<T extends ReviewItem>(props: ReviewViewProps<T>): JSX
 
   const nounTitle = `${noun[0]!.toUpperCase()}${noun.slice(1)}`;
   const visible = items;
-  // Three-state selection so a deliberate deselect is honoured (sc-10137):
-  //  - `undefined` — untouched: default to the first row so the detail panel is
-  //    populated on load, and keep defaulting when a filter change drops the
-  //    selected row (fall back to the first surviving row, not an empty panel);
-  //  - a row id — that row when it's visible, else the first surviving row;
-  //  - `null` — an explicit deselect: leave nothing selected (no snap back).
-  const [selectedId, setSelectedId] = useState<string | null | undefined>(undefined);
-  const selected = selectedId === null ? null : (visible.find((i) => i.id === selectedId) ?? visible[0] ?? null);
+  const [selected, setSelectedId] = useRowSelection(visible, 'id');
 
   const [decision, setDecision] = useState<Decision | null>(null);
   const [response, setResponse] = useState('');

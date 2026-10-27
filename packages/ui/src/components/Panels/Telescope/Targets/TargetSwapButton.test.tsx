@@ -152,6 +152,7 @@ describe(TargetSwapButton, () => {
           instrument: 'GMOS_NORTH',
           lightSinkVariant: undefined,
           oiwfs: undefined,
+          programLabel: 'G-2025A-ENG-GMOSN-01',
           pwfs1: undefined,
           pwfs2: undefined,
           rotator: {
@@ -225,7 +226,7 @@ describe(TargetSwapButton, () => {
           },
         );
 
-        await expect.element(sut.getByRole('button')).toHaveTextContent('Point to Base');
+        await expect.element(sut.getByRole('button')).toMatchTextContent('Point to Base');
         await expect.element(sut.getByRole('button')).toHaveClass('p-button-danger');
 
         await userEvent.click(sut.getByRole('button'));

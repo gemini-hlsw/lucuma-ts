@@ -1,4 +1,3 @@
-/** No imports on purpose: `mock-server/` reaches this by relative path and cannot resolve `@/`. */
 export const SITE_TIME_ZONES = {
   GN: 'Pacific/Honolulu',
   GS: 'America/Santiago',

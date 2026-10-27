@@ -45,14 +45,14 @@ GraphQL has a built-in error system with errors in the response:
 
 ## When to Use Each Pattern
 
-| Scenario                 | Pattern                  |
-| ------------------------ | ------------------------ |
-| Unexpected server error  | Built-in errors          |
-| Authentication required  | Built-in errors          |
-| User input validation    | Union result types       |
-| Business rule violation  | Union result types       |
+| Scenario | Pattern |
+|----------|---------|
+| Unexpected server error | Built-in errors |
+| Authentication required | Built-in errors |
+| User input validation | Union result types |
+| Business rule violation | Union result types |
 | Partial success possible | Union or nullable fields |
-| Multiple error types     | Union result types       |
+| Multiple error types | Union result types |
 
 ## Union-Based Error Pattern
 
@@ -78,7 +78,11 @@ type ValidationError {
 ### Multiple Error Types
 
 ```graphql
-union CreateOrderResult = CreateOrderSuccess | ValidationError | InsufficientInventory | PaymentFailed
+union CreateOrderResult =
+  | CreateOrderSuccess
+  | ValidationError
+  | InsufficientInventory
+  | PaymentFailed
 
 type CreateOrderSuccess {
   order: Order!
@@ -355,8 +359,8 @@ type UserWithExternalData {
   id: ID!
   name: String!
   # These might fail independently
-  profileImage: Image # External service
-  socialConnections: [Social] # External service
+  profileImage: Image           # External service
+  socialConnections: [Social]   # External service
   # Errors for each
   profileImageError: String
   socialConnectionsError: String

@@ -1,3 +1,4 @@
+import { useToastApi } from '@gemini-hlsw/lucuma-common-ui';
 import { useConfiguration, useUpdateConfiguration } from '@gql/configs/Configuration';
 import { GET_INSTRUMENT, useSetTemporaryInstrument } from '@gql/configs/Instrument';
 import { Button } from 'primereact/button';
@@ -6,7 +7,6 @@ import { lazy, startTransition, Suspense, useState } from 'react';
 
 import { useImportInstrument } from '@/components/atoms/instrument';
 import { useTransitionPromise } from '@/Helpers/hooks';
-import { useToast } from '@/Helpers/toast';
 import type { InstrumentConfig } from '@/types';
 
 import { ModalSolarProgress } from '../ModalSolarProgress';
@@ -64,7 +64,7 @@ function useModifyInstrument() {
   const [setTemporaryInstrument, { loading: setTemporaryInstrumentLoading }] = useSetTemporaryInstrument();
   const [updateConfiguration, { loading: updateConfigurationLoading }] = useUpdateConfiguration();
 
-  const toast = useToast();
+  const toast = useToastApi();
 
   const [isPending, startTransition] = useTransitionPromise();
 
@@ -97,11 +97,7 @@ function useModifyInstrument() {
       ]);
 
       if (instrument.comment?.includes('Default fallback configuration')) {
-        toast?.show({
-          severity: 'warn',
-          summary: 'Warning',
-          detail: instrument.comment,
-        });
+        toast.warn('Warning', instrument.comment);
       }
     });
   };

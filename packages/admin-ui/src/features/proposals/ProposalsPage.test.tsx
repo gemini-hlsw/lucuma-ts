@@ -1,8 +1,10 @@
+import { fakeJwt, standardUser } from '@gemini-hlsw/lucuma-common-ui/testing';
 import { describe, expect, it } from 'vitest';
 import { userEvent } from 'vitest/browser';
 
+import { PROGRAM_CONFIGURATION_REQUESTS_QUERY, PROGRAM_OBSERVATIONS_QUERY } from '@/gql/odb/changeRequests';
 import { PROPOSALS_QUERY } from '@/gql/odb/proposals';
-import { fakeJwt, standardUser } from '@/test/factories';
+import { emptyRoster } from '@/test/factories';
 import { type MockedResponseOf, renderWithContext } from '@/test/render';
 
 import ProposalsPage from './ProposalsPage';
@@ -46,9 +48,31 @@ const proposalsMock = (): MockedResponseOf<typeof PROPOSALS_QUERY> => ({
   },
 });
 
+/** ProposalsPage as staff. The page auto-selects the first proposal, so its detail queries answer empty. */
+const renderPage = () =>
+  renderWithContext(<ProposalsPage />, {
+    token: STAFF_TOKEN,
+    mocks: [
+      proposalsMock(),
+      {
+        request: { query: PROGRAM_CONFIGURATION_REQUESTS_QUERY, variables: { programId: 'p-1', offset: null } },
+        result: {
+          data: {
+            configurationRequests: { __typename: 'ConfigurationRequestSelectResult', matches: [], hasMore: false },
+          },
+        },
+      } satisfies MockedResponseOf<typeof PROGRAM_CONFIGURATION_REQUESTS_QUERY>,
+      {
+        request: { query: PROGRAM_OBSERVATIONS_QUERY, variables: { programId: 'p-1', offset: null } },
+        result: { data: { observations: { __typename: 'ObservationSelectResult', matches: [], hasMore: false } } },
+      } satisfies MockedResponseOf<typeof PROGRAM_OBSERVATIONS_QUERY>,
+      emptyRoster(),
+    ],
+  });
+
 describe(ProposalsPage, () => {
   it('lists special proposals with the master-list columns', async () => {
-    const screen = await renderWithContext(<ProposalsPage />, { token: STAFF_TOKEN, mocks: [proposalsMock()] });
+    const screen = await renderPage();
     await expect.element(screen.getByText('Proposals', { exact: true })).toBeInTheDocument();
     for (const h of ['Reference', 'Semester', 'PI', 'Type', 'Status', 'Title']) {
       await expect.element(screen.getByText(h, { exact: true })).toBeInTheDocument();
@@ -58,7 +82,7 @@ describe(ProposalsPage, () => {
   });
 
   it('offers status / type / semester facet dropdowns instead of a resolved toggle', async () => {
-    const screen = await renderWithContext(<ProposalsPage />, { token: STAFF_TOKEN, mocks: [proposalsMock()] });
+    const screen = await renderPage();
     await expect.element(screen.getByText('All statuses').first()).toBeInTheDocument();
     await expect.element(screen.getByText('All types').first()).toBeInTheDocument();
     await expect.element(screen.getByText('All semesters').first()).toBeInTheDocument();
@@ -66,7 +90,7 @@ describe(ProposalsPage, () => {
   });
 
   it('leaves nothing selected when the selected row is deselected — sc-10137', async () => {
-    const screen = await renderWithContext(<ProposalsPage />, { token: STAFF_TOKEN, mocks: [proposalsMock()] });
+    const screen = await renderPage();
     const row = screen.getByRole('cell', { name: 'G-2027B-0042' });
     await expect.element(row).toBeInTheDocument();
 
@@ -83,7 +107,7 @@ describe(ProposalsPage, () => {
   });
 
   it('offers a roster-backed contact-scientist picker in the accept award — sc-9624', async () => {
-    const screen = await renderWithContext(<ProposalsPage />, { token: STAFF_TOKEN, mocks: [proposalsMock()] });
+    const screen = await renderPage();
     // The first proposal auto-selects; choosing Accept reveals the award form.
     await userEvent.click(screen.getByRole('button', { name: 'Accept' }));
 

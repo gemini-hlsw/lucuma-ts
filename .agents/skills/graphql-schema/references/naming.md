@@ -121,15 +121,15 @@ Name based on the relationship:
 
 ```graphql
 type Post {
-  author: User! # Not: user, createdBy
+  author: User!         # Not: user, createdBy
   comments: [Comment!]!
   tags: [Tag!]!
 }
 
 type Comment {
-  post: Post! # Parent reference
+  post: Post!           # Parent reference
   author: User!
-  replies: [Comment!]! # Child reference
+  replies: [Comment!]!  # Child reference
 }
 ```
 
@@ -139,8 +139,8 @@ Name by what they return, not how they're computed:
 
 ```graphql
 type User {
-  fullName: String! # Not: getFullName, computedName
-  postCount: Int! # Not: calculatePostCount
+  fullName: String!        # Not: getFullName, computedName
+  postCount: Int!          # Not: calculatePostCount
   recentActivity: [Activity!]!
 }
 ```
@@ -239,8 +239,8 @@ type Mutation {
   createPost(input: CreatePostInput!): Post!
 
   # Update operations
-  updateUser(id: ID!, input: UpdateUserInput!): User!
-  updatePost(id: ID!, input: UpdatePostInput!): Post!
+  updateUser(input: UpdateUserInput!): User!
+  updatePost(input: UpdatePostInput!): Post!
 
   # Delete operations
   deleteUser(id: ID!): DeleteUserPayload!
@@ -262,15 +262,15 @@ type Mutation {
 
 ### Common Verb Patterns
 
-| Operation     | Verbs                                       |
-| ------------- | ------------------------------------------- |
-| Create        | `create`, `add`, `register`, `submit`       |
-| Read          | `get`, `fetch`, `load` (avoid in mutations) |
-| Update        | `update`, `edit`, `modify`, `set`           |
-| Delete        | `delete`, `remove`, `archive`               |
-| State change  | `publish`, `approve`, `reject`, `cancel`    |
-| Relationships | `add`, `remove`, `link`, `unlink`           |
-| Actions       | `send`, `invite`, `follow`, `like`          |
+| Operation | Verbs |
+|-----------|-------|
+| Create | `create`, `add`, `register`, `submit` |
+| Read | `get`, `fetch`, `load` (avoid in mutations) |
+| Update | `update`, `edit`, `modify`, `set` |
+| Delete | `delete`, `remove`, `archive` |
+| State change | `publish`, `approve`, `reject`, `cancel` |
+| Relationships | `add`, `remove`, `link`, `unlink` |
+| Actions | `send`, `invite`, `follow`, `like` |
 
 ## Input Types
 
@@ -285,6 +285,7 @@ input CreateUserInput {
 }
 
 input UpdateUserInput {
+  id: ID!
   email: String
   name: String
 }
@@ -386,8 +387,8 @@ type Query {
 ```graphql
 # Avoid: inconsistent naming
 type User {
-  firstName: String! # camelCase
-  last_name: String! # snake_case
+  firstName: String!    # camelCase
+  last_name: String!    # snake_case
   EmailAddress: String! # PascalCase
 }
 

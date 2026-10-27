@@ -23,6 +23,8 @@ A running docker service is required to install navigate, the user installing na
 
 After running the install.sh script, the `navigate` command will be enabled to `start`, `stop` and `update` the cluster. For more information try the command `navigate help`.
 
+`navigate update` deploys the release tag last promoted to the server's environment (`staging` or `production`, taken from `SITE` in `.env`). It reads that tag from the GitHub deployment records written by the promote script, so the server needs access to api.github.com. `navigate update --force-version <tag>` deploys another tag instead, after a warning and a confirmation prompt: anything other than the promoted version may be incompatible with the other systems of the environment.
+
 This snippet can be used in order to run the `install.sh` script.
 
 ```bash

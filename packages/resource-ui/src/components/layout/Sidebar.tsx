@@ -25,7 +25,7 @@ function itemClassName(isActive: boolean, isDisabled: boolean): string {
 /** Real `NavLink`s, so React Router recomputes `isActive` and the highlight cannot go stale. */
 function SidebarItem({ item }: { item: SidebarMenuItem }): JSX.Element {
   const [params] = useSearchParams();
-  const search = searchString(carrySelection(params));
+  const search = searchString(carrySelection(params, item.carries));
   const icon = item.icon === undefined ? null : <FontAwesomeIcon icon={item.icon} size="sm" aria-hidden="true" />;
 
   if (item.disabled === true) {

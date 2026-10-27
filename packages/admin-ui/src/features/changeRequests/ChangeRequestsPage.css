@@ -6,10 +6,6 @@
   border-bottom: 1px solid var(--surface-border, #2a2a2e);
 }
 
-.cr-table {
-  cursor: pointer;
-}
-
 .cr-status-pill {
   display: inline-block;
   padding: 2px 10px;
@@ -38,75 +34,6 @@
   color: var(--text-color-secondary, #9a9aa2);
 }
 
-.cr-dot {
-  display: inline-block;
-  width: 0.7rem;
-  height: 0.7rem;
-  border-radius: 50%;
-}
-
-.cr-dot-open {
-  background: var(--yellow-400, #d9b85c);
-}
-
-.cr-dot-approved {
-  background: var(--green-400, #6fcf7f);
-}
-
-.cr-dot-denied {
-  background: var(--red-400, #e57373);
-}
-
-.cr-untracked {
-  color: var(--text-color-secondary, #9a9aa2);
-  font-style: italic;
-  font-size: 0.84rem;
-}
-
-.cr-windows-link {
-  padding: 0;
-  font-weight: 600;
-}
-
-.cr-windows-panel {
-  max-width: 28rem;
-}
-
-.cr-windows-group + .cr-windows-group {
-  margin-top: 10px;
-}
-
-.cr-windows-obs {
-  font-weight: 600;
-  font-size: 0.84rem;
-}
-
-.cr-windows-list {
-  margin: 4px 0 0;
-  padding-left: 1.1rem;
-  font-size: 0.84rem;
-}
-
-.cr-window-exclude {
-  color: var(--red-400, #e57373);
-}
-
-.cr-selected-ids {
-  margin: 0 0 10px;
-  font-weight: 600;
-}
-
-.cr-response {
-  width: 100%;
-}
-
-.cr-response.is-disabled {
-  opacity: 0.6;
-}
-
-.cr-actions {
-  margin-top: 12px;
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
+.cr-table {
+  cursor: pointer;
 }

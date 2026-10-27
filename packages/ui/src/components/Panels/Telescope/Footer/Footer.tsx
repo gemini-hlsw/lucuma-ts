@@ -1,10 +1,10 @@
+import { Gear } from '@gemini-hlsw/lucuma-common-ui';
 import { Slew } from '@gql/server/Buttons';
 import { TitleDropdown } from '@Shared/Title/Title';
 import { Button } from 'primereact/button';
 
 import { useCanEdit } from '@/components/atoms/auth';
 import { useSetSlewVisible } from '@/components/atoms/slew';
-import { Gear } from '@/components/Icons';
 
 import { ApplyParameters } from './ApplyParameters';
 

@@ -1,6 +1,4 @@
-import { faCheck, faCopy } from '@fortawesome/pro-regular-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { cn } from '@gemini-hlsw/lucuma-common-ui';
+import { Check, cn, Copy, VERSION_SUFFIX } from '@gemini-hlsw/lucuma-common-ui';
 import { Button } from 'primereact/button';
 import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
@@ -10,9 +8,9 @@ import { type JSX, type ReactNode, useState } from 'react';
 import { CURRENT_ENV, liveGraphqlEndpoint } from '@/app/environment';
 
 const VERSION_BASE = import.meta.env.FRONTEND_VERSION;
-const VERSION_SUFFIX = `-${CURRENT_ENV.versionSuffix}`;
+const BUILD_SUFFIX = `-${VERSION_SUFFIX[CURRENT_ENV.name]}`;
 
-const displayVersion = (): string => `${VERSION_BASE}${VERSION_SUFFIX}`;
+const displayVersion = (): string => `${VERSION_BASE}${BUILD_SUFFIX}`;
 
 interface AboutFact {
   readonly caption: string;
@@ -30,6 +28,7 @@ const caption = (fact: AboutFact): JSX.Element => (
 
 export function AboutResource({ visible, onHide }: { visible: boolean; onHide: () => void }): JSX.Element {
   const [copied, setCopied] = useState(false);
+  const CopyIcon = copied ? Check : Copy;
   const version = displayVersion();
 
   const copyVersion = async (): Promise<void> => {
@@ -53,7 +52,7 @@ export function AboutResource({ visible, onHide }: { visible: boolean; onHide: (
         <>
           {VERSION_BASE}
           <span className="whitespace-nowrap">
-            {VERSION_SUFFIX}
+            {BUILD_SUFFIX}
             <Button
               text
               type="button"
@@ -63,7 +62,7 @@ export function AboutResource({ visible, onHide }: { visible: boolean; onHide: (
               aria-label="Copy version"
               onClick={() => void copyVersion()}
             >
-              <FontAwesomeIcon icon={copied ? faCheck : faCopy} size="xs" aria-hidden="true" />
+              <CopyIcon size="xs" aria-hidden="true" />
             </Button>
           </span>
         </>

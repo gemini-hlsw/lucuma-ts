@@ -1,13 +1,12 @@
 import './Login.css';
 
 import orcidLogo from '@assets/orcid-logo.svg';
+import { Astronaut } from '@gemini-hlsw/lucuma-common-ui';
 import { Button } from 'primereact/button';
 import { Image } from 'primereact/image';
 import { Link } from 'react-router';
 
 import { useGuestLogin, useSignInURL } from '@/auth/hooks';
-
-import { Astronaut } from '../Icons';
 
 export default function Login() {
   const signinURL = useSignInURL();

@@ -29,7 +29,7 @@ export default defineConfig(
         graphQLConfig: {
           projects: {
             resource: {
-              schema: './mock-server/schema.graphql',
+              schema: import.meta.resolve('@gemini-hlsw/lucuma-odb-schemas/resource'),
               documents: [`./src/gql/*.{ts,tsx}`],
             },
           },
@@ -46,7 +46,7 @@ export default defineConfig(
     },
   },
   {
-    files: ['mock-server/**/*.ts', 'tasks/**/*.ts'],
+    files: ['tasks/**/*.ts'],
     languageOptions: {
       parserOptions: {
         project: ['./tsconfig.node.json'],

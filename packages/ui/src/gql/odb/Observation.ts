@@ -1,4 +1,5 @@
 import { skipToken, useLazyQuery, useQuery } from '@apollo/client/react';
+import { useAllPages } from '@gemini-hlsw/lucuma-common-ui';
 import type { OptionsOf } from '@gql/util';
 
 import { graphql } from './gen';
@@ -24,6 +25,9 @@ export const OBSERVATION_FRAGMENT = graphql(`
           }
         }
       }
+      reference {
+        label
+      }
     }
     targetEnvironment {
       firstScienceTarget {
@@ -35,6 +39,7 @@ export const OBSERVATION_FRAGMENT = graphql(`
       asterism {
         ...TargetItem
       }
+      useBlindOffset
     }
   }
 `);
@@ -152,9 +157,9 @@ export function useObservationById() {
   return useLazyQuery(GET_OBSERVATION_BY_ID, { fetchPolicy: 'network-only' });
 }
 
-const GET_OBSERVATIONS_BY_STATE = graphql(`
+export const GET_OBSERVATIONS_BY_STATE = graphql(`
   # eslint-disable @graphql-eslint/selection-set-depth
-  query ObservationsByState($states: [ObservationWorkflowState!]!, $site: Site!, $date: Date!) {
+  query ObservationsByState($states: [ObservationWorkflowState!]!, $site: Site!, $date: Date!, $offset: ObservationId) {
     observations(
       WHERE: {
         workflow: { workflowState: { IN: $states } }
@@ -162,16 +167,24 @@ const GET_OBSERVATIONS_BY_STATE = graphql(`
         program: { AND: [{ activeStart: { LTE: $date } }, { activeEnd: { GTE: $date } }] }
         reference: { IS_NULL: false }
       }
+      OFFSET_AFTER: $offset
     ) {
       matches {
         ...ObservationItem
       }
+      hasMore
     }
   }
 `);
 
+/**
+ * Fetches every observation matching the given state, site and date.
+ *
+ * The ODB returns at most 1000 matches per request, so the rest are fetched page by page.
+ * `loading` stays true until the fetch ends. `incomplete` is set if it stops early.
+ */
 export function useObservationsByState(options: OptionsOf<typeof GET_OBSERVATIONS_BY_STATE>) {
-  return useQuery(
+  const result = useQuery(
     GET_OBSERVATIONS_BY_STATE,
     options === skipToken
       ? skipToken
@@ -181,6 +194,8 @@ export function useObservationsByState(options: OptionsOf<typeof GET_OBSERVATION
           fetchPolicy: 'cache-and-network',
         },
   );
+
+  return useAllPages(result, 'observations');
 }
 
 export const GET_GUIDE_ENVIRONMENT = graphql(`

@@ -9,10 +9,14 @@
  * cookie-based auth flows (login redirect, token refresh, role switch) must
  * target SSO's absolute origin, and the Users view queries SSO's GraphQL.
  */
+import {
+  type EnvironmentName,
+  resolveEnvironment,
+  type SsoEnvironment,
+  ssoEnvironment,
+} from '@gemini-hlsw/lucuma-common-ui';
 
-export interface Environment {
-  readonly name: 'development' | 'staging' | 'production';
-  readonly ssoUri: string;
+export interface Environment extends SsoEnvironment {
   readonly odbUri: string;
   /** SSO's GraphQL endpoint (the Users view's roster + role mutations). */
   readonly ssoGraphqlUri: string;
@@ -24,53 +28,50 @@ export interface Environment {
   readonly exploreUri: string;
 }
 
+/** The shared SSO base plus its GraphQL endpoint. The SSO origin is set only in
+ *  common-ui. */
+const ssoBase = (name: EnvironmentName): Pick<Environment, 'name' | 'ssoUri' | 'ssoGraphqlUri'> => {
+  const base = ssoEnvironment(name);
+  return { ...base, ssoGraphqlUri: `${base.ssoUri}/graphql` };
+};
+
 const DEV: Environment = {
-  name: 'development',
-  ssoUri: 'https://sso-dev.gpp.lucuma.xyz',
+  ...ssoBase('development'),
   odbUri: 'https://lucuma-postgres-odb-dev.herokuapp.com/odb',
-  ssoGraphqlUri: 'https://sso-dev.gpp.lucuma.xyz/graphql',
-  exploreUri: 'https://explore-dev.lucuma.xyz',
+  exploreUri: 'https://explore-dev.gemini.edu',
 };
 
 const STAGING: Environment = {
-  name: 'staging',
-  ssoUri: 'https://sso-test.gpp.gemini.edu',
+  ...ssoBase('staging'),
   odbUri: 'https://lucuma-postgres-odb-staging.herokuapp.com/odb',
-  ssoGraphqlUri: 'https://sso-test.gpp.gemini.edu/graphql',
   exploreUri: 'https://explore-test.gemini.edu',
 };
 
 const PRODUCTION: Environment = {
-  name: 'production',
-  ssoUri: 'https://sso.gpp.gemini.edu',
+  ...ssoBase('production'),
   odbUri: 'https://lucuma-postgres-odb-production.herokuapp.com/odb',
-  ssoGraphqlUri: 'https://sso.gpp.gemini.edu/graphql',
   exploreUri: 'https://explore.gemini.edu',
 };
 
+/** DEV, with the ODB and SSO GraphQL behind the Vite proxies (vite.config.ts),
+ *  so requests need no CORS. Explore is a separate app, so it is not proxied. */
 const LOCAL_DEV: Environment = {
-  name: 'development',
-  ssoUri: DEV.ssoUri,
-  // Vite proxies (vite.config.ts) — same-origin in dev, so no CORS.
+  ...DEV,
   odbUri: '/odb',
   ssoGraphqlUri: '/sso-graphql',
-  // Explore is a separate deployed app, so link to the dev one rather than
-  // proxying it.
-  exploreUri: DEV.exploreUri,
 };
 
-const environments = {
-  'admin-dev.lucuma.xyz': DEV,
-  'admin-staging.lucuma.xyz': STAGING,
+const ENVIRONMENTS = {
+  'admin-dev.gemini.edu': DEV,
+  'admin-test.gemini.edu': STAGING,
   'admin.gemini.edu': PRODUCTION,
   localhost: LOCAL_DEV,
 } satisfies Record<string, Environment>;
 
 /** The environment a hostname resolves to; unknown hosts (dev-server
  *  aliases, previews) fall through to the proxied local-dev entry. */
-export function environmentFor(hostname: string): Environment {
-  return environments[hostname as keyof typeof environments] ?? LOCAL_DEV;
-}
+export const environmentFor = (hostname: string): Environment =>
+  resolveEnvironment(ENVIRONMENTS, hostname, 'localhost');
 
 export const CURRENT_ENV: Environment = environmentFor(window.location.hostname);
 

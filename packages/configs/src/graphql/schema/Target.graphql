@@ -121,6 +121,7 @@ input ObservationInput {
   subtitle: String
   instrument: Instrument
   reference: String
+  programLabel: String
   fpu: Fpu
 }
 

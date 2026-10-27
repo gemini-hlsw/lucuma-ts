@@ -12,7 +12,7 @@ Packages (under `packages/*`):
 
 - **ui** (`@gemini-hlsw/navigate-ui`) — React 19 web UI to configure the telescope. PrimeReact + Tailwind v4, Jotai state, Apollo Client, react-router.
 - **configs** (`@gemini-hlsw/navigate-configs`) — GraphQL backend (graphql-yoga) over a Postgres DB via Prisma. Serves the `/db` endpoint the UI talks to.
-- **resource-ui** (`@gemini-hlsw/resource-ui`) — separate React web UI for Resource. The app reads **one** backend: the live Resource service at `/resource/graphql` (the vite proxy carries that path to the dev deployment purely to sidestep CORS). It does not serve the v1 API yet, so `pnpm resource-ui dev` shows a warning toast and empty views - that is expected, not a broken build. The package's `mock-server` backs the browser tests, codegen and GraphiQL on :4000; the app cannot be pointed at it (see `packages/resource-ui/CLAUDE.md`).
+- **resource-ui** (`@gemini-hlsw/resource-ui`) — separate React web UI for Resource. The app reads **one** backend: the live Resource service at `/resource/graphql` (the vite proxy carries that path to the dev deployment purely to sidestep CORS). Its data fields need an SSO Bearer token, so signed out, `pnpm resource-ui dev` shows a sign-in toast and empty views - that is expected, not a broken build. The schema comes from `@gemini-hlsw/lucuma-odb-schemas/resource`; tests answer each operation with fixtures (see `packages/resource-ui/CLAUDE.md`).
 - **admin-ui** (`@gemini-hlsw/admin-ui`) — separate React web UI for the GPP Admin views (Programs, Users, Proposals, Change Requests, Calls for Proposals). Talks to the ODB and SSO GraphQL endpoints; codegen types under `src/gql/{odb,sso}/gen/`.
 - **common-ui** (`@gemini-hlsw/lucuma-common-ui`) — shared code/utilities/test setup imported by `ui` and `resource-ui`.
 - **e2e** (`@gemini-hlsw/navigate-e2e`) — Playwright end-to-end tests that run real `ui` + `configs` + a `navigate-server` docker image.
@@ -40,7 +40,6 @@ pnpm configs test            # vitest integration tests in Node (spins up a Post
 # resource-ui
 pnpm resource-ui codegen           # regenerate src/gql/gen (gitignored) - needed before test/build on a fresh clone
 pnpm resource-ui dev               # vite dev server (proxies /resource/graphql to the live dev service)
-pnpm resource-ui dev:mock-server   # mock GraphQL server + GraphiQL on :4000 (predev hook runs codegen)
 pnpm resource-ui test              # vitest - runs in a real browser (Playwright/chromium)
 pnpm resource-ui build             # tsc -b && vite build (runs codegen via prebuild)
 
@@ -115,10 +114,11 @@ When writing Vitest tests:
 - Generated code (`**/gen/`, `src/prisma/gen/`) is not committed and should never be hand-edited — change the source schema/documents and re-run codegen.
 - **Prefer Tailwind utility classes over (S)CSS styling when possible.** Reach for a `.css`/`.scss` file only for styles Tailwind can't express (e.g. complex selectors, keyframe animations, third-party component overrides).
 - **Prefer the shared helpers in `packages/common-ui/src/functions.ts` over hand-rolled equivalents** (imported as `@gemini-hlsw/lucuma-common-ui` from `ui`, `admin-ui` and `resource-ui`): `isNullish`/`isNotNullish` instead of `x === null || x === undefined` (and as the `.filter()` predicate, since they're type guards), `when(x, …)` for an inline conditional without an else — especially conditional JSX — plus `cn` for Tailwind class merging, `round`, `formatDateTime`, `groupBy`, `parseNumber`. Only write the check by hand when the helper doesn't fit or reads worse; note that `when` also treats `false` as the false case, so it works for booleans too.
+- **Show toasts with `useToastApi()` from `@gemini-hlsw/lucuma-common-ui`** (`toast.error(summary, detail?)`; each method returns a cleanup function). Use `useToast()` (raw PrimeReact handle) only for options the API lacks, such as `sticky`, `closable`, `clear` or `replace`. Code outside React uses `store.get(toastAtom)`. Each app mounts one `ToastOutlet`.
 - **Prefer strict types from the schema (or other authoritative sources) over hand-written ones.** Derive from the generated types so a schema change surfaces as a compile error rather than silently drifting: select rows through fragments and use the generated fragment types; key label/lookup maps as `satisfies Record<Enum, …>` (or `Partial<Record<…>>` when the coverage is intentionally partial) over the generated enum; narrow with `Extract<…>` instead of re-declaring a union locally. Reach for a local type only when no operation selects the field (so codegen doesn't emit it) — and say so in a comment.
 
 ## CI & publishing
 
 CI (`.github/workflows/ci.yml`) builds/lints/tests only changed packages (`...[origin/main]...` filters), runs the Playwright e2e job against a docker stack, and on tag push builds & publishes two docker images: `noirlab/gpp-nav-configs` (configs) and `noirlab/gpp-nav` (server + UI static files).
 
-On a push to `main`, two further jobs deploy the standalone UIs to Firebase Hosting when their package (or a dependency) changed: `deploy-resource` publishes resource-ui to https://resource-dev.lucuma.xyz, and `deploy-admin` publishes admin-ui to https://admin-dev.lucuma.xyz. Each is gated by a package-specific `ci:set-deploy-flag` script, so a change to one can't trigger the other's deploy.
+On a push to `main`, two further jobs deploy the standalone UIs to Firebase Hosting when their package (or a dependency) changed: `deploy-resource` publishes resource-ui to https://resource-dev.gemini.edu, and `deploy-admin` publishes admin-ui to https://admin-dev.gemini.edu. Each is gated by a package-specific `ci:set-deploy-flag` script, so a change to one can't trigger the other's deploy.

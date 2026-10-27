@@ -15,7 +15,7 @@ const ITEMS: SidebarMenuItem[] = SIDEBAR_MENU_SECTIONS.flatMap((section) => sect
 /** Real `NavLink`s, so the router sets `aria-current` and the CSS highlight cannot go stale. */
 function BottomNavItem({ item }: { item: SidebarMenuItem }): JSX.Element {
   const [params] = useSearchParams();
-  const search = searchString(carrySelection(params));
+  const search = searchString(carrySelection(params, item.carries));
   const content = (
     <>
       {item.icon === undefined ? null : <FontAwesomeIcon icon={item.icon} size="sm" aria-hidden="true" />}

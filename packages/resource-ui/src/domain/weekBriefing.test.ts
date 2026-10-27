@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { ComponentBlock, ComponentRecord, Mounting } from './types';
+import type { InstrumentAvailabilityBlock, InstrumentComponent, InstrumentComponentAvailabilityBlock } from './types';
 import { buildWeekChanges, buildWeekNightFacts, summarizeWeek } from './weekBriefing';
 import { buildWeekTimeline } from './weekTimeline';
 
@@ -8,8 +8,8 @@ import { buildWeekTimeline } from './weekTimeline';
 const week = buildWeekTimeline({
   site: 'GS',
   firstNight: '2026-11-22',
-  mountings: [],
-  closures: [],
+  instrumentAvailability: [],
+  telescopeAvailability: [],
   nightsWithData: undefined,
 });
 
@@ -64,7 +64,9 @@ describe('the changes list', () => {
   const DAY = 86_400_000;
   const { interval } = week;
 
-  const mounting = (over: Partial<Mounting> & Pick<Mounting, 'id' | 'interval'>): Mounting => ({
+  const instrumentBlock = (
+    over: Partial<InstrumentAvailabilityBlock> & Pick<InstrumentAvailabilityBlock, 'id' | 'interval'>,
+  ): InstrumentAvailabilityBlock => ({
     instrument: 'GMOS',
     publishedName: 'GMOS',
     usage: 'SCIENCE',
@@ -77,17 +79,17 @@ describe('the changes list', () => {
   it('lists a run beginning and a run ending inside the week, oldest first', () => {
     const changes = buildWeekChanges({
       interval,
-      mountings: [
-        mounting({ id: 'ends', interval: { start: interval.start - 30 * DAY, end: interval.start + DAY } }),
-        mounting({
+      instrumentAvailability: [
+        instrumentBlock({ id: 'ends', interval: { start: interval.start - 30 * DAY, end: interval.start + DAY } }),
+        instrumentBlock({
           id: 'begins',
           publishedName: 'Maroon-X Run',
           port: 5,
           interval: { start: interval.start + 3 * DAY, end: interval.end + 30 * DAY },
         }),
       ],
-      closures: [],
-      componentBlocks: [],
+      telescopeAvailability: [],
+      componentAvailability: [],
       components: [],
     });
 
@@ -99,9 +101,11 @@ describe('the changes list', () => {
     // A run that began exactly as the week opened merely continues.
     const changes = buildWeekChanges({
       interval,
-      mountings: [mounting({ id: 'continues', interval: { start: interval.start, end: interval.end } })],
-      closures: [],
-      componentBlocks: [],
+      instrumentAvailability: [
+        instrumentBlock({ id: 'continues', interval: { start: interval.start, end: interval.end } }),
+      ],
+      telescopeAvailability: [],
+      componentAvailability: [],
       components: [],
     });
 
@@ -111,8 +115,8 @@ describe('the changes list', () => {
   it('phrases a closure by its printed reason', () => {
     const changes = buildWeekChanges({
       interval,
-      mountings: [],
-      closures: [
+      instrumentAvailability: [],
+      telescopeAvailability: [
         {
           id: 'shutdown',
           availability: 'CLOSED',
@@ -121,7 +125,7 @@ describe('the changes list', () => {
           interval: { start: interval.start + DAY, end: interval.start + 2 * DAY },
         },
       ],
-      componentBlocks: [],
+      componentAvailability: [],
       components: [],
     });
 
@@ -130,7 +134,7 @@ describe('the changes list', () => {
   });
 
   it('announces the state a component enters, with its note', () => {
-    const r400: ComponentRecord = {
+    const r400: InstrumentComponent = {
       id: 'k-gs-R400_G5325',
       instrument: 'GMOS',
       componentType: 'DISPERSER',
@@ -140,7 +144,7 @@ describe('the changes list', () => {
       aliases: [],
     };
     const failsAt = interval.start + 2 * DAY;
-    const blocks: readonly ComponentBlock[] = [
+    const blocks: readonly InstrumentComponentAvailabilityBlock[] = [
       {
         id: 'up',
         componentId: r400.id,
@@ -161,9 +165,9 @@ describe('the changes list', () => {
 
     const changes = buildWeekChanges({
       interval,
-      mountings: [],
-      closures: [],
-      componentBlocks: blocks,
+      instrumentAvailability: [],
+      telescopeAvailability: [],
+      componentAvailability: blocks,
       components: [r400],
     });
 

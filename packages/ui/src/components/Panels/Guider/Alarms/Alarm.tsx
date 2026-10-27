@@ -1,4 +1,4 @@
-import { cn, isNotNullish, NumberInput, round } from '@gemini-hlsw/lucuma-common-ui';
+import { cn, isNotNullish, NumberInput, round, Volume, VolumeSlash } from '@gemini-hlsw/lucuma-common-ui';
 import type { UpdateGuideAlarmMutationVariables, WfsType } from '@gql/configs/gen/graphql';
 import { Title } from '@Shared/Title/Title';
 import type { InputNumberValueChangeEvent } from 'primereact/inputnumber';
@@ -7,7 +7,6 @@ import { ToggleButton } from 'primereact/togglebutton';
 import { useId } from 'react';
 
 import type { AlarmType } from '@/components/atoms/alarm';
-import { Volume, VolumeSlash } from '@/components/Icons';
 import type { GuideAlarm, GuideQuality } from '@/types';
 
 export function Alarm({

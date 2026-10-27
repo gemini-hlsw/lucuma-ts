@@ -1,3 +1,4 @@
+import { selectDropdownOption } from '@gemini-hlsw/lucuma-common-ui/testing';
 import {
   PWFS1_FIELD_STOP,
   PWFS1_FILTER,
@@ -11,7 +12,7 @@ import {
 import type { MockedResponseOf } from '@gql/util';
 
 import { createPwfsMechState } from '@/test/create';
-import { operationOutcome, selectDropdownOption } from '@/test/helpers';
+import { operationOutcome } from '@/test/helpers';
 import { renderWithContext } from '@/test/render';
 
 import { PWFS1, PWFS2 } from './PWFS';

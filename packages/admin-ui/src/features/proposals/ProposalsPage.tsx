@@ -1,4 +1,4 @@
-import { isNotNullish, type Labelled, NumberInput } from '@gemini-hlsw/lucuma-common-ui';
+import { isNotNullish, type Labelled, NumberInput, useToastApi } from '@gemini-hlsw/lucuma-common-ui';
 import { AutoComplete } from 'primereact/autocomplete';
 import { Dropdown } from 'primereact/dropdown';
 import { InputText } from 'primereact/inputtext';
@@ -7,7 +7,6 @@ import { type JSX, useMemo, useState } from 'react';
 import { DataSourceBadge } from '@/components/DataSourceBadge';
 import { SearchInput } from '@/components/SearchInput';
 import { TimeAwardsGrid } from '@/components/TimeAwardsGrid';
-import { useToast } from '@/components/toastContext';
 import { friendlyError } from '@/gql/errors';
 import type { ProgramPropertiesInput } from '@/gql/odb/gen/graphql';
 import { allocationsInput, useAssignContactScientists, useSetAllocations, useUpdateProgram } from '@/gql/odb/programs';
@@ -24,6 +23,7 @@ import {
 import { matchesQuery } from '@/lib/search';
 
 import { type Decision, type ReviewColumn, type ReviewItem, ReviewView } from '../review/ReviewView';
+import { ProposalConfigurationRequests } from './ProposalConfigurationRequests';
 
 /** A proposal is "resolved" once a decision has been recorded. */
 type ReviewProposal = Proposal & ReviewItem;
@@ -78,9 +78,9 @@ const BLANK_AWARD: AwardDraft = {
  * records NOT_ACCEPTED.
  */
 export default function ProposalsPage(): JSX.Element {
-  const toast = useToast();
-  const { data, loading, error, refetch } = useProposals();
-  const proposals = useMemo(() => (data ? mapProposals(data) : EMPTY), [data]);
+  const toast = useToastApi();
+  const { data, loading, incomplete, error, refetch } = useProposals();
+  const proposals = useMemo(() => (data ? mapProposals(data.programs.matches) : EMPTY), [data]);
   const [setProposalStatus, { loading: settingStatus }] = useSetProposalStatus();
   const [setAllocations, { loading: settingAllocations }] = useSetAllocations();
   const [updateProgram, { loading: updatingProgram }] = useUpdateProgram();
@@ -192,7 +192,14 @@ export default function ProposalsPage(): JSX.Element {
     <ReviewView<ReviewProposal>
       title="Proposals"
       blurb="Review & respond to Director’s Time and Poor Weather proposals."
-      badge={<DataSourceBadge loading={loading} error={error && friendlyError(error)} empty={items.length === 0} />}
+      badge={
+        <DataSourceBadge
+          loading={loading}
+          incomplete={incomplete}
+          error={error && friendlyError(error)}
+          empty={items.length === 0}
+        />
+      }
       controls={controls}
       resolving={resolving}
       items={items}
@@ -211,6 +218,7 @@ export default function ProposalsPage(): JSX.Element {
             <dd>{SPECIAL_PROPOSAL_TYPE_LABEL[p.type]}</dd>
           </dl>
           <p className="review-abstract">{p.abstract}</p>
+          <ProposalConfigurationRequests programId={p.id} programLabel={p.reference} />
         </>
       )}
       renderExtra={(p, decision) =>

@@ -1,9 +1,8 @@
+import { Search } from '@gemini-hlsw/lucuma-common-ui';
 import { IconField } from 'primereact/iconfield';
 import { InputIcon } from 'primereact/inputicon';
 import { InputText } from 'primereact/inputtext';
 import type { JSX } from 'react';
-
-import { Search } from '@/components/Icons';
 
 /**
  * The magnifying-glass filter box used above the admin tables (Programs, Users,

@@ -5,6 +5,7 @@ import {
   type Labelled,
   NumberInput,
   parseNumber,
+  TriangleExclamation,
   useSyncedState,
   when,
 } from '@gemini-hlsw/lucuma-common-ui';
@@ -34,7 +35,6 @@ import { Button } from 'primereact/button';
 import { Dropdown } from 'primereact/dropdown';
 import { Slider } from 'primereact/slider';
 
-import { TriangleExclamation } from '@/components/Icons';
 import { BTN_CLASSES } from '@/Helpers/constants';
 import type { Mechanism } from '@/types';
 
@@ -178,7 +178,7 @@ export function BotSubsystems({ canEdit }: { canEdit: boolean }) {
         disabled={!canEdit}
         loading={loading}
         style={{ gridArea: 'g51' }}
-        label="Park"
+        label="Close"
         data-testid="park-shutters"
       />
       <label

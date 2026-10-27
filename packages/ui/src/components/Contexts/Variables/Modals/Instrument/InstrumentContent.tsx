@@ -1,5 +1,5 @@
 import { skipToken } from '@apollo/client/react';
-import { formatDateTime, when } from '@gemini-hlsw/lucuma-common-ui';
+import { CircleCheck, CircleXMark, formatDateTime, Trash, when } from '@gemini-hlsw/lucuma-common-ui';
 import {
   useConfiguredInstrument,
   useDeleteInstrument,
@@ -19,8 +19,9 @@ import { useMountEffect } from 'primereact/hooks';
 import { MultiSelect } from 'primereact/multiselect';
 import { useRef, useState } from 'react';
 
-import { CircleCheck, CircleXMark, Trash } from '@/components/Icons';
 import type { InstrumentConfig } from '@/types';
+
+import { CurrentMarker } from '../CurrentMarker';
 
 export function InstrumentContent({
   instrument,
@@ -95,6 +96,7 @@ export function InstrumentContent({
       {when(port && name, () => (
         <InstrumentTable
           instruments={instrumentsData?.instruments ?? []}
+          loadedPk={configuredInstrument?.pk}
           selectedInstrument={instrument}
           setInstrument={setInstrument}
           onImport={onImport}
@@ -108,6 +110,7 @@ export function InstrumentContent({
 
 function InstrumentTable({
   instruments,
+  loadedPk,
   selectedInstrument,
   setInstrument,
   onImport,
@@ -115,6 +118,7 @@ function InstrumentTable({
   loading,
 }: {
   instruments: InstrumentConfig[];
+  loadedPk: number | undefined;
   selectedInstrument: InstrumentConfig | null;
   setInstrument: (_: InstrumentConfig) => void;
   onImport: (_: InstrumentConfig) => void;
@@ -155,7 +159,14 @@ function InstrumentTable({
           header="Created"
           sortable
           dataType="date"
-          body={(i: InstrumentConfig) => formatDateTime(i.createdAt, false)}
+          body={(i: InstrumentConfig) => (
+            <>
+              {formatDateTime(i.createdAt, false)}
+              {when(i.pk === loadedPk, () => (
+                <CurrentMarker />
+              ))}
+            </>
+          )}
         />
         <Column
           field="wfs"

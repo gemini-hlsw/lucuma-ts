@@ -1,4 +1,4 @@
-import { isNotNullish } from '@gemini-hlsw/lucuma-common-ui';
+import { Check, isNotNullish } from '@gemini-hlsw/lucuma-common-ui';
 import { useConfiguration } from '@gql/configs/Configuration';
 import type { UpdateGuideLoopMutationVariables } from '@gql/configs/gen/graphql';
 import { useGetGuideLoop, useUpdateGuideLoop } from '@gql/configs/GuideLoop';
@@ -16,7 +16,6 @@ import { createLightSinkVariant } from '@Telescope/Targets/inputs';
 import { Button } from 'primereact/button';
 
 import { useCanEdit } from '@/components/atoms/auth';
-import { Check } from '@/components/Icons';
 import type { Fpu, GuideLoop } from '@/types';
 
 interface LightPathConfiguration extends LightpathConfigMutationVariables {
@@ -75,7 +74,7 @@ export function LightPath() {
 
   async function onClick(
     newLightPath: string,
-    from: LightSource | null | undefined,
+    from: LightSource,
     instrument: Instrument,
     lightSinkVariant: LightSinkVariant | null | undefined,
   ) {

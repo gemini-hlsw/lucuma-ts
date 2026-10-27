@@ -55,12 +55,25 @@ async function failureDetail(res: Response): Promise<string> {
   return body ? `${String(res.status)}: ${body}` : String(res.status);
 }
 
-/** The ORCID sign-in URL; navigating here begins the login redirect. `state` is
- *  where SSO returns the browser after the round-trip. */
-export function signInUrl(ssoUri: string, state: string): string {
+/** The ORCID sign-in URL; navigating here begins the login redirect. SSO returns
+ *  to `returnTo` only when it is on `origin`, else to the app root. This stops
+ *  sign-in from sending the user to another site. */
+export function signInUrl(ssoUri: string, returnTo: string, origin: string = window.location.origin): string {
+  const root = new URL('/', origin);
   const url = new URL('/auth/v1/stage1', ssoUri);
-  url.searchParams.set('state', state);
+  url.searchParams.set('state', sameOriginOr(root, returnTo).toString());
   return url.toString();
+}
+
+/** `returnTo` resolved against `root`, or `root` when it leaves that origin or
+ *  does not parse. Avoids `URL.parse`, which is newer than the target browsers. */
+function sameOriginOr(root: URL, returnTo: string): URL {
+  try {
+    const target = new URL(returnTo, root);
+    return target.origin === root.origin ? target : root;
+  } catch {
+    return root;
+  }
 }
 
 /** Switch the session's active role. Throws when SSO rejects the switch or is

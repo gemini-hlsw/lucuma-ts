@@ -1,6 +1,15 @@
 import './CfpPage.css';
 
-import { NumberInput } from '@gemini-hlsw/lucuma-common-ui';
+import {
+  CircleCheck,
+  CircleXMark,
+  Copy,
+  NumberInput,
+  Plus,
+  Upload,
+  useToastApi,
+  XMark,
+} from '@gemini-hlsw/lucuma-common-ui';
 import { Button } from 'primereact/button';
 import { Checkbox } from 'primereact/checkbox';
 import { Column, type ColumnSortEvent } from 'primereact/column';
@@ -11,9 +20,8 @@ import { SplitButton } from 'primereact/splitbutton';
 import { Fragment, type JSX, useMemo, useState } from 'react';
 
 import { DataSourceBadge } from '@/components/DataSourceBadge';
-import { CircleCheck, CircleXMark, Copy, Plus, Upload, XMark } from '@/components/Icons';
 import { Tile } from '@/components/Tile';
-import { useToast } from '@/components/toastContext';
+import { useRowSelection } from '@/components/useRowSelection';
 import { friendlyError } from '@/gql/errors';
 import {
   blankCall,
@@ -86,8 +94,8 @@ function sortByLabel(label: (c: CallForProposals) => string) {
  * updateCallsForProposals / createCallForProposals mutations.
  */
 export default function CfpPage(): JSX.Element {
-  const toast = useToast();
-  const { data, loading, error } = useCfps();
+  const toast = useToastApi();
+  const { data, loading, incomplete, error } = useCfps();
   const cfps = useMemo(() => (data ? mapCfps(data) : EMPTY_CFPS), [data]);
   const [updateCfp, { loading: updating }] = useUpdateCfp();
   const [createCfp, { loading: creating }] = useCreateCfp();
@@ -108,9 +116,7 @@ export default function CfpPage(): JSX.Element {
     [cfps, observatoryFilter, openFilter],
   );
 
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const activeId = selectedId ?? cfps[0]?.id ?? '';
-  const original = useMemo(() => cfps.find((c) => c.id === activeId) ?? cfps[0], [cfps, activeId]);
+  const [original, setSelectedId] = useRowSelection(visibleCfps, 'id');
 
   // A brand-new call being drafted before it's created (sc-10136). While set,
   // the editor shows this blank draft with a Create button instead of the
@@ -157,7 +163,12 @@ export default function CfpPage(): JSX.Element {
         flush
         controls={
           <>
-            <DataSourceBadge loading={loading} error={error && friendlyError(error)} empty={cfps.length === 0} />
+            <DataSourceBadge
+              loading={loading}
+              incomplete={incomplete}
+              error={error && friendlyError(error)}
+              empty={cfps.length === 0}
+            />
             <Dropdown
               value={openFilter}
               options={[...OPEN_FILTER_OPTIONS]}

@@ -1,4 +1,4 @@
-import { groupBy, isNullish } from '@gemini-hlsw/lucuma-common-ui';
+import { groupBy, isNullish, useToastApi } from '@gemini-hlsw/lucuma-common-ui';
 import { useUpdateConfiguration } from '@gql/configs/Configuration';
 import type { Instrument } from '@gql/configs/gen/graphql';
 import { useInstrument } from '@gql/configs/Instrument';
@@ -9,7 +9,6 @@ import { Button } from 'primereact/button';
 import { SplitButton } from 'primereact/splitbutton';
 
 import { useCanEdit } from '@/components/atoms/auth';
-import { useToast } from '@/Helpers/toast';
 import type { Target } from '@/types';
 
 import {
@@ -31,7 +30,7 @@ export function TargetSwapButton({
   loading: boolean;
 }) {
   const canEdit = useCanEdit();
-  const toast = useToast();
+  const toast = useToastApi();
 
   const { data, loading: stateLoading, setStale } = useNavigateState();
 
@@ -70,19 +69,11 @@ export function TargetSwapButton({
         await restoreTarget({ variables: { config: tcsConfig } });
       } else {
         if (!selectedGuider) {
-          toast?.show({
-            severity: 'warn',
-            summary: 'Cannot swap target',
-            detail: 'No guide target selected',
-          });
+          toast.warn('Cannot swap target', 'No guide target selected');
           return;
         }
         if (!acqCamInstrument) {
-          toast?.show({
-            severity: 'warn',
-            summary: 'Cannot swap target',
-            detail: `No configuration found for ${acqCamName}`,
-          });
+          toast.warn('Cannot swap target', `No configuration found for ${acqCamName}`);
           return;
         }
         // If swapping
@@ -104,15 +95,11 @@ export function TargetSwapButton({
         });
       }
     } else {
-      toast?.show({
-        severity: 'warn',
-        summary: data?.onSwappedTarget ? 'Cannot restore target' : 'Cannot swap target',
-        detail,
-      });
+      toast.warn(data?.onSwappedTarget ? 'Cannot restore target' : 'Cannot swap target', detail);
     }
   };
 
-  if (guiderTargets.length === 1 || data?.onSwappedTarget)
+  if (guiderTargets.length <= 1 || data?.onSwappedTarget)
     return (
       <Button
         disabled={disabled}

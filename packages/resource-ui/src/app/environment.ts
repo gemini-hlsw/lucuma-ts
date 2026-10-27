@@ -1,35 +1,30 @@
-export interface Environment {
-  readonly name: 'development' | 'staging';
+import { resolveEnvironment, type SsoEnvironment, ssoEnvironment } from '@gemini-hlsw/lucuma-common-ui';
+
+export interface Environment extends SsoEnvironment {
   readonly graphqlEndpoint: string;
-  readonly ssoUri: string;
-  readonly versionSuffix: 'DEV' | 'STAGING';
 }
 
-const DEV_SSO_URI = 'https://sso-dev.gpp.lucuma.xyz';
-
 const ENVIRONMENTS = {
-  'resource-dev.lucuma.xyz': {
-    name: 'development',
-    graphqlEndpoint: 'https://lucuma-resource-dev.lucuma.xyz/resource/graphql',
-    ssoUri: DEV_SSO_URI,
-    versionSuffix: 'DEV',
+  'resource-dev.gemini.edu': {
+    ...ssoEnvironment('development'),
+    graphqlEndpoint: 'https://resource-api-dev.gemini.edu/resource/graphql',
   },
-  'resource-staging.lucuma.xyz': {
-    name: 'staging',
-    graphqlEndpoint: 'https://lucuma-resource-staging.lucuma.xyz/resource/graphql',
-    ssoUri: 'https://sso-test.gpp.gemini.edu',
-    versionSuffix: 'STAGING',
+  'resource-test.gemini.edu': {
+    ...ssoEnvironment('staging'),
+    graphqlEndpoint: 'https://resource-api-test.gemini.edu/resource/graphql',
+  },
+  'resource.gemini.edu': {
+    ...ssoEnvironment('production'),
+    graphqlEndpoint: 'https://resource-api.gemini.edu/resource/graphql',
   },
   localhost: {
-    name: 'development',
+    ...ssoEnvironment('development'),
     graphqlEndpoint: '/resource/graphql',
-    ssoUri: DEV_SSO_URI,
-    versionSuffix: 'DEV',
   },
 } satisfies Record<string, Environment>;
 
 export const environmentFor = (hostname: string): Environment =>
-  ENVIRONMENTS[hostname as keyof typeof ENVIRONMENTS] ?? ENVIRONMENTS.localhost;
+  resolveEnvironment(ENVIRONMENTS, hostname, 'localhost');
 
 export const CURRENT_ENV = environmentFor(window.location.hostname);
 

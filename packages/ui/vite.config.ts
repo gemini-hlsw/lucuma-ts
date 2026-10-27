@@ -69,7 +69,7 @@ export default defineConfig(({ mode }) => ({
     },
   },
   server: {
-    allowedHosts: ['localhost', '.lucuma.xyz', '.gemini.edu'],
+    allowedHosts: ['localhost', '.gemini.edu'],
     host: '0.0.0.0',
     proxy: {
       '^/navigate/graphql': {
@@ -77,7 +77,7 @@ export default defineConfig(({ mode }) => ({
         changeOrigin: true,
       },
       '^/db': {
-        target: 'http://navigate.lucuma.xyz:4000',
+        target: 'http://navigate.gemini.edu:4000',
         changeOrigin: true,
       },
       '^/navigate/ws': {
@@ -105,9 +105,8 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react(),
-    babel({ presets: [reactCompilerPreset()], exclude: /[/\\](node_modules|common-ui)[/\\]/ }),
-    mode === 'development' &&
-      mkcert({ hosts: ['localhost', 'local.lucuma.xyz', 'navigate.lucuma.xyz', 'navigate.gemini.edu'] }),
+    babel({ presets: [reactCompilerPreset()], exclude: /[/\\](node_modules)[/\\]/ }),
+    mode === 'development' && mkcert({ hosts: ['localhost', 'local.gemini.edu', 'navigate.gemini.edu'] }),
     mode === 'production' && buildVersionFile(),
     tailwindcss(),
   ],
@@ -116,7 +115,6 @@ export default defineConfig(({ mode }) => ({
     clearMocks: true,
     globals: true,
     setupFiles: [
-      'src/gql/dev-messages.ts',
       '@gemini-hlsw/lucuma-common-ui/test/setup.ts',
       '@gemini-hlsw/lucuma-common-ui/test/disable-animations.css',
     ],

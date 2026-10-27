@@ -88,6 +88,8 @@ export function formatConditions(cond: RawConditions | null | undefined): string
 export const MODE_TYPE_FORMAT: Record<ObservingModeType, { readonly instrument: string; readonly mode: string }> = {
   ALOPEKE_SPECKLE: { instrument: 'Alopeke', mode: 'Speckle' },
   ALOPEKE_WIDE_FIELD: { instrument: 'Alopeke', mode: 'WideField' },
+  // No instrument of its own: the mode takes the instrument as a parameter.
+  DAYTIME_CALIBRATION: { instrument: 'Daytime calibration', mode: '' },
   EXCHANGE_KECK: { instrument: 'Keck', mode: '' },
   EXCHANGE_SUBARU: { instrument: 'Subaru', mode: '' },
   FLAMINGOS_2_IMAGING: { instrument: 'Flamingos-2', mode: 'Imaging' },

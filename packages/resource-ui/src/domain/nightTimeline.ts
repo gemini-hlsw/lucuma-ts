@@ -10,7 +10,15 @@ import {
   type TimelineLegend,
   type TimelineRow,
 } from './timeline';
-import type { Closure, Interval, ModeBlock, Mounting, Site, SubsystemBlock, TooBlock } from './types';
+import type {
+  InstrumentAvailabilityBlock,
+  Interval,
+  Site,
+  TelescopeAvailabilityBlock,
+  TelescopeModeBlock,
+  TelescopeSubsystemAvailabilityBlock,
+  TooSupportBlock,
+} from './types';
 
 export interface NightTimeline extends TimelineLegend {
   readonly observingNight: string;
@@ -26,14 +34,14 @@ export interface NightTimeline extends TimelineLegend {
 export interface BuildNightTimelineOptions {
   readonly site: Site;
   readonly observingNight: string;
-  readonly mountings: readonly Mounting[];
-  readonly closures: readonly Closure[];
+  readonly instrumentAvailability: readonly InstrumentAvailabilityBlock[];
+  readonly telescopeAvailability: readonly TelescopeAvailabilityBlock[];
   /** ToO support records reaching the night. The row appears only when some do. */
-  readonly tooBlocks?: readonly TooBlock[];
+  readonly tooSupport?: readonly TooSupportBlock[];
   /** Telescope mode records reaching the night. The row appears only when some do. */
-  readonly modeBlocks?: readonly ModeBlock[];
+  readonly telescopeMode?: readonly TelescopeModeBlock[];
   /** Subsystem records reaching the night. A row appears per subsystem with any. */
-  readonly subsystemBlocks?: readonly SubsystemBlock[];
+  readonly telescopeSubsystemAvailability?: readonly TelescopeSubsystemAvailabilityBlock[];
 }
 
 /** Instants strictly inside the night where a block starts or ends. */
@@ -54,18 +62,21 @@ const transitionsIn = (rows: readonly TimelineRow[], night: Interval): readonly 
 export const buildNightTimeline = ({
   site,
   observingNight,
-  mountings,
-  closures,
-  tooBlocks = [],
-  modeBlocks = [],
-  subsystemBlocks = [],
+  instrumentAvailability,
+  telescopeAvailability,
+  tooSupport = [],
+  telescopeMode = [],
+  telescopeSubsystemAvailability = [],
 }: BuildNightTimelineOptions): NightTimeline => {
   const interval = observingNightInterval(site, observingNight);
   const rows = placeBlocks(
-    [...collectStateRows(closures, tooBlocks, modeBlocks, subsystemBlocks), ...collectBlocks({ mountings, closures })],
+    [
+      ...collectStateRows(telescopeAvailability, tooSupport, telescopeMode, telescopeSubsystemAvailability),
+      ...collectBlocks({ instrumentAvailability, telescopeAvailability }),
+    ],
     interval,
   );
-  const bands = placeBands(closures, interval);
+  const bands = placeBands(telescopeAvailability, interval);
 
   return {
     observingNight,

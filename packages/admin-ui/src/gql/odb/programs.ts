@@ -20,6 +20,8 @@ export const PROGRAM_ITEM_FRAGMENT = graphql(`
   fragment ProgramItem on Program {
     id
     name
+    resourceCount
+    resourceLimit
     reference {
       label
     }
@@ -140,6 +142,33 @@ export function useUpdateProgram() {
   return useMutation(UPDATE_PROGRAM_MUTATION);
 }
 
+/** Set the program's resource cap.
+ *
+ *  Separate from `updateProgram` because the ODB exposes it as its own
+ *  mutation rather than a field of `ProgramPropertiesInput`, and staff-only
+ *  (`requireStaffAccess`) where the properties update is not.
+ *
+ *  Lowering the cap below the current count is a supported action — it freezes
+ *  the program rather than deleting anything — so the ODB answers with the
+ *  updated program *and* a `program_resource_limit_exceeded` warning. That is
+ *  why the hook reads `errorPolicy: 'all'`: the default would discard the data
+ *  and throw, reporting a write that actually landed as a failure. */
+export const SET_PROGRAM_RESOURCE_LIMIT_MUTATION = graphql(`
+  mutation AdminSetProgramResourceLimit($programId: ProgramId!, $limit: NonNegInt!) {
+    setProgramResourceLimit(input: { programId: $programId, limit: $limit }) {
+      program {
+        id
+        resourceCount
+        resourceLimit
+      }
+    }
+  }
+`);
+
+export function useSetProgramResourceLimit() {
+  return useMutation(SET_PROGRAM_RESOURCE_LIMIT_MUTATION, { errorPolicy: 'all' });
+}
+
 export const SET_ALLOCATIONS_MUTATION = graphql(`
   mutation AdminSetAllocations($programId: ProgramId!, $allocations: [AllocationInput!]!) {
     setAllocations(input: { programId: $programId, allocations: $allocations }) {
@@ -192,6 +221,19 @@ export function proposalTypeInput(p: Program): GeminiProposalTypeInput {
         },
       }
     : { classical: { minPercentTime: p.minPercentTime } };
+}
+
+/** Whether an edit touched anything `proposalTypeInput` sends. The proposal
+ *  type is a `oneOf`, so there is no "leave it as it is" value: sending the
+ *  block at all rewrites the proposal's type. Since the editor collapses every
+ *  subtype to Queue or Classical, sending it on an untouched Director's Time
+ *  (or Poor Weather, Large Program, …) proposal would rewrite it as a Queue one
+ *  and the ODB rejects that against a Director's Time call (sc-10439).
+ *
+ *  Compared through `proposalTypeInput` rather than field by field, so a field
+ *  added to the input can never go unnoticed here and drop a save. */
+export function proposalTypeChanged(original: Program, draft: Program): boolean {
+  return JSON.stringify(proposalTypeInput(original)) !== JSON.stringify(proposalTypeInput(draft));
 }
 
 export const CREATE_PROGRAM_NOTE_MUTATION = graphql(`
@@ -347,6 +389,8 @@ export function mapPrograms(raw: AdminProgramsResult): Program[] {
       proprietaryMonths: p.goa?.proprietaryMonths ?? 0,
       considerForBand3: queue?.considerForBand3 === 'CONSIDER',
       minPercentTime: queue?.minPercentTime ?? classical?.minPercentTime ?? 100,
+      resourceCount: p.resourceCount,
+      resourceLimit: p.resourceLimit,
       privateHeader: p.goa?.privateHeader ?? false,
       thesisInvestigators,
       privateNote: privateNote?.text ?? '',

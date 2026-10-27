@@ -10,7 +10,7 @@ import { render as renderBare } from 'vitest-browser-react';
 
 import { buildSemesterTimeline } from '@/domain/semesterTimeline';
 import { observingNightInterval } from '@/domain/siteTime';
-import type { Mounting, PublishedSemester } from '@/domain/types';
+import type { InstrumentAvailabilityBlock, PublishedSemester } from '@/domain/types';
 import { ROOT_FONT_SIZE } from '@/test/styleProbe';
 
 import { SemesterCalendar } from './SemesterCalendar';
@@ -18,7 +18,7 @@ import { SemesterCalendar } from './SemesterCalendar';
 const render = async (element: ReactElement) => renderBare(<MemoryRouter>{element}</MemoryRouter>);
 
 const night = (label: string) => observingNightInterval('GS', label);
-const MOUNTINGS: readonly Mounting[] = [
+const INSTRUMENT_BLOCKS: readonly InstrumentAvailabilityBlock[] = [
   {
     id: 'ghost',
     instrument: 'GHOST',
@@ -35,8 +35,8 @@ const timeline = buildSemesterTimeline({
   site: 'GS',
   firstNight: '2026-08-02',
   lastNight: '2026-09-01',
-  mountings: MOUNTINGS,
-  closures: [],
+  instrumentAvailability: INSTRUMENT_BLOCKS,
+  telescopeAvailability: [],
 });
 
 const semester: PublishedSemester = {
@@ -62,7 +62,13 @@ describe(SemesterCalendar, () => {
   it("grows the calendar's own height with the reader's root font size", async () => {
     document.documentElement.style.fontSize = ROOT_FONT_SIZE;
     const base = await render(
-      <SemesterCalendar timeline={timeline} semester={semester} site="GS" mountings={MOUNTINGS} closures={[]} />,
+      <SemesterCalendar
+        timeline={timeline}
+        semester={semester}
+        site="GS"
+        instrumentAvailability={INSTRUMENT_BLOCKS}
+        telescopeAvailability={[]}
+      />,
     );
     // Guarded non-empty first, so a chart that never rendered cannot pass as merely "the right ratio".
     await expect.poll(() => calendarHeight(base.container)).toBeGreaterThan(0);
@@ -70,7 +76,13 @@ describe(SemesterCalendar, () => {
 
     document.documentElement.style.fontSize = '32px';
     const doubled = await render(
-      <SemesterCalendar timeline={timeline} semester={semester} site="GS" mountings={MOUNTINGS} closures={[]} />,
+      <SemesterCalendar
+        timeline={timeline}
+        semester={semester}
+        site="GS"
+        instrumentAvailability={INSTRUMENT_BLOCKS}
+        telescopeAvailability={[]}
+      />,
     );
     await expect.poll(() => calendarHeight(doubled.container)).toBeGreaterThan(0);
     expect(calendarHeight(doubled.container)).toBeCloseTo(baseHeight * 2, 0);

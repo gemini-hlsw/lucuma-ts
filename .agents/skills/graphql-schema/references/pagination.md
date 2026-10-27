@@ -64,13 +64,11 @@ type PostsPage {
 ```
 
 **Pros:**
-
 - Straightforward to build
 - Allows jumping to specific page
 - Familiar to REST developers
 
 **Cons:**
-
 - Inconsistent with real-time data (items shift)
 - Poor performance on large offsets
 - Duplicate or missing items when data changes
@@ -84,14 +82,12 @@ type Query {
 ```
 
 **Pros:**
-
 - Stable pagination (cursor points to specific item)
 - Efficient for large datasets
 - Works well with real-time updates
 - Industry standard (Relay specification)
 
 **Cons:**
-
 - Can't jump to arbitrary page
 - Requires more code to build
 - Opaque cursors require explanation
@@ -104,7 +100,12 @@ The Connection pattern is defined by the Relay specification and widely adopted:
 
 ```graphql
 type Query {
-  posts(first: Int, after: String, last: Int, before: String): PostConnection!
+  posts(
+    first: Int
+    after: String
+    last: Int
+    before: String
+  ): PostConnection!
 }
 
 type PostConnection {
@@ -128,15 +129,14 @@ type PageInfo {
 
 ### Connection Arguments
 
-| Argument | Purpose                                      |
-| -------- | -------------------------------------------- |
-| `first`  | Number of items from the start               |
-| `after`  | Cursor to start after (forward pagination)   |
-| `last`   | Number of items from the end                 |
+| Argument | Purpose |
+|----------|---------|
+| `first` | Number of items from the start |
+| `after` | Cursor to start after (forward pagination) |
+| `last` | Number of items from the end |
 | `before` | Cursor to start before (backward pagination) |
 
 **Usage patterns:**
-
 - Forward: `first` + `after`
 - Backward: `last` + `before`
 - Don't mix forward and backward in same request
@@ -144,7 +144,6 @@ type PageInfo {
 ### Edge Type
 
 Edges contain:
-
 - `node`: The actual item
 - `cursor`: Opaque cursor for this item
 - Additional edge-specific data (optional)
@@ -163,10 +162,10 @@ type PostEdge {
 
 ```graphql
 type PageInfo {
-  hasNextPage: Boolean! # More items forward?
-  hasPreviousPage: Boolean! # More items backward?
-  startCursor: String # Cursor of first item
-  endCursor: String # Cursor of last item
+  hasNextPage: Boolean!      # More items forward?
+  hasPreviousPage: Boolean!  # More items backward?
+  startCursor: String        # Cursor of first item
+  endCursor: String          # Cursor of last item
 }
 ```
 
@@ -180,7 +179,12 @@ type Query {
   posts(first: Int, after: String): PostConnection!
 
   # Connection with filters
-  userPosts(userId: ID!, first: Int, after: String, status: PostStatus): PostConnection!
+  userPosts(
+    userId: ID!
+    first: Int
+    after: String
+    status: PostStatus
+  ): PostConnection!
 }
 ```
 
@@ -201,7 +205,6 @@ type User {
 ### Cursor Design
 
 Cursors should be:
-
 - **Opaque**: Clients shouldn't parse them
 - **Stable**: Same cursor = same position
 - **Serializable**: Usually base64-encoded
@@ -226,22 +229,21 @@ Always set sensible defaults and limits:
 ```graphql
 type Query {
   posts(
-    first: Int = 20 # Default page size
+    first: Int = 20  # Default page size
     after: String
   ): PostConnection!
 }
 ```
 
 In resolver, enforce maximum:
-
 ```typescript
 const resolvers = {
   Query: {
     posts: (_, { first = 20, after }) => {
       const limit = Math.min(first, 100); // Cap at 100
       // ...
-    },
-  },
+    }
+  }
 };
 ```
 
@@ -268,7 +270,11 @@ enum OrderDirection {
 }
 
 type Query {
-  posts(first: Int, after: String, orderBy: PostOrder = { field: CREATED_AT, direction: DESC }): PostConnection!
+  posts(
+    first: Int
+    after: String
+    orderBy: PostOrder = { field: CREATED_AT, direction: DESC }
+  ): PostConnection!
 }
 ```
 
@@ -284,7 +290,12 @@ input PostFilter {
 }
 
 type Query {
-  posts(first: Int, after: String, filter: PostFilter, orderBy: PostOrder): PostConnection!
+  posts(
+    first: Int
+    after: String
+    filter: PostFilter
+    orderBy: PostOrder
+  ): PostConnection!
 }
 ```
 
@@ -335,7 +346,7 @@ type Query {
 type PostConnection {
   edges: [PostEdge!]!
   pageInfo: PageInfo!
-  totalCount: Int # Nullable - may not always be computed
+  totalCount: Int  # Nullable - may not always be computed
 }
 ```
 
@@ -380,7 +391,6 @@ CREATE INDEX idx_posts_author_created ON posts(author_id, created_at DESC);
 ### Consider Denormalization
 
 For very large datasets, consider:
-
 - Materialized views
 - Denormalized count columns
 - Cached aggregations

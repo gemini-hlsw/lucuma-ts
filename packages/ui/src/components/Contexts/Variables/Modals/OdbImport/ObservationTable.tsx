@@ -1,4 +1,6 @@
+import { Search, when } from '@gemini-hlsw/lucuma-common-ui';
 import { dateToLocalObservingNight } from '@gemini-hlsw/lucuma-core';
+import { useConfiguration } from '@gql/configs/Configuration';
 import { useObservationsByState } from '@gql/odb/Observation';
 import { useServerConfigValue } from '@gql/server/ServerConfiguration';
 import { useAtom } from 'jotai';
@@ -10,11 +12,13 @@ import { DataTable } from 'primereact/datatable';
 import { IconField } from 'primereact/iconfield';
 import { InputIcon } from 'primereact/inputicon';
 import { InputText } from 'primereact/inputtext';
+import { Message } from 'primereact/message';
 import { MultiSelect } from 'primereact/multiselect';
 import { useState } from 'react';
 
-import { Search } from '@/components/Icons';
 import type { OdbObservation } from '@/types';
+
+import { CurrentMarker } from '../CurrentMarker';
 
 interface ParamsInterface {
   selectedObservation: OdbObservation | null;
@@ -96,7 +100,11 @@ export function ObservationTable({ selectedObservation, setSelectedObservation, 
     ),
   );
 
-  const { data, loading: observationsLoading } = useObservationsByState({
+  const {
+    data,
+    loading: observationsLoading,
+    incomplete,
+  } = useObservationsByState({
     variables: {
       date: observingNight,
       site,
@@ -104,6 +112,9 @@ export function ObservationTable({ selectedObservation, setSelectedObservation, 
     },
   });
   const observations = data?.observations.matches;
+
+  const { data: configurationData } = useConfiguration();
+  const isCurrent = (o: OdbObservation) => o.id === configurationData?.configuration?.obsId;
 
   const setGlobalFilterValue = (value: string) =>
     setFilters((prevFilters) => ({
@@ -143,6 +154,12 @@ export function ObservationTable({ selectedObservation, setSelectedObservation, 
         optionLabel="header"
         placeholder="Select columns"
       />
+      {when(incomplete, () => (
+        <Message
+          severity="warn"
+          text="Could not load every observation from the ODB. Reopen this dialog to try again."
+        />
+      ))}
     </div>
   );
 
@@ -165,7 +182,9 @@ export function ObservationTable({ selectedObservation, setSelectedObservation, 
         globalFilterFields={visibleColumns.map((c) => c.field)}
         header={header}
         emptyMessage="No observations found."
+        cellMemo={false}
       >
+        <Column body={(o: OdbObservation) => when(isCurrent(o), () => <CurrentMarker />)} />
         {visibleColumns.map((column) => (
           <Column {...column} key={column.field} filter />
         ))}

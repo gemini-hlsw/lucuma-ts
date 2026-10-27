@@ -1,4 +1,4 @@
-import { NumberInput } from '@gemini-hlsw/lucuma-common-ui';
+import { FloppyDisk, List, NumberInput } from '@gemini-hlsw/lucuma-common-ui';
 import type { SetTemporaryInstrumentMutationVariables } from '@gql/configs/gen/graphql';
 import { useConfiguredInstrument, useSetTemporaryInstrument, useUpdateInstrument } from '@gql/configs/Instrument';
 import { CommentConfirmButton } from '@Shared/CommentConfirmButton';
@@ -9,7 +9,6 @@ import { InputText } from 'primereact/inputtext';
 import { useId } from 'react';
 
 import { useSetImportInstrument } from '@/components/atoms/instrument';
-import { FloppyDisk, List } from '@/components/Icons';
 
 export function InstrumentPanel({ canEdit }: { canEdit: boolean }) {
   const [updateInstrument, { loading: updateInstrumentLoading }] = useUpdateInstrument();

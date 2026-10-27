@@ -103,7 +103,7 @@ jobs:
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
       - name: Add hosts to /etc/hosts
         run: |
-          sudo echo "127.0.0.1 navigate.lucuma.xyz" | sudo tee -a /etc/hosts
+          sudo echo "127.0.0.1 navigate.gemini.edu" | sudo tee -a /etc/hosts
       - run: pnpm exec playwright install firefox --only-shell
       - run: pnpm --filter "...[${{ env.CHANGED_SINCE }}]..." --if-present build
       - run: pnpm --filter "...[${{ env.CHANGED_SINCE }}]..." --if-present e2e:docker-up
@@ -233,7 +233,7 @@ jobs:
   deploy-server:
     environment:
       name: navigate-dev-gn
-      url: https://navigate-dev.lucuma.xyz/
+      url: https://navigate-dev.gemini.edu/
     if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v'))
     needs: [build-docker, publish-ui]
     runs-on: ubuntu-latest
@@ -309,7 +309,7 @@ jobs:
     timeout-minutes: 10
     environment:
       name: resource-ui-dev
-      url: 'https://resource-dev.lucuma.xyz'
+      url: 'https://resource-dev.gemini.edu'
     steps:
       - uses: actions/checkout@v7
         with:
@@ -356,7 +356,7 @@ jobs:
     timeout-minutes: 10
     environment:
       name: admin-ui-dev
-      url: 'https://admin-dev.lucuma.xyz'
+      url: 'https://admin-dev.gemini.edu'
     steps:
       - uses: actions/checkout@v7
         with:

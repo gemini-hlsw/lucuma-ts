@@ -3,8 +3,9 @@
  * program → request master-detail — see ChangeRequestsPage.
  */
 import { skipToken, useMutation, useQuery } from '@apollo/client/react';
-import { parseNumber } from '@gemini-hlsw/lucuma-common-ui';
-import { useCallback, useEffect } from 'react';
+import { isNullish, parseNumber, useAllPages } from '@gemini-hlsw/lucuma-common-ui';
+import type { DocumentNode } from 'graphql';
+import { useCallback, useMemo } from 'react';
 
 import type {
   ChangeRequest,
@@ -16,64 +17,75 @@ import type {
 } from '../types';
 import type { DocumentType } from './gen';
 import { graphql } from './gen';
-import type { Instrument } from './gen/graphql';
+import type { Instrument, ObservationItemFragment } from './gen/graphql';
 import { formatConditions, formatDec, formatRa, isScienceObservation, mapObservationRow } from './shared';
+
+/** One ConfigurationRequest as both review views render it — the Change
+ *  Requests tab (sc-9094) and the Proposals tab's per-CR approve/deny (sc-9595).
+ *  A named fragment so `mapChangeRequests` maps requests whether they arrive via
+ *  the top-level `configurationRequests` query or a program's own
+ *  `configurationRequests` field. */
+export const CONFIGURATION_REQUEST_FRAGMENT = graphql(`
+  fragment ConfigurationRequestItem on ConfigurationRequest {
+    id
+    status
+    justification
+    feedback
+    createdAt
+    applicableObservations
+    program {
+      id
+      name
+      reference {
+        label
+      }
+      pi {
+        id
+        user {
+          id
+          profile {
+            givenName
+            familyName
+          }
+        }
+      }
+    }
+    configuration {
+      target {
+        coordinates {
+          ra {
+            degrees
+          }
+          dec {
+            degrees
+          }
+        }
+      }
+      observingMode {
+        instrument
+        mode
+      }
+      conditions {
+        imageQuality
+        cloudExtinction
+        skyBackground
+        waterVapor
+      }
+    }
+  }
+`);
 
 export const CHANGE_REQUESTS_QUERY = graphql(`
   query AdminChangeRequests($offset: ConfigurationRequestId) {
     # Only requests on accepted programs (sc-9601) — a change request against a
     # merely-submitted proposal isn't actionable here. Mirrors the Programs
-    # query's proposalStatus filter. Paged via the OFFSET cursor (sc-9604):
+    # query's proposalStatus filter. Paged via the OFFSET_AT cursor (sc-9604):
     # a single fixed LIMIT silently dropped requests past the first page — a
     # newly-submitted one, landing at the tail, went missing — so
     # useChangeRequests follows hasMore to the end.
-    configurationRequests(WHERE: { program: { proposalStatus: { EQ: ACCEPTED } } }, OFFSET: $offset) {
+    configurationRequests(WHERE: { program: { proposalStatus: { EQ: ACCEPTED } } }, OFFSET_AT: $offset) {
       matches {
-        id
-        status
-        justification
-        feedback
-        createdAt
-        applicableObservations
-        program {
-          id
-          name
-          reference {
-            label
-          }
-          pi {
-            id
-            user {
-              id
-              profile {
-                givenName
-                familyName
-              }
-            }
-          }
-        }
-        configuration {
-          target {
-            coordinates {
-              ra {
-                degrees
-              }
-              dec {
-                degrees
-              }
-            }
-          }
-          observingMode {
-            instrument
-            mode
-          }
-          conditions {
-            imageQuality
-            cloudExtinction
-            skyBackground
-            waterVapor
-          }
-        }
+        ...ConfigurationRequestItem
       }
       hasMore
     }
@@ -81,6 +93,7 @@ export const CHANGE_REQUESTS_QUERY = graphql(`
 `);
 
 export type AdminChangeRequestsResult = DocumentType<typeof CHANGE_REQUESTS_QUERY>;
+type ConfigurationRequestItem = DocumentType<typeof CONFIGURATION_REQUEST_FRAGMENT>;
 
 /** Gemini instrument enum → display label + site. Instruments not listed here
  *  (e.g. visiting instruments) default to North, since that's unverifiable
@@ -93,8 +106,18 @@ const INSTRUMENT_SITE: Partial<Record<Instrument, { label: string; site: Site }>
   IGRINS2: { label: 'IGRINS-2', site: 'NORTH' },
 };
 
+/** Map the Change Requests query result — the top-level configurationRequests
+ *  list — onto the view shape. */
 export function mapChangeRequests(raw: AdminChangeRequestsResult): ChangeRequest[] {
-  return raw.configurationRequests.matches.map((c): ChangeRequest => {
+  return mapConfigurationRequests(raw.configurationRequests.matches);
+}
+
+/** Map raw ConfigurationRequest rows onto the view shape, from either source
+ *  (the CR query or one program's requests). `observations` is left empty here —
+ *  a request carries only observation ids; the review panel fills the rows from
+ *  the program's observations (see useProgramObservations). */
+export function mapConfigurationRequests(matches: readonly ConfigurationRequestItem[]): ChangeRequest[] {
+  return matches.map((c): ChangeRequest => {
     const prof = c.program.pi?.user?.profile;
     const coords = c.configuration.target?.coordinates;
     const instrument = c.configuration.observingMode?.instrument;
@@ -125,9 +148,6 @@ export function mapChangeRequests(raw: AdminChangeRequestsResult): ChangeRequest
       instrument: site.label,
       conditions: formatConditions(c.configuration.conditions),
       observationIds: c.applicableObservations,
-      // Filled in by the page from the program's observations (see
-      // useProgramObservations) — ConfigurationRequest carries only observation
-      // IDs, not the observation rows themselves.
       observations: [],
     };
   });
@@ -136,46 +156,55 @@ export function mapChangeRequests(raw: AdminChangeRequestsResult): ChangeRequest
 /** The change-requests list — cached rows render immediately, refreshed in
  *  background. Follows the ODB's `hasMore` cursor to the last page (sc-9604)
  *  so no request is ever dropped by a page limit; the returned `data` grows as
- *  pages arrive and `loading` stays true until the final page is in. */
+ *  pages arrive and `loading` stays true until the final page is in; `incomplete`
+ *  says a page could not be had (`useAllPages`). */
 export function useChangeRequests() {
   const result = useQuery(CHANGE_REQUESTS_QUERY, {
     variables: { offset: null },
     fetchPolicy: 'cache-and-network',
     notifyOnNetworkStatusChange: true,
   });
+  return useAllPages(result, 'configurationRequests');
+}
 
-  const { data, fetchMore } = result;
+/** One program's configuration requests, for the Proposals detail (sc-9595),
+ *  where the proposal is decided before it is accepted and so is not in the
+ *  accepted-programs list above. Loaded for the selected proposal only, rather
+ *  than under every program of the Proposals query, which already walks them all. */
+export const PROGRAM_CONFIGURATION_REQUESTS_QUERY = graphql(`
+  query AdminProgramConfigurationRequests($programId: ProgramId!, $offset: ConfigurationRequestId) {
+    configurationRequests(WHERE: { program: { id: { EQ: $programId } } }, OFFSET_AT: $offset) {
+      matches {
+        ...ConfigurationRequestItem
+      }
+      hasMore
+    }
+  }
+`);
 
-  // Walk the remaining pages: each fetchMore appends the next page's matches
-  // (merged via updateQuery, since the cache has no field policy for this list),
-  // using the last loaded id as the cursor, until the ODB reports no more.
-  useEffect(() => {
-    if (!data?.configurationRequests.hasMore || fetchMore === undefined) return;
-    const matches = data.configurationRequests.matches;
-    const cursor = matches[matches.length - 1]?.id;
-    if (cursor === undefined) return;
-    void fetchMore({
-      variables: { offset: cursor },
-      updateQuery: (prev, { fetchMoreResult }) => ({
-        configurationRequests: {
-          ...fetchMoreResult.configurationRequests,
-          matches: [...prev.configurationRequests.matches, ...fetchMoreResult.configurationRequests.matches],
-        },
-      }),
-    });
-  }, [data, fetchMore]);
-
-  return {
-    ...result,
-    // Not settled until every page is in, so callers don't render a partial set.
-    loading: result.loading || (data?.configurationRequests.hasMore ?? false),
-  };
+/** The selected program's requests, following `hasMore` to the last page with
+ *  `useAllPages`, like the other walks here, so none is dropped by a page limit.
+ *  `partial` is true while pages are still to come, and stays true if the walk
+ *  cannot finish (`incomplete`), so a partial list never passes for the whole set.
+ *  Skipped when no program is selected. */
+export function useProgramConfigurationRequests(programId: string | null) {
+  const result = useQuery(
+    PROGRAM_CONFIGURATION_REQUESTS_QUERY,
+    isNullish(programId)
+      ? skipToken
+      : // cache-and-network, like the other request walks: a proposal reopened
+        // later must not show requests that were resolved in the meantime.
+        { variables: { programId, offset: null }, fetchPolicy: 'cache-and-network', notifyOnNetworkStatusChange: true },
+  );
+  const { data, loading, incomplete, error } = useAllPages(result, 'configurationRequests');
+  const requests = useMemo(() => (data ? mapConfigurationRequests(data.configurationRequests.matches) : []), [data]);
+  return { requests, error, loading, incomplete, partial: data?.configurationRequests.hasMore ?? false };
 }
 
 /*
  * A ConfigurationRequest carries only observation ids (applicableObservations),
  * so the page resolves them to rows. We fetch the selected program's
- * observations page-by-page (WHERE program + OFFSET cursor, following the
+ * observations page-by-page (WHERE program + OFFSET_AT cursor, following the
  * pagination pattern in explore's ProgramSummaryQueries) rather than sending one
  * `id: { IN: [...] }` list: a program with thousands of observations would blow
  * past Postgres's 32,767 bind-parameter limit and the ODB would 500. Paging
@@ -183,7 +212,7 @@ export function useChangeRequests() {
  */
 export const PROGRAM_OBSERVATIONS_QUERY = graphql(`
   query AdminProgramObservations($programId: ProgramId!, $offset: ObservationId) {
-    observations(WHERE: { program: { id: { EQ: $programId } } }, OFFSET: $offset) {
+    observations(WHERE: { program: { id: { EQ: $programId } } }, OFFSET_AT: $offset) {
       matches {
         ...ObservationItem
       }
@@ -192,10 +221,7 @@ export const PROGRAM_OBSERVATIONS_QUERY = graphql(`
   }
 `);
 
-export type AdminProgramObservationsResult = DocumentType<typeof PROGRAM_OBSERVATIONS_QUERY>;
-type ObservationMatch = AdminProgramObservationsResult['observations']['matches'][number];
-
-export function observationsByIdFrom(matches: readonly ObservationMatch[]): ReadonlyMap<string, ObservationRow> {
+export function observationsByIdFrom(matches: readonly ObservationItemFragment[]): ReadonlyMap<string, ObservationRow> {
   // Science observations only — calibration ("system") observations aren't
   // part of the requested science and shouldn't appear or be duplicate-checked
   // (sc-9591).
@@ -204,11 +230,14 @@ export function observationsByIdFrom(matches: readonly ObservationMatch[]): Read
 
 /** Load every observation in `programId`, following the ODB's `hasMore` cursor
  *  so no page limit can silently drop rows. Returns the accumulated matches once
- *  the last page has loaded; `loading` stays true until then. Skipped when no
+ *  the last page has loaded; `loading` stays true until then, and `incomplete` says
+ *  a page could not be had. Skipped when no
  *  program is selected. */
 export function useProgramObservations(programId: string | null): {
-  matches: readonly ObservationMatch[];
+  matches: readonly ObservationItemFragment[];
+  error: Error | undefined;
   loading: boolean;
+  incomplete: boolean;
 } {
   const result = useQuery(
     PROGRAM_OBSERVATIONS_QUERY,
@@ -220,32 +249,8 @@ export function useProgramObservations(programId: string | null): {
       : { variables: { programId, offset: null }, notifyOnNetworkStatusChange: true, errorPolicy: 'all' },
   );
 
-  const { data, fetchMore } = result;
-
-  // Walk the remaining pages: each fetchMore appends the next page's matches
-  // (merged via updateQuery, since the cache has no field policy for this list),
-  // using the last loaded id as the cursor, until the ODB reports no more.
-  useEffect(() => {
-    if (!data?.observations.hasMore || fetchMore === undefined) return;
-    const matches = data.observations.matches;
-    const cursor = matches[matches.length - 1]?.id;
-    if (cursor === undefined) return;
-    void fetchMore({
-      variables: { offset: cursor },
-      updateQuery: (prev, { fetchMoreResult }) => ({
-        observations: {
-          ...fetchMoreResult.observations,
-          matches: [...prev.observations.matches, ...fetchMoreResult.observations.matches],
-        },
-      }),
-    });
-  }, [data, fetchMore]);
-
-  return {
-    matches: data?.observations.matches ?? [],
-    // Not settled until every page is in, so callers don't render a partial set.
-    loading: result.loading || (data?.observations.hasMore ?? false),
-  };
+  const { data, loading, incomplete } = useAllPages(result, 'observations');
+  return { matches: data?.observations.matches ?? [], error: result.error, loading, incomplete };
 }
 
 /** Resolve the requests and write the reviewer's response to `feedback`.
@@ -325,16 +330,18 @@ export function groupChangeRequestsByProgram(requests: readonly ChangeRequest[])
   });
 }
 
-const RESOLVE_OPTIONS = { refetchQueries: [CHANGE_REQUESTS_QUERY], awaitRefetchQueries: true };
-
-/** Resolve the selected requests, writing `response` as the staff feedback.
+/** Resolve the requests, writing `response` as the staff feedback.
  *
  *  A null `response` means the reviewer left no response, which keeps whatever
  *  is stored rather than erasing it — the two cases need different documents,
- *  since a nulled variable clears the field. */
-export function useResolveChangeRequests() {
-  const [withFeedback, withState] = useMutation(RESOLVE_WITH_FEEDBACK_MUTATION, RESOLVE_OPTIONS);
-  const [keepingFeedback, keepState] = useMutation(RESOLVE_KEEPING_FEEDBACK_MUTATION, RESOLVE_OPTIONS);
+ *  since a nulled variable clears the field. `refetchQuery` is the list the
+ *  calling view reads from, so the resolved statuses reload in place — the Change
+ *  Requests query for that tab, or one program's own requests query for the
+ *  per-request approval in the Proposals detail (sc-9595). */
+export function useResolveChangeRequests(refetchQuery: DocumentNode = CHANGE_REQUESTS_QUERY) {
+  const options = useMemo(() => ({ refetchQueries: [refetchQuery], awaitRefetchQueries: true }), [refetchQuery]);
+  const [withFeedback, withState] = useMutation(RESOLVE_WITH_FEEDBACK_MUTATION, options);
+  const [keepingFeedback, keepState] = useMutation(RESOLVE_KEEPING_FEEDBACK_MUTATION, options);
   const resolve = useCallback(
     (ids: readonly string[], status: ConfigurationRequestStatus, response: string | null) =>
       response === null

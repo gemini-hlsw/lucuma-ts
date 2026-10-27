@@ -1,6 +1,6 @@
 import './Layout.css';
 
-import { cn } from '@gemini-hlsw/lucuma-common-ui';
+import { Bars, cn, Copy, SignOut, useToastApi, VERSION_SUFFIX } from '@gemini-hlsw/lucuma-common-ui';
 import { useSetAtom } from 'jotai';
 import { Dialog } from 'primereact/dialog';
 import { Dropdown } from 'primereact/dropdown';
@@ -8,28 +8,18 @@ import { type JSX, useState } from 'react';
 import { NavLink, Outlet } from 'react-router';
 
 import { useTheme } from '@/app/useTheme';
-import { CURRENT_ENV, type Environment } from '@/auth/environments';
+import { CURRENT_ENV } from '@/auth/environments';
 import * as sso from '@/auth/ssoClient';
 import { displayName, type StandardRole } from '@/auth/user';
 import { odbTokenAtom, useIsLoggedIn, useUser } from '@/components/atoms/auth';
-import { Bars, Copy, SignOut } from '@/components/Icons';
-import { useToast } from '@/components/toastContext';
-
-/** Environment → the version-string suffix, matching Explore's scheme. The
- *  complete set of environment names (satisfies Record) so a new environment is
- *  a compile error here, not a missing suffix. */
-const ENV_SUFFIX = {
-  development: 'DEV',
-  staging: 'STAGING',
-  production: 'PROD',
-} as const satisfies Record<Environment['name'], string>;
+import { VersionCheck } from '@/components/VersionCheck';
 
 /** The build version in Explore's `DATE-COMMIT-ENV` form (sc-9615): the
  *  `YYYYMMDD-commit` baked in at build time (vite.config.ts) plus the runtime
  *  environment suffix — resolved here rather than at build time because one
  *  bundle serves every environment by hostname. Shown in the About dialog so a
  *  bug report can name the exact build. */
-const DISPLAY_VERSION = `${import.meta.env.FRONTEND_VERSION}-${ENV_SUFFIX[CURRENT_ENV.name]}`;
+const DISPLAY_VERSION = `${import.meta.env.FRONTEND_VERSION}-${VERSION_SUFFIX[CURRENT_ENV.name]}`;
 
 /** The Admin views (Shortcut epic 5747), in rail order. Views register here
  *  and in app/router.tsx. */
@@ -77,7 +67,7 @@ export default function Layout(): JSX.Element {
   // Keep the lucuma-ui-css dark theme class on <body> (explore is dark-only).
   useTheme('dark');
 
-  const toast = useToast();
+  const toast = useToastApi();
   const [aboutOpen, setAboutOpen] = useState(false);
   const user = useUser();
   const isLoggedIn = useIsLoggedIn();
@@ -221,6 +211,8 @@ export default function Layout(): JSX.Element {
           <Outlet />
         </main>
       </div>
+
+      <VersionCheck />
     </div>
   );
 }

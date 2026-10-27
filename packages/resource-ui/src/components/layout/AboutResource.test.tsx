@@ -1,3 +1,4 @@
+import { VERSION_SUFFIX } from '@gemini-hlsw/lucuma-common-ui';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { page } from 'vitest/browser';
 
@@ -6,7 +7,7 @@ import { openDialog, value } from '@/test/aboutDialog';
 
 import { AboutResource } from './AboutResource';
 
-const buildVersion = `${import.meta.env.FRONTEND_VERSION}-${CURRENT_ENV.versionSuffix}`;
+const buildVersion = `${import.meta.env.FRONTEND_VERSION}-${VERSION_SUFFIX[CURRENT_ENV.name]}`;
 
 describe(AboutResource, () => {
   afterEach(() => {

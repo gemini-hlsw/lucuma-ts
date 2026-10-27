@@ -6,6 +6,7 @@ import {
   allocationsInput,
   mapPrograms,
   programPropertiesInput,
+  proposalTypeChanged,
   proposalTypeInput,
 } from './programs';
 
@@ -37,6 +38,8 @@ function program(overrides: Partial<RawProgram>): RawProgram {
     __typename: 'Program',
     id: 'p-1322',
     name: null,
+    resourceCount: 2,
+    resourceLimit: 1000,
     proposalStatus: 'ACCEPTED',
     reference: { __typename: 'ScienceProgramReference', label: 'G-2027B-1322-Q' },
     pi: {
@@ -77,6 +80,20 @@ const result = (matches: RawProgram[]): AdminProgramsResult => ({
 describe(mapPrograms, () => {
   it('returns an empty array when there are no matches', () => {
     expect(mapPrograms(result([]))).toEqual([]);
+  });
+
+  it('carries the resource count and limit through (sc-9090)', () => {
+    const [p] = mapPrograms(result([program({ resourceCount: 84, resourceLimit: 1000 })]));
+    expect(p?.resourceCount).toBe(84);
+    expect(p?.resourceLimit).toBe(1000);
+  });
+
+  it('keeps a count that has passed its limit rather than clamping it', () => {
+    // The ODB allows the limit to be set below the count — the program is
+    // frozen, not corrected — so the form has to be able to show that state.
+    const [p] = mapPrograms(result([program({ resourceCount: 84, resourceLimit: 1 })]));
+    expect(p?.resourceCount).toBe(84);
+    expect(p?.resourceLimit).toBe(1);
   });
 
   it('projects a Queue program, reading contact scientists from SUPPORT roles and thesis from ProgramUser', () => {
@@ -201,6 +218,8 @@ describe(proposalTypeInput, () => {
     id: 'p-1',
     reference: 'R',
     name: 'N',
+    resourceCount: 0,
+    resourceLimit: 1000,
     pi: 'PI',
     programClass: 'QUEUE',
     programType: 'QUEUE',
@@ -234,6 +253,80 @@ describe(proposalTypeInput, () => {
   });
 });
 
+describe(proposalTypeChanged, () => {
+  // sc-10439: a Director's Time program reaches the editor with its subtype
+  // preserved in programType but collapsed to QUEUE in programClass. Saving an
+  // edit that leaves the proposal type alone must not send the type block at
+  // all, or the ODB rejects the Queue proposal against the Director's Time call.
+  const base: Program = {
+    id: 'p-1',
+    reference: 'R',
+    name: 'N',
+    pi: 'PI',
+    programClass: 'QUEUE',
+    programType: 'QUEUE',
+    tooStatus: 'RAPID',
+    resourceCount: 0,
+    resourceLimit: 1000,
+    contactScientists: [],
+    activeStart: '2027-08-01',
+    activeEnd: '2028-02-01',
+    status: 'INACTIVE',
+    explicitStatus: null,
+    defaultStatus: 'INACTIVE',
+    proprietaryMonths: 12,
+    considerForBand3: true,
+    minPercentTime: 75,
+    privateHeader: true,
+    thesisInvestigators: [],
+    allocations: [],
+    privateNote: '',
+    privateNoteId: null,
+  };
+  const dd: Program = { ...base, programType: 'DIRECTORS_TIME' };
+
+  it('stays quiet when an unrelated field is edited on a Directors Time program', () => {
+    expect(
+      proposalTypeChanged(dd, { ...dd, contactScientists: [{ programUserId: 'pu-1', userId: 'u-1', name: 'CS' }] }),
+    ).toBe(false);
+    expect(proposalTypeChanged(dd, { ...dd, allocations: [{ category: 'US', scienceBand: 'BAND1', hours: 3 }] })).toBe(
+      false,
+    );
+    expect(proposalTypeChanged(dd, { ...dd, privateNote: 'note' })).toBe(false);
+  });
+
+  // The ToO ceiling lives on the program, so editing it is a program update,
+  // never a proposal-type rewrite.
+  it('stays quiet when the ToO ceiling is edited', () => {
+    expect(proposalTypeChanged(base, { ...base, tooStatus: 'NONE' })).toBe(false);
+    expect(proposalTypeChanged(base, { ...base, tooStatus: null })).toBe(false);
+  });
+
+  it('stays quiet when nothing at all changed', () => {
+    expect(proposalTypeChanged(base, { ...base })).toBe(false);
+  });
+
+  // Every field the Queue branch of `proposalTypeInput` sends, each flipped on
+  // its own. The guard compares built payloads, so these also pin down that
+  // each field actually reaches the input.
+  it.each([
+    ['programClass', { programClass: 'CLASSICAL' } as const],
+    ['minPercentTime', { minPercentTime: 50 } as const],
+    ['considerForBand3', { considerForBand3: false } as const],
+  ])('reports a change when %s is edited', (_field, patch) => {
+    expect(proposalTypeChanged(base, { ...base, ...patch })).toBe(true);
+  });
+
+  // The Classical branch sends only minPercentTime, so a difference in a field
+  // it never sends is not a change worth a mutation. The editor disables
+  // band-3 off Queue, so this is defence in depth rather than a live path.
+  it('ignores fields the Classical branch never sends', () => {
+    const classical: Program = { ...base, programClass: 'CLASSICAL', programType: 'CLASSICAL' };
+    expect(proposalTypeChanged(classical, { ...classical, considerForBand3: false })).toBe(false);
+    expect(proposalTypeChanged(classical, { ...classical, minPercentTime: 50 })).toBe(true);
+  });
+});
+
 describe(allocationsInput, () => {
   it('sends only positive awards, keeping zero cells as grid-only editing state', () => {
     // Regression: a zeroed cell keeps the category's row visible in the grid;
@@ -257,6 +350,8 @@ describe(programPropertiesInput, () => {
     id: 'p-1',
     reference: 'R',
     name: 'N',
+    resourceCount: 0,
+    resourceLimit: 1000,
     pi: 'PI',
     programClass: 'QUEUE',
     programType: 'QUEUE',

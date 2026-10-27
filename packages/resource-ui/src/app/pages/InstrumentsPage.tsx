@@ -4,8 +4,8 @@ import { Dropdown } from 'primereact/dropdown';
 import { InputText } from 'primereact/inputtext';
 import { type JSX, useState } from 'react';
 
+import { RECENT_DAYS, useRecentSpan } from '@/app/useRecentSpan';
 import { useSelection } from '@/app/useSelection';
-import { useSiteSpan } from '@/app/useSiteSpan';
 import { useUrlParam } from '@/app/useUrlParam';
 import { FilterField } from '@/components/ui/FilterField';
 import { countedOption } from '@/components/ui/filterOptions';
@@ -19,16 +19,16 @@ import { WhereCell, type WhereReading } from '@/components/ui/WhereCell';
 import { semesterHolding } from '@/domain/coverage';
 import {
   buildInstrumentRows,
+  instrumentLocationLabel,
   type InstrumentRow,
   locationLabel,
   locationOptions,
   matchesInstrument,
-  mountingLocationLabel,
   runsOf,
 } from '@/domain/instrumentFinder';
 import { eveningLabel, eveningRange, firstEveningDate, nightCount, observingNightInterval } from '@/domain/siteTime';
 import { USAGE_LABEL } from '@/domain/timeline';
-import type { Mounting, ResourceUsage, Site } from '@/domain/types';
+import type { InstrumentAvailabilityBlock, ResourceUsage, Site } from '@/domain/types';
 import { InstrumentSwatch } from '@/features/timeline/InstrumentSwatch';
 import { INSTRUMENT_LABEL } from '@/features/timeline/timelineOptions';
 import { usePublishedSemesters, useSemesterSchedule } from '@/gql/hooks';
@@ -49,12 +49,12 @@ const instrumentWhere = (row: InstrumentRow): WhereReading => ({
 });
 
 /** A run list is read for its lengths, and the count is already in the interval the query returns. */
-function Runs({ runs, site }: { runs: readonly Mounting[]; site: Site }): JSX.Element {
+function Runs({ runs, site }: { runs: readonly InstrumentAvailabilityBlock[]; site: Site }): JSX.Element {
   const rows = runs.map((run) => ({
     id: run.id,
     dates: eveningRange(site, run.interval),
     nights: nightCount(site, run.interval),
-    where: mountingLocationLabel(run),
+    where: instrumentLocationLabel(run),
     status: usageStatus(run.usage),
     note: run.note,
   }));
@@ -71,20 +71,19 @@ function Runs({ runs, site }: { runs: readonly Mounting[]; site: Site }): JSX.El
 }
 
 export default function InstrumentsPage(): JSX.Element {
-  const { site, observingNight } = useSelection();
+  const { site, tonight } = useSelection();
   const { semesters, loading: loadingSets, error: setsError } = usePublishedSemesters();
   const [search, setSearch] = useUrlParam('q', '', { replace: true });
   const [location, setLocation] = useUrlParam('location', '', { replace: true });
   const [expanded, setExpanded] = useState<InstrumentRow[]>([]);
 
-  // The site's whole recorded span: its instruments are the ones its records have ever named.
-  const held = semesterHolding(semesters, site, observingNight);
-  const bounds = useSiteSpan();
+  const held = semesterHolding(semesters, site, tonight);
+  const bounds = useRecentSpan();
 
-  const { mountings, loading, error } = useSemesterSchedule(site, bounds);
+  const { instrumentAvailability, loading, error } = useSemesterSchedule(site, bounds);
 
-  const night = observingNightInterval(site, observingNight);
-  const rows = buildInstrumentRows({ mountings, night });
+  const night = observingNightInterval(site, tonight);
+  const rows = buildInstrumentRows({ instrumentAvailability, night });
   const locations = locationOptions(rows);
   // Sorted by the name on screen: a list alphabetised by an unseen enum tag looks unsorted.
   const visible = rows
@@ -97,7 +96,7 @@ export default function InstrumentsPage(): JSX.Element {
   return (
     <div className="min-w-0">
       <PageHeader title="Instruments" demo={held?.demo === true}>
-        Every instrument {site} has ever recorded, and where it is on the night of{' '}
+        Every instrument {site} has recorded in the past {RECENT_DAYS} days, and where it is on the night of{' '}
         {eveningLabel(firstEveningDate(site, night))}. {onTelescope} of {rows.length} on the telescope. Open a row for
         its runs.
       </PageHeader>
@@ -145,7 +144,9 @@ export default function InstrumentsPage(): JSX.Element {
           onRowToggle={(event) => {
             setExpanded(event.data as InstrumentRow[]);
           }}
-          rowExpansionTemplate={(row: InstrumentRow) => <Runs runs={runsOf(row.instrument, mountings)} site={site} />}
+          rowExpansionTemplate={(row: InstrumentRow) => (
+            <Runs runs={runsOf(row.instrument, instrumentAvailability)} site={site} />
+          )}
           size="small"
           stripedRows
           data-testid="instrument-table"

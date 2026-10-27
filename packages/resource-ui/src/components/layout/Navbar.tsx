@@ -1,13 +1,15 @@
 import {
-  faArrowRightFromBracket,
-  faBars,
-  faCheck,
-  faCircleInfo,
-  faLayerGroup,
-  faUser,
-} from '@fortawesome/pro-regular-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { cn, displayName, type User } from '@gemini-hlsw/lucuma-common-ui';
+  ArrowRightFromBracket,
+  Bars,
+  Check,
+  cn,
+  displayName,
+  Info,
+  LayerGroup,
+  type User,
+  UserIcon,
+  useToast,
+} from '@gemini-hlsw/lucuma-common-ui';
 import { Button } from 'primereact/button';
 import { Menu } from 'primereact/menu';
 import type { MenuItem } from 'primereact/menuitem';
@@ -22,7 +24,6 @@ import orcidLogo from '@/assets/orcid-logo.svg';
 import { signOut } from '@/auth/session';
 import { signInUrl } from '@/auth/ssoClient';
 import { type SessionStatus, useSessionStatus, useSignedOutElsewhere, useUser } from '@/components/atoms/auth';
-import { useToast } from '@/components/atoms/toast';
 import { AboutResource } from '@/components/layout/AboutResource';
 import { SegmentedControl, type SegmentedOption } from '@/components/ui/SegmentedControl';
 import { FOCUS_RING } from '@/components/ui/styles';
@@ -144,7 +145,7 @@ export default function Navbar(): JSX.Element {
 
   const logoutItem: MenuItem = {
     label: 'Logout',
-    icon: <FontAwesomeIcon icon={faArrowRightFromBracket} className={MENU_ICON} aria-hidden="true" />,
+    icon: <ArrowRightFromBracket className={MENU_ICON} aria-hidden="true" />,
     command: onSignOut,
   };
 
@@ -164,7 +165,7 @@ export default function Navbar(): JSX.Element {
         title="GPP Resource - telescope calendar & operational-resource manager. Go to tonight."
       >
         {/* A glyph, not type: the wordmark beside it carries the name, and the mark matches it. */}
-        <FontAwesomeIcon icon={faLayerGroup} widthAuto className="text-gpp" aria-hidden="true" />
+        <LayerGroup widthAuto className="text-gpp" aria-hidden="true" />
         {BRAND_LABEL}
       </Link>
 
@@ -186,7 +187,7 @@ export default function Navbar(): JSX.Element {
           title={signedIn ? accountLabel : undefined}
         >
           {/* A glyph, not type: the name beside it is what the row says. */}
-          <FontAwesomeIcon icon={faUser} size="sm" widthAuto aria-hidden="true" />
+          <UserIcon size="sm" widthAuto aria-hidden="true" />
           {/* Only the icon fits the phone bar; the name stays announced, and the menu carries it for the eye. */}
           <span className="xp-account-name max-md:sr-only">{accountLabel}</span>
         </span>
@@ -203,7 +204,7 @@ export default function Navbar(): JSX.Element {
           aria-haspopup="menu"
           aria-expanded={menuOpen}
           aria-controls={menuOpen ? MENU_ID : undefined}
-          icon={<FontAwesomeIcon icon={faBars} widthAuto aria-hidden="true" />}
+          icon={<Bars widthAuto aria-hidden="true" />}
           onClick={(event) => {
             menu.current?.toggle(event);
           }}
@@ -213,7 +214,7 @@ export default function Navbar(): JSX.Element {
           model={[
             {
               label: 'About Resource',
-              icon: <FontAwesomeIcon icon={faCircleInfo} className={MENU_ICON} aria-hidden="true" />,
+              icon: <Info className={MENU_ICON} aria-hidden="true" />,
               command: () => {
                 setAboutOpen(true);
               },
@@ -224,11 +225,7 @@ export default function Navbar(): JSX.Element {
               className: CLOCK_ITEM,
               value: choice.value,
               icon: (
-                <FontAwesomeIcon
-                  icon={faCheck}
-                  className={cn(MENU_ICON, choice.value === timeDisplay ? '' : 'invisible')}
-                  aria-hidden="true"
-                />
+                <Check className={cn(MENU_ICON, choice.value === timeDisplay ? '' : 'invisible')} aria-hidden="true" />
               ),
               command: () => {
                 setClockPreference(choice.value);

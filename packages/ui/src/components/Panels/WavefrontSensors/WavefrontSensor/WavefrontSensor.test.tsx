@@ -1,3 +1,4 @@
+import { selectDropdownOption } from '@gemini-hlsw/lucuma-common-ui/testing';
 import { GET_CONFIGURATION } from '@gql/configs/Configuration';
 import { GUIDE_STATE_QUERY, GUIDE_STATE_SUBSCRIPTION } from '@gql/server/GuideState';
 import {
@@ -14,7 +15,7 @@ import type { MockedResponseOf } from '@gql/util';
 import { userEvent } from 'vitest/browser';
 
 import { createConfiguration, createGuideState, createWfsConfigState } from '@/test/create';
-import { operationOutcome, selectDropdownOption } from '@/test/helpers';
+import { operationOutcome } from '@/test/helpers';
 import { renderWithContext } from '@/test/render';
 
 import { OiwfsWavefrontSensor, Pwfs1WavefrontSensor, Pwfs2WavefrontSensor } from './WavefrontSensor';

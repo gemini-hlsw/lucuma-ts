@@ -1,4 +1,5 @@
 import type { MockLink } from '@apollo/client/testing';
+import { selectDropdownOption } from '@gemini-hlsw/lucuma-common-ui/testing';
 import { GET_CONFIGURATION } from '@gql/configs/Configuration';
 import { GET_INSTRUMENT, UPDATE_INSTRUMENT } from '@gql/configs/Instrument';
 import type { AdjustTarget } from '@gql/server/gen/graphql';
@@ -16,7 +17,7 @@ import type { DocumentNode } from 'graphql';
 import { userEvent } from 'vitest/browser';
 
 import { createConfiguration, createFocalPlaneOffset, createInstrumentConfig } from '@/test/create';
-import { operationOutcome, selectDropdownOption } from '@/test/helpers';
+import { operationOutcome } from '@/test/helpers';
 import { type RenderResultWithStore, renderWithContext } from '@/test/render';
 import type { InstrumentConfig } from '@/types';
 

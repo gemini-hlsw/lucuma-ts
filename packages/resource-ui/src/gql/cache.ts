@@ -1,6 +1,6 @@
 import { InMemoryCache } from '@apollo/client';
 
-/** Exactly the `ScheduleBlock` implementors, which is what `cache.test.ts` holds this list to. */
+/** Exactly the schema's `…Block` types, which is what `cache.test.ts` holds this list to. */
 export const CONTEXTUAL_BLOCK_TYPES = [
   'InstrumentAvailabilityBlock',
   'InstrumentComponentAvailabilityBlock',

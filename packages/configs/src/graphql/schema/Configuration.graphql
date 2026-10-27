@@ -3,6 +3,7 @@
 
 enum GuidingType {
   NORMAL
+  OFF
 }
 
 enum BaffleMode {
@@ -56,6 +57,7 @@ type Configuration {
   obsInstrument: Instrument
   obsSubtitle: String
   obsReference: String
+  programLabel: String
   baffleMode: BaffleMode!
   "Only when baffleMode is MANUAL"
   centralBaffle: CentralBaffle
@@ -75,14 +77,15 @@ type Mutation {
     selectedP1Target: Int
     selectedP2Target: Int
     selectedGuiderTarget: Int
-    oiGuidingType: GuidingType!
-    p1GuidingType: GuidingType!
-    p2GuidingType: GuidingType!
+    oiGuidingType: GuidingType
+    p1GuidingType: GuidingType
+    p2GuidingType: GuidingType
     obsTitle: String
     obsId: ObservationId
     obsInstrument: Instrument
     obsSubtitle: String
     obsReference: String
+    programLabel: String
     baffleMode: BaffleMode!
     centralBaffle: CentralBaffle
     deployableBaffle: DeployableBaffle
@@ -104,6 +107,7 @@ type Mutation {
     obsInstrument: Instrument
     obsSubtitle: String
     obsReference: String
+    programLabel: String
     baffleMode: BaffleMode
     centralBaffle: CentralBaffle
     deployableBaffle: DeployableBaffle

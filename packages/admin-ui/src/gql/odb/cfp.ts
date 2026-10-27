@@ -8,8 +8,7 @@
  * the matching block back in CallForProposalsPropertiesInput.
  */
 import { useMutation, useQuery } from '@apollo/client/react';
-import { parseNumber } from '@gemini-hlsw/lucuma-common-ui';
-import { useEffect } from 'react';
+import { parseNumber, useAllPages } from '@gemini-hlsw/lucuma-common-ui';
 
 import { currentSemester } from '@/lib/semester';
 
@@ -99,10 +98,10 @@ export const CFPS_QUERY = graphql(`
     # includeDeleted so DELETED (invisible) calls are fetchable — the
     # "Invisible" facet (sc-9612) needs them; visibility is filtered client-side
     # from each call's existence (WhereCallForProposals has no existence field).
-    # Paged via the OFFSET cursor: a single fixed LIMIT would hide calls past it
+    # Paged via the OFFSET_AT cursor: a single fixed LIMIT would hide calls past it
     # — including a newly-created one, which then couldn't be selected after
     # New → Create (sc-10136). useCfps follows hasMore to the last page.
-    callsForProposals(OFFSET: $offset, includeDeleted: true) {
+    callsForProposals(OFFSET_AT: $offset, includeDeleted: true) {
       matches {
         ...CallForProposalsItem
       }
@@ -114,35 +113,11 @@ export const CFPS_QUERY = graphql(`
 /** The calls list — cached rows render immediately, refreshed in background.
  *  Follows the ODB's `hasMore` cursor to the last page so no call is dropped by
  *  a page limit; the returned `data` grows as pages arrive and `loading` stays
- *  true until the final page is in (mirrors useProposals / useChangeRequests). */
+ *  true until the final page is in; `incomplete` says a page could not be had
+ *  (`useAllPages`). */
 export function useCfps() {
   const result = useQuery(CFPS_QUERY, { variables: { offset: null }, fetchPolicy: 'cache-and-network' });
-  const { data, fetchMore } = result;
-
-  // Walk the remaining pages: each fetchMore appends the next page's matches
-  // (merged via updateQuery, since the cache has no field policy for this list),
-  // using the last loaded id as the cursor, until the ODB reports no more.
-  useEffect(() => {
-    if (!data?.callsForProposals.hasMore || fetchMore === undefined) return;
-    const matches = data.callsForProposals.matches;
-    const cursor = matches[matches.length - 1]?.id;
-    if (cursor === undefined) return;
-    void fetchMore({
-      variables: { offset: cursor },
-      updateQuery: (prev, { fetchMoreResult }) => ({
-        callsForProposals: {
-          ...fetchMoreResult.callsForProposals,
-          matches: [...prev.callsForProposals.matches, ...fetchMoreResult.callsForProposals.matches],
-        },
-      }),
-    });
-  }, [data, fetchMore]);
-
-  return {
-    ...result,
-    // Not settled until every page is in, so callers don't render a partial set.
-    loading: result.loading || (data?.callsForProposals.hasMore ?? false),
-  };
+  return useAllPages(result, 'callsForProposals');
 }
 
 export type AdminCfpsResult = DocumentType<typeof CFPS_QUERY>;

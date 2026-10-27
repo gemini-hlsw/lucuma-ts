@@ -7,17 +7,23 @@
       "skillPath": "skills/apollo-client/SKILL.md",
       "computedHash": "008c067a3d480ab905aa37aab113b8dc54028e29e593610866b7ea8131377ce1"
     },
+    "graphql-operations": {
+      "source": "apollographql/skills",
+      "sourceType": "github",
+      "skillPath": "skills/graphql-operations/SKILL.md",
+      "computedHash": "a158d0ceac9f203827af14ca4ad9fc2951e4c47ea34f61bf0873f02cfa65f18d"
+    },
     "graphql-schema": {
       "source": "apollographql/skills",
       "sourceType": "github",
       "skillPath": "skills/graphql-schema/SKILL.md",
-      "computedHash": "95f5384cc907635fc31121648dffffed0bb6f773ee594cbfe9be9e5e4a0e6aba"
+      "computedHash": "f09f5117528041abf9098c5ecf2e62ffb0c158fa7098cb1a745515d9ef4aeb67"
     },
     "simple-english": {
       "source": "AminBlg/SimpleEnglish",
       "sourceType": "github",
       "skillPath": "skills/simple-english/SKILL.md",
-      "computedHash": "65ff95333af589a97d5db3b3528fff191edbdf46e3676ea9956dc8a115c1e8b3"
+      "computedHash": "bd1d3cad1bbe29dd289d0e81a10d5ce5c5224f89f769f482f14529b8effdcb90"
     }
   }
 }
