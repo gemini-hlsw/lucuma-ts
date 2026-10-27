@@ -1,6 +1,6 @@
 import './ConfigurationRequestReview.css';
 
-import { cn, isNotNullish, isNullish } from '@gemini-hlsw/lucuma-common-ui';
+import { Check, cn, isNotNullish, isNullish, PaperPlane, XMark } from '@gemini-hlsw/lucuma-common-ui';
 import { Button } from 'primereact/button';
 import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
@@ -10,7 +10,6 @@ import { type JSX, type ReactNode, useLayoutEffect, useMemo, useRef, useState } 
 
 import { ConflictsTable } from '@/components/ConflictsTable';
 import { DuplicatesTable } from '@/components/DuplicatesTable';
-import { Check, PaperPlane, XMark } from '@/components/Icons';
 import { Tile } from '@/components/Tile';
 import { useToast } from '@/components/toastContext';
 import { friendlyError } from '@/gql/errors';

@@ -1,6 +1,18 @@
 import './Navbar.css';
 
-import { cn, when } from '@gemini-hlsw/lucuma-common-ui';
+import {
+  ChevronDown,
+  cn,
+  Info,
+  Map,
+  Moon,
+  SignIn,
+  SignOut,
+  Sliders,
+  Sun,
+  UserIcon,
+  when,
+} from '@gemini-hlsw/lucuma-common-ui';
 import { useConfiguration } from '@gql/configs/Configuration';
 import { useServerConfigValue } from '@gql/server/ServerConfiguration';
 import { Button } from 'primereact/button';
@@ -15,7 +27,6 @@ import { useAlarmValue } from '@/components/atoms/alarm';
 import { useIsLoggedIn, useUser } from '@/components/atoms/auth';
 import { useSetCalParamsVisible } from '@/components/atoms/calparams';
 import { useTheme } from '@/components/atoms/theme';
-import { ChevronDown, Info, Map, Moon, SignIn, SignOut, Sliders, Sun, User } from '@/components/Icons';
 
 import { ConnectionLost } from './ConnectionLost';
 
@@ -94,7 +105,7 @@ export default function Navbar() {
 
         <SplitButton
           label={user ? displayName(user) : 'Login'}
-          icon={<User size="lg" />}
+          icon={<UserIcon size="lg" />}
           className="p-button-text nav-btn"
           buttonClassName={cn(!user && 'menu-button-not-logged-in')}
           model={items}

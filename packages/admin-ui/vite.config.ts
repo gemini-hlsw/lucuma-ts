@@ -49,7 +49,7 @@ export default defineConfig({
   },
   plugins: [
     react(),
-    babel({ presets: [reactCompilerPreset()], exclude: /[/\\](node_modules|common-ui)[/\\]/ }),
+    babel({ presets: [reactCompilerPreset()], exclude: /[/\\](node_modules)[/\\]/ }),
     tailwindcss(),
     buildVersionFile(),
   ],

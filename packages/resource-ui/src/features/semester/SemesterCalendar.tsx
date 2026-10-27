@@ -1,5 +1,6 @@
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 
+import { ChevronLeft, ChevronRight } from '@gemini-hlsw/lucuma-common-ui';
 import { format, getDay, parse, startOfWeek } from 'date-fns';
 import { enUS } from 'date-fns/locale';
 import { Button } from 'primereact/button';
@@ -16,7 +17,6 @@ import {
 
 import { useOpenNight } from '@/app/useOpenNight';
 import { useUrlParam } from '@/app/useUrlParam';
-import { ChevronLeft, ChevronRight } from '@/components/ui/Icons';
 import { buildCalendarNews } from '@/domain/calendarNews';
 import { buildCalendarNights, type CalendarNight } from '@/domain/calendarNights';
 import { moonPhaseLabel } from '@/domain/moon';

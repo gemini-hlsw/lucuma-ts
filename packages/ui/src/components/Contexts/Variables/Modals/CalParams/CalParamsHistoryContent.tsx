@@ -1,4 +1,4 @@
-import { formatDateTime, when } from '@gemini-hlsw/lucuma-common-ui';
+import { formatDateTime, Trash, when } from '@gemini-hlsw/lucuma-common-ui';
 import { useCalParamsHistory, useDeleteCalParams } from '@gql/configs/CalParams';
 import { useServerConfigValue } from '@gql/server/ServerConfiguration';
 import { Button } from 'primereact/button';
@@ -7,7 +7,6 @@ import { ConfirmPopup, confirmPopup } from 'primereact/confirmpopup';
 import { DataTable } from 'primereact/datatable';
 import { useRef } from 'react';
 
-import { Trash } from '@/components/Icons';
 import type { CalParams } from '@/types';
 
 import { CurrentMarker } from '../CurrentMarker';

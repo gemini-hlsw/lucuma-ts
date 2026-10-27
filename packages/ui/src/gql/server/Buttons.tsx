@@ -2,7 +2,7 @@
 
 import type { ApolloCache, MutationUpdaterFunction, OperationVariables } from '@apollo/client';
 import { useMutation } from '@apollo/client/react';
-import { cn, isNullish, when } from '@gemini-hlsw/lucuma-common-ui';
+import { cn, Crosshairs, CrosshairsSlash, isNullish, Parking, ParkingSlash, when } from '@gemini-hlsw/lucuma-common-ui';
 import { useConfiguration } from '@gql/configs/Configuration';
 import { useSlewFlags } from '@gql/configs/SlewFlags';
 import type { TypedDocumentNode } from '@graphql-typed-document-node/core';
@@ -11,7 +11,6 @@ import type { ButtonProps } from 'primereact/button';
 import { Button } from 'primereact/button';
 import type { ReactNode } from 'react';
 
-import { Crosshairs, CrosshairsSlash, Parking, ParkingSlash } from '@/components/Icons';
 import { BTN_CLASSES } from '@/Helpers/constants';
 import type { SetStale } from '@/Helpers/hooks';
 import type { EnclosureState, MechSystemState, SlewFlags, TelescopeState } from '@/types';

@@ -1,6 +1,6 @@
+import { TriangleExclamation } from '@gemini-hlsw/lucuma-common-ui';
 import { type JSX, useMemo } from 'react';
 
-import { TriangleExclamation } from '@/components/Icons';
 import { friendlyError } from '@/gql/errors';
 import {
   observationsByIdFrom,

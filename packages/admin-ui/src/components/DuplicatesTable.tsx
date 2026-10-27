@@ -1,10 +1,10 @@
 import './checkTables.css';
 
+import { Spinner, TriangleExclamation } from '@gemini-hlsw/lucuma-common-ui';
 import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
 import { type JSX, useEffect, useRef, useState } from 'react';
 
-import { Spinner, TriangleExclamation } from '@/components/Icons';
 import { type DuplicateRow, type DuplicateSource, findDuplicates } from '@/lib/geminiArchive';
 
 interface DuplicatesState {

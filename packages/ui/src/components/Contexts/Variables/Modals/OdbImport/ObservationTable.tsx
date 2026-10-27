@@ -1,4 +1,4 @@
-import { when } from '@gemini-hlsw/lucuma-common-ui';
+import { Search, when } from '@gemini-hlsw/lucuma-common-ui';
 import { dateToLocalObservingNight } from '@gemini-hlsw/lucuma-core';
 import { useConfiguration } from '@gql/configs/Configuration';
 import { useObservationsByState } from '@gql/odb/Observation';
@@ -16,7 +16,6 @@ import { Message } from 'primereact/message';
 import { MultiSelect } from 'primereact/multiselect';
 import { useState } from 'react';
 
-import { Search } from '@/components/Icons';
 import type { OdbObservation } from '@/types';
 
 import { CurrentMarker } from '../CurrentMarker';

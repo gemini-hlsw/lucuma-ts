@@ -1,9 +1,7 @@
-import { fetchDeployedVersion, isNewerVersion, isNotNullish } from '@gemini-hlsw/lucuma-common-ui';
+import { fetchDeployedVersion, isNewerVersion, isNotNullish, Rotate } from '@gemini-hlsw/lucuma-common-ui';
 import { Button } from 'primereact/button';
 import { Toast } from 'primereact/toast';
 import { type JSX, useEffect, useRef } from 'react';
-
-import { Rotate } from './Icons';
 
 /** How often to ask the server what it is serving. Slower than navigate's
  *  minute: a stale Admin tab is an inconvenience, not an operational risk. */

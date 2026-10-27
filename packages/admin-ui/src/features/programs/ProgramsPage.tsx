@@ -1,6 +1,6 @@
 import './ProgramsPage.css';
 
-import { isNotNullish, NumberInput } from '@gemini-hlsw/lucuma-common-ui';
+import { isNotNullish, NumberInput, TriangleExclamation, Upload, XMark } from '@gemini-hlsw/lucuma-common-ui';
 import { AutoComplete } from 'primereact/autocomplete';
 import { Button } from 'primereact/button';
 import { Checkbox } from 'primereact/checkbox';
@@ -12,7 +12,6 @@ import { InputTextarea } from 'primereact/inputtextarea';
 import { type JSX, useMemo, useState } from 'react';
 
 import { DataSourceBadge } from '@/components/DataSourceBadge';
-import { TriangleExclamation, Upload, XMark } from '@/components/Icons';
 import { SearchInput } from '@/components/SearchInput';
 import { Tile } from '@/components/Tile';
 import { TimeAwardsGrid } from '@/components/TimeAwardsGrid';

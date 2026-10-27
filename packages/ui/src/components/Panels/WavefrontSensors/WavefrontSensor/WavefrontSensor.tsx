@@ -1,4 +1,4 @@
-import { cn } from '@gemini-hlsw/lucuma-common-ui';
+import { cn, Play, Stop } from '@gemini-hlsw/lucuma-common-ui';
 import { useConfiguration } from '@gql/configs/Configuration';
 import type { Instrument, WfsType } from '@gql/configs/gen/graphql';
 import type { Site } from '@gql/odb/gen/graphql';
@@ -33,7 +33,6 @@ import { Checkbox } from 'primereact/checkbox';
 import { Dropdown } from 'primereact/dropdown';
 import { useId, useMemo, useState } from 'react';
 
-import { Play, Stop } from '@/components/Icons';
 import { instrumentToOiwfs } from '@/Helpers/functions';
 
 const DEFAULT_FREQ_OPTIONS = {

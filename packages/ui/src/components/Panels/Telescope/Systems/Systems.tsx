@@ -1,9 +1,9 @@
+import { ChevronRight } from '@gemini-hlsw/lucuma-common-ui';
 import { useServerConfigValue } from '@gql/server/ServerConfiguration';
 import type { ReactNode } from 'react';
 import { useState } from 'react';
 
 import { useCanEdit } from '@/components/atoms/auth';
-import { ChevronRight } from '@/components/Icons';
 
 import { Altair, GeMS } from './AdaptiveOptics';
 import { AgMechanism } from './AgMechanism';

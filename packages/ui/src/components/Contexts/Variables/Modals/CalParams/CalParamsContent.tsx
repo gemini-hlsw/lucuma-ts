@@ -1,4 +1,13 @@
-import { cn, isNotNullish, NumberInput, useSyncedState, when } from '@gemini-hlsw/lucuma-common-ui';
+import {
+  ClockRotateLeft,
+  cn,
+  FloppyDisk,
+  isNotNullish,
+  NumberInput,
+  TriangleExclamation,
+  useSyncedState,
+  when,
+} from '@gemini-hlsw/lucuma-common-ui';
 import { useCalParams, useCalParamsHistory, useCreateCalParams } from '@gql/configs/CalParams';
 import type { CalParamsCreateInput } from '@gql/configs/gen/graphql';
 import { useServerConfigValue } from '@gql/server/ServerConfiguration';
@@ -10,7 +19,6 @@ import { useId, useMemo } from 'react';
 
 import { useCanEdit } from '@/components/atoms/auth';
 import { useSetCalParamsHistoryVisible } from '@/components/atoms/calparams';
-import { ClockRotateLeft, FloppyDisk, TriangleExclamation } from '@/components/Icons';
 
 /**
  * Format numbers with at least 2 fraction digits.

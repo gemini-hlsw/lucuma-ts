@@ -1,6 +1,4 @@
-import { faCheck, faCopy } from '@fortawesome/pro-regular-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { cn, VERSION_SUFFIX } from '@gemini-hlsw/lucuma-common-ui';
+import { Check, cn, Copy, VERSION_SUFFIX } from '@gemini-hlsw/lucuma-common-ui';
 import { Button } from 'primereact/button';
 import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
@@ -30,6 +28,7 @@ const caption = (fact: AboutFact): JSX.Element => (
 
 export function AboutResource({ visible, onHide }: { visible: boolean; onHide: () => void }): JSX.Element {
   const [copied, setCopied] = useState(false);
+  const CopyIcon = copied ? Check : Copy;
   const version = displayVersion();
 
   const copyVersion = async (): Promise<void> => {
@@ -63,7 +62,7 @@ export function AboutResource({ visible, onHide }: { visible: boolean; onHide: (
               aria-label="Copy version"
               onClick={() => void copyVersion()}
             >
-              <FontAwesomeIcon icon={copied ? faCheck : faCopy} size="xs" aria-hidden="true" />
+              <CopyIcon size="xs" aria-hidden="true" />
             </Button>
           </span>
         </>

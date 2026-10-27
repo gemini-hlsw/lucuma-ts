@@ -1,4 +1,12 @@
-import { formatToSignedArcseconds, isNotNullish, NumberInput } from '@gemini-hlsw/lucuma-common-ui';
+import {
+  CaretDown,
+  CaretLeft,
+  CaretRight,
+  CaretUp,
+  formatToSignedArcseconds,
+  isNotNullish,
+  NumberInput,
+} from '@gemini-hlsw/lucuma-common-ui';
 import { useConfiguration } from '@gql/configs/Configuration';
 import type { WfsType } from '@gql/configs/gen/graphql';
 import { Button } from 'primereact/button';
@@ -9,7 +17,6 @@ import { Slider } from 'primereact/slider';
 import type React from 'react';
 import { startTransition, useId, useState } from 'react';
 
-import { CaretDown, CaretLeft, CaretRight, CaretUp } from '@/components/Icons';
 import { instrumentToOiwfs } from '@/Helpers/functions';
 
 import type { Coords, HandsetStrategy } from './strategy';
