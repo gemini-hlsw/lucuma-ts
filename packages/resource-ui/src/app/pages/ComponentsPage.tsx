@@ -26,8 +26,8 @@ import type {
 } from '@/domain/types';
 import { ComponentIdentityCell, StatusCell } from '@/features/components/componentCells';
 import { componentStatus, componentWhere, TYPE_LABEL, whereLabel } from '@/features/components/componentLabels';
+import { INSTRUMENT_LABEL } from '@/features/timeline/instruments';
 import { InstrumentSwatch } from '@/features/timeline/InstrumentSwatch';
-import { INSTRUMENT_LABEL } from '@/features/timeline/timelineOptions';
 import { useComponentBrowser } from '@/gql/hooks';
 
 /** The piece's recent records, with "Installed" resolved to where it was. */

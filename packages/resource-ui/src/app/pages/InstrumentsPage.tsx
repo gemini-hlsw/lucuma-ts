@@ -28,8 +28,8 @@ import {
 import { eveningLabel, eveningRange, firstEveningDate, nightCount, observingNightInterval } from '@/domain/siteTime';
 import { USAGE_LABEL } from '@/domain/timeline';
 import type { InstrumentAvailabilityBlock, ResourceUsage, Site } from '@/domain/types';
+import { INSTRUMENT_LABEL } from '@/features/timeline/instruments';
 import { InstrumentSwatch } from '@/features/timeline/InstrumentSwatch';
-import { INSTRUMENT_LABEL } from '@/features/timeline/timelineOptions';
 import { useSemesterSchedule } from '@/gql/hooks';
 
 /** One function, so a run cannot wear one status in the table and another under it. */

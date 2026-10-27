@@ -13,7 +13,6 @@ export interface SidebarMenuItem {
   label: string;
   to: string;
   icon?: IconDefinition;
-  disabled?: boolean;
   /** The selection the link carries, when the destination reads less than the default. */
   carries?: readonly CarriedParam[];
 }

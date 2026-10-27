@@ -5,6 +5,7 @@ import type {
   InstrumentAvailabilityBlock,
   InstrumentComponent,
   InstrumentComponentAvailabilityBlock,
+  Interval,
   OffPortPlace,
   PublishedSemester,
   TelescopeAvailabilityBlock,
@@ -13,12 +14,18 @@ import type {
   TooSupportBlock,
 } from './types';
 
-interface ApiInterval {
+/** An interval as the API states it: ISO instants, not epoch millis. */
+export interface ApiInterval {
   readonly start: string;
   readonly end: string;
 }
 
-const toInterval = (interval: ApiInterval): { start: number; end: number } => ({
+export const toApiInterval = (interval: Interval): ApiInterval => ({
+  start: new Date(interval.start).toISOString(),
+  end: new Date(interval.end).toISOString(),
+});
+
+const toInterval = (interval: ApiInterval): Interval => ({
   start: Date.parse(interval.start),
   end: Date.parse(interval.end),
 });

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { InstrumentAvailabilityBlock, InstrumentComponent, InstrumentComponentAvailabilityBlock } from './types';
-import { buildWeekChanges } from './weekBriefing';
+import { buildWeekChanges } from './weekChanges';
 import { buildWeekTimeline } from './weekTimeline';
 
 /** `nightsWithData: undefined` leaves every night of the week recorded. */

@@ -239,12 +239,15 @@ describe(WeekPage, () => {
     await expect.poll(shownUrl).toMatch(/^\/night\?site=GS&night=2025-11-(1[4-9]|20)$/);
   });
 
-  it('draws a week the backend holds nothing for as seven nights not recorded', async () => {
+  it('says nothing is recorded for a week the backend holds nothing for, in place of the chart', async () => {
     const screen = await openWeek(
       '/week?site=GS&night=2030-01-01',
       weekSchedule({ site: 'GS', night: '2030-01-01' }, { withoutData: weekOf('2030-01-01') }),
     );
 
-    await expect.poll(() => screen.getByTestId('week-timeline').getByText('not recorded').elements().length).toBe(7);
+    await expect.element(screen.getByText('Nothing is recorded for this week.')).toBeVisible();
+    await expect.element(screen.getByTestId('week-timeline')).not.toBeInTheDocument();
+    await expect.element(screen.getByLabelText('Legend')).not.toBeInTheDocument();
+    await expect.element(screen.getByText('Nothing changes this week', { exact: false })).not.toBeInTheDocument();
   });
 });

@@ -152,7 +152,6 @@ describe(NightPage, () => {
     );
 
     await expect.element(screen.getByText('Nothing is recorded for this night', { exact: false })).toBeVisible();
-    await expect.element(screen.getByRole('button', { name: /nearest covered night/ })).not.toBeInTheDocument();
   });
 
   it('draws no timeline when the night query fails, rather than an empty one beside the alert', async () => {

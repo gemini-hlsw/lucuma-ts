@@ -169,14 +169,7 @@ export default function Navbar(): JSX.Element {
         {BRAND_LABEL}
       </Link>
 
-      <SegmentedControl
-        size="sm"
-        value={site}
-        options={SITE_OPTIONS}
-        onChange={setSite}
-        ariaLabel="Site"
-        testId="site-toggle"
-      />
+      <SegmentedControl value={site} options={SITE_OPTIONS} onChange={setSite} ariaLabel="Site" testId="site-toggle" />
 
       <div className="xp-masthead-center" />
 

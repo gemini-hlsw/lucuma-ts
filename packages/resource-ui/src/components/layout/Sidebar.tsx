@@ -10,11 +10,7 @@ import { SIDEBAR_MENU_SECTIONS } from './SidebarMenu';
 
 const ITEM_BASE = 'flex items-center gap-2 border-l-2 px-4 py-2 text-xs';
 
-function itemClassName(isActive: boolean, isDisabled: boolean): string {
-  if (isDisabled) {
-    return cn(ITEM_BASE, 'border-l-transparent text-foreground-muted');
-  }
-
+function itemClassName(isActive: boolean): string {
   if (isActive) {
     return cn(ITEM_BASE, 'border-l-gpp bg-gpp/40 text-white');
   }
@@ -28,17 +24,8 @@ function SidebarItem({ item }: { item: SidebarMenuItem }): JSX.Element {
   const search = searchString(carrySelection(params, item.carries));
   const icon = item.icon === undefined ? null : <FontAwesomeIcon icon={item.icon} size="sm" aria-hidden="true" />;
 
-  if (item.disabled === true) {
-    return (
-      <a aria-disabled="true" className={itemClassName(false, true)}>
-        {icon}
-        {item.label}
-      </a>
-    );
-  }
-
   return (
-    <NavLink to={{ pathname: item.to, search }} className={({ isActive }) => itemClassName(isActive, false)}>
+    <NavLink to={{ pathname: item.to, search }} className={({ isActive }) => itemClassName(isActive)}>
       {icon}
       {item.label}
     </NavLink>

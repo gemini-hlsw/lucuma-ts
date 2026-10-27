@@ -17,7 +17,6 @@ colors:
   foreground: 'rgb(255 255 255 / 87%)'
   foreground-secondary: 'rgb(255 255 255 / 60%)'
   foreground-muted: 'rgb(255 255 255 / 38%)'
-  warning: 'oklch(87.9% 0.169 91.605deg)'
   warning-fill: 'oklch(41.4% 0.112 45.904deg)'
   warning-edge: 'oklch(66.6% 0.179 58.318deg)'
   warning-ink: 'oklch(96.2% 0.059 95.617deg)'
@@ -61,7 +60,7 @@ typography:
     fontWeight: 700
     letterSpacing: '0.4em'
 rounded:
-  chip: '2px'
+  swatch: '2px'
   control: '4px'
 spacing:
   spacing: '3.5px'
@@ -198,10 +197,8 @@ Text is a white-opacity ladder (Material dark), not a grey ramp:
 - **Unknown** (`#a1a1aa` zinc): a reserved neutral outside the validated hue sets - it must
   read as "identity unresolved". Where an unknown run coincides with a named one, the named
   run wins the shared span.
-- **Amber**: unknown/warning accents, one family end to end, named as `--color-warning` (the
-  weight a warning word takes on the canvas: the PrimeReact warning tags) plus a panel
-  triplet `--color-warning-fill` / `-edge` / `-ink` for the warn toast. Amber warns; it
-  never celebrates. One exception stays raw: Cal-Zorro's identity hue, which happens to share the family.
+- **Amber**: the warn toast's panel triplet, `--color-warning-fill` / `-edge` / `-ink`, one
+  family end to end. Amber warns; it never celebrates. One exception stays raw: Cal-Zorro's identity hue, which happens to share the family.
 - **Block ink** (`#fff` / `#0a0a0a`): bar labels take whichever of light or dark clears
   4.5:1 on the fill.
 
@@ -537,12 +534,11 @@ below adds only what is particular to its component.
 - **Hover.** A hovered surface climbs one step of the ladder, to Raised (`#414141`), and its text
   brightens to foreground. The primary button is the one exception: it lightens its own fill to
   `--color-gpp-light` rather than climbing the neutral ladder.
-- **Disabled.** An icon button drops to 40% opacity and takes the default cursor; a disabled
-  navigation item drops its text to muted. Muted carrying a disabled affordance is the sanctioned
-  case, not a tone violation. Whether a disabled control must also say _why_ is Future Readiness's
+- **Disabled.** An icon button drops to 40% opacity and takes the default cursor. Muted carrying a
+  disabled affordance is the sanctioned case, not a tone violation. Whether a disabled control must also say _why_ is Future Readiness's
   rule, and it arrives with editing.
 - **Selected.** The selected member of a set raises its surface, brightens its text to foreground,
-  and carries a 2px inset action-green underline. Selection is never a green fill: choosing a view
+  and carries a 2px inset action-green underline. Selection is never a green fill: choosing a site
   is navigation, not a success state, and a fill would compete with the real action.
 - **Active.** The current destination fills with the action green at 40% and carries
   `aria-current="page"`, set by the router rather than by hand, so the highlight cannot drift from
@@ -580,8 +576,8 @@ phone bar today.
 ### Segmented controls (the site toggle)
 
 Idle segments are surface-on-subtle with secondary text; the selected segment takes the shared
-Selected treatment and the shared focus **outline**, both under Interaction states. Compact
-variant (`seg-sm`) for the masthead's site toggle.
+Selected treatment and the shared focus **outline**, both under Interaction states. Sized
+compact, since its one home is the masthead.
 
 ### Page-header selects
 
@@ -631,8 +627,8 @@ default blue already clear the bar with the ink the theme gives them.
 The three states a page shows instead of content, as three distinct components, never one
 that decides: `ErrorAlert` (reserved danger red, `role="alert"`, the error's own message
 verbatim), `Loading`, and `EmptyPanel` (neutral - never red, never a warning: a gap means
-"not recorded"). The night view alone has three distinct empty states, one carrying a
-button.
+"not recorded"). The night and week views each put an `EmptyPanel` in place of the chart when
+nothing is recorded for any of their nights.
 
 **The loader.** `Loading` is the one place the Resource mark (`faLayerGroup`, the wordmark's
 glyph) moves. It sits centred at the top of the data area in the brand green (`text-gpp`, 7.5:1

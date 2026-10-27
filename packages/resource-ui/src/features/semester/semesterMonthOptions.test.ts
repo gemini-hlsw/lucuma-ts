@@ -1,4 +1,5 @@
 /** Through the builder, so label, colour and tooltip decisions are checkable without a browser. */
+import type { AxisLabelsFormatterContextObject } from 'highcharts';
 import { describe, expect, it } from 'vitest';
 
 import { portRowLabel, TELESCOPE_PORTS } from '@/domain/ports';
@@ -144,38 +145,36 @@ describe('day numbers', () => {
   });
 });
 
-describe('bands', () => {
-  it('shades the weekend nights', () => {
-    const weekends = buildMonthBands(august).filter((band) => band.className === 'schedule-weekend');
+describe('the axis', () => {
+  const axisOf = () => {
+    const { xAxis } = buildSemesterMonthOptions({ month: august, site: 'GS', now: null });
+    if (xAxis === undefined || Array.isArray(xAxis)) {
+      throw new Error('expected a single x axis');
+    }
+    return xAxis;
+  };
 
-    expect(weekends).toHaveLength(august.nights.filter((entry) => entry.isWeekend).length);
-    expect(weekends.length).toBeGreaterThan(0);
+  it("numbers the tick in the middle of each night with its evening's day, and any other value with nothing", () => {
+    const formatter = axisOf().labels?.formatter;
+    const label = (value: number) =>
+      formatter?.call({ value } as AxisLabelsFormatterContextObject, {} as never) ?? 'no formatter';
+    const labels = dayTickPositions(august, 1).map(label);
+
+    expect(labels.slice(0, 3)).toEqual(['1', '2', '3']);
+    expect(labels.at(-1)).toBe('31');
+    expect(label(august.interval.start)).toBe('');
   });
 
-  it('washes a telescope-wide closure across every row, labelled once', () => {
-    const shut = buildSemesterTimeline({
-      site: 'GS',
-      firstNight: '2026-08-02',
-      lastNight: '2026-09-01',
-      instrumentAvailability: [],
-      telescopeAvailability: [
-        {
-          id: 'wide',
-          availability: 'CLOSED',
-          port: null,
-          reason: 'Telescope Shutdown A&G Maintenance',
-          interval: span('2026-08-02', '2026-08-07'),
-        },
-      ],
-    });
+  it('draws a line at the start of every night, in the week colour where a Sunday evening begins one', () => {
+    const lines = (axisOf().plotLines ?? []).filter((line) => line.className !== 'schedule-today');
+    const weekStarts = lines.filter((line) => line.color === 'var(--schedule-week-line)');
 
-    const band = buildMonthBands(shut.months[0]!).find((entry) => entry.className === 'schedule-closure-band');
-
-    expect(band?.label?.text).toBe('Telescope Shutdown A&G Maintenance');
+    expect(lines.map((line) => line.value)).toEqual(august.nights.map((entry) => entry.interval.start));
+    expect(weekStarts.map((line) => line.value)).toEqual(
+      ['2026-08-03', '2026-08-10', '2026-08-17', '2026-08-24', '2026-08-31'].map((label) => night(label).start),
+    );
   });
-});
 
-describe('axis', () => {
   it('reads day numbers in the site clock, not the browser one', () => {
     const options = buildSemesterMonthOptions({ month: august, site: 'GS', now: null });
 
@@ -218,6 +217,15 @@ describe('axis', () => {
   });
 });
 
+describe('the weekend bands', () => {
+  it('shades the weekend nights', () => {
+    const weekends = buildMonthBands(august).filter((band) => band.className === 'schedule-weekend');
+
+    expect(weekends).toHaveLength(august.nights.filter((entry) => entry.isWeekend).length);
+    expect(weekends.length).toBeGreaterThan(0);
+  });
+});
+
 describe('the telescope-wide closure band', () => {
   const shutdown: TelescopeAvailabilityBlock = {
     id: 'wide',
@@ -235,6 +243,10 @@ describe('the telescope-wide closure band', () => {
   }).months[0]!;
 
   const closureBand = () => buildMonthBands(month).find((band) => band.className === 'schedule-closure-band');
+
+  it('is labelled once, with the closure reason', () => {
+    expect(closureBand()?.label?.text).toBe(shutdown.reason);
+  });
 
   it('spans only the nights it closes, not the month', () => {
     expect(closureBand()?.from).toBe(shutdown.interval.start);

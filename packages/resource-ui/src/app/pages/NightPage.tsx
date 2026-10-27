@@ -7,6 +7,7 @@ import { useSelection } from '@/app/useSelection';
 import { NightStepper } from '@/components/ui/NightStepper';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { EmptyPanel, ErrorAlert, Loading } from '@/components/ui/PageStatus';
+import { toApiInterval } from '@/domain/adapters';
 import { buildNightTimeline } from '@/domain/nightTimeline';
 import { addDays } from '@/domain/semester';
 import { observingNightInterval } from '@/domain/siteTime';
@@ -18,7 +19,7 @@ import {
   telescopeLegendExtras,
   tooLegendExtras,
 } from '@/features/timeline/timelineOptions';
-import { toApiInterval, useNightSchedule } from '@/gql/hooks';
+import { useNightSchedule } from '@/gql/hooks';
 
 /** A night is short enough that the marker should keep up with the clock. */
 const NOW_TICK_MS = 60_000;

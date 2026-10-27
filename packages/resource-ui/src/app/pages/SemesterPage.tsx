@@ -7,6 +7,7 @@ import { useSemester } from '@/app/useSemester';
 import { LabelledControl } from '@/components/ui/LabelledControl';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { ErrorAlert, Loading } from '@/components/ui/PageStatus';
+import { toApiInterval } from '@/domain/adapters';
 import { buildSemesterTimeline } from '@/domain/semesterTimeline';
 import { observingNightInterval } from '@/domain/siteTime';
 import { SemesterBlockTable } from '@/features/semester/SemesterBlockTable';
@@ -17,7 +18,7 @@ import {
   telescopeLegendExtras,
   tooLegendExtras,
 } from '@/features/timeline/timelineOptions';
-import { toApiInterval, useSemesterSchedule } from '@/gql/hooks';
+import { useSemesterSchedule } from '@/gql/hooks';
 
 /** The semester runs for months, so the "today" marker needs no fine tick. */
 const NOW_TICK_MS = 5 * 60_000;

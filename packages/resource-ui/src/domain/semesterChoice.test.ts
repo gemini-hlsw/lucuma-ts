@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { resolveSemester } from './coverage';
+import { resolveSemester } from './semesterChoice';
 import type { PublishedSemester } from './types';
 
 const semester = (

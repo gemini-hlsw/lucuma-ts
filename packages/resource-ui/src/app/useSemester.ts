@@ -1,6 +1,6 @@
 import { useSelection } from '@/app/useSelection';
 import { useUrlParam } from '@/app/useUrlParam';
-import { resolveSemester, semestersAtSite } from '@/domain/coverage';
+import { resolveSemester, semestersAtSite } from '@/domain/semesterChoice';
 import type { PublishedSemester } from '@/domain/types';
 import { usePublishedSemesters } from '@/gql/hooks';
 

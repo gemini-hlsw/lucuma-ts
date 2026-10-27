@@ -1,10 +1,14 @@
+import { clip } from './interval';
 import { portRowLabel, portRows } from './ports';
+import { addDays, isWeekendDate } from './semester';
+import { observingNightInterval } from './siteTime';
 import type {
   InstrumentAvailabilityBlock,
   Interval,
   Partner,
   ResourceInstrument,
   ResourceUsage,
+  Site,
   TelescopeAvailability,
   TelescopeAvailabilityBlock,
   TelescopeModeBlock,
@@ -81,13 +85,6 @@ export interface TimelineLegend {
   readonly hasUnavailable: boolean;
 }
 
-/** The overlap of two intervals, or null when they miss. */
-export const clip = (interval: Interval, bounds: Interval): Interval | null => {
-  const start = Math.max(interval.start, bounds.start);
-  const end = Math.min(interval.end, bounds.end);
-  return start < end ? { start, end } : null;
-};
-
 /** `interval` with every hole removed, so a port closure inside a wide shutdown becomes nothing. */
 export const subtract = (interval: Interval, holes: readonly Interval[]): readonly Interval[] => {
   let pieces: Interval[] = [interval];
@@ -112,6 +109,29 @@ export const subtract = (interval: Interval, holes: readonly Interval[]): readon
 
 /** Rounded, not floored: a night is 23 or 25 hours across a GS DST change, and thirty must read as thirty. */
 export const nightsIn = (interval: Interval): number => Math.round((interval.end - interval.start) / 86_400_000);
+
+/** A window's nights in order; `hasData` is the API's per-night flag where the window asks for one. */
+export const timelineNights = (
+  site: Site,
+  observingNights: readonly string[],
+  hasData: (observingNight: string) => boolean = () => true,
+): readonly TimelineNight[] =>
+  observingNights.map((observingNight) => {
+    const eveningDate = addDays(observingNight, -1);
+    return {
+      observingNight,
+      eveningDate,
+      interval: observingNightInterval(site, observingNight),
+      isWeekend: isWeekendDate(eveningDate),
+      dataAvailable: hasData(observingNight),
+    };
+  });
+
+/** First night's start to last night's end; they abut, so it is continuous. */
+export const spanOfNights = (nights: readonly TimelineNight[]): Interval => ({
+  start: nights[0]?.interval.start ?? 0,
+  end: nights.at(-1)?.interval.end ?? 0,
+});
 
 export const nightAt = (nights: readonly TimelineNight[], instant: number): TimelineNight | null =>
   nights.find((night) => night.interval.start <= instant && instant < night.interval.end) ?? null;

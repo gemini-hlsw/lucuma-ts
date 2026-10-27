@@ -35,7 +35,7 @@ the clock toggle, finder scoping) are DESIGN.md's. The mechanics:
     parameter written back when absent (a replace, so Back is unaffected) - DESIGN.md says why
     a remembered default cannot be left implicit the way every other default is.
   - **Semester** is `app/useSemester.ts`, which owns the page-scoped `semester` param through
-    `useUrlParam` and resolves it with `domain/coverage.ts`'s `resolveSemester`. Only /semester
+    `useUrlParam` and resolves it with `domain/semesterChoice.ts`'s `resolveSemester`. Only /semester
     may call it, and no other page reads the published semesters at all.
   - **Clock** is `app/useClockPreference.ts`, built on `app/preference.ts`: a
     `useSyncExternalStore` over `localStorage`, so every reader re-renders on a write from any
@@ -118,12 +118,14 @@ view is empty under the sign-in toast.
 `domain/timeline.ts` produced, never from an `InstrumentAvailabilityBlock`, and both charts build on `domain/timeline.ts`
 plus `features/timeline/`. A view supplies its own axis and its own way of phrasing a span - dates and
 nights for the semester and week, clock times for a night - and nothing else. Adding a fourth window
-should not mean copying any of it.
+should not mean copying any of it: `timelineNights` and `spanOfNights` in `domain/timeline.ts` list a
+window's nights, and `timelineOptions.ts` holds the pieces every chart composes (`nowMarker`,
+`weekendBands`, `nightLines`, `midpointTicks` / `midpointLabel`, `closureBandPlotBand`).
 
 | View           | What it draws                                                                      | Its module                   |
 | -------------- | ---------------------------------------------------------------------------------- | ---------------------------- |
 | Night          | the chart alone, plus PWFS1/PWFS2/LGS subsystem rows no other view shows           | `features/night/`            |
-| Week           | the run chart, plus `WeekChangesTable`                                             | `domain/weekBriefing.ts`     |
+| Week           | the run chart, plus `WeekChangesTable`                                             | `domain/weekChanges.ts`      |
 | Semester       | an xrange per month: how long a run lasts                                          | `features/semester/`         |
 | `/instruments` | a row per instrument the site's records name, expanding into its runs              | `domain/instrumentFinder.ts` |
 | `/components`  | the ICTD half: the piece catalog grouped by instrument, expanding into its history | `domain/componentFinder.ts`  |
@@ -159,8 +161,10 @@ these components are DESIGN.md's; this table is the ownership map.
 | `NightStepper`                           | The Tonight / arrows / date toolbar, its chrome, aria labels and cleared-input guard. The page owns the date vocabulary.                                                                                                                                                                                                                                                 |
 | `LabelledControl`                        | Binds a caption to its control **by id**, as a render prop, so the caller decides which prop carries it (`id` on an input, `inputId` on a PrimeReact Dropdown). It must not wrap the control: implicit labelling only reaches a labelable element, and a label wrapping a Dropdown named nothing and swallowed the control's words into the name ("Instrument All All"). |
 | `FilterField`                            | The finder bar's layout over `LabelledControl`. `filterOptions.countedOption` is the "(12)" suffix.                                                                                                                                                                                                                                                                      |
+| `features/timeline/instruments.ts`       | Every instrument's display name, colour and ink. The charts, the swatch and the inventory pages all read it; no page reaches into `timelineOptions.ts` for a name.                                                                                                                                                                                                       |
 | `InstrumentSwatch`                       | Colour square plus name (in `features/timeline/`, beside the palette it reads).                                                                                                                                                                                                                                                                                          |
-| `siteTime.eveningLabel` / `eveningRange` | The one evening formatter. Style is a parameter (`dayMonth`, `dayMonthYear`, `weekdayDayMonth`) because that choice is about what the page already says, never about what the date means.                                                                                                                                                                                |
+| `domain/interval.ts`                     | The one overlap rule (`clip`, with `overlaps` on top of it) and the finders' `transitionsOf`.                                                                                                                                                                                                                                                                            |
+| `siteTime.eveningLabel` / `eveningRange` | The one evening formatter. Style is a parameter (`dayMonth`, `dayMonthYear`) because that choice is about what the page already says, never about what the date means.                                                                                                                                                                                                   |
 
 - **Toasts go through the one PrimeReact `Toast` that `ToastOutlet` mounts in `main.tsx`.**
   `useToastApi()` from `@gemini-hlsw/lucuma-common-ui` is the default in components and hooks:
@@ -210,8 +214,8 @@ changing an operation or bumping the schema package, run `codegen`**; `prebuild`
   selections carry it. The `src/*/gen` entry in `eslint.config.shared.js`'s `globalIgnores` keeps the
   generated schema out of the operation rules; narrowing it turns that file into forty lint errors.
 
-One request per page load; every view gets its whole window in one response, all range queries
-`clip: false`:
+Every view gets its whole window in one response, all range queries `clip: false`. That is one
+request per page load, except on Semester, which first reads `PublishedSemesters` to learn its window:
 
 | Operation            | What it reads                                                                                                           | Views                                            |
 | -------------------- | ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |

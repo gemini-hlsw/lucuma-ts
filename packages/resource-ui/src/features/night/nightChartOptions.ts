@@ -8,9 +8,8 @@ import {
   type BlockDescriber,
   buildTimelineChart,
   closureBandPlotBand,
-  MARKER_LINE_Z,
   MUTED_TICK,
-  NOW_LABEL,
+  nowMarker,
   readerPx,
   WEEK_LINE_Z,
 } from '@/features/timeline/timelineOptions';
@@ -61,10 +60,8 @@ interface NightChartModel {
   readonly timeDisplay: TimeDisplay;
 }
 
-export const buildNightChartOptions = ({ night, site, now, timeDisplay }: NightChartModel): Options => {
-  const showsNow = now !== null && now >= night.interval.start && now < night.interval.end;
-
-  return buildTimelineChart({
+export const buildNightChartOptions = ({ night, site, now, timeDisplay }: NightChartModel): Options =>
+  buildTimelineChart({
     rows: night.rows,
     site,
     timeDisplay,
@@ -92,24 +89,6 @@ export const buildNightChartOptions = ({ night, site, now, timeDisplay }: NightC
         y: readerPx(1.125),
       },
       plotBands: [...night.bands.map((band) => closureBandPlotBand(band, 0.875))],
-      plotLines: [
-        ...buildTransitionLines(night.transitions),
-        ...(showsNow
-          ? [
-              {
-                value: now,
-                color: 'var(--schedule-today)',
-                width: 2,
-                zIndex: MARKER_LINE_Z,
-                className: 'schedule-today',
-                label: {
-                  text: 'now',
-                  style: NOW_LABEL,
-                },
-              },
-            ]
-          : []),
-      ],
+      plotLines: [...buildTransitionLines(night.transitions), ...nowMarker(now, night.interval, 'now')],
     },
   });
-};

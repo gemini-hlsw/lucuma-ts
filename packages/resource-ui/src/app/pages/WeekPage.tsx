@@ -7,10 +7,11 @@ import { useOpenNight } from '@/app/useOpenNight';
 import { useSelection } from '@/app/useSelection';
 import { NightStepper } from '@/components/ui/NightStepper';
 import { PageHeader } from '@/components/ui/PageHeader';
-import { ErrorAlert, Loading } from '@/components/ui/PageStatus';
+import { EmptyPanel, ErrorAlert, Loading } from '@/components/ui/PageStatus';
+import { toApiInterval } from '@/domain/adapters';
 import { addDays } from '@/domain/semester';
 import { nightAt } from '@/domain/timeline';
-import { buildWeekChanges } from '@/domain/weekBriefing';
+import { buildWeekChanges } from '@/domain/weekChanges';
 import { buildWeekTimeline, WEEK_NIGHTS } from '@/domain/weekTimeline';
 import { TimelineChart, TimelineLegendBar } from '@/features/timeline/TimelineChart';
 import {
@@ -19,9 +20,9 @@ import {
   telescopeLegendExtras,
   tooLegendExtras,
 } from '@/features/timeline/timelineOptions';
-import { WeekChangesTable } from '@/features/week/WeekBriefing';
+import { WeekChangesTable } from '@/features/week/WeekChangesTable';
 import { buildWeekChartOptions } from '@/features/week/weekChartOptions';
-import { toApiInterval, useWeekSchedule } from '@/gql/hooks';
+import { useWeekSchedule } from '@/gql/hooks';
 
 /** A week is long enough that the marker needs no fine tick. */
 const NOW_TICK_MS = 5 * 60_000;
@@ -79,6 +80,8 @@ export default function WeekPage(): JSX.Element {
     components: nightComponents.components,
   });
 
+  const nothingRecorded = week.nights.every((night) => !night.dataAvailable);
+
   const step = (days: number): void => {
     setObservingNight(addDays(observingNight, days));
   };
@@ -120,7 +123,9 @@ export default function WeekPage(): JSX.Element {
 
       {loading && <Loading what="the week" />}
 
-      {!loading && (
+      {!loading && nothingRecorded && <EmptyPanel>Nothing is recorded for this week.</EmptyPanel>}
+
+      {!loading && !nothingRecorded && (
         <>
           <TimelineLegendBar
             legend={week}

@@ -2,6 +2,7 @@ import { skipToken, useQuery } from '@apollo/client/react';
 import { isNullish } from '@gemini-hlsw/lucuma-common-ui';
 
 import {
+  type ApiInterval,
   type NightComponents,
   toComponentAvailability,
   toComponents,
@@ -17,7 +18,6 @@ import type {
   InstrumentAvailabilityBlock,
   InstrumentComponent,
   InstrumentComponentAvailabilityBlock,
-  Interval,
   PublishedSemester,
   Site,
   TelescopeAvailabilityBlock,
@@ -73,17 +73,6 @@ export interface ScheduleResult {
   readonly loading: boolean;
   readonly error: Error | undefined;
 }
-
-/** An interval as the API takes it: ISO instants, not epoch millis. */
-export interface ApiInterval {
-  readonly start: string;
-  readonly end: string;
-}
-
-export const toApiInterval = (interval: Interval): ApiInterval => ({
-  start: new Date(interval.start).toISOString(),
-  end: new Date(interval.end).toISOString(),
-});
 
 /** `skip` covers the first render, before the picker has resolved which semester is shown. */
 export const useSemesterSchedule = (site: Site, bounds: ApiInterval | null): ScheduleResult => {

@@ -191,10 +191,6 @@ body {
     background: color-mix(in oklab, var(--xp-green) 40%, transparent);
   }
 
-  .xp-bottomnav-item[aria-disabled='true'] {
-    color: var(--color-foreground-muted);
-  }
-
   .xp-bottomnav-item > span {
     max-width: 100%;
     line-height: 1.15;
@@ -259,7 +255,7 @@ body {
   outline-offset: -2px;
 }
 
-.p-selectbutton.seg-sm .p-button {
+.p-selectbutton.segmented .p-button {
   padding: 2.8px 7.7px;
   font-size: var(--text-xs);
 }

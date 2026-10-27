@@ -10,11 +10,10 @@ import type { JSX } from 'react';
 
 import type { TimelineLegend } from '@/domain/timeline';
 
+import { INSTRUMENT_LABEL, instrumentColor } from './instruments';
 import {
   CLOSURE_LABEL,
   formatterPoint,
-  INSTRUMENT_LABEL,
-  instrumentColor,
   type LegendExtra,
   type TimelinePointCustom,
   tooltipHtml,

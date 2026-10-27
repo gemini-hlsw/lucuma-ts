@@ -5,7 +5,7 @@ interface PageHeaderProps {
   readonly title: string;
   /** The line under the title: what the page shows, in its own words. */
   readonly children?: ReactNode;
-  /** The page's own controls - a night stepper, a view toggle - pushed right. */
+  /** The page's own controls - a night stepper, a semester picker - pushed right. */
   readonly actions?: ReactNode;
 }
 

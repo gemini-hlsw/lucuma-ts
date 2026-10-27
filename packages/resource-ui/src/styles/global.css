@@ -20,7 +20,6 @@
   --color-warning-fill: oklch(41.4% 0.112 45.904deg);
   --color-warning-edge: oklch(66.6% 0.179 58.318deg);
   --color-warning-ink: oklch(96.2% 0.059 95.617deg);
-  --color-warning: oklch(87.9% 0.169 91.605deg);
   --color-danger-fill: oklch(39.6% 0.141 25.723deg);
   --color-danger-edge: oklch(50.5% 0.213 27.518deg);
   --color-danger-ink: oklch(93.6% 0.032 17.717deg);
@@ -164,8 +163,6 @@
   --schedule-band: rgb(231 0 11 / 22%);
   --schedule-band-edge: rgb(231 0 11 / 70%);
   --schedule-closed: #b91c1c;
-
-  /* A hole in the record: a dark veil. */
   --schedule-no-data: rgb(10 10 10 / 78%);
 
   /* Night lines are faint on purpose: at thirty a month they are a texture, not a grid. */

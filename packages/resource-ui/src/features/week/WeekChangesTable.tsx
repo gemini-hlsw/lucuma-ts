@@ -6,9 +6,9 @@ import type { JSX } from 'react';
 import { EmptyPanel } from '@/components/ui/PageStatus';
 import { displayTimeZone, type TimeDisplay, zoneFormatters } from '@/domain/siteTime';
 import type { Site } from '@/domain/types';
-import type { WeekChange } from '@/domain/weekBriefing';
+import type { WeekChange } from '@/domain/weekChanges';
 import { LOCATION_LABEL } from '@/features/components/componentLabels';
-import { INSTRUMENT_LABEL } from '@/features/timeline/timelineOptions';
+import { INSTRUMENT_LABEL } from '@/features/timeline/instruments';
 
 const whenFormat = zoneFormatters('en-GB', {
   weekday: 'short',
