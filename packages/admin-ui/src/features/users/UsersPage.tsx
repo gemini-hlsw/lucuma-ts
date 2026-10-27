@@ -16,7 +16,6 @@ import {
   PARTNER_NAME,
   PARTNERS,
   type RoleType,
-  rosterHasMore,
   type RosterUser,
   useAddRole,
   useDeleteRole,
@@ -50,8 +49,8 @@ const sameRole = (a: RoleKey | null, b: RoleKey): boolean => a !== null && a.typ
 export default function UsersPage(): JSX.Element {
   const toast = useToastApi();
   const { data, loading, error } = useUsers();
-  const users = useMemo(() => (data ? mapRosterUsers(data) : []), [data]);
-  const truncated = data ? rosterHasMore(data) : false;
+  const users = useMemo(() => (data ? mapRosterUsers(data.users.matches) : []), [data]);
+  const truncated = data?.users.hasMore ?? false;
   const [addRole] = useAddRole();
   const [deleteRole] = useDeleteRole();
   const [globalFilter, setGlobalFilter] = useState('');

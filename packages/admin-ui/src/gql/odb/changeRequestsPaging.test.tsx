@@ -3,17 +3,17 @@ import { describe, expect, it } from 'vitest';
 
 import { type MockedResponseOf, renderWithContext } from '@/test/render';
 
-import type { AdminChangeRequestsResult } from './changeRequests';
 import {
   CHANGE_REQUESTS_QUERY,
   PROGRAM_CONFIGURATION_REQUESTS_QUERY,
   useChangeRequests,
   useProgramConfigurationRequests,
 } from './changeRequests';
+import type { ConfigurationRequestItemFragment } from './gen/graphql';
 
 const STAFF_TOKEN = fakeJwt(standardUser('staff'));
 
-type RawRequest = AdminChangeRequestsResult['configurationRequests']['matches'][number];
+type RawRequest = ConfigurationRequestItemFragment;
 
 /** A minimal ConfigurationRequest match; only `id` and `program.id` matter here. */
 const cr = (id: string, programId: string): RawRequest => ({

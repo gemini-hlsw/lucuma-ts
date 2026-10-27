@@ -2,8 +2,8 @@ import { fakeJwt, standardUser } from '@gemini-hlsw/lucuma-common-ui/testing';
 import { describe, expect, it } from 'vitest';
 import { userEvent } from 'vitest/browser';
 
-import type { AdminCfpsResult } from '@/gql/odb/cfp';
 import { CFPS_QUERY } from '@/gql/odb/cfp';
+import type { CallForProposalsItemFragment } from '@/gql/odb/gen/graphql';
 import { type MockedResponseOf, renderWithContext } from '@/test/render';
 
 import CfpPage from './CfpPage';
@@ -19,7 +19,7 @@ const limits = () => ({
 });
 
 /** One existing Gemini call, so the page has a selection to fall back to. */
-const existingCall = (): AdminCfpsResult['callsForProposals']['matches'][number] => ({
+const existingCall = (): CallForProposalsItemFragment => ({
   __typename: 'CallForProposals',
   id: 'c-100',
   existence: 'PRESENT',
@@ -43,9 +43,7 @@ const existingCall = (): AdminCfpsResult['callsForProposals']['matches'][number]
   subaru: null,
 });
 
-const cfpsMock = (
-  matches: AdminCfpsResult['callsForProposals']['matches'] = [existingCall()],
-): MockedResponseOf<typeof CFPS_QUERY> => ({
+const cfpsMock = (matches: CallForProposalsItemFragment[] = [existingCall()]): MockedResponseOf<typeof CFPS_QUERY> => ({
   request: { query: CFPS_QUERY, variables: { offset: null } },
   maxUsageCount: Infinity,
   result: {

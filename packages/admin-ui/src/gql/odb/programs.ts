@@ -7,7 +7,6 @@ import { useMutation, useQuery } from '@apollo/client/react';
 import { parseNumber } from '@gemini-hlsw/lucuma-common-ui';
 
 import type { Allocation, Program } from '../types';
-import type { DocumentType } from './gen';
 import { graphql } from './gen';
 import type {
   AllocationInput,
@@ -336,11 +335,9 @@ export function useAssignContactScientists(): {
   return { assign, loading: adding || linking };
 }
 
-export type AdminProgramsResult = DocumentType<typeof PROGRAMS_QUERY>;
-
 /** Map Program rows onto the editable Program view shape. */
-export function mapPrograms(raw: AdminProgramsResult): Program[] {
-  return raw.programs.matches.map((p: ProgramItemFragment): Program => {
+export function mapPrograms(matches: readonly ProgramItemFragment[]): Program[] {
+  return matches.map((p): Program => {
     // Hide the ODB's sentinel bounds (1901/2099) — they mean "not set yet".
     const activeStart = p.active?.start === '1901-01-01' ? '' : (p.active?.start ?? '');
     const activeEnd = p.active?.end === '2099-12-31' ? '' : (p.active?.end ?? '');

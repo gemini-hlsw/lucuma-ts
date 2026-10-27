@@ -3,15 +3,10 @@ import { describe, expect, it } from 'vitest';
 import { executionDigest } from '@/test/factories';
 
 import type { ChangeRequest } from '../types';
-import {
-  type AdminChangeRequestsResult,
-  groupChangeRequestsByProgram,
-  mapChangeRequests,
-  observationsByIdFrom,
-} from './changeRequests';
-import type { ObservationItemFragment } from './gen/graphql';
+import { groupChangeRequestsByProgram, mapConfigurationRequests, observationsByIdFrom } from './changeRequests';
+import type { ConfigurationRequestItemFragment, ObservationItemFragment } from './gen/graphql';
 
-type RawRequest = AdminChangeRequestsResult['configurationRequests']['matches'][number];
+type RawRequest = ConfigurationRequestItemFragment;
 
 function request(overrides: Partial<RawRequest>): RawRequest {
   return {
@@ -64,32 +59,26 @@ function request(overrides: Partial<RawRequest>): RawRequest {
   };
 }
 
-const result = (matches: RawRequest[]): AdminChangeRequestsResult => ({
-  configurationRequests: { __typename: 'ConfigurationRequestSelectResult', matches, hasMore: false },
-});
-
-describe(mapChangeRequests, () => {
+describe(mapConfigurationRequests, () => {
   it('carries staff feedback through, distinct from the PI justification', () => {
-    const [c] = mapChangeRequests(
-      result([
-        request({
-          status: 'DENIED',
-          justification: 'PI wants darker skies',
-          feedback: 'Denied: no dark time left this semester',
-        }),
-      ]),
-    );
+    const [c] = mapConfigurationRequests([
+      request({
+        status: 'DENIED',
+        justification: 'PI wants darker skies',
+        feedback: 'Denied: no dark time left this semester',
+      }),
+    ]);
     expect(c?.feedback).toBe('Denied: no dark time left this semester');
     expect(c?.justification).toBe('PI wants darker skies');
   });
 
   it('reads an unresolved request\u2019s absent feedback as empty', () => {
-    const [c] = mapChangeRequests(result([request({ feedback: null })]));
+    const [c] = mapConfigurationRequests([request({ feedback: null })]);
     expect(c?.feedback).toBe('');
   });
 
   it('projects coordinates, instrument/site, and a percentile-based conditions string', () => {
-    const [c] = mapChangeRequests(result([request({})]));
+    const [c] = mapConfigurationRequests([request({})]);
     expect(c?.programId).toBe('p-172');
     expect(c?.programReference).toBe('G-2027B-0172-Q');
     expect(c?.pi).toBe('Andrew Stephens');
@@ -110,29 +99,27 @@ describe(mapChangeRequests, () => {
   });
 });
 
-describe('mapChangeRequests PI fallback', () => {
+describe('mapConfigurationRequests PI fallback', () => {
   it('renders a partial profile with just the available name parts', () => {
-    const [c] = mapChangeRequests(
-      result([
-        request({
-          program: {
-            __typename: 'Program',
-            id: 'p-1',
-            name: 'T',
-            reference: null,
-            pi: {
-              __typename: 'ProgramUser',
-              id: 'm-1',
-              user: {
-                __typename: 'User',
-                id: 'u-1',
-                profile: { __typename: 'UserProfile', givenName: 'Ada', familyName: null },
-              },
+    const [c] = mapConfigurationRequests([
+      request({
+        program: {
+          __typename: 'Program',
+          id: 'p-1',
+          name: 'T',
+          reference: null,
+          pi: {
+            __typename: 'ProgramUser',
+            id: 'm-1',
+            user: {
+              __typename: 'User',
+              id: 'u-1',
+              profile: { __typename: 'UserProfile', givenName: 'Ada', familyName: null },
             },
           },
-        }),
-      ]),
-    );
+        },
+      }),
+    ]);
     expect(c?.pi).toBe('Ada');
     expect(c?.programReference).toBe('p-1'); // falls back to the id
   });

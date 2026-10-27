@@ -3,7 +3,7 @@ import { fakeJwt, standardUser } from '@gemini-hlsw/lucuma-common-ui/testing';
 import { describe, expect, it } from 'vitest';
 import { userEvent } from 'vitest/browser';
 
-import type { AdminProgramsResult } from '@/gql/odb/programs';
+import type { ProgramItemFragment } from '@/gql/odb/gen/graphql';
 import {
   mapPrograms,
   programPropertiesInput,
@@ -26,7 +26,7 @@ const REFERENCE = `G-${currentSemester()}-0397-D`;
 const SECOND_REFERENCE = `G-${currentSemester()}-0398-Q`;
 const THIRD_REFERENCE = `G-${currentSemester()}-0499-Q`;
 
-type RawProgram = AdminProgramsResult['programs']['matches'][number];
+type RawProgram = ProgramItemFragment;
 
 /** A Director's Time program — the shape sc-10439 was reported against. Its
  *  proposal carries no Queue fields, and the mapper collapses the subtype to
@@ -326,7 +326,7 @@ describe(ProgramsPage, () => {
 /** The mapped program a fixture yields, so a save mock can be built from the
  *  same values the page will send. */
 function mapped(raw: RawProgram = directorsTimeProgram()) {
-  const [p] = mapPrograms({ programs: { __typename: 'ProgramSelectResult', matches: [raw] } });
+  const [p] = mapPrograms([raw]);
   if (!p) throw new Error('fixture did not map');
   return p;
 }
