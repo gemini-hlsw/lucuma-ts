@@ -477,8 +477,7 @@ const LABEL_DISTANCE = 15;
 
 /**
  * What the gutter reserves for type, in rem, so a reader who raises their font size gets a wider
- * gutter rather than a clipped heading. `labelAdvance.test.ts` measures every string the gutter can
- * print against it, under the letter-spacing WCAG 1.4.12 lets a reader impose.
+ * gutter rather than a clipped heading.
  */
 const GUTTER_TEXT_REM = 7;
 

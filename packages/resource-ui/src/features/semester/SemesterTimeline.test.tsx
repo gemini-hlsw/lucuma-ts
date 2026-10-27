@@ -2,7 +2,7 @@
  * A grid item defaults to `min-width: auto`, so the column wedges open at the first width.
  *
  * The gutter is a pixel budget, and a budget spent in the wrong face measures nothing, so this file
- * loads the app's styling for its font stack - the fourth exception CLAUDE.md names.
+ * loads the app's styling for its font stack.
  */
 import '@/styles/global.css';
 import '@/styles/main.css';

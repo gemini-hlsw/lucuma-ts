@@ -176,7 +176,6 @@ Text is a white-opacity ladder (Material dark), not a grey ramp:
 - **Secondary** `rgb(255 255 255 / 60%)` - supporting text, idle control labels.
 - **Muted** `rgb(255 255 255 / 38%)` - decorative or duplicated text only. 38% white fails AA
   on every surface above, at any size, so it may never be the only carrier of information.
-  `src/test/cssMirrors.test.ts` pins both halves of that against those surfaces.
 
 ### Data colours
 
@@ -283,9 +282,7 @@ step these six do not reinstate, so those classes compile to nothing and the tex
 whatever it inherits. Nothing catches that - no build error, no lint, no visible break - so the six
 steps are the only guard. An arbitrary size like `text-[20px]` is unchecked in the same way and does
 compile, which makes it the quieter mistake: a size only its own component knows, off the scale
-every other surface reads from. `src/test/textTokens.test.ts` asserts that tailwind-merge reads
-every `@theme` text role as a size, and fails on one it would take for a colour - which a merge
-drops with nothing to show for it.
+every other surface reads from.
 
 `DENSE` and `TICK` in `features/timeline/timelineOptions.ts` mirror `--text-xs` and `--text-2xs`
 for the chart options, which need the number rather than the `var()` - a label measuring NaN

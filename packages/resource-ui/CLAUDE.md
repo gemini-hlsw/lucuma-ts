@@ -299,13 +299,6 @@ hold, auth header, toasts) run the real links ahead of canned answers through `s
   budget - is the exception, and imports only what it needs. Loading `global.css` + `main.css` means
   also putting `.dark` in scope, on the root as `main.tsx` does or around the subject, or none of the
   theme's rules apply. Grep the existing exceptions before adding one.
-- **A value the stylesheet owns and code restates is pinned in `src/test/cssMirrors.test.ts`**: the chart
-  copies of the type tokens, every `var()` the code names, the per-instrument ink contrast, each alert
-  panel's ink on its own fill, the foreground ladder against every surface, and the hand-written masthead
-  breakpoint. It reads the CSS as text rather
-  than loading it, so it is not a fifth exception. The foreground block pins both directions, since
-  "muted is decoration only" is a claim about what must _fail_ 4.5:1 as much as what must clear it. Add
-  the pin with the mirror, or the next reader has no way to know the two must agree.
 - **The URL hooks in `src/app/` are driven through the URL**, not through `renderHook`: `test/probe.tsx` renders
   a hook inside the real router, prints what a test asserts on and offers buttons standing in for the app's
   controls. One `Probe` per route, though - two routes rendering it at the same position let React reuse the
