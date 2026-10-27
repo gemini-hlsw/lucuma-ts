@@ -1,5 +1,5 @@
 import { useImportObservation } from '@Contexts/Variables/Modals/OdbImport/useImportObservation';
-import { isNullish, List } from '@gemini-hlsw/lucuma-common-ui';
+import { isNullish, List, useToastApi } from '@gemini-hlsw/lucuma-common-ui';
 import { dateToLocalObservingNight } from '@gemini-hlsw/lucuma-core';
 import { useConfiguration } from '@gql/configs/Configuration';
 import { useObservationById } from '@gql/odb/Observation';
@@ -11,7 +11,6 @@ import { Divider } from 'primereact/divider';
 import { useCanEdit } from '@/components/atoms/auth';
 import { useSetCatalogVisible } from '@/components/atoms/catalog';
 import { useSetOdbVisible } from '@/components/atoms/odb';
-import { useToast } from '@/Helpers/toast';
 
 interface ParamsInterface {
   prevPanel: () => void;
@@ -29,7 +28,7 @@ export function TelescopeTitle({ prevPanel, nextPanel }: ParamsInterface) {
   const [getObservation, { loading: getObservationLoading }] = useObservationById();
   const [refreshEphemerisFiles, { loading: refreshLoading }] = useRefreshEphemerisFiles();
 
-  const toast = useToast();
+  const toast = useToastApi();
 
   async function reimportObservation() {
     if (!configuration?.obsId) return;
@@ -42,17 +41,15 @@ export function TelescopeTitle({ prevPanel, nextPanel }: ParamsInterface) {
 
     if (data?.observation) {
       await importObservation(data.observation);
-      toast?.show({
-        severity: 'success',
-        summary: 'Observation reimported',
-        detail: `Observation ${data.observation.id} (ref ${configuration.obsReference ?? 'unknown'}) has been reimported successfully.`,
-      });
+      toast.success(
+        'Observation reimported',
+        `Observation ${data.observation.id} (ref ${configuration.obsReference ?? 'unknown'}) has been reimported successfully.`,
+      );
     } else {
-      toast?.show({
-        severity: 'error',
-        summary: 'Reimport failed',
-        detail: `Observation ${configuration?.obsId} (ref ${configuration.obsReference ?? 'unknown'}) could not be found in the ODB.`,
-      });
+      toast.error(
+        'Reimport failed',
+        `Observation ${configuration?.obsId} (ref ${configuration.obsReference ?? 'unknown'}) could not be found in the ODB.`,
+      );
     }
   }
 
@@ -61,11 +58,7 @@ export function TelescopeTitle({ prevPanel, nextPanel }: ParamsInterface) {
 
     const { data } = await refreshEphemerisFiles({ variables: { observingNight } });
     if (data?.refreshEphemerisFiles.result === 'SUCCESS') {
-      toast?.show({
-        severity: 'success',
-        summary: 'Success',
-        detail: `Ephemerides refreshed (for ${observingNight})`,
-      });
+      toast.success('Success', `Ephemerides refreshed (for ${observingNight})`);
     }
   }
 

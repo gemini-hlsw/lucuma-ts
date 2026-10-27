@@ -1,6 +1,6 @@
 import './UsersPage.css';
 
-import { when } from '@gemini-hlsw/lucuma-common-ui';
+import { useToastApi, when } from '@gemini-hlsw/lucuma-common-ui';
 import { Checkbox } from 'primereact/checkbox';
 import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
@@ -9,7 +9,6 @@ import { type JSX, useMemo, useState } from 'react';
 import { DataSourceBadge } from '@/components/DataSourceBadge';
 import { SearchInput } from '@/components/SearchInput';
 import { Tile } from '@/components/Tile';
-import { useToast } from '@/components/toastContext';
 import { friendlyError } from '@/gql/errors';
 import {
   mapRosterUsers,
@@ -49,7 +48,7 @@ const sameRole = (a: RoleKey | null, b: RoleKey): boolean => a !== null && a.typ
  * header is a toggle that facets the table down to holders of that role.
  */
 export default function UsersPage(): JSX.Element {
-  const toast = useToast();
+  const toast = useToastApi();
   const { data, loading, error } = useUsers();
   const users = useMemo(() => (data ? mapRosterUsers(data) : []), [data]);
   const truncated = data ? rosterHasMore(data) : false;

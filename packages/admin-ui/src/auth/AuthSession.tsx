@@ -1,8 +1,8 @@
+import { useToastApi } from '@gemini-hlsw/lucuma-common-ui';
 import { useSetAtom } from 'jotai';
 import { useEffect, useRef } from 'react';
 
 import { odbTokenAtom, useOdbTokenValue, useTokenExp, useUser } from '@/components/atoms/auth';
-import { useToast } from '@/components/toastContext';
 
 import { EXPIRATION_ANTICIPATION_SECONDS } from './environments';
 import * as sso from './ssoClient';
@@ -17,7 +17,7 @@ import * as sso from './ssoClient';
  * Renders nothing; mount once inside the Jotai provider.
  */
 export function AuthSession(): null {
-  const toast = useToast();
+  const toast = useToastApi();
   const token = useOdbTokenValue();
   const user = useUser();
   const exp = useTokenExp();

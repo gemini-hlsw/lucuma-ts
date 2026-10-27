@@ -8,6 +8,7 @@ import {
   LayerGroup,
   type User,
   UserIcon,
+  useToast,
 } from '@gemini-hlsw/lucuma-common-ui';
 import { Button } from 'primereact/button';
 import { Menu } from 'primereact/menu';
@@ -23,7 +24,6 @@ import orcidLogo from '@/assets/orcid-logo.svg';
 import { signOut } from '@/auth/session';
 import { signInUrl } from '@/auth/ssoClient';
 import { type SessionStatus, useSessionStatus, useSignedOutElsewhere, useUser } from '@/components/atoms/auth';
-import { useToast } from '@/components/atoms/toast';
 import { AboutResource } from '@/components/layout/AboutResource';
 import { SegmentedControl, type SegmentedOption } from '@/components/ui/SegmentedControl';
 import { FOCUS_RING } from '@/components/ui/styles';

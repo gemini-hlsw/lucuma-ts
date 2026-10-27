@@ -1,6 +1,6 @@
 import './Layout.css';
 
-import { Bars, cn, Copy, SignOut, VERSION_SUFFIX } from '@gemini-hlsw/lucuma-common-ui';
+import { Bars, cn, Copy, SignOut, useToastApi, VERSION_SUFFIX } from '@gemini-hlsw/lucuma-common-ui';
 import { useSetAtom } from 'jotai';
 import { Dialog } from 'primereact/dialog';
 import { Dropdown } from 'primereact/dropdown';
@@ -12,7 +12,6 @@ import { CURRENT_ENV } from '@/auth/environments';
 import * as sso from '@/auth/ssoClient';
 import { displayName, type StandardRole } from '@/auth/user';
 import { odbTokenAtom, useIsLoggedIn, useUser } from '@/components/atoms/auth';
-import { useToast } from '@/components/toastContext';
 import { VersionCheck } from '@/components/VersionCheck';
 
 /** The build version in Explore's `DATE-COMMIT-ENV` form (sc-9615): the
@@ -68,7 +67,7 @@ export default function Layout(): JSX.Element {
   // Keep the lucuma-ui-css dark theme class on <body> (explore is dark-only).
   useTheme('dark');
 
-  const toast = useToast();
+  const toast = useToastApi();
   const [aboutOpen, setAboutOpen] = useState(false);
   const user = useUser();
   const isLoggedIn = useIsLoggedIn();

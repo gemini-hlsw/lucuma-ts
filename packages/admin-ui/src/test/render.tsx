@@ -1,4 +1,5 @@
 import type { MockLink } from '@apollo/client/testing';
+import { ToastOutlet } from '@gemini-hlsw/lucuma-common-ui';
 import { AtomsAndApollo } from '@gemini-hlsw/lucuma-common-ui/testing';
 import { PrimeReactProvider } from 'primereact/api';
 import type { ReactElement } from 'react';
@@ -6,7 +7,6 @@ import { MemoryRouter } from 'react-router';
 import { render } from 'vitest-browser-react';
 
 import { odbTokenAtom } from '@/components/atoms/auth';
-import { ToastProvider } from '@/components/toast';
 
 // The typed-mock helper is shared from common-ui; re-exported so tests can keep
 // importing it alongside renderWithContext from this module.
@@ -29,9 +29,8 @@ export function renderWithContext(
   return render(
     <AtomsAndApollo initialValues={[[odbTokenAtom, token]]} mocks={mocks}>
       <PrimeReactProvider>
-        <ToastProvider>
-          <MemoryRouter initialEntries={[route]}>{ui}</MemoryRouter>
-        </ToastProvider>
+        <ToastOutlet position="bottom-right" />
+        <MemoryRouter initialEntries={[route]}>{ui}</MemoryRouter>
       </PrimeReactProvider>
     </AtomsAndApollo>,
   );

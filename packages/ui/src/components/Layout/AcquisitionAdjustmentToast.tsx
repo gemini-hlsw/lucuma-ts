@@ -1,11 +1,11 @@
 import offsetsReceivedMp3 from '@assets/sounds/offsets-received.mp3';
 import offsetsReceivedWebm from '@assets/sounds/offsets-received.webm';
+import { useToast } from '@gemini-hlsw/lucuma-common-ui';
 import { useAcquisitionAdjustmentState } from '@gql/server/AcquisitionAdjustment';
 import type { ToastMessage } from 'primereact/toast';
 import { useEffect } from 'react';
 
 import { useAudio } from '@/Helpers/hooks';
-import { useToast } from '@/Helpers/toast';
 
 import { AcquisitionAdjustmentPrompt } from './AcquisitionAdjustmentPrompt';
 

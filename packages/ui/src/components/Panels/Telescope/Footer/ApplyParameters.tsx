@@ -1,11 +1,10 @@
+import { useToastApi } from '@gemini-hlsw/lucuma-common-ui';
 import { useConfigureTcs } from '@gql/server/TcsConfiguration';
 import { useTcsConfigInput } from '@Telescope/Targets/inputs';
 import { Button } from 'primereact/button';
 
-import { useToast } from '@/Helpers/toast';
-
 export function ApplyParameters({ canEdit }: { canEdit: boolean }) {
-  const toast = useToast();
+  const toast = useToastApi();
 
   const [configureTcs, { loading: configureTcsLoading }] = useConfigureTcs();
   const { data: tcsConfigInput, loading: inputLoading, detail } = useTcsConfigInput();
@@ -20,11 +19,7 @@ export function ApplyParameters({ canEdit }: { canEdit: boolean }) {
         },
       });
     } else {
-      toast?.show({
-        severity: 'warn',
-        summary: 'Cannot apply parameters',
-        detail,
-      });
+      toast.warn('Cannot apply parameters', detail);
     }
   };
 

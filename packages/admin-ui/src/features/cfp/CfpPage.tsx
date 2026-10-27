@@ -1,6 +1,15 @@
 import './CfpPage.css';
 
-import { CircleCheck, CircleXMark, Copy, NumberInput, Plus, Upload, XMark } from '@gemini-hlsw/lucuma-common-ui';
+import {
+  CircleCheck,
+  CircleXMark,
+  Copy,
+  NumberInput,
+  Plus,
+  Upload,
+  useToastApi,
+  XMark,
+} from '@gemini-hlsw/lucuma-common-ui';
 import { Button } from 'primereact/button';
 import { Checkbox } from 'primereact/checkbox';
 import { Column, type ColumnSortEvent } from 'primereact/column';
@@ -12,7 +21,6 @@ import { Fragment, type JSX, useMemo, useState } from 'react';
 
 import { DataSourceBadge } from '@/components/DataSourceBadge';
 import { Tile } from '@/components/Tile';
-import { useToast } from '@/components/toastContext';
 import { useRowSelection } from '@/components/useRowSelection';
 import { friendlyError } from '@/gql/errors';
 import {
@@ -86,7 +94,7 @@ function sortByLabel(label: (c: CallForProposals) => string) {
  * updateCallsForProposals / createCallForProposals mutations.
  */
 export default function CfpPage(): JSX.Element {
-  const toast = useToast();
+  const toast = useToastApi();
   const { data, loading, incomplete, error } = useCfps();
   const cfps = useMemo(() => (data ? mapCfps(data) : EMPTY_CFPS), [data]);
   const [updateCfp, { loading: updating }] = useUpdateCfp();

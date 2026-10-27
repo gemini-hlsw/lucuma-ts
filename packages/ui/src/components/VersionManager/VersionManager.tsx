@@ -1,13 +1,11 @@
-import { isNotNullish, RotateRight } from '@gemini-hlsw/lucuma-common-ui';
+import { isNotNullish, RotateRight, useToast } from '@gemini-hlsw/lucuma-common-ui';
 import { useVersion as useConfigsVersion } from '@gql/configs/Version';
 import { useVersion as useServerVersion } from '@gql/server/Version';
 import { Button } from 'primereact/button';
 import type { ToastMessage } from 'primereact/toast';
-import { Toast } from 'primereact/toast';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { frontendVersion } from '@/Helpers/constants';
-import { useToast } from '@/Helpers/toast';
 import { fetchDeployedUiVersion } from '@/Helpers/version';
 
 // 1 minute
@@ -21,7 +19,6 @@ const pollInterval = 1000 * 60;
  *   has been deployed.
  */
 export function VersionManager() {
-  const toastRef = useRef<Toast>(null);
   const toast = useToast();
 
   const server = useServerVersion({ pollInterval });
@@ -74,7 +71,7 @@ export function VersionManager() {
     [deployedUiVersion, checkAndShowNewVersion],
   );
 
-  return <Toast ref={toastRef} />;
+  return null;
 }
 
 /**

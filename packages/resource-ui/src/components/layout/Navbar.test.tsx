@@ -1,4 +1,4 @@
-import { VERSION_SUFFIX } from '@gemini-hlsw/lucuma-common-ui';
+import { toastAtom, VERSION_SUFFIX } from '@gemini-hlsw/lucuma-common-ui';
 import type { MockedResponseOf } from '@gemini-hlsw/lucuma-common-ui/testing';
 import { NIGHT_SCHEDULE_QUERY } from '@gql/resource';
 import type { ToastMessage } from 'primereact/toast';
@@ -14,7 +14,6 @@ import { SESSION_CHANNEL, SESSION_TIMINGS, SIGNED_OUT_MESSAGE, startSession } fr
 import { signInUrl } from '@/auth/ssoClient';
 import { sessionCheckedAtom, setToken } from '@/components/atoms/auth';
 import { store } from '@/components/atoms/store';
-import { toastAtom } from '@/components/atoms/toast';
 import { ToastOutlet } from '@/components/ui/ToastOutlet';
 import { observingNightInterval } from '@/domain/siteTime';
 import { toApiInterval } from '@/gql/hooks';

@@ -12,7 +12,7 @@ import { BatchHttpLink } from '@apollo/client/link/batch-http';
 import { SetContextLink } from '@apollo/client/link/context';
 import { ErrorLink } from '@apollo/client/link/error';
 import { GraphQLWsLink } from '@apollo/client/link/subscriptions';
-import { withAbsoluteUri } from '@gemini-hlsw/lucuma-common-ui';
+import { toastAtom, withAbsoluteUri } from '@gemini-hlsw/lucuma-common-ui';
 import { SERVER_CONFIGURATION } from '@gql/server/ServerConfiguration';
 import { OperationTypeNode } from 'graphql/language';
 import { createClient as createWsClient } from 'graphql-ws';
@@ -20,7 +20,6 @@ import { createClient as createWsClient } from 'graphql-ws';
 import { odbTokenAtom } from '@/components/atoms/auth';
 import { wsIsConnectedAtom } from '@/components/atoms/connection';
 import { store } from '@/components/atoms/store';
-import { toastAtom } from '@/Helpers/toast';
 
 const navigateServerURI = withAbsoluteUri('/navigate/graphql');
 const navigateServerWsURI = withAbsoluteUri('/navigate/ws', true);
