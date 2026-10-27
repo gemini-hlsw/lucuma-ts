@@ -51,10 +51,7 @@ export async function refreshSession(signal?: AbortSignal, timeoutMs = REFRESH_T
   }
 }
 
-export function signInUrl(returnTo: string = window.location.href): string {
-  const target = new URL(returnTo, window.location.origin);
-  const state = target.origin === window.location.origin ? target : new URL('/', window.location.origin);
-  return sso.signInUrl(CURRENT_ENV.ssoUri, state.toString());
-}
+export const signInUrl = (returnTo: string = window.location.href): string =>
+  sso.signInUrl(CURRENT_ENV.ssoUri, returnTo);
 
 export const logout = (): Promise<void> => sso.logout(CURRENT_ENV.ssoUri);

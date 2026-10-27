@@ -8,7 +8,6 @@ describe(environmentFor, () => {
       name: 'development',
       graphqlEndpoint: 'https://resource-api-dev.gemini.edu/resource/graphql',
       ssoUri: 'https://sso-dev.gpp.gemini.edu',
-      versionSuffix: 'DEV',
     });
   });
 
@@ -17,7 +16,14 @@ describe(environmentFor, () => {
       name: 'staging',
       graphqlEndpoint: 'https://resource-api-test.gemini.edu/resource/graphql',
       ssoUri: 'https://sso-test.gpp.gemini.edu',
-      versionSuffix: 'STAGING',
+    });
+  });
+
+  it('reads the production deployment off its own hostname', () => {
+    expect(environmentFor('resource.gemini.edu')).toEqual({
+      name: 'production',
+      graphqlEndpoint: 'https://resource-api.gemini.edu/resource/graphql',
+      ssoUri: 'https://sso.gpp.gemini.edu',
     });
   });
 
@@ -28,7 +34,6 @@ describe(environmentFor, () => {
         name: 'development',
         graphqlEndpoint: '/resource/graphql',
         ssoUri: 'https://sso-dev.gpp.gemini.edu',
-        versionSuffix: 'DEV',
       });
     },
   );

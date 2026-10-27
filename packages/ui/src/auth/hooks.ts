@@ -9,15 +9,15 @@ import { useToast } from '@/Helpers/toast';
 import type { StandardRole } from './user';
 
 /**
- * Hook to get the SSO login page URL
+ * Hook to get the SSO login page URL. SSO returns to the page that sent the user
+ * to sign in, or to the root when there is none.
  */
 export function useSignInURL() {
   const location = useLocation();
   const { ssoUri } = useServerConfigValue();
   const signinURL = useMemo(() => {
     const from = (location.state as LocationInterface)?.from?.pathname ?? '/';
-    const state = new URL(from, window.location.origin);
-    return sso.signInUrl(ssoUri, state.toString());
+    return sso.signInUrl(ssoUri, from);
   }, [location.state, ssoUri]);
 
   return signinURL;
