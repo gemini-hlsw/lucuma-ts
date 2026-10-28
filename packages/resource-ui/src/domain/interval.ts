@@ -1,7 +1,13 @@
 import type { Interval } from './types';
 
-/** Both finders ask this of their own record type, so it is generic over anything with an interval. */
-export const overlaps = (a: Interval, b: Interval): boolean => a.start < b.end && b.start < a.end;
+/** The overlap of two intervals, or null when they miss. */
+export const clip = (interval: Interval, bounds: Interval): Interval | null => {
+  const start = Math.max(interval.start, bounds.start);
+  const end = Math.min(interval.end, bounds.end);
+  return start < end ? { start, end } : null;
+};
+
+export const overlaps = (a: Interval, b: Interval): boolean => clip(a, b) !== null;
 
 /** Where consecutive records meet, or the two edges of the gap between them. */
 export const transitionsOf = (records: readonly { readonly interval: Interval }[]): readonly number[] =>

@@ -8,7 +8,7 @@ so") and `/components` ("where is the R400 grating"). **v1 is read-only**: Resou
 reproduces schedules that already exist; nothing edits them. [CLAUDE.md](CLAUDE.md) is
 the working guide and design record.
 
-React 19 + Apollo Client + Highcharts (XRange) + react-big-calendar + PrimeReact +
+React 19 + Apollo Client + Highcharts (XRange) + PrimeReact +
 Tailwind CSS 4. The schema is the backend's, from `@gemini-hlsw/lucuma-odb-schemas/resource`
 (gemini-hlsw/lucuma-odb#3050); where it and this package disagree, the backend wins.
 CLAUDE.md lists the operations the UI runs and records the v1 scope trims.

@@ -1,7 +1,5 @@
 import { toastAtom, VERSION_SUFFIX } from '@gemini-hlsw/lucuma-common-ui';
-import type { MockedResponseOf } from '@gemini-hlsw/lucuma-common-ui/testing';
 import { fakeJwt, standardUser } from '@gemini-hlsw/lucuma-common-ui/testing';
-import { NIGHT_SCHEDULE_QUERY } from '@gql/resource';
 import type { ToastMessage } from 'primereact/toast';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { type LocatorSelectors, page, userEvent } from 'vitest/browser';
@@ -16,10 +14,8 @@ import { signInUrl } from '@/auth/ssoClient';
 import { sessionCheckedAtom, setToken } from '@/components/atoms/auth';
 import { store } from '@/components/atoms/store';
 import { ToastOutlet } from '@/components/ui/ToastOutlet';
-import { observingNightInterval } from '@/domain/siteTime';
-import { toApiInterval } from '@/gql/hooks';
-import { publishedSemester, publishedSemesters } from '@/test/fixtures/semester';
-import { chooseClock, chooseSite, openAppMenu } from '@/test/helpers';
+import { nightSchedule } from '@/test/fixtures/night';
+import { chooseClock, chooseSite, nightAxisLabels, openAppMenu } from '@/test/helpers';
 import { renderApp, type RenderedApp } from '@/test/renderApp';
 import { ssoCall, ssoRefreshes, stubSso } from '@/test/sso';
 
@@ -40,28 +36,8 @@ const renderSignedIn = async () =>
 
 const NIGHT = '2026-11-14';
 
-/** The night page inside the real shell, with nothing recorded: the subject is the clock its header prints. */
-const NIGHT_SCHEDULE: MockedResponseOf<typeof NIGHT_SCHEDULE_QUERY> = {
-  request: {
-    query: NIGHT_SCHEDULE_QUERY,
-    variables: { site: 'GS', night: NIGHT, ...toApiInterval(observingNightInterval('GS', NIGHT)) },
-  },
-  result: {
-    data: {
-      telescopeNight: {
-        __typename: 'TelescopeNight',
-        observingNight: NIGHT,
-        dataAvailable: false,
-        interval: { __typename: 'TimestampInterval', ...toApiInterval(observingNightInterval('GS', NIGHT)) },
-      },
-      instrumentAvailability: [],
-      telescopeAvailability: [],
-      tooSupport: [],
-      telescopeMode: [],
-      telescopeSubsystemAvailability: [],
-    },
-  },
-};
+/** The night page inside the real shell: the subject is the clock its chart axis prints. */
+const NIGHT_SCHEDULE = nightSchedule({ site: 'GS', night: NIGHT });
 
 const openNightInShell = async () =>
   renderApp({
@@ -69,7 +45,7 @@ const openNightInShell = async () =>
     route: `/night?site=GS&night=${NIGHT}`,
     path: '/',
     childRoutes: [{ path: 'night', element: <NightPage /> }],
-    mocks: [publishedSemesters(publishedSemester({ site: 'GS', semester: '2026B' })), NIGHT_SCHEDULE],
+    mocks: [NIGHT_SCHEDULE],
   });
 
 const SESSION_ENDED = 'Your session ended';
@@ -149,7 +125,7 @@ describe(Navbar, () => {
   });
 
   it('links the wordmark to tonight, dropping the deep-linked night', async () => {
-    const screen = await renderNavbar('/semester?site=GS&night=2026-11-14&view=calendar');
+    const screen = await renderNavbar('/semester?site=GS&night=2026-11-14&q=GPI');
 
     const brand = screen.getByRole('link', { name: 'Resource', exact: false });
     await expect.element(brand).toHaveAttribute('href', '/night?site=GS');
@@ -263,25 +239,25 @@ describe(Navbar, () => {
 
   it('switches every clock in the app to UT', async () => {
     const screen = await openNightInShell();
-    await expect.element(screen.getByText('14:00 to 14:00 site time', { exact: false })).toBeVisible();
+    await expect.poll(() => nightAxisLabels()[0]).toBe('14:00');
 
     await chooseClock(screen, 'UTC');
-    await expect.element(screen.getByText('17:00 to 17:00 UTC', { exact: false })).toBeVisible();
+    await expect.poll(() => nightAxisLabels()[0]).toBe('18:00');
   });
 
   it('switches the clock from the keyboard, the row being the whole control', async () => {
     const screen = await openNightInShell();
-    await expect.element(screen.getByText('14:00 to 14:00 site time', { exact: false })).toBeVisible();
+    await expect.poll(() => nightAxisLabels()[0]).toBe('14:00');
 
     await openAppMenu(screen);
     await userEvent.keyboard('{ArrowDown}{ArrowDown}{Enter}');
 
-    await expect.element(screen.getByText('17:00 to 17:00 UTC', { exact: false })).toBeVisible();
+    await expect.poll(() => nightAxisLabels()[0]).toBe('18:00');
   });
 
   it('operates the clock from the keyboard - the spike kept menu-native navigation for exactly this', async () => {
     const screen = await openNightInShell();
-    await expect.element(screen.getByText('14:00 to 14:00 site time', { exact: false })).toBeVisible();
+    await expect.poll(() => nightAxisLabels()[0]).toBe('14:00');
 
     await openAppMenu(screen);
     const utc = page.getByRole('menuitemradio', { name: 'Clock: UTC', exact: true });
@@ -291,7 +267,7 @@ describe(Navbar, () => {
 
     await userEvent.keyboard('{Enter}');
 
-    await expect.element(screen.getByText('17:00 to 17:00 UTC', { exact: false })).toBeVisible();
+    await expect.poll(() => nightAxisLabels()[0]).toBe('18:00');
     await openAppMenu(screen);
     await expect
       .element(page.getByRole('menuitemradio', { name: 'Clock: UTC', exact: true }))

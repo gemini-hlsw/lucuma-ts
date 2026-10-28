@@ -4,7 +4,7 @@ import type { JSX } from 'react';
 
 import type { ResourceInstrument } from '@/domain/types';
 
-import { INSTRUMENT_LABEL, instrumentColor } from './timelineOptions';
+import { INSTRUMENT_LABEL, instrumentColor } from './instruments';
 
 interface InstrumentSwatchProps {
   readonly instrument: ResourceInstrument;

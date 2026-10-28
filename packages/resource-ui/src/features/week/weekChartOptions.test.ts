@@ -1,4 +1,4 @@
-import type { XAxisOptions } from 'highcharts';
+import type { AxisLabelsFormatterContextObject, XAxisOptions } from 'highcharts';
 import { describe, expect, it } from 'vitest';
 
 import { observingNightInterval } from '@/domain/siteTime';
@@ -56,22 +56,45 @@ describe('night headings', () => {
   });
 });
 
-describe('the sun across the week', () => {
-  it('washes every night, so the usable hours read as seven separate windows', () => {
-    const bands = buildWeekBands(build(), 'GS');
-    const daylight = bands.filter((band) => band.className === 'night-daylight');
+describe('the axis', () => {
+  it('labels the tick in the middle of each night with that night, and any other value with nothing', () => {
+    const week = build();
+    const formatter = axisOf().labels?.formatter;
+    const label = (value: number) =>
+      formatter?.call({ value } as AxisLabelsFormatterContextObject, {} as never) ?? 'no formatter';
 
-    // Two daylight stretches per night - before sunset and after sunrise.
-    expect(daylight).toHaveLength(14);
-    for (const band of daylight) {
-      expect(band.zIndex).toBe(5);
-    }
+    expect(weekTickPositions(week).map(label)).toEqual([
+      'Fri 13',
+      'Sat 14',
+      'Sun 15',
+      'Mon 16',
+      'Tue 17',
+      'Wed 18',
+      'Thu 19',
+    ]);
+    expect(label(week.interval.start)).toBe('');
+  });
+
+  it('marks now, unlabelled, only while it falls inside the week', () => {
+    const week = build();
+    const marker = (now: number) => {
+      const { xAxis } = buildWeekChartOptions({ week, site: 'GS', now });
+      return (Array.isArray(xAxis) ? undefined : xAxis?.plotLines)?.filter(
+        (line) => line.className === 'schedule-today',
+      );
+    };
+
+    const inside = marker(week.interval.start + 60_000);
+
+    expect(inside?.map((line) => line.value)).toEqual([week.interval.start + 60_000]);
+    expect(inside?.[0]?.label).toBeUndefined();
+    expect(marker(week.interval.end)).toEqual([]);
   });
 });
 
 describe('nights with nothing recorded', () => {
   it('hatches an un-entered night and names it', () => {
-    const bands = buildWeekBands(build(new Set(['2026-11-14'])), 'GS');
+    const bands = buildWeekBands(build(new Set(['2026-11-14'])));
     const missing = bands.filter((band) => band.className === 'week-no-data');
 
     expect(missing).toHaveLength(6);
@@ -79,7 +102,7 @@ describe('nights with nothing recorded', () => {
   });
 
   it('hatches nothing while the answer is still in flight', () => {
-    const bands = buildWeekBands(build(undefined), 'GS');
+    const bands = buildWeekBands(build(undefined));
 
     expect(bands.filter((band) => band.className === 'week-no-data')).toEqual([]);
   });
@@ -124,7 +147,6 @@ describe('a telescope-wide closure across the week', () => {
         telescopeAvailability: [shutdown],
         nightsWithData: undefined,
       }),
-      'GS',
     ).find((band) => band.className === 'schedule-closure-band');
 
   it('spans only the nights it closes', () => {

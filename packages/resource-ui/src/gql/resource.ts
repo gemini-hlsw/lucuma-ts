@@ -66,44 +66,14 @@ export const TELESCOPE_SUBSYSTEM_AVAILABILITY_BLOCK_FRAGMENT = graphql(`
   }
 `);
 
-/** The piece's identity is nested, so a view listing what changed needs no second round trip. */
-export const INSTRUMENT_COMPONENT_AVAILABILITY_BLOCK_FRAGMENT = graphql(`
-  fragment InstrumentComponentAvailabilityBlockItem on InstrumentComponentAvailabilityBlock {
-    usage
-    location
-    note
-    interval {
-      start
-      end
-    }
-    component {
-      id
-      instrument
-      componentType
-      code
-      name
-      barcode
-      aliases
-    }
-  }
-`);
-
 export const PUBLISHED_SEMESTERS_QUERY = graphql(`
   query PublishedSemesters {
     publishedSemesters {
       site
       semester
-      title
-      version
-      demo
       nights {
         start
         end
-      }
-      holidays
-      moonEvents {
-        date
-        phase
       }
     }
   }
@@ -168,9 +138,6 @@ export const WEEK_SCHEDULE_QUERY = graphql(`
     }
     telescopeAvailability(site: $site, start: $start, end: $end, clip: false) {
       ...TelescopeAvailabilityBlockItem
-    }
-    instrumentComponentAvailability(site: $site, start: $start, end: $end, clip: false) {
-      ...InstrumentComponentAvailabilityBlockItem
     }
     tooSupport(site: $site, start: $start, end: $end, clip: false) {
       ...TooSupportBlockItem

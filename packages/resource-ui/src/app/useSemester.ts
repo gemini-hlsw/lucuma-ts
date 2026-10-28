@@ -1,6 +1,6 @@
 import { useSelection } from '@/app/useSelection';
 import { useUrlParam } from '@/app/useUrlParam';
-import { resolveSemester, semestersAtSite } from '@/domain/coverage';
+import { resolveSemester, semestersAtSite } from '@/domain/semesterChoice';
 import type { PublishedSemester } from '@/domain/types';
 import { usePublishedSemesters } from '@/gql/hooks';
 
@@ -20,8 +20,7 @@ interface SemesterSelection {
  */
 export function useSemester(): SemesterSelection {
   const { site, observingNight } = useSelection();
-  // The month names a page of one semester's calendar, so it cannot survive a semester change.
-  const [requested, setSemester] = useUrlParam('semester', '', { clears: ['month'] });
+  const [requested, setSemester] = useUrlParam('semester', '');
   const { semesters, loading, error } = usePublishedSemesters();
 
   return {

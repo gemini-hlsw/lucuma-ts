@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-09-22",
+  "generatedAt": "2026-10-26",
   "title": "Design System: Resource",
   "extensions": {
     "colorMeta": {
@@ -90,22 +90,12 @@
         "canonical": "rgb(255 255 255 / 38%)",
         "note": "Fails AA on every surface in the ladder at any size, so it may never be the only carrier of information."
       },
-      "warning": {
-        "role": "tertiary",
-        "displayName": "Amber",
-        "canonical": "oklch(87.9% 0.169 91.605deg)",
-        "tonalRamp": [
-          "oklch(41.4% 0.112 45.904deg)",
-          "oklch(66.6% 0.179 58.318deg)",
-          "oklch(87.9% 0.169 91.605deg)",
-          "oklch(96.2% 0.059 95.617deg)"
-        ],
-        "note": "The ramp is the panel triplet plus the canvas weight: fill, edge, word, ink."
-      },
       "warning-fill": {
         "role": "tertiary",
         "displayName": "Amber Panel Fill",
-        "canonical": "oklch(41.4% 0.112 45.904deg)"
+        "canonical": "oklch(41.4% 0.112 45.904deg)",
+        "tonalRamp": ["oklch(41.4% 0.112 45.904deg)", "oklch(66.6% 0.179 58.318deg)", "oklch(96.2% 0.059 95.617deg)"],
+        "note": "The warn toast panel: fill, edge, ink. Amber warns; it never celebrates."
       },
       "warning-edge": {
         "role": "tertiary",
@@ -225,12 +215,6 @@
           "source": "src/components/ui/styles.ts"
         },
         {
-          "name": "calendar event outline",
-          "appliesTo": "react-big-calendar events",
-          "css": "outline: 2px solid var(--color-gpp, hsl(122deg 39% 49%)); outline-offset: 1px;",
-          "source": "src/styles/global.css"
-        },
-        {
           "name": "segmented control outline",
           "appliesTo": ".p-selectbutton .p-button",
           "css": "outline: 2px solid var(--color-gpp-light, hsl(122deg 39% 55%)); outline-offset: -2px;",
@@ -239,7 +223,7 @@
         }
       ],
       "contrast": "The light green step, not the base one. The base green measures 2.91:1 against the translucent green an active nav item fills with, under WCAG 1.4.11’s 3:1 floor for a UI part; the light step measures 3.35:1.",
-      "shortfalls": "Week cards ride the browser-default ring, and chart bars are mouse-only with no keyboard path to a bar’s open-night action."
+      "shortfalls": "Chart bars are mouse-only with no keyboard path to a bar’s open-night action."
     },
     "unmappedTokens": [
       {
@@ -314,8 +298,8 @@
       "name": "Segmented Control",
       "kind": "nav",
       "refersTo": "segment-idle",
-      "description": "View and clock toggles. The selected segment raises its surface and carries a 2px inset action-green underline; a green fill would compete with the real action.",
-      "html": "<div class=\"ds-seg\" role=\"group\" aria-label=\"View\"><button class=\"ds-seg-btn\" type=\"button\">Chart</button><button class=\"ds-seg-btn ds-seg-btn-on\" type=\"button\" aria-pressed=\"true\">Calendar</button></div>",
+      "description": "The masthead's site toggle. The selected segment raises its surface and carries a 2px inset action-green underline; a green fill would compete with the real action.",
+      "html": "<div class=\"ds-seg\" role=\"group\" aria-label=\"Site\"><button class=\"ds-seg-btn\" type=\"button\">GN</button><button class=\"ds-seg-btn ds-seg-btn-on\" type=\"button\" aria-pressed=\"true\">GS</button></div>",
       "css": ".ds-seg { display: inline-flex; }.ds-seg-btn { font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif; font-size: var(--text-xs, 0.75rem); line-height: 1rem; min-height: 24px; padding: 2.8px 7.7px; background: var(--color-surface, #1e1e1e); border: 1px solid var(--color-subtle, #454545); color: var(--color-foreground-secondary, rgb(255 255 255 / 60%)); font-weight: 500; cursor: pointer; } .ds-seg-btn:first-child { border-radius: 4px 0 0 4px; } .ds-seg-btn:last-child { border-radius: 0 4px 4px 0; border-left: none; } .ds-seg-btn:not(.ds-seg-btn-on):hover { background: var(--color-surface-raised, #414141); color: var(--color-foreground, rgb(255 255 255 / 87%)); } .ds-seg-btn-on { background: var(--color-surface-raised, #414141); color: var(--color-foreground, rgb(255 255 255 / 87%)); font-weight: 600; box-shadow: inset 0 -2px 0 0 var(--color-gpp, hsl(122deg 39% 49%)); } .ds-seg-btn:focus-visible { outline: 2px solid var(--color-gpp-light, hsl(122deg 39% 55%)); outline-offset: -2px; }"
     },
     {
@@ -337,8 +321,8 @@
       "name": "Sidebar Navigation Item",
       "kind": "nav",
       "description": "Uppercase section label over icon+text items. The current destination fills with the action green at 40% and carries aria-current=\"page\", set by the router.",
-      "html": "<nav class=\"ds-nav\" aria-label=\"Primary navigation\"><div class=\"ds-nav-label\">Schedule</div><a class=\"ds-nav-item ds-nav-item-on\" href=\"#\" aria-current=\"page\">Night</a><a class=\"ds-nav-item\" href=\"#\">Week</a><a class=\"ds-nav-item ds-nav-item-off\" aria-disabled=\"true\">Semester</a></nav>",
-      "css": ".ds-nav { font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif; width: 196px; background: var(--color-surface, #1e1e1e); border-right: 1px solid var(--color-subtle, #454545); padding: 7px 0; } .ds-nav-label { padding: 14px 14px 7px; font-size: var(--text-xs, 0.75rem); line-height: 1rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-foreground-secondary, rgb(255 255 255 / 60%)); } .ds-nav-item { display: flex; align-items: center; gap: 7px; padding: 7px 14px; border-left: 2px solid transparent; font-size: var(--text-xs, 0.75rem); line-height: 1rem; color: var(--color-foreground-secondary, rgb(255 255 255 / 60%)); text-decoration: none; } .ds-nav-item:not(.ds-nav-item-on):not(.ds-nav-item-off):hover { background: var(--color-surface-raised, #414141); color: var(--color-foreground, rgb(255 255 255 / 87%)); } .ds-nav-item-on { border-left-color: var(--color-gpp, hsl(122deg 39% 49%)); background: color-mix(in oklab, var(--color-gpp, hsl(122deg 39% 49%)) 40%, transparent); color: #fff; } .ds-nav-item-off { color: var(--color-foreground-muted, rgb(255 255 255 / 38%)); } .ds-nav-item:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--color-gpp-light, hsl(122deg 39% 55%)); }"
+      "html": "<nav class=\"ds-nav\" aria-label=\"Primary navigation\"><div class=\"ds-nav-label\">Schedule</div><a class=\"ds-nav-item ds-nav-item-on\" href=\"#\" aria-current=\"page\">Night</a><a class=\"ds-nav-item\" href=\"#\">Week</a><a class=\"ds-nav-item\" href=\"#\">Semester</a></nav>",
+      "css": ".ds-nav { font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif; width: 196px; background: var(--color-surface, #1e1e1e); border-right: 1px solid var(--color-subtle, #454545); padding: 7px 0; } .ds-nav-label { padding: 14px 14px 7px; font-size: var(--text-xs, 0.75rem); line-height: 1rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-foreground-secondary, rgb(255 255 255 / 60%)); } .ds-nav-item { display: flex; align-items: center; gap: 7px; padding: 7px 14px; border-left: 2px solid transparent; font-size: var(--text-xs, 0.75rem); line-height: 1rem; color: var(--color-foreground-secondary, rgb(255 255 255 / 60%)); text-decoration: none; } .ds-nav-item:not(.ds-nav-item-on):hover { background: var(--color-surface-raised, #414141); color: var(--color-foreground, rgb(255 255 255 / 87%)); } .ds-nav-item-on { border-left-color: var(--color-gpp, hsl(122deg 39% 49%)); background: color-mix(in oklab, var(--color-gpp, hsl(122deg 39% 49%)) 40%, transparent); color: #fff; } .ds-nav-item:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--color-gpp-light, hsl(122deg 39% 55%)); }"
     },
     {
       "name": "Data Table",
@@ -351,7 +335,7 @@
   ],
   "narrative": {
     "northStar": "One Observatory Console",
-    "overview": "Resource is one console among the GPP applications, and it must feel like it: a reader coming from Explore (https://explore-dev.gemini.edu/) stays in the same dark, dense, matter-of-fact world. The chrome was measured from the running Explore application - the surface ladder, the white-opacity text ladder, the action green, the lightgreen identity accent - and those measured values are recorded here as tokens. Continuity is a floor, not a ceiling: where Resource can achieve clearer hierarchy, stronger accessibility, better interaction design, or more efficient use of space than Explore, it does, without breaking the family resemblance.\n\nThe surface is an information-dense engineering dashboard for experts - astronomers, night operations, staff - who scan, compare, and monitor the same views repeatedly. Density wins ties: condensed is correct here, airy is not. The interface recedes behind the record; colour is spent on identity and alarm, never on decoration. Today every view reads; mutations, auth, and a telescope scheduler builder are coming, so every pattern below is chosen to survive the arrival of editing (see Future Readiness).",
+    "overview": "Resource is one console among the GPP applications, and it must feel like it: a reader coming from Explore (https://explore-dev.gemini.edu/) stays in the same dark, dense, matter-of-fact world. The chrome was measured from the running Explore application - the surface ladder, the white-opacity text ladder, the action green, the lightgreen identity accent - and those measured values are recorded here as tokens. Continuity is a floor, not a ceiling: where Resource can achieve clearer hierarchy, stronger accessibility, better interaction design, or more efficient use of space than Explore, it does, without breaking the family resemblance.\n\nThe surface is an information-dense engineering dashboard for experts - astronomers, night operations, staff - who scan, compare, and monitor the same views repeatedly. Density wins ties: condensed is correct here, airy is not. The interface recedes behind the record; colour is spent on identity and alarm, never on decoration. Today every view reads; mutations and a telescope scheduler builder are coming, so every pattern below is chosen to survive the arrival of editing (see Future Readiness).",
     "keyCharacteristics": [
       "Dark-first and only: black canvas, tonal layering, no glare, minimal chrome.",
       "Dense: type and the boxes that hold it in rem so a reader can scale them, spacing in px so it does not.",
@@ -382,7 +366,7 @@
       },
       {
         "name": "A Gap Is a Gap",
-        "body": "Empty cells, empty calendar squares, and unrecorded spans stay empty. \"Not recorded\" must never be styled as \"closed\" or \"unavailable\" (invariant I4).",
+        "body": "Empty cells and unrecorded spans stay empty. \"Not recorded\" must never be styled as \"closed\" or \"unavailable\" (invariant I4).",
         "section": "colors"
       },
       {
@@ -407,12 +391,12 @@
       },
       {
         "name": "The One-Library Rule",
-        "body": "Every component is PrimeReact's: buttons, dialogs, menus, tables, inputs and overlays come from `primereact/*` and take the lucuma-ui theme, always. A hand-written element that imitates a component PrimeReact ships is not an option; plain HTML with Tailwind is for what PrimeReact has no component for - a caption, a live region, a line of text - never for a look-alike control.",
+        "body": "Every component is PrimeReact's: buttons, dialogs, menus, tables, inputs and overlays come from `primereact/*` and take the lucuma-ui theme, always. A hand-written element that imitates a component PrimeReact ships is not an option, whatever it would save in overrides; plain HTML with Tailwind is for what PrimeReact has no component for - a caption, a live region, a line of text - and never for a look-alike control.",
         "section": "components"
       },
       {
         "name": "The One-Glyph-Set Rule",
-        "body": "Every icon or glyph is a FontAwesome icon rendered through `FontAwesomeIcon`, sized by FontAwesome's own `size` prop: no inline SVG, no PrimeIcons. The one image is the ORCID iD logo on the login item (`src/assets/orcid-logo.svg`, the file navigate-ui's login page renders), shown in ORCID's own green rather than the theme's ink, because the mark identifies the sign-in provider and is used as ORCID publishes it. Nothing else may be an image.",
+        "body": "Every icon or glyph is a FontAwesome icon rendered through the project's `FontAwesomeIcon`, sized by FontAwesome's own `size` prop: no inline SVG, no PrimeIcons. The one image is the ORCID iD logo on the login item (`src/assets/orcid-logo.svg`, the file navigate-ui's login page renders), shown in ORCID's own green rather than the theme's ink, because the mark identifies the sign-in provider and is used as ORCID publishes it. Nothing else may be an image.",
         "section": "components"
       }
     ],

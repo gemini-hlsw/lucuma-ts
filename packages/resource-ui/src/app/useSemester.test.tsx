@@ -1,4 +1,4 @@
-/** `resolveSemester`'s own rules are unit-tested in `domain/coverage.test.ts`. */
+/** `resolveSemester`'s own rules are unit-tested in `domain/semesterChoice.test.ts`. */
 import { describe, expect, it } from 'vitest';
 
 import { publishedSemester, publishedSemesters } from '@/test/fixtures/semester';

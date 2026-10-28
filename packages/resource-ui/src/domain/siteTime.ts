@@ -58,14 +58,11 @@ export type EveningStyle =
   /** "7 Aug" - a chart tooltip, where the year is the window's own. */
   | 'dayMonth'
   /** "7 Aug 2026" - a table spanning a site's whole record, where it is not. */
-  | 'dayMonthYear'
-  /** "Sat 21 Nov" - a week card, which is read by weekday. */
-  | 'weekdayDayMonth';
+  | 'dayMonthYear';
 
 const EVENING_OPTIONS = {
   dayMonth: { day: 'numeric', month: 'short' },
   dayMonthYear: { day: 'numeric', month: 'short', year: 'numeric' },
-  weekdayDayMonth: { weekday: 'short', day: 'numeric', month: 'short' },
 } satisfies Record<EveningStyle, Intl.DateTimeFormatOptions>;
 
 const eveningFormatters = new Map<EveningStyle, Intl.DateTimeFormat>();

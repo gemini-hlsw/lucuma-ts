@@ -9,9 +9,12 @@ const fromIsoDate = (iso: string): Date => new Date(`${iso}T00:00:00Z`);
 
 /** Saturday or Sunday, read at UTC so a calendar date cannot slide under a zone. */
 export const isWeekendDate = (isoDate: string): boolean => {
-  const day = new Date(`${isoDate}T00:00:00Z`).getUTCDay();
+  const day = fromIsoDate(isoDate).getUTCDay();
   return day === 0 || day === 6;
 };
+
+/** Sunday, the day a calendar week starts on, read at UTC like `isWeekendDate`. */
+export const startsWeek = (isoDate: string): boolean => fromIsoDate(isoDate).getUTCDay() === 0;
 
 export const addDays = (iso: string, days: number): string => {
   const date = fromIsoDate(iso);

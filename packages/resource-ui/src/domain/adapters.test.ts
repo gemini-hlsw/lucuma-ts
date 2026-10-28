@@ -81,12 +81,7 @@ const semesterEntry = (nights: SemesterEntry['nights']): SemesterEntry => ({
   __typename: 'PublishedSemester',
   site: 'GS',
   semester: '2025B',
-  title: 'GS 2025B Schedule',
-  version: null,
-  demo: false,
   nights,
-  holidays: [],
-  moonEvents: [],
 });
 
 describe(toPublishedSemesters, () => {

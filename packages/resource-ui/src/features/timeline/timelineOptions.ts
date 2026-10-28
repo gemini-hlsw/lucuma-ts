@@ -4,10 +4,13 @@ import type {
   PatternObject,
   XAxisOptions,
   XAxisPlotBandsOptions,
+  XAxisPlotLinesOptions,
   XrangePointOptionsObject,
 } from 'highcharts';
 import type { CSSProperties } from 'react';
 
+import { midpoint } from '@/domain/interval';
+import { startsWeek } from '@/domain/semester';
 import { displayTimeZone, eveningLabel, firstEveningDate, lastEveningDate, type TimeDisplay } from '@/domain/siteTime';
 import {
   type BlockState,
@@ -18,6 +21,7 @@ import {
   TELESCOPE_MODE_LABEL,
   type TimelineBand,
   type TimelineBlock,
+  type TimelineNight,
   type TimelineRow,
   TOO_SUPPORT_LABEL,
   USAGE_LABEL,
@@ -26,6 +30,7 @@ import {
 // Re-exported beside the fills that draw it, so chart code has one import.
 export { USAGE_LABEL } from '@/domain/timeline';
 import type {
+  Interval,
   ResourceInstrument,
   Site,
   TelescopeAvailabilityBlock,
@@ -35,82 +40,7 @@ import type {
   TooSupportBlock,
 } from '@/domain/types';
 
-/** Keyed by the enum, so a new instrument fails to compile until it has a colour. */
-const INSTRUMENT_COLOR = {
-  ACQ_CAM: 'var(--instrument-acq-cam)',
-  ALOPEKE: 'var(--instrument-alopeke)',
-  ALTAIR: 'var(--instrument-altair)',
-  CAL_ZORRO: 'var(--instrument-cal-zorro)',
-  CANOPUS: 'var(--instrument-canopus)',
-  ENGINEERING: 'var(--instrument-engineering)',
-  F2: 'var(--instrument-f2)',
-  GCAL: 'var(--instrument-gcal)',
-  GHOST: 'var(--instrument-ghost)',
-  GMOS: 'var(--instrument-gmos)',
-  GNIRS: 'var(--instrument-gnirs)',
-  GPI: 'var(--instrument-gpi)',
-  GSAOI: 'var(--instrument-gsaoi)',
-  IGRINS2: 'var(--instrument-igrins2)',
-  IQUEYE: 'var(--instrument-iqueye)',
-  MAROON_X: 'var(--instrument-maroon-x)',
-  NIRI: 'var(--instrument-niri)',
-  SCORPIO: 'var(--instrument-scorpio)',
-  UNKNOWN: 'var(--instrument-unknown)',
-} satisfies Record<ResourceInstrument, string>;
-
-const INSTRUMENT_INK_LIGHT = 'var(--instrument-ink-light)';
-
-/** Legible only on the bright instrument fill it was chosen for; light ink reads on every chrome fill. */
-const INSTRUMENT_INK_DARK = 'var(--instrument-ink-dark)';
-
-const INSTRUMENT_INK = {
-  ACQ_CAM: INSTRUMENT_INK_DARK,
-  ALOPEKE: INSTRUMENT_INK_DARK,
-  ALTAIR: INSTRUMENT_INK_LIGHT,
-  CAL_ZORRO: INSTRUMENT_INK_DARK,
-  CANOPUS: INSTRUMENT_INK_LIGHT,
-  ENGINEERING: INSTRUMENT_INK_DARK,
-  F2: INSTRUMENT_INK_DARK,
-  GCAL: INSTRUMENT_INK_DARK,
-  GHOST: INSTRUMENT_INK_DARK,
-  GMOS: INSTRUMENT_INK_DARK,
-  GNIRS: INSTRUMENT_INK_DARK,
-  GPI: INSTRUMENT_INK_DARK,
-  GSAOI: INSTRUMENT_INK_DARK,
-  IGRINS2: INSTRUMENT_INK_DARK,
-  IQUEYE: INSTRUMENT_INK_DARK,
-  MAROON_X: INSTRUMENT_INK_LIGHT,
-  NIRI: INSTRUMENT_INK_DARK,
-  SCORPIO: INSTRUMENT_INK_DARK,
-  UNKNOWN: INSTRUMENT_INK_DARK,
-} satisfies Record<ResourceInstrument, string>;
-
-/** Published spellings, so a legend reads as the sheet does, not as the enum. */
-export const INSTRUMENT_LABEL = {
-  ACQ_CAM: 'AcqCam',
-  ALOPEKE: "'Alopeke",
-  ALTAIR: 'Altair',
-  CAL_ZORRO: 'Zorro',
-  CANOPUS: 'Canopus',
-  ENGINEERING: 'Engineering',
-  F2: 'F2',
-  GCAL: 'GCAL',
-  GHOST: 'GHOST',
-  GMOS: 'GMOS',
-  GNIRS: 'GNIRS',
-  GPI: 'GPI',
-  GSAOI: 'GSAOI',
-  IGRINS2: 'IGRINS2',
-  IQUEYE: 'IQUEYE',
-  MAROON_X: 'Maroon-X',
-  NIRI: 'NIRI',
-  SCORPIO: 'SCORPIO',
-  UNKNOWN: 'Unknown',
-} satisfies Record<ResourceInstrument, string>;
-
-export const instrumentColor = (instrument: ResourceInstrument): string => INSTRUMENT_COLOR[instrument];
-
-export const instrumentInk = (instrument: ResourceInstrument): string => INSTRUMENT_INK[instrument];
+import { INSTRUMENT_INK_DARK, INSTRUMENT_INK_LIGHT, instrumentColor, instrumentInk } from './instruments';
 
 export const UNSCHEDULED_LABEL = 'No instrument scheduled';
 /** The one name a closure has everywhere; the reason rides on the record, never on the key. */
@@ -153,12 +83,6 @@ export const tooLegendExtras = (tooSupport: readonly TooSupportBlock[]): LegendE
     swatch: { backgroundColor: tooColor(too) },
   }));
 
-/** Naming the washes is what stops a reader taking the largest painted areas for schedule facts. */
-export const skyLegendExtras = (): LegendExtra[] => [
-  { key: 'daylight', label: 'Daylight', swatch: { backgroundColor: 'var(--night-daylight-wash)' } },
-  { key: 'twilight', label: 'Twilight', swatch: { backgroundColor: 'var(--night-twilight-wash)' } },
-];
-
 export const calendarLegendExtras = (options: {
   readonly weekend?: boolean;
   readonly now?: string | false;
@@ -194,8 +118,8 @@ const engineeringPattern = (instrument: ResourceInstrument): PatternObject => ({
     path: { d: 'M 0 8 L 8 0', strokeWidth: 2.5 },
     width: 8,
     height: 8,
-    color: INSTRUMENT_INK[instrument],
-    backgroundColor: INSTRUMENT_COLOR[instrument],
+    color: instrumentInk(instrument),
+    backgroundColor: instrumentColor(instrument),
   },
 });
 
@@ -217,12 +141,12 @@ const blockColor = (block: TimelineBlock): string | PatternObject => {
   if (block.usage === 'UNAVAILABLE') {
     return 'transparent';
   }
-  return INSTRUMENT_COLOR[block.instrument];
+  return instrumentColor(block.instrument);
 };
 
 const blockBorder = (block: TimelineBlock): string | null =>
   block.state === 'MOUNTED' && block.instrument !== null && block.usage === 'UNAVAILABLE'
-    ? INSTRUMENT_COLOR[block.instrument]
+    ? instrumentColor(block.instrument)
     : null;
 
 const blockInk = (block: TimelineBlock): string => {
@@ -235,7 +159,7 @@ const blockInk = (block: TimelineBlock): string => {
   if (block.instrument === null || block.usage === 'UNAVAILABLE') {
     return 'var(--timeline-muted-text)';
   }
-  return INSTRUMENT_INK[block.instrument];
+  return instrumentInk(block.instrument);
 };
 
 export interface TimelinePointCustom {
@@ -444,14 +368,71 @@ export const closureBandPlotBand = (band: TimelineBand, labelYRem: number): XAxi
   },
 });
 
+/** The now marker, drawn only while now falls inside the window. */
+export const nowMarker = (now: number | null, window: Interval, label?: string): XAxisPlotLinesOptions[] =>
+  now !== null && now >= window.start && now < window.end
+    ? [
+        {
+          value: now,
+          color: 'var(--schedule-today)',
+          width: 2,
+          zIndex: MARKER_LINE_Z,
+          className: 'schedule-today',
+          ...(label === undefined ? {} : { label: { text: label, style: NOW_LABEL } }),
+        },
+      ]
+    : [];
+
+export const weekendBands = (nights: readonly TimelineNight[]): XAxisPlotBandsOptions[] =>
+  nights
+    .filter((night) => night.isWeekend)
+    .map((night) => ({
+      from: night.interval.start,
+      to: night.interval.end,
+      color: 'var(--schedule-weekend)',
+      className: 'schedule-weekend',
+    }));
+
+/** A week's nights are its columns; a month's are texture under the lines that start each week. */
+export const nightLines = (nights: readonly TimelineNight[], window: 'week' | 'month'): XAxisPlotLinesOptions[] =>
+  nights.map((night) =>
+    window === 'week'
+      ? {
+          value: night.interval.start,
+          color: 'var(--schedule-week-line)',
+          width: 1,
+          zIndex: WEEK_LINE_Z,
+          className: 'week-night-line',
+        }
+      : {
+          value: night.interval.start,
+          color: startsWeek(night.eveningDate) ? 'var(--schedule-week-line)' : 'var(--schedule-night-line)',
+          width: 1,
+          zIndex: NIGHT_LINE_Z,
+        },
+  );
+
+/** Every `step`th night's midpoint, where its label sits; the boundaries are the night lines. */
+export const midpointTicks = (nights: readonly TimelineNight[], step = 1): number[] =>
+  nights.filter((_, index) => index % step === 0).map((night) => midpoint(night.interval));
+
+/** Labels the tick at a night's midpoint with that night, and any other tick with nothing. */
+export const midpointLabel = (
+  nights: readonly TimelineNight[],
+  value: number | string,
+  label: (night: TimelineNight) => string,
+): string => {
+  const night = nights.find((candidate) => midpoint(candidate.interval) === Number(value));
+  return night === undefined ? '' : label(night);
+};
+
 /*
  * Every chart's stacking order, bottom to top: night lines are texture under the week lines that
- * group them; the sun washes cover both; the heading mask hides all three where a heading row runs;
- * a band labelled in that row has to clear the mask; the now marker clears everything.
+ * group them; the heading mask hides both where a heading row runs; a band labelled in that row has
+ * to clear the mask; the now marker clears everything.
  */
 export const NIGHT_LINE_Z = 1;
 export const WEEK_LINE_Z = 2;
-export const WASH_Z = 5;
 const HEADING_MASK_Z = 6;
 export const LABELLED_BAND_Z = 8;
 export const MARKER_LINE_Z = 9;
@@ -477,8 +458,7 @@ const LABEL_DISTANCE = 15;
 
 /**
  * What the gutter reserves for type, in rem, so a reader who raises their font size gets a wider
- * gutter rather than a clipped heading. `labelAdvance.test.ts` measures every string the gutter can
- * print against it, under the letter-spacing WCAG 1.4.12 lets a reader impose.
+ * gutter rather than a clipped heading.
  */
 const GUTTER_TEXT_REM = 7;
 

@@ -43,13 +43,13 @@ The destinations all draw the one published record. Today there are five; the se
 expected to grow - more paths, more endpoints, more ways of seeing the same record - and
 adding one must never mean restructuring the others:
 
-| Destination    | The question it answers                                           |
-| -------------- | ----------------------------------------------------------------- |
-| `/night`       | What is mounted, and what the telescope is doing, for one night   |
-| `/week`        | Seven nights on one continuous axis, and what changed across them |
-| `/semester`    | How long each run lasts, as a chart or as a calendar              |
-| `/instruments` | Where a named instrument is tonight, and its run history          |
-| `/components`  | Where a named piece of hardware is, and its history               |
+| Destination    | The question it answers                                         |
+| -------------- | --------------------------------------------------------------- |
+| `/night`       | What is mounted, and what the telescope is doing, for one night |
+| `/week`        | Seven nights on one continuous axis                             |
+| `/semester`    | How long each run lasts, month by month                         |
+| `/instruments` | Where a named instrument is tonight, and its run history        |
+| `/components`  | Where a named piece of hardware is, and its history             |
 
 Success is that a reader trusts what they see: no view claims a fact the record does not carry,
 and no gap is decorated to look like an answer.
@@ -102,9 +102,10 @@ the app.
 **Nothing is gated on data.** No destination is hidden or disabled because a schedule is
 missing; gating on whether a schedule exists strands the reader on one view.
 
-**Synthetic data must never pass for real.** A semester whose schedule was never published is
-marked as demo wherever it is chosen and wherever its pages are read, and a demo semester never
-merges with a real one.
+**Every semester is real.** The app reads the live Resource service, so every semester it lists
+is a published one and no page marks one as demo. Only the Semester page reads the list of
+semesters; every other view asks about its own window alone, and a night with nothing recorded
+says so whether or not a semester covers it.
 
 **A gap means "not recorded", never "unavailable"** (invariant **I4**). This is the product's
 central honesty commitment: the absence of a record is the absence of a record, and no view may
@@ -118,13 +119,12 @@ as `UNKNOWN` with its text carried alongside: a lookup question, not an error.
 
 Each is open; none is scheduled. Anything built here needs a reason recorded beside it.
 
-- **A visible "List" as a third view toggle.** A screen-reader block table already backs the
+- **A visible "List" view on the semester page.** A screen-reader block table already backs the
   semester chart, so exposing a list there is nearly free - but it adds a mode, and the
   night and week views would first need their tables built.
 - **A retry affordance on the load-failure toast**, which is message-only today.
 - **A components table on the night view.** If it returns it should answer a question
   `/components` cannot.
-- **"Jump to current month"** in the calendar, when the viewed semester holds today.
 
 ### Open with operations
 

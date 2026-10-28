@@ -17,7 +17,6 @@ colors:
   foreground: 'rgb(255 255 255 / 87%)'
   foreground-secondary: 'rgb(255 255 255 / 60%)'
   foreground-muted: 'rgb(255 255 255 / 38%)'
-  warning: 'oklch(87.9% 0.169 91.605deg)'
   warning-fill: 'oklch(41.4% 0.112 45.904deg)'
   warning-edge: 'oklch(66.6% 0.179 58.318deg)'
   warning-ink: 'oklch(96.2% 0.059 95.617deg)'
@@ -61,7 +60,7 @@ typography:
     fontWeight: 700
     letterSpacing: '0.4em'
 rounded:
-  chip: '2px'
+  swatch: '2px'
   control: '4px'
 spacing:
   spacing: '3.5px'
@@ -176,7 +175,6 @@ Text is a white-opacity ladder (Material dark), not a grey ramp:
 - **Secondary** `rgb(255 255 255 / 60%)` - supporting text, idle control labels.
 - **Muted** `rgb(255 255 255 / 38%)` - decorative or duplicated text only. 38% white fails AA
   on every surface above, at any size, so it may never be the only carrier of information.
-  `src/test/cssMirrors.test.ts` pins both halves of that against those surfaces.
 
 ### Data colours
 
@@ -199,12 +197,8 @@ Text is a white-opacity ladder (Material dark), not a grey ramp:
 - **Unknown** (`#a1a1aa` zinc): a reserved neutral outside the validated hue sets - it must
   read as "identity unresolved". Where an unknown run coincides with a named one, the named
   run wins the shared span.
-- **Amber**: unknown/warning accents, one family end to end, named as `--color-warning` (the
-  weight a warning word takes on the canvas: the calendar's and the week cards' "holiday",
-  the PrimeReact warning tags) plus a panel triplet `--color-warning-fill` / `-edge` / `-ink`
-  for the warn toast. Amber warns; it never celebrates. Two exceptions stay
-  raw: the calendar's holiday day-inset ring, which is a date accent rather than a warning,
-  and Cal-Zorro's identity hue, which happens to share the family.
+- **Amber**: the warn toast's panel triplet, `--color-warning-fill` / `-edge` / `-ink`, one
+  family end to end. Amber warns; it never celebrates. One exception stays raw: Cal-Zorro's identity hue, which happens to share the family.
 - **Block ink** (`#fff` / `#0a0a0a`): bar labels take whichever of light or dark clears
   4.5:1 on the fill.
 
@@ -230,7 +224,7 @@ is the plain bar; Engineering-use the same hue hatched; Not-available hollow wit
 the outline and a muted label - visually distinct from the ghost, and never red. Absence is
 drawn hollow (`schedule-ghost`), never as another identity colour, and never red either.
 
-**A Gap Is a Gap.** Empty cells, empty calendar squares, and unrecorded spans stay empty.
+**A Gap Is a Gap.** Empty cells and unrecorded spans stay empty.
 "Not recorded" must never be styled as "closed" or "unavailable" (invariant I4).
 
 ## Typography
@@ -257,14 +251,14 @@ Section and Display, so 20px would be a step with no role. Line heights tighten 
 Tailwind's remaining steps are switched off in `@theme`, which is what keeps a seventh size from
 arriving as `text-xl`. Every role below body size is a token, so a call site says the role:
 
-| Token                       | Size            | Role, and the rule for using it                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| --------------------------- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `--text-2xl` / `text-2xl`   | 1.5rem (24px)   | **Display** (600). The single glanceable fact a destination exists to answer, at most one per page, read from a step back rather than at the keyboard. A destination with no such fact does not reach for it.                                                                                                                                                                                                                                                                              |
-| `--text-lg` / `text-lg`     | 1.125rem (18px) | **Section** (600). Head a section within a destination, where a page has more than one and the reader has to find the right one. Never a substitute for Title, which names the destination itself.                                                                                                                                                                                                                                                                                         |
-| `--text-base` / `text-base` | 1rem (16px)     | **Title** (600). Name the destination the reader is on, once per page, in `PageHeader`, and nothing else. Exactly one element on a page may carry it.                                                                                                                                                                                                                                                                                                                                      |
-| `--text-sm` / `text-sm`     | 0.875rem (14px) | **Body** (400). Set anything a reader reads as words - table cells, controls, prose, messages, empty states - at this, and reach for it by default. It is set once on `body`, so an unclassed surface inherits it rather than the root.                                                                                                                                                                                                                                                    |
-| `--text-xs` / `text-xs`     | 0.75rem (12px)  | **Dense** (400-700). The chrome's own size and every dense data surface - buttons, page selects, the masthead right cluster, sidebar links, segmented controls, chart annotations, table captions, night card metadata. Pack a surface tighter than Body only where the reader is scanning rather than reading, and never go smaller. The weight is the call site's, since a chart label and a button want different emphasis at the one size. **This is the floor for informative text.** |
-| `--text-2xs` / `text-2xs`   | 0.625rem (10px) | **Tick** (400). Number an axis tick - the day numbers on the semester chart, the hour times on the night chart. Nothing else may take it, ever.                                                                                                                                                                                                                                                                                                                                            |
+| Token                       | Size            | Role, and the rule for using it                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| --------------------------- | --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--text-2xl` / `text-2xl`   | 1.5rem (24px)   | **Display** (600). The single glanceable fact a destination exists to answer, at most one per page, read from a step back rather than at the keyboard. A destination with no such fact does not reach for it.                                                                                                                                                                                                                                                         |
+| `--text-lg` / `text-lg`     | 1.125rem (18px) | **Section** (600). Head a section within a destination, where a page has more than one and the reader has to find the right one. Never a substitute for Title, which names the destination itself.                                                                                                                                                                                                                                                                    |
+| `--text-base` / `text-base` | 1rem (16px)     | **Title** (600). Name the destination the reader is on, once per page, in `PageHeader`, and nothing else. Exactly one element on a page may carry it.                                                                                                                                                                                                                                                                                                                 |
+| `--text-sm` / `text-sm`     | 0.875rem (14px) | **Body** (400). Set anything a reader reads as words - table cells, controls, prose, messages, empty states - at this, and reach for it by default. It is set once on `body`, so an unclassed surface inherits it rather than the root.                                                                                                                                                                                                                               |
+| `--text-xs` / `text-xs`     | 0.75rem (12px)  | **Dense** (400-700). The chrome's own size and every dense data surface - buttons, page selects, the masthead right cluster, sidebar links, segmented controls, chart annotations, table captions. Pack a surface tighter than Body only where the reader is scanning rather than reading, and never go smaller. The weight is the call site's, since a chart label and a button want different emphasis at the one size. **This is the floor for informative text.** |
+| `--text-2xs` / `text-2xs`   | 0.625rem (10px) | **Tick** (400). Number an axis tick - the day numbers on the semester chart, the hour times on the night chart. Nothing else may take it, ever.                                                                                                                                                                                                                                                                                                                       |
 
 Tick is the one step below the floor, and it earns the exception by carrying nothing: a tick number
 is a scale marker, scanned rather than read, one or two characters, and redundant with the axis it
@@ -283,17 +277,15 @@ step these six do not reinstate, so those classes compile to nothing and the tex
 whatever it inherits. Nothing catches that - no build error, no lint, no visible break - so the six
 steps are the only guard. An arbitrary size like `text-[20px]` is unchecked in the same way and does
 compile, which makes it the quieter mistake: a size only its own component knows, off the scale
-every other surface reads from. `src/test/textTokens.test.ts` asserts that tailwind-merge reads
-every `@theme` text role as a size, and fails on one it would take for a colour - which a merge
-drops with nothing to show for it.
+every other surface reads from.
 
 `DENSE` and `TICK` in `features/timeline/timelineOptions.ts` mirror `--text-xs` and `--text-2xs`
 for the chart options, which need the number rather than the `var()` - a label measuring NaN
 never draws.
 
 **Below Body, hierarchy is weight, case and tracking - never a smaller size.** Micro-labels -
-the environment banner, page-header control captions (SEMESTER), legend section names, calendar
-weekday headers, chart gutter group headings, the phone bar, the calendar chip - are Dense set
+the environment banner, page-header control captions (SEMESTER), legend section names, chart
+gutter group headings, the phone bar - are Dense set
 uppercase with 0.05em tracking (`tracking-wider`), and semibold or bold where their neighbours
 are not. Butterick gives 0.05-0.12em for all-caps and Bringhurst 0.05-0.10em, so 0.05em is the
 floor rather than a preference. That dress is what separates them, so **set a micro-label in
@@ -337,18 +329,15 @@ extending or fixing, rather than trusting any prose list to stay complete.
 
 Three patterns stand:
 
-- **Foreground dimmed by opacity in CSS:** `.rbc-off-range` takes an out-of-month date number
-  to 0.35, below the muted step. The square is chrome, so this reads as decoration rather than
-  a tone violation, but it is an opacity dim and not a step on the ladder.
 - **Muted carrying information at any size:** `text-foreground-muted` on text that is a
-  fact's only rendering - the semester calendar's empty message, the About
+  fact's only rendering - the About
   dialog's Endpoint caption (its value reads at Secondary) and its version line, and their kin.
   A note, an empty message, a "not recorded" where-reading and a history row's status word are
   the pattern already at Secondary; copy those. Grep `text-foreground-muted`; whatever is not
   genuinely decorative, a disabled affordance or a duplicate belongs to this set.
 - **A fixed px size on a box that holds text:** the masthead and banner heights, the 28px control
-  line, and the 196px sidebar column. The words do not grow their box. The bottom bar, the calendar
-  height and the filter and page controls are already on the right side of the rule, being
+  line, and the 196px sidebar column. The words do not grow their box. The bottom bar
+  and the filter and page controls are already on the right side of the rule, being
   `min-height` and rem. A new fixed box is a bug, not a precedent.
 
 Each fix lands as its own change. The pattern descriptions define the set; no instance list
@@ -363,7 +352,7 @@ masthead (surface, 1px subtle bottom border) carries four things and no more: th
 account name and menu. A fixed-width
 (196px) sidebar groups navigation under uppercase section labels (SCHEDULE: Semester, Week,
 Night; INVENTORY: Instruments, Components). The remaining viewport is the workspace: one
-scroll container, `PageHeader` (title, subtitle, right-hand controls slot), then content at
+scroll container, `PageHeader` (title, right-hand controls slot), then content at
 full width. This structure is the starting point, not a law - if a future workflow (the
 scheduler builder above all) needs a different frame, change the frame rather than forcing
 the workflow into it, but keep masthead selections global and page controls local.
@@ -379,9 +368,9 @@ the workflow into it, but keep masthead selections global and page controls loca
     Deleted, Back off a site change would pop the parameter and the memory would put the same
     site straight back, and a copied URL would open at the recipient's site, not the sender's.
   - **Semester is the semester page's.** Only /semester reads a semester, so its picker lives
-    in that page's header beside Chart|Calendar, page-scoped through the URL with `month`
-    dropping alongside. Night and week derive what they need from the night they report on, the
-    finders from tonight. A stale `?semester=` elsewhere is unread, not scrubbed.
+    in that page's header, page-scoped through the URL, and lists each semester by its plain name.
+    Night and week read no semester at all, and the finders answer for tonight. A stale
+    `?semester=` elsewhere is unread, not scrubbed.
   - **Clock is the reader's.** Site time or UTC is a reading habit, not part of a shared link,
     so it lives in the menu under SETTINGS and persists per browser rather than in the URL.
     Page-scoped parameters live in the URL per page, defaults deleted rather than written.
@@ -496,15 +485,15 @@ another, move it up the ladder.
 
 ## Shapes
 
-Rectangles, small radii, 1px borders. Controls and panels round at 4px; calendar chips at
+Rectangles, small radii, 1px borders. Controls and panels round at 4px; legend swatches at
 2px; chart tooltips at 6px; nothing pill-shaped,
-nothing circular except status dots and moon-phase icons. Form
+nothing circular except status dots. Form
 language for schedule data is exact: bars are rectangles whose edges are facts (half-open
 intervals - an end is exclusive; the deliberate 3px corner radius softens a corner without
 moving one), so bars must never be given rounding or padding that would move an edge off
 its time. Meaning rides on fill treatment: solid =
 recorded use, hatched = engineering use, hollow dashed outline = absence, translucent wash =
-closure band or daylight. A 1px `rgb(255 255 255 / 12%)` border separates adjacent blocks
+closure band. A 1px `rgb(255 255 255 / 12%)` border separates adjacent blocks
 that share a hue.
 
 ## Components
@@ -533,9 +522,8 @@ Nothing else may be an image.
 Five states, stated once here because they are the app's and not any one component's. A section
 below adds only what is particular to its component.
 
-- **Focus.** Every interactive element shows a visible action-green focus indicator, using one of
-  the two shared treatments - the calendar events' 2px outline offset 1px, or `FOCUS_RING` (a 2px
-  inset ring, `components/ui/styles.ts`). The ring is the green's **light** step
+- **Focus.** Every interactive element shows a visible action-green focus indicator, using
+  `FOCUS_RING` (a 2px inset ring, `components/ui/styles.ts`). The ring is the green's **light** step
   (`--color-gpp-light`): the base green measures 2.91:1 against the translucent green an active
   nav item fills with, under 1.4.11's 3:1 floor for a UI part, where the light step measures
   3.35:1 and gains contrast everywhere else too. A segmented control takes that same light green
@@ -546,21 +534,20 @@ below adds only what is particular to its component.
 - **Hover.** A hovered surface climbs one step of the ladder, to Raised (`#414141`), and its text
   brightens to foreground. The primary button is the one exception: it lightens its own fill to
   `--color-gpp-light` rather than climbing the neutral ladder.
-- **Disabled.** An icon button drops to 40% opacity and takes the default cursor; a disabled
-  navigation item drops its text to muted. Muted carrying a disabled affordance is the sanctioned
-  case, not a tone violation. Whether a disabled control must also say _why_ is Future Readiness's
+- **Disabled.** An icon button drops to 40% opacity and takes the default cursor. Muted carrying a
+  disabled affordance is the sanctioned case, not a tone violation. Whether a disabled control must also say _why_ is Future Readiness's
   rule, and it arrives with editing.
 - **Selected.** The selected member of a set raises its surface, brightens its text to foreground,
-  and carries a 2px inset action-green underline. Selection is never a green fill: choosing a view
+  and carries a 2px inset action-green underline. Selection is never a green fill: choosing a site
   is navigation, not a success state, and a fill would compete with the real action.
 - **Active.** The current destination fills with the action green at 40% and carries
   `aria-current="page"`, set by the router rather than by hand, so the highlight cannot drift from
   what is announced.
 
-**Shipped shortfalls, queued like the type deviations:** week cards ride the browser-default ring,
-chart bars are mouse-only with no keyboard path to a bar's open-night action (nights stay reachable
-through the date controls until bars get a focusable treatment), and `FOCUS_RING` is worn only by
-the masthead and the phone bar today.
+**Shipped shortfalls, queued like the type deviations:** chart bars are mouse-only with no
+keyboard path to a bar's open-night action (nights stay reachable through the date controls
+until bars get a focusable treatment), and `FOCUS_RING` is worn only by the masthead and the
+phone bar today.
 
 ### Buttons
 
@@ -586,11 +573,11 @@ the masthead and the phone bar today.
   `size` prop, so it alone is given the menu glyphs' box, 1.25em by 1em, as utilities, and the
   icon column stays aligned.
 
-### Segmented controls (view/clock toggles)
+### Segmented controls (the site toggle)
 
 Idle segments are surface-on-subtle with secondary text; the selected segment takes the shared
-Selected treatment and the shared focus **outline**, both under Interaction states. Compact
-variant (`seg-sm`) for chart-corner toggles.
+Selected treatment and the shared focus **outline**, both under Interaction states. Sized
+compact, since its one home is the masthead.
 
 ### Page-header selects
 
@@ -640,8 +627,8 @@ default blue already clear the bar with the ink the theme gives them.
 The three states a page shows instead of content, as three distinct components, never one
 that decides: `ErrorAlert` (reserved danger red, `role="alert"`, the error's own message
 verbatim), `Loading`, and `EmptyPanel` (neutral - never red, never a warning: a gap means
-"not recorded"). The night view alone has three distinct empty states, one carrying a
-button.
+"not recorded"). The night and week views each put an `EmptyPanel` in place of the chart when
+nothing is recorded for any of their nights.
 
 **The loader.** `Loading` is the one place the Resource mark (`faLayerGroup`, the wordmark's
 glyph) moves. It sits centred at the top of the data area in the brand green (`text-gpp`, 7.5:1
@@ -703,20 +690,11 @@ phrasing of a span, nothing else.
   neutral, and print their state in words - no legend section, because a colour key would
   key no distinction, and no appearance on the wide views, where three semester-constant
   rows per month would bury the runs.
-- **Legend:** one section per state row, then Instruments, then Sky and Calendar where a
-  view supplies them - six, in that order. The neutrals repeat across rows, so a repeated
+- **Legend:** one section per state row, then Instruments, then Calendar where a
+  view supplies it - five, in that order. The neutrals repeat across rows, so a repeated
   grey is keyed under the row it belongs to; a section with no keys does not render.
-- **The calendar draws no run bars, ever** - single-evening chips only, for critical events
-  (a port's instrument changing, the telescope closing with its reason, reopening). Of the
-  state record it draws only the telescope closures (the wash and its chips); Mode and ToO
-  spans do not reach the calendar at all - routine values every week would bury the runs.
-  A window-edge boundary is furniture, not news. Empty squares stay empty. More news kinds
-  are expected over time.
-- **Change feeds** (week changes table, calendar news) read ports only: a shelf change is
-  inventory, not a night's headline; a boundary on the window's edge is not a change.
-- **Every night-shaped thing opens its night view** - calendar squares, week cards, chart bars
-  route onto `/night`. What each of those must show on focus, and which of them still falls
-  short, is Interaction states above.
+- **Every night-shaped thing opens its night view** - chart bars route onto `/night`.
+  What a bar must show on focus, and how it still falls short, is Interaction states above.
 
 ### Navigation (sidebar and phone bar)
 

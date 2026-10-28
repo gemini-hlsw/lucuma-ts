@@ -1,5 +1,4 @@
 import { when } from '@gemini-hlsw/lucuma-common-ui';
-import { Button } from 'primereact/button';
 import type { JSX } from 'react';
 
 import { useClockPreference } from '@/app/useClockPreference';
@@ -8,9 +7,7 @@ import { useSelection } from '@/app/useSelection';
 import { NightStepper } from '@/components/ui/NightStepper';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { EmptyPanel, ErrorAlert, Loading } from '@/components/ui/PageStatus';
-import { SemesterTitleLink } from '@/components/ui/SemesterTitleLink';
-import { coverageRanges, nearestCoveredNight, semesterHolding } from '@/domain/coverage';
-import { moonPhaseAt, moonPhaseLabel } from '@/domain/moon';
+import { toApiInterval } from '@/domain/adapters';
 import { buildNightTimeline } from '@/domain/nightTimeline';
 import { addDays } from '@/domain/semester';
 import { observingNightInterval } from '@/domain/siteTime';
@@ -19,11 +16,10 @@ import { TimelineChart, TimelineLegendBar } from '@/features/timeline/TimelineCh
 import {
   calendarLegendExtras,
   modeLegendExtras,
-  skyLegendExtras,
   telescopeLegendExtras,
   tooLegendExtras,
 } from '@/features/timeline/timelineOptions';
-import { toApiInterval, useNightSchedule, usePublishedSemesters } from '@/gql/hooks';
+import { useNightSchedule } from '@/gql/hooks';
 
 /** A night is short enough that the marker should keep up with the clock. */
 const NOW_TICK_MS = 60_000;
@@ -32,11 +28,9 @@ const NOW_TICK_MS = 60_000;
 export default function NightPage(): JSX.Element {
   const { site, observingNight, tonight, setObservingNight, clearObservingNight } = useSelection();
   const timeDisplay = useClockPreference();
-  const { semesters, loading: loadingSets, error: setsError } = usePublishedSemesters();
   const now = useNow(NOW_TICK_MS);
 
   const interval = observingNightInterval(site, observingNight);
-  const held = semesterHolding(semesters, site, observingNight);
 
   const {
     instrumentAvailability,
@@ -61,19 +55,10 @@ export default function NightPage(): JSX.Element {
 
   const options = buildNightChartOptions({ night, site, now, timeDisplay });
 
-  const failure = setsError ?? error;
-  const moon = moonPhaseLabel(moonPhaseAt((interval.start + interval.end) / 2));
-  const busy = loadingSets || loading;
-
-  // Only read on the no-data path; cheap enough not to gate on it.
-  const ranges = coverageRanges(semesters, site);
-  const nearest = nearestCoveredNight(ranges, observingNight);
-
   return (
     <div className="min-w-0">
       <PageHeader
         title={`Night of ${observingNight}`}
-        demo={held?.demo === true}
         actions={
           <NightStepper
             value={observingNight}
@@ -88,61 +73,27 @@ export default function NightPage(): JSX.Element {
             isTonight={observingNight === tonight}
           />
         }
-      >
-        {clockLabel(interval.start, site, timeDisplay)} to {clockLabel(interval.end, site, timeDisplay)}{' '}
-        {timeDisplay === 'utc' ? 'UTC' : 'site time'}, labelled by the date it ends. {moon}.
-        {when(held, (held) => (
-          <>
-            {' '}
-            <SemesterTitleLink semester={held} />.
-          </>
-        ))}
-      </PageHeader>
+      />
 
-      {when(failure, (failure) => (
-        <ErrorAlert what="the night" error={failure} />
+      {when(error, (error) => (
+        <ErrorAlert what="the night" error={error} />
       ))}
 
-      {busy && <Loading what="the night" />}
+      {loading && <Loading what="the night" />}
 
-      {!busy && held === null && (
-        <EmptyPanel>
-          <p>
-            No published schedule covers this night at {site}.
-            {ranges.length > 0 &&
-              ` Published nights at ${site} run ${ranges
-                .map((range) => `${range.firstNight} to ${range.lastNight}${range.demo ? ' (synthetic demo)' : ''}`)
-                .join(', and ')}.`}
-          </p>
-          {when(nearest, (nearest) => (
-            <Button
-              size="small"
-              outlined
-              className="mt-2"
-              onClick={() => {
-                setObservingNight(nearest);
-              }}
-            >
-              Open the nearest covered night, {nearest}
-            </Button>
-          ))}
-        </EmptyPanel>
-      )}
-
-      {!busy && held !== null && dataAvailable === false && (
+      {!loading && dataAvailable === false && (
         // I4: absence is "not recorded", never "unavailable", which is why the flag is asked for.
         <EmptyPanel>Nothing is recorded for this night. That is not the same as nothing being available.</EmptyPanel>
       )}
 
       {/* Three answers, not two: `undefined` is the errored query, so `!== false` would draw an empty chart. */}
-      {!busy && held !== null && dataAvailable === true && (
+      {!loading && dataAvailable === true && (
         <>
           <TimelineLegendBar
             legend={night}
             telescope={telescopeLegendExtras(telescopeAvailability)}
             mode={modeLegendExtras(telescopeMode)}
             too={tooLegendExtras(tooSupport)}
-            sky={skyLegendExtras()}
             calendar={calendarLegendExtras({
               now: now !== null && now >= interval.start && now < interval.end && 'Now',
             })}

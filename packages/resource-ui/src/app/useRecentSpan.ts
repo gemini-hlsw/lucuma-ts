@@ -1,6 +1,6 @@
 import { useSelection } from '@/app/useSelection';
+import { type ApiInterval, toApiInterval } from '@/domain/adapters';
 import { DAY_MS, observingNightInterval } from '@/domain/siteTime';
-import { type ApiInterval, toApiInterval } from '@/gql/hooks';
 
 /** The longest window the Resource service accepts. */
 export const RECENT_DAYS = 400;

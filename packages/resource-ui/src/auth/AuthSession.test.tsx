@@ -38,12 +38,7 @@ const ONE_SEMESTER: PublishedSemestersQuery = {
       __typename: 'PublishedSemester',
       site: 'GS',
       semester: '2025B',
-      title: 'Gemini South Semester 2025B',
-      version: null,
-      demo: false,
-      holidays: [],
       nights: { __typename: 'DateInterval', start: '2025-08-02', end: '2026-02-02' },
-      moonEvents: [],
     },
   ],
 };
@@ -361,8 +356,8 @@ describe(AuthSession, () => {
 
     await expect.element(screen.getByTestId('account-control')).toHaveTextContent('Ada Lovelace');
     await expect.element(screen.getByText(NIGHT_LOADING)).not.toBeInTheDocument();
-    expect(screen.operations.toSorted()).toEqual(['NightSchedule', 'PublishedSemesters']);
-    expect(screen.authorizations).toEqual([`Bearer ${token}`, `Bearer ${token}`]);
+    expect(screen.operations).toEqual(['NightSchedule']);
+    expect(screen.authorizations).toEqual([`Bearer ${token}`]);
   });
 
   it('shows no live-server failure while requests wait on the check', async () => {
@@ -407,8 +402,8 @@ describe(AuthSession, () => {
 
     await expect.element(screen.getByTestId('account-control')).toHaveTextContent('Not signed in');
     await expect.element(screen.getByText(NIGHT_LOADING)).not.toBeInTheDocument();
-    expect(screen.operations.toSorted()).toEqual(['NightSchedule', 'PublishedSemesters']);
-    expect(screen.authorizations).toEqual([null, null]);
+    expect(screen.operations).toEqual(['NightSchedule']);
+    expect(screen.authorizations).toEqual([null]);
   });
 
   it('never draws "Not signed in" on the way to signing in from an answer at 9 s', async () => {

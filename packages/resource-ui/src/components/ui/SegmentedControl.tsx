@@ -14,7 +14,6 @@ interface SegmentedControlProps<T extends string> {
   readonly onChange: (value: T) => void;
   /** Group label for assistive tech (the control is a single logical choice). */
   readonly ariaLabel: string;
-  readonly size?: 'sm' | 'md';
   readonly testId?: string;
 }
 
@@ -30,7 +29,6 @@ export function SegmentedControl<T extends string>({
   options,
   onChange,
   ariaLabel,
-  size = 'md',
   testId,
 }: SegmentedControlProps<T>): JSX.Element {
   const items: SegmentedItem<T>[] = options.map((option) => ({
@@ -67,7 +65,7 @@ export function SegmentedControl<T extends string>({
       }}
       aria-label={ariaLabel}
       data-testid={testId}
-      className={size === 'sm' ? 'seg-sm' : undefined}
+      className="segmented"
     />
   );
 }

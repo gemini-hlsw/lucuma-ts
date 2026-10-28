@@ -4,7 +4,7 @@ import { Dropdown } from 'primereact/dropdown';
 import { InputText } from 'primereact/inputtext';
 import { type JSX, useState } from 'react';
 
-import { RECENT_DAYS, useRecentSpan } from '@/app/useRecentSpan';
+import { useRecentSpan } from '@/app/useRecentSpan';
 import { useSelection } from '@/app/useSelection';
 import { useUrlParam } from '@/app/useUrlParam';
 import { FilterField } from '@/components/ui/FilterField';
@@ -16,7 +16,6 @@ import { RecordHistoryTable } from '@/components/ui/RecordHistoryTable';
 import { type RecordStatus, StatusTag } from '@/components/ui/StatusTag';
 import { EXPANDER_COLUMN_STYLE } from '@/components/ui/styles';
 import { WhereCell, type WhereReading } from '@/components/ui/WhereCell';
-import { semesterHolding } from '@/domain/coverage';
 import {
   buildInstrumentRows,
   instrumentLocationLabel,
@@ -26,12 +25,12 @@ import {
   matchesInstrument,
   runsOf,
 } from '@/domain/instrumentFinder';
-import { eveningLabel, eveningRange, firstEveningDate, nightCount, observingNightInterval } from '@/domain/siteTime';
+import { eveningRange, nightCount, observingNightInterval } from '@/domain/siteTime';
 import { USAGE_LABEL } from '@/domain/timeline';
 import type { InstrumentAvailabilityBlock, ResourceUsage, Site } from '@/domain/types';
+import { INSTRUMENT_LABEL } from '@/features/timeline/instruments';
 import { InstrumentSwatch } from '@/features/timeline/InstrumentSwatch';
-import { INSTRUMENT_LABEL } from '@/features/timeline/timelineOptions';
-import { usePublishedSemesters, useSemesterSchedule } from '@/gql/hooks';
+import { useSemesterSchedule } from '@/gql/hooks';
 
 /** One function, so a run cannot wear one status in the table and another under it. */
 const usageStatus = (usage: ResourceUsage): RecordStatus => ({
@@ -72,12 +71,10 @@ function Runs({ runs, site }: { runs: readonly InstrumentAvailabilityBlock[]; si
 
 export default function InstrumentsPage(): JSX.Element {
   const { site, tonight } = useSelection();
-  const { semesters, loading: loadingSets, error: setsError } = usePublishedSemesters();
   const [search, setSearch] = useUrlParam('q', '', { replace: true });
   const [location, setLocation] = useUrlParam('location', '', { replace: true });
   const [expanded, setExpanded] = useState<InstrumentRow[]>([]);
 
-  const held = semesterHolding(semesters, site, tonight);
   const bounds = useRecentSpan();
 
   const { instrumentAvailability, loading, error } = useSemesterSchedule(site, bounds);
@@ -90,18 +87,11 @@ export default function InstrumentsPage(): JSX.Element {
     .filter((row) => matchesInstrument(row, search) && (location === '' || locationLabel(row) === location))
     .sort((a, b) => INSTRUMENT_LABEL[a.instrument].localeCompare(INSTRUMENT_LABEL[b.instrument]));
 
-  const onTelescope = rows.filter((row) => row.where.kind === 'PORT').length;
-  const failure = setsError ?? error;
-
   return (
     <div className="min-w-0">
-      <PageHeader title="Instruments" demo={held?.demo === true}>
-        Every instrument {site} has recorded in the past {RECENT_DAYS} days, and where it is on the night of{' '}
-        {eveningLabel(firstEveningDate(site, night))}. {onTelescope} of {rows.length} on the telescope. Open a row for
-        its runs.
-      </PageHeader>
+      <PageHeader title="Instruments" />
 
-      {failure !== undefined && <ErrorAlert what="the instruments" error={failure} />}
+      {error !== undefined && <ErrorAlert what="the instruments" error={error} />}
 
       <div className="mb-3 flex flex-wrap items-end gap-3">
         <FilterField label="Search">
@@ -134,9 +124,9 @@ export default function InstrumentsPage(): JSX.Element {
         </FilterField>
       </div>
 
-      {(loading || loadingSets) && <Loading what="the instruments" />}
+      {loading && <Loading what="the instruments" />}
 
-      {!loading && !loadingSets && (
+      {!loading && (
         <DataTable
           value={[...visible]}
           dataKey="instrument"

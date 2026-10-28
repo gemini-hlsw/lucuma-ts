@@ -61,11 +61,11 @@ describe(useOpenNight, () => {
   });
 
   it('carries the site over and leaves the page it came from behind', async () => {
-    const screen = await openProbe('/semester?site=GS&semester=2025B&view=calendar');
+    const screen = await openProbe('/semester?site=GS&semester=2025B&q=GPI');
 
     await screen.getByRole('button', { name: 'open 2025-12-24' }).click();
 
-    // Exact, not partial: an appended `&semester=` or `&view=` must fail this.
+    // Exact, not partial: an appended `&semester=` or `&q=` must fail this.
     await expect.element(screen.getByTestId(PROBE_URL_TESTID)).toHaveTextContent('/night?site=GS&night=2025-12-24');
   });
 

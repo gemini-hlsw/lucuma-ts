@@ -1,14 +1,15 @@
-import { addDays, isWeekendDate } from './semester';
-import { observingNightInterval } from './siteTime';
+import { addDays } from './semester';
 import {
   collectBlocks,
   collectStateRows,
   legendFor,
   placeBands,
   placeBlocks,
+  spanOfNights,
   type TimelineBand,
   type TimelineLegend,
   type TimelineNight,
+  timelineNights,
   type TimelineRow,
 } from './timeline';
 import type {
@@ -83,17 +84,8 @@ export const buildSemesterTimeline = ({
   tooSupport = [],
   telescopeMode = [],
 }: BuildSemesterTimelineOptions): SemesterTimeline => {
-  const nights: readonly TimelineNight[] = nightsFrom(firstNight, lastNight).map((observingNight) => {
-    const eveningDate = addDays(observingNight, -1);
-    return {
-      observingNight,
-      eveningDate,
-      interval: observingNightInterval(site, observingNight),
-      isWeekend: isWeekendDate(eveningDate),
-      // One range query carries no per-night flag; the night view is where "not recorded" is stated.
-      dataAvailable: true,
-    };
-  });
+  // One range query carries no per-night flag; the night view is where "not recorded" is stated.
+  const nights = timelineNights(site, nightsFrom(firstNight, lastNight));
 
   // The state rows join once, so every month and the block table's rows carry the same head.
   const collected = [
@@ -110,10 +102,7 @@ export const buildSemesterTimeline = ({
 
   const months = [...byMonth.entries()].map(([key, monthNights]) => {
     const [year = '0', month = '1'] = key.split('-');
-    const bounds: Interval = {
-      start: monthNights[0]?.interval.start ?? 0,
-      end: monthNights.at(-1)?.interval.end ?? 0,
-    };
+    const bounds = spanOfNights(monthNights);
 
     return {
       year: Number(year),
@@ -127,10 +116,7 @@ export const buildSemesterTimeline = ({
   });
 
   // Keyed off the whole semester, so the legend does not change as you read down the page.
-  const wholeSemester: Interval = {
-    start: nights[0]?.interval.start ?? 0,
-    end: nights.at(-1)?.interval.end ?? 0,
-  };
+  const wholeSemester = spanOfNights(nights);
   const rows = placeBlocks(collected, wholeSemester);
   const bands = placeBands(telescopeAvailability, wholeSemester);
 

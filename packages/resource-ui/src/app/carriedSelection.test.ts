@@ -23,7 +23,7 @@ describe(carrySelection, () => {
   });
 
   it('returns an empty result when none of the carried keys are present', () => {
-    const params = new URLSearchParams('semester=2025B&view=calendar');
+    const params = new URLSearchParams('semester=2025B&q=GPI');
 
     expect([...carrySelection(params).keys()]).toEqual([]);
   });

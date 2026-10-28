@@ -16,24 +16,10 @@ const ITEMS: SidebarMenuItem[] = SIDEBAR_MENU_SECTIONS.flatMap((section) => sect
 function BottomNavItem({ item }: { item: SidebarMenuItem }): JSX.Element {
   const [params] = useSearchParams();
   const search = searchString(carrySelection(params, item.carries));
-  const content = (
-    <>
-      {item.icon === undefined ? null : <FontAwesomeIcon icon={item.icon} size="sm" aria-hidden="true" />}
-      <span>{item.label}</span>
-    </>
-  );
-
-  if (item.disabled === true) {
-    return (
-      <a aria-disabled="true" className="xp-bottomnav-item">
-        {content}
-      </a>
-    );
-  }
-
   return (
     <NavLink to={{ pathname: item.to, search }} className={cn('xp-bottomnav-item', FOCUS_RING)}>
-      {content}
+      {item.icon === undefined ? null : <FontAwesomeIcon icon={item.icon} size="sm" aria-hidden="true" />}
+      <span>{item.label}</span>
     </NavLink>
   );
 }

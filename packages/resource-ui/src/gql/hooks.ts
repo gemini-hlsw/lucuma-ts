@@ -2,11 +2,10 @@ import { skipToken, useQuery } from '@apollo/client/react';
 import { isNullish } from '@gemini-hlsw/lucuma-common-ui';
 
 import {
-  type NightComponents,
+  type ApiInterval,
   toComponentAvailability,
   toComponents,
   toInstrumentAvailability,
-  toNightComponents,
   toPublishedSemesters,
   toTelescopeAvailability,
   toTelescopeMode,
@@ -17,7 +16,6 @@ import type {
   InstrumentAvailabilityBlock,
   InstrumentComponent,
   InstrumentComponentAvailabilityBlock,
-  Interval,
   PublishedSemester,
   Site,
   TelescopeAvailabilityBlock,
@@ -74,17 +72,6 @@ export interface ScheduleResult {
   readonly error: Error | undefined;
 }
 
-/** An interval as the API takes it: ISO instants, not epoch millis. */
-export interface ApiInterval {
-  readonly start: string;
-  readonly end: string;
-}
-
-export const toApiInterval = (interval: Interval): ApiInterval => ({
-  start: new Date(interval.start).toISOString(),
-  end: new Date(interval.end).toISOString(),
-});
-
 /** `skip` covers the first render, before the picker has resolved which semester is shown. */
 export const useSemesterSchedule = (site: Site, bounds: ApiInterval | null): ScheduleResult => {
   const { data, loading, error } = useQuery(
@@ -108,8 +95,6 @@ export interface NightScheduleResult extends ScheduleResult {
   /** Subsystem records over the night - PWFS1, PWFS2, LGS from the workbook. */
   readonly telescopeSubsystemAvailability: readonly TelescopeSubsystemAvailabilityBlock[];
 }
-
-const NO_COMPONENTS: NightComponents = { components: [], blocks: [] };
 
 /** One night: its records, and whether anything is recorded for it at all. */
 export const useNightSchedule = (site: Site, observingNight: string, bounds: ApiInterval): NightScheduleResult => {
@@ -136,8 +121,6 @@ export interface WeekScheduleResult extends ScheduleResult {
   readonly nightsWithData: ReadonlySet<string>;
   /** Whether the answer has arrived, so an empty set is not read as "none". */
   readonly nightsResolved: boolean;
-  /** Component records over the window, for the briefing's changes list. */
-  readonly nightComponents: NightComponents;
 }
 
 /** A week of nights: the runs crossing them, and which nights are entered. */
@@ -154,7 +137,6 @@ export const useWeekSchedule = (
   const nightsWithData = new Set(
     (data?.telescopeNights ?? []).filter((night) => night.dataAvailable).map((night) => night.observingNight),
   );
-  const nightComponents = data === undefined ? NO_COMPONENTS : toNightComponents(data.instrumentComponentAvailability);
 
   return {
     instrumentAvailability,
@@ -165,7 +147,6 @@ export const useWeekSchedule = (
     error,
     nightsWithData,
     nightsResolved: data !== undefined,
-    nightComponents,
   };
 };
 

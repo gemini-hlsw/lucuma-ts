@@ -10,11 +10,10 @@ import type { JSX } from 'react';
 
 import type { TimelineLegend } from '@/domain/timeline';
 
+import { INSTRUMENT_LABEL, instrumentColor } from './instruments';
 import {
   CLOSURE_LABEL,
   formatterPoint,
-  INSTRUMENT_LABEL,
-  instrumentColor,
   type LegendExtra,
   type TimelinePointCustom,
   tooltipHtml,
@@ -123,14 +122,12 @@ export function TimelineLegendBar({
   telescope = [],
   mode = [],
   too = [],
-  sky = [],
   calendar = [],
 }: {
   legend: TimelineLegend;
   telescope?: readonly LegendExtra[];
   mode?: readonly LegendExtra[];
   too?: readonly LegendExtra[];
-  sky?: readonly LegendExtra[];
   calendar?: readonly LegendExtra[];
 }): JSX.Element {
   const closureKey: LegendExtra = {
@@ -179,7 +176,6 @@ export function TimelineLegendBar({
           ...(legend.hasUnscheduled ? [unscheduledKey] : []),
         ]}
       />
-      <LegendSection label="Sky" entries={sky} />
       <LegendSection label="Calendar" entries={calendar} />
     </div>
   );

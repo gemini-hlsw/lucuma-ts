@@ -20,3 +20,8 @@ export async function chooseClock(sut: LocatorSelectors, label: 'Site time' | 'U
   await expect.element(choice).toBeVisible();
   await userEvent.click(choice);
 }
+
+export const nightAxisLabels = (): string[] =>
+  [...document.querySelectorAll('[data-testid="night-timeline"] .highcharts-xaxis-labels text')].map(
+    (tick) => tick.textContent ?? '',
+  );

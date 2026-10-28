@@ -1,14 +1,15 @@
-import { addDays, isWeekendDate } from './semester';
-import { observingNightInterval } from './siteTime';
+import { addDays } from './semester';
 import {
   collectBlocks,
   collectStateRows,
   legendFor,
   placeBands,
   placeBlocks,
+  spanOfNights,
   type TimelineBand,
   type TimelineLegend,
   type TimelineNight,
+  timelineNights,
   type TimelineRow,
 } from './timeline';
 import type {
@@ -56,21 +57,12 @@ export const buildWeekTimeline = ({
   telescopeMode = [],
   nightsWithData,
 }: BuildWeekTimelineOptions): WeekTimeline => {
-  const nights: readonly TimelineNight[] = weekNightLabels(firstNight).map((observingNight) => {
-    const eveningDate = addDays(observingNight, -1);
-    return {
-      observingNight,
-      eveningDate,
-      interval: observingNightInterval(site, observingNight),
-      isWeekend: isWeekendDate(eveningDate),
-      dataAvailable: nightsWithData === undefined || nightsWithData.has(observingNight),
-    };
-  });
-
-  const interval: Interval = {
-    start: nights[0]?.interval.start ?? 0,
-    end: nights.at(-1)?.interval.end ?? 0,
-  };
+  const nights = timelineNights(
+    site,
+    weekNightLabels(firstNight),
+    (observingNight) => nightsWithData === undefined || nightsWithData.has(observingNight),
+  );
+  const interval = spanOfNights(nights);
   const rows = placeBlocks(
     [
       ...collectStateRows(telescopeAvailability, tooSupport, telescopeMode),

@@ -1,6 +1,6 @@
 /*
  * The stylesheet decides which navigation answers at a width and whether the bar fits the viewport,
- * so this test file loads it - the one other exception is `chartOverlays.css`.
+ * so this test file loads it.
  */
 import '@/styles/global.css';
 import '@/styles/main.css';

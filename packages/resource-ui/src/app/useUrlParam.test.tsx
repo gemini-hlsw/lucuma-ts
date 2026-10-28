@@ -10,11 +10,11 @@ const openView = async (route: string, options?: Parameters<typeof useUrlParam>[
     route,
     element: (
       <Probe
-        use={() => useUrlParam('view', 'chart', options)}
+        use={() => useUrlParam('q', 'all', options)}
         readout={([value]) => ({ value })}
         actions={([, set]) => [
-          { label: 'calendar', run: () => set('calendar') },
-          { label: 'chart', run: () => set('chart') },
+          { label: 'gpi', run: () => set('gpi') },
+          { label: 'all', run: () => set('all') },
           { label: 'blank', run: () => set('') },
         ]}
       />
@@ -24,70 +24,62 @@ const openView = async (route: string, options?: Parameters<typeof useUrlParam>[
 
 describe(useUrlParam, () => {
   it('reads the parameter the URL carries', async () => {
-    const screen = await openView('/semester?view=calendar');
+    const screen = await openView('/instruments?q=gpi');
 
-    await expect.element(screen.getByTestId('probe-value')).toHaveTextContent('calendar');
+    await expect.element(screen.getByTestId('probe-value')).toHaveTextContent('gpi');
   });
 
   it('falls back when the URL names none, so a bare link is not a blank view', async () => {
-    const screen = await openView('/semester');
+    const screen = await openView('/instruments');
 
-    await expect.element(screen.getByTestId('probe-value')).toHaveTextContent('chart');
+    await expect.element(screen.getByTestId('probe-value')).toHaveTextContent('all');
   });
 
   it('writes a chosen value into the URL, which is what makes the view linkable', async () => {
-    const screen = await openView('/semester');
+    const screen = await openView('/instruments');
 
-    await screen.getByRole('button', { name: 'calendar' }).click();
+    await screen.getByRole('button', { name: 'gpi' }).click();
 
-    await expect.element(screen.getByTestId(PROBE_URL_TESTID)).toHaveTextContent('/semester?view=calendar');
+    await expect.element(screen.getByTestId(PROBE_URL_TESTID)).toHaveTextContent('/instruments?q=gpi');
   });
 
   it('deletes the value rather than writing it when it equals the fallback', async () => {
-    const screen = await openView('/semester?view=calendar');
+    const screen = await openView('/instruments?q=gpi');
 
-    await screen.getByRole('button', { name: 'chart' }).click();
+    await screen.getByRole('button', { name: 'all' }).click();
 
-    // Not `?view=chart`: two URLs for one state make a link say more than the sender chose.
-    await expect.element(screen.getByTestId(PROBE_URL_TESTID)).toHaveTextContent('/semester');
+    // Not `?q=all`: two URLs for one state make a link say more than the sender chose.
+    await expect.element(screen.getByTestId(PROBE_URL_TESTID)).toHaveTextContent('/instruments');
   });
 
   it('reads an empty value as the fallback too, so a cleared filter drops out of the URL', async () => {
-    const screen = await openView('/semester?view=calendar');
+    const screen = await openView('/instruments?q=gpi');
 
     await screen.getByRole('button', { name: 'blank' }).click();
 
-    await expect.element(screen.getByTestId(PROBE_URL_TESTID)).toHaveTextContent('/semester');
+    await expect.element(screen.getByTestId(PROBE_URL_TESTID)).toHaveTextContent('/instruments');
   });
 
-  it('clears its subordinate parameters in the same update, never leaving a half-changed URL', async () => {
-    const screen = await openView('/semester?view=calendar&month=2026-11', { clears: ['month'] });
+  it('pushes history by default, so the back button undoes a change', async () => {
+    const screen = await openView('/instruments');
 
-    await screen.getByRole('button', { name: 'chart' }).click();
-
-    await expect.element(screen.getByTestId(PROBE_URL_TESTID)).toHaveTextContent('/semester');
-  });
-
-  it('pushes history by default, so the back button undoes a view switch', async () => {
-    const screen = await openView('/semester');
-
-    await screen.getByRole('button', { name: 'calendar' }).click();
-    await expect.element(screen.getByTestId(PROBE_URL_TESTID)).toMatchTextContent('view=calendar');
+    await screen.getByRole('button', { name: 'gpi' }).click();
+    await expect.element(screen.getByTestId(PROBE_URL_TESTID)).toMatchTextContent('q=gpi');
 
     // The memory router's own history; `window.history.back()` would navigate the test page.
     await screen.router.navigate(-1);
 
-    await expect.element(screen.getByTestId(PROBE_URL_TESTID)).toHaveTextContent('/semester');
+    await expect.element(screen.getByTestId(PROBE_URL_TESTID)).toHaveTextContent('/instruments');
   });
 
   it('replaces history when asked, so a per-keystroke control does not bury the back button', async () => {
-    const screen = await openView('/semester', { replace: true });
+    const screen = await openView('/instruments', { replace: true });
 
-    await screen.getByRole('button', { name: 'calendar' }).click();
-    await expect.element(screen.getByTestId(PROBE_URL_TESTID)).toMatchTextContent('view=calendar');
+    await screen.getByRole('button', { name: 'gpi' }).click();
+    await expect.element(screen.getByTestId(PROBE_URL_TESTID)).toMatchTextContent('q=gpi');
 
     await screen.router.navigate(-1);
 
-    await expect.element(screen.getByTestId(PROBE_URL_TESTID)).toMatchTextContent('view=calendar');
+    await expect.element(screen.getByTestId(PROBE_URL_TESTID)).toMatchTextContent('q=gpi');
   });
 });

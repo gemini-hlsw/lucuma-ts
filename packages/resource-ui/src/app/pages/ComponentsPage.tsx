@@ -4,7 +4,7 @@ import { Dropdown } from 'primereact/dropdown';
 import { InputText } from 'primereact/inputtext';
 import { type JSX, useState } from 'react';
 
-import { RECENT_DAYS, useRecentSpan } from '@/app/useRecentSpan';
+import { useRecentSpan } from '@/app/useRecentSpan';
 import { useSelection } from '@/app/useSelection';
 import { useUrlParam } from '@/app/useUrlParam';
 import { FilterField } from '@/components/ui/FilterField';
@@ -16,8 +16,7 @@ import { RecordHistoryTable } from '@/components/ui/RecordHistoryTable';
 import { EXPANDER_COLUMN_STYLE } from '@/components/ui/styles';
 import { WhereCell } from '@/components/ui/WhereCell';
 import { buildFinderRows, type FinderRow, historyOf, matchesComponent, whereOf } from '@/domain/componentFinder';
-import { semesterHolding } from '@/domain/coverage';
-import { eveningLabel, eveningRange, firstEveningDate, nightCount, observingNightInterval } from '@/domain/siteTime';
+import { eveningRange, nightCount, observingNightInterval } from '@/domain/siteTime';
 import type {
   ComponentType,
   InstrumentAvailabilityBlock,
@@ -27,9 +26,9 @@ import type {
 } from '@/domain/types';
 import { ComponentIdentityCell, StatusCell } from '@/features/components/componentCells';
 import { componentStatus, componentWhere, TYPE_LABEL, whereLabel } from '@/features/components/componentLabels';
+import { INSTRUMENT_LABEL } from '@/features/timeline/instruments';
 import { InstrumentSwatch } from '@/features/timeline/InstrumentSwatch';
-import { INSTRUMENT_LABEL } from '@/features/timeline/timelineOptions';
-import { useComponentBrowser, usePublishedSemesters } from '@/gql/hooks';
+import { useComponentBrowser } from '@/gql/hooks';
 
 /** The piece's recent records, with "Installed" resolved to where it was. */
 function History({
@@ -68,7 +67,6 @@ function History({
 
 export default function ComponentsPage(): JSX.Element {
   const { site, tonight } = useSelection();
-  const { semesters, loading: loadingSets, error: setsError } = usePublishedSemesters();
   // The filters live in the URL, so "the R400 gratings at GS" is a sendable link.
   const [search, setSearch] = useUrlParam('q', '', { replace: true });
   const [instrumentParam, setInstrumentParam] = useUrlParam('instrument', '', { replace: true });
@@ -79,7 +77,6 @@ export default function ComponentsPage(): JSX.Element {
   // Which rows are open stays local: it is reading posture, not a finding.
   const [expanded, setExpanded] = useState<FinderRow[]>([]);
 
-  const held = semesterHolding(semesters, site, tonight);
   const bounds = useRecentSpan();
 
   const { components, componentAvailability, instrumentAvailability, loading, error } = useComponentBrowser(
@@ -139,16 +136,11 @@ export default function ComponentsPage(): JSX.Element {
     );
   };
 
-  const failure = setsError ?? error;
-
   return (
     <div className="min-w-0">
-      <PageHeader title="Components" demo={held?.demo === true}>
-        Where every instrument piece is on the night of {eveningLabel(firstEveningDate(site, night))}. Open a row for
-        its history over the past {RECENT_DAYS} days.
-      </PageHeader>
+      <PageHeader title="Components" />
 
-      {failure !== undefined && <ErrorAlert what="the components" error={failure} />}
+      {error !== undefined && <ErrorAlert what="the components" error={error} />}
 
       <div className="mb-3 flex flex-wrap items-end gap-3">
         <FilterField label="Search">
@@ -196,9 +188,9 @@ export default function ComponentsPage(): JSX.Element {
         </FilterField>
       </div>
 
-      {(loadingSets || loading) && <Loading what="the catalog" />}
+      {loading && <Loading what="the catalog" />}
 
-      {!loading && !loadingSets && (
+      {!loading && (
         <DataTable
           value={[...visible]}
           dataKey="component.id"

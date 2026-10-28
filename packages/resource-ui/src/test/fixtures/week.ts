@@ -38,7 +38,6 @@ export const weekSchedule = (
       }),
       instrumentAvailability: [],
       telescopeAvailability: [],
-      instrumentComponentAvailability: [],
       tooSupport: [],
       telescopeMode: [],
       ...blocks,

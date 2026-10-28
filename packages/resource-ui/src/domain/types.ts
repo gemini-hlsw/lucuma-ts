@@ -103,22 +103,9 @@ export interface TelescopeSubsystemAvailabilityBlock {
 export interface PublishedSemester {
   readonly site: Site;
   readonly semester: string;
-  readonly title: string;
-  readonly version: string | null;
-  /** True for a synthetic schedule that was never published - the pickers must say so. */
-  readonly demo: boolean;
   /** Both ends inclusive; the API states the range half-open and `toPublishedSemesters` converts. */
   readonly firstNight: string;
   readonly lastNight: string;
-  /** An empty list is a source that marks none, not missing data. */
-  readonly holidays: readonly string[];
-  /** New and full moons as the sheet prints them, not as we compute them. */
-  readonly moonEvents: readonly MoonEvent[];
-}
-
-export interface MoonEvent {
-  readonly date: string;
-  readonly phase: 'NEW' | 'FULL';
 }
 
 /** One operational-state value, as everywhere in Resource. */

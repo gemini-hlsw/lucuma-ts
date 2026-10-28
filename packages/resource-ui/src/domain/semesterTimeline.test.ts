@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
+import { clip } from './interval';
 import { portRowLabel, TELESCOPE_PORTS } from './ports';
 import { buildSemesterTimeline } from './semesterTimeline';
 import { observingNightInterval } from './siteTime';
-import { clip, subtract } from './timeline';
+import { subtract } from './timeline';
 import type { InstrumentAvailabilityBlock, TelescopeAvailabilityBlock } from './types';
 
 const night = (label: string) => observingNightInterval('GS', label);

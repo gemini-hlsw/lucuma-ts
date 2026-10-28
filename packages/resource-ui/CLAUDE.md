@@ -35,10 +35,8 @@ the clock toggle, finder scoping) are DESIGN.md's. The mechanics:
     parameter written back when absent (a replace, so Back is unaffected) - DESIGN.md says why
     a remembered default cannot be left implicit the way every other default is.
   - **Semester** is `app/useSemester.ts`, which owns the page-scoped `semester` param through
-    `useUrlParam` (clearing `month`) and resolves it with `domain/coverage.ts`'s
-    `resolveSemester`. Only /semester may call it. Pages needing the night's own semester -
-    the demo flag above all - use `semesterHolding`, which returns null outside coverage
-    rather than reaching for the nearest.
+    `useUrlParam` and resolves it with `domain/semesterChoice.ts`'s `resolveSemester`. Only /semester
+    may call it, and no other page reads the published semesters at all.
   - **Clock** is `app/useClockPreference.ts`, built on `app/preference.ts`: a
     `useSyncExternalStore` over `localStorage`, so every reader re-renders on a write from any
     tree. It is not in the URL. `displayTimeZone` in `domain/siteTime.ts` is still the one zone
@@ -48,16 +46,15 @@ the clock toggle, finder scoping) are DESIGN.md's. The mechanics:
   back, notifies every subscriber, and holds the session's own choice in a closure so a denied
   write costs the choice its persistence rather than its effect. Tests start with no habit -
   `src/test/setup.ts` clears storage and fires the storage event that invalidates that closure.
-- **Every night-shaped thing opens its night view through `app/useOpenNight.ts`** - calendar
-  squares, week cards, chart bars all route through the one hook.
+- **Every night-shaped thing opens its night view through `app/useOpenNight.ts`** - chart
+  bars on the week and semester charts both route through the one hook.
 - **Page-scoped parameters go through `app/useUrlParam.ts`.** Defaults are deleted from the
-  URL, not written, and subordinate parameters drop in the same update: the calendar's month
-  belongs to the calendar alone, so switching view or semester drops it.
+  URL, not written.
 - **A navigation carries `site` and `night` and nothing else**, through
   `app/carriedSelection.ts` - the one answer to what survives a link. A menu link to the
   inventory carries `site` alone (`carries` in `SidebarMenu.ts`), since those pages answer for
   tonight and never read a night. Every other parameter
-  (`semester`, `month`, `view`, `q`, `instrument`, `type`, `location`) is one page's, and is
+  (`semester`, `q`, `instrument`, `type`, `location`) is one page's, and is
   dropped at the boundary rather than following the reader into a view that never reads it.
   This is react-router's own default for `to`; carrying more would be the hand-written
   override, so a new link needs no convention, only the helper where it wants site and night.
@@ -121,19 +118,19 @@ view is empty under the sign-in toast.
 `domain/timeline.ts` produced, never from an `InstrumentAvailabilityBlock`, and both charts build on `domain/timeline.ts`
 plus `features/timeline/`. A view supplies its own axis and its own way of phrasing a span - dates and
 nights for the semester and week, clock times for a night - and nothing else. Adding a fourth window
-should not mean copying any of it. The one deliberate exception is `domain/calendarNews.ts`, which
-reads raw records because its subject is the records' own boundaries rather than placed spans.
+should not mean copying any of it: `timelineNights` and `spanOfNights` in `domain/timeline.ts` list a
+window's nights, and `timelineOptions.ts` holds the pieces every chart composes (`nowMarker`,
+`weekendBands`, `nightLines`, `midpointTicks` / `midpointLabel`, `closureBandPlotBand`).
 
-| View              | What it draws                                                                                             | Its module                                    |
-| ----------------- | --------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
-| Night             | the chart alone, plus PWFS1/PWFS2/LGS subsystem rows no other view shows                                  | `features/night/`                             |
-| Week              | the run chart, plus `WeekNightStrip` (a card per night, each one a button onto it) and `WeekChangesTable` | `domain/weekBriefing.ts`                      |
-| Semester chart    | an xrange per month: how long a run lasts                                                                 | `features/semester/`                          |
-| Semester calendar | night chrome plus single-evening critical-event chips                                                     | `domain/calendarNews.ts`, `calendarNights.ts` |
-| `/instruments`    | a row per instrument the site's records name, expanding into its runs                                     | `domain/instrumentFinder.ts`                  |
-| `/components`     | the ICTD half: the piece catalog grouped by instrument, expanding into its history                        | `domain/componentFinder.ts`                   |
+| View           | What it draws                                                                      | Its module                   |
+| -------------- | ---------------------------------------------------------------------------------- | ---------------------------- |
+| Night          | the chart alone, plus PWFS1/PWFS2/LGS subsystem rows no other view shows           | `features/night/`            |
+| Week           | the run chart alone                                                                | `features/week/`             |
+| Semester       | an xrange per month: how long a run lasts                                          | `features/semester/`         |
+| `/instruments` | a row per instrument the site's records name, expanding into its runs              | `domain/instrumentFinder.ts` |
+| `/components`  | the ICTD half: the piece catalog grouped by instrument, expanding into its history | `domain/componentFinder.ts`  |
 
-What each view may draw and how (calendar chips, change-feed rules, subsystem rows, legend
+What each view may draw and how (change-feed rules, subsystem rows, legend
 order, colour and treatment) is specified in DESIGN.md. Structural rules the code does not
 state for itself:
 
@@ -145,15 +142,8 @@ state for itself:
 - **The two browser pages are deliberately not shared.** The shapes diverge - grouped subheaders against
   a flat list, two filters against one, different expansions - and a `FinderPage` taking a dozen props
   would hide nothing. Both open a row into `components/ui/RecordHistoryTable.tsx`.
-- **A night no semester covers says what is covered** (`domain/coverage.ts`), and offers the nearest
-  covered night. A demo semester never merges with a real one.
-
-Three traps in the calendar, each of which has cost real time:
-
-- A square is the **evening** a night begins, not the night's label, or it sits a day off the grid.
-- All-day event **ends are exclusive** (local midnight after the last evening) or bars draw a day short.
-- The calendar's height is **inline in the component**, not in `global.css` - the browser tests do not
-  load the app stylesheet, and the height decides the week-row geometry.
+- **The Night page's content depends on its night query alone**: loading, error, nothing recorded
+  (`dataAvailable` false), or the chart. Whether a semester covers the night does not enter it.
 
 ## Shared modules
 
@@ -166,13 +156,15 @@ these components are DESIGN.md's; this table is the ownership map.
 | Module                                   | What it owns                                                                                                                                                                                                                                                                                                                                                             |
 | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `WhereCell`                              | A `WhereReading`: coarse presence (on the telescope / off it / not recorded), the place in words, and the change tag. `componentLabels.componentWhere` and `InstrumentsPage.instrumentWhere` map onto it, one line each.                                                                                                                                                 |
-| `PageHeader`                             | Every destination's title, synthetic flag, subtitle and right-hand controls slot.                                                                                                                                                                                                                                                                                        |
+| `PageHeader`                             | Every destination's title and right-hand controls slot.                                                                                                                                                                                                                                                                                                                  |
 | `PageStatus`                             | The three page-state components (`ErrorAlert`, `Loading`, `EmptyPanel`); which state may look like what is DESIGN.md's.                                                                                                                                                                                                                                                  |
 | `NightStepper`                           | The Tonight / arrows / date toolbar, its chrome, aria labels and cleared-input guard. The page owns the date vocabulary.                                                                                                                                                                                                                                                 |
 | `LabelledControl`                        | Binds a caption to its control **by id**, as a render prop, so the caller decides which prop carries it (`id` on an input, `inputId` on a PrimeReact Dropdown). It must not wrap the control: implicit labelling only reaches a labelable element, and a label wrapping a Dropdown named nothing and swallowed the control's words into the name ("Instrument All All"). |
 | `FilterField`                            | The finder bar's layout over `LabelledControl`. `filterOptions.countedOption` is the "(12)" suffix.                                                                                                                                                                                                                                                                      |
+| `features/timeline/instruments.ts`       | Every instrument's display name, colour and ink. The charts, the swatch and the inventory pages all read it; no page reaches into `timelineOptions.ts` for a name.                                                                                                                                                                                                       |
 | `InstrumentSwatch`                       | Colour square plus name (in `features/timeline/`, beside the palette it reads).                                                                                                                                                                                                                                                                                          |
-| `siteTime.eveningLabel` / `eveningRange` | The one evening formatter. Style is a parameter (`dayMonth`, `dayMonthYear`, `weekdayDayMonth`) because that choice is about what the page already says, never about what the date means.                                                                                                                                                                                |
+| `domain/interval.ts`                     | The one overlap rule (`clip`, with `overlaps` on top of it) and the finders' `transitionsOf`.                                                                                                                                                                                                                                                                            |
+| `siteTime.eveningLabel` / `eveningRange` | The one evening formatter. Style is a parameter (`dayMonth`, `dayMonthYear`) because that choice is about what the page already says, never about what the date means.                                                                                                                                                                                                   |
 
 - **Toasts go through the one PrimeReact `Toast` that `ToastOutlet` mounts in `main.tsx`.**
   `useToastApi()` from `@gemini-hlsw/lucuma-common-ui` is the default in components and hooks:
@@ -222,12 +214,12 @@ changing an operation or bumping the schema package, run `codegen`**; `prebuild`
   selections carry it. The `src/*/gen` entry in `eslint.config.shared.js`'s `globalIgnores` keeps the
   generated schema out of the operation rules; narrowing it turns that file into forty lint errors.
 
-One request per page load; every view gets its whole window in one response, all range queries
-`clip: false`:
+Every view gets its whole window in one response, all range queries `clip: false`. That is one
+request per page load, except on Semester, which first reads `PublishedSemesters` to learn its window:
 
 | Operation            | What it reads                                                                                                           | Views                                            |
 | -------------------- | ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
-| `PublishedSemesters` | `publishedSemesters`                                                                                                    | the shell's semester picker; every view's bounds |
+| `PublishedSemesters` | `publishedSemesters`: `site`, `semester` and the night span only                                                        | Semester: its picker and its window              |
 | `SemesterSchedule`   | `instrumentAvailability`, `telescopeAvailability`, `tooSupport`, `telescopeMode`                                        | Semester; `/instruments`, over the past 400 days |
 | `NightSchedule`      | `telescopeNight` (`dataAvailable` and the interval) plus those four and `telescopeSubsystemAvailability`                | Night                                            |
 | `WeekSchedule`       | `telescopeNights` (per-night `dataAvailable`) plus the four of `SemesterSchedule` and `instrumentComponentAvailability` | Week                                             |
@@ -239,8 +231,8 @@ GraphQL response → **pure adapters** (`src/domain/adapters.ts`) → **UI domai
 (`src/domain/types.ts`) → components. All null handling and timestamp parsing lives in the adapters;
 components never touch generated fragment shapes.
 
-`src/domain/` holds the pure modules - date, interval and semester math, the sky (`moon.ts`, `sun.ts`), the
-timeline and calendar projections, the two finders, the week briefing - each with unit tests beside it. Keep
+`src/domain/` holds the pure modules - date, interval and semester math, the
+timeline projections, the two finders - each with unit tests beside it. Keep
 date math and chart builders pure; keep components focused on rendering and interaction.
 
 ## Non-negotiables
@@ -299,13 +291,6 @@ hold, auth header, toasts) run the real links ahead of canned answers through `s
   budget - is the exception, and imports only what it needs. Loading `global.css` + `main.css` means
   also putting `.dark` in scope, on the root as `main.tsx` does or around the subject, or none of the
   theme's rules apply. Grep the existing exceptions before adding one.
-- **A value the stylesheet owns and code restates is pinned in `src/test/cssMirrors.test.ts`**: the chart
-  copies of the type tokens, every `var()` the code names, the per-instrument ink contrast, each alert
-  panel's ink on its own fill, the foreground ladder against every surface, and the hand-written masthead
-  breakpoint. It reads the CSS as text rather
-  than loading it, so it is not a fifth exception. The foreground block pins both directions, since
-  "muted is decoration only" is a claim about what must _fail_ 4.5:1 as much as what must clear it. Add
-  the pin with the mirror, or the next reader has no way to know the two must agree.
 - **The URL hooks in `src/app/` are driven through the URL**, not through `renderHook`: `test/probe.tsx` renders
   a hook inside the real router, prints what a test asserts on and offers buttons standing in for the app's
   controls. One `Probe` per route, though - two routes rendering it at the same position let React reuse the
