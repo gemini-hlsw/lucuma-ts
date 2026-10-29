@@ -1,17 +1,43 @@
 import type { JSX } from 'react';
 
 import { useOpenNight } from '@/app/useOpenNight';
+import { contains } from '@/domain/interval';
 import type { SemesterTimeline as Timeline, TimelineMonth } from '@/domain/semesterTimeline';
 import { nightAt } from '@/domain/timeline';
 import type { Site } from '@/domain/types';
-import { TimelineChart } from '@/features/timeline/TimelineChart';
+import { TimelineChart, TimelineLegendBar } from '@/features/timeline/TimelineChart';
+import { calendarLegendExtras, type LegendExtra } from '@/features/timeline/timelineOptions';
 
 import { buildSemesterMonthOptions } from './semesterMonthOptions';
 
-export { TimelineLegendBar as SemesterTimelineLegend } from '@/features/timeline/TimelineChart';
+/** Decides "Today" here, off a prop, so the page's timeline does not take `now` as a dependency. */
+export function SemesterTimelineLegend({
+  timeline,
+  now,
+  telescope,
+  mode,
+  too,
+}: {
+  timeline: Timeline;
+  now: number;
+  telescope: readonly LegendExtra[];
+  mode: readonly LegendExtra[];
+  too: readonly LegendExtra[];
+}): JSX.Element {
+  const today = timeline.months.some((month) => month.nights.some((night) => contains(night.interval, now)));
+  return (
+    <TimelineLegendBar
+      legend={timeline}
+      telescope={telescope}
+      mode={mode}
+      too={too}
+      calendar={calendarLegendExtras({ weekend: true, now: today && 'Today' })}
+    />
+  );
+}
 
-function MonthChart({ month, site, now }: { month: TimelineMonth; site: Site; now: number | null }): JSX.Element {
-  const options = buildSemesterMonthOptions({ month, site, now });
+function MonthChart({ month, site, now }: { month: TimelineMonth; site: Site; now: number }): JSX.Element {
+  const options = buildSemesterMonthOptions({ month, site });
 
   const openNight = useOpenNight();
   const openNightAt = (instant: number): void => {
@@ -27,6 +53,7 @@ function MonthChart({ month, site, now }: { month: TimelineMonth; site: Site; no
       continuesLabel="continues past this month"
       label={month.label}
       testId={`semester-month-${month.label}`}
+      now={now}
       onInstantClick={openNightAt}
       heading={
         <h3 className="mb-1 text-xs font-semibold tracking-wider text-foreground-secondary uppercase">{month.label}</h3>
@@ -42,7 +69,7 @@ export function SemesterTimeline({
 }: {
   timeline: Timeline;
   site: Site;
-  now: number | null;
+  now: number;
 }): JSX.Element {
   return (
     <div

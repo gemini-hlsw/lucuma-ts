@@ -25,3 +25,9 @@ export const nightAxisLabels = (): string[] =>
   [...document.querySelectorAll('[data-testid="night-timeline"] .highcharts-xaxis-labels text')].map(
     (tick) => tick.textContent ?? '',
   );
+
+/** Highcharts keeps a plot line it will not draw as a hidden or path-less element, so presence proves nothing. */
+export const drawnPlotLineX = (selector: string): number[] =>
+  [...document.querySelectorAll<SVGPathElement>(`.highcharts-plot-line${selector}`)]
+    .filter((line) => line.getAttribute('d') !== null && getComputedStyle(line).visibility !== 'hidden')
+    .map((line) => Number(/M\s*([\d.]+)/u.exec(line.getAttribute('d') ?? '')?.[1]));

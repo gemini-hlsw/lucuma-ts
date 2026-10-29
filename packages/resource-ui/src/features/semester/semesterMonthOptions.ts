@@ -10,7 +10,6 @@ import {
   midpointTicks,
   MUTED_TICK,
   nightLines,
-  nowMarker,
   readerPx,
   weekendBands,
 } from '@/features/timeline/timelineOptions';
@@ -43,11 +42,9 @@ export const buildMonthBands = (month: TimelineMonth): XAxisPlotBandsOptions[] =
 interface SemesterMonthModel {
   readonly month: TimelineMonth;
   readonly site: Site;
-  /** Epoch millis of "now", drawn as a marker when it lands inside the month. */
-  readonly now: number | null;
 }
 
-export const buildSemesterMonthOptions = ({ month, site, now }: SemesterMonthModel): Options =>
+export const buildSemesterMonthOptions = ({ month, site }: SemesterMonthModel): Options =>
   buildTimelineChart({
     rows: month.rows,
     site,
@@ -75,7 +72,7 @@ export const buildSemesterMonthOptions = ({ month, site, now }: SemesterMonthMod
         y: readerPx(1),
       },
       plotBands: buildMonthBands(month),
-      plotLines: [...nightLines(month.nights, 'month'), ...nowMarker(now, month.interval)],
+      plotLines: nightLines(month.nights, 'month'),
     },
     // A chart's width is not the viewport's, and only Highcharts measures its own container.
     responsive: {

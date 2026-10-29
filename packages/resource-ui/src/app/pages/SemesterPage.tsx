@@ -12,12 +12,7 @@ import { buildSemesterTimeline } from '@/domain/semesterTimeline';
 import { observingNightInterval } from '@/domain/siteTime';
 import { SemesterBlockTable } from '@/features/semester/SemesterBlockTable';
 import { SemesterTimeline, SemesterTimelineLegend } from '@/features/semester/SemesterTimeline';
-import {
-  calendarLegendExtras,
-  modeLegendExtras,
-  telescopeLegendExtras,
-  tooLegendExtras,
-} from '@/features/timeline/timelineOptions';
+import { modeLegendExtras, telescopeLegendExtras, tooLegendExtras } from '@/features/timeline/timelineOptions';
 import { useSemesterSchedule } from '@/gql/hooks';
 
 /** The semester runs for months, so the "today" marker needs no fine tick. */
@@ -57,14 +52,6 @@ export default function SemesterPage(): JSX.Element {
   const telescopeExtras = telescopeLegendExtras(telescopeAvailability);
   const modeExtras = modeLegendExtras(telescopeMode);
   const tooExtras = tooLegendExtras(tooSupport);
-  const semesterNights = timeline?.months.flatMap((month) => month.nights) ?? [];
-  const calendarExtras = calendarLegendExtras({
-    weekend: true,
-    now:
-      now !== null &&
-      semesterNights.some((night) => now >= night.interval.start && now < night.interval.end) &&
-      'Today',
-  });
 
   const failure = setsError ?? error;
 
@@ -120,11 +107,11 @@ export default function SemesterPage(): JSX.Element {
           />
 
           <SemesterTimelineLegend
-            legend={timeline}
+            timeline={timeline}
+            now={now}
             telescope={telescopeExtras}
             mode={modeExtras}
             too={tooExtras}
-            calendar={calendarExtras}
           />
           <SemesterTimeline timeline={timeline} site={selected.site} now={now} />
         </>

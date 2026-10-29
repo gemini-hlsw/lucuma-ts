@@ -23,6 +23,8 @@ import { SemesterTimeline } from './SemesterTimeline';
 const render = async (element: ReactElement) => renderBare(<MemoryRouter>{element}</MemoryRouter>);
 
 const night = (label: string) => observingNightInterval('GS', label);
+/** Inside August, so every chart also carries the now marker these measurements must not depend on. */
+const NOW = night('2026-08-10').start;
 const INSTRUMENT_BLOCKS: readonly InstrumentAvailabilityBlock[] = [
   {
     id: 'ghost',
@@ -93,7 +95,7 @@ describe(SemesterTimeline, () => {
   it('resizes its charts when the container does, not when the window does', async () => {
     const screen = await render(
       <div style={{ width: '900px' }} data-testid="host">
-        <SemesterTimeline timeline={timeline} site="GS" now={null} />
+        <SemesterTimeline timeline={timeline} site="GS" now={NOW} />
       </div>,
     );
 
@@ -109,7 +111,7 @@ describe(SemesterTimeline, () => {
   it('never lets a chart push the page sideways', async () => {
     const screen = await render(
       <div style={{ width: '320px' }} data-testid="host">
-        <SemesterTimeline timeline={timeline} site="GS" now={null} />
+        <SemesterTimeline timeline={timeline} site="GS" now={NOW} />
       </div>,
     );
 
@@ -122,7 +124,7 @@ describe(SemesterTimeline, () => {
 
     const screen = await render(
       <div style={{ width: '900px' }} data-testid="host">
-        <SemesterTimeline timeline={headedTimeline} site="GS" now={null} />
+        <SemesterTimeline timeline={headedTimeline} site="GS" now={NOW} />
       </div>,
     );
 
@@ -142,7 +144,7 @@ describe(SemesterTimeline, () => {
     document.documentElement.style.fontSize = ROOT_FONT_SIZE;
     const base = await render(
       <div style={{ width: '900px' }} data-testid="base">
-        <SemesterTimeline timeline={headedTimeline} site="GS" now={null} />
+        <SemesterTimeline timeline={headedTimeline} site="GS" now={NOW} />
       </div>,
     );
     const baseHost = base.getByTestId('base').element() as HTMLElement;
@@ -152,7 +154,7 @@ describe(SemesterTimeline, () => {
     document.documentElement.style.fontSize = '32px';
     const doubled = await render(
       <div style={{ width: '900px' }} data-testid="doubled">
-        <SemesterTimeline timeline={headedTimeline} site="GS" now={null} />
+        <SemesterTimeline timeline={headedTimeline} site="GS" now={NOW} />
       </div>,
     );
     const doubledHost = doubled.getByTestId('doubled').element() as HTMLElement;
@@ -161,7 +163,7 @@ describe(SemesterTimeline, () => {
   });
 
   it('draws a region per month, named so it can be navigated', async () => {
-    const screen = await render(<SemesterTimeline timeline={timeline} site="GS" now={null} />);
+    const screen = await render(<SemesterTimeline timeline={timeline} site="GS" now={NOW} />);
 
     await expect.element(screen.getByRole('region', { name: 'August 2026' })).toBeVisible();
   });

@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { observingNightInterval } from '@/domain/siteTime';
 import type { TelescopeAvailabilityBlock } from '@/domain/types';
 import { buildWeekTimeline } from '@/domain/weekTimeline';
-import { DENSE } from '@/features/timeline/timelineOptions';
+import { DENSE, NOW_MARKER_ID } from '@/features/timeline/timelineOptions';
 import { collectFontSizes } from '@/test/fontSizes';
 
 import {
@@ -27,7 +27,7 @@ const build = (nightsWithData?: ReadonlySet<string>) =>
   });
 
 const axisOf = (): XAxisOptions => {
-  const { xAxis } = buildWeekChartOptions({ week: build(), site: 'GS', now: null });
+  const { xAxis } = buildWeekChartOptions({ week: build(), site: 'GS' });
   if (xAxis === undefined || Array.isArray(xAxis)) {
     throw new Error('expected a single x axis');
   }
@@ -75,20 +75,13 @@ describe('the axis', () => {
     expect(label(week.interval.start)).toBe('');
   });
 
-  it('marks now, unlabelled, only while it falls inside the week', () => {
-    const week = build();
-    const marker = (now: number) => {
-      const { xAxis } = buildWeekChartOptions({ week, site: 'GS', now });
-      return (Array.isArray(xAxis) ? undefined : xAxis?.plotLines)?.filter(
-        (line) => line.className === 'schedule-today',
-      );
-    };
+  it('leads its plot lines with the unlabelled now slot, which the chart positions', () => {
+    const [slot, ...lines] = axisOf().plotLines ?? [];
 
-    const inside = marker(week.interval.start + 60_000);
-
-    expect(inside?.map((line) => line.value)).toEqual([week.interval.start + 60_000]);
-    expect(inside?.[0]?.label).toBeUndefined();
-    expect(marker(week.interval.end)).toEqual([]);
+    expect(slot).toMatchObject({ id: NOW_MARKER_ID, className: 'schedule-today' });
+    expect(slot).not.toHaveProperty('label');
+    expect(slot).not.toHaveProperty('value');
+    expect(lines).toEqual(buildWeekLines(build()));
   });
 });
 
@@ -118,7 +111,7 @@ describe('the chart', () => {
 
   it('sets every chart label at Data-small - nothing on the week chart drops below the type floor', () => {
     // Six un-entered nights, so the hatched bands' "not recorded" labels are in the walk.
-    const options = buildWeekChartOptions({ week: build(new Set(['2026-11-14'])), site: 'GS', now: null });
+    const options = buildWeekChartOptions({ week: build(new Set(['2026-11-14'])), site: 'GS' });
 
     expect(new Set(collectFontSizes(options))).toEqual(new Set([DENSE]));
   });

@@ -4,9 +4,17 @@ import 'highcharts/es-modules/masters/modules/xrange.src.js';
 // The engineering-use hatch on blocks (timelineOptions engineeringPattern).
 import 'highcharts/es-modules/masters/modules/pattern-fill.src.js';
 
-import { Chart } from '@highcharts/react';
-import type { ChartClickEventObject, Options, Point, PointClickEventObject, PointerEventObject } from 'highcharts';
-import type { JSX } from 'react';
+import { Chart, type HighchartsReactRefObject } from '@highcharts/react';
+import type {
+  Chart as HighchartsChart,
+  ChartClickCallbackFunction,
+  ChartClickEventObject,
+  Options,
+  PointClickCallbackFunction,
+  TooltipFormatterCallbackFunction,
+  XAxisPlotLinesOptions,
+} from 'highcharts';
+import { type JSX, useEffect, useRef } from 'react';
 
 import type { TimelineLegend } from '@/domain/timeline';
 
@@ -15,6 +23,7 @@ import {
   CLOSURE_LABEL,
   formatterPoint,
   type LegendExtra,
+  NOW_MARKER_ID,
   type TimelinePointCustom,
   tooltipHtml,
   UNSCHEDULED_LABEL,
@@ -27,9 +36,49 @@ interface TimelineChartProps {
   readonly label: string;
   readonly testId: string;
   readonly heading?: JSX.Element;
+  /** Epoch millis the now marker stands at; Highcharts hides a line outside the axis. */
+  readonly now?: number;
   /** Called with the axis instant under a click: the target is the night, not the block. */
   readonly onInstantClick?: (instant: number) => void;
 }
+
+type InstantHandler = (instant: number) => void;
+
+// Declared over the plain pointer event, but a chart click always carries the axis coordinates.
+const chartClick =
+  (onInstantClick: InstantHandler): ChartClickCallbackFunction =>
+  (event) => {
+    const instant = (event as ChartClickEventObject).xAxis[0]?.value;
+    if (instant !== undefined) {
+      onInstantClick(instant);
+    }
+  };
+
+// A bar resolves the instant under the cursor itself, not point.x, which can be nights away.
+const pointClick = (onInstantClick: InstantHandler): PointClickCallbackFunction =>
+  function (event) {
+    const axis = this.series.chart.xAxis[0];
+    if (axis !== undefined) {
+      onInstantClick(axis.toValue(event.chartX));
+    }
+  };
+
+const tooltipFormatter = (continuesLabel: string): TooltipFormatterCallbackFunction =>
+  function () {
+    const custom = formatterPoint<TimelinePointCustom>(this)?.custom;
+    return custom === undefined ? '' : tooltipHtml(custom, continuesLabel);
+  };
+
+/** Structural, because Highcharts does not type the live `Axis.plotLines` items. */
+interface PlotLineItem {
+  readonly id?: string;
+  update(options: XAxisPlotLinesOptions, redraw?: boolean): void;
+}
+
+const nowLine = (chart: HighchartsChart | undefined): PlotLineItem | undefined =>
+  (chart?.xAxis[0] as { plotLines?: readonly PlotLineItem[] } | undefined)?.plotLines?.find(
+    (line) => line.id === NOW_MARKER_ID,
+  );
 
 export function TimelineChart({
   options,
@@ -37,6 +86,7 @@ export function TimelineChart({
   label,
   testId,
   heading,
+  now,
   onInstantClick,
 }: TimelineChartProps): JSX.Element {
   const withTooltip: Options = {
@@ -46,51 +96,35 @@ export function TimelineChart({
       : {
           chart: {
             ...options.chart,
-            events: {
-              // Must spread the existing chart.events, or the builder's render handler (band-label fitting) is lost.
-              ...options.chart?.events,
-              // Declared over the plain pointer event, but a chart click always carries the axis coordinates.
-              click(event: PointerEventObject) {
-                const instant = (event as ChartClickEventObject).xAxis[0]?.value;
-                if (instant !== undefined) {
-                  onInstantClick(instant);
-                }
-              },
-            },
+            // Must spread the existing chart.events, or the builder's render handler (band-label fitting) is lost.
+            events: { ...options.chart?.events, click: chartClick(onInstantClick) },
           },
           plotOptions: {
             ...options.plotOptions,
             xrange: {
               ...options.plotOptions?.xrange,
               cursor: 'pointer' as const,
-              point: {
-                events: {
-                  // A bar resolves the instant under the cursor itself, not point.x, which can be nights away.
-                  click(this: Point, event: PointClickEventObject) {
-                    const axis = this.series.chart.xAxis[0];
-                    if (axis !== undefined) {
-                      onInstantClick(axis.toValue(event.chartX));
-                    }
-                  },
-                },
-              },
+              point: { events: { click: pointClick(onInstantClick) } },
             },
           },
         }),
-    tooltip: {
-      ...options.tooltip,
-      formatter() {
-        const custom = formatterPoint<TimelinePointCustom>(this)?.custom;
-        return custom === undefined ? '' : tooltipHtml(custom, continuesLabel);
-      },
-    },
+    tooltip: { ...options.tooltip, formatter: tooltipFormatter(continuesLabel) },
   };
+
+  const chartRef = useRef<HighchartsReactRefObject>(null);
+
+  // Also after an options change: the wrapper's `chart.update` has run by then, on the same slot.
+  useEffect(() => {
+    if (now !== undefined) {
+      nowLine(chartRef.current?.chart)?.update({ value: now });
+    }
+  }, [now, options, onInstantClick, continuesLabel]);
 
   return (
     // Highcharts observes its own render target, so nothing here drives the reflow.
     <section className="min-w-0" aria-label={label} data-testid={testId}>
       {heading}
-      <Chart options={withTooltip} />
+      <Chart ref={chartRef} options={withTooltip} />
     </section>
   );
 }

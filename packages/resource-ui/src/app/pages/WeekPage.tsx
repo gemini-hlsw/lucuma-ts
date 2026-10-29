@@ -2,23 +2,15 @@ import { when } from '@gemini-hlsw/lucuma-common-ui';
 import type { JSX } from 'react';
 
 import { useNow } from '@/app/useNow';
-import { useOpenNight } from '@/app/useOpenNight';
 import { useSelection } from '@/app/useSelection';
 import { NightStepper } from '@/components/ui/NightStepper';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { EmptyPanel, ErrorAlert, Loading } from '@/components/ui/PageStatus';
 import { toApiInterval } from '@/domain/adapters';
 import { addDays } from '@/domain/semester';
-import { nightAt } from '@/domain/timeline';
 import { buildWeekTimeline, WEEK_NIGHTS } from '@/domain/weekTimeline';
-import { TimelineChart, TimelineLegendBar } from '@/features/timeline/TimelineChart';
-import {
-  calendarLegendExtras,
-  modeLegendExtras,
-  telescopeLegendExtras,
-  tooLegendExtras,
-} from '@/features/timeline/timelineOptions';
-import { buildWeekChartOptions } from '@/features/week/weekChartOptions';
+import { modeLegendExtras, telescopeLegendExtras, tooLegendExtras } from '@/features/timeline/timelineOptions';
+import { WeekTimeline, WeekTimelineLegend } from '@/features/week/WeekTimeline';
 import { useWeekSchedule } from '@/gql/hooks';
 
 /** A week is long enough that the marker needs no fine tick. */
@@ -31,6 +23,7 @@ export default function WeekPage(): JSX.Element {
   // The page speaks evening dates; the observing-night labels stay in the URL.
   const firstEvening = addDays(observingNight, -1);
   const lastEvening = addDays(observingNight, WEEK_NIGHTS - 2);
+  const title = `Nights beginning ${firstEvening} to ${lastEvening}`;
 
   // The scheduler's query takes a half-open date range, so the end is the night after the last shown.
   const nights = { start: observingNight, end: addDays(observingNight, WEEK_NIGHTS) };
@@ -65,26 +58,16 @@ export default function WeekPage(): JSX.Element {
     nightsWithData: nightsResolved ? nightsWithData : undefined,
   });
 
-  const options = buildWeekChartOptions({ week, site, now });
-
   const nothingRecorded = week.nights.every((night) => !night.dataAvailable);
 
   const step = (days: number): void => {
     setObservingNight(addDays(observingNight, days));
   };
 
-  const openNight = useOpenNight();
-  const openNightAt = (instant: number): void => {
-    const night = nightAt(week.nights, instant);
-    if (night !== null) {
-      openNight(night.observingNight);
-    }
-  };
-
   return (
     <div className="min-w-0">
       <PageHeader
-        title={`Nights beginning ${firstEvening} to ${lastEvening}`}
+        title={title}
         actions={
           <NightStepper
             value={firstEvening}
@@ -111,24 +94,14 @@ export default function WeekPage(): JSX.Element {
 
       {!loading && !nothingRecorded && (
         <>
-          <TimelineLegendBar
-            legend={week}
+          <WeekTimelineLegend
+            week={week}
+            now={now}
             telescope={telescopeLegendExtras(telescopeAvailability)}
             mode={modeLegendExtras(telescopeMode)}
             too={tooLegendExtras(tooSupport)}
-            calendar={calendarLegendExtras({
-              weekend: week.nights.some((night) => night.isWeekend),
-              now: now !== null && now >= week.interval.start && now < week.interval.end && 'Now',
-              noData: week.nights.some((night) => !night.dataAvailable),
-            })}
           />
-          <TimelineChart
-            options={options}
-            continuesLabel="continues past this week"
-            label={`Nights beginning ${firstEvening} to ${lastEvening}`}
-            testId="week-timeline"
-            onInstantClick={openNightAt}
-          />
+          <WeekTimeline week={week} site={site} now={now} label={title} />
         </>
       )}
     </div>

@@ -30,7 +30,6 @@ import {
 // Re-exported beside the fills that draw it, so chart code has one import.
 export { USAGE_LABEL } from '@/domain/timeline';
 import type {
-  Interval,
   ResourceInstrument,
   Site,
   TelescopeAvailabilityBlock,
@@ -357,6 +356,8 @@ interface TimelineChartModel {
   readonly seriesName: string;
   /** Reaches Highcharts as `time.timezone`, so only labels Highcharts itself formats move with it. */
   readonly timeDisplay?: TimeDisplay;
+  /** What the now marker says beside itself; the week and month say nothing. */
+  readonly nowLabel?: string;
 }
 
 const TOP_MARGIN = 8;
@@ -390,20 +391,17 @@ export const closureBandPlotBand = (band: TimelineBand, labelYRem: number): XAxi
   },
 });
 
-/** The now marker, drawn only while now falls inside the window. */
-export const nowMarker = (now: number | null, window: Interval, label?: string): XAxisPlotLinesOptions[] =>
-  now !== null && now >= window.start && now < window.end
-    ? [
-        {
-          value: now,
-          color: 'var(--schedule-today)',
-          width: 2,
-          zIndex: MARKER_LINE_Z,
-          className: 'schedule-today',
-          ...(label === undefined ? {} : { label: { text: label, style: NOW_LABEL } }),
-        },
-      ]
-    : [];
+export const NOW_MARKER_ID = 'now';
+
+/** No value: `TimelineChart` moves the line on the live axis, so a tick never rebuilds the options. */
+export const nowMarker = (label?: string): XAxisPlotLinesOptions => ({
+  id: NOW_MARKER_ID,
+  color: 'var(--schedule-today)',
+  width: 2,
+  zIndex: MARKER_LINE_Z,
+  className: 'schedule-today',
+  ...(label === undefined ? {} : { label: { text: label, style: NOW_LABEL } }),
+});
 
 export const weekendBands = (nights: readonly TimelineNight[]): XAxisPlotBandsOptions[] =>
   nights
@@ -508,6 +506,7 @@ export const buildTimelineChart = ({
   responsive,
   seriesName,
   timeDisplay = 'site',
+  nowLabel,
 }: TimelineChartModel): Options => {
   // One read for the whole options object, so the bar and band fit tests judge at the same root.
   const rootPx = rootFontSizePx();
@@ -547,7 +546,8 @@ export const buildTimelineChart = ({
     legend: { enabled: false },
     // The table view carries the accessible reading; the a11y module would announce every point.
     accessibility: { enabled: false },
-    xAxis,
+    // First: `Axis.update` matches an un-id'd line by index, and a line count that grows would land on it.
+    xAxis: { ...xAxis, plotLines: [nowMarker(nowLabel), ...(xAxis.plotLines ?? [])] },
     yAxis: {
       categories: [...categories],
       reversed: true,

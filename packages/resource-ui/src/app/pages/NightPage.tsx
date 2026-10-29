@@ -8,6 +8,7 @@ import { NightStepper } from '@/components/ui/NightStepper';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { EmptyPanel, ErrorAlert, Loading } from '@/components/ui/PageStatus';
 import { toApiInterval } from '@/domain/adapters';
+import { contains } from '@/domain/interval';
 import { buildNightTimeline } from '@/domain/nightTimeline';
 import { addDays } from '@/domain/semester';
 import { observingNightInterval } from '@/domain/siteTime';
@@ -53,7 +54,7 @@ export default function NightPage(): JSX.Element {
     telescopeSubsystemAvailability,
   });
 
-  const options = buildNightChartOptions({ night, site, now, timeDisplay });
+  const options = buildNightChartOptions({ night, site, timeDisplay });
 
   return (
     <div className="min-w-0">
@@ -95,7 +96,7 @@ export default function NightPage(): JSX.Element {
             mode={modeLegendExtras(telescopeMode)}
             too={tooLegendExtras(tooSupport)}
             calendar={calendarLegendExtras({
-              now: now !== null && now >= interval.start && now < interval.end && 'Now',
+              now: contains(interval, now) && 'Now',
             })}
           />
           {night.transitions.length > 0 && (
@@ -106,6 +107,7 @@ export default function NightPage(): JSX.Element {
           )}
           <TimelineChart
             options={options}
+            now={now}
             continuesLabel="continues beyond tonight"
             label={`Night of ${observingNight}`}
             testId="night-timeline"

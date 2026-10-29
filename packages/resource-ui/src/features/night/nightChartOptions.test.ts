@@ -5,7 +5,14 @@ import { buildNightTimeline } from '@/domain/nightTimeline';
 import { portRowLabel, TELESCOPE_PORTS } from '@/domain/ports';
 import { observingNightInterval } from '@/domain/siteTime';
 import type { InstrumentAvailabilityBlock, TelescopeAvailabilityBlock } from '@/domain/types';
-import { buildTimelinePoints, DENSE, readerPx, TICK, type TimelinePoint } from '@/features/timeline/timelineOptions';
+import {
+  buildTimelinePoints,
+  DENSE,
+  NOW_MARKER_ID,
+  readerPx,
+  TICK,
+  type TimelinePoint,
+} from '@/features/timeline/timelineOptions';
 import { collectFontSizes } from '@/test/fontSizes';
 
 import {
@@ -104,15 +111,15 @@ describe('describing a block', () => {
 });
 
 /** The chart's single x axis; the builder never produces the array form. */
-const axisOf = (now: number | null = null): XAxisOptions => {
-  const { xAxis } = buildNightChartOptions({ night: build(), site: 'GS', now, timeDisplay: 'site' });
+const axisOf = (): XAxisOptions => {
+  const { xAxis } = buildNightChartOptions({ night: build(), site: 'GS', timeDisplay: 'site' });
   if (xAxis === undefined || Array.isArray(xAxis)) {
     throw new Error('expected a single x axis');
   }
   return xAxis;
 };
 
-const plotLines = (now: number | null = null): XAxisPlotLinesOptions[] => axisOf(now).plotLines ?? [];
+const plotLines = (): XAxisPlotLinesOptions[] => axisOf().plotLines ?? [];
 
 describe('the chart', () => {
   it('spans exactly the night', () => {
@@ -122,7 +129,7 @@ describe('the chart', () => {
 
   it('hands the masthead clock to Highcharts, which formats the axis labels', () => {
     const optionsIn = (timeDisplay: 'site' | 'utc') =>
-      buildNightChartOptions({ night: build(), site: 'GS', now: null, timeDisplay });
+      buildNightChartOptions({ night: build(), site: 'GS', timeDisplay });
 
     expect(optionsIn('site').time?.timezone).toBe('America/Santiago');
     expect(optionsIn('utc').time?.timezone).toBe('UTC');
@@ -138,23 +145,23 @@ describe('the chart', () => {
   });
 
   it('sets every chart label at Data-small but the hour ticks, which are the tick tier', () => {
-    // A closure band and a now marker, so every label the night chart can set is in the walk.
+    // A closure band and the now marker's slot, so every label the night chart can set is in the walk.
     const night = buildNightTimeline({
       site: 'GS',
       observingNight: NIGHT,
       instrumentAvailability: [instrumentBlock({ id: 'a', port: 3, interval })],
       telescopeAvailability: [{ id: 'wide', availability: 'CLOSED', port: null, reason: 'Shutdown', interval }],
     });
-    const options = buildNightChartOptions({ night, site: 'GS', now: interval.start + HOUR, timeDisplay: 'site' });
+    const options = buildNightChartOptions({ night, site: 'GS', timeDisplay: 'site' });
 
     expect(new Set(collectFontSizes(options))).toEqual(new Set([DENSE, TICK]));
   });
 
-  it('marks now only when it falls inside the night', () => {
-    const marker = (now: number | null) => plotLines(now).filter((line) => line.className === 'schedule-today');
+  it('leads its plot lines with the labelled now slot, which the chart positions', () => {
+    const [slot] = plotLines();
 
-    expect(marker(interval.start + HOUR)).toHaveLength(1);
-    expect(marker(interval.end + HOUR)).toHaveLength(0);
+    expect(slot).toMatchObject({ id: NOW_MARKER_ID, className: 'schedule-today', label: { text: 'now' } });
+    expect(slot).not.toHaveProperty('value');
   });
 });
 
@@ -167,12 +174,7 @@ describe('the telescope-state header band', () => {
     telescopeMode: [{ id: 'm1', mode: 'PRIORITY_VISITOR', programReferences: [], partner: null, interval, note: null }],
     tooSupport: [{ id: 't1', tooSupport: 'STANDARD', interval, note: null }],
   });
-  const options = buildNightChartOptions({
-    night: stateNight,
-    site: 'GS',
-    now: null,
-    timeDisplay: 'site',
-  });
+  const options = buildNightChartOptions({ night: stateNight, site: 'GS', timeDisplay: 'site' });
   const yAxis = options.yAxis as YAxisOptions;
   const data = (options.series?.[0] as { data: TimelinePoint[] }).data;
 
@@ -308,7 +310,7 @@ describe('a telescope-wide closure on the night', () => {
       instrumentAvailability: [],
       telescopeAvailability: [shutdown],
     });
-    const { xAxis } = buildNightChartOptions({ night, site: 'GS', now: null, timeDisplay: 'site' });
+    const { xAxis } = buildNightChartOptions({ night, site: 'GS', timeDisplay: 'site' });
     if (xAxis === undefined || Array.isArray(xAxis)) {
       throw new Error('expected a single x axis');
     }
