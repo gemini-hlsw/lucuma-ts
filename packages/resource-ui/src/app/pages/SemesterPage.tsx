@@ -113,7 +113,7 @@ export default function SemesterPage(): JSX.Element {
             mode={modeExtras}
             too={tooExtras}
           />
-          <SemesterTimeline timeline={timeline} site={selected.site} now={now} />
+          <SemesterTimeline timeline={timeline} site={selected.site} />
         </>
       )}
     </div>

@@ -107,7 +107,6 @@ export default function NightPage(): JSX.Element {
           )}
           <TimelineChart
             options={options}
-            now={now}
             continuesLabel="continues beyond tonight"
             label={`Night of ${observingNight}`}
             testId="night-timeline"

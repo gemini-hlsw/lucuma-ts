@@ -101,7 +101,7 @@ export default function WeekPage(): JSX.Element {
             mode={modeLegendExtras(telescopeMode)}
             too={tooLegendExtras(tooSupport)}
           />
-          <WeekTimeline week={week} site={site} now={now} label={title} />
+          <WeekTimeline week={week} site={site} label={title} />
         </>
       )}
     </div>

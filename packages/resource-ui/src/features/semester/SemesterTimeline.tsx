@@ -36,7 +36,7 @@ export function SemesterTimelineLegend({
   );
 }
 
-function MonthChart({ month, site, now }: { month: TimelineMonth; site: Site; now: number }): JSX.Element {
+function MonthChart({ month, site }: { month: TimelineMonth; site: Site }): JSX.Element {
   const options = buildSemesterMonthOptions({ month, site });
 
   const openNight = useOpenNight();
@@ -53,7 +53,6 @@ function MonthChart({ month, site, now }: { month: TimelineMonth; site: Site; no
       continuesLabel="continues past this month"
       label={month.label}
       testId={`semester-month-${month.label}`}
-      now={now}
       onInstantClick={openNightAt}
       heading={
         <h3 className="mb-1 text-xs font-semibold tracking-wider text-foreground-secondary uppercase">{month.label}</h3>
@@ -62,15 +61,7 @@ function MonthChart({ month, site, now }: { month: TimelineMonth; site: Site; no
   );
 }
 
-export function SemesterTimeline({
-  timeline,
-  site,
-  now,
-}: {
-  timeline: Timeline;
-  site: Site;
-  now: number;
-}): JSX.Element {
+export function SemesterTimeline({ timeline, site }: { timeline: Timeline; site: Site }): JSX.Element {
   return (
     <div
       data-testid="semester-timeline"
@@ -78,7 +69,7 @@ export function SemesterTimeline({
       className="grid [grid-template-columns:repeat(auto-fit,minmax(min(420px,100%),1fr))] gap-x-8 gap-y-5"
     >
       {timeline.months.map((month) => (
-        <MonthChart key={`${month.year}-${month.month}`} month={month} site={site} now={now} />
+        <MonthChart key={`${month.year}-${month.month}`} month={month} site={site} />
       ))}
     </div>
   );

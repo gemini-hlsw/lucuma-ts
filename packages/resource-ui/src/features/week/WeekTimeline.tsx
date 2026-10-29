@@ -39,17 +39,7 @@ export function WeekTimelineLegend({
   );
 }
 
-export function WeekTimeline({
-  week,
-  site,
-  now,
-  label,
-}: {
-  week: Timeline;
-  site: Site;
-  now: number;
-  label: string;
-}): JSX.Element {
+export function WeekTimeline({ week, site, label }: { week: Timeline; site: Site; label: string }): JSX.Element {
   const options = buildWeekChartOptions({ week, site });
 
   const openNight = useOpenNight();
@@ -63,7 +53,6 @@ export function WeekTimeline({
   return (
     <TimelineChart
       options={options}
-      now={now}
       continuesLabel="continues past this week"
       label={label}
       testId="week-timeline"
