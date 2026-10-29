@@ -13,7 +13,6 @@ import {
   midpointTicks,
   MUTED_LABEL,
   nightLines,
-  nowMarker,
   readerPx,
   weekendBands,
 } from '@/features/timeline/timelineOptions';
@@ -58,11 +57,9 @@ export const buildWeekLines = (week: WeekTimeline): XAxisPlotLinesOptions[] => n
 interface WeekChartModel {
   readonly week: WeekTimeline;
   readonly site: Site;
-  /** Epoch millis of "now", drawn as a marker when it lands inside the week. */
-  readonly now: number | null;
 }
 
-export const buildWeekChartOptions = ({ week, site, now }: WeekChartModel): Options =>
+export const buildWeekChartOptions = ({ week, site }: WeekChartModel): Options =>
   buildTimelineChart({
     rows: week.rows,
     site,
@@ -89,6 +86,6 @@ export const buildWeekChartOptions = ({ week, site, now }: WeekChartModel): Opti
         y: readerPx(1.125),
       },
       plotBands: buildWeekBands(week),
-      plotLines: [...buildWeekLines(week), ...nowMarker(now, week.interval)],
+      plotLines: buildWeekLines(week),
     },
   });

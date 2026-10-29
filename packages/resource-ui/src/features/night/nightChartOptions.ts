@@ -9,7 +9,6 @@ import {
   buildTimelineChart,
   closureBandPlotBand,
   MUTED_TICK,
-  nowMarker,
   readerPx,
   WEEK_LINE_Z,
 } from '@/features/timeline/timelineOptions';
@@ -56,15 +55,15 @@ export const buildTransitionLines = (transitions: readonly number[]): XAxisPlotL
 interface NightChartModel {
   readonly night: NightTimeline;
   readonly site: Site;
-  readonly now: number | null;
   readonly timeDisplay: TimeDisplay;
 }
 
-export const buildNightChartOptions = ({ night, site, now, timeDisplay }: NightChartModel): Options =>
+export const buildNightChartOptions = ({ night, site, timeDisplay }: NightChartModel): Options =>
   buildTimelineChart({
     rows: night.rows,
     site,
     timeDisplay,
+    nowLabel: 'now',
     describe: nightDescriber(site, night.interval, timeDisplay),
     rowHeightRem: ROW_HEIGHT_REM,
     bottomMarginRem: BOTTOM_MARGIN_REM,
@@ -89,6 +88,6 @@ export const buildNightChartOptions = ({ night, site, now, timeDisplay }: NightC
         y: readerPx(1.125),
       },
       plotBands: [...night.bands.map((band) => closureBandPlotBand(band, 0.875))],
-      plotLines: [...buildTransitionLines(night.transitions), ...nowMarker(now, night.interval, 'now')],
+      plotLines: buildTransitionLines(night.transitions),
     },
   });

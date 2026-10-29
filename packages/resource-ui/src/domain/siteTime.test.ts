@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
-import { firstEveningDate, lastEveningDate, nightCount, observingNightInterval, observingNightOf } from './siteTime';
+import {
+  firstEveningDate,
+  lastEveningDate,
+  nextNightBoundary,
+  nightCount,
+  observingNightInterval,
+  observingNightOf,
+} from './siteTime';
 
 const ms = (iso: string): number => Date.parse(iso);
 
@@ -50,6 +57,30 @@ describe(observingNightOf, () => {
     expect(short.end - short.start).toBe(23 * 3_600_000);
     expect(observingNightOf('GS', short.start)).toBe('2026-09-06');
     expect(observingNightOf('GS', short.end - 1)).toBe('2026-09-06');
+  });
+});
+
+/** What a clock that only needs to know the night waits for. */
+describe(nextNightBoundary, () => {
+  it('is the end of the night in progress', () => {
+    const night = observingNightInterval('GS', '2026-11-14');
+
+    expect(nextNightBoundary('GS', night.start)).toBe(night.end);
+    expect(nextNightBoundary('GS', night.start + 6 * 3_600_000)).toBe(night.end);
+    expect(nextNightBoundary('GS', night.end - 1)).toBe(night.end);
+  });
+
+  it('is strictly after the instant, so a clock standing on 14:00 waits a whole night', () => {
+    const night = observingNightInterval('GN', '2026-08-12');
+
+    expect(nextNightBoundary('GN', night.end)).toBe(observingNightInterval('GN', '2026-08-13').end);
+  });
+
+  it('lands on the 23-hour night across the Gemini South spring-forward', () => {
+    const short = observingNightInterval('GS', '2026-09-06');
+
+    expect(nextNightBoundary('GS', short.start)).toBe(short.end);
+    expect(short.end - short.start).toBe(23 * 3_600_000);
   });
 });
 

@@ -1,8 +1,10 @@
 import type { MockLink } from '@apollo/client/testing';
 import { openDropdown, selectDropdownOption } from '@gemini-hlsw/lucuma-common-ui/testing';
-import { describe, expect, it } from 'vitest';
+import Highcharts from 'highcharts/es-modules/masters/highcharts.src.js';
+import { describe, expect, it, vi } from 'vitest';
 
 import Layout from '@/components/layout/Layout';
+import { observingNightInterval } from '@/domain/siteTime';
 import {
   instrumentAvailabilityBlock,
   overNights,
@@ -10,7 +12,7 @@ import {
   telescopeModeBlock,
 } from '@/test/fixtures/blocks';
 import { publishedSemester, publishedSemesters, semesterSchedule } from '@/test/fixtures/semester';
-import { chooseClock, chooseSite } from '@/test/helpers';
+import { chooseClock, chooseSite, drawnPlotLineX } from '@/test/helpers';
 import { Probe, PROBE_URL_TESTID } from '@/test/probe';
 import { renderApp } from '@/test/renderApp';
 
@@ -53,6 +55,58 @@ const drawnBars = () =>
     .join('|');
 
 describe(SemesterPage, () => {
+  it('keeps the options of every month chart across a tick: the marker moves and chart.update never runs', async () => {
+    // The clock only: Apollo and Highcharts keep their real timers, and the wall clock keeps running underneath.
+    vi.useFakeTimers({ toFake: ['Date', 'setInterval', 'clearInterval'], shouldAdvanceTime: true });
+    try {
+      vi.setSystemTime(observingNightInterval('GS', '2025-11-14').start + 6 * 3_600_000);
+      const update = vi.spyOn(Highcharts.Chart.prototype, 'update');
+      const screen = await openSemester(
+        '/semester?site=GS&semester=2025B',
+        publishedSemesters(GS_2025B),
+        semesterSchedule(GS_2025B, { instrumentAvailability: [GHOST] }),
+      );
+      await expect.element(screen.getByRole('region', { name: 'January 2026' })).toBeVisible();
+      await expect.poll(() => drawnPlotLineX('.schedule-today')).toHaveLength(1);
+      const [before] = drawnPlotLineX('.schedule-today');
+      const updates = update.mock.calls.length;
+
+      vi.advanceTimersByTime(2 * 24 * 3_600_000);
+
+      await expect.poll(() => drawnPlotLineX('.schedule-today')[0]).toBeGreaterThan(before ?? Number.NaN);
+      expect(drawnPlotLineX('.schedule-today')).toHaveLength(1);
+      expect(update.mock.calls.length).toBe(updates);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('keys Today while the clock is inside the semester and not outside it', async () => {
+    vi.useFakeTimers({ toFake: ['Date', 'setInterval', 'clearInterval'], shouldAdvanceTime: true });
+    try {
+      // The night before the semester's first, six hours in.
+      vi.setSystemTime(observingNightInterval('GS', '2025-08-01').start + 6 * 3_600_000);
+      const screen = await openSemester(
+        '/semester?site=GS&semester=2025B',
+        publishedSemesters(GS_2025B),
+        semesterSchedule(GS_2025B, { instrumentAvailability: [GHOST] }),
+      );
+      const calendar = screen.getByRole('group', { name: 'Calendar' });
+      await expect.element(calendar.getByText('Weekend')).toBeVisible();
+      await expect.element(calendar.getByText('Today')).not.toBeInTheDocument();
+
+      vi.advanceTimersByTime(24 * 3_600_000);
+      await expect.element(calendar.getByText('Today')).toBeVisible();
+
+      // A tab asleep through the semester's end re-reads the clock when it comes back.
+      vi.setSystemTime(observingNightInterval('GS', '2026-02-02').start + 6 * 3_600_000);
+      document.dispatchEvent(new Event('visibilitychange'));
+      await expect.element(calendar.getByText('Today')).not.toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   describe('the chart', () => {
     it("opens an old calendar link on that semester's timeline", async () => {
       const screen = await openSemester(

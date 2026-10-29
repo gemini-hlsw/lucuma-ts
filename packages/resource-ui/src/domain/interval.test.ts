@@ -1,11 +1,20 @@
 import { describe, expect, it } from 'vitest';
 
-import { overlaps } from './interval';
+import { contains, overlaps } from './interval';
 import { observingNightInterval } from './siteTime';
 
 /** The window a finder asks its records about. */
 const night = observingNightInterval('GS', '2026-10-15');
 const HOUR = 3_600_000;
+
+describe(contains, () => {
+  it('takes the opening instant and refuses the closing one', () => {
+    expect(contains(night, night.start)).toBe(true);
+    expect(contains(night, night.end - 1)).toBe(true);
+    expect(contains(night, night.end)).toBe(false);
+    expect(contains(night, night.start - 1)).toBe(false);
+  });
+});
 
 describe(overlaps, () => {
   it('leaves out a record that ends exactly where the night begins', () => {

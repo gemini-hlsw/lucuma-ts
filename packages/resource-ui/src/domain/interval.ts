@@ -9,6 +9,9 @@ export const clip = (interval: Interval, bounds: Interval): Interval | null => {
 
 export const overlaps = (a: Interval, b: Interval): boolean => clip(a, b) !== null;
 
+export const contains = (interval: Interval, instant: number): boolean =>
+  instant >= interval.start && instant < interval.end;
+
 /** Where consecutive records meet, or the two edges of the gap between them. */
 export const transitionsOf = (records: readonly { readonly interval: Interval }[]): readonly number[] =>
   records.slice(1).flatMap((record, index) => {

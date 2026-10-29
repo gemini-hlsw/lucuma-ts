@@ -2,11 +2,12 @@
 import '@/styles/chartOverlays.css';
 
 import type { MockLink } from '@apollo/client/testing';
-import { describe, expect, it } from 'vitest';
+import Highcharts from 'highcharts/es-modules/masters/highcharts.src.js';
+import { describe, expect, it, vi } from 'vitest';
 import { page } from 'vitest/browser';
 
 import Layout from '@/components/layout/Layout';
-import { observingNightOf } from '@/domain/siteTime';
+import { observingNightInterval, observingNightOf } from '@/domain/siteTime';
 import {
   instrumentAvailabilityBlock,
   overNights,
@@ -16,7 +17,7 @@ import {
   tooSupportBlock,
 } from '@/test/fixtures/blocks';
 import { nightSchedule } from '@/test/fixtures/night';
-import { chooseClock, nightAxisLabels } from '@/test/helpers';
+import { chooseClock, drawnPlotLineX, nightAxisLabels } from '@/test/helpers';
 import { renderApp } from '@/test/renderApp';
 
 import NightPage from './NightPage';
@@ -44,6 +45,27 @@ const chartBars = () =>
     .join('|');
 
 describe(NightPage, () => {
+  it('drops the Now key when the night ends, without updating the chart', async () => {
+    // The clock only: Apollo and Highcharts keep their real timers, and the wall clock keeps running underneath.
+    vi.useFakeTimers({ toFake: ['Date', 'setInterval', 'clearInterval'], shouldAdvanceTime: true });
+    try {
+      vi.setSystemTime(observingNightInterval('GS', '2025-11-14').start + 6 * 3_600_000);
+      const update = vi.spyOn(Highcharts.Chart.prototype, 'update');
+      const screen = await openOrdinaryNight();
+      const calendar = screen.getByRole('group', { name: 'Calendar' });
+      await expect.element(calendar.getByText('Now')).toBeVisible();
+      await expect.poll(() => drawnPlotLineX('.schedule-today')).toHaveLength(1);
+      const updates = update.mock.calls.length;
+
+      vi.advanceTimersByTime(24 * 3_600_000);
+
+      await expect.element(calendar.getByText('Now')).not.toBeInTheDocument();
+      expect(update.mock.calls.length).toBe(updates);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   describe('the telescope-state rows', () => {
     it('draws a shutdown as a closed Telescope row, and an unrecorded mode as no Mode row at all', async () => {
       const shutdown = overNights('GS', '2024-08-02', '2024-08-16');

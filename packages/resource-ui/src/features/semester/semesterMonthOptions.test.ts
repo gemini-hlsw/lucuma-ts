@@ -6,7 +6,7 @@ import { portRowLabel, TELESCOPE_PORTS } from '@/domain/ports';
 import { buildSemesterTimeline, type TimelineMonth } from '@/domain/semesterTimeline';
 import { observingNightInterval } from '@/domain/siteTime';
 import type { InstrumentAvailabilityBlock, Site, TelescopeAvailabilityBlock } from '@/domain/types';
-import { buildTimelinePoints, DENSE, eveningDescriber, TICK } from '@/features/timeline/timelineOptions';
+import { buildTimelinePoints, DENSE, eveningDescriber, NOW_MARKER_ID, TICK } from '@/features/timeline/timelineOptions';
 import { collectFontSizes } from '@/test/fontSizes';
 
 import {
@@ -136,7 +136,7 @@ describe('day numbers', () => {
   });
 
   it('numbers every night when wide, and thins as the container narrows', () => {
-    const options = buildSemesterMonthOptions({ month: august, site: 'GS', now: null });
+    const options = buildSemesterMonthOptions({ month: august, site: 'GS' });
     const rules = options.responsive?.rules ?? [];
 
     expect(options.xAxis).toMatchObject({ tickPositions: dayTickPositions(august, 1) });
@@ -147,7 +147,7 @@ describe('day numbers', () => {
 
 describe('the axis', () => {
   const axisOf = () => {
-    const { xAxis } = buildSemesterMonthOptions({ month: august, site: 'GS', now: null });
+    const { xAxis } = buildSemesterMonthOptions({ month: august, site: 'GS' });
     if (xAxis === undefined || Array.isArray(xAxis)) {
       throw new Error('expected a single x axis');
     }
@@ -176,44 +176,31 @@ describe('the axis', () => {
   });
 
   it('reads day numbers in the site clock, not the browser one', () => {
-    const options = buildSemesterMonthOptions({ month: august, site: 'GS', now: null });
+    const options = buildSemesterMonthOptions({ month: august, site: 'GS' });
 
     // A GS night spans two UTC dates; the viewer's zone would shift every column.
     expect(options.time).toEqual({ timezone: 'America/Santiago' });
   });
 
   it('pins the rows so a row with nothing on it keeps its height', () => {
-    const options = buildSemesterMonthOptions({ month: august, site: 'GS', now: null });
+    const options = buildSemesterMonthOptions({ month: august, site: 'GS' });
 
     expect(options.yAxis).toMatchObject({ min: 0, max: ROWS.length - 1, categories: ROWS });
   });
 
   it('sets every chart label at Data-small but the day ticks, whatever the month width', () => {
-    const options = buildSemesterMonthOptions({ month: august, site: 'GS', now: null });
+    const options = buildSemesterMonthOptions({ month: august, site: 'GS' });
 
     // The walk reaches the responsive rules too: a narrow month thins its ticks, never its labels.
     expect(new Set(collectFontSizes(options))).toEqual(new Set([DENSE, TICK]));
   });
 
-  it('marks now only in the month it falls in', () => {
-    const inside = buildSemesterMonthOptions({
-      month: august,
-      site: 'GS',
-      now: august.interval.start + 60_000,
-    });
-    const outside = buildSemesterMonthOptions({
-      month: august,
-      site: 'GS',
-      now: august.interval.end + 86_400_000,
-    });
+  it('leads its plot lines with the unlabelled now slot, which the chart positions', () => {
+    const [slot] = axisOf().plotLines ?? [];
 
-    const marker = (options: ReturnType<typeof buildSemesterMonthOptions>) =>
-      (Array.isArray(options.xAxis) ? undefined : options.xAxis?.plotLines)?.filter(
-        (line) => line.className === 'schedule-today',
-      );
-
-    expect(marker(inside)).toHaveLength(1);
-    expect(marker(outside)).toHaveLength(0);
+    expect(slot).toMatchObject({ id: NOW_MARKER_ID, className: 'schedule-today' });
+    expect(slot).not.toHaveProperty('label');
+    expect(slot).not.toHaveProperty('value');
   });
 });
 

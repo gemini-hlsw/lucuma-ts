@@ -4,9 +4,18 @@ import 'highcharts/es-modules/masters/modules/xrange.src.js';
 // The engineering-use hatch on blocks (timelineOptions engineeringPattern).
 import 'highcharts/es-modules/masters/modules/pattern-fill.src.js';
 
-import { Chart } from '@highcharts/react';
-import type { ChartClickEventObject, Options, Point, PointClickEventObject, PointerEventObject } from 'highcharts';
-import type { JSX } from 'react';
+import { Chart, type HighchartsReactRefObject } from '@highcharts/react';
+import type {
+  Chart as HighchartsChart,
+  ChartClickCallbackFunction,
+  ChartClickEventObject,
+  ChartRenderCallbackFunction,
+  Options,
+  PointClickCallbackFunction,
+  TooltipFormatterCallbackFunction,
+  XAxisPlotLinesOptions,
+} from 'highcharts';
+import { type JSX, useEffect, useRef } from 'react';
 
 import type { TimelineLegend } from '@/domain/timeline';
 
@@ -15,6 +24,7 @@ import {
   CLOSURE_LABEL,
   formatterPoint,
   type LegendExtra,
+  NOW_MARKER_ID,
   type TimelinePointCustom,
   tooltipHtml,
   UNSCHEDULED_LABEL,
@@ -31,6 +41,71 @@ interface TimelineChartProps {
   readonly onInstantClick?: (instant: number) => void;
 }
 
+type InstantHandler = (instant: number) => void;
+
+// Declared over the plain pointer event, but a chart click always carries the axis coordinates.
+const chartClick =
+  (onInstantClick: InstantHandler): ChartClickCallbackFunction =>
+  (event) => {
+    const instant = (event as ChartClickEventObject).xAxis[0]?.value;
+    if (instant !== undefined) {
+      onInstantClick(instant);
+    }
+  };
+
+// A bar resolves the instant under the cursor itself, not point.x, which can be nights away.
+const pointClick = (onInstantClick: InstantHandler): PointClickCallbackFunction =>
+  function (event) {
+    const axis = this.series.chart.xAxis[0];
+    if (axis !== undefined) {
+      onInstantClick(axis.toValue(event.chartX));
+    }
+  };
+
+/** Keyed on the chart, not a ref: a ref passed around during render is a compiler and lint error. */
+const rearmOnRender = new WeakMap<HighchartsChart, () => void>();
+
+const chartRender = (inner: ChartRenderCallbackFunction | undefined): ChartRenderCallbackFunction =>
+  function (event) {
+    inner?.call(this, event);
+    rearmOnRender.get(this)?.();
+  };
+
+const tooltipFormatter = (continuesLabel: string): TooltipFormatterCallbackFunction =>
+  function () {
+    const custom = formatterPoint<TimelinePointCustom>(this)?.custom;
+    return custom === undefined ? '' : tooltipHtml(custom, continuesLabel);
+  };
+
+/** Structural, because Highcharts does not type the live `Axis.plotLines` items. */
+interface PlotLineItem {
+  readonly id?: string;
+  update(options: XAxisPlotLinesOptions, redraw?: boolean): void;
+}
+
+const nowLine = (chart: HighchartsChart): PlotLineItem | undefined =>
+  (chart.xAxis[0] as { plotLines?: readonly PlotLineItem[] } | undefined)?.plotLines?.find(
+    (line) => line.id === NOW_MARKER_ID,
+  );
+
+const MIN_TICK_MS = 60_000;
+const MAX_TICK_MS = 24 * 3_600_000;
+
+/** One pixel of marker travel per tick, as vis-timeline does, inside a minute-to-day band. */
+const markerTickMs = (chart: HighchartsChart): number => {
+  const axis = chart.xAxis[0];
+  if (axis === undefined) {
+    return MAX_TICK_MS;
+  }
+  const msPerPixel = Math.abs(axis.toValue(1, true) - axis.toValue(0, true));
+  return Math.min(MAX_TICK_MS, Math.max(MIN_TICK_MS, msPerPixel));
+};
+
+/** Plot-line `update` redraws the line alone, so a tick fires no `render` and cannot re-arm itself. */
+const moveMarker = (chart: HighchartsChart): void => {
+  nowLine(chart)?.update({ value: Date.now() });
+};
+
 export function TimelineChart({
   options,
   continuesLabel,
@@ -39,58 +114,67 @@ export function TimelineChart({
   heading,
   onInstantClick,
 }: TimelineChartProps): JSX.Element {
+  const chartRef = useRef<HighchartsReactRefObject>(null);
+
   const withTooltip: Options = {
     ...options,
+    chart: {
+      ...options.chart,
+      events: {
+        ...options.chart?.events,
+        render: chartRender(options.chart?.events?.render),
+        ...(onInstantClick === undefined ? {} : { click: chartClick(onInstantClick) }),
+      },
+    },
     ...(onInstantClick === undefined
       ? {}
       : {
-          chart: {
-            ...options.chart,
-            events: {
-              // Must spread the existing chart.events, or the builder's render handler (band-label fitting) is lost.
-              ...options.chart?.events,
-              // Declared over the plain pointer event, but a chart click always carries the axis coordinates.
-              click(event: PointerEventObject) {
-                const instant = (event as ChartClickEventObject).xAxis[0]?.value;
-                if (instant !== undefined) {
-                  onInstantClick(instant);
-                }
-              },
-            },
-          },
           plotOptions: {
             ...options.plotOptions,
             xrange: {
               ...options.plotOptions?.xrange,
               cursor: 'pointer' as const,
-              point: {
-                events: {
-                  // A bar resolves the instant under the cursor itself, not point.x, which can be nights away.
-                  click(this: Point, event: PointClickEventObject) {
-                    const axis = this.series.chart.xAxis[0];
-                    if (axis !== undefined) {
-                      onInstantClick(axis.toValue(event.chartX));
-                    }
-                  },
-                },
-              },
+              point: { events: { click: pointClick(onInstantClick) } },
             },
           },
         }),
-    tooltip: {
-      ...options.tooltip,
-      formatter() {
-        const custom = formatterPoint<TimelinePointCustom>(this)?.custom;
-        return custom === undefined ? '' : tooltipHtml(custom, continuesLabel);
-      },
-    },
+    tooltip: { ...options.tooltip, formatter: tooltipFormatter(continuesLabel) },
   };
+
+  // Also after an options change: the wrapper's `chart.update` has run by then, on the same slot.
+  useEffect(() => {
+    const chart = chartRef.current?.chart;
+    if (chart === undefined) {
+      return;
+    }
+    let timer: ReturnType<typeof setInterval> | undefined;
+    const arm = (): void => {
+      clearInterval(timer);
+      timer = setInterval(() => moveMarker(chart), markerTickMs(chart));
+    };
+    // A background tab slows its timers, so the line catches up the moment the tab is seen again.
+    const onVisible = (): void => {
+      if (document.visibilityState === 'visible') {
+        moveMarker(chart);
+        arm();
+      }
+    };
+    moveMarker(chart);
+    arm();
+    rearmOnRender.set(chart, arm);
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      rearmOnRender.delete(chart);
+      clearInterval(timer);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, [options, onInstantClick, continuesLabel]);
 
   return (
     // Highcharts observes its own render target, so nothing here drives the reflow.
     <section className="min-w-0" aria-label={label} data-testid={testId}>
       {heading}
-      <Chart options={withTooltip} />
+      <Chart ref={chartRef} options={withTooltip} />
     </section>
   );
 }

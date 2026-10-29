@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useSearchParams } from 'react-router';
 
 import { setLastSite, useLastSite } from '@/app/useLastSite';
-import { useNow } from '@/app/useNow';
+import { nightBoundaries, useNow } from '@/app/useNow';
 import { observingNightOf } from '@/domain/siteTime';
 import { type Site, SITES } from '@/domain/types';
 
@@ -21,16 +21,13 @@ interface SelectionControls extends Selection {
   clearObservingNight: () => void;
 }
 
-/** The default night rolls over once a day at 14:00 local, so a coarse tick is plenty. */
-const DEFAULT_NIGHT_TICK_MS = 5 * 60_000;
-
 export function useSelection(): SelectionControls {
   const [params, setParams] = useSearchParams();
-  const now = useNow(DEFAULT_NIGHT_TICK_MS);
   const remembered = useLastSite();
 
   const named = params.get('site');
   const site = asSite(named, remembered);
+  const now = useNow(nightBoundaries(site));
 
   /*
    * The one URL default this app writes rather than deletes. Everywhere else an absent parameter

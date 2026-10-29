@@ -1,7 +1,7 @@
 import { Dropdown } from 'primereact/dropdown';
 import type { JSX } from 'react';
 
-import { useNow } from '@/app/useNow';
+import { nightBoundaries, useNow } from '@/app/useNow';
 import { useSelection } from '@/app/useSelection';
 import { useSemester } from '@/app/useSemester';
 import { LabelledControl } from '@/components/ui/LabelledControl';
@@ -12,22 +12,14 @@ import { buildSemesterTimeline } from '@/domain/semesterTimeline';
 import { observingNightInterval } from '@/domain/siteTime';
 import { SemesterBlockTable } from '@/features/semester/SemesterBlockTable';
 import { SemesterTimeline, SemesterTimelineLegend } from '@/features/semester/SemesterTimeline';
-import {
-  calendarLegendExtras,
-  modeLegendExtras,
-  telescopeLegendExtras,
-  tooLegendExtras,
-} from '@/features/timeline/timelineOptions';
+import { modeLegendExtras, telescopeLegendExtras, tooLegendExtras } from '@/features/timeline/timelineOptions';
 import { useSemesterSchedule } from '@/gql/hooks';
-
-/** The semester runs for months, so the "today" marker needs no fine tick. */
-const NOW_TICK_MS = 5 * 60_000;
 
 /** The whole semester in one request: the view draws all of it, so paging would draw it twice. */
 export default function SemesterPage(): JSX.Element {
   const { site } = useSelection();
   const { semester: selected, semestersForSite, setSemester, loading: loadingSets, error: setsError } = useSemester();
-  const now = useNow(NOW_TICK_MS);
+  const now = useNow(nightBoundaries(selected?.site ?? site));
 
   const bounds =
     selected === null
@@ -57,14 +49,6 @@ export default function SemesterPage(): JSX.Element {
   const telescopeExtras = telescopeLegendExtras(telescopeAvailability);
   const modeExtras = modeLegendExtras(telescopeMode);
   const tooExtras = tooLegendExtras(tooSupport);
-  const semesterNights = timeline?.months.flatMap((month) => month.nights) ?? [];
-  const calendarExtras = calendarLegendExtras({
-    weekend: true,
-    now:
-      now !== null &&
-      semesterNights.some((night) => now >= night.interval.start && now < night.interval.end) &&
-      'Today',
-  });
 
   const failure = setsError ?? error;
 
@@ -120,13 +104,13 @@ export default function SemesterPage(): JSX.Element {
           />
 
           <SemesterTimelineLegend
-            legend={timeline}
+            timeline={timeline}
+            now={now}
             telescope={telescopeExtras}
             mode={modeExtras}
             too={tooExtras}
-            calendar={calendarExtras}
           />
-          <SemesterTimeline timeline={timeline} site={selected.site} now={now} />
+          <SemesterTimeline timeline={timeline} site={selected.site} />
         </>
       )}
     </div>

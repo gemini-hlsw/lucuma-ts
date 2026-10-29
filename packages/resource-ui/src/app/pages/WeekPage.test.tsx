@@ -1,9 +1,10 @@
 import type { MockLink } from '@apollo/client/testing';
-import { describe, expect, it } from 'vitest';
+import Highcharts from 'highcharts/es-modules/masters/highcharts.src.js';
+import { describe, expect, it, vi } from 'vitest';
 import { page } from 'vitest/browser';
 
 import { addDays } from '@/domain/semester';
-import { observingNightOf } from '@/domain/siteTime';
+import { observingNightInterval, observingNightOf } from '@/domain/siteTime';
 import {
   instrumentAvailabilityBlock,
   overNights,
@@ -12,6 +13,7 @@ import {
   tooSupportBlock,
 } from '@/test/fixtures/blocks';
 import { weekSchedule } from '@/test/fixtures/week';
+import { drawnPlotLineX } from '@/test/helpers';
 import { Probe, PROBE_URL_TESTID } from '@/test/probe';
 import { renderApp } from '@/test/renderApp';
 
@@ -44,6 +46,26 @@ const chartBars = () =>
     .join('|');
 
 describe(WeekPage, () => {
+  it('keeps the chart options across a tick: the marker moves and chart.update never runs', async () => {
+    // The clock only: Apollo and Highcharts keep their real timers, and the wall clock keeps running underneath.
+    vi.useFakeTimers({ toFake: ['Date', 'setInterval', 'clearInterval'], shouldAdvanceTime: true });
+    try {
+      vi.setSystemTime(observingNightInterval('GS', '2025-11-15').start + 6 * 3_600_000);
+      const update = vi.spyOn(Highcharts.Chart.prototype, 'update');
+      await openOrdinaryWeek();
+      await expect.poll(() => drawnPlotLineX('.schedule-today')).toHaveLength(1);
+      const [before] = drawnPlotLineX('.schedule-today');
+      const updates = update.mock.calls.length;
+
+      vi.advanceTimersByTime(24 * 3_600_000);
+
+      await expect.poll(() => drawnPlotLineX('.schedule-today')[0]).toBeGreaterThan(before ?? Number.NaN);
+      expect(update.mock.calls.length).toBe(updates);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('draws seven nights from the one asked for', async () => {
     const screen = await openOrdinaryWeek();
 
