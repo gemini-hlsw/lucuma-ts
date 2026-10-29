@@ -294,9 +294,16 @@ export const eveningDescriber = (site: Site): BlockDescriber => ({
   length: (block: TimelineBlock) => `${block.nights} ${block.nights === 1 ? 'night' : 'nights'}`,
 });
 
-const toPoint = (block: TimelineBlock, rowIndex: number, describe: BlockDescriber): TimelinePoint => {
+const toPoint = (
+  block: TimelineBlock,
+  rowIndex: number,
+  blockIndex: number,
+  describe: BlockDescriber,
+): TimelinePoint => {
   const border = blockBorder(block);
   return {
+    // Without an id, a redraw matches points by x, so blocks that start the same night swap or vanish.
+    id: `${String(rowIndex)}:${String(blockIndex)}`,
     x: block.interval.start,
     x2: block.interval.end,
     y: rowIndex,
@@ -320,7 +327,22 @@ const toPoint = (block: TimelineBlock, rowIndex: number, describe: BlockDescribe
 };
 
 export const buildTimelinePoints = (rows: readonly TimelineRow[], describe: BlockDescriber): readonly TimelinePoint[] =>
-  rows.flatMap((row, rowIndex) => row.blocks.map((block) => toPoint(block, rowIndex, describe)));
+  rows.flatMap((row, rowIndex) =>
+    row.blocks.map((block, blockIndex) => toPoint(block, rowIndex, blockIndex, describe)),
+  );
+
+/**
+ * Names the series after what it draws, so a redraw with other data replaces the series instead of
+ * updating its points: Highcharts matches old points to new rows in x order, and points laid out
+ * row by row are not in x order, so an in-place update lands blocks on the wrong rows.
+ */
+export const seriesKey = (points: readonly TimelinePoint[]): string => {
+  let hash = 0;
+  for (const character of JSON.stringify(points.map((point) => [point.y, point.x, point.x2, point.custom.blockId]))) {
+    hash = (hash * 31 + character.charCodeAt(0)) | 0;
+  }
+  return `timeline-${(hash >>> 0).toString(36)}`;
+};
 
 interface TimelineChartModel {
   readonly rows: readonly TimelineRow[];
@@ -575,6 +597,7 @@ export const buildTimelineChart = ({
     series: [
       {
         type: 'xrange',
+        id: seriesKey(points),
         name: seriesName,
         data: [...points] as XrangePointOptionsObject[],
         dataLabels: {
