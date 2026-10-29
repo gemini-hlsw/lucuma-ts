@@ -1,4 +1,3 @@
-import { isNotNullish } from '@gemini-hlsw/lucuma-common-ui';
 import Highcharts from 'highcharts/es-modules/masters/highcharts.src.js';
 import type { ReactElement } from 'react';
 import { MemoryRouter } from 'react-router';
@@ -144,6 +143,18 @@ const drawnLabels = () =>
 
 const nowLineX = () => drawnPlotLineX('.schedule-today');
 
+/** The line's x once a reflow has finished moving it: the same reading on three polls in a row. */
+const settledNowLineX = async (): Promise<number | undefined> => {
+  const recent: (number | undefined)[] = [];
+  await expect
+    .poll(() => {
+      recent.push(nowLineX()[0]);
+      return recent.length >= 3 && recent.slice(-3).every((x) => x === recent.at(-1));
+    })
+    .toBe(true);
+  return recent.at(-1);
+};
+
 const MINUTE = 60_000;
 
 /** The clock alone: `expect.poll` and Highcharts keep the real `setTimeout`. */
@@ -152,19 +163,40 @@ const fakeClock = (at: number): void => {
   vi.setSystemTime(at);
 };
 
-/** The delay of the last interval armed, which is the chart's marker tick. */
-const armedTick = (setInterval: { mock: { lastCall?: unknown[] } }): number | undefined => {
-  const delay = setInterval.mock.lastCall?.[1];
-  return typeof delay === 'number' ? delay : undefined;
-};
-
-/** The live chart's own scale, so the expected cadence is read off the axis rather than hard-coded. */
-const axisMsPerPixel = (): number => {
-  const axis = Highcharts.charts.findLast(isNotNullish)?.xAxis[0];
-  return axis === undefined ? Number.NaN : Math.abs(axis.toValue(1, true) - axis.toValue(0, true));
-};
-
 const T0 = night('2026-08-10').start;
+
+const svgNodes = () => document.querySelectorAll('[data-testid="chart"] svg *').length;
+const patternIds = () => [...document.querySelectorAll('[data-testid="chart"] svg defs pattern')].map((p) => p.id);
+const liveCharts = () => Highcharts.charts.filter((c) => c !== undefined).length;
+const containers = () => document.querySelectorAll('.highcharts-container').length;
+
+interface Added {
+  readonly target: string;
+  readonly type: string;
+  readonly listener: EventListenerOrEventListenerObject | null;
+}
+
+/** Every listener added to `target` and not yet removed. */
+const trackListeners = (live: Added[], target: Window | Document, name: string): void => {
+  const add = target.addEventListener.bind(target);
+  const remove = target.removeEventListener.bind(target);
+  vi.spyOn(target, 'addEventListener').mockImplementation((type, listener, options) => {
+    live.push({ target: name, type, listener });
+    add(type, listener, options);
+  });
+  vi.spyOn(target, 'removeEventListener').mockImplementation((type, listener, options) => {
+    const index = live.findIndex(
+      (entry) => entry.target === name && entry.type === type && entry.listener === listener,
+    );
+    if (index >= 0) {
+      live.splice(index, 1);
+    }
+    remove(type, listener, options);
+  });
+};
+
+/** One options object for the cases that change nothing but the clock or the host. */
+const sharedOptions = buildSemesterMonthOptions({ month, site: 'GS' });
 
 describe(TimelineChart, () => {
   afterEach(() => {
@@ -172,50 +204,39 @@ describe(TimelineChart, () => {
     vi.useRealTimers();
   });
 
-  it('moves the now marker on a tick without updating the chart', async () => {
+  /** Everything that moves the line, each proven to touch neither the bars nor `chart.update`. */
+  const moves: readonly [string, (screen: Awaited<ReturnType<typeof render>>) => Promise<void> | void, 1 | -1][] = [
+    [
+      'a day passes',
+      () => {
+        vi.advanceTimersByTime(DAY);
+      },
+      1,
+    ],
+    [
+      'the tab becomes visible after sleeping',
+      () => {
+        vi.setSystemTime(T0 + DAY);
+        document.dispatchEvent(new Event('visibilitychange'));
+      },
+      1,
+    ],
+    ['the host narrows', (screen) => screen.rerender(chart('continues', 600, sharedOptions)), -1],
+  ];
+
+  it.each(moves)('moves the now marker when %s, without updating the chart', async (_case, trigger, direction) => {
     fakeClock(T0);
     const update = vi.spyOn(Highcharts.Chart.prototype, 'update');
-    await render(chart());
+    const screen = await render(chart('continues', 900, sharedOptions));
     await expect.poll(nowLineX).toHaveLength(1);
     const [before] = nowLineX();
     const bars = drawnBars();
 
-    vi.advanceTimersByTime(DAY);
+    await trigger(screen);
 
-    await expect.poll(nowLineX).not.toEqual([before]);
-    expect(nowLineX()[0]).toBeGreaterThan(before ?? Number.NaN);
+    await expect.poll(() => Math.sign((nowLineX()[0] ?? Number.NaN) - (before ?? Number.NaN))).toBe(direction);
     expect(update).not.toHaveBeenCalled();
-    expect(drawnBars()).toStrictEqual(bars);
-  });
-
-  it('catches the line up when the tab becomes visible, before its next tick', async () => {
-    fakeClock(T0);
-    const update = vi.spyOn(Highcharts.Chart.prototype, 'update');
-    await render(chart());
-    await expect.poll(nowLineX).toHaveLength(1);
-    const [before] = nowLineX();
-
-    // The clock jumps as it does while a tab sleeps, with no timer firing in between.
-    vi.setSystemTime(T0 + DAY);
-    document.dispatchEvent(new Event('visibilitychange'));
-
-    await expect.poll(() => nowLineX()[0]).toBeGreaterThan(before ?? Number.NaN);
-    expect(update).not.toHaveBeenCalled();
-  });
-
-  it('follows the container when it is resized, with no update of its own', async () => {
-    fakeClock(T0);
-    const update = vi.spyOn(Highcharts.Chart.prototype, 'update');
-    // The same options both times: only the container changes, as when the grid drops a column.
-    const options = buildSemesterMonthOptions({ month, site: 'GS' });
-    const screen = await render(chart('continues', 900, options));
-    await expect.poll(nowLineX).toHaveLength(1);
-    const [wide] = nowLineX();
-
-    await screen.rerender(chart('continues', 600, options));
-
-    await expect.poll(() => nowLineX()[0]).toBeLessThan(wide ?? Number.NaN);
-    expect(update).not.toHaveBeenCalled();
+    expect(drawnBars()).toHaveLength(bars.length);
   });
 
   it('hides the marker once now leaves the window, and shows it again on return', async () => {
@@ -232,104 +253,87 @@ describe(TimelineChart, () => {
     await expect.poll(nowLineX).toHaveLength(1);
   });
 
-  it('keeps the marker where it was when the options change', async () => {
+  /** Each view at an instant inside its window, with the band its per-pixel tick must fall in. */
+  const views: readonly [string, ReactElement, number, [number, number]][] = [
+    ['night', nightChart(1), nightInterval.start + 6 * HOUR, [MINUTE, 3 * MINUTE]],
+    [
+      'week',
+      weekChart('2024-08-12', [run('ghost', 'GHOST', '2024-08-02', '2024-09-30')]),
+      night('2024-08-14').start + 6 * HOUR,
+      [10 * MINUTE, 15 * MINUTE],
+    ],
+    ['month', chart(), T0, [45 * MINUTE, 65 * MINUTE]],
+  ];
+
+  it.each(views)('moves the %s marker once per pixel of travel', async (_view, element, at, [notBefore, by]) => {
+    fakeClock(at);
+    await render(element);
+    await expect.poll(nowLineX).toHaveLength(1);
+    const [before] = nowLineX();
+
+    vi.advanceTimersByTime(notBefore);
+    expect(nowLineX()[0]).toBe(before);
+
+    vi.advanceTimersByTime(by - notBefore);
+    await expect.poll(() => nowLineX()[0]).toBeGreaterThan(before ?? Number.NaN);
+  });
+
+  it('waits longer between moves when the host narrows', async () => {
+    fakeClock(T0);
+    const screen = await render(chart());
+    await expect.poll(nowLineX).toHaveLength(1);
+    const [wide] = nowLineX();
+
+    await screen.rerender(chart('continues', 600));
+    const narrow = await settledNowLineX();
+    expect(narrow).toBeLessThan(wide ?? Number.NaN);
+
+    vi.advanceTimersByTime(65 * MINUTE);
+    expect(nowLineX()[0]).toBe(narrow);
+
+    vi.advanceTimersByTime(45 * MINUTE);
+    await expect.poll(() => nowLineX()[0]).toBeGreaterThan(narrow ?? Number.NaN);
+  });
+
+  it('redraws every block in place and keeps the marker when the options change', async () => {
     fakeClock(T0);
     const update = vi.spyOn(Highcharts.Chart.prototype, 'update');
     const screen = await render(chart());
-    await expect.poll(nowLineX).toHaveLength(1);
-    const before = nowLineX();
-
-    await screen.rerender(chart('runs on'));
-
-    await expect.poll(() => update.mock.calls.length).toBe(1);
-    await expect.poll(nowLineX).toEqual(before);
-  });
-
-  const views: readonly [string, ReactElement, [number, number]][] = [
-    ['night', nightChart(1), [MINUTE, 3 * MINUTE]],
-    ['week', weekChart('2024-08-12', [run('ghost', 'GHOST', '2024-08-02', '2024-09-30')]), [10 * MINUTE, 15 * MINUTE]],
-    ['month', chart(), [45 * MINUTE, 65 * MINUTE]],
-  ];
-
-  it.each(views)('ticks the %s marker once per pixel of travel', async (_view, element, [least, most]) => {
-    fakeClock(T0);
-    const setInterval = vi.spyOn(window, 'setInterval');
-    await render(element);
-
-    await expect.poll(() => armedTick(setInterval)).toBeDefined();
-    const tick = armedTick(setInterval) ?? Number.NaN;
-    expect(tick).toBe(Math.min(DAY, Math.max(MINUTE, axisMsPerPixel())));
-    expect(tick).toBeGreaterThanOrEqual(least);
-    expect(tick).toBeLessThanOrEqual(most);
-  });
-
-  it('arms a longer tick when the host narrows', async () => {
-    fakeClock(T0);
-    const setInterval = vi.spyOn(window, 'setInterval');
-    const screen = await render(chart());
-    await expect.poll(() => armedTick(setInterval)).toBeDefined();
-    const wide = armedTick(setInterval) ?? Number.NaN;
-
-    await screen.rerender(chart('continues', 600));
-
-    await expect.poll(() => armedTick(setInterval)).toBeGreaterThan(wide);
-    expect(armedTick(setInterval)).toBe(Math.min(DAY, Math.max(MINUTE, axisMsPerPixel())));
-  });
-
-  it('leaves no timer behind on unmount', async () => {
-    fakeClock(T0);
-    const screen = await render(chart());
-    await expect.poll(nowLineX).toHaveLength(1);
-    expect(vi.getTimerCount()).toBeGreaterThan(0);
-
-    await screen.unmount();
-
-    expect(vi.getTimerCount()).toBe(0);
-  });
-
-  it('redraws every block in place when the options change', async () => {
-    const screen = await render(chart());
     await expect.poll(() => drawnLabels()).toStrictEqual(['Open', 'GHOST', 'GMOS-S']);
+    await expect.poll(nowLineX).toHaveLength(1);
     const bars = drawnBars();
+    const marker = nowLineX();
     expect(bars).toHaveLength(3);
 
     await screen.rerender(chart('runs on'));
 
+    await expect.poll(() => update.mock.calls.length).toBe(1);
     await expect.poll(() => drawnLabels()).toStrictEqual(['Open', 'GHOST', 'GMOS-S']);
     await expect.poll(() => drawnBars()).toStrictEqual(bars);
+    expect(nowLineX()).toEqual(marker);
   });
 
   /* The week page's sequence: a loading week draws empty, the next week draws one run, and stepping back redraws the cached one. */
-  it('draws other data on the right rows after a window change', async () => {
+  it('draws other data on the right rows, and carries the marker, across a window change and back', async () => {
     const ghost = run('ghost', 'GHOST', '2024-08-02', '2024-08-14');
     const gmos = run('gmos', 'GMOS', '2024-08-15', '2024-09-30');
+    fakeClock(night('2024-08-14').start + 6 * HOUR);
     const screen = await render(weekChart('2024-08-12', [ghost, gmos]));
     await expect.poll(() => drawnLabels()).toStrictEqual(['GHOST', 'GMOS']);
+    await expect.poll(nowLineX).toHaveLength(1);
     const home = drawnBars();
+    const marker = nowLineX();
 
     await screen.rerender(weekChart('2024-08-19', []));
     await expect.poll(() => drawnBars()).toStrictEqual([]);
     await screen.rerender(weekChart('2024-08-19', [gmos]));
     await expect.poll(() => drawnLabels()).toStrictEqual(['GMOS']);
+    await expect.poll(nowLineX).toEqual([]);
     await screen.rerender(weekChart('2024-08-12', [ghost, gmos]));
 
     await expect.poll(() => drawnLabels()).toStrictEqual(['GHOST', 'GMOS']);
     await expect.poll(() => drawnBars()).toStrictEqual(home);
-  });
-
-  it('carries the marker from a week it falls in to one it does not, and back', async () => {
-    const ghost = run('ghost', 'GHOST', '2024-08-02', '2024-09-30');
-    fakeClock(night('2024-08-14').start + 6 * HOUR);
-    const screen = await render(weekChart('2024-08-12', [ghost]));
-    await expect.poll(nowLineX).toHaveLength(1);
-    const home = nowLineX();
-
-    await screen.rerender(weekChart('2024-08-19', [ghost]));
-    await expect.poll(() => drawnLabels()).toStrictEqual(['GHOST']);
-    await expect.poll(nowLineX).toEqual([]);
-
-    await screen.rerender(weekChart('2024-08-12', [ghost]));
-    await expect.poll(nowLineX).toEqual(home);
+    expect(nowLineX()).toEqual(marker);
   });
 
   /* Highcharts matches an un-id'd plot line by index on update, so a transition that appears must not land on the marker's slot. */
@@ -345,5 +349,50 @@ describe(TimelineChart, () => {
     await expect.poll(() => drawnPlotLineX('.night-transition')).toHaveLength(2);
     expect(nowLineX()).toEqual(marker);
     expect(document.querySelectorAll('.schedule-today')).toHaveLength(1);
+  });
+
+  describe('leaves nothing behind', () => {
+    it('adds no svg node or pattern def across 200 now ticks', async () => {
+      fakeClock(T0 + 6 * HOUR);
+      await render(chart('continues', 900, sharedOptions));
+      await expect.poll(nowLineX).toHaveLength(1);
+      const nodes = svgNodes();
+      const ids = patternIds();
+      expect(ids).toHaveLength(1);
+
+      for (let round = 1; round <= 200; round += 1) {
+        vi.advanceTimersByTime(HOUR);
+      }
+
+      expect(svgNodes()).toBe(nodes);
+      expect(patternIds()).toStrictEqual(ids);
+      expect(document.querySelectorAll('.highcharts-plot-line.schedule-today')).toHaveLength(1);
+    });
+
+    // Highcharts arms one 500 ms data-label fade (SVGElement.animate) that destroy() does not clear, so the clock runs past it first.
+    it('leaves no chart, container, timer or listener behind on unmount', async () => {
+      vi.useFakeTimers({ toFake: ['Date', 'setTimeout', 'clearTimeout', 'setInterval', 'clearInterval'] });
+      vi.setSystemTime(T0 + 6 * HOUR);
+      const live: Added[] = [];
+      trackListeners(live, window, 'window');
+      trackListeners(live, document, 'document');
+      const chartsBefore = liveCharts();
+      const containersBefore = containers();
+
+      const screen = await render(chart('continues', 900, sharedOptions));
+      expect(nowLineX()).toHaveLength(1);
+      expect(liveCharts()).toBe(chartsBefore + 1);
+      expect(containers()).toBe(containersBefore + 1);
+      expect(live.length).toBeGreaterThan(0);
+      expect(vi.getTimerCount()).toBeGreaterThan(0);
+
+      vi.advanceTimersByTime(HOUR);
+      await screen.unmount();
+
+      expect(liveCharts()).toBe(chartsBefore);
+      expect(containers()).toBe(containersBefore);
+      expect(vi.getTimerCount()).toBe(0);
+      expect(live.map((entry) => `${entry.target}:${entry.type}`)).toStrictEqual([]);
+    });
   });
 });
