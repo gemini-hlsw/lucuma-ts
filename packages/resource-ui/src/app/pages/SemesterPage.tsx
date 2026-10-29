@@ -1,7 +1,7 @@
 import { Dropdown } from 'primereact/dropdown';
 import type { JSX } from 'react';
 
-import { useNow } from '@/app/useNow';
+import { nightBoundaries, useNow } from '@/app/useNow';
 import { useSelection } from '@/app/useSelection';
 import { useSemester } from '@/app/useSemester';
 import { LabelledControl } from '@/components/ui/LabelledControl';
@@ -15,14 +15,11 @@ import { SemesterTimeline, SemesterTimelineLegend } from '@/features/semester/Se
 import { modeLegendExtras, telescopeLegendExtras, tooLegendExtras } from '@/features/timeline/timelineOptions';
 import { useSemesterSchedule } from '@/gql/hooks';
 
-/** The semester runs for months, so the "today" marker needs no fine tick. */
-const NOW_TICK_MS = 5 * 60_000;
-
 /** The whole semester in one request: the view draws all of it, so paging would draw it twice. */
 export default function SemesterPage(): JSX.Element {
   const { site } = useSelection();
   const { semester: selected, semestersForSite, setSemester, loading: loadingSets, error: setsError } = useSemester();
-  const now = useNow(NOW_TICK_MS);
+  const now = useNow(nightBoundaries(selected?.site ?? site));
 
   const bounds =
     selected === null

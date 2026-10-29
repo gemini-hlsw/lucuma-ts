@@ -55,7 +55,7 @@ const drawnBars = () =>
     .join('|');
 
 describe(SemesterPage, () => {
-  it('moves the today marker on a tick without updating any month chart', async () => {
+  it('keeps the options of every month chart across a tick: the marker moves and chart.update never runs', async () => {
     // The clock only: Apollo and Highcharts keep their real timers, and the wall clock keeps running underneath.
     vi.useFakeTimers({ toFake: ['Date', 'setInterval', 'clearInterval'], shouldAdvanceTime: true });
     try {
@@ -76,6 +76,32 @@ describe(SemesterPage, () => {
       await expect.poll(() => drawnPlotLineX('.schedule-today')[0]).toBeGreaterThan(before ?? Number.NaN);
       expect(drawnPlotLineX('.schedule-today')).toHaveLength(1);
       expect(update.mock.calls.length).toBe(updates);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('keys Today while the clock is inside the semester and not outside it', async () => {
+    vi.useFakeTimers({ toFake: ['Date', 'setInterval', 'clearInterval'], shouldAdvanceTime: true });
+    try {
+      // The night before the semester's first, six hours in.
+      vi.setSystemTime(observingNightInterval('GS', '2025-08-01').start + 6 * 3_600_000);
+      const screen = await openSemester(
+        '/semester?site=GS&semester=2025B',
+        publishedSemesters(GS_2025B),
+        semesterSchedule(GS_2025B, { instrumentAvailability: [GHOST] }),
+      );
+      const calendar = screen.getByRole('group', { name: 'Calendar' });
+      await expect.element(calendar.getByText('Weekend')).toBeVisible();
+      await expect.element(calendar.getByText('Today')).not.toBeInTheDocument();
+
+      vi.advanceTimersByTime(24 * 3_600_000);
+      await expect.element(calendar.getByText('Today')).toBeVisible();
+
+      // A tab asleep through the semester's end re-reads the clock when it comes back.
+      vi.setSystemTime(observingNightInterval('GS', '2026-02-02').start + 6 * 3_600_000);
+      document.dispatchEvent(new Event('visibilitychange'));
+      await expect.element(calendar.getByText('Today')).not.toBeInTheDocument();
     } finally {
       vi.useRealTimers();
     }

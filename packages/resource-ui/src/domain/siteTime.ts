@@ -36,6 +36,10 @@ export const observingNightOf = (site: Site, epochMillis: number): string => {
   return Number(field('hour')) % 24 >= 14 ? addDays(localDate, 1) : localDate;
 };
 
+/** The end of the observing night in progress - the next 14:00 site-local, strictly after `epochMillis`. */
+export const nextNightBoundary = (site: Site, epochMillis: number): number =>
+  observingNightInterval(site, observingNightOf(site, epochMillis)).end;
+
 /** How the published sheet heads that night's column. */
 export const firstEveningDate = (site: Site, interval: Interval): string =>
   addDays(observingNightOf(site, interval.start), -1);

@@ -1,7 +1,7 @@
 import { when } from '@gemini-hlsw/lucuma-common-ui';
 import type { JSX } from 'react';
 
-import { useNow } from '@/app/useNow';
+import { nightBoundaries, useNow } from '@/app/useNow';
 import { useSelection } from '@/app/useSelection';
 import { NightStepper } from '@/components/ui/NightStepper';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -13,12 +13,9 @@ import { modeLegendExtras, telescopeLegendExtras, tooLegendExtras } from '@/feat
 import { WeekTimeline, WeekTimelineLegend } from '@/features/week/WeekTimeline';
 import { useWeekSchedule } from '@/gql/hooks';
 
-/** A week is long enough that the marker needs no fine tick. */
-const NOW_TICK_MS = 5 * 60_000;
-
 export default function WeekPage(): JSX.Element {
   const { site, observingNight, tonight, setObservingNight, clearObservingNight } = useSelection();
-  const now = useNow(NOW_TICK_MS);
+  const now = useNow(nightBoundaries(site));
 
   // The page speaks evening dates; the observing-night labels stay in the URL.
   const firstEvening = addDays(observingNight, -1);

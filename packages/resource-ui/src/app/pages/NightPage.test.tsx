@@ -45,20 +45,21 @@ const chartBars = () =>
     .join('|');
 
 describe(NightPage, () => {
-  it('moves the now marker on a tick without updating the chart', async () => {
+  it('drops the Now key when the night ends, without updating the chart', async () => {
     // The clock only: Apollo and Highcharts keep their real timers, and the wall clock keeps running underneath.
     vi.useFakeTimers({ toFake: ['Date', 'setInterval', 'clearInterval'], shouldAdvanceTime: true });
     try {
       vi.setSystemTime(observingNightInterval('GS', '2025-11-14').start + 6 * 3_600_000);
       const update = vi.spyOn(Highcharts.Chart.prototype, 'update');
-      await openOrdinaryNight();
+      const screen = await openOrdinaryNight();
+      const calendar = screen.getByRole('group', { name: 'Calendar' });
+      await expect.element(calendar.getByText('Now')).toBeVisible();
       await expect.poll(() => drawnPlotLineX('.schedule-today')).toHaveLength(1);
-      const [before] = drawnPlotLineX('.schedule-today');
       const updates = update.mock.calls.length;
 
-      vi.advanceTimersByTime(3_600_000);
+      vi.advanceTimersByTime(24 * 3_600_000);
 
-      await expect.poll(() => drawnPlotLineX('.schedule-today')[0]).toBeGreaterThan(before ?? Number.NaN);
+      await expect.element(calendar.getByText('Now')).not.toBeInTheDocument();
       expect(update.mock.calls.length).toBe(updates);
     } finally {
       vi.useRealTimers();

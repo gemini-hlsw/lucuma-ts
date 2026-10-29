@@ -2,7 +2,7 @@ import { when } from '@gemini-hlsw/lucuma-common-ui';
 import type { JSX } from 'react';
 
 import { useClockPreference } from '@/app/useClockPreference';
-import { useNow } from '@/app/useNow';
+import { nightBoundaries, useNow } from '@/app/useNow';
 import { useSelection } from '@/app/useSelection';
 import { NightStepper } from '@/components/ui/NightStepper';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -22,14 +22,11 @@ import {
 } from '@/features/timeline/timelineOptions';
 import { useNightSchedule } from '@/gql/hooks';
 
-/** A night is short enough that the marker should keep up with the clock. */
-const NOW_TICK_MS = 60_000;
-
 /** The view the rest of the model exists for: a run changing mid-night is drawn where it changes. */
 export default function NightPage(): JSX.Element {
   const { site, observingNight, tonight, setObservingNight, clearObservingNight } = useSelection();
   const timeDisplay = useClockPreference();
-  const now = useNow(NOW_TICK_MS);
+  const now = useNow(nightBoundaries(site));
 
   const interval = observingNightInterval(site, observingNight);
 

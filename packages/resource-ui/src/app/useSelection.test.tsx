@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
-import { observingNightOf } from '@/domain/siteTime';
+import { observingNightInterval, observingNightOf } from '@/domain/siteTime';
 import { Probe, PROBE_URL_TESTID } from '@/test/probe';
 import { renderApp } from '@/test/renderApp';
 
@@ -40,6 +40,24 @@ describe(useSelection, () => {
     // Derived with the function the page uses, so this cannot decay the way a hardcoded date would.
     const inProgress = observingNightOf('GS', Date.now());
     await expect.element(screen.getByTestId('probe-night')).toHaveTextContent(inProgress);
+  });
+
+  it('rolls tonight over at 14:00 site time', async () => {
+    // The clock only, so the router and the locators keep their real timers.
+    vi.useFakeTimers({ toFake: ['Date', 'setInterval', 'clearInterval'] });
+    try {
+      vi.setSystemTime(observingNightInterval('GS', '2025-11-14').end - 60_000);
+      const screen = await openSelection('/night?site=GS');
+      await expect.element(screen.getByTestId('probe-tonight')).toHaveTextContent('2025-11-14');
+      await expect.element(screen.getByTestId('probe-night')).toHaveTextContent('2025-11-14');
+
+      vi.advanceTimersByTime(2 * 60_000);
+
+      await expect.element(screen.getByTestId('probe-tonight')).toHaveTextContent('2025-11-15');
+      await expect.element(screen.getByTestId('probe-night')).toHaveTextContent('2025-11-15');
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('reads an unknown site as Gemini North rather than rendering nothing', async () => {

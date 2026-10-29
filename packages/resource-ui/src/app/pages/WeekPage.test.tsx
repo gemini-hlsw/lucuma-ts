@@ -46,7 +46,7 @@ const chartBars = () =>
     .join('|');
 
 describe(WeekPage, () => {
-  it('moves the now marker on a tick without updating the chart', async () => {
+  it('keeps the chart options across a tick: the marker moves and chart.update never runs', async () => {
     // The clock only: Apollo and Highcharts keep their real timers, and the wall clock keeps running underneath.
     vi.useFakeTimers({ toFake: ['Date', 'setInterval', 'clearInterval'], shouldAdvanceTime: true });
     try {
@@ -57,7 +57,7 @@ describe(WeekPage, () => {
       const [before] = drawnPlotLineX('.schedule-today');
       const updates = update.mock.calls.length;
 
-      vi.advanceTimersByTime(6 * 3_600_000);
+      vi.advanceTimersByTime(24 * 3_600_000);
 
       await expect.poll(() => drawnPlotLineX('.schedule-today')[0]).toBeGreaterThan(before ?? Number.NaN);
       expect(update.mock.calls.length).toBe(updates);
