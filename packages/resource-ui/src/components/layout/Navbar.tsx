@@ -21,7 +21,7 @@ import { carrySelection, searchString } from '@/app/carriedSelection';
 import { setClockPreference, useClockPreference } from '@/app/useClockPreference';
 import { useSelection } from '@/app/useSelection';
 import orcidLogo from '@/assets/orcid-logo.svg';
-import { signOut } from '@/auth/session';
+import { session } from '@/auth/session';
 import { signInUrl } from '@/auth/ssoClient';
 import { type SessionStatus, useSessionStatus, useSignedOutElsewhere, useUser } from '@/components/atoms/auth';
 import { AboutResource } from '@/components/layout/AboutResource';
@@ -138,7 +138,7 @@ export default function Navbar(): JSX.Element {
     focusMenuButton();
     setAnnounceSignOut(true);
     signingOut.current = true;
-    void signOut().then(({ reachedSso }) => {
+    void session.signOut().then(({ reachedSso }) => {
       if (!reachedSso && signingOut.current) toast?.show(LOGOUT_UNREACHABLE_TOAST);
     });
   };

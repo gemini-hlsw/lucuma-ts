@@ -74,6 +74,3 @@ export const environmentFor = (hostname: string): Environment =>
   resolveEnvironment(ENVIRONMENTS, hostname, 'localhost');
 
 export const CURRENT_ENV: Environment = environmentFor(window.location.hostname);
-
-/** How many seconds before token expiry to proactively refresh. */
-export const EXPIRATION_ANTICIPATION_SECONDS = 30;
