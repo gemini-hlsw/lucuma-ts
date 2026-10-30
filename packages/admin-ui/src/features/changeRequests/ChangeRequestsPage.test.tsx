@@ -1,5 +1,4 @@
 import { fakeJwt, standardUser } from '@gemini-hlsw/lucuma-common-ui/testing';
-import { dateToLocalObservingNight } from '@gemini-hlsw/lucuma-core';
 import { describe, expect, it } from 'vitest';
 import { userEvent } from 'vitest/browser';
 
@@ -10,7 +9,6 @@ import {
   RESOLVE_KEEPING_FEEDBACK_MUTATION,
   RESOLVE_WITH_FEEDBACK_MUTATION,
 } from '@/gql/odb/changeRequests';
-import { CONFLICTS_QUERY, similarModeTypes } from '@/gql/odb/conflicts';
 import { type MockedResponseOf, renderWithContext } from '@/test/render';
 
 import ChangeRequestsPage from './ChangeRequestsPage';
@@ -70,25 +68,6 @@ const observations = (): MockedResponseOf<typeof PROGRAM_OBSERVATIONS_QUERY> => 
   maxUsageCount: Number.POSITIVE_INFINITY,
 });
 
-/** The Potential Conflicts table mounts with the selection. Its variables are
- *  derived exactly as the hook derives them, so the mock matches. */
-const conflicts = (): MockedResponseOf<typeof CONFLICTS_QUERY> => ({
-  request: {
-    query: CONFLICTS_QUERY,
-    variables: {
-      modeTypes: [...similarModeTypes('GMOS_SOUTH_LONG_SLIT')].sort(),
-      today: dateToLocalObservingNight(new Date()),
-    },
-  },
-  result: {
-    data: {
-      configurationRequests: { __typename: 'ConfigurationRequestSelectResult', matches: [] },
-      observations: { __typename: 'ObservationSelectResult', matches: [] },
-    },
-  },
-  maxUsageCount: Number.POSITIVE_INFINITY,
-});
-
 /** Resolve with no response: it must go out as the document that omits
  *  `feedback` entirely, since a nulled variable erases whatever is stored.
  *  Matching this document rather than the one below is the assertion. */
@@ -141,7 +120,7 @@ describe(ChangeRequestsPage, () => {
     // stored earlier, so a cleared box must omit the field entirely.
     const screen = await renderWithContext(<ChangeRequestsPage />, {
       token: STAFF_TOKEN,
-      mocks: [requests(), observations(), conflicts(), resolveKeepingFeedback()],
+      mocks: [requests(), observations(), resolveKeepingFeedback()],
     });
     const box = await denyDraft(screen);
     await userEvent.clear(box);
@@ -153,7 +132,7 @@ describe(ChangeRequestsPage, () => {
     // "   " is as empty as "" to a reviewer, and just as invalid to the ODB.
     const screen = await renderWithContext(<ChangeRequestsPage />, {
       token: STAFF_TOKEN,
-      mocks: [requests(), observations(), conflicts(), resolveKeepingFeedback()],
+      mocks: [requests(), observations(), resolveKeepingFeedback()],
     });
     const box = await denyDraft(screen);
     await userEvent.fill(box, '   ');
@@ -165,7 +144,7 @@ describe(ChangeRequestsPage, () => {
     const note = 'No dark time left this semester';
     const screen = await renderWithContext(<ChangeRequestsPage />, {
       token: STAFF_TOKEN,
-      mocks: [requests(), observations(), conflicts(), resolveExpecting(note)],
+      mocks: [requests(), observations(), resolveExpecting(note)],
     });
     const box = await denyDraft(screen);
     await userEvent.fill(box, note);
@@ -178,7 +157,7 @@ describe(ChangeRequestsPage, () => {
   it('leaves nothing selected when the selected program is deselected — sc-10137', async () => {
     const screen = await renderWithContext(<ChangeRequestsPage />, {
       token: STAFF_TOKEN,
-      mocks: [requests(), observations(), conflicts()],
+      mocks: [requests(), observations()],
     });
 
     // The first program auto-selects on load, so its requests tile is shown.

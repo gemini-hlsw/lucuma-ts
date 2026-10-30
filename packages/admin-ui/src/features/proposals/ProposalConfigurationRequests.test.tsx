@@ -1,6 +1,5 @@
 import type { MockLink } from '@apollo/client/testing';
 import { fakeJwt, standardUser } from '@gemini-hlsw/lucuma-common-ui/testing';
-import { dateToLocalObservingNight } from '@gemini-hlsw/lucuma-core';
 import { describe, expect, it } from 'vitest';
 import { userEvent } from 'vitest/browser';
 
@@ -9,7 +8,6 @@ import {
   PROGRAM_OBSERVATIONS_QUERY,
   RESOLVE_WITH_FEEDBACK_MUTATION,
 } from '@/gql/odb/changeRequests';
-import { CONFLICTS_QUERY, similarModeTypes } from '@/gql/odb/conflicts';
 import { type MockedResponseOf, renderWithContext } from '@/test/render';
 
 import { ProposalConfigurationRequests } from './ProposalConfigurationRequests';
@@ -64,23 +62,6 @@ const observationsMock = (): MockedResponseOf<typeof PROGRAM_OBSERVATIONS_QUERY>
   maxUsageCount: Infinity,
 });
 
-const emptyConflicts = (): MockedResponseOf<typeof CONFLICTS_QUERY> => ({
-  request: {
-    query: CONFLICTS_QUERY,
-    variables: {
-      modeTypes: [...similarModeTypes('GMOS_NORTH_LONG_SLIT')].sort(),
-      today: dateToLocalObservingNight(new Date()),
-    },
-  },
-  maxUsageCount: Infinity,
-  result: {
-    data: {
-      configurationRequests: { __typename: 'ConfigurationRequestSelectResult', matches: [] },
-      observations: { __typename: 'ObservationSelectResult', matches: [] },
-    },
-  },
-});
-
 const render = (mocks: readonly MockLink.MockedResponse[]) =>
   renderWithContext(<ProposalConfigurationRequests programId="p-1" programLabel="G-2027B-0042-DD" />, {
     token: STAFF_TOKEN,
@@ -126,7 +107,6 @@ describe(ProposalConfigurationRequests, () => {
       requestsMock([rawRequest('REQUESTED')]),
       requestsMock([rawRequest('APPROVED', 'Reloaded from the ODB.')]),
       observationsMock(),
-      emptyConflicts(),
       approveMock(),
     ]);
 
@@ -208,7 +188,6 @@ describe(ProposalConfigurationRequests, () => {
       requestsMock([rawRequest('REQUESTED')]),
       slowReload,
       observationsMock(),
-      emptyConflicts(),
       approveMock(),
     ]);
     await expect.element(screen.getByText('Configuration Requests')).toBeVisible();

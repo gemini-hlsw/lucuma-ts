@@ -11,12 +11,11 @@ const STAFF_TOKEN = fakeJwt(standardUser('staff'));
 /** A conflict row; only the fields the target lookup reads matter here. */
 function row(overrides: Partial<ConflictRow> = {}): ConflictRow {
   return {
-    sourceId: 'x-1',
-    key: 'x-1:p-1:x-9',
+    key: 'p-1:x-9',
     programLabel: 'G-2027B-0057-Q',
     detailLabel: 'x-9',
     programId: 'p-1',
-    requestId: 'x-9',
+    observationId: null,
     status: 'Requested',
     target: '—',
     applicableObservations: [],
@@ -104,7 +103,7 @@ describe(useConflictTargetNames, () => {
       <Harness
         rows={[
           row({ applicableObservations: ['o-2', 'o-1'] }),
-          row({ sourceId: 'x-2', key: 'x-2:p-1:x-9', applicableObservations: ['o-1'] }),
+          row({ key: 'p-1:x-9-again', applicableObservations: ['o-1'] }),
         ]}
       />,
       {
@@ -124,7 +123,7 @@ describe(useConflictTargetNames, () => {
     await expect.element(screen.getByTestId('count')).toHaveTextContent('2');
   });
 
-  it('does not query at all when no row has applicable observations (ToO rows carry their own name)', async () => {
+  it('does not query at all when no row has applicable observations (observation rows carry their own name)', async () => {
     // An unmatched query fails quietly in Apollo's mock link, so asserting on
     // what renders cannot tell a skipped query from a failed one. Instead, mock
     // the empty-id query and have it answer with a name: the hook must never
