@@ -7,7 +7,6 @@ import type {
   XAxisPlotLinesOptions,
   XrangePointOptionsObject,
 } from 'highcharts';
-import type { CSSProperties } from 'react';
 
 import { midpoint } from '@/domain/interval';
 import { startsWeek } from '@/domain/semester';
@@ -15,29 +14,17 @@ import { displayTimeZone, eveningLabel, firstEveningDate, lastEveningDate, type 
 import {
   type BlockState,
   isNotableState,
-  NOTABLE_MODE,
-  NOTABLE_TOO,
   stateRowCount,
-  TELESCOPE_MODE_LABEL,
   type TimelineBand,
   type TimelineBlock,
   type TimelineNight,
   type TimelineRow,
-  TOO_SUPPORT_LABEL,
   USAGE_LABEL,
 } from '@/domain/timeline';
 
 // Re-exported beside the fills that draw it, so chart code has one import.
 export { USAGE_LABEL } from '@/domain/timeline';
-import type {
-  ResourceInstrument,
-  Site,
-  TelescopeAvailabilityBlock,
-  TelescopeModeBlock,
-  TelescopeModeType,
-  TooSupport,
-  TooSupportBlock,
-} from '@/domain/types';
+import type { ResourceInstrument, Site } from '@/domain/types';
 
 import { INSTRUMENT_INK_DARK, INSTRUMENT_INK_LIGHT, instrumentColor, instrumentInk } from './instruments';
 
@@ -50,66 +37,6 @@ export const stateFill = (notable: boolean): string => (notable ? 'var(--state-n
 
 /** The bright neutral takes dark text, the quiet one white (global.css). */
 export const stateFillInk = (notable: boolean): string => (notable ? INSTRUMENT_INK_DARK : INSTRUMENT_INK_LIGHT);
-
-const modeColor = (mode: TelescopeModeType): string => stateFill(NOTABLE_MODE[mode]);
-
-const tooColor = (too: TooSupport): string => stateFill(NOTABLE_TOO[too]);
-
-/** A key a view adds to the shared legend, rather than growing a second one that drifts from it. */
-export interface LegendExtra {
-  readonly key: string;
-  readonly label: string;
-  readonly swatch: CSSProperties;
-}
-
-/** Open only: a Closed span draws in the closure red, which the "Closed" key already names. */
-export const telescopeLegendExtras = (telescopeAvailability: readonly TelescopeAvailabilityBlock[]): LegendExtra[] =>
-  telescopeAvailability.some((telescopeBlock) => telescopeBlock.port === null && telescopeBlock.availability === 'OPEN')
-    ? [{ key: 'telescope-open', label: 'Open', swatch: { backgroundColor: stateFill(false) } }]
-    : [];
-
-export const modeLegendExtras = (telescopeMode: readonly TelescopeModeBlock[]): LegendExtra[] =>
-  [...new Set(telescopeMode.map((block) => block.mode))].map((mode) => ({
-    key: `mode-${mode}`,
-    label: TELESCOPE_MODE_LABEL[mode],
-    swatch: { backgroundColor: modeColor(mode) },
-  }));
-
-export const tooLegendExtras = (tooSupport: readonly TooSupportBlock[]): LegendExtra[] =>
-  [...new Set(tooSupport.map((block) => block.tooSupport))].map((too) => ({
-    key: `too-${too}`,
-    label: TOO_SUPPORT_LABEL[too],
-    swatch: { backgroundColor: tooColor(too) },
-  }));
-
-export const calendarLegendExtras = (options: {
-  readonly weekend?: boolean;
-  readonly now?: string | false;
-  readonly noData?: boolean;
-}): LegendExtra[] => [
-  ...(options.weekend === true
-    ? [{ key: 'weekend', label: 'Weekend', swatch: { backgroundColor: 'var(--schedule-weekend)' } }]
-    : []),
-  ...(typeof options.now === 'string'
-    ? [
-        {
-          key: 'now',
-          label: options.now,
-          // A line, not a fill - the swatch says so rather than reading as a block.
-          swatch: { backgroundColor: 'transparent', borderLeft: '2px solid var(--schedule-today)' },
-        },
-      ]
-    : []),
-  ...(options.noData === true
-    ? [
-        {
-          key: 'no-data',
-          label: 'Nothing recorded',
-          swatch: { backgroundColor: 'var(--schedule-no-data)' },
-        },
-      ]
-    : []),
-];
 
 /** The instrument's own hue hatched with its measured ink: identity on the hue, stripes say reserved. */
 const engineeringPattern = (instrument: ResourceInstrument): PatternObject => ({
@@ -128,7 +55,7 @@ const blockColor = (block: TimelineBlock): string | PatternObject => {
     // Closed takes the reserved closure red, the one meaning red ever has on these charts.
     return block.variant === 'CLOSED' ? 'var(--schedule-closed)' : stateFill(false);
   }
-  if (block.state === 'TOO' || block.state === 'MODE' || block.state === 'SUBSYSTEM') {
+  if (block.state === 'TOO' || block.state === 'MODE') {
     return stateFill(isNotableState(block));
   }
   if (block.instrument === null) {
@@ -152,7 +79,7 @@ const blockInk = (block: TimelineBlock): string => {
   if (block.state === 'TELESCOPE') {
     return block.variant === 'CLOSED' ? 'var(--timeline-text)' : stateFillInk(false);
   }
-  if (block.state === 'TOO' || block.state === 'MODE' || block.state === 'SUBSYSTEM') {
+  if (block.state === 'TOO' || block.state === 'MODE') {
     return stateFillInk(isNotableState(block));
   }
   if (block.instrument === null || block.usage === 'UNAVAILABLE') {
@@ -197,9 +124,6 @@ export const CHART_LABEL = { color: 'var(--timeline-text)', fontSize: DENSE, fon
 export const MUTED_LABEL = { color: 'var(--timeline-muted-text)', fontSize: DENSE } as const;
 
 export const MUTED_TICK = { color: 'var(--timeline-muted-text)', fontSize: TICK } as const;
-
-/** The now marker's own label, which takes the marker's colour so the two read as one thing. */
-export const NOW_LABEL = { color: 'var(--schedule-today)', fontSize: DENSE, fontWeight: '700' } as const;
 
 /**
  * Advance of semibold label type, in px per rem of font size - over-estimated on purpose because an
@@ -343,7 +267,7 @@ export const seriesKey = (points: readonly TimelinePoint[]): string => {
   return `timeline-${(hash >>> 0).toString(36)}`;
 };
 
-interface TimelineChartModel {
+export interface TimelineChartModel {
   readonly rows: readonly TimelineRow[];
   readonly site: Site;
   readonly describe: BlockDescriber;
@@ -356,8 +280,6 @@ interface TimelineChartModel {
   readonly seriesName: string;
   /** Reaches Highcharts as `time.timezone`, so only labels Highcharts itself formats move with it. */
   readonly timeDisplay?: TimeDisplay;
-  /** What the now marker says beside itself; the week and month say nothing. */
-  readonly nowLabel?: string;
 }
 
 const TOP_MARGIN = 8;
@@ -394,13 +316,12 @@ export const closureBandPlotBand = (band: TimelineBand, labelYRem: number): XAxi
 export const NOW_MARKER_ID = 'now';
 
 /** No value: `TimelineChart` moves the line on the live axis, so a tick never rebuilds the options. */
-export const nowMarker = (label?: string): XAxisPlotLinesOptions => ({
+export const nowMarker = (): XAxisPlotLinesOptions => ({
   id: NOW_MARKER_ID,
   color: 'var(--schedule-today)',
   width: 2,
   zIndex: MARKER_LINE_Z,
   className: 'schedule-today',
-  ...(label === undefined ? {} : { label: { text: label, style: NOW_LABEL } }),
 });
 
 export const weekendBands = (nights: readonly TimelineNight[]): XAxisPlotBandsOptions[] =>
@@ -506,7 +427,6 @@ export const buildTimelineChart = ({
   responsive,
   seriesName,
   timeDisplay = 'site',
-  nowLabel,
 }: TimelineChartModel): Options => {
   // One read for the whole options object, so the bar and band fit tests judge at the same root.
   const rootPx = rootFontSizePx();
@@ -547,7 +467,7 @@ export const buildTimelineChart = ({
     // The table view carries the accessible reading; the a11y module would announce every point.
     accessibility: { enabled: false },
     // First: `Axis.update` matches an un-id'd line by index, and a line count that grows would land on it.
-    xAxis: { ...xAxis, plotLines: [nowMarker(nowLabel), ...(xAxis.plotLines ?? [])] },
+    xAxis: { ...xAxis, plotLines: [nowMarker(), ...(xAxis.plotLines ?? [])] },
     yAxis: {
       categories: [...categories],
       reversed: true,

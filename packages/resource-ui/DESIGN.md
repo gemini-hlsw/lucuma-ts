@@ -686,13 +686,14 @@ phrasing of a span, nothing else.
   label out of line with its bar).
 - **The night view draws the chart alone, deliberately bare** - its emptiness is a decision,
   not an omission; do not furnish it.
-- **Subsystem rows** (PWFS1/PWFS2/LGS) are the night view's alone, draw in the one quiet
-  neutral, and print their state in words - no legend section, because a colour key would
-  key no distinction, and no appearance on the wide views, where three semester-constant
-  rows per month would bury the runs.
-- **Legend:** one section per state row, then Instruments, then Calendar where a
-  view supplies it - five, in that order. The neutrals repeat across rows, so a repeated
-  grey is keyed under the row it belongs to; a section with no keys does not render.
+- **No subsystem rows** (PWFS1/PWFS2/LGS) on any view: the three views draw the same rows, and
+  nightly subsystem state would be three semester-constant rows per month on the wide views.
+- **Legend:** one section per state row, then Instruments, then Calendar - five, in that
+  order. The window's projection derives the keys from what it placed and the bar draws
+  them; no view adds or removes one. The neutrals repeat across rows, so a repeated grey
+  is keyed under the row it belongs to; a section with no keys does not render.
+- **The now marker is a bare line** in the today colour, with no word beside it on any view; the
+  legend's Now key (Today on the semester) names it.
 - **Every night-shaped thing opens its night view** - chart bars route onto `/night`.
   What a bar must show on focus, and how it still falls short, is Interaction states above.
 

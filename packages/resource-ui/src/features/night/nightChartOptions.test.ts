@@ -1,18 +1,13 @@
-import type { AxisLabelsFormatterContextObject, XAxisOptions, XAxisPlotLinesOptions, YAxisOptions } from 'highcharts';
+import type { AxisLabelsFormatterContextObject, XAxisOptions, YAxisOptions } from 'highcharts';
 import { describe, expect, it } from 'vitest';
 
 import { buildNightTimeline } from '@/domain/nightTimeline';
 import { portRowLabel, TELESCOPE_PORTS } from '@/domain/ports';
 import { observingNightInterval } from '@/domain/siteTime';
+import { TOO_SUPPORT_LABEL } from '@/domain/timeline';
 import type { InstrumentAvailabilityBlock, TelescopeAvailabilityBlock } from '@/domain/types';
-import {
-  buildTimelinePoints,
-  DENSE,
-  NOW_MARKER_ID,
-  readerPx,
-  TICK,
-  type TimelinePoint,
-} from '@/features/timeline/timelineOptions';
+import { buildTimelinePoints, DENSE, readerPx, TICK, type TimelinePoint } from '@/features/timeline/timelineOptions';
+import { scheduleOf } from '@/test/fixtures/domain';
 import { collectFontSizes } from '@/test/fontSizes';
 
 import {
@@ -42,7 +37,7 @@ const instrumentBlock = (
 });
 
 const build = (instrumentAvailability: readonly InstrumentAvailabilityBlock[] = []) =>
-  buildNightTimeline({ site: 'GS', observingNight: NIGHT, instrumentAvailability, telescopeAvailability: [] });
+  buildNightTimeline({ site: 'GS', observingNight: NIGHT, schedule: scheduleOf({ instrumentAvailability }) });
 
 describe('clock and duration labels', () => {
   it('reads the clock in the site zone, not the browser one', () => {
@@ -119,8 +114,6 @@ const axisOf = (): XAxisOptions => {
   return xAxis;
 };
 
-const plotLines = (): XAxisPlotLinesOptions[] => axisOf().plotLines ?? [];
-
 describe('the chart', () => {
   it('spans exactly the night', () => {
     expect(axisOf().min).toBe(interval.start);
@@ -149,19 +142,14 @@ describe('the chart', () => {
     const night = buildNightTimeline({
       site: 'GS',
       observingNight: NIGHT,
-      instrumentAvailability: [instrumentBlock({ id: 'a', port: 3, interval })],
-      telescopeAvailability: [{ id: 'wide', availability: 'CLOSED', port: null, reason: 'Shutdown', interval }],
+      schedule: scheduleOf({
+        instrumentAvailability: [instrumentBlock({ id: 'a', port: 3, interval })],
+        telescopeAvailability: [{ id: 'wide', availability: 'CLOSED', port: null, reason: 'Shutdown', interval }],
+      }),
     });
     const options = buildNightChartOptions({ night, site: 'GS', timeDisplay: 'site' });
 
     expect(new Set(collectFontSizes(options))).toEqual(new Set([DENSE, TICK]));
-  });
-
-  it('leads its plot lines with the labelled now slot, which the chart positions', () => {
-    const [slot] = plotLines();
-
-    expect(slot).toMatchObject({ id: NOW_MARKER_ID, className: 'schedule-today', label: { text: 'now' } });
-    expect(slot).not.toHaveProperty('value');
   });
 });
 
@@ -169,10 +157,13 @@ describe('the telescope-state header band', () => {
   const stateNight = buildNightTimeline({
     site: 'GS',
     observingNight: NIGHT,
-    instrumentAvailability: [instrumentBlock({ id: 'g1', port: 2, interval })],
-    telescopeAvailability: [],
-    telescopeMode: [{ id: 'm1', mode: 'PRIORITY_VISITOR', programReferences: [], partner: null, interval, note: null }],
-    tooSupport: [{ id: 't1', tooSupport: 'STANDARD', interval, note: null }],
+    schedule: scheduleOf({
+      instrumentAvailability: [instrumentBlock({ id: 'g1', port: 2, interval })],
+      telescopeMode: [
+        { id: 'm1', mode: 'PRIORITY_VISITOR', programReferences: [], partner: null, interval, note: null },
+      ],
+      tooSupport: [{ id: 't1', tooSupport: 'STANDARD', interval, note: null }],
+    }),
   });
   const options = buildNightChartOptions({ night: stateNight, site: 'GS', timeDisplay: 'site' });
   const yAxis = options.yAxis as YAxisOptions;
@@ -193,7 +184,7 @@ describe('the telescope-state header band', () => {
 
     // A visitor run is worth noticing; standard ToO support stays quiet. Neither spends a hue.
     expect(fillOf('Priority visitor')).toBe('var(--state-notable)');
-    expect(fillOf('Standard ToOs')).toBe('var(--state-routine)');
+    expect(fillOf(TOO_SUPPORT_LABEL.STANDARD)).toBe('var(--state-routine)');
   });
 
   it('styles only the headings; every data row keeps its full-strength label', () => {
@@ -222,8 +213,7 @@ describe('instrument usability treatments', () => {
     const night = buildNightTimeline({
       site: 'GS',
       observingNight: NIGHT,
-      instrumentAvailability: [instrumentBlock({ id: 'a', port: 3, usage, interval })],
-      telescopeAvailability: [],
+      schedule: scheduleOf({ instrumentAvailability: [instrumentBlock({ id: 'a', port: 3, usage, interval })] }),
     });
     return buildTimelinePoints(night.rows, nightDescriber('GS', interval, 'site'))[0];
   };
@@ -266,8 +256,7 @@ describe('a port closure on the night', () => {
     const night = buildNightTimeline({
       site: 'GS',
       observingNight: NIGHT,
-      instrumentAvailability: [],
-      telescopeAvailability,
+      schedule: scheduleOf({ telescopeAvailability }),
     });
     return buildTimelinePoints(night.rows, nightDescriber('GS', interval, 'site'));
   };
@@ -307,8 +296,7 @@ describe('a telescope-wide closure on the night', () => {
     const night = buildNightTimeline({
       site: 'GS',
       observingNight: NIGHT,
-      instrumentAvailability: [],
-      telescopeAvailability: [shutdown],
+      schedule: scheduleOf({ telescopeAvailability: [shutdown] }),
     });
     const { xAxis } = buildNightChartOptions({ night, site: 'GS', timeDisplay: 'site' });
     if (xAxis === undefined || Array.isArray(xAxis)) {

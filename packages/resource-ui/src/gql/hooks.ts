@@ -9,7 +9,6 @@ import {
   toPublishedSemesters,
   toTelescopeAvailability,
   toTelescopeMode,
-  toTelescopeSubsystemAvailability,
   toTooSupport,
 } from '@/domain/adapters';
 import type {
@@ -17,11 +16,8 @@ import type {
   InstrumentComponent,
   InstrumentComponentAvailabilityBlock,
   PublishedSemester,
+  Schedule,
   Site,
-  TelescopeAvailabilityBlock,
-  TelescopeModeBlock,
-  TelescopeSubsystemAvailabilityBlock,
-  TooSupportBlock,
 } from '@/domain/types';
 
 import {
@@ -48,7 +44,7 @@ const toSchedule = (
         readonly telescopeMode?: Parameters<typeof toTelescopeMode>[0];
       }
     | undefined,
-): Pick<ScheduleResult, 'instrumentAvailability' | 'telescopeAvailability' | 'tooSupport' | 'telescopeMode'> => ({
+): Schedule => ({
   instrumentAvailability: toInstrumentAvailability(data?.instrumentAvailability ?? []),
   telescopeAvailability: toTelescopeAvailability(data?.telescopeAvailability ?? []),
   tooSupport: toTooSupport(data?.tooSupport ?? []),
@@ -63,11 +59,8 @@ export const usePublishedSemesters = (): PublishedSemestersResult => {
 };
 
 export interface ScheduleResult {
-  readonly instrumentAvailability: readonly InstrumentAvailabilityBlock[];
-  readonly telescopeAvailability: readonly TelescopeAvailabilityBlock[];
-  /** ToO support and telescope mode records over the window, unclipped. */
-  readonly tooSupport: readonly TooSupportBlock[];
-  readonly telescopeMode: readonly TelescopeModeBlock[];
+  /** The window's records, unclipped. */
+  readonly schedule: Schedule;
   readonly loading: boolean;
   readonly error: Error | undefined;
 }
@@ -83,8 +76,7 @@ export const useSemesterSchedule = (site: Site, bounds: ApiInterval | null): Sch
         },
   );
 
-  const { instrumentAvailability, telescopeAvailability, tooSupport, telescopeMode } = toSchedule(data);
-  return { instrumentAvailability, telescopeAvailability, tooSupport, telescopeMode, loading, error };
+  return { schedule: toSchedule(data), loading, error };
 };
 
 export interface NightScheduleResult extends ScheduleResult {
@@ -92,8 +84,6 @@ export interface NightScheduleResult extends ScheduleResult {
   readonly dataAvailable: boolean | undefined;
   /** The night's interval as the API resolved it, for checking against ours. */
   readonly apiInterval: ApiInterval | undefined;
-  /** Subsystem records over the night - PWFS1, PWFS2, LGS from the workbook. */
-  readonly telescopeSubsystemAvailability: readonly TelescopeSubsystemAvailabilityBlock[];
 }
 
 /** One night: its records, and whether anything is recorded for it at all. */
@@ -102,18 +92,12 @@ export const useNightSchedule = (site: Site, observingNight: string, bounds: Api
     variables: { site, night: observingNight, ...bounds },
   });
 
-  const { instrumentAvailability, telescopeAvailability, tooSupport, telescopeMode } = toSchedule(data);
-  const telescopeSubsystemAvailability = toTelescopeSubsystemAvailability(data?.telescopeSubsystemAvailability ?? []);
   return {
-    instrumentAvailability,
-    telescopeAvailability,
+    schedule: toSchedule(data),
     loading,
     error,
     dataAvailable: data?.telescopeNight.dataAvailable,
     apiInterval: data?.telescopeNight.interval,
-    tooSupport,
-    telescopeMode,
-    telescopeSubsystemAvailability,
   };
 };
 
@@ -133,21 +117,11 @@ export const useWeekSchedule = (
     variables: { site, nightsStart: nights.start, nightsEnd: nights.end, ...bounds },
   });
 
-  const { instrumentAvailability, telescopeAvailability, tooSupport, telescopeMode } = toSchedule(data);
   const nightsWithData = new Set(
     (data?.telescopeNights ?? []).filter((night) => night.dataAvailable).map((night) => night.observingNight),
   );
 
-  return {
-    instrumentAvailability,
-    telescopeAvailability,
-    tooSupport,
-    telescopeMode,
-    loading,
-    error,
-    nightsWithData,
-    nightsResolved: data !== undefined,
-  };
+  return { schedule: toSchedule(data), loading, error, nightsWithData, nightsResolved: data !== undefined };
 };
 
 export interface ComponentBrowserResult {

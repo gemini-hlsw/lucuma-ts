@@ -8,18 +8,11 @@ import { NightStepper } from '@/components/ui/NightStepper';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { EmptyPanel, ErrorAlert, Loading } from '@/components/ui/PageStatus';
 import { toApiInterval } from '@/domain/adapters';
-import { contains } from '@/domain/interval';
 import { buildNightTimeline } from '@/domain/nightTimeline';
 import { addDays } from '@/domain/semester';
 import { observingNightInterval } from '@/domain/siteTime';
 import { buildNightChartOptions, clockLabel } from '@/features/night/nightChartOptions';
 import { TimelineChart, TimelineLegendBar } from '@/features/timeline/TimelineChart';
-import {
-  calendarLegendExtras,
-  modeLegendExtras,
-  telescopeLegendExtras,
-  tooLegendExtras,
-} from '@/features/timeline/timelineOptions';
 import { useNightSchedule } from '@/gql/hooks';
 
 /** The view the rest of the model exists for: a run changing mid-night is drawn where it changes. */
@@ -30,28 +23,13 @@ export default function NightPage(): JSX.Element {
 
   const interval = observingNightInterval(site, observingNight);
 
-  const {
-    instrumentAvailability,
-    telescopeAvailability,
-    tooSupport,
-    telescopeMode,
-    telescopeSubsystemAvailability,
-    loading,
-    error,
-    dataAvailable,
-  } = useNightSchedule(site, observingNight, toApiInterval(interval));
+  const { schedule, loading, error, dataAvailable } = useNightSchedule(site, observingNight, toApiInterval(interval));
 
-  const night = buildNightTimeline({
-    site,
-    observingNight,
-    instrumentAvailability,
-    telescopeAvailability,
-    tooSupport,
-    telescopeMode,
-    telescopeSubsystemAvailability,
-  });
+  const night = buildNightTimeline({ site, observingNight, schedule });
 
   const options = buildNightChartOptions({ night, site, timeDisplay });
+  // Outside the conditional JSX, or the React Compiler puts the chart options in the clock's memo scope.
+  const changes = night.transitions.map((instant) => clockLabel(instant, site, timeDisplay)).join(', ');
 
   return (
     <div className="min-w-0">
@@ -87,20 +65,9 @@ export default function NightPage(): JSX.Element {
       {/* Three answers, not two: `undefined` is the errored query, so `!== false` would draw an empty chart. */}
       {!loading && dataAvailable === true && (
         <>
-          <TimelineLegendBar
-            legend={night}
-            telescope={telescopeLegendExtras(telescopeAvailability)}
-            mode={modeLegendExtras(telescopeMode)}
-            too={tooLegendExtras(tooSupport)}
-            calendar={calendarLegendExtras({
-              now: contains(interval, now) && 'Now',
-            })}
-          />
+          <TimelineLegendBar legend={night.legend} span={night.interval} now={now} />
           {night.transitions.length > 0 && (
-            <p className="mb-3 text-xs text-foreground-secondary">
-              Changes during the night at{' '}
-              {night.transitions.map((instant) => clockLabel(instant, site, timeDisplay)).join(', ')}.
-            </p>
+            <p className="mb-3 text-xs text-foreground-secondary">Changes during the night at {changes}.</p>
           )}
           <TimelineChart
             options={options}

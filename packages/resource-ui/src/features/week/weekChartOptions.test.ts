@@ -4,7 +4,8 @@ import { describe, expect, it } from 'vitest';
 import { observingNightInterval } from '@/domain/siteTime';
 import type { TelescopeAvailabilityBlock } from '@/domain/types';
 import { buildWeekTimeline } from '@/domain/weekTimeline';
-import { DENSE, NOW_MARKER_ID } from '@/features/timeline/timelineOptions';
+import { DENSE } from '@/features/timeline/timelineOptions';
+import { scheduleOf } from '@/test/fixtures/domain';
 import { collectFontSizes } from '@/test/fontSizes';
 
 import {
@@ -18,13 +19,7 @@ import {
 const FIRST = '2026-11-14';
 
 const build = (nightsWithData?: ReadonlySet<string>) =>
-  buildWeekTimeline({
-    site: 'GS',
-    firstNight: FIRST,
-    instrumentAvailability: [],
-    telescopeAvailability: [],
-    nightsWithData,
-  });
+  buildWeekTimeline({ site: 'GS', firstNight: FIRST, schedule: scheduleOf(), nightsWithData });
 
 const axisOf = (): XAxisOptions => {
   const { xAxis } = buildWeekChartOptions({ week: build(), site: 'GS' });
@@ -75,13 +70,8 @@ describe('the axis', () => {
     expect(label(week.interval.start)).toBe('');
   });
 
-  it('leads its plot lines with the unlabelled now slot, which the chart positions', () => {
-    const [slot, ...lines] = axisOf().plotLines ?? [];
-
-    expect(slot).toMatchObject({ id: NOW_MARKER_ID, className: 'schedule-today' });
-    expect(slot).not.toHaveProperty('label');
-    expect(slot).not.toHaveProperty('value');
-    expect(lines).toEqual(buildWeekLines(build()));
+  it('draws its night lines after the now slot', () => {
+    expect(axisOf().plotLines?.slice(1)).toEqual(buildWeekLines(build()));
   });
 });
 
@@ -136,8 +126,7 @@ describe('a telescope-wide closure across the week', () => {
       buildWeekTimeline({
         site: 'GS',
         firstNight: FIRST,
-        instrumentAvailability: [],
-        telescopeAvailability: [shutdown],
+        schedule: scheduleOf({ telescopeAvailability: [shutdown] }),
         nightsWithData: undefined,
       }),
     ).find((band) => band.className === 'schedule-closure-band');

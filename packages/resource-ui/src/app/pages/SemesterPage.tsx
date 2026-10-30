@@ -11,8 +11,8 @@ import { toApiInterval } from '@/domain/adapters';
 import { buildSemesterTimeline } from '@/domain/semesterTimeline';
 import { observingNightInterval } from '@/domain/siteTime';
 import { SemesterBlockTable } from '@/features/semester/SemesterBlockTable';
-import { SemesterTimeline, SemesterTimelineLegend } from '@/features/semester/SemesterTimeline';
-import { modeLegendExtras, telescopeLegendExtras, tooLegendExtras } from '@/features/timeline/timelineOptions';
+import { SemesterTimeline } from '@/features/semester/SemesterTimeline';
+import { TimelineLegendBar } from '@/features/timeline/TimelineChart';
 import { useSemesterSchedule } from '@/gql/hooks';
 
 /** The whole semester in one request: the view draws all of it, so paging would draw it twice. */
@@ -30,8 +30,7 @@ export default function SemesterPage(): JSX.Element {
           end: toApiInterval(observingNightInterval(selected.site, selected.lastNight)).end,
         };
 
-  const { instrumentAvailability, telescopeAvailability, tooSupport, telescopeMode, loading, error } =
-    useSemesterSchedule(selected?.site ?? site, bounds);
+  const { schedule, loading, error } = useSemesterSchedule(selected?.site ?? site, bounds);
 
   const timeline =
     selected === null
@@ -40,15 +39,8 @@ export default function SemesterPage(): JSX.Element {
           site: selected.site,
           firstNight: selected.firstNight,
           lastNight: selected.lastNight,
-          instrumentAvailability,
-          telescopeAvailability,
-          tooSupport,
-          telescopeMode,
+          schedule,
         });
-
-  const telescopeExtras = telescopeLegendExtras(telescopeAvailability);
-  const modeExtras = modeLegendExtras(telescopeMode);
-  const tooExtras = tooLegendExtras(tooSupport);
 
   const failure = setsError ?? error;
 
@@ -103,13 +95,7 @@ export default function SemesterPage(): JSX.Element {
             caption={`${selected.site} ${selected.semester} schedule, one row per block`}
           />
 
-          <SemesterTimelineLegend
-            timeline={timeline}
-            now={now}
-            telescope={telescopeExtras}
-            mode={modeExtras}
-            too={tooExtras}
-          />
+          <TimelineLegendBar legend={timeline.legend} span={timeline.interval} now={now} nowLabel="Today" />
           <SemesterTimeline timeline={timeline} site={selected.site} />
         </>
       )}

@@ -5,6 +5,7 @@ import { page } from 'vitest/browser';
 
 import { addDays } from '@/domain/semester';
 import { observingNightInterval, observingNightOf } from '@/domain/siteTime';
+import { TOO_SUPPORT_LABEL } from '@/domain/timeline';
 import {
   instrumentAvailabilityBlock,
   overNights,
@@ -98,7 +99,9 @@ describe(WeekPage, () => {
 
     await expect.element(screen.getByRole('group', { name: 'Telescope' }).getByText('Open')).toBeVisible();
     await expect.element(screen.getByRole('group', { name: 'Mode' }).getByText('Queue')).toBeVisible();
-    await expect.element(screen.getByRole('group', { name: 'ToO' }).getByText('Standard ToOs')).toBeVisible();
+    await expect
+      .element(screen.getByRole('group', { name: 'ToO' }).getByText(TOO_SUPPORT_LABEL.STANDARD))
+      .toBeVisible();
     await expect.element(screen.getByRole('group', { name: 'Instruments' }).getByText('GHOST')).toBeVisible();
   });
 

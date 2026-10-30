@@ -77,7 +77,8 @@ export default function InstrumentsPage(): JSX.Element {
 
   const bounds = useRecentSpan();
 
-  const { instrumentAvailability, loading, error } = useSemesterSchedule(site, bounds);
+  const { schedule, loading, error } = useSemesterSchedule(site, bounds);
+  const { instrumentAvailability } = schedule;
 
   const night = observingNightInterval(site, tonight);
   const rows = buildInstrumentRows({ instrumentAvailability, night });

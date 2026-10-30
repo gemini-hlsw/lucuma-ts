@@ -12,6 +12,7 @@ import { buildWeekTimeline } from '@/domain/weekTimeline';
 import { buildNightChartOptions } from '@/features/night/nightChartOptions';
 import { buildSemesterMonthOptions } from '@/features/semester/semesterMonthOptions';
 import { buildWeekChartOptions } from '@/features/week/weekChartOptions';
+import { scheduleOf } from '@/test/fixtures/domain';
 import { drawnPlotLineX } from '@/test/helpers';
 
 import { TimelineChart } from './TimelineChart';
@@ -42,24 +43,26 @@ const month = buildSemesterTimeline({
   site: 'GS',
   firstNight: '2026-08-02',
   lastNight: '2026-09-01',
-  instrumentAvailability: [
-    block('ghost', 'GHOST', { start: night('2026-08-02').start, end: night('2026-08-20').end }),
-    block(
-      'gmos',
-      'GMOS',
-      { start: night('2026-08-02').start, end: night('2026-08-30').end },
-      { publishedName: 'GMOS-S', usage: 'ENGINEERING', port: 2 },
-    ),
-  ],
-  telescopeAvailability: [
-    {
-      id: 'open',
-      availability: 'OPEN',
-      port: null,
-      reason: null,
-      interval: { start: night('2026-08-02').start, end: night('2026-08-14').end },
-    },
-  ],
+  schedule: scheduleOf({
+    instrumentAvailability: [
+      block('ghost', 'GHOST', { start: night('2026-08-02').start, end: night('2026-08-20').end }),
+      block(
+        'gmos',
+        'GMOS',
+        { start: night('2026-08-02').start, end: night('2026-08-30').end },
+        { publishedName: 'GMOS-S', usage: 'ENGINEERING', port: 2 },
+      ),
+    ],
+    telescopeAvailability: [
+      {
+        id: 'open',
+        availability: 'OPEN',
+        port: null,
+        reason: null,
+        interval: { start: night('2026-08-02').start, end: night('2026-08-14').end },
+      },
+    ],
+  }),
 }).months[0]!;
 
 const run = (id: string, instrument: 'GHOST' | 'GMOS', from: string, to: string): InstrumentAvailabilityBlock =>
@@ -69,8 +72,7 @@ const weekChart = (firstNight: string, blocks: readonly InstrumentAvailabilityBl
   const week = buildWeekTimeline({
     site: 'GS',
     firstNight,
-    instrumentAvailability: blocks,
-    telescopeAvailability: [],
+    schedule: scheduleOf({ instrumentAvailability: blocks }),
     nightsWithData: undefined,
   });
   return (
@@ -108,13 +110,14 @@ const nightChart = (changes: number) => {
   const timeline = buildNightTimeline({
     site: 'GS',
     observingNight: NIGHT,
-    instrumentAvailability: Array.from({ length: changes + 1 }, (_, index) =>
-      block(`b${String(index)}`, index % 2 === 0 ? 'GHOST' : 'GMOS', {
-        start: index === 0 ? nightInterval.start - DAY : nightInterval.start + index * 3 * HOUR,
-        end: index === changes ? nightInterval.end + DAY : nightInterval.start + (index + 1) * 3 * HOUR,
-      }),
-    ),
-    telescopeAvailability: [],
+    schedule: scheduleOf({
+      instrumentAvailability: Array.from({ length: changes + 1 }, (_, index) =>
+        block(`b${String(index)}`, index % 2 === 0 ? 'GHOST' : 'GMOS', {
+          start: index === 0 ? nightInterval.start - DAY : nightInterval.start + index * 3 * HOUR,
+          end: index === changes ? nightInterval.end + DAY : nightInterval.start + (index + 1) * 3 * HOUR,
+        }),
+      ),
+    }),
   });
   expect(timeline.transitions).toHaveLength(changes);
   return (

@@ -114,31 +114,38 @@ view is empty under the sign-in toast.
 
 ## The views
 
-**Do not give a view its own path from records to pixels.** Every view projects from the placed rows
-`domain/timeline.ts` produced, never from an `InstrumentAvailabilityBlock`, and both charts build on `domain/timeline.ts`
-plus `features/timeline/`. A view supplies its own axis and its own way of phrasing a span - dates and
-nights for the semester and week, clock times for a night - and nothing else. Adding a fourth window
-should not mean copying any of it: `timelineNights` and `spanOfNights` in `domain/timeline.ts` list a
-window's nights, and `timelineOptions.ts` holds the pieces every chart composes (`nowMarker`,
-`weekendBands`, `nightLines`, `midpointTicks` / `midpointLabel`, `closureBandPlotBand`).
+**Do not give a view its own path from records to pixels.** Every schedule view is a **Window**
+(glossary): it hands its nights and its Schedule (glossary) to `projectWindow` in `domain/timeline.ts` and gets
+back the placed rows, the closure bands and the legend. Nothing else reads an
+`InstrumentAvailabilityBlock`, and the state-row, placement and legend rules live and are tested in
+that one module. A view that draws several windows over one schedule, as the semester does per
+month, calls `collectSchedule` once and `placeWindow` per window instead of `projectWindow` per
+window. A view adds only its own extra - the night's transitions, the week's nights, the
+semester's months - plus its own axis and its own way of phrasing a span (dates and nights for the
+semester and week, clock times for a night). Adding a fourth window should not mean copying any of
+it: `timelineNights` in `domain/timeline.ts` lists a window's nights, and `timelineOptions.ts` holds
+the pieces every chart composes (`nowMarker`, `weekendBands`, `nightLines`, `midpointTicks` /
+`midpointLabel`, `closureBandPlotBand`).
 
 | View           | What it draws                                                                      | Its module                   |
 | -------------- | ---------------------------------------------------------------------------------- | ---------------------------- |
-| Night          | the chart alone, plus PWFS1/PWFS2/LGS subsystem rows no other view shows           | `features/night/`            |
+| Night          | the chart alone                                                                    | `features/night/`            |
 | Week           | the run chart alone                                                                | `features/week/`             |
 | Semester       | an xrange per month: how long a run lasts                                          | `features/semester/`         |
 | `/instruments` | a row per instrument the site's records name, expanding into its runs              | `domain/instrumentFinder.ts` |
 | `/components`  | the ICTD half: the piece catalog grouped by instrument, expanding into its history | `domain/componentFinder.ts`  |
 
-What each view may draw and how (change-feed rules, subsystem rows, legend
+What each view may draw and how (change-feed rules, legend
 order, colour and treatment) is specified in DESIGN.md. Structural rules the code does not
 state for itself:
 
 - **Every schedule view heads itself with the Telescope, Mode and ToO rows** when records
-  reach its window, through `collectStateRows` in `domain/timeline.ts`
-  (`NOTABLE_MODE`/`NOTABLE_TOO` mark the states DESIGN.md calls notable). All chart layout is
-  derived from the rows inside the shared builders - no view passes categories or header
-  counts alongside its data.
+  reach its window; `projectWindow` does it (`NOTABLE_MODE`/`NOTABLE_TOO` mark the states
+  DESIGN.md calls notable). All chart layout is derived from the rows inside the shared
+  builders - no view passes categories or header counts alongside its data.
+- **A window never takes `now`.** `TimelineLegendBar` decides the Now key from the page clock and
+  the window's span, so a tick rebuilds no rows or chart options. Its key table is the one place a
+  legend key becomes words and a swatch: a key the projection adds is drawn there or nowhere.
 - **The two browser pages are deliberately not shared.** The shapes diverge - grouped subheaders against
   a flat list, two filters against one, different expansions - and a `FinderPage` taking a dozen props
   would hide nothing. Both open a row into `components/ui/RecordHistoryTable.tsx`.
@@ -176,6 +183,10 @@ these components are DESIGN.md's; this table is the ownership map.
   `ToastMessage` constant with string `summary` and `detail` (the live-server failure toasts carry a
   summary alone) and withdraw it with `remove(thatConstant)`: PrimeReact removes by deep equality.
   What a toast says and looks like is DESIGN.md's ("Toasts").
+- **A component's props are a named `interface`, `<Component>Props`, exported beside it** (as
+  `TimelineLegendBarProps`), so a test or a parent can name what the component takes without reading
+  its destructure. New components are written this way; an inline props shape moves when its file is
+  next touched.
 
 ## Gotchas that cost real debugging
 
@@ -221,7 +232,7 @@ request per page load, except on Semester, which first reads `PublishedSemesters
 | -------------------- | ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
 | `PublishedSemesters` | `publishedSemesters`: `site`, `semester` and the night span only                                                        | Semester: its picker and its window              |
 | `SemesterSchedule`   | `instrumentAvailability`, `telescopeAvailability`, `tooSupport`, `telescopeMode`                                        | Semester; `/instruments`, over the past 400 days |
-| `NightSchedule`      | `telescopeNight` (`dataAvailable` and the interval) plus those four and `telescopeSubsystemAvailability`                | Night                                            |
+| `NightSchedule`      | `telescopeNight` (`dataAvailable` and the interval) plus those four                                                     | Night                                            |
 | `WeekSchedule`       | `telescopeNights` (per-night `dataAvailable`) plus the four of `SemesterSchedule` and `instrumentComponentAvailability` | Week                                             |
 | `ComponentBrowser`   | `components`, `instrumentComponentAvailability`, `instrumentAvailability`                                               | `/components`, over the past 400 days            |
 
@@ -268,10 +279,20 @@ other home.
 
 ## Testing
 
-Browser-mode Vitest (Playwright chromium). Pure functions get plain unit tests; pages get browser tests that
-mount through `src/test/renderApp.tsx` and drive real interactions with accessible queries
-(`getByRole`, `getByLabelText`). Pass `renderApp` its `mocks`, built per operation by `src/test/fixtures/`
-with only the **Blocks** the assertion depends on. A query no mock answers fails the test
+Browser-mode Vitest (Playwright chromium). Three classes of test, named by what they mount:
+
+| Class     | Mounts                                                           | May replace                                  |
+| --------- | ---------------------------------------------------------------- | -------------------------------------------- |
+| unit      | nothing: a function, a link chain, a module over the store       | `fetch`; timers only for "never fires"       |
+| component | one component with props and real children, a router if it links | nothing: callbacks are `vi.fn()` props       |
+| page      | a page under a route through the shared render helper            | the network only: typed fixtures at the link |
+
+A page test covers wiring only: its status states, the operation it sends, URL in and out, cache across
+navigation, and one happy path per control; wording, columns, labels and the full matrix of a control's
+presses belong to the component test. No `vi.mock` of an app module: real children, the router, the shared
+store and `vi.fn()` props, with the GraphQL answer at the link as the one seam. Tests drive real interactions
+with accessible queries (`getByRole`, `getByLabelText`). Pass the render helper its `mocks`, built per
+operation by `src/test/fixtures/` with only the **Blocks** the assertion depends on. A query no mock answers fails the test
 (`failOnUnansweredQueries`, registered by common-ui's shared `test/setup.ts`), so a fixture must match the variables the page sends.
 `src/gql/resource.test.ts` validates every document against the schema. Link-chain tests (session
 hold, auth header, toasts) run the real links ahead of canned answers through `src/test/linkClient.ts`.
@@ -296,7 +317,7 @@ hold, auth header, toasts) run the real links ahead of canned answers through `s
   controls. One `Probe` per route, though - two routes rendering it at the same position let React reuse the
   fiber, and two `use` bodies with different hook counts is a hook-order violation.
 - Prefer tests driven by configuration (e.g. `SIDEBAR_MENU_SECTIONS`) over hard-coded lists.
-- Don't assert on internal React structure; don't over-mock.
+- Don't assert on internal React structure.
 
 ## Styling mechanics
 

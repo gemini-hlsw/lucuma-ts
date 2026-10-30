@@ -1,43 +1,12 @@
 import type { JSX } from 'react';
 
 import { useOpenNight } from '@/app/useOpenNight';
-import { contains } from '@/domain/interval';
 import { nightAt } from '@/domain/timeline';
 import type { Site } from '@/domain/types';
 import type { WeekTimeline as Timeline } from '@/domain/weekTimeline';
-import { TimelineChart, TimelineLegendBar } from '@/features/timeline/TimelineChart';
-import { calendarLegendExtras, type LegendExtra } from '@/features/timeline/timelineOptions';
+import { TimelineChart } from '@/features/timeline/TimelineChart';
 
 import { buildWeekChartOptions } from './weekChartOptions';
-
-/** Decides "Now" here, off a prop, so the page's week does not take `now` as a dependency. */
-export function WeekTimelineLegend({
-  week,
-  now,
-  telescope,
-  mode,
-  too,
-}: {
-  week: Timeline;
-  now: number;
-  telescope: readonly LegendExtra[];
-  mode: readonly LegendExtra[];
-  too: readonly LegendExtra[];
-}): JSX.Element {
-  return (
-    <TimelineLegendBar
-      legend={week}
-      telescope={telescope}
-      mode={mode}
-      too={too}
-      calendar={calendarLegendExtras({
-        weekend: week.nights.some((night) => night.isWeekend),
-        now: contains(week.interval, now) && 'Now',
-        noData: week.nights.some((night) => !night.dataAvailable),
-      })}
-    />
-  );
-}
 
 export function WeekTimeline({ week, site, label }: { week: Timeline; site: Site; label: string }): JSX.Element {
   const options = buildWeekChartOptions({ week, site });

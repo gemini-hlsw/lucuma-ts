@@ -63,7 +63,6 @@ export const buildNightChartOptions = ({ night, site, timeDisplay }: NightChartM
     rows: night.rows,
     site,
     timeDisplay,
-    nowLabel: 'now',
     describe: nightDescriber(site, night.interval, timeDisplay),
     rowHeightRem: ROW_HEIGHT_REM,
     bottomMarginRem: BOTTOM_MARGIN_REM,

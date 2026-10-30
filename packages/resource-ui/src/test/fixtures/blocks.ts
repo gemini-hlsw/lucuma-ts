@@ -3,7 +3,6 @@ import type {
   Site,
   TelescopeAvailabilityBlockItemFragment,
   TelescopeModeBlockItemFragment,
-  TelescopeSubsystemAvailabilityBlockItemFragment,
   TooSupportBlockItemFragment,
 } from '@gql/gen/graphql';
 
@@ -85,24 +84,6 @@ export const telescopeModeBlock = ({
   mode,
   programReferences,
   partner,
-  note,
-  interval,
-});
-
-export const telescopeSubsystemAvailabilityBlock = ({
-  subsystem,
-  interval,
-  usage = 'SCIENCE',
-  powerSource = null,
-  note = null,
-}: Pick<TelescopeSubsystemAvailabilityBlockItemFragment, 'subsystem' | 'interval'> &
-  Partial<
-    Omit<TelescopeSubsystemAvailabilityBlockItemFragment, '__typename' | 'subsystem' | 'interval'>
-  >): TelescopeSubsystemAvailabilityBlockItemFragment => ({
-  __typename: 'TelescopeSubsystemAvailabilityBlock',
-  subsystem,
-  usage,
-  powerSource,
   note,
   interval,
 });

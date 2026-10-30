@@ -84,7 +84,6 @@ const EMPTY_NIGHT: MockedResponseOf<typeof NIGHT_SCHEDULE_QUERY> = {
       telescopeAvailability: [],
       tooSupport: [],
       telescopeMode: [],
-      telescopeSubsystemAvailability: [],
     },
   }),
 };

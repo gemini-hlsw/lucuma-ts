@@ -6,7 +6,8 @@ import { portRowLabel, TELESCOPE_PORTS } from '@/domain/ports';
 import { buildSemesterTimeline, type TimelineMonth } from '@/domain/semesterTimeline';
 import { observingNightInterval } from '@/domain/siteTime';
 import type { InstrumentAvailabilityBlock, Site, TelescopeAvailabilityBlock } from '@/domain/types';
-import { buildTimelinePoints, DENSE, eveningDescriber, NOW_MARKER_ID, TICK } from '@/features/timeline/timelineOptions';
+import { buildTimelinePoints, DENSE, eveningDescriber, TICK } from '@/features/timeline/timelineOptions';
+import { scheduleOf } from '@/test/fixtures/domain';
 import { collectFontSizes } from '@/test/fontSizes';
 
 import {
@@ -47,8 +48,7 @@ const timeline = buildSemesterTimeline({
   site: 'GS',
   firstNight: '2026-08-02',
   lastNight: '2027-02-01',
-  instrumentAvailability: [GHOST],
-  telescopeAvailability: [AG],
+  schedule: scheduleOf({ instrumentAvailability: [GHOST], telescopeAvailability: [AG] }),
 });
 
 const august = timeline.months[0]!;
@@ -90,8 +90,9 @@ describe('points', () => {
       site: 'GS',
       firstNight: '2026-08-02',
       lastNight: '2026-09-01',
-      instrumentAvailability: [{ ...GHOST, id: 'gmos', instrument: 'GMOS', publishedName: 'GMOS', port: 3 }],
-      telescopeAvailability: [],
+      schedule: scheduleOf({
+        instrumentAvailability: [{ ...GHOST, id: 'gmos', instrument: 'GMOS', publishedName: 'GMOS', port: 3 }],
+      }),
     });
 
     const point = buildMonthPoints(withoutGhost.months[0]!, 'GS')[0];
@@ -103,8 +104,7 @@ describe('points', () => {
       site: 'GS',
       firstNight: '2026-08-02',
       lastNight: '2026-09-01',
-      instrumentAvailability: [],
-      telescopeAvailability: [{ ...AG, reason: null }],
+      schedule: scheduleOf({ telescopeAvailability: [{ ...AG, reason: null }] }),
     });
 
     const point = buildMonthPoints(unnamed.months[0]!, 'GS')[0];
@@ -194,14 +194,6 @@ describe('the axis', () => {
     // The walk reaches the responsive rules too: a narrow month thins its ticks, never its labels.
     expect(new Set(collectFontSizes(options))).toEqual(new Set([DENSE, TICK]));
   });
-
-  it('leads its plot lines with the unlabelled now slot, which the chart positions', () => {
-    const [slot] = axisOf().plotLines ?? [];
-
-    expect(slot).toMatchObject({ id: NOW_MARKER_ID, className: 'schedule-today' });
-    expect(slot).not.toHaveProperty('label');
-    expect(slot).not.toHaveProperty('value');
-  });
 });
 
 describe('the weekend bands', () => {
@@ -225,8 +217,7 @@ describe('the telescope-wide closure band', () => {
     site: 'GS',
     firstNight: '2026-08-02',
     lastNight: '2027-02-01',
-    instrumentAvailability: [],
-    telescopeAvailability: [shutdown],
+    schedule: scheduleOf({ telescopeAvailability: [shutdown] }),
   }).months[0]!;
 
   const closureBand = () => buildMonthBands(month).find((band) => band.className === 'schedule-closure-band');

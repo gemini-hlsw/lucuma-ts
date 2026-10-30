@@ -1,23 +1,15 @@
 /** The partial-night cases are synthetic on purpose: only this view can show the capability holds. */
 import { describe, expect, it } from 'vitest';
 
+import { scheduleOf } from '@/test/fixtures/domain';
+
 import { buildNightTimeline } from './nightTimeline';
-import { portRowLabel, TELESCOPE_PORTS } from './ports';
 import { observingNightInterval } from './siteTime';
-import { MODE_ROW_LABEL, TOO_ROW_LABEL } from './timeline';
-import type {
-  InstrumentAvailabilityBlock,
-  TelescopeAvailabilityBlock,
-  TelescopeModeBlock,
-  TelescopeSubsystemAvailabilityBlock,
-  TooSupportBlock,
-} from './types';
+import { MODE_ROW_LABEL, TOO_ROW_LABEL, TOO_SUPPORT_LABEL } from './timeline';
+import type { InstrumentAvailabilityBlock, Schedule, TelescopeModeBlock, TooSupportBlock } from './types';
 
 const NIGHT = '2026-11-14';
 const interval = observingNightInterval('GS', NIGHT);
-/** Every night draws the telescope's ports, whatever tonight happens to hold. */
-const ROWS = TELESCOPE_PORTS.map(portRowLabel);
-
 const HOUR = 3_600_000;
 
 const instrumentBlock = (
@@ -31,24 +23,8 @@ const instrumentBlock = (
   ...over,
 });
 
-const build = (
-  over: {
-    instrumentAvailability?: readonly InstrumentAvailabilityBlock[];
-    telescopeAvailability?: readonly TelescopeAvailabilityBlock[];
-    tooSupport?: readonly TooSupportBlock[];
-    telescopeMode?: readonly TelescopeModeBlock[];
-    telescopeSubsystemAvailability?: readonly TelescopeSubsystemAvailabilityBlock[];
-  } = {},
-) =>
-  buildNightTimeline({
-    site: 'GS',
-    observingNight: NIGHT,
-    instrumentAvailability: over.instrumentAvailability ?? [],
-    telescopeAvailability: over.telescopeAvailability ?? [],
-    tooSupport: over.tooSupport ?? [],
-    telescopeMode: over.telescopeMode ?? [],
-    telescopeSubsystemAvailability: over.telescopeSubsystemAvailability ?? [],
-  });
+const build = (over: Partial<Schedule> = {}) =>
+  buildNightTimeline({ site: 'GS', observingNight: NIGHT, schedule: scheduleOf(over) });
 
 const rowIn = (timeline: ReturnType<typeof build>, row: string) => timeline.rows.find((entry) => entry.key === row);
 
@@ -58,25 +34,6 @@ describe('the night window', () => {
 
     expect(night.interval).toEqual(interval);
     expect(night.observingNight).toBe(NIGHT);
-  });
-
-  it('clips a run that spans the semester down to tonight, and says it continues', () => {
-    const night = build({
-      instrumentAvailability: [
-        instrumentBlock({
-          id: 'ghost',
-          port: 1,
-          instrument: 'GHOST',
-          publishedName: 'GHOST',
-          interval: { start: interval.start - 100 * 24 * HOUR, end: interval.end + 60 * 24 * HOUR },
-        }),
-      ],
-    });
-    const block = rowIn(night, 'Port 1')?.blocks[0];
-
-    expect(block?.interval).toEqual(interval);
-    expect(block?.continuesBefore).toBe(true);
-    expect(block?.continuesAfter).toBe(true);
   });
 
   it('reports no transitions when the night is uniform, which every published night is', () => {
@@ -121,7 +78,7 @@ describe('partial nights', () => {
   });
 
   it('keeps both instruments in the legend', () => {
-    expect(build({ instrumentAvailability: SPLIT_NIGHT }).instruments).toEqual(['F2', 'GMOS']);
+    expect(build({ instrumentAvailability: SPLIT_NIGHT }).legend.instruments).toEqual(['F2', 'GMOS']);
   });
 
   it('lists several changes in order, without repeating a shared boundary', () => {
@@ -159,30 +116,6 @@ describe('the telescope-state rows', () => {
     ...over,
   });
 
-  it('shows no state rows when the night carries no records, so a gap stays a gap', () => {
-    // I4: two permanently empty rows would read as chrome nobody entered.
-    expect(build().rows.map((row) => row.key)).toEqual(ROWS);
-  });
-
-  it('heads the chart with Mode then ToO when the night has records', () => {
-    const night = build({
-      tooSupport: [too({ id: 't', tooSupport: 'STANDARD', interval })],
-      telescopeMode: [mode({ id: 'm', mode: 'QUEUE', interval })],
-    });
-
-    expect(night.rows.map((row) => row.key)).toEqual([MODE_ROW_LABEL, TOO_ROW_LABEL, ...ROWS]);
-  });
-
-  it('prints the recorded value on the block, in its operational spelling', () => {
-    const night = build({
-      tooSupport: [too({ id: 't', tooSupport: 'NONE', interval })],
-      telescopeMode: [mode({ id: 'm', mode: 'PRIORITY_VISITOR', interval })],
-    });
-
-    expect(rowIn(night, TOO_ROW_LABEL)?.blocks[0]?.label).toBe('No ToOs');
-    expect(rowIn(night, MODE_ROW_LABEL)?.blocks[0]?.label).toBe('Priority visitor');
-  });
-
   it('draws a mid-night ToO change as two blocks and names the instant', () => {
     // ToO support changes at an instant no port row changes at, and the row shows where.
     const change = interval.start + 7 * HOUR;
@@ -193,7 +126,10 @@ describe('the telescope-state rows', () => {
       ],
     });
 
-    expect(rowIn(night, TOO_ROW_LABEL)?.blocks.map((block) => block.label)).toEqual(['Standard ToOs', 'Rapid ToOs']);
+    expect(rowIn(night, TOO_ROW_LABEL)?.blocks.map((block) => block.label)).toEqual([
+      TOO_SUPPORT_LABEL.STANDARD,
+      TOO_SUPPORT_LABEL.RAPID,
+    ]);
     expect(night.transitions).toEqual([change]);
   });
 
@@ -215,33 +151,5 @@ describe('the telescope-state rows', () => {
     const block = rowIn(night, MODE_ROW_LABEL)?.blocks[0];
     expect(block?.label).toBe('Block scheduling');
     expect(block?.detail).toBe('University of Hawaii');
-  });
-
-  it('rows each subsystem after the state rows, phrased in usage words', () => {
-    const night = build({
-      telescopeAvailability: [{ id: 'a', availability: 'OPEN', port: null, interval, reason: null }],
-      telescopeSubsystemAvailability: [
-        { id: 's1', subsystem: 'PWFS1', usage: 'SCIENCE', powerSource: null, interval, note: null },
-        { id: 's2', subsystem: 'LGS', usage: 'UNAVAILABLE', powerSource: null, interval, note: null },
-      ],
-    });
-
-    // Requirement order, and leading, so `stateRowCount` counts them into the header band.
-    expect(night.rows.map((row) => row.label)).toEqual(['Telescope', 'PWFS1', 'LGS', ...ROWS]);
-    // A subsystem is available for science, not "doing" it - the laser column's Yes/No in words.
-    expect(night.rows.find((row) => row.label === 'PWFS1')?.blocks[0]?.label).toBe('Available');
-    const lgs = night.rows.find((row) => row.label === 'LGS')?.blocks[0];
-    expect(lgs?.label).toBe('Not available');
-    expect(lgs?.state).toBe('SUBSYSTEM');
-  });
-
-  it('keeps state blocks out of the instrument legend and the unscheduled key', () => {
-    const night = build({
-      tooSupport: [too({ id: 't', tooSupport: 'STANDARD', interval })],
-      telescopeMode: [mode({ id: 'm', mode: 'QUEUE', interval })],
-    });
-
-    expect(night.instruments).toEqual([]);
-    expect(night.hasUnscheduled).toBe(false);
   });
 });

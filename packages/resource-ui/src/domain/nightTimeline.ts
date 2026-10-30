@@ -1,30 +1,8 @@
-import { observingNightInterval } from './siteTime';
-import {
-  collectBlocks,
-  collectStateRows,
-  legendFor,
-  placeBands,
-  placeBlocks,
-  type TimelineBand,
-  type TimelineLegend,
-  type TimelineRow,
-} from './timeline';
-import type {
-  InstrumentAvailabilityBlock,
-  Interval,
-  Site,
-  TelescopeAvailabilityBlock,
-  TelescopeModeBlock,
-  TelescopeSubsystemAvailabilityBlock,
-  TooSupportBlock,
-} from './types';
+import { projectWindow, timelineNights, type TimelineRow, type WindowProjection } from './timeline';
+import type { Interval, Schedule, Site } from './types';
 
-export interface NightTimeline extends TimelineLegend {
+export interface NightTimeline extends WindowProjection {
   readonly observingNight: string;
-  /** 14:00 local the previous day to 14:00 local on the labelling day. */
-  readonly interval: Interval;
-  readonly rows: readonly TimelineRow[];
-  readonly bands: readonly TimelineBand[];
   /** Empty while the sheets stay whole-night granular; populated the moment a partial night lands. */
   readonly transitions: readonly number[];
 }
@@ -32,14 +10,7 @@ export interface NightTimeline extends TimelineLegend {
 export interface BuildNightTimelineOptions {
   readonly site: Site;
   readonly observingNight: string;
-  readonly instrumentAvailability: readonly InstrumentAvailabilityBlock[];
-  readonly telescopeAvailability: readonly TelescopeAvailabilityBlock[];
-  /** ToO support records reaching the night. The row appears only when some do. */
-  readonly tooSupport?: readonly TooSupportBlock[];
-  /** Telescope mode records reaching the night. The row appears only when some do. */
-  readonly telescopeMode?: readonly TelescopeModeBlock[];
-  /** Subsystem records reaching the night. A row appears per subsystem with any. */
-  readonly telescopeSubsystemAvailability?: readonly TelescopeSubsystemAvailabilityBlock[];
+  readonly schedule: Schedule;
 }
 
 /** Instants strictly inside the night where a block starts or ends. */
@@ -57,31 +28,8 @@ const transitionsIn = (rows: readonly TimelineRow[], night: Interval): readonly 
   return [...inside].sort((a, b) => a - b);
 };
 
-export const buildNightTimeline = ({
-  site,
-  observingNight,
-  instrumentAvailability,
-  telescopeAvailability,
-  tooSupport = [],
-  telescopeMode = [],
-  telescopeSubsystemAvailability = [],
-}: BuildNightTimelineOptions): NightTimeline => {
-  const interval = observingNightInterval(site, observingNight);
-  const rows = placeBlocks(
-    [
-      ...collectStateRows(telescopeAvailability, tooSupport, telescopeMode, telescopeSubsystemAvailability),
-      ...collectBlocks({ instrumentAvailability, telescopeAvailability }),
-    ],
-    interval,
-  );
-  const bands = placeBands(telescopeAvailability, interval);
+export const buildNightTimeline = ({ site, observingNight, schedule }: BuildNightTimelineOptions): NightTimeline => {
+  const window = projectWindow({ nights: timelineNights(site, [observingNight]), schedule });
 
-  return {
-    observingNight,
-    interval,
-    rows,
-    bands,
-    transitions: transitionsIn(rows, interval),
-    ...legendFor(rows, bands),
-  };
+  return { ...window, observingNight, transitions: transitionsIn(window.rows, window.interval) };
 };

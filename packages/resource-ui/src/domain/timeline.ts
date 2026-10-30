@@ -1,3 +1,5 @@
+import { isNotNullish } from '@gemini-hlsw/lucuma-common-ui';
+
 import { clip } from './interval';
 import { portRowLabel, portRows } from './ports';
 import { addDays, isWeekendDate } from './semester';
@@ -8,15 +10,13 @@ import type {
   Partner,
   ResourceInstrument,
   ResourceUsage,
+  Schedule,
   Site,
   TelescopeAvailability,
   TelescopeAvailabilityBlock,
   TelescopeModeBlock,
   TelescopeModeType,
-  TelescopeSubsystem,
-  TelescopeSubsystemAvailabilityBlock,
   TooSupport,
-  TooSupportBlock,
 } from './types';
 
 export type BlockState =
@@ -25,8 +25,7 @@ export type BlockState =
   | 'UNSCHEDULED'
   | 'TELESCOPE'
   | 'TOO'
-  | 'MODE'
-  | 'SUBSYSTEM';
+  | 'MODE';
 
 export interface TimelineBlock {
   readonly id: string;
@@ -76,13 +75,25 @@ export interface TimelineNight {
   readonly dataAvailable: boolean;
 }
 
+/** Keys only, never labels or swatches: what each key looks like is the legend bar's one table. */
 export interface TimelineLegend {
   /** Only those actually drawn: keys to colours that are not on the page are noise. */
   readonly instruments: readonly ResourceInstrument[];
+  readonly modes: readonly TelescopeModeType[];
+  readonly toos: readonly TooSupport[];
+  readonly hasOpen: boolean;
   readonly hasClosure: boolean;
   readonly hasUnscheduled: boolean;
   readonly hasEngineeringUse: boolean;
   readonly hasUnavailable: boolean;
+  /** A window of one night draws no weekend shading, so it has no weekend key. */
+  readonly hasWeekend: boolean;
+  readonly hasNoData: boolean;
+}
+
+export interface WindowInput {
+  readonly nights: readonly TimelineNight[];
+  readonly schedule: Schedule;
 }
 
 /** `interval` with every hole removed, so a port closure inside a wide shutdown becomes nothing. */
@@ -128,7 +139,7 @@ export const timelineNights = (
   });
 
 /** First night's start to last night's end; they abut, so it is continuous. */
-export const spanOfNights = (nights: readonly TimelineNight[]): Interval => ({
+const spanOfNights = (nights: readonly TimelineNight[]): Interval => ({
   start: nights[0]?.interval.start ?? 0,
   end: nights.at(-1)?.interval.end ?? 0,
 });
@@ -139,11 +150,22 @@ export const nightAt = (nights: readonly TimelineNight[], instant: number): Time
 /** A block before any window has been chosen: it still has its own full span. */
 export type UnplacedBlock = Omit<TimelineBlock, 'interval' | 'continuesBefore' | 'continuesAfter'>;
 
+export interface UnplacedRow {
+  readonly label: string;
+  readonly blocks: readonly UnplacedBlock[];
+}
+
+const isTelescopeWide = (block: TelescopeAvailabilityBlock): boolean => block.port === null;
+const isClosed = (block: TelescopeAvailabilityBlock): boolean => block.availability === 'CLOSED';
+const wideClosures = (blocks: readonly TelescopeAvailabilityBlock[]): readonly TelescopeAvailabilityBlock[] =>
+  blocks.filter(isTelescopeWide).filter(isClosed);
+
+/** Read under a row or legend section already named ToO, so the word is not repeated. */
 export const TOO_SUPPORT_LABEL = {
-  STANDARD: 'Standard ToOs',
-  INTERRUPT: 'Interrupt ToOs',
-  RAPID: 'Rapid ToOs',
-  NONE: 'No ToOs',
+  STANDARD: 'Standard',
+  INTERRUPT: 'Interrupt',
+  RAPID: 'Rapid',
+  NONE: 'None',
 } satisfies Record<TooSupport, string>;
 
 export const TELESCOPE_MODE_LABEL = {
@@ -191,27 +213,6 @@ export const TELESCOPE_ROW_LABEL = 'Telescope';
 export const MODE_ROW_LABEL = 'Mode';
 export const TOO_ROW_LABEL = 'ToO';
 
-/** Not the instruments' words: a subsystem is available for science, it is not doing science. */
-export const SUBSYSTEM_USAGE_LABEL = {
-  SCIENCE: 'Available',
-  ENGINEERING: 'Engineering use',
-  UNAVAILABLE: 'Not available',
-} satisfies Record<ResourceUsage, string>;
-
-export const SUBSYSTEM_ROW_LABEL = {
-  PWFS1: 'PWFS1',
-  PWFS2: 'PWFS2',
-  ALTAIR: 'Altair',
-  CANOPUS: 'Canopus',
-  LGS: 'LGS',
-  GPOL: 'GPOL',
-  DOME_SHUTTER: 'Dome shutter',
-  DOME_VENT_GATES: 'Dome vents',
-} satisfies Record<TelescopeSubsystem, string>;
-
-/** The requirement's enum order, sensors first. */
-const SUBSYSTEM_ORDER = Object.keys(SUBSYSTEM_ROW_LABEL) as readonly TelescopeSubsystem[];
-
 /** The ordinary night is queue operation with standard ToO support; anything else is worth noticing. */
 export const NOTABLE_MODE = {
   QUEUE: false,
@@ -233,33 +234,31 @@ export const NOTABLE_TOO = {
 const isTooSupport = (variant: string): variant is TooSupport => variant in NOTABLE_TOO;
 const isModeType = (variant: string): variant is TelescopeModeType => variant in NOTABLE_MODE;
 
+/** The mode a MODE block carries, or null for any other block or an unknown mode. */
+const modeOf = (block: Pick<TimelineBlock, 'state' | 'variant'>): TelescopeModeType | null =>
+  block.state === 'MODE' && isNotNullish(block.variant) && isModeType(block.variant) ? block.variant : null;
+
+/** The ToO level a TOO block carries, or null for any other block or an unknown level. */
+const tooOf = (block: Pick<TimelineBlock, 'state' | 'variant'>): TooSupport | null =>
+  block.state === 'TOO' && isNotNullish(block.variant) && isTooSupport(block.variant) ? block.variant : null;
+
 /** A TELESCOPE block is never notable: Closed takes the reserved closure red, not the bright neutral. */
 export const isNotableState = (block: Pick<TimelineBlock, 'state' | 'variant' | 'usage'>): boolean => {
-  // Subsystem state is recorded nightly and dominated by standing facts, so brightness there is noise.
-  if (block.state === 'SUBSYSTEM') {
-    return false;
+  const mode = modeOf(block);
+  if (mode !== null) {
+    return NOTABLE_MODE[mode];
   }
-  if (block.variant === null) {
-    return false;
-  }
-  if (block.state === 'MODE' && isModeType(block.variant)) {
-    return NOTABLE_MODE[block.variant];
-  }
-  if (block.state === 'TOO' && isTooSupport(block.variant)) {
-    return NOTABLE_TOO[block.variant];
+  const too = tooOf(block);
+  if (too !== null) {
+    return NOTABLE_TOO[too];
   }
   return false;
 };
 
 /** A window with no state records gets no state rows: the gap stays a gap (I4). */
-export const collectStateRows = (
-  telescopeAvailability: readonly TelescopeAvailabilityBlock[],
-  tooSupport: readonly TooSupportBlock[],
-  telescopeMode: readonly TelescopeModeBlock[],
-  telescopeSubsystemAvailability: readonly TelescopeSubsystemAvailabilityBlock[] = [],
-): readonly { readonly label: string; readonly blocks: readonly UnplacedBlock[] }[] => {
+const collectStateRows = ({ telescopeAvailability, tooSupport, telescopeMode }: Schedule): readonly UnplacedRow[] => {
   // Open and Closed alike, unlike the CLOSED-only band below: the Telescope row states both.
-  const telescope = telescopeAvailability.filter((telescopeBlock) => telescopeBlock.port === null);
+  const telescope = telescopeAvailability.filter(isTelescopeWide);
   return [
     ...(telescope.length === 0
       ? []
@@ -318,47 +317,11 @@ export const collectStateRows = (
             })),
           },
         ]),
-    // Hue stays the instruments' alone, so these draw in the state neutrals.
-    ...SUBSYSTEM_ORDER.flatMap((subsystem) => {
-      const records = telescopeSubsystemAvailability.filter((block) => block.subsystem === subsystem);
-      return records.length === 0
-        ? []
-        : [
-            {
-              label: SUBSYSTEM_ROW_LABEL[subsystem],
-              blocks: records.map((block) => ({
-                id: block.id,
-                rowLabel: SUBSYSTEM_ROW_LABEL[subsystem],
-                state: 'SUBSYSTEM' as const,
-                label: SUBSYSTEM_USAGE_LABEL[block.usage],
-                instrument: null,
-                usage: block.usage,
-                variant: null,
-                fullInterval: block.interval,
-                nights: nightsIn(block.interval),
-                detail: subsystemDetail(block),
-              })),
-            },
-          ];
-    }),
   ];
-};
-
-const subsystemDetail = (block: TelescopeSubsystemAvailabilityBlock): string | null => {
-  const parts = [
-    ...(block.powerSource === null ? [] : [block.powerSource === 'GENERATOR' ? 'Generator power' : 'Commercial power']),
-    ...(block.note === null ? [] : [block.note]),
-  ];
-  return parts.length === 0 ? null : parts.join(' - ');
 };
 
 /** By label, since the labels are this module's own constants. */
-const STATE_ROW_LABELS = new Set<string>([
-  TELESCOPE_ROW_LABEL,
-  MODE_ROW_LABEL,
-  TOO_ROW_LABEL,
-  ...Object.values(SUBSYSTEM_ROW_LABEL),
-]);
+const STATE_ROW_LABELS = new Set<string>([TELESCOPE_ROW_LABEL, MODE_ROW_LABEL, TOO_ROW_LABEL]);
 
 /** Leading rows only: state rows always precede the subjects. */
 export const stateRowCount = (rows: readonly { readonly label: string }[]): number => {
@@ -369,20 +332,9 @@ export const stateRowCount = (rows: readonly { readonly label: string }[]): numb
   return count;
 };
 
-export interface TimelineSource {
-  readonly instrumentAvailability: readonly InstrumentAvailabilityBlock[];
-  readonly telescopeAvailability: readonly TelescopeAvailabilityBlock[];
-}
-
-/** Window-independent, so a semester places the same blocks in six months without rebuilding them. */
-export const collectBlocks = ({
-  instrumentAvailability,
-  telescopeAvailability,
-}: TimelineSource): readonly { readonly label: string; readonly blocks: readonly UnplacedBlock[] }[] => {
+const collectBlocks = ({ instrumentAvailability, telescopeAvailability }: Schedule): readonly UnplacedRow[] => {
   // CLOSED only: the Open spans are the Telescope row's, and nothing here may treat them as shut.
-  const wideSpans = telescopeAvailability
-    .filter((telescopeBlock) => telescopeBlock.port === null && telescopeBlock.availability === 'CLOSED')
-    .map((telescopeBlock) => telescopeBlock.interval);
+  const wideSpans = wideClosures(telescopeAvailability).map((telescopeBlock) => telescopeBlock.interval);
 
   return portRows([...instrumentAvailability, ...telescopeAvailability].map((record) => record.port)).map((port) => {
     const rowLabel = portRowLabel(port);
@@ -420,7 +372,8 @@ export const collectBlocks = ({
             : [instrumentRowBlock(instrumentBlock, instrumentBlock.interval, instrumentBlock.id)],
         ),
         ...telescopeAvailability
-          .filter((telescopeBlock) => telescopeBlock.availability === 'CLOSED' && telescopeBlock.port === port)
+          .filter(isClosed)
+          .filter((telescopeBlock) => telescopeBlock.port === port)
           .flatMap((telescopeBlock) =>
             subtract(telescopeBlock.interval, wideSpans).map((piece, index) => ({
               id: `${telescopeBlock.id}-${index}`,
@@ -441,7 +394,7 @@ export const collectBlocks = ({
 };
 
 /** Places collected blocks in one window, dropping those that miss it. */
-export const placeBlocks = (collected: ReturnType<typeof collectBlocks>, bounds: Interval): readonly TimelineRow[] =>
+const placeBlocks = (collected: readonly UnplacedRow[], bounds: Interval): readonly TimelineRow[] =>
   collected.map(({ label, blocks }) => ({
     key: label,
     label,
@@ -460,32 +413,47 @@ export const placeBlocks = (collected: ReturnType<typeof collectBlocks>, bounds:
     }),
   }));
 
-/** Telescope-wide closures clipped to one window. */
-export const placeBands = (
-  telescopeAvailability: readonly TelescopeAvailabilityBlock[],
-  bounds: Interval,
-): readonly TimelineBand[] =>
-  telescopeAvailability
-    .filter((telescopeBlock) => telescopeBlock.port === null && telescopeBlock.availability === 'CLOSED')
-    .flatMap((telescopeBlock) => {
-      const visible = clip(telescopeBlock.interval, bounds);
-      return visible === null
-        ? []
-        : [{ id: telescopeBlock.id, interval: visible, label: telescopeBlock.reason ?? 'Closed' }];
-    });
+/** Telescope-wide closures, each still its whole span. */
+const collectBands = ({ telescopeAvailability }: Schedule): readonly TimelineBand[] =>
+  wideClosures(telescopeAvailability).map((telescopeBlock) => ({
+    id: telescopeBlock.id,
+    interval: telescopeBlock.interval,
+    label: telescopeBlock.reason ?? 'Closed',
+  }));
+
+const placeBands = (bands: readonly TimelineBand[], bounds: Interval): readonly TimelineBand[] =>
+  bands.flatMap((band) => {
+    const visible = clip(band.interval, bounds);
+    return visible === null ? [] : [{ ...band, interval: visible }];
+  });
 
 /** Derived from what was actually placed, never from the schema. */
-export const legendFor = (rows: readonly TimelineRow[], bands: readonly TimelineBand[]): TimelineLegend => {
+const legendFor = (
+  rows: readonly TimelineRow[],
+  bands: readonly TimelineBand[],
+  nights: readonly TimelineNight[],
+): TimelineLegend => {
   const instruments = new Set<ResourceInstrument>();
+  const modes = new Set<TelescopeModeType>();
+  const toos = new Set<TooSupport>();
+  let hasOpen = false;
   let hasUnscheduled = false;
   let hasEngineeringUse = false;
   let hasUnavailable = false;
   for (const row of rows) {
     for (const block of row.blocks) {
+      const mode = modeOf(block);
+      const too = tooOf(block);
       // By state, not by a null instrument: ToO and mode blocks name none either.
       if (block.state === 'UNSCHEDULED') {
         hasUnscheduled = true;
-      } else if (block.instrument !== null) {
+      } else if (block.state === 'TELESCOPE') {
+        hasOpen ||= block.variant === 'OPEN';
+      } else if (mode !== null) {
+        modes.add(mode);
+      } else if (too !== null) {
+        toos.add(too);
+      } else if (isNotNullish(block.instrument)) {
         instruments.add(block.instrument);
         hasEngineeringUse ||= block.usage === 'ENGINEERING';
         hasUnavailable ||= block.usage === 'UNAVAILABLE';
@@ -495,9 +463,44 @@ export const legendFor = (rows: readonly TimelineRow[], bands: readonly Timeline
   return {
     // Alphabetical, so the key's order is stable across windows.
     instruments: [...instruments].sort(),
+    modes: [...modes],
+    toos: [...toos],
+    hasOpen,
     hasClosure: bands.length > 0,
     hasUnscheduled,
     hasEngineeringUse,
     hasUnavailable,
+    hasWeekend: nights.length > 1 && nights.some((night) => night.isWeekend),
+    hasNoData: nights.some((night) => !night.dataAvailable),
   };
 };
+
+export interface WindowProjection {
+  readonly interval: Interval;
+  readonly rows: readonly TimelineRow[];
+  readonly bands: readonly TimelineBand[];
+  readonly legend: TimelineLegend;
+}
+
+/** A schedule read before any window is chosen: its rows and bands, every block still its whole span. */
+export interface CollectedSchedule {
+  readonly rows: readonly UnplacedRow[];
+  readonly bands: readonly TimelineBand[];
+}
+
+export const collectSchedule = (schedule: Schedule): CollectedSchedule => ({
+  rows: [...collectStateRows(schedule), ...collectBlocks(schedule)],
+  bands: collectBands(schedule),
+});
+
+/** One window over a collected schedule: what lands in it, clipped, and the legend of what landed. */
+export const placeWindow = (collected: CollectedSchedule, nights: readonly TimelineNight[]): WindowProjection => {
+  const interval = spanOfNights(nights);
+  const rows = placeBlocks(collected.rows, interval);
+  const bands = placeBands(collected.bands, interval);
+  return { interval, rows, bands, legend: legendFor(rows, bands, nights) };
+};
+
+/** The one path from a schedule to placed rows: every window projects through here and adds only its own extras. */
+export const projectWindow = ({ nights, schedule }: WindowInput): WindowProjection =>
+  placeWindow(collectSchedule(schedule), nights);

@@ -8,9 +8,10 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { EmptyPanel, ErrorAlert, Loading } from '@/components/ui/PageStatus';
 import { toApiInterval } from '@/domain/adapters';
 import { addDays } from '@/domain/semester';
+import { EMPTY_SCHEDULE } from '@/domain/types';
 import { buildWeekTimeline, WEEK_NIGHTS } from '@/domain/weekTimeline';
-import { modeLegendExtras, telescopeLegendExtras, tooLegendExtras } from '@/features/timeline/timelineOptions';
-import { WeekTimeline, WeekTimelineLegend } from '@/features/week/WeekTimeline';
+import { TimelineLegendBar } from '@/features/timeline/TimelineChart';
+import { WeekTimeline } from '@/features/week/WeekTimeline';
 import { useWeekSchedule } from '@/gql/hooks';
 
 export default function WeekPage(): JSX.Element {
@@ -28,30 +29,17 @@ export default function WeekPage(): JSX.Element {
   const draft = buildWeekTimeline({
     site,
     firstNight: observingNight,
-    instrumentAvailability: [],
-    telescopeAvailability: [],
+    schedule: EMPTY_SCHEDULE,
     nightsWithData: undefined,
   });
   const bounds = toApiInterval(draft.interval);
 
-  const {
-    instrumentAvailability,
-    telescopeAvailability,
-    tooSupport,
-    telescopeMode,
-    loading,
-    error,
-    nightsWithData,
-    nightsResolved,
-  } = useWeekSchedule(site, nights, bounds);
+  const { schedule, loading, error, nightsWithData, nightsResolved } = useWeekSchedule(site, nights, bounds);
 
   const week = buildWeekTimeline({
     site,
     firstNight: observingNight,
-    instrumentAvailability,
-    telescopeAvailability,
-    tooSupport,
-    telescopeMode,
+    schedule,
     nightsWithData: nightsResolved ? nightsWithData : undefined,
   });
 
@@ -91,13 +79,7 @@ export default function WeekPage(): JSX.Element {
 
       {!loading && !nothingRecorded && (
         <>
-          <WeekTimelineLegend
-            week={week}
-            now={now}
-            telescope={telescopeLegendExtras(telescopeAvailability)}
-            mode={modeLegendExtras(telescopeMode)}
-            too={tooLegendExtras(tooSupport)}
-          />
+          <TimelineLegendBar legend={week.legend} span={week.interval} now={now} />
           <WeekTimeline week={week} site={site} label={title} />
         </>
       )}

@@ -1,40 +1,12 @@
 import type { JSX } from 'react';
 
 import { useOpenNight } from '@/app/useOpenNight';
-import { contains } from '@/domain/interval';
 import type { SemesterTimeline as Timeline, TimelineMonth } from '@/domain/semesterTimeline';
 import { nightAt } from '@/domain/timeline';
 import type { Site } from '@/domain/types';
-import { TimelineChart, TimelineLegendBar } from '@/features/timeline/TimelineChart';
-import { calendarLegendExtras, type LegendExtra } from '@/features/timeline/timelineOptions';
+import { TimelineChart } from '@/features/timeline/TimelineChart';
 
 import { buildSemesterMonthOptions } from './semesterMonthOptions';
-
-/** Decides "Today" here, off a prop, so the page's timeline does not take `now` as a dependency. */
-export function SemesterTimelineLegend({
-  timeline,
-  now,
-  telescope,
-  mode,
-  too,
-}: {
-  timeline: Timeline;
-  now: number;
-  telescope: readonly LegendExtra[];
-  mode: readonly LegendExtra[];
-  too: readonly LegendExtra[];
-}): JSX.Element {
-  const today = timeline.months.some((month) => month.nights.some((night) => contains(night.interval, now)));
-  return (
-    <TimelineLegendBar
-      legend={timeline}
-      telescope={telescope}
-      mode={mode}
-      too={too}
-      calendar={calendarLegendExtras({ weekend: true, now: today && 'Today' })}
-    />
-  );
-}
 
 function MonthChart({ month, site }: { month: TimelineMonth; site: Site }): JSX.Element {
   const options = buildSemesterMonthOptions({ month, site });
