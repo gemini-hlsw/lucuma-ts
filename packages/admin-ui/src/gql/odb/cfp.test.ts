@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
 import type { CallForProposals } from '../types';
-import { type AdminCfpsResult, blankCall, cfpPropertiesInput, createCfpInput, mapCfps, semesterDates } from './cfp';
+import { blankCall, cfpPropertiesInput, createCfpInput, mapCfps, semesterDates } from './cfp';
+import type { CallForProposalsItemFragment } from './gen/graphql';
 
-type RawCfp = AdminCfpsResult['callsForProposals']['matches'][number];
+type RawCfp = CallForProposalsItemFragment;
 type RawLimits = NonNullable<RawCfp['keck']>['coordinateLimits'];
 type RawPartner = RawCfp['partners'][number];
 type RawExchangePartner = NonNullable<RawCfp['gemini']>['exchangePartners'][number];
@@ -113,42 +114,36 @@ function subaruCall(overrides: Partial<RawCfp> = {}): RawCfp {
   };
 }
 
-const result = (matches: RawCfp[]): AdminCfpsResult => ({
-  callsForProposals: { __typename: 'CallsForProposalsSelectResult', matches, hasMore: false },
-});
-
 describe(mapCfps, () => {
   it('returns an empty array on no matches', () => {
-    expect(mapCfps(result([]))).toEqual([]);
+    expect(mapCfps([])).toEqual([]);
   });
 
   it('projects a Gemini call, keeping instrument enum values and every partner', () => {
-    const [c] = mapCfps(
-      result([
-        geminiCall(
-          {
-            partners: [
-              partner('US', '2099-01-01T00:00:00Z', '2099-01-01T00:00:00Z'),
-              partner('CA', '2099-01-01T00:00:00Z', null),
-            ],
+    const [c] = mapCfps([
+      geminiCall(
+        {
+          partners: [
+            partner('US', '2099-01-01T00:00:00Z', '2099-01-01T00:00:00Z'),
+            partner('CA', '2099-01-01T00:00:00Z', null),
+          ],
+        },
+        {
+          allowsNonPartnerPi: true,
+          nonPartnerDeadline: '2099-01-01T00:00:00Z',
+          instruments: ['GMOS_NORTH', 'GMOS_SOUTH', 'FLAMINGOS2', 'GNIRS'],
+          exchangePartners: [
+            exchangePartner('KECK', '2099-01-01T00:00:00Z', '2099-01-01T00:00:00Z'),
+            exchangePartner('SUBARU', '2099-01-01T00:00:00Z', null),
+          ],
+          coordinateLimits: {
+            __typename: 'SiteCoordinateLimits',
+            north: limits(4, 1, 323, 90),
+            south: limits(5, 2, 270, 28),
           },
-          {
-            allowsNonPartnerPi: true,
-            nonPartnerDeadline: '2099-01-01T00:00:00Z',
-            instruments: ['GMOS_NORTH', 'GMOS_SOUTH', 'FLAMINGOS2', 'GNIRS'],
-            exchangePartners: [
-              exchangePartner('KECK', '2099-01-01T00:00:00Z', '2099-01-01T00:00:00Z'),
-              exchangePartner('SUBARU', '2099-01-01T00:00:00Z', null),
-            ],
-            coordinateLimits: {
-              __typename: 'SiteCoordinateLimits',
-              north: limits(4, 1, 323, 90),
-              south: limits(5, 2, 270, 28),
-            },
-          },
-        ),
-      ]),
-    );
+        },
+      ),
+    ]);
     expect(c?.id).toBe('c-101');
     expect(c?.semester).toBe('2025A');
     expect(c?.activeStart).toBe('2025-02-01');
@@ -171,7 +166,7 @@ describe(mapCfps, () => {
   });
 
   it('projects a Keck exchange call (single-site limits, no type) — sc-9608 / sc-10123', () => {
-    const [c] = mapCfps(result([keckCall()]));
+    const [c] = mapCfps([keckCall()]);
     expect(c?.id).toBe('c-368');
     expect(c?.details.observatory).toBe('KECK');
     if (c?.details.observatory !== 'KECK') throw new Error('expected Keck');
@@ -180,7 +175,7 @@ describe(mapCfps, () => {
   });
 
   it('projects a Subaru exchange call (its own type + instruments) — sc-9608 / sc-10123', () => {
-    const [c] = mapCfps(result([subaruCall()]));
+    const [c] = mapCfps([subaruCall()]);
     expect(c?.id).toBe('c-367');
     expect(c?.details.observatory).toBe('SUBARU');
     if (c?.details.observatory !== 'SUBARU') throw new Error('expected Subaru');
@@ -190,36 +185,32 @@ describe(mapCfps, () => {
   });
 
   it('keeps calls of every observatory, one row each (no longer drops exchange calls)', () => {
-    const rows = mapCfps(result([geminiCall(), keckCall(), subaruCall()]));
+    const rows = mapCfps([geminiCall(), keckCall(), subaruCall()]);
     expect(rows.map((c) => c.details.observatory)).toEqual(['GEMINI', 'KECK', 'SUBARU']);
   });
 
   it('maps existence to visible (PRESENT visible, DELETED not) — sc-9612', () => {
-    const [present] = mapCfps(result([geminiCall({ existence: 'PRESENT' })]));
-    const [deleted] = mapCfps(result([geminiCall({ existence: 'DELETED' })]));
+    const [present] = mapCfps([geminiCall({ existence: 'PRESENT' })]);
+    const [deleted] = mapCfps([geminiCall({ existence: 'DELETED' })]);
     expect(present?.visible).toBe(true);
     expect(deleted?.visible).toBe(false);
   });
 
   it('is open while today is before the latest partner deadline, closed once all have passed', () => {
-    const [open, closed, untracked] = mapCfps(
-      result([
-        geminiCall({ id: 'c-open', partners: [partner('US', '2099-01-01T00:00:00Z', null)] }),
-        geminiCall({ id: 'c-closed', partners: [partner('US', '2000-01-01T00:00:00Z', null)] }),
-        geminiCall({ id: 'c-untracked', partners: [] }),
-      ]),
-    );
+    const [open, closed, untracked] = mapCfps([
+      geminiCall({ id: 'c-open', partners: [partner('US', '2099-01-01T00:00:00Z', null)] }),
+      geminiCall({ id: 'c-closed', partners: [partner('US', '2000-01-01T00:00:00Z', null)] }),
+      geminiCall({ id: 'c-untracked', partners: [] }),
+    ]);
     expect(open?.active).toBe(true);
     expect(closed?.active).toBe(false);
     expect(untracked?.active).toBe(false); // no deadlines at all → not yet open
   });
 
   it('stays open on an exchange-partner deadline alone (sc-9610)', () => {
-    const [c] = mapCfps(
-      result([
-        geminiCall({ id: 'c-exch' }, { exchangePartners: [exchangePartner('KECK', '2099-01-01T00:00:00Z', null)] }),
-      ]),
-    );
+    const [c] = mapCfps([
+      geminiCall({ id: 'c-exch' }, { exchangePartners: [exchangePartner('KECK', '2099-01-01T00:00:00Z', null)] }),
+    ]);
     // No regular partners, but Keck's window is open — the call is open.
     expect(c?.active).toBe(true);
   });

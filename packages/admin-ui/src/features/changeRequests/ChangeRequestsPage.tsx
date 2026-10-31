@@ -12,7 +12,7 @@ import { useRowSelection } from '@/components/useRowSelection';
 import { friendlyError } from '@/gql/errors';
 import {
   groupChangeRequestsByProgram,
-  mapChangeRequests,
+  mapConfigurationRequests,
   observationsByIdFrom,
   useChangeRequests,
   useProgramObservations,
@@ -52,7 +52,7 @@ const ALL = 'ALL';
  */
 export default function ChangeRequestsPage(): JSX.Element {
   const { data, loading, incomplete, error } = useChangeRequests();
-  const requests = useMemo(() => (data ? mapChangeRequests(data) : EMPTY), [data]);
+  const requests = useMemo(() => (data ? mapConfigurationRequests(data.configurationRequests.matches) : EMPTY), [data]);
   const { resolve, loading: saving } = useResolveChangeRequests();
   const programs = useMemo(() => groupChangeRequestsByProgram(requests), [requests]);
 

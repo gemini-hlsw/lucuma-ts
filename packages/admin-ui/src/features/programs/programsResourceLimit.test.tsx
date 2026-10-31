@@ -2,7 +2,7 @@ import { fakeJwt, standardUser } from '@gemini-hlsw/lucuma-common-ui/testing';
 import { describe, expect, it } from 'vitest';
 import { userEvent } from 'vitest/browser';
 
-import type { AdminProgramsResult } from '@/gql/odb/programs';
+import type { ProgramItemFragment } from '@/gql/odb/gen/graphql';
 import {
   mapPrograms,
   programPropertiesInput,
@@ -23,7 +23,7 @@ const STAFF_TOKEN = fakeJwt(standardUser('staff'));
 // sit in it — derived, not hardcoded, so this can't rot at the semester turn.
 const REFERENCE = `G-${currentSemester()}-1234-Q`;
 
-type RawProgram = AdminProgramsResult['programs']['matches'][number];
+type RawProgram = ProgramItemFragment;
 
 const program = (resourceCount: number, resourceLimit: number): RawProgram => ({
   __typename: 'Program',
@@ -91,9 +91,7 @@ const alwaysSaved = (draft: Program, original: Program): readonly unknown[] => [
 /** The mapped program the fixture yields, so a save mock can be built from the
  *  same values the page will send. */
 const mapped = (resourceCount: number, resourceLimit: number): Program => {
-  const [p] = mapPrograms({
-    programs: { __typename: 'ProgramSelectResult', matches: [program(resourceCount, resourceLimit)] },
-  });
+  const [p] = mapPrograms([program(resourceCount, resourceLimit)]);
   if (!p) throw new Error('fixture did not map');
   return p;
 };

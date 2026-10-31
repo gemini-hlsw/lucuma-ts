@@ -4,12 +4,12 @@ import { describe, expect, it } from 'vitest';
 
 import { type MockedResponseOf, renderWithContext } from '@/test/render';
 
-import type { AdminCfpsResult } from './cfp';
 import { CFPS_QUERY, useCfps } from './cfp';
+import type { CallForProposalsItemFragment } from './gen/graphql';
 
 const STAFF_TOKEN = fakeJwt(standardUser('staff'));
 
-type RawCfp = AdminCfpsResult['callsForProposals']['matches'][number];
+type RawCfp = CallForProposalsItemFragment;
 
 /** A minimal Gemini call match; only `id` matters for these paging tests. */
 const cfp = (id: string): RawCfp => ({

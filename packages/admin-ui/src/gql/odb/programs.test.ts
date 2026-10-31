@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
 import type { Program } from '../types';
+import type { ProgramItemFragment } from './gen/graphql';
 import {
-  type AdminProgramsResult,
   allocationsInput,
   mapPrograms,
   programPropertiesInput,
@@ -10,7 +10,7 @@ import {
   proposalTypeInput,
 } from './programs';
 
-type RawProgram = AdminProgramsResult['programs']['matches'][number];
+type RawProgram = ProgramItemFragment;
 type RawProgramUser = RawProgram['users'][number];
 
 function programUser(
@@ -73,17 +73,13 @@ function program(overrides: Partial<RawProgram>): RawProgram {
   };
 }
 
-const result = (matches: RawProgram[]): AdminProgramsResult => ({
-  programs: { __typename: 'ProgramSelectResult', matches },
-});
-
 describe(mapPrograms, () => {
   it('returns an empty array when there are no matches', () => {
-    expect(mapPrograms(result([]))).toEqual([]);
+    expect(mapPrograms([])).toEqual([]);
   });
 
   it('carries the resource count and limit through (sc-9090)', () => {
-    const [p] = mapPrograms(result([program({ resourceCount: 84, resourceLimit: 1000 })]));
+    const [p] = mapPrograms([program({ resourceCount: 84, resourceLimit: 1000 })]);
     expect(p?.resourceCount).toBe(84);
     expect(p?.resourceLimit).toBe(1000);
   });
@@ -91,43 +87,41 @@ describe(mapPrograms, () => {
   it('keeps a count that has passed its limit rather than clamping it', () => {
     // The ODB allows the limit to be set below the count — the program is
     // frozen, not corrected — so the form has to be able to show that state.
-    const [p] = mapPrograms(result([program({ resourceCount: 84, resourceLimit: 1 })]));
+    const [p] = mapPrograms([program({ resourceCount: 84, resourceLimit: 1 })]);
     expect(p?.resourceCount).toBe(84);
     expect(p?.resourceLimit).toBe(1);
   });
 
   it('projects a Queue program, reading contact scientists from SUPPORT roles and thesis from ProgramUser', () => {
-    const [p] = mapPrograms(
-      result([
-        program({
-          allocations: [
-            {
-              __typename: 'Allocation',
-              category: 'US',
-              scienceBand: 'BAND1',
-              duration: { __typename: 'TimeSpan', hours: 12.5 },
-            },
-            // A non-partner category (sc-9670): Calibration time must map like any
-            // other, proving Allocation.category spans TimeAccountingCategory.
-            {
-              __typename: 'Allocation',
-              category: 'CAL',
-              scienceBand: 'BAND2',
-              duration: { __typename: 'TimeSpan', hours: 4 },
-            },
-          ],
-          notes: [
-            { __typename: 'ProgramNote', id: 'n-1', text: 'internal note', isPrivate: true },
-            { __typename: 'ProgramNote', id: 'n-2', text: 'PI-visible note', isPrivate: false },
-          ],
-          users: [
-            programUser('m-1', 'PI', false, 'Ada', 'Lovelace'),
-            programUser('m-2', 'SUPPORT_PRIMARY', false, 'Bob', 'Contact'),
-            programUser('m-3', 'COI', true, 'Cleo', 'Student'),
-          ],
-        }),
-      ]),
-    );
+    const [p] = mapPrograms([
+      program({
+        allocations: [
+          {
+            __typename: 'Allocation',
+            category: 'US',
+            scienceBand: 'BAND1',
+            duration: { __typename: 'TimeSpan', hours: 12.5 },
+          },
+          // A non-partner category (sc-9670): Calibration time must map like any
+          // other, proving Allocation.category spans TimeAccountingCategory.
+          {
+            __typename: 'Allocation',
+            category: 'CAL',
+            scienceBand: 'BAND2',
+            duration: { __typename: 'TimeSpan', hours: 4 },
+          },
+        ],
+        notes: [
+          { __typename: 'ProgramNote', id: 'n-1', text: 'internal note', isPrivate: true },
+          { __typename: 'ProgramNote', id: 'n-2', text: 'PI-visible note', isPrivate: false },
+        ],
+        users: [
+          programUser('m-1', 'PI', false, 'Ada', 'Lovelace'),
+          programUser('m-2', 'SUPPORT_PRIMARY', false, 'Bob', 'Contact'),
+          programUser('m-3', 'COI', true, 'Cleo', 'Student'),
+        ],
+      }),
+    ]);
     expect(p?.id).toBe('p-1322');
     expect(p?.name).toBe('p-1322 (untitled)'); // name fallback
     expect(p?.reference).toBe('G-2027B-1322-Q');
@@ -156,24 +150,22 @@ describe(mapPrograms, () => {
   });
 
   it('carries a staff status override (sc-10277)', () => {
-    const [p] = mapPrograms(result([program({ status: 'COMPLETE', explicitStatus: 'COMPLETE' })]));
+    const [p] = mapPrograms([program({ status: 'COMPLETE', explicitStatus: 'COMPLETE' })]);
     expect(p?.status).toBe('COMPLETE');
     expect(p?.explicitStatus).toBe('COMPLETE');
   });
 
   it('treats Classical proposals as CLASSICAL with no Band-3 (Queue-only), and a null ceiling as unrestricted', () => {
-    const [p] = mapPrograms(
-      result([
-        program({
-          tooActivationCeiling: null,
-          proposal: {
-            __typename: 'Proposal',
-            gemini: { __typename: 'Classical', scienceSubtype: 'CLASSICAL', minPercentTime: 90 },
-          },
-          pi: null,
-        }),
-      ]),
-    );
+    const [p] = mapPrograms([
+      program({
+        tooActivationCeiling: null,
+        proposal: {
+          __typename: 'Proposal',
+          gemini: { __typename: 'Classical', scienceSubtype: 'CLASSICAL', minPercentTime: 90 },
+        },
+        pi: null,
+      }),
+    ]);
     expect(p?.programClass).toBe('CLASSICAL');
     expect(p?.programType).toBe('CLASSICAL');
     expect(p?.tooStatus).toBeNull(); // a null ceiling is no restriction, not NONE
@@ -183,16 +175,14 @@ describe(mapPrograms, () => {
   });
 
   it('keeps the real proposal type for non-Queue/Classical subtypes, collapsing only programClass', () => {
-    const [p] = mapPrograms(
-      result([
-        program({
-          proposal: {
-            __typename: 'Proposal',
-            gemini: { __typename: 'LargeProgram', scienceSubtype: 'LARGE_PROGRAM' },
-          },
-        }),
-      ]),
-    );
+    const [p] = mapPrograms([
+      program({
+        proposal: {
+          __typename: 'Proposal',
+          gemini: { __typename: 'LargeProgram', scienceSubtype: 'LARGE_PROGRAM' },
+        },
+      }),
+    ]);
     // programType carries the true subtype (sc-9581); programClass still
     // collapses to QUEUE, since the editor only offers Queue/Classical.
     expect(p?.programType).toBe('LARGE_PROGRAM');
@@ -200,12 +190,10 @@ describe(mapPrograms, () => {
   });
 
   it('shows the 1901–2099 sentinel bounds as blank dates, keeps a real range', () => {
-    const [sentinel, custom] = mapPrograms(
-      result([
-        program({ id: 'p-1' }),
-        program({ id: 'p-2', active: { __typename: 'DateInterval', start: '2027-08-01', end: '2028-02-28' } }),
-      ]),
-    );
+    const [sentinel, custom] = mapPrograms([
+      program({ id: 'p-1' }),
+      program({ id: 'p-2', active: { __typename: 'DateInterval', start: '2027-08-01', end: '2028-02-28' } }),
+    ]);
     expect(sentinel?.activeStart).toBe('');
     expect(sentinel?.activeEnd).toBe('');
     expect(custom?.activeStart).toBe('2027-08-01');

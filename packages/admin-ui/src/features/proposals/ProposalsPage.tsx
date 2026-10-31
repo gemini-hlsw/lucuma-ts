@@ -259,7 +259,7 @@ function AwardForm({
   // Contact-scientist type-ahead from the SSO roster — the same flow as the
   // Programs view. A roster failure just leaves suggestions empty.
   const { data: rosterData } = useUsers();
-  const roster = useMemo(() => (rosterData ? mapRosterUsers(rosterData) : []), [rosterData]);
+  const roster = useMemo(() => (rosterData ? mapRosterUsers(rosterData.users.matches) : []), [rosterData]);
   const [contactSuggestions, setContactSuggestions] = useState<ContactScientist[]>([]);
   function suggestContacts(query: string): void {
     const chosen = new Set(award.contactScientists.map((c) => c.userId));
