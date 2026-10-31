@@ -1,5 +1,6 @@
 import { fakeJwt, standardUser } from '@gemini-hlsw/lucuma-common-ui/testing';
-import { describe, expect, it, vi } from 'vitest';
+import { createStore, type Store } from 'jotai';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   isLoggedInAtom,
@@ -9,7 +10,12 @@ import {
   setToken,
   useSessionStatus,
 } from './auth';
-import { store } from './store';
+
+let store: Store;
+
+beforeEach(() => {
+  store = createStore();
+});
 
 describe(useSessionStatus, () => {
   it('reads checking before the session has been asked', () => {

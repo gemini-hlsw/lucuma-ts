@@ -2,18 +2,18 @@ import { ApolloClient, ApolloLink, gql, InMemoryCache } from '@apollo/client';
 import { Observable } from '@apollo/client/utilities';
 import { toastAtom } from '@gemini-hlsw/lucuma-common-ui';
 import { fakeJwt, standardUser } from '@gemini-hlsw/lucuma-common-ui/testing';
-import { Provider as JotaiProvider } from 'jotai';
+import { createStore, Provider as JotaiProvider, type Store } from 'jotai';
 import { PrimeReactProvider } from 'primereact/api';
 import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
 import { page } from 'vitest/browser';
 import { render } from 'vitest-browser-react';
 
 import { odbTokenAtom, sessionCheckedAtom } from '@/components/atoms/auth';
-import { store } from '@/components/atoms/store';
+import { store as appStore } from '@/components/atoms/store';
 import { ToastOutlet } from '@/components/ui/ToastOutlet';
 import { captureHeader, createLinkClient } from '@/test/linkClient';
 
-import { authLink, client, liveLink, sessionHoldLink } from './ApolloConfigs';
+import { authLink, createClient, liveLink, sessionHoldLink } from './ApolloConfigs';
 
 const QUERY = gql`
   query AuthHeaderProbe {
@@ -37,9 +37,15 @@ const ANSWERS = [
 const TOKEN = fakeJwt(standardUser('staff'));
 const UNDECODABLE_TOKEN = 'header.payload.signature';
 
+let store: Store;
+
+beforeEach(() => {
+  store = createStore();
+});
+
 const headerSent = async (name: string, context?: ApolloLink.OperationContext): Promise<string | null | undefined> => {
   const capture = captureHeader(name);
-  const linkClient = createLinkClient(ApolloLink.from([authLink(), capture.link]), ANSWERS);
+  const linkClient = createLinkClient(ApolloLink.from([authLink(store), capture.link]), ANSWERS);
   await linkClient.query({ query: QUERY, context });
   return capture.sent[0];
 };
@@ -80,6 +86,19 @@ describe(authLink, () => {
   });
 });
 
+describe('two link chains on two stores', () => {
+  it('should send no bearer through a chain built on another store when a token is set on the first', async () => {
+    const other = createStore();
+    appStore.set(odbTokenAtom, TOKEN);
+    const capture = captureHeader('Authorization');
+    const linkClient = createLinkClient(ApolloLink.from([authLink(other), capture.link]), ANSWERS);
+
+    await linkClient.query({ query: QUERY });
+
+    expect(capture.sent).toEqual([null]);
+  });
+});
+
 describe(sessionHoldLink, () => {
   const heldApollo = () => {
     const entered: string[] = [];
@@ -88,7 +107,10 @@ describe(sessionHoldLink, () => {
       return forward(operation);
     });
     const capture = captureHeader('Authorization');
-    const linkClient = createLinkClient(ApolloLink.from([enter, sessionHoldLink(), authLink(), capture.link]), ANSWERS);
+    const linkClient = createLinkClient(
+      ApolloLink.from([enter, sessionHoldLink(store), authLink(store), capture.link]),
+      ANSWERS,
+    );
     return { linkClient, sent: capture.sent, entered };
   };
 
@@ -122,9 +144,11 @@ describe(sessionHoldLink, () => {
 
 describe("the live client's request chain", () => {
   let fetchSpy: MockInstance<typeof fetch>;
+  let client: ApolloClient;
 
   beforeEach(() => {
     store.set(sessionCheckedAtom, true);
+    client = createClient(store);
     fetchSpy = vi.spyOn(window, 'fetch').mockImplementation(() =>
       Promise.resolve(
         new Response(JSON.stringify({ data: { publishedSemesters: [] } }), {
@@ -157,24 +181,25 @@ describe("the live client's request chain", () => {
   });
 });
 
-describe(liveLink, () => {
-  type Answer = (observer: {
-    next: (result: ApolloLink.Result) => void;
-    error: (error: unknown) => void;
-    complete: () => void;
-  }) => void;
+type Answer = (observer: {
+  next: (result: ApolloLink.Result) => void;
+  error: (error: unknown) => void;
+  complete: () => void;
+}) => void;
 
-  const answering =
-    (result: ApolloLink.Result): Answer =>
-    (observer) => {
-      observer.next(result);
-      observer.complete();
-    };
-  const served = answering({ data: { publishedSemesters: [] } });
-  const unreachable: Answer = (observer) => {
-    observer.error(new Error('Failed to fetch'));
+const answering =
+  (result: ApolloLink.Result): Answer =>
+  (observer) => {
+    observer.next(result);
+    observer.complete();
   };
-  const failed = answering({ data: null, errors: [{ message: 'Cannot query field "publishedSemesters"' }] });
+const served = answering({ data: { publishedSemesters: [] } });
+const unreachable: Answer = (observer) => {
+  observer.error(new Error('Failed to fetch'));
+};
+const failed = answering({ data: null, errors: [{ message: 'Cannot query field "publishedSemesters"' }] });
+
+describe(liveLink, () => {
   const unauthenticated = answering({
     data: null,
     errors: [{ message: "Field 'publishedSemesters' requires authentication." }],
@@ -182,10 +207,7 @@ describe(liveLink, () => {
   const refused = answering({ data: null, errors: [{ message: 'Access denied.' }] });
 
   let answer: Answer = served;
-  const liveClient = new ApolloClient({
-    link: liveLink(new ApolloLink(() => new Observable<ApolloLink.Result>((observer) => answer(observer)))),
-    cache: new InMemoryCache(),
-  });
+  let liveClient: ApolloClient;
 
   const ask = async (next: Answer): Promise<void> => {
     answer = next;
@@ -197,6 +219,10 @@ describe(liveLink, () => {
 
   beforeEach(async () => {
     store.set(sessionCheckedAtom, true);
+    liveClient = new ApolloClient({
+      link: liveLink(store, new ApolloLink(() => new Observable<ApolloLink.Result>((observer) => answer(observer)))),
+      cache: new InMemoryCache(),
+    });
     await render(
       <PrimeReactProvider>
         <JotaiProvider store={store}>
@@ -276,5 +302,48 @@ describe(liveLink, () => {
     await ask(refused);
 
     await expect.poll(summaries).toEqual(['The live server could not verify your sign-in.']);
+  });
+});
+
+describe('two live chains on two stores', () => {
+  const liveChain = async () => {
+    const chainStore = createStore();
+    chainStore.set(sessionCheckedAtom, true);
+    let answer: Answer = served;
+    const client = new ApolloClient({
+      link: liveLink(
+        chainStore,
+        new ApolloLink(() => new Observable<ApolloLink.Result>((observer) => answer(observer))),
+      ),
+      cache: new InMemoryCache(),
+    });
+    const screen = await render(
+      <PrimeReactProvider>
+        <JotaiProvider store={chainStore}>
+          <ToastOutlet />
+        </JotaiProvider>
+      </PrimeReactProvider>,
+    );
+    await expect.poll(() => chainStore.get(toastAtom)).not.toBeNull();
+    return {
+      ask: async (next: Answer): Promise<void> => {
+        answer = next;
+        await client.query({ query: QUERY, fetchPolicy: 'no-cache' }).catch(() => undefined);
+      },
+      summaries: () => [...screen.container.querySelectorAll('.p-toast-summary')].map((summary) => summary.textContent),
+    };
+  };
+
+  it("should keep the first store's standing warning when the second store's chain succeeds", async () => {
+    const first = await liveChain();
+    const other = await liveChain();
+    await first.ask(unreachable);
+    await expect.poll(first.summaries).toEqual(['The live server could not be reached.']);
+
+    await other.ask(served);
+    await first.ask(failed);
+
+    await expect.poll(first.summaries).toEqual(['The live server answered with an error.']);
+    expect(other.summaries()).toEqual([]);
   });
 });

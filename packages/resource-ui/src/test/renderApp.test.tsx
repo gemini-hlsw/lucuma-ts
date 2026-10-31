@@ -54,7 +54,7 @@ describe(renderApp, () => {
     const screen = await openProbe({ token: fakeJwt(standardUser('staff')) });
     await expect.element(screen.getByTestId('probe-status')).toHaveTextContent('signed-in');
 
-    const signedOut = signOut();
+    const signedOut = signOut(store);
     ssoLogout().answer({ status: 200 });
     expect(await signedOut).toEqual({ reachedSso: true });
 
