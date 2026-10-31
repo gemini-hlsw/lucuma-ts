@@ -42,7 +42,7 @@
     "@graphql-codegen/client-preset": "6.2.3",
     "@graphql-eslint/eslint-plugin": "4.4.2",
     "@graphql-typed-document-node/core": "3.2.0",
-    "@rolldown/plugin-babel": "0.2.4",
+    "@rolldown/plugin-babel": "0.3.0",
     "@tailwindcss/vite": "4.3.3",
     "@tsconfig/strictest": "2.0.8",
     "@tsconfig/vite-react": "8.1.1",
