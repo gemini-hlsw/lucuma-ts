@@ -8,12 +8,12 @@ import { page } from 'vitest/browser';
 
 import Layout from '@/components/layout/Layout';
 import { observingNightInterval, observingNightOf } from '@/domain/siteTime';
+import { TOO_SUPPORT_LABEL } from '@/domain/timeline';
 import {
   instrumentAvailabilityBlock,
   overNights,
   telescopeAvailabilityBlock,
   telescopeModeBlock,
-  telescopeSubsystemAvailabilityBlock,
   tooSupportBlock,
 } from '@/test/fixtures/blocks';
 import { nightSchedule } from '@/test/fixtures/night';
@@ -82,7 +82,9 @@ describe(NightPage, () => {
 
       const legend = screen.getByLabelText('Legend');
       await expect.element(legend.getByRole('group', { name: 'Telescope' }).getByText('Closed')).toBeVisible();
-      await expect.element(legend.getByRole('group', { name: 'ToO' }).getByText('Standard ToOs')).toBeVisible();
+      await expect
+        .element(legend.getByRole('group', { name: 'ToO' }).getByText(TOO_SUPPORT_LABEL.STANDARD))
+        .toBeVisible();
       // A gap is not recorded, so the mode is not drawn as anything - not Queue, not Shutdown.
       await expect.element(legend.getByRole('group', { name: 'Mode' })).not.toBeInTheDocument();
     });
@@ -105,7 +107,9 @@ describe(NightPage, () => {
       // One legend section per state row, so a grey repeated across rows is keyed under its own row.
       await expect.element(screen.getByRole('group', { name: 'Telescope' }).getByText('Open')).toBeVisible();
       await expect.element(screen.getByRole('group', { name: 'Mode' }).getByText('Priority visitor')).toBeVisible();
-      await expect.element(screen.getByRole('group', { name: 'ToO' }).getByText('Standard ToOs')).toBeVisible();
+      await expect
+        .element(screen.getByRole('group', { name: 'ToO' }).getByText(TOO_SUPPORT_LABEL.STANDARD))
+        .toBeVisible();
     });
 
     it('leaves a stretch the Telescope row does not record empty, never reading it as closed', async () => {
@@ -312,51 +316,6 @@ describe(NightPage, () => {
     // Non-empty first: a blanked chart must not slip through as merely "different".
     await expect.poll(() => labels().length).toBeGreaterThan(0);
     await expect.poll(labels).not.toBe(siteLabels);
-  });
-
-  it('heads the chart with the subsystem rows - the sensors and the laser', async () => {
-    const night = overNights('GS', '2025-11-14', '2025-11-14');
-    const screen = await openNight(
-      '/night?site=GS&night=2025-11-14',
-      nightSchedule(
-        { site: 'GS', night: '2025-11-14' },
-        {
-          telescopeSubsystemAvailability: [
-            telescopeSubsystemAvailabilityBlock({ subsystem: 'PWFS1', interval: night }),
-            telescopeSubsystemAvailabilityBlock({ subsystem: 'PWFS2', interval: night }),
-            telescopeSubsystemAvailabilityBlock({ subsystem: 'LGS', interval: night, usage: 'UNAVAILABLE' }),
-          ],
-        },
-      ),
-    );
-
-    await expect.element(screen.getByText('PWFS1').first()).toBeVisible();
-    await expect.element(screen.getByText('PWFS2').first()).toBeVisible();
-    // An unavailable laser is printed in words rather than shouted in the bright neutral.
-    await expect.element(screen.getByText('LGS').first()).toBeVisible();
-    await expect.element(screen.getByText('Not available').first()).toBeVisible();
-  });
-
-  it('reads an available laser as available, not as not available', async () => {
-    const screen = await openNight(
-      '/night?site=GN&night=2026-08-27',
-      nightSchedule(
-        { site: 'GN', night: '2026-08-27' },
-        {
-          telescopeSubsystemAvailability: [
-            telescopeSubsystemAvailabilityBlock({
-              subsystem: 'LGS',
-              interval: overNights('GN', '2026-08-27', '2026-08-27'),
-            }),
-          ],
-        },
-      ),
-    );
-
-    const chart = screen.getByTestId('night-timeline');
-    await expect.element(chart).toBeVisible();
-    await expect.element(chart.getByText('Available').first()).toBeVisible();
-    await expect.element(chart.getByText('Not available')).not.toBeInTheDocument();
   });
 
   it('keeps an off-port run off the chart - the schedule is the ports picture', async () => {

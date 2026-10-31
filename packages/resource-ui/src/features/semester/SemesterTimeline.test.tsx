@@ -15,6 +15,7 @@ import { render as renderBare } from 'vitest-browser-react';
 import { buildSemesterTimeline } from '@/domain/semesterTimeline';
 import { observingNightInterval } from '@/domain/siteTime';
 import type { InstrumentAvailabilityBlock } from '@/domain/types';
+import { scheduleOf } from '@/test/fixtures/domain';
 import { ROOT_FONT_SIZE } from '@/test/styleProbe';
 
 import { SemesterTimeline } from './SemesterTimeline';
@@ -42,8 +43,7 @@ const timeline = buildSemesterTimeline({
   site: 'GS',
   firstNight: '2026-08-02',
   lastNight: '2026-09-01',
-  instrumentAvailability: INSTRUMENT_BLOCKS,
-  telescopeAvailability: [],
+  schedule: scheduleOf({ instrumentAvailability: INSTRUMENT_BLOCKS }),
 });
 
 /** Carries a whole-telescope record, because the group headings only head a chart that has state rows. */
@@ -51,16 +51,18 @@ const headedTimeline = buildSemesterTimeline({
   site: 'GS',
   firstNight: '2026-08-02',
   lastNight: '2026-09-01',
-  instrumentAvailability: INSTRUMENT_BLOCKS,
-  telescopeAvailability: [
-    {
-      id: 'open',
-      availability: 'OPEN',
-      port: null,
-      interval: { start: night('2026-08-02').start, end: night('2026-09-01').end },
-      reason: null,
-    },
-  ],
+  schedule: scheduleOf({
+    instrumentAvailability: INSTRUMENT_BLOCKS,
+    telescopeAvailability: [
+      {
+        id: 'open',
+        availability: 'OPEN',
+        port: null,
+        interval: { start: night('2026-08-02').start, end: night('2026-09-01').end },
+        reason: null,
+      },
+    ],
+  }),
 });
 
 const chartWidth = (container: HTMLElement): number =>

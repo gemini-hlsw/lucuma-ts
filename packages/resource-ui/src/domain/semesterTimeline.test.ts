@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
+import { scheduleOf } from '@/test/fixtures/domain';
+
 import { clip } from './interval';
 import { portRowLabel, TELESCOPE_PORTS } from './ports';
 import { buildSemesterTimeline } from './semesterTimeline';
 import { observingNightInterval } from './siteTime';
 import { subtract } from './timeline';
-import type { InstrumentAvailabilityBlock, TelescopeAvailabilityBlock } from './types';
+import type { InstrumentAvailabilityBlock, Schedule, TelescopeAvailabilityBlock } from './types';
 
 const night = (label: string) => observingNightInterval('GS', label);
 
@@ -35,19 +37,8 @@ const telescopeBlock = (
   ...over,
 });
 
-const build = (
-  over: {
-    instrumentAvailability?: readonly InstrumentAvailabilityBlock[];
-    telescopeAvailability?: readonly TelescopeAvailabilityBlock[];
-  } = {},
-) =>
-  buildSemesterTimeline({
-    site: 'GS',
-    firstNight: '2026-08-02',
-    lastNight: '2027-02-01',
-    instrumentAvailability: over.instrumentAvailability ?? [],
-    telescopeAvailability: over.telescopeAvailability ?? [],
-  });
+const build = (over: Partial<Schedule> = {}) =>
+  buildSemesterTimeline({ site: 'GS', firstNight: '2026-08-02', lastNight: '2027-02-01', schedule: scheduleOf(over) });
 
 const rowIn = (timeline: ReturnType<typeof build>, monthLabel: string, row: string) =>
   timeline.months.find((month) => month.label === monthLabel)?.rows.find((entry) => entry.key === row);
@@ -116,13 +107,6 @@ describe('closures at Gemini South', () => {
     expect(august?.blocks[0]?.state).toBe('UNSCHEDULED');
     // It begins where the shutdown ends, not where the sheet's run begins.
     expect(august?.blocks[0]?.interval.start).toBe(SHUTDOWN.end);
-  });
-
-  it('reports the closure for the legend even though no row carries it', () => {
-    const timeline = build({ telescopeAvailability: PUBLISHED_CLOSURES });
-
-    expect(timeline.hasClosure).toBe(true);
-    expect(timeline.instruments).toEqual([]);
   });
 });
 
@@ -210,26 +194,6 @@ describe('months', () => {
 });
 
 describe('the legend', () => {
-  it('lists only the instruments actually drawn, in a stable order', () => {
-    const timeline = build({
-      instrumentAvailability: [
-        instrumentBlock({ id: 'a', port: 3, instrument: 'GMOS', interval: span('2026-08-08', '2026-08-20') }),
-        instrumentBlock({
-          id: 'b',
-          port: 1,
-          instrument: 'GHOST',
-          publishedName: 'GHOST',
-          interval: span('2026-08-08', '2026-09-01'),
-        }),
-      ],
-    });
-
-    // Alphabetical, so the key does not reshuffle between semesters.
-    expect(timeline.instruments).toEqual(['GHOST', 'GMOS']);
-    expect(timeline.hasClosure).toBe(false);
-    expect(timeline.hasUnscheduled).toBe(false);
-  });
-
   it('treats a published ENGINEERING run as an instrument, because the sheet does', () => {
     const timeline = build({
       instrumentAvailability: [
@@ -244,17 +208,6 @@ describe('the legend', () => {
     });
 
     expect(rowIn(timeline, 'October 2026', 'Port 3')?.blocks[0]?.state).toBe('MOUNTED');
-    expect(timeline.instruments).toEqual(['ENGINEERING']);
-  });
-
-  it('flags an unscheduled span separately from the instruments', () => {
-    const timeline = build({
-      telescopeAvailability: [
-        telescopeBlock({ id: 'ag', port: 4, interval: span('2026-08-02', '2026-09-01'), reason: 'A&G' }),
-      ],
-    });
-
-    expect(timeline.hasUnscheduled).toBe(true);
-    expect(timeline.instruments).toEqual([]);
+    expect(timeline.legend.instruments).toEqual(['ENGINEERING']);
   });
 });

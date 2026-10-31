@@ -10,7 +10,6 @@ import type {
   PublishedSemester,
   TelescopeAvailabilityBlock,
   TelescopeModeBlock,
-  TelescopeSubsystemAvailabilityBlock,
   TooSupportBlock,
 } from './types';
 
@@ -106,18 +105,6 @@ export const toTelescopeMode = (blocks: readonly Gql.TelescopeModeBlockItemFragm
     mode: block.mode,
     programReferences: block.programReferences,
     partner: block.partner ?? null,
-    interval: toInterval(block.interval),
-    note: block.note ?? null,
-  }));
-
-export const toTelescopeSubsystemAvailability = (
-  blocks: readonly Gql.TelescopeSubsystemAvailabilityBlockItemFragment[],
-): readonly TelescopeSubsystemAvailabilityBlock[] =>
-  blocks.map((block, index) => ({
-    id: rowKey('tsa', index),
-    subsystem: block.subsystem,
-    usage: block.usage,
-    powerSource: block.powerSource ?? null,
     interval: toInterval(block.interval),
     note: block.note ?? null,
   }));

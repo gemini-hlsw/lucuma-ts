@@ -3,13 +3,11 @@ import type {
   InstrumentComponentType,
   InstrumentPlace,
   Partner,
-  PowerSource,
   ResourceInstrument,
   ResourceUsage,
   Site,
   TelescopeAvailability,
   TelescopeModeType,
-  TelescopeSubsystem,
   TooSupport,
 } from '@gql/gen/graphql';
 
@@ -18,13 +16,11 @@ export type {
   ComponentLocation,
   InstrumentPlace,
   Partner,
-  PowerSource,
   ResourceInstrument,
   ResourceUsage,
   Site,
   TelescopeAvailability,
   TelescopeModeType,
-  TelescopeSubsystem,
   TooSupport,
 };
 
@@ -90,15 +86,21 @@ export interface TelescopeModeBlock {
   readonly note: string | null;
 }
 
-export interface TelescopeSubsystemAvailabilityBlock {
-  readonly id: string;
-  readonly subsystem: TelescopeSubsystem;
-  readonly usage: ResourceUsage;
-  /** Recorded when operations state it; the workbook carries none. */
-  readonly powerSource: PowerSource | null;
-  readonly interval: Interval;
-  readonly note: string | null;
+/** The record lists a schedule query answers with, as one value every window projects. */
+export interface Schedule {
+  readonly instrumentAvailability: readonly InstrumentAvailabilityBlock[];
+  /** Read four ways: the Telescope row, holes in per-port closures, UNSCHEDULED blocks and the closure bands. */
+  readonly telescopeAvailability: readonly TelescopeAvailabilityBlock[];
+  readonly tooSupport: readonly TooSupportBlock[];
+  readonly telescopeMode: readonly TelescopeModeBlock[];
 }
+
+export const EMPTY_SCHEDULE: Schedule = {
+  instrumentAvailability: [],
+  telescopeAvailability: [],
+  tooSupport: [],
+  telescopeMode: [],
+};
 
 export interface PublishedSemester {
   readonly site: Site;

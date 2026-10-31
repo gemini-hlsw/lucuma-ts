@@ -16,7 +16,7 @@ change later tonight is the item's next change.
 _Avoid_: Tonight, status
 
 **Block**:
-One recorded fact about one subject (the telescope, an instrument, a subsystem or a component) over a half-open
+One recorded fact about one subject (the telescope, an instrument or a component) over a half-open
 interval: the start is included, the end is not. A block has no identity of its own; a query can trim it to a window.
 _Avoid_: Mounting, closure, record, entry
 
@@ -28,3 +28,13 @@ _Avoid_: Closed, empty, downtime
 The night labelled by a date, running from 14:00 site-local time on the previous day to 14:00 site-local time on that
 date.
 _Avoid_: Night of (date), calendar day
+
+**Schedule**:
+The blocks one query answers with, as one value: the instrument, telescope, ToO and mode lists. A window places a
+schedule; nothing hands the lists around separately.
+_Avoid_: Blocks (for the set), source, data
+
+**Window**:
+The run of consecutive observing nights one schedule view draws, with every block placed on it and a legend naming
+only what it contains. The Night, Week and Semester views are each one window.
+_Avoid_: Range, span, timeline, view (for the nights themselves)

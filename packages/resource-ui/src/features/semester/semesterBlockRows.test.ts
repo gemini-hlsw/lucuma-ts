@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 
 import { buildSemesterTimeline } from '@/domain/semesterTimeline';
 import { observingNightInterval } from '@/domain/siteTime';
-import type { InstrumentAvailabilityBlock, TelescopeAvailabilityBlock } from '@/domain/types';
+import type { InstrumentAvailabilityBlock, Schedule, TelescopeAvailabilityBlock } from '@/domain/types';
+import { scheduleOf } from '@/test/fixtures/domain';
 
 import { buildBlockRows, WHOLE_TELESCOPE } from './semesterBlockRows';
 
@@ -25,15 +26,18 @@ const instrumentBlock = (over: Partial<InstrumentAvailabilityBlock> = {}): Instr
   ...over,
 });
 
-const build = (over: Partial<Parameters<typeof buildSemesterTimeline>[0]> = {}) =>
+interface Span {
+  readonly firstNight: string;
+  readonly lastNight: string;
+}
+const ONE_WEEK: Span = { firstNight: '2026-08-08', lastNight: '2026-08-14' };
+
+const build = (over: Partial<Schedule> = {}, span: Span = ONE_WEEK) =>
   buildBlockRows(
     buildSemesterTimeline({
       site: SITE,
-      firstNight: '2026-08-08',
-      lastNight: '2026-08-14',
-      instrumentAvailability: [instrumentBlock()],
-      telescopeAvailability: [],
-      ...over,
+      ...span,
+      schedule: scheduleOf({ instrumentAvailability: [instrumentBlock()], ...over }),
     }),
     SITE,
   );
@@ -52,11 +56,10 @@ describe(buildBlockRows, () => {
   });
 
   it('keeps a run that crosses a month boundary as one row', () => {
-    const rows = build({
-      firstNight: '2026-08-08',
-      lastNight: '2026-10-14',
-      instrumentAvailability: [instrumentBlock({ interval: nights('2026-08-08', '2026-10-14') })],
-    });
+    const rows = build(
+      { instrumentAvailability: [instrumentBlock({ interval: nights('2026-08-08', '2026-10-14') })] },
+      { firstNight: '2026-08-08', lastNight: '2026-10-14' },
+    );
 
     expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({ from: '7 Aug 2026', to: '13 Oct 2026' });

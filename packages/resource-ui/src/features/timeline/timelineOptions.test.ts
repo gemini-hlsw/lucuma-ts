@@ -12,7 +12,9 @@ import {
   eveningDescriber,
   fitBandLabels,
   labelGutter,
+  NOW_MARKER_ID,
   TICK,
+  type TimelineChartModel,
   type TimelinePointCustom,
 } from './timelineOptions';
 
@@ -104,10 +106,21 @@ const MODEL = {
   rowHeightRem: 2.125,
   bottomMarginRem: 2.125,
   seriesName: 'Schedule',
-} as const satisfies Parameters<typeof buildTimelineChart>[0];
+} as const satisfies TimelineChartModel;
 
 describe(buildTimelineChart, () => {
   const options = buildTimelineChart(MODEL);
+
+  it("leads the view's plot lines with the bare now slot, which the chart positions", () => {
+    const line = { value: 1, color: 'red' };
+    const { xAxis } = buildTimelineChart({ ...MODEL, xAxis: { plotLines: [line] } });
+    const [slot, ...lines] = (Array.isArray(xAxis) ? undefined : xAxis?.plotLines) ?? [];
+
+    expect(slot).toMatchObject({ id: NOW_MARKER_ID, className: 'schedule-today' });
+    expect(slot).not.toHaveProperty('label');
+    expect(slot).not.toHaveProperty('value');
+    expect(lines).toEqual([line]);
+  });
 
   const custom = (label: string): TimelinePointCustom => ({
     blockId: 'b1',

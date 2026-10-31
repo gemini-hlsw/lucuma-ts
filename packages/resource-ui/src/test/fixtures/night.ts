@@ -40,7 +40,6 @@ export const nightSchedule = (
         telescopeAvailability: [],
         tooSupport: [],
         telescopeMode: [],
-        telescopeSubsystemAvailability: [],
         ...blocks,
       },
     },

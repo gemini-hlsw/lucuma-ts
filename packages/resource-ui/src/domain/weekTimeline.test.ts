@@ -1,14 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
-import { portRowLabel, TELESCOPE_PORTS } from './ports';
+import { scheduleOf } from '@/test/fixtures/domain';
+
 import { observingNightInterval } from './siteTime';
 import { nightAt } from './timeline';
-import type { InstrumentAvailabilityBlock, TelescopeAvailabilityBlock } from './types';
+import type { InstrumentAvailabilityBlock, Schedule } from './types';
 import { buildWeekTimeline, WEEK_NIGHTS, weekNightLabels } from './weekTimeline';
 
 const FIRST = '2026-11-14';
-/** Every week draws the telescope's ports, whatever the seven nights hold. */
-const ROWS = TELESCOPE_PORTS.map(portRowLabel);
 
 const instrumentBlock = (
   over: Partial<InstrumentAvailabilityBlock> & Pick<InstrumentAvailabilityBlock, 'id' | 'port' | 'interval'>,
@@ -21,20 +20,8 @@ const instrumentBlock = (
   ...over,
 });
 
-const build = (
-  over: {
-    instrumentAvailability?: readonly InstrumentAvailabilityBlock[];
-    telescopeAvailability?: readonly TelescopeAvailabilityBlock[];
-    nightsWithData?: ReadonlySet<string> | undefined;
-  } = {},
-) =>
-  buildWeekTimeline({
-    site: 'GS',
-    firstNight: FIRST,
-    instrumentAvailability: over.instrumentAvailability ?? [],
-    telescopeAvailability: over.telescopeAvailability ?? [],
-    nightsWithData: 'nightsWithData' in over ? over.nightsWithData : undefined,
-  });
+const build = (over: Partial<Schedule> = {}, nightsWithData?: ReadonlySet<string>) =>
+  buildWeekTimeline({ site: 'GS', firstNight: FIRST, schedule: scheduleOf(over), nightsWithData });
 
 describe('the week window', () => {
   it('starts at the night asked for and runs seven nights', () => {
@@ -106,36 +93,9 @@ describe('runs across the week', () => {
   });
 });
 
-describe('the telescope-state rows', () => {
-  it('heads the week with Telescope, Mode and ToO rows when records reach it', () => {
-    const span = { start: observingNightInterval('GS', FIRST).start, end: observingNightInterval('GS', FIRST).end };
-    const week = buildWeekTimeline({
-      site: 'GS',
-      firstNight: FIRST,
-      instrumentAvailability: [],
-      telescopeAvailability: [{ id: 'a1', availability: 'OPEN', port: null, interval: span, reason: null }],
-      tooSupport: [{ id: 't1', tooSupport: 'NONE', interval: span, note: null }],
-      telescopeMode: [{ id: 'm1', mode: 'QUEUE', programReferences: [], partner: null, interval: span, note: null }],
-      nightsWithData: undefined,
-    });
-
-    expect(week.rows.map((row) => row.label)).toEqual(['Telescope', 'Mode', 'ToO', ...ROWS]);
-    // The workbook records "Open" as explicitly as "Closed" - a fact, not a gap.
-    expect(week.rows[0]?.blocks[0]).toMatchObject({ state: 'TELESCOPE', label: 'Open', variant: 'OPEN' });
-    expect(week.rows[1]?.blocks[0]?.label).toBe('Queue');
-    expect(week.rows[2]?.blocks[0]?.label).toBe('No ToOs');
-    // An Open record is never a closure band.
-    expect(week.bands).toEqual([]);
-  });
-
-  it('has no state rows when the week holds no such records - the gap stays a gap', () => {
-    expect(build().rows.map((row) => row.label)).toEqual([...ROWS]);
-  });
-});
-
 describe('nights with nothing recorded', () => {
   it('marks the nights the API reports no data for', () => {
-    const week = build({ nightsWithData: new Set(['2026-11-14', '2026-11-15']) });
+    const week = build({}, new Set(['2026-11-14', '2026-11-15']));
 
     expect(week.nights.filter((night) => night.dataAvailable).map((night) => night.observingNight)).toEqual([
       '2026-11-14',
@@ -145,7 +105,7 @@ describe('nights with nothing recorded', () => {
 
   it('assumes data until the answer arrives, rather than greying out the week', () => {
     // An empty set and "not asked yet" differ: treating one as the other flashes "not recorded" everywhere.
-    const week = build({ nightsWithData: undefined });
+    const week = build({}, undefined);
 
     expect(week.nights.every((night) => night.dataAvailable)).toBe(true);
   });

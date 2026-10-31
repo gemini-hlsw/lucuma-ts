@@ -1,25 +1,14 @@
 import { addDays } from './semester';
 import {
-  collectBlocks,
-  collectStateRows,
-  legendFor,
-  placeBands,
-  placeBlocks,
-  spanOfNights,
+  collectSchedule,
+  placeWindow,
   type TimelineBand,
-  type TimelineLegend,
   type TimelineNight,
   timelineNights,
   type TimelineRow,
+  type WindowProjection,
 } from './timeline';
-import type {
-  InstrumentAvailabilityBlock,
-  Interval,
-  Site,
-  TelescopeAvailabilityBlock,
-  TelescopeModeBlock,
-  TooSupportBlock,
-} from './types';
+import type { Interval, Schedule, Site } from './types';
 
 export interface TimelineMonth {
   readonly year: number;
@@ -33,11 +22,8 @@ export interface TimelineMonth {
   readonly bands: readonly TimelineBand[];
 }
 
-export interface SemesterTimeline extends TimelineLegend {
+export interface SemesterTimeline extends WindowProjection {
   readonly months: readonly TimelineMonth[];
-  /** Placed over the whole semester, so a run crossing a month boundary is one row rather than six. */
-  readonly rows: readonly TimelineRow[];
-  readonly bands: readonly TimelineBand[];
 }
 
 const MONTH_LABELS = [
@@ -68,30 +54,18 @@ export interface BuildSemesterTimelineOptions {
   readonly site: Site;
   readonly firstNight: string;
   readonly lastNight: string;
-  readonly instrumentAvailability: readonly InstrumentAvailabilityBlock[];
-  readonly telescopeAvailability: readonly TelescopeAvailabilityBlock[];
-  /** The state rows head every month only when some records exist, like the night view. */
-  readonly tooSupport?: readonly TooSupportBlock[];
-  readonly telescopeMode?: readonly TelescopeModeBlock[];
+  readonly schedule: Schedule;
 }
 
 export const buildSemesterTimeline = ({
   site,
   firstNight,
   lastNight,
-  instrumentAvailability,
-  telescopeAvailability,
-  tooSupport = [],
-  telescopeMode = [],
+  schedule,
 }: BuildSemesterTimelineOptions): SemesterTimeline => {
   // One range query carries no per-night flag; the night view is where "not recorded" is stated.
   const nights = timelineNights(site, nightsFrom(firstNight, lastNight));
-
-  // The state rows join once, so every month and the block table's rows carry the same head.
-  const collected = [
-    ...collectStateRows(telescopeAvailability, tooSupport, telescopeMode),
-    ...collectBlocks({ instrumentAvailability, telescopeAvailability }),
-  ];
+  const collected = collectSchedule(schedule);
 
   // Group by the evening date's month, so a column sits under the month the sheet prints it under.
   const byMonth = new Map<string, TimelineNight[]>();
@@ -102,23 +76,20 @@ export const buildSemesterTimeline = ({
 
   const months = [...byMonth.entries()].map(([key, monthNights]) => {
     const [year = '0', month = '1'] = key.split('-');
-    const bounds = spanOfNights(monthNights);
+    const { interval, rows, bands } = placeWindow(collected, monthNights);
 
     return {
       year: Number(year),
       month: Number(month),
       label: `${MONTH_LABELS[Number(month) - 1] ?? key} ${year}`,
-      interval: bounds,
+      interval,
       nights: monthNights,
-      rows: placeBlocks(collected, bounds),
-      bands: placeBands(telescopeAvailability, bounds),
+      rows,
+      bands,
     };
   });
 
-  // Keyed off the whole semester, so the legend does not change as you read down the page.
-  const wholeSemester = spanOfNights(nights);
-  const rows = placeBlocks(collected, wholeSemester);
-  const bands = placeBands(telescopeAvailability, wholeSemester);
-
-  return { months, rows, bands, ...legendFor(rows, bands) };
+  // Projected over the whole semester, so a run crossing a month boundary is one row rather than
+  // six and the legend does not change as you read down the page.
+  return { ...placeWindow(collected, nights), months };
 };

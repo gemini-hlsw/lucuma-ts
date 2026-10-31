@@ -53,19 +53,6 @@ export const TELESCOPE_MODE_BLOCK_FRAGMENT = graphql(`
   }
 `);
 
-export const TELESCOPE_SUBSYSTEM_AVAILABILITY_BLOCK_FRAGMENT = graphql(`
-  fragment TelescopeSubsystemAvailabilityBlockItem on TelescopeSubsystemAvailabilityBlock {
-    subsystem
-    usage
-    powerSource
-    note
-    interval {
-      start
-      end
-    }
-  }
-`);
-
 export const PUBLISHED_SEMESTERS_QUERY = graphql(`
   query PublishedSemesters {
     publishedSemesters {
@@ -119,9 +106,6 @@ export const NIGHT_SCHEDULE_QUERY = graphql(`
     }
     telescopeMode(site: $site, start: $start, end: $end, clip: false) {
       ...TelescopeModeBlockItem
-    }
-    telescopeSubsystemAvailability(site: $site, start: $start, end: $end, clip: false) {
-      ...TelescopeSubsystemAvailabilityBlockItem
     }
   }
 `);
