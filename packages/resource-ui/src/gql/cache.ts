@@ -1,6 +1,6 @@
 import { InMemoryCache } from '@apollo/client';
 
-/** Exactly the schema's `…Block` types, which is what `cache.test.ts` holds this list to. */
+/** Held by hand until the backend gives the block types a shared `ResourceBlock` interface to key on. */
 export const CONTEXTUAL_BLOCK_TYPES = [
   'InstrumentAvailabilityBlock',
   'InstrumentComponentAvailabilityBlock',
