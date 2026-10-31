@@ -258,8 +258,8 @@ importers:
         specifier: workspace:*
         version: link:../common-ui
       '@gemini-hlsw/lucuma-core':
-        specifier: 0.271.0
-        version: 0.271.0
+        specifier: 0.272.0
+        version: 0.272.0
       '@gemini-hlsw/lucuma-odb-schemas':
         specifier: 0.107.1-4.ac88829
         version: 0.107.1-4.ac88829
@@ -381,8 +381,8 @@ importers:
   packages/common-ui:
     dependencies:
       '@gemini-hlsw/lucuma-core':
-        specifier: 0.271.0
-        version: 0.271.0
+        specifier: 0.272.0
+        version: 0.272.0
       date-fns:
         specifier: 4.4.0
         version: 4.4.0
@@ -493,8 +493,8 @@ importers:
         specifier: 0.177.2-20261015-48a23cc4
         version: 0.177.2-20261015-48a23cc4
       '@gemini-hlsw/lucuma-core':
-        specifier: 0.271.0
-        version: 0.271.0
+        specifier: 0.272.0
+        version: 0.272.0
       '@gemini-hlsw/lucuma-odb-schemas':
         specifier: 0.107.1-4.ac88829
         version: 0.107.1-4.ac88829
@@ -777,8 +777,8 @@ importers:
         specifier: workspace:*
         version: link:../common-ui
       '@gemini-hlsw/lucuma-core':
-        specifier: 0.271.0
-        version: 0.271.0
+        specifier: 0.272.0
+        version: 0.272.0
       '@gemini-hlsw/lucuma-odb-schemas':
         specifier: 0.107.1-4.ac88829
         version: 0.107.1-4.ac88829
@@ -1184,8 +1184,8 @@ packages:
   '@gemini-hlsw/lucuma-apps-schemas@0.177.2-20261015-48a23cc4':
     resolution: {integrity: sha512-kgWbDeI2Hi/nTWtW/yRafDPNmNXZM9P5xuVatZR9/75kHNmUvTe9PwFAGZJmewsMNbk3/sfnQPNcG5OP+Tdl8w==}
 
-  '@gemini-hlsw/lucuma-core@0.271.0':
-    resolution: {integrity: sha512-FueHdYoGlTPJyUV2zLqm1m0UAUY5QqFrgSz0EU8yOa7EyEsuG8kUmKXtFRKxYt0yjFKnkEl2/KFR9PlFUXD2Ew==}
+  '@gemini-hlsw/lucuma-core@0.272.0':
+    resolution: {integrity: sha512-YvGWorOEti5Xn5rcwpSu15MHjd3FIcq0lTvaVNQzmZXwBty6J92AeRAy/99ulzixOYNhiln9tb7qJEzU3DGZmw==}
 
   '@gemini-hlsw/lucuma-odb-schemas@0.107.1-4.ac88829':
     resolution: {integrity: sha512-9xVTUXhGgaA4yyzglPaOUs92lEg6reD94VrF4qMRxiG4uzj2aBxcYag2ridLag/d+GZqAfsoA86kuQ0phRLujA==}
@@ -6090,7 +6090,7 @@ snapshots:
 
   '@gemini-hlsw/lucuma-apps-schemas@0.177.2-20261015-48a23cc4': {}
 
-  '@gemini-hlsw/lucuma-core@0.271.0': {}
+  '@gemini-hlsw/lucuma-core@0.272.0': {}
 
   '@gemini-hlsw/lucuma-odb-schemas@0.107.1-4.ac88829': {}
 
