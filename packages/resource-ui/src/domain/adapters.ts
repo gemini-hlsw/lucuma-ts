@@ -1,4 +1,15 @@
-import type * as Gql from '@gql/gen/graphql';
+import type {
+  InstrumentAvailabilityBlockItem,
+  InstrumentComponentAvailabilityBlockItem,
+  InstrumentComponentItem,
+  InstrumentLocationItem,
+  PublishedSemesterItem,
+  ScheduleSpan,
+  TelescopeAvailabilityBlockItem,
+  TelescopeModeBlockItem,
+  TimestampIntervalItem,
+  TooSupportBlockItem,
+} from '@gql/types';
 
 import { addDays } from './semester';
 import type {
@@ -13,18 +24,13 @@ import type {
   TooSupportBlock,
 } from './types';
 
-/** An interval as the API states it: ISO instants, not epoch millis. */
-export interface ApiInterval {
-  readonly start: string;
-  readonly end: string;
-}
-
-export const toApiInterval = (interval: Interval): ApiInterval => ({
+/** The interval as the API states it: ISO instants, not epoch millis. */
+export const toScheduleSpan = (interval: Interval): ScheduleSpan => ({
   start: new Date(interval.start).toISOString(),
   end: new Date(interval.end).toISOString(),
 });
 
-const toInterval = (interval: ApiInterval): Interval => ({
+const toInterval = (interval: TimestampIntervalItem): Interval => ({
   start: Date.parse(interval.start),
   end: Date.parse(interval.end),
 });
@@ -32,8 +38,8 @@ const toInterval = (interval: ApiInterval): Interval => ({
 /** Position in the response, not an identity; a prefix must be unique per combined rendering context. */
 const rowKey = (kind: string, index: number): string => `${kind}${String(index)}`;
 
-export const toPublishedSemesters = (data: Gql.PublishedSemestersQuery): readonly PublishedSemester[] =>
-  data.publishedSemesters.map((entry) => ({
+export const toPublishedSemesters = (semesters: readonly PublishedSemesterItem[]): readonly PublishedSemester[] =>
+  semesters.map((entry) => ({
     site: entry.site,
     semester: entry.semester,
     // The API states a semester's nights half-open; the domain reads them inclusively.
@@ -46,9 +52,9 @@ const warnedInstruments = new Set<string>();
 
 /** The one place the port/place promise is checked; a contradictory record reads UNKNOWN, never throws. */
 const toLocation = (
-  location: Gql.InstrumentAvailabilityBlockItemFragment['location'],
+  location: InstrumentLocationItem,
   publishedName: string,
-  interval: ApiInterval,
+  interval: TimestampIntervalItem,
 ): { port: number | null; place: OffPortPlace | null } => {
   if (location.place !== 'PORT') {
     return { port: null, place: location.place };
@@ -68,7 +74,7 @@ const toLocation = (
 };
 
 export const toInstrumentAvailability = (
-  blocks: readonly Gql.InstrumentAvailabilityBlockItemFragment[],
+  blocks: readonly InstrumentAvailabilityBlockItem[],
 ): readonly InstrumentAvailabilityBlock[] =>
   blocks.map((block, index) => ({
     id: rowKey('ia', index),
@@ -81,7 +87,7 @@ export const toInstrumentAvailability = (
   }));
 
 export const toTelescopeAvailability = (
-  blocks: readonly Gql.TelescopeAvailabilityBlockItemFragment[],
+  blocks: readonly TelescopeAvailabilityBlockItem[],
 ): readonly TelescopeAvailabilityBlock[] =>
   blocks.map((block, index) => ({
     id: rowKey('ta', index),
@@ -91,7 +97,7 @@ export const toTelescopeAvailability = (
     reason: block.reason ?? null,
   }));
 
-export const toTooSupport = (blocks: readonly Gql.TooSupportBlockItemFragment[]): readonly TooSupportBlock[] =>
+export const toTooSupport = (blocks: readonly TooSupportBlockItem[]): readonly TooSupportBlock[] =>
   blocks.map((block, index) => ({
     id: rowKey('ts', index),
     tooSupport: block.tooSupport,
@@ -99,7 +105,7 @@ export const toTooSupport = (blocks: readonly Gql.TooSupportBlockItemFragment[])
     note: block.note ?? null,
   }));
 
-export const toTelescopeMode = (blocks: readonly Gql.TelescopeModeBlockItemFragment[]): readonly TelescopeModeBlock[] =>
+export const toTelescopeMode = (blocks: readonly TelescopeModeBlockItem[]): readonly TelescopeModeBlock[] =>
   blocks.map((block, index) => ({
     id: rowKey('tm', index),
     mode: block.mode,
@@ -109,8 +115,8 @@ export const toTelescopeMode = (blocks: readonly Gql.TelescopeModeBlockItemFragm
     note: block.note ?? null,
   }));
 
-export const toComponents = (data: Gql.ComponentBrowserQuery): readonly InstrumentComponent[] =>
-  data.components.map((component) => ({
+export const toComponents = (components: readonly InstrumentComponentItem[]): readonly InstrumentComponent[] =>
+  components.map((component) => ({
     id: component.id,
     instrument: component.instrument,
     componentType: component.componentType,
@@ -121,9 +127,9 @@ export const toComponents = (data: Gql.ComponentBrowserQuery): readonly Instrume
   }));
 
 export const toComponentAvailability = (
-  data: Gql.ComponentBrowserQuery,
+  blocks: readonly InstrumentComponentAvailabilityBlockItem[],
 ): readonly InstrumentComponentAvailabilityBlock[] =>
-  data.instrumentComponentAvailability.map((block, index) => ({
+  blocks.map((block, index) => ({
     id: rowKey('ica', index),
     componentId: block.component.id,
     usage: block.usage,

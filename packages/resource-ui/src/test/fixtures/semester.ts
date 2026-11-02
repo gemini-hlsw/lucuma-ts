@@ -1,6 +1,7 @@
 import type { MockedResponseOf } from '@gemini-hlsw/lucuma-common-ui/testing';
-import type { PublishedSemestersQuery, SemesterScheduleQuery, SemesterScheduleQueryVariables } from '@gql/gen/graphql';
+import type { SemesterScheduleQuery, SemesterScheduleQueryVariables } from '@gql/gen/graphql';
 import { PUBLISHED_SEMESTERS_QUERY, SEMESTER_SCHEDULE_QUERY } from '@gql/resource';
+import type { PublishedSemesterItem } from '@gql/types';
 
 import { RECENT_DAYS } from '@/app/useRecentSpan';
 import { addDays } from '@/domain/semester';
@@ -9,10 +10,8 @@ import type { Site } from '@/domain/types';
 
 import { overNights } from './blocks';
 
-export type PublishedSemesterRow = PublishedSemestersQuery['publishedSemesters'][number];
-
 /** Semester A's evenings run 1 February to 31 July, B's 1 August to 31 January; the API labels nights by their end. */
-const semesterNights = (semester: string): PublishedSemesterRow['nights'] => {
+const semesterNights = (semester: string): PublishedSemesterItem['nights'] => {
   const year = Number(semester.slice(0, 4));
   const [start, end] = semester.endsWith('A')
     ? [`${year}-02-02`, `${year}-08-02`]
@@ -24,8 +23,8 @@ export const publishedSemester = ({
   site,
   semester,
   ...overrides
-}: Pick<PublishedSemesterRow, 'site' | 'semester'> &
-  Partial<Omit<PublishedSemesterRow, '__typename' | 'site' | 'semester'>>): PublishedSemesterRow => ({
+}: Pick<PublishedSemesterItem, 'site' | 'semester'> &
+  Partial<Omit<PublishedSemesterItem, '__typename' | 'site' | 'semester'>>): PublishedSemesterItem => ({
   __typename: 'PublishedSemester',
   site,
   semester,
@@ -34,21 +33,21 @@ export const publishedSemester = ({
 });
 
 export const publishedSemesters = (
-  ...semesters: PublishedSemesterRow[]
+  ...semesters: PublishedSemesterItem[]
 ): MockedResponseOf<typeof PUBLISHED_SEMESTERS_QUERY> => ({
   request: { query: PUBLISHED_SEMESTERS_QUERY },
   result: { data: { publishedSemesters: semesters } },
 });
 
 /** The window the page asks for: every observing night the semester publishes. */
-export const semesterWindow = ({ site, nights }: PublishedSemesterRow): SemesterScheduleQueryVariables => {
+export const semesterWindow = ({ site, nights }: PublishedSemesterItem): SemesterScheduleQueryVariables => {
   const { start, end } = overNights(site, nights.start, addDays(nights.end, -1));
   return { site, start, end };
 };
 
 /** Pass a semester to answer the window its page asks for, or explicit variables to pin that window. */
 export const semesterSchedule = (
-  window: PublishedSemesterRow | SemesterScheduleQueryVariables | ReturnType<typeof recentSpan>,
+  window: PublishedSemesterItem | SemesterScheduleQueryVariables | ReturnType<typeof recentSpan>,
   blocks: Partial<SemesterScheduleQuery> = {},
 ): MockedResponseOf<typeof SEMESTER_SCHEDULE_QUERY> => ({
   request: {

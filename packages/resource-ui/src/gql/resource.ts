@@ -1,5 +1,68 @@
 import { graphql } from './gen';
 
+export const TIMESTAMP_INTERVAL_FRAGMENT = graphql(`
+  fragment TimestampIntervalItem on TimestampInterval {
+    start
+    end
+  }
+`);
+
+export const DATE_INTERVAL_FRAGMENT = graphql(`
+  fragment DateIntervalItem on DateInterval {
+    start
+    end
+  }
+`);
+
+export const INSTRUMENT_LOCATION_FRAGMENT = graphql(`
+  fragment InstrumentLocationItem on InstrumentLocation {
+    place
+    port
+  }
+`);
+
+export const INSTRUMENT_COMPONENT_REF_FRAGMENT = graphql(`
+  fragment InstrumentComponentRef on InstrumentComponent {
+    id
+  }
+`);
+
+export const INSTRUMENT_COMPONENT_FRAGMENT = graphql(`
+  fragment InstrumentComponentItem on InstrumentComponent {
+    id
+    instrument
+    componentType
+    code
+    name
+    barcode
+    aliases
+  }
+`);
+
+export const INSTRUMENT_COMPONENT_AVAILABILITY_BLOCK_FRAGMENT = graphql(`
+  fragment InstrumentComponentAvailabilityBlockItem on InstrumentComponentAvailabilityBlock {
+    usage
+    location
+    note
+    interval {
+      ...TimestampIntervalItem
+    }
+    component {
+      ...InstrumentComponentRef
+    }
+  }
+`);
+
+export const PUBLISHED_SEMESTER_FRAGMENT = graphql(`
+  fragment PublishedSemesterItem on PublishedSemester {
+    site
+    semester
+    nights {
+      ...DateIntervalItem
+    }
+  }
+`);
+
 export const INSTRUMENT_AVAILABILITY_BLOCK_FRAGMENT = graphql(`
   fragment InstrumentAvailabilityBlockItem on InstrumentAvailabilityBlock {
     instrument
@@ -7,12 +70,10 @@ export const INSTRUMENT_AVAILABILITY_BLOCK_FRAGMENT = graphql(`
     usage
     note
     interval {
-      start
-      end
+      ...TimestampIntervalItem
     }
     location {
-      place
-      port
+      ...InstrumentLocationItem
     }
   }
 `);
@@ -23,8 +84,7 @@ export const TELESCOPE_AVAILABILITY_BLOCK_FRAGMENT = graphql(`
     port
     reason
     interval {
-      start
-      end
+      ...TimestampIntervalItem
     }
   }
 `);
@@ -34,8 +94,7 @@ export const TOO_SUPPORT_BLOCK_FRAGMENT = graphql(`
     tooSupport
     note
     interval {
-      start
-      end
+      ...TimestampIntervalItem
     }
   }
 `);
@@ -47,21 +106,22 @@ export const TELESCOPE_MODE_BLOCK_FRAGMENT = graphql(`
     partner
     note
     interval {
-      start
-      end
+      ...TimestampIntervalItem
     }
+  }
+`);
+
+export const TELESCOPE_NIGHT_FRAGMENT = graphql(`
+  fragment TelescopeNightItem on TelescopeNight {
+    observingNight
+    dataAvailable
   }
 `);
 
 export const PUBLISHED_SEMESTERS_QUERY = graphql(`
   query PublishedSemesters {
     publishedSemesters {
-      site
-      semester
-      nights {
-        start
-        end
-      }
+      ...PublishedSemesterItem
     }
   }
 `);
@@ -88,11 +148,9 @@ export const SEMESTER_SCHEDULE_QUERY = graphql(`
 export const NIGHT_SCHEDULE_QUERY = graphql(`
   query NightSchedule($site: Site!, $night: Date!, $start: Timestamp!, $end: Timestamp!) {
     telescopeNight(site: $site, observingNight: $night) {
-      observingNight
-      dataAvailable
+      ...TelescopeNightItem
       interval {
-        start
-        end
+        ...TimestampIntervalItem
       }
     }
     instrumentAvailability(site: $site, start: $start, end: $end, clip: false) {
@@ -114,8 +172,7 @@ export const NIGHT_SCHEDULE_QUERY = graphql(`
 export const WEEK_SCHEDULE_QUERY = graphql(`
   query WeekSchedule($site: Site!, $nightsStart: Date!, $nightsEnd: Date!, $start: Timestamp!, $end: Timestamp!) {
     telescopeNights(site: $site, start: $nightsStart, end: $nightsEnd) {
-      observingNight
-      dataAvailable
+      ...TelescopeNightItem
     }
     instrumentAvailability(site: $site, start: $start, end: $end, clip: false) {
       ...InstrumentAvailabilityBlockItem
@@ -136,25 +193,10 @@ export const WEEK_SCHEDULE_QUERY = graphql(`
 export const COMPONENT_BROWSER_QUERY = graphql(`
   query ComponentBrowser($site: Site!, $start: Timestamp!, $end: Timestamp!) {
     components(site: $site) {
-      id
-      instrument
-      componentType
-      code
-      name
-      barcode
-      aliases
+      ...InstrumentComponentItem
     }
     instrumentComponentAvailability(site: $site, start: $start, end: $end, clip: false) {
-      usage
-      location
-      note
-      interval {
-        start
-        end
-      }
-      component {
-        id
-      }
+      ...InstrumentComponentAvailabilityBlockItem
     }
     instrumentAvailability(site: $site, start: $start, end: $end, clip: false) {
       ...InstrumentAvailabilityBlockItem

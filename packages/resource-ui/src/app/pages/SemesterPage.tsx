@@ -7,7 +7,7 @@ import { useSemester } from '@/app/useSemester';
 import { LabelledControl } from '@/components/ui/LabelledControl';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { ErrorAlert, Loading } from '@/components/ui/PageStatus';
-import { toApiInterval } from '@/domain/adapters';
+import { toScheduleSpan } from '@/domain/adapters';
 import { buildSemesterTimeline } from '@/domain/semesterTimeline';
 import { observingNightInterval } from '@/domain/siteTime';
 import { SemesterBlockTable } from '@/features/semester/SemesterBlockTable';
@@ -26,8 +26,8 @@ export default function SemesterPage(): JSX.Element {
       ? null
       : {
           // The observing-night interval, not the calendar day: a night runs 14:00 local to 14:00 local.
-          start: toApiInterval(observingNightInterval(selected.site, selected.firstNight)).start,
-          end: toApiInterval(observingNightInterval(selected.site, selected.lastNight)).end,
+          start: toScheduleSpan(observingNightInterval(selected.site, selected.firstNight)).start,
+          end: toScheduleSpan(observingNightInterval(selected.site, selected.lastNight)).end,
         };
 
   const { schedule, loading, error } = useSemesterSchedule(selected?.site ?? site, bounds);

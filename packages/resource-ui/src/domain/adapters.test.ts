@@ -75,7 +75,7 @@ describe(toInstrumentAvailability, () => {
   });
 });
 
-type SemesterEntry = Parameters<typeof toPublishedSemesters>[0]['publishedSemesters'][number];
+type SemesterEntry = Parameters<typeof toPublishedSemesters>[0][number];
 
 const semesterEntry = (nights: SemesterEntry['nights']): SemesterEntry => ({
   __typename: 'PublishedSemester',
@@ -87,9 +87,9 @@ const semesterEntry = (nights: SemesterEntry['nights']): SemesterEntry => ({
 describe(toPublishedSemesters, () => {
   it('reads the exclusive nights end as the last night before it', () => {
     // The exclusive end names the first uncovered date; passing it through adds a night that was never scheduled.
-    const [semester] = toPublishedSemesters({
-      publishedSemesters: [semesterEntry({ __typename: 'DateInterval', start: '2025-08-01', end: '2026-02-01' })],
-    });
+    const [semester] = toPublishedSemesters([
+      semesterEntry({ __typename: 'DateInterval', start: '2025-08-01', end: '2026-02-01' }),
+    ]);
 
     expect(semester).toMatchObject({ firstNight: '2025-08-01', lastNight: '2026-01-31' });
   });

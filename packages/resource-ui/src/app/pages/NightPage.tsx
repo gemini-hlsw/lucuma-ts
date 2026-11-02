@@ -7,7 +7,7 @@ import { useSelection } from '@/app/useSelection';
 import { NightStepper } from '@/components/ui/NightStepper';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { EmptyPanel, ErrorAlert, Loading } from '@/components/ui/PageStatus';
-import { toApiInterval } from '@/domain/adapters';
+import { toScheduleSpan } from '@/domain/adapters';
 import { buildNightTimeline } from '@/domain/nightTimeline';
 import { addDays } from '@/domain/semester';
 import { observingNightInterval } from '@/domain/siteTime';
@@ -23,7 +23,7 @@ export default function NightPage(): JSX.Element {
 
   const interval = observingNightInterval(site, observingNight);
 
-  const { schedule, loading, error, dataAvailable } = useNightSchedule(site, observingNight, toApiInterval(interval));
+  const { schedule, loading, error, dataAvailable } = useNightSchedule(site, observingNight, toScheduleSpan(interval));
 
   const night = buildNightTimeline({ site, observingNight, schedule });
 

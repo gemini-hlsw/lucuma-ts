@@ -1,11 +1,9 @@
 import type { MockedResponseOf } from '@gemini-hlsw/lucuma-common-ui/testing';
 import type { ComponentBrowserQuery, ComponentBrowserQueryVariables } from '@gql/gen/graphql';
 import { COMPONENT_BROWSER_QUERY } from '@gql/resource';
+import type { InstrumentComponentAvailabilityBlockItem, InstrumentComponentItem } from '@gql/types';
 
 import { overNights } from './blocks';
-
-type InstrumentComponent = ComponentBrowserQuery['components'][number];
-type ComponentAvailabilityBlock = ComponentBrowserQuery['instrumentComponentAvailability'][number];
 
 export const instrumentComponent = ({
   id = 'k-gs-g_G0325',
@@ -15,7 +13,7 @@ export const instrumentComponent = ({
   name = 'g',
   barcode = null,
   aliases = [],
-}: Partial<Omit<InstrumentComponent, '__typename'>> = {}): InstrumentComponent => ({
+}: Partial<Omit<InstrumentComponentItem, '__typename'>> = {}): InstrumentComponentItem => ({
   __typename: 'InstrumentComponent',
   id,
   instrument,
@@ -32,7 +30,9 @@ export const instrumentComponentAvailabilityBlock = ({
   usage = 'SCIENCE',
   location = 'INSTALLED',
   note = null,
-}: Partial<Omit<ComponentAvailabilityBlock, '__typename'>> = {}): ComponentAvailabilityBlock => ({
+}: Partial<
+  Omit<InstrumentComponentAvailabilityBlockItem, '__typename'>
+> = {}): InstrumentComponentAvailabilityBlockItem => ({
   __typename: 'InstrumentComponentAvailabilityBlock',
   usage,
   location,

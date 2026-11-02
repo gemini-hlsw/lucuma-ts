@@ -1,25 +1,23 @@
+import type { Site } from '@gql/gen/graphql';
 import type {
-  InstrumentAvailabilityBlockItemFragment,
-  Site,
-  TelescopeAvailabilityBlockItemFragment,
-  TelescopeModeBlockItemFragment,
-  TooSupportBlockItemFragment,
-} from '@gql/gen/graphql';
+  InstrumentAvailabilityBlockItem,
+  TelescopeAvailabilityBlockItem,
+  TelescopeModeBlockItem,
+  TimestampIntervalItem,
+  TooSupportBlockItem,
+} from '@gql/types';
 
 import { observingNightInterval } from '@/domain/siteTime';
-
-type Interval = InstrumentAvailabilityBlockItemFragment['interval'];
+import type { OffPortPlace } from '@/domain/types';
 
 /** The half-open interval from the start of `firstNight` to the end of `lastNight`, both observing nights. */
-export const overNights = (site: Site, firstNight: string, lastNight: string): Interval => ({
+export const overNights = (site: Site, firstNight: string, lastNight: string): TimestampIntervalItem => ({
   __typename: 'TimestampInterval',
   start: new Date(observingNightInterval(site, firstNight).start).toISOString(),
   end: new Date(observingNightInterval(site, lastNight).end).toISOString(),
 });
 
-type Placement =
-  | { readonly port: number }
-  | { readonly place: Exclude<InstrumentAvailabilityBlockItemFragment['location']['place'], 'PORT'> };
+type Placement = { readonly port: number } | { readonly place: OffPortPlace };
 
 export const instrumentAvailabilityBlock = ({
   instrument,
@@ -28,9 +26,9 @@ export const instrumentAvailabilityBlock = ({
   usage = 'SCIENCE',
   note = null,
   ...placement
-}: Pick<InstrumentAvailabilityBlockItemFragment, 'instrument' | 'interval'> &
-  Partial<Pick<InstrumentAvailabilityBlockItemFragment, 'publishedName' | 'usage' | 'note'>> &
-  Placement): InstrumentAvailabilityBlockItemFragment => ({
+}: Pick<InstrumentAvailabilityBlockItem, 'instrument' | 'interval'> &
+  Partial<Pick<InstrumentAvailabilityBlockItem, 'publishedName' | 'usage' | 'note'>> &
+  Placement): InstrumentAvailabilityBlockItem => ({
   __typename: 'InstrumentAvailabilityBlock',
   instrument,
   publishedName,
@@ -49,10 +47,8 @@ export const telescopeAvailabilityBlock = ({
   availability = 'CLOSED',
   port = null,
   reason = null,
-}: Pick<TelescopeAvailabilityBlockItemFragment, 'interval'> &
-  Partial<
-    Omit<TelescopeAvailabilityBlockItemFragment, '__typename' | 'interval'>
-  >): TelescopeAvailabilityBlockItemFragment => ({
+}: Pick<TelescopeAvailabilityBlockItem, 'interval'> &
+  Partial<Omit<TelescopeAvailabilityBlockItem, '__typename' | 'interval'>>): TelescopeAvailabilityBlockItem => ({
   __typename: 'TelescopeAvailabilityBlock',
   availability,
   port,
@@ -64,8 +60,8 @@ export const tooSupportBlock = ({
   interval,
   tooSupport = 'STANDARD',
   note = null,
-}: Pick<TooSupportBlockItemFragment, 'interval'> &
-  Partial<Omit<TooSupportBlockItemFragment, '__typename' | 'interval'>>): TooSupportBlockItemFragment => ({
+}: Pick<TooSupportBlockItem, 'interval'> &
+  Partial<Omit<TooSupportBlockItem, '__typename' | 'interval'>>): TooSupportBlockItem => ({
   __typename: 'TooSupportBlock',
   tooSupport,
   note,
@@ -78,8 +74,8 @@ export const telescopeModeBlock = ({
   programReferences = [],
   partner = null,
   note = null,
-}: Pick<TelescopeModeBlockItemFragment, 'interval'> &
-  Partial<Omit<TelescopeModeBlockItemFragment, '__typename' | 'interval'>>): TelescopeModeBlockItemFragment => ({
+}: Pick<TelescopeModeBlockItem, 'interval'> &
+  Partial<Omit<TelescopeModeBlockItem, '__typename' | 'interval'>>): TelescopeModeBlockItem => ({
   __typename: 'TelescopeModeBlock',
   mode,
   programReferences,
