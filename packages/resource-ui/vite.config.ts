@@ -60,6 +60,8 @@ export default defineConfig({
     unstubGlobals: true,
     globals: true,
     exclude: ['**/node_modules/**', '**/dist/**'],
+    // A test that depends on an earlier one fails here, with the seed printed to replay it.
+    sequence: { shuffle: true },
     // No app stylesheet: a test that needs styling to pass is testing the stylesheet.
     setupFiles: [
       '@gemini-hlsw/lucuma-common-ui/test/setup.ts',

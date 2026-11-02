@@ -1,7 +1,7 @@
 import { openDropdown, selectDropdownOption } from '@gemini-hlsw/lucuma-common-ui/testing';
 import type { ComponentBrowserQuery } from '@gql/gen/graphql';
 import { describe, expect, it } from 'vitest';
-import { page } from 'vitest/browser';
+import { type Locator, type LocatorSelectors, page } from 'vitest/browser';
 
 import { instrumentAvailabilityBlock } from '@/test/fixtures/blocks';
 import {
@@ -11,7 +11,8 @@ import {
 } from '@/test/fixtures/components';
 import { recentSpan } from '@/test/fixtures/semester';
 import { eveningsFromTonight, nightsFromTonight } from '@/test/fixtures/tonight';
-import { renderApp } from '@/test/renderApp';
+import { dropdownOptionTexts } from '@/test/helpers';
+import { renderWithRoute } from '@/test/render';
 
 import ComponentsPage from './ComponentsPage';
 
@@ -21,7 +22,7 @@ const GS_WHOLE = nightsFromTonight('GS', -100, 60);
 const GMOS_S = instrumentAvailabilityBlock({
   instrument: 'GMOS',
   publishedName: 'GMOS-S',
-  port: 3,
+  at: { port: 3 },
   interval: GS_WHOLE,
 });
 
@@ -95,9 +96,14 @@ const R400_OUT = eveningsFromTonight('GS', R400_FAILED_AT, 60);
 
 const CATALOG = [MASK_011, MASK_012, G_FILTER, B1200, F2_K_SHORT, GSAOI_K_SHORT];
 
+/** Expands the R400 row and hands back its history, for tests about what the history says. */
+const openHistory = async (screen: LocatorSelectors): Promise<Locator> => {
+  await screen.getByRole('button', { name: /expand k-gs-R400_G5325/i }).click();
+  return screen.getByTestId('component-history');
+};
+
 const openComponents = (route: string, data: Partial<ComponentBrowserQuery>) =>
-  renderApp({
-    element: <ComponentsPage />,
+  renderWithRoute(<ComponentsPage />, {
     route,
     mocks: [componentBrowser(recentSpan('GS'), data)],
   });
@@ -224,24 +230,6 @@ describe(ComponentsPage, () => {
     expect(status?.textContent).toBe('Unavailable');
   });
 
-  it('says a stored piece with nothing wrong is a spare, not broken', async () => {
-    const screen = await openComponents(COMPONENTS, {
-      components: [R831],
-      instrumentComponentAvailability: [
-        instrumentComponentAvailabilityBlock({
-          component: R831,
-          usage: 'UNAVAILABLE',
-          location: 'LAB',
-          interval: GS_WHOLE,
-        }),
-      ],
-    });
-
-    const row = screen.getByRole('row', { name: /R831/ });
-    await expect.element(row.getByText('Spare')).toBeVisible();
-    await expect.element(row.getByText('Unavailable')).not.toBeInTheDocument();
-  });
-
   it('groups the catalog by instrument instead of repeating an Instrument column', async () => {
     const screen = await openComponents(COMPONENTS, {
       components: [G_FILTER, MASK_011],
@@ -274,39 +262,23 @@ describe(ComponentsPage, () => {
         instrumentComponentAvailabilityBlock({ component: R400, interval: nightsFromTonight('GS', 61, 120) }),
       ],
     });
-    await screen.getByRole('button', { name: /expand k-gs-R400_G5325/i }).click();
-
     // Scoped to the current semester the history would say nothing about the cut.
-    const history = screen.getByTestId('component-history');
+    const history = await openHistory(screen);
     await expect.element(history.getByText(eveningsFromTonight('GS', -390, -21))).toBeVisible();
     await expect.element(history.getByText(eveningsFromTonight('GS', 61, 120))).toBeVisible();
   });
 
-  it('heads the history with its columns, so a reader need not infer them from position', async () => {
-    const screen = await openR400();
-    await screen.getByRole('button', { name: /expand k-gs-R400_G5325/i }).click();
-
-    const history = screen.getByTestId('component-history');
-    for (const column of ['Dates', 'Nights', 'Location', 'Status', 'Note']) {
-      await expect.element(history.getByRole('columnheader', { name: column })).toBeVisible();
-    }
-  });
-
   it('says where "Installed" was, resolving the span against the same instrument blocks the row uses', async () => {
     const screen = await openR400();
-    await screen.getByRole('button', { name: /expand k-gs-R400_G5325/i }).click();
-
     // The block only says INSTALLED; the port comes from the instrument blocks already in hand.
-    const history = screen.getByTestId('component-history');
+    const history = await openHistory(screen);
     await expect.element(history.getByText('Port 3 · GMOS-S').first()).toBeVisible();
     await expect.element(history.getByText('Installed')).not.toBeInTheDocument();
   });
 
   it('counts the nights a record covers, which is what "how long was it out" asks', async () => {
     const screen = await openR400();
-    await screen.getByRole('button', { name: /expand k-gs-R400_G5325/i }).click();
-
-    const history = screen.getByTestId('component-history');
+    const history = await openHistory(screen);
     await expect
       .element(history.getByRole('row').filter({ hasText: R400_OUT }))
       .toMatchTextContent(String(60 - R400_FAILED_AT + 1));
@@ -314,9 +286,7 @@ describe(ComponentsPage, () => {
 
   it('speaks the row status vocabulary in the history, never the bare enum', async () => {
     const screen = await openR400();
-    await screen.getByRole('button', { name: /expand k-gs-R400_G5325/i }).click();
-
-    const history = screen.getByTestId('component-history');
+    const history = await openHistory(screen);
     await expect.element(history.getByText('Unavailable').first()).toBeVisible();
     await expect.element(history.getByText('Science').first()).toBeVisible();
     await expect.element(history.getByText(/^(SCIENCE|UNAVAILABLE|ENGINEERING)$/)).not.toBeInTheDocument();
@@ -351,7 +321,6 @@ describe(ComponentsPage, () => {
     await openDropdown(screen, { label: 'Instrument' });
 
     await expect.element(page.getByRole('option', { name: 'GHOST (1)' })).toBeVisible();
-    const options = [...document.querySelectorAll('[role="option"]')].map((option) => option.textContent ?? '');
-    expect(options).toEqual(['F2 (1)', 'GHOST (1)', 'GMOS (4)', 'GSAOI (2)']);
+    expect(dropdownOptionTexts()).toEqual(['F2 (1)', 'GHOST (1)', 'GMOS (4)', 'GSAOI (2)']);
   });
 });

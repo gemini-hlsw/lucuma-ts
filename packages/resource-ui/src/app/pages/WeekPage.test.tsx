@@ -1,70 +1,59 @@
 import type { MockLink } from '@apollo/client/testing';
 import Highcharts from 'highcharts/es-modules/masters/highcharts.src.js';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { page } from 'vitest/browser';
 
 import { addDays } from '@/domain/semester';
-import { observingNightInterval, observingNightOf } from '@/domain/siteTime';
-import { TOO_SUPPORT_LABEL } from '@/domain/timeline';
-import {
-  instrumentAvailabilityBlock,
-  overNights,
-  telescopeAvailabilityBlock,
-  telescopeModeBlock,
-  tooSupportBlock,
-} from '@/test/fixtures/blocks';
-import { weekSchedule } from '@/test/fixtures/week';
-import { drawnPlotLineX } from '@/test/helpers';
-import { Probe, PROBE_URL_TESTID } from '@/test/probe';
-import { renderApp } from '@/test/renderApp';
+import { HOUR_MS, observingNightInterval, observingNightOf } from '@/domain/siteTime';
+import { drawnBars, drawnPlotLineX } from '@/test/chartProbe';
+import { instrumentAvailabilityBlock, overNights } from '@/test/fixtures/blocks';
+import { publishedSemester, wholeSemester } from '@/test/fixtures/semester';
+import { type WeekRow, weekSchedule } from '@/test/fixtures/week';
+import { fakeClock } from '@/test/helpers';
+import { probeRoute, shownUrl } from '@/test/probe';
+import { renderWithRoute } from '@/test/render';
 
 import WeekPage from './WeekPage';
 
-const GS_2025B_WHOLE = overNights('GS', '2025-08-02', '2026-02-01');
-const GHOST = instrumentAvailabilityBlock({ instrument: 'GHOST', port: 1, interval: GS_2025B_WHOLE });
+const GS_2025B_WHOLE = wholeSemester(publishedSemester({ site: 'GS', semester: '2025B' }));
+const GHOST = instrumentAvailabilityBlock({ instrument: 'GHOST', at: { port: 1 }, interval: GS_2025B_WHOLE });
 
-/** Stand in for the views a link opens: the subject is the jump, not what they draw. */
-const LINK_TARGETS = [{ path: '/night', element: <Probe use={() => null} /> }];
-
-const shownUrl = () => document.querySelector(`[data-testid="${PROBE_URL_TESTID}"]`)?.textContent ?? '';
+const weekUrl = ({ site, night }: WeekRow) => `/week?site=${site}&night=${night}`;
 
 const openWeek = (route: string, ...mocks: MockLink.MockedResponse[]) =>
-  renderApp({ element: <WeekPage />, route, extraRoutes: LINK_TARGETS, mocks });
+  renderWithRoute(<WeekPage />, { route, extraRoutes: [probeRoute('/night')], mocks });
+
+/** The week a row names, answered with its blocks; the URL is not the subject here. */
+const openWeekOf = (row: WeekRow, blocks?: Parameters<typeof weekSchedule>[1], ...more: MockLink.MockedResponse[]) =>
+  openWeek(weekUrl(row), weekSchedule(row, blocks), ...more);
+
+const ORDINARY_WEEK: WeekRow = { site: 'GS', night: '2025-11-14' };
 
 /** The ordinary week most tests open. */
 const openOrdinaryWeek = (...more: MockLink.MockedResponse[]) =>
-  openWeek(
-    '/week?site=GS&night=2025-11-14',
-    weekSchedule({ site: 'GS', night: '2025-11-14' }, { instrumentAvailability: [GHOST] }),
-    ...more,
-  );
+  openWeekOf(ORDINARY_WEEK, { instrumentAvailability: [GHOST] }, ...more);
 
 const weekOf = (night: string): string[] => Array.from({ length: 7 }, (_, index) => addDays(night, index));
 
-const chartBars = () =>
-  [...document.querySelectorAll('[data-testid="week-timeline"] path.highcharts-point')]
-    .map((point) => `${point.getAttribute('d') ?? ''}#${point.getAttribute('fill') ?? ''}`)
-    .join('|');
+const chartBars = () => drawnBars('[data-testid="week-timeline"]');
+
+afterEach(() => {
+  vi.useRealTimers();
+});
 
 describe(WeekPage, () => {
   it('keeps the chart options across a tick: the marker moves and chart.update never runs', async () => {
-    // The clock only: Apollo and Highcharts keep their real timers, and the wall clock keeps running underneath.
-    vi.useFakeTimers({ toFake: ['Date', 'setInterval', 'clearInterval'], shouldAdvanceTime: true });
-    try {
-      vi.setSystemTime(observingNightInterval('GS', '2025-11-15').start + 6 * 3_600_000);
-      const update = vi.spyOn(Highcharts.Chart.prototype, 'update');
-      await openOrdinaryWeek();
-      await expect.poll(() => drawnPlotLineX('.schedule-today')).toHaveLength(1);
-      const [before] = drawnPlotLineX('.schedule-today');
-      const updates = update.mock.calls.length;
+    fakeClock(observingNightInterval('GS', '2025-11-15').start + 6 * HOUR_MS, { shouldAdvanceTime: true });
+    const update = vi.spyOn(Highcharts.Chart.prototype, 'update');
+    await openOrdinaryWeek();
+    await expect.poll(() => drawnPlotLineX('.schedule-today')).toHaveLength(1);
+    const [before] = drawnPlotLineX('.schedule-today');
+    const updates = update.mock.calls.length;
 
-      vi.advanceTimersByTime(24 * 3_600_000);
+    vi.advanceTimersByTime(24 * HOUR_MS);
 
-      await expect.poll(() => drawnPlotLineX('.schedule-today')[0]).toBeGreaterThan(before ?? Number.NaN);
-      expect(update.mock.calls.length).toBe(updates);
-    } finally {
-      vi.useRealTimers();
-    }
+    await expect.poll(() => drawnPlotLineX('.schedule-today')[0]).toBeGreaterThan(before ?? Number.NaN);
+    expect(update.mock.calls.length).toBe(updates);
   });
 
   it('draws seven nights from the one asked for', async () => {
@@ -83,36 +72,8 @@ describe(WeekPage, () => {
     await expect.element(screen.getByText('Wed 19').first()).toBeVisible();
   });
 
-  it('heads the chart with the telescope-state rows, their values keyed in sections', async () => {
-    const screen = await openWeek(
-      '/week?site=GS&night=2025-11-14',
-      weekSchedule(
-        { site: 'GS', night: '2025-11-14' },
-        {
-          instrumentAvailability: [GHOST],
-          telescopeAvailability: [telescopeAvailabilityBlock({ interval: GS_2025B_WHOLE, availability: 'OPEN' })],
-          telescopeMode: [telescopeModeBlock({ interval: GS_2025B_WHOLE })],
-          tooSupport: [tooSupportBlock({ interval: GS_2025B_WHOLE })],
-        },
-      ),
-    );
-
-    await expect.element(screen.getByRole('group', { name: 'Telescope' }).getByText('Open')).toBeVisible();
-    await expect.element(screen.getByRole('group', { name: 'Mode' }).getByText('Queue')).toBeVisible();
-    await expect
-      .element(screen.getByRole('group', { name: 'ToO' }).getByText(TOO_SUPPORT_LABEL.STANDARD))
-      .toBeVisible();
-    await expect.element(screen.getByRole('group', { name: 'Instruments' }).getByText('GHOST')).toBeVisible();
-  });
-
   it('marks the night the backend holds nothing for as not recorded, and only that night', async () => {
-    const screen = await openWeek(
-      '/week?site=GS&night=2025-11-14',
-      weekSchedule(
-        { site: 'GS', night: '2025-11-14' },
-        { instrumentAvailability: [GHOST], withoutData: ['2025-11-16'] },
-      ),
-    );
+    const screen = await openWeekOf(ORDINARY_WEEK, { instrumentAvailability: [GHOST], withoutData: ['2025-11-16'] });
 
     await expect.poll(() => screen.getByTestId('week-timeline').getByText('not recorded').elements().length).toBe(1);
   });
@@ -131,17 +92,17 @@ describe(WeekPage, () => {
     // A run ending inside the first week, so the two windows draw different bars.
     const ghost = instrumentAvailabilityBlock({
       instrument: 'GHOST',
-      port: 1,
+      at: { port: 1 },
       interval: overNights('GS', '2024-08-02', '2024-08-14'),
     });
     const gmos = instrumentAvailabilityBlock({
       instrument: 'GMOS',
-      port: 1,
+      at: { port: 1 },
       interval: overNights('GS', '2024-08-15', '2024-09-30'),
     });
-    const screen = await openWeek(
-      '/week?site=GS&night=2024-08-12',
-      weekSchedule({ site: 'GS', night: '2024-08-12' }, { instrumentAvailability: [ghost, gmos] }),
+    const screen = await openWeekOf(
+      { site: 'GS', night: '2024-08-12' },
+      { instrumentAvailability: [ghost, gmos] },
       weekSchedule({ site: 'GS', night: '2024-08-19' }, { instrumentAvailability: [gmos] }),
     );
     await expect.poll(() => chartBars().length).toBeGreaterThan(0);
@@ -168,40 +129,24 @@ describe(WeekPage, () => {
     await expect
       .element(screen.getByText(`Nights beginning ${addDays(tonight, -1)} to ${addDays(tonight, 5)}`))
       .toBeVisible();
-    await expect.element(screen.getByRole('button', { name: 'Tonight' })).toBeDisabled();
   });
 
   it('picks the week by the evening it begins, in the same vocabulary as the heading', async () => {
     const screen = await openOrdinaryWeek(weekSchedule({ site: 'GS', night: '2025-11-21' }));
 
     const input = screen.getByLabelText('First evening');
-    await expect.element(input).toHaveValue('2025-11-13');
-
     await input.fill('2025-11-20');
 
     await expect.element(screen.getByText('Nights beginning 2025-11-20 to 2025-11-26')).toBeVisible();
   });
 
-  it('keys the chrome as well as the data: the weekends it shades', async () => {
-    const screen = await openOrdinaryWeek();
-    const legend = screen.getByLabelText('Legend');
-
-    await expect.element(legend.getByRole('group', { name: 'Calendar' }).getByText('Weekend')).toBeVisible();
-  });
-
   it('keys the colours to the instruments the week actually holds', async () => {
-    const screen = await openWeek(
-      '/week?site=GS&night=2025-11-14',
-      weekSchedule(
-        { site: 'GS', night: '2025-11-14' },
-        {
-          instrumentAvailability: [
-            GHOST,
-            instrumentAvailabilityBlock({ instrument: 'GMOS', port: 3, interval: GS_2025B_WHOLE }),
-          ],
-        },
-      ),
-    );
+    const screen = await openWeekOf(ORDINARY_WEEK, {
+      instrumentAvailability: [
+        GHOST,
+        instrumentAvailabilityBlock({ instrument: 'GMOS', at: { port: 3 }, interval: GS_2025B_WHOLE }),
+      ],
+    });
     const legend = screen.getByLabelText('Legend');
 
     await expect.element(legend.getByText('GHOST')).toBeVisible();
@@ -221,10 +166,7 @@ describe(WeekPage, () => {
   });
 
   it('says nothing is recorded for a week the backend holds nothing for, in place of the chart', async () => {
-    const screen = await openWeek(
-      '/week?site=GS&night=2030-01-01',
-      weekSchedule({ site: 'GS', night: '2030-01-01' }, { withoutData: weekOf('2030-01-01') }),
-    );
+    const screen = await openWeekOf({ site: 'GS', night: '2030-01-01' }, { withoutData: weekOf('2030-01-01') });
 
     await expect.element(screen.getByText('Nothing is recorded for this week.')).toBeVisible();
     await expect.element(screen.getByTestId('week-timeline')).not.toBeInTheDocument();

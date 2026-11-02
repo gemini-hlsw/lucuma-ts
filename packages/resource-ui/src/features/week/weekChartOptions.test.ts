@@ -1,11 +1,10 @@
-import type { AxisLabelsFormatterContextObject, XAxisOptions } from 'highcharts';
+import type { XAxisOptions } from 'highcharts';
 import { describe, expect, it } from 'vitest';
 
-import { observingNightInterval } from '@/domain/siteTime';
-import type { TelescopeAvailabilityBlock } from '@/domain/types';
 import { buildWeekTimeline } from '@/domain/weekTimeline';
 import { DENSE } from '@/features/timeline/timelineOptions';
-import { scheduleOf } from '@/test/fixtures/domain';
+import { axisLabel, singleXAxis } from '@/test/chartOptions';
+import { domainTelescopeClosure, nightsSpan, scheduleOf } from '@/test/fixtures/domain';
 import { collectFontSizes } from '@/test/fontSizes';
 
 import {
@@ -21,13 +20,7 @@ const FIRST = '2026-11-14';
 const build = (nightsWithData?: ReadonlySet<string>) =>
   buildWeekTimeline({ site: 'GS', firstNight: FIRST, schedule: scheduleOf(), nightsWithData });
 
-const axisOf = (): XAxisOptions => {
-  const { xAxis } = buildWeekChartOptions({ week: build(), site: 'GS' });
-  if (xAxis === undefined || Array.isArray(xAxis)) {
-    throw new Error('expected a single x axis');
-  }
-  return xAxis;
-};
+const axisOf = (): XAxisOptions => singleXAxis(buildWeekChartOptions({ week: build(), site: 'GS' }));
 
 describe('night headings', () => {
   it('heads a night by the weekday and day it begins on', () => {
@@ -54,9 +47,8 @@ describe('night headings', () => {
 describe('the axis', () => {
   it('labels the tick in the middle of each night with that night, and any other value with nothing', () => {
     const week = build();
-    const formatter = axisOf().labels?.formatter;
-    const label = (value: number) =>
-      formatter?.call({ value } as AxisLabelsFormatterContextObject, {} as never) ?? 'no formatter';
+    const axis = axisOf();
+    const label = (value: number) => axisLabel(axis, { value });
 
     expect(weekTickPositions(week).map(label)).toEqual([
       'Fri 13',
@@ -109,17 +101,12 @@ describe('the chart', () => {
 
 describe('a telescope-wide closure across the week', () => {
   // Two nights of the seven, so a band drawn over the whole week would not pass as this one.
-  const closed = {
-    start: observingNightInterval('GS', '2026-11-16').start,
-    end: observingNightInterval('GS', '2026-11-17').end,
-  };
-  const shutdown: TelescopeAvailabilityBlock = {
+  const closed = nightsSpan('GS', '2026-11-16', '2026-11-17');
+  const shutdown = domainTelescopeClosure({
     id: 'wide',
-    availability: 'CLOSED',
-    port: null,
     reason: 'Telescope Shutdown A&G Maintenance',
     interval: closed,
-  };
+  });
 
   const closureBand = () =>
     buildWeekBands(

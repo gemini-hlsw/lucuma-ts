@@ -8,35 +8,27 @@ import '@/styles/global.css';
 import '@/styles/main.css';
 
 import type { ReactElement } from 'react';
-import { MemoryRouter } from 'react-router';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { render as renderBare } from 'vitest-browser-react';
 
-import { buildSemesterTimeline } from '@/domain/semesterTimeline';
+import { buildSemesterTimeline, type SemesterTimeline as Timeline } from '@/domain/semesterTimeline';
 import { observingNightInterval } from '@/domain/siteTime';
-import type { InstrumentAvailabilityBlock } from '@/domain/types';
-import { scheduleOf } from '@/test/fixtures/domain';
+import { domainInstrumentBlock, domainTelescopeBlock, nightsSpan, scheduleOf } from '@/test/fixtures/domain';
+import { renderWithRoute } from '@/test/render';
 import { ROOT_FONT_SIZE } from '@/test/styleProbe';
 
 import { SemesterTimeline } from './SemesterTimeline';
 
 // A router, because every chart is also a click-through into its nights.
-const render = async (element: ReactElement) => renderBare(<MemoryRouter>{element}</MemoryRouter>);
+const render = async (element: ReactElement) => renderWithRoute(element, { route: '/semester?site=GS' });
 
-const night = (label: string) => observingNightInterval('GS', label);
 /** Inside August, so every chart also carries the now marker these measurements must not depend on. */
-const NOW = night('2026-08-10').start;
-const INSTRUMENT_BLOCKS: readonly InstrumentAvailabilityBlock[] = [
-  {
+const NOW = observingNightInterval('GS', '2026-08-10').start;
+const INSTRUMENT_BLOCKS = [
+  domainInstrumentBlock({
     id: 'ghost',
     instrument: 'GHOST',
-    publishedName: 'GHOST',
-    usage: 'SCIENCE',
-    port: 1,
-    place: null,
-    note: null,
-    interval: { start: night('2026-08-08').start, end: night('2026-09-01').end },
-  },
+    interval: nightsSpan('GS', '2026-08-08', '2026-09-01'),
+  }),
 ];
 
 const timeline = buildSemesterTimeline({
@@ -54,16 +46,20 @@ const headedTimeline = buildSemesterTimeline({
   schedule: scheduleOf({
     instrumentAvailability: INSTRUMENT_BLOCKS,
     telescopeAvailability: [
-      {
-        id: 'open',
-        availability: 'OPEN',
-        port: null,
-        interval: { start: night('2026-08-02').start, end: night('2026-09-01').end },
-        reason: null,
-      },
+      domainTelescopeBlock({ id: 'open', interval: nightsSpan('GS', '2026-08-02', '2026-09-01') }),
     ],
   }),
 });
+
+/** The timeline inside a host of the given width, as the page grid hands it one. */
+const renderInHost = async (width: number, subject: Timeline, id = 'host'): Promise<HTMLElement> => {
+  const screen = await render(
+    <div style={{ width: `${String(width)}px` }} data-testid={id}>
+      <SemesterTimeline timeline={subject} site="GS" />
+    </div>,
+  );
+  return screen.getByTestId(id).element() as HTMLElement;
+};
 
 const chartWidth = (container: HTMLElement): number =>
   Math.round(container.querySelector('.highcharts-container')?.getBoundingClientRect().width ?? 0);
@@ -96,18 +92,12 @@ describe(SemesterTimeline, () => {
   });
 
   afterEach(() => {
-    vi.useRealTimers();
     document.documentElement.style.fontSize = '';
+    vi.useRealTimers();
   });
 
   it('resizes its charts when the container does, not when the window does', async () => {
-    const screen = await render(
-      <div style={{ width: '900px' }} data-testid="host">
-        <SemesterTimeline timeline={timeline} site="GS" />
-      </div>,
-    );
-
-    const host = screen.getByTestId('host').element() as HTMLElement;
+    const host = await renderInHost(900, timeline);
     await expect.poll(() => chartWidth(host)).toBeGreaterThan(700);
 
     host.style.width = '400px';
@@ -117,26 +107,14 @@ describe(SemesterTimeline, () => {
   });
 
   it('never lets a chart push the page sideways', async () => {
-    const screen = await render(
-      <div style={{ width: '320px' }} data-testid="host">
-        <SemesterTimeline timeline={timeline} site="GS" />
-      </div>,
-    );
-
-    const host = screen.getByTestId('host').element() as HTMLElement;
+    const host = await renderInHost(320, timeline);
     await expect.poll(() => chartWidth(host)).toBeLessThanOrEqual(320);
   });
 
   it('leaves the gutter wide enough to draw a group heading whole', async () => {
     document.documentElement.style.fontSize = ROOT_FONT_SIZE;
 
-    const screen = await render(
-      <div style={{ width: '900px' }} data-testid="host">
-        <SemesterTimeline timeline={headedTimeline} site="GS" />
-      </div>,
-    );
-
-    const host = screen.getByTestId('host').element() as HTMLElement;
+    const host = await renderInHost(900, headedTimeline);
     // Guarded on the heading drawn at all, or an unrendered chart passes as a gutter with nothing truncated.
     await expect
       .poll(() => gutterLabels(host).filter((label) => label.textContent?.startsWith('INSTRUME')).length)
@@ -150,22 +128,12 @@ describe(SemesterTimeline, () => {
    */
   it('keeps every row label when the reader doubles their font size', async () => {
     document.documentElement.style.fontSize = ROOT_FONT_SIZE;
-    const base = await render(
-      <div style={{ width: '900px' }} data-testid="base">
-        <SemesterTimeline timeline={headedTimeline} site="GS" />
-      </div>,
-    );
-    const baseHost = base.getByTestId('base').element() as HTMLElement;
+    const baseHost = await renderInHost(900, headedTimeline, 'base');
     await expect.poll(() => drawnGutterLabels(baseHost).length).toBeGreaterThan(0);
     const expected = drawnGutterLabels(baseHost);
 
     document.documentElement.style.fontSize = '32px';
-    const doubled = await render(
-      <div style={{ width: '900px' }} data-testid="doubled">
-        <SemesterTimeline timeline={headedTimeline} site="GS" />
-      </div>,
-    );
-    const doubledHost = doubled.getByTestId('doubled').element() as HTMLElement;
+    const doubledHost = await renderInHost(900, headedTimeline, 'doubled');
 
     await expect.poll(() => drawnGutterLabels(doubledHost)).toStrictEqual(expected);
   });

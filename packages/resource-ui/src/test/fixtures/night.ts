@@ -2,7 +2,7 @@ import type { MockedResponseOf } from '@gemini-hlsw/lucuma-common-ui/testing';
 import type { NightScheduleQuery, NightScheduleQueryVariables, Site } from '@gql/gen/graphql';
 import { NIGHT_SCHEDULE_QUERY } from '@gql/resource';
 
-import { overNights } from './blocks';
+import { overNights, telescopeNight } from './blocks';
 
 export interface NightRow {
   readonly site: Site;
@@ -31,9 +31,7 @@ export const nightSchedule = (
     result: {
       data: {
         telescopeNight: {
-          __typename: 'TelescopeNight',
-          observingNight: variables.night,
-          dataAvailable,
+          ...telescopeNight({ observingNight: variables.night, dataAvailable }),
           interval: { __typename: 'TimestampInterval', start: variables.start, end: variables.end },
         },
         instrumentAvailability: [],

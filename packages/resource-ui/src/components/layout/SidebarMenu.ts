@@ -40,3 +40,6 @@ export const SIDEBAR_MENU_SECTIONS: SidebarMenuSection[] = [
     ],
   },
 ];
+
+/** The sections group the sidebar; a phone bar and a link table want the destinations alone. */
+export const SIDEBAR_MENU_ITEMS: readonly SidebarMenuItem[] = SIDEBAR_MENU_SECTIONS.flatMap((section) => section.items);

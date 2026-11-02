@@ -17,6 +17,8 @@ export function pixelOver(color: string, backdrop: string): Rgb {
   return [r!, g!, b!];
 }
 
+const asCss = ([r, g, b]: Rgb): string => `rgb(${String(r)} ${String(g)} ${String(b)})`;
+
 export function contrastRatio(a: Rgb, b: Rgb): number {
   const luminance = (rgb: Rgb) =>
     rgb
@@ -35,3 +37,6 @@ export function resolvedSize(token: string): string {
   probe.remove();
   return size;
 }
+
+/** The contrast of `ink` once the browser has painted it over `fill`, against that fill. */
+export const contrastOn = (ink: string, fill: Rgb): number => contrastRatio(pixelOver(ink, asCss(fill)), fill);

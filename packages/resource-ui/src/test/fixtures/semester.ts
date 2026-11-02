@@ -1,7 +1,7 @@
 import type { MockedResponseOf } from '@gemini-hlsw/lucuma-common-ui/testing';
 import type { SemesterScheduleQuery, SemesterScheduleQueryVariables } from '@gql/gen/graphql';
 import { PUBLISHED_SEMESTERS_QUERY, SEMESTER_SCHEDULE_QUERY } from '@gql/resource';
-import type { PublishedSemesterItem } from '@gql/types';
+import type { DateIntervalItem, PublishedSemesterItem, TimestampIntervalItem } from '@gql/types';
 
 import { RECENT_DAYS } from '@/app/useRecentSpan';
 import { addDays } from '@/domain/semester';
@@ -11,7 +11,7 @@ import type { Site } from '@/domain/types';
 import { overNights } from './blocks';
 
 /** Semester A's evenings run 1 February to 31 July, B's 1 August to 31 January; the API labels nights by their end. */
-const semesterNights = (semester: string): PublishedSemesterItem['nights'] => {
+const semesterNights = (semester: string): DateIntervalItem => {
   const year = Number(semester.slice(0, 4));
   const [start, end] = semester.endsWith('A')
     ? [`${year}-02-02`, `${year}-08-02`]
@@ -39,10 +39,14 @@ export const publishedSemesters = (
   result: { data: { publishedSemesters: semesters } },
 });
 
-/** The window the page asks for: every observing night the semester publishes. */
-export const semesterWindow = ({ site, nights }: PublishedSemesterItem): SemesterScheduleQueryVariables => {
-  const { start, end } = overNights(site, nights.start, addDays(nights.end, -1));
-  return { site, start, end };
+/** Every observing night the semester publishes, as one interval. */
+export const wholeSemester = ({ site, nights }: PublishedSemesterItem): TimestampIntervalItem =>
+  overNights(site, nights.start, addDays(nights.end, -1));
+
+/** The window the page asks for. */
+export const semesterWindow = (published: PublishedSemesterItem): SemesterScheduleQueryVariables => {
+  const { start, end } = wholeSemester(published);
+  return { site: published.site, start, end };
 };
 
 /** Pass a semester to answer the window its page asks for, or explicit variables to pin that window. */

@@ -1,30 +1,32 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { observingNightInterval, observingNightOf } from '@/domain/siteTime';
+import { fakeClock } from '@/test/helpers';
 import { Probe, PROBE_URL_TESTID } from '@/test/probe';
-import { renderApp } from '@/test/renderApp';
+import { renderWithRoute } from '@/test/render';
 
 import { useSelection } from './useSelection';
 
 const openSelection = async (route: string) =>
-  renderApp({
-    route,
-    element: (
-      <Probe
-        use={useSelection}
-        readout={(selection) => ({
-          site: selection.site,
-          night: selection.observingNight,
-          tonight: selection.tonight,
-        })}
-        actions={(selection) => [
-          { label: 'to GS', run: () => selection.setSite('GS') },
-          { label: 'tonight', run: selection.clearObservingNight },
-        ]}
-      />
-    ),
-    mocks: [],
-  });
+  renderWithRoute(
+    <Probe
+      use={useSelection}
+      readout={(selection) => ({
+        site: selection.site,
+        night: selection.observingNight,
+        tonight: selection.tonight,
+      })}
+      actions={(selection) => [
+        { label: 'to GS', run: () => selection.setSite('GS') },
+        { label: 'tonight', run: selection.clearObservingNight },
+      ]}
+    />,
+    { route },
+  );
+
+afterEach(() => {
+  vi.useRealTimers();
+});
 
 describe(useSelection, () => {
   it('reads the whole selection out of the query string', async () => {
@@ -43,21 +45,15 @@ describe(useSelection, () => {
   });
 
   it('rolls tonight over at 14:00 site time', async () => {
-    // The clock only, so the router and the locators keep their real timers.
-    vi.useFakeTimers({ toFake: ['Date', 'setInterval', 'clearInterval'] });
-    try {
-      vi.setSystemTime(observingNightInterval('GS', '2025-11-14').end - 60_000);
-      const screen = await openSelection('/night?site=GS');
-      await expect.element(screen.getByTestId('probe-tonight')).toHaveTextContent('2025-11-14');
-      await expect.element(screen.getByTestId('probe-night')).toHaveTextContent('2025-11-14');
+    fakeClock(observingNightInterval('GS', '2025-11-14').end - 60_000);
+    const screen = await openSelection('/night?site=GS');
+    await expect.element(screen.getByTestId('probe-tonight')).toHaveTextContent('2025-11-14');
+    await expect.element(screen.getByTestId('probe-night')).toHaveTextContent('2025-11-14');
 
-      vi.advanceTimersByTime(2 * 60_000);
+    vi.advanceTimersByTime(2 * 60_000);
 
-      await expect.element(screen.getByTestId('probe-tonight')).toHaveTextContent('2025-11-15');
-      await expect.element(screen.getByTestId('probe-night')).toHaveTextContent('2025-11-15');
-    } finally {
-      vi.useRealTimers();
-    }
+    await expect.element(screen.getByTestId('probe-tonight')).toHaveTextContent('2025-11-15');
+    await expect.element(screen.getByTestId('probe-night')).toHaveTextContent('2025-11-15');
   });
 
   it('reads an unknown site as Gemini North rather than rendering nothing', async () => {

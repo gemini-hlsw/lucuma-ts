@@ -1,24 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
-import { scheduleOf } from '@/test/fixtures/domain';
+import { domainInstrumentBlock, nightsSpan, scheduleOf } from '@/test/fixtures/domain';
 
 import { observingNightInterval } from './siteTime';
 import { nightAt } from './timeline';
-import type { InstrumentAvailabilityBlock, Schedule } from './types';
+import type { Schedule } from './types';
 import { buildWeekTimeline, WEEK_NIGHTS, weekNightLabels } from './weekTimeline';
 
 const FIRST = '2026-11-14';
-
-const instrumentBlock = (
-  over: Partial<InstrumentAvailabilityBlock> & Pick<InstrumentAvailabilityBlock, 'id' | 'port' | 'interval'>,
-): InstrumentAvailabilityBlock => ({
-  instrument: 'GMOS',
-  publishedName: 'GMOS',
-  usage: 'SCIENCE',
-  place: null,
-  note: null,
-  ...over,
-});
 
 const build = (over: Partial<Schedule> = {}, nightsWithData?: ReadonlySet<string>) =>
   buildWeekTimeline({ site: 'GS', firstNight: FIRST, schedule: scheduleOf(over), nightsWithData });
@@ -72,15 +61,11 @@ describe('runs across the week', () => {
     // The blocks come unclipped for this reason: a per-night projection returns seven seams.
     const week = build({
       instrumentAvailability: [
-        instrumentBlock({
+        domainInstrumentBlock({
           id: 'ghost',
           port: 1,
           instrument: 'GHOST',
-          publishedName: 'GHOST',
-          interval: {
-            start: observingNightInterval('GS', '2026-08-08').start,
-            end: observingNightInterval('GS', '2027-02-01').end,
-          },
+          interval: nightsSpan('GS', '2026-08-08', '2027-02-01'),
         }),
       ],
     });

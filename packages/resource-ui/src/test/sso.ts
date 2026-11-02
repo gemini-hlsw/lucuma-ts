@@ -1,9 +1,16 @@
 import { vi } from 'vitest';
 
+import { pendingRefresh } from '@/auth/session';
+
+export interface SsoAnswer {
+  readonly status?: number;
+  readonly body?: string;
+}
+
 export interface PendingSsoCall {
   readonly url: string;
   readonly signal: AbortSignal | null;
-  readonly answer: (response: { status?: number; body?: string }) => void;
+  readonly answer: (response: SsoAnswer) => void;
   readonly fail: () => void;
 }
 
@@ -36,6 +43,13 @@ export function ssoCall(index: number): PendingSsoCall {
   const pending = calls[index];
   if (!pending) throw new Error(`no SSO request #${index} was made`);
   return pending;
+}
+
+/** Resolves once the session has taken the answer in, not merely once fetch has. */
+export async function answerRefresh(index: number, response: SsoAnswer): Promise<void> {
+  const settled = pendingRefresh();
+  ssoCall(index).answer(response);
+  await settled;
 }
 
 const callsTo = (path: string): readonly PendingSsoCall[] => calls.filter((made) => made.url.includes(path));

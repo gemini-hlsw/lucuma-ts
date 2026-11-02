@@ -67,16 +67,12 @@ describe(setToken, () => {
   });
 
   it('lets a subscriber failure out instead of reading it as a refused write', () => {
-    const unsubscribe = store.sub(odbTokenAtom, () => {
+    store.sub(odbTokenAtom, () => {
       throw new Error('a token subscriber failed');
     });
 
-    try {
-      expect(() => {
-        setToken(store, fakeJwt(standardUser('staff')));
-      }).toThrow(AggregateError);
-    } finally {
-      unsubscribe();
-    }
+    expect(() => {
+      setToken(store, fakeJwt(standardUser('staff')));
+    }).toThrow(AggregateError);
   });
 });

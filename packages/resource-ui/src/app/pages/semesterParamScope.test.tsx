@@ -3,19 +3,17 @@
  * matters is that nowhere else reads it: these pages must render identically with and without one.
  */
 import type { MockLink } from '@apollo/client/testing';
-import type { MockedResponseOf } from '@gemini-hlsw/lucuma-common-ui/testing';
-import { NIGHT_SCHEDULE_QUERY, WEEK_SCHEDULE_QUERY } from '@gql/resource';
 import type { JSX } from 'react';
 import { describe, expect, it } from 'vitest';
 
 import Sidebar from '@/components/layout/Sidebar';
-import { addDays } from '@/domain/semester';
-import { WEEK_NIGHTS } from '@/domain/weekTimeline';
-import { instrumentAvailabilityBlock, overNights } from '@/test/fixtures/blocks';
+import { instrumentAvailabilityBlock } from '@/test/fixtures/blocks';
 import { componentBrowser, instrumentComponent } from '@/test/fixtures/components';
+import { nightSchedule } from '@/test/fixtures/night';
 import { recentSpan, semesterSchedule } from '@/test/fixtures/semester';
 import { nightsFromTonight } from '@/test/fixtures/tonight';
-import { renderApp } from '@/test/renderApp';
+import { weekSchedule } from '@/test/fixtures/week';
+import { renderWithRoute } from '@/test/render';
 
 import ComponentsPage from './ComponentsPage';
 import InstrumentsPage from './InstrumentsPage';
@@ -25,55 +23,13 @@ import WeekPage from './WeekPage';
 const NIGHT = '2025-11-14';
 const GS_WHOLE = nightsFromTonight('GS', -60, 60);
 
-/** The API takes an interval as plain start and end; a selected one carries its `__typename` too. */
-const asInput = ({ start, end }: { start: string; end: string }) => ({ start, end });
-
-const NIGHT_SCHEDULE: MockedResponseOf<typeof NIGHT_SCHEDULE_QUERY> = {
-  request: {
-    query: NIGHT_SCHEDULE_QUERY,
-    variables: { site: 'GS', night: NIGHT, ...asInput(overNights('GS', NIGHT, NIGHT)) },
-  },
-  result: {
-    data: {
-      telescopeNight: {
-        __typename: 'TelescopeNight',
-        observingNight: NIGHT,
-        dataAvailable: false,
-        interval: overNights('GS', NIGHT, NIGHT),
-      },
-      instrumentAvailability: [],
-      telescopeAvailability: [],
-      tooSupport: [],
-      telescopeMode: [],
-    },
-  },
-};
-
-const WEEK_SCHEDULE: MockedResponseOf<typeof WEEK_SCHEDULE_QUERY> = {
-  request: {
-    query: WEEK_SCHEDULE_QUERY,
-    variables: {
-      site: 'GS',
-      nightsStart: NIGHT,
-      nightsEnd: addDays(NIGHT, WEEK_NIGHTS),
-      ...asInput(overNights('GS', NIGHT, addDays(NIGHT, WEEK_NIGHTS - 1))),
-    },
-  },
-  result: {
-    data: {
-      telescopeNights: [],
-      instrumentAvailability: [],
-      telescopeAvailability: [],
-      tooSupport: [],
-      telescopeMode: [],
-    },
-  },
-};
+const NIGHT_SCHEDULE = nightSchedule({ site: 'GS', night: NIGHT }, { dataAvailable: false });
+const WEEK_SCHEDULE = weekSchedule({ site: 'GS', night: NIGHT });
 
 const INSTRUMENTS = semesterSchedule(recentSpan('GS'), {
   instrumentAvailability: [
-    instrumentAvailabilityBlock({ instrument: 'GHOST', port: 1, interval: GS_WHOLE }),
-    instrumentAvailabilityBlock({ instrument: 'GPI', place: 'BASE', usage: 'UNAVAILABLE', interval: GS_WHOLE }),
+    instrumentAvailabilityBlock({ instrument: 'GHOST', at: { port: 1 }, interval: GS_WHOLE }),
+    instrumentAvailabilityBlock({ instrument: 'GPI', at: { place: 'BASE' }, usage: 'UNAVAILABLE', interval: GS_WHOLE }),
   ],
 });
 
@@ -83,8 +39,7 @@ const COMPONENTS = componentBrowser(recentSpan('GS'), {
 
 describe('the semester parameter outside /semester', () => {
   it('leaves the night where the night parameter put it, whatever semester is named', async () => {
-    const stale = await renderApp({
-      element: <NightPage />,
+    const stale = await renderWithRoute(<NightPage />, {
       route: `/night?site=GS&night=${NIGHT}&semester=2024B`,
       mocks: [NIGHT_SCHEDULE],
     });
@@ -93,16 +48,14 @@ describe('the semester parameter outside /semester', () => {
   });
 
   it('opens the same week with a stale semester as without one', async () => {
-    const plain = await renderApp({
-      element: <WeekPage />,
+    const plain = await renderWithRoute(<WeekPage />, {
       route: `/week?site=GS&night=${NIGHT}`,
       mocks: [WEEK_SCHEDULE],
     });
     const heading = plain.getByRole('heading', { level: 1 }).element().textContent;
     await plain.unmount();
 
-    const stale = await renderApp({
-      element: <WeekPage />,
+    const stale = await renderWithRoute(<WeekPage />, {
       route: `/week?site=GS&night=${NIGHT}&semester=2099Z`,
       mocks: [WEEK_SCHEDULE],
     });
@@ -119,8 +72,7 @@ describe('the semester parameter outside /semester', () => {
 
     for (const { element, testId, schedule } of pages) {
       const rendered = async (search: string): Promise<string> => {
-        const screen = await renderApp({
-          element,
+        const screen = await renderWithRoute(element, {
           route: `/finder?site=GS${search}`,
           mocks: [schedule],
         });
@@ -149,8 +101,7 @@ describe('a finder filter carried by a navigation link', () => {
   }
 
   it('does not reach the other finder', async () => {
-    const screen = await renderApp({
-      element: <InstrumentsWithNav />,
+    const screen = await renderWithRoute(<InstrumentsWithNav />, {
       route: `/instruments?site=GS&night=${NIGHT}&q=GPI`,
       extraRoutes: [{ path: '/components', element: <ComponentsPage /> }],
       mocks: [INSTRUMENTS, COMPONENTS],
@@ -163,6 +114,6 @@ describe('a finder filter carried by a navigation link', () => {
 
     await expect.element(screen.getByTestId('component-table')).toBeVisible();
     await expect.element(screen.getByLabelText('Search', { exact: true })).toHaveValue('');
-    await expect.poll(() => screen.router.state.location.search).not.toContain('q=GPI');
+    await expect.poll(() => screen.router.location.search).not.toContain('q=GPI');
   });
 });

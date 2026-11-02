@@ -1,15 +1,10 @@
 import { type ApolloClient, ApolloLink, gql } from '@apollo/client';
 import { ApolloProvider } from '@apollo/client/react';
 import type { MockLink } from '@apollo/client/testing';
-import { Observable } from '@apollo/client/utilities';
 import { toastAtom } from '@gemini-hlsw/lucuma-common-ui';
-import type { MockedResponseOf } from '@gemini-hlsw/lucuma-common-ui/testing';
 import { fakeJwt, standardUser } from '@gemini-hlsw/lucuma-common-ui/testing';
-import type { PublishedSemestersQuery } from '@gql/gen/graphql';
 import { createStore, Provider as JotaiProvider, type Store } from 'jotai';
-import { PrimeReactProvider } from 'primereact/api';
 import { type JSX, type ReactNode, StrictMode } from 'react';
-import { createMemoryRouter, RouterProvider } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render } from 'vitest-browser-react';
 
@@ -19,9 +14,12 @@ import Layout from '@/components/layout/Layout';
 import { ToastOutlet } from '@/components/ui/ToastOutlet';
 import { liveLink } from '@/gql/ApolloConfigs';
 import { usePublishedSemesters } from '@/gql/hooks';
-import { NIGHT_SCHEDULE_QUERY, PUBLISHED_SEMESTERS_QUERY } from '@/gql/resource';
-import { captureHeader, createLinkClient } from '@/test/linkClient';
-import { ssoCalls, ssoRefreshes, stubSso } from '@/test/sso';
+import { nightSchedule } from '@/test/fixtures/night';
+import { publishedSemester, publishedSemesters } from '@/test/fixtures/semester';
+import { fakeTimeouts } from '@/test/helpers';
+import { captureHeader, captureOperations, createLinkClient, respondWith } from '@/test/linkClient';
+import { renderInShell } from '@/test/render';
+import { answerRefresh, ssoCalls, ssoRefreshes, stubSso } from '@/test/sso';
 
 import { AuthSession } from './AuthSession';
 import { pendingRefresh, SESSION_TIMINGS, type SessionTimings } from './session';
@@ -31,16 +29,7 @@ function SemesterCount({ testId = 'semesters' }: { testId?: string }): JSX.Eleme
   return <p data-testid={testId}>{loading ? 'loading' : `${String(semesters.length)} semesters`}</p>;
 }
 
-const ONE_SEMESTER: PublishedSemestersQuery = {
-  publishedSemesters: [
-    {
-      __typename: 'PublishedSemester',
-      site: 'GS',
-      semester: '2025B',
-      nights: { __typename: 'DateInterval', start: '2025-08-02', end: '2026-02-02' },
-    },
-  ],
-};
+const ONE_SEMESTER = { publishedSemesters: [publishedSemester({ site: 'GS', semester: '2025B' })] };
 
 let store: Store;
 
@@ -54,40 +43,13 @@ const onSecondRequest = (outcome: ApolloLink.Result | Error): ApolloLink => {
   let requests = 0;
   return new ApolloLink((operation, forward) => {
     requests += 1;
-    if (requests !== 2) return forward(operation);
-    return new Observable<ApolloLink.Result>((observer) => {
-      if (outcome instanceof Error) {
-        observer.error(outcome);
-      } else {
-        observer.next(outcome);
-        observer.complete();
-      }
-    });
+    return requests === 2 ? respondWith(outcome) : forward(operation);
   });
 };
 
-const NO_SEMESTERS: MockedResponseOf<typeof PUBLISHED_SEMESTERS_QUERY> = {
-  request: { query: PUBLISHED_SEMESTERS_QUERY },
-  result: { data: { publishedSemesters: [] } },
-};
-
-const EMPTY_NIGHT: MockedResponseOf<typeof NIGHT_SCHEDULE_QUERY> = {
-  request: { query: NIGHT_SCHEDULE_QUERY, variables: () => true },
-  result: ({ night, start, end }) => ({
-    data: {
-      telescopeNight: {
-        __typename: 'TelescopeNight',
-        observingNight: night,
-        dataAvailable: true,
-        interval: { __typename: 'TimestampInterval', start, end },
-      },
-      instrumentAvailability: [],
-      telescopeAvailability: [],
-      tooSupport: [],
-      telescopeMode: [],
-    },
-  }),
-};
+const SHELL_ROUTE = '/night?site=GS&night=2025-11-14';
+const NO_SEMESTERS = publishedSemesters();
+const EMPTY_NIGHT = nightSchedule({ site: 'GS', night: '2025-11-14' });
 
 const MARKED: MockLink.MockedResponse = {
   request: { query: RENEWAL_MARKER },
@@ -137,13 +99,9 @@ const NIGHT_LOADING = 'Loading the night…';
 /** Stands in for a Resource service that denies an anonymous caller, answering with an error and no data. */
 const deniesAnonymous = new ApolloLink((operation, forward) => {
   const headers = (operation.getContext().headers ?? {}) as Record<string, string>;
-  if (Object.hasOwn(headers, 'Authorization')) {
-    return forward(operation);
-  }
-  return new Observable<ApolloLink.Result>((observer) => {
-    observer.next({ errors: [{ message: 'Access denied.' }] });
-    observer.complete();
-  });
+  return Object.hasOwn(headers, 'Authorization')
+    ? forward(operation)
+    : respondWith({ errors: [{ message: 'Access denied.' }] });
 });
 
 const renderShell = async ({
@@ -155,48 +113,28 @@ const renderShell = async ({
   after?: ApolloLink;
   timings?: SessionTimings;
 } = {}) => {
-  const operations: string[] = [];
-  const logOperation = new ApolloLink((operation, forward) => {
-    operations.push(operation.operationName ?? '');
-    return forward(operation);
-  });
+  const { link: logOperation, names: operations } = captureOperations();
   const { client, authorizations } = capturingApollo(
     after === undefined ? logOperation : ApolloLink.from([logOperation, after]),
   );
-  const router = createMemoryRouter(
-    [
-      {
-        path: '/',
-        element: (
-          <AuthSession timings={timings}>
-            <Layout />
-            <ToastOutlet />
-          </AuthSession>
-        ),
-        children: [{ path: 'night', element: <NightPage /> }],
-      },
-    ],
-    { initialEntries: ['/night?site=GS&night=2025-11-14'] },
-  );
   setToken(store, token);
   store.set(sessionCheckedAtom, token !== null);
-  const screen = await render(
-    <PrimeReactProvider>
-      <JotaiProvider store={store}>
-        <ApolloProvider client={client}>
-          <RouterProvider router={router} />
-        </ApolloProvider>
-      </JotaiProvider>
-    </PrimeReactProvider>,
-  );
+  const screen = await renderInShell(<NightPage />, {
+    route: SHELL_ROUTE,
+    store,
+    shell: (
+      <ApolloProvider client={client}>
+        <AuthSession timings={timings}>
+          <Layout />
+          <ToastOutlet />
+        </AuthSession>
+      </ApolloProvider>
+    ),
+  });
   return Object.assign(screen, { client, authorizations, operations });
 };
 
 const sentOnce = (operations: readonly string[]): boolean => new Set(operations).size === operations.length;
-
-const fakeTimeouts = (): void => {
-  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
-};
 
 beforeEach(() => {
   store = createStore();
@@ -351,9 +289,7 @@ describe(AuthSession, () => {
     expect(screen.operations).toEqual([]);
 
     const token = fakeJwt(standardUser('staff'));
-    const settled = pendingRefresh();
-    ssoRefreshes()[0]?.answer({ body: token });
-    await settled;
+    await answerRefresh(0, { body: token });
 
     await expect.element(screen.getByTestId('account-control')).toHaveTextContent('Ada Lovelace');
     await expect.element(screen.getByText(NIGHT_LOADING)).not.toBeInTheDocument();
@@ -365,9 +301,7 @@ describe(AuthSession, () => {
     const screen = await renderShell({ after: deniesAnonymous });
     await expect.element(screen.getByText(NIGHT_LOADING)).toBeVisible();
 
-    const settled = pendingRefresh();
-    ssoRefreshes()[0]?.answer({ body: fakeJwt(standardUser('staff')) });
-    await settled;
+    await answerRefresh(0, { body: fakeJwt(standardUser('staff')) });
     await expect.element(screen.getByText(NIGHT_LOADING)).not.toBeInTheDocument();
 
     expect(store.get(toastAtom)).not.toBeNull();
@@ -423,9 +357,7 @@ describe(AuthSession, () => {
 
       await vi.advanceTimersByTimeAsync(9_000);
 
-      const p = pendingRefresh();
-      ssoRefreshes()[0]?.answer({ body: fakeJwt(standardUser('staff')) });
-      await p;
+      await answerRefresh(0, { body: fakeJwt(standardUser('staff')) });
 
       await vi.advanceTimersByTimeAsync(60_000);
 

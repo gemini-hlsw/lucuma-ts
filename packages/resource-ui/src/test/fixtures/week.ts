@@ -4,7 +4,7 @@ import { WEEK_SCHEDULE_QUERY } from '@gql/resource';
 
 import { addDays } from '@/domain/semester';
 
-import { overNights } from './blocks';
+import { overNights, telescopeNight } from './blocks';
 
 export interface WeekRow {
   readonly site: Site;
@@ -34,7 +34,7 @@ export const weekSchedule = (
     data: {
       telescopeNights: Array.from({ length: WEEK_NIGHTS }, (_, index) => {
         const observingNight = addDays(week.night, index);
-        return { __typename: 'TelescopeNight', observingNight, dataAvailable: !withoutData.includes(observingNight) };
+        return telescopeNight({ observingNight, dataAvailable: !withoutData.includes(observingNight) });
       }),
       instrumentAvailability: [],
       telescopeAvailability: [],

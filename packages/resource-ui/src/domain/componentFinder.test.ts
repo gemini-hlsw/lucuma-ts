@@ -1,42 +1,30 @@
 import { describe, expect, it } from 'vitest';
 
+import { domainInstrumentBlock, domainInstrumentComponent } from '@/test/fixtures/domain';
+
 import { buildFinderRows, historyOf, matchesComponent } from './componentFinder';
-import { observingNightInterval } from './siteTime';
+import { DAY_MS, HOUR_MS, observingNightInterval } from './siteTime';
 import type { InstrumentAvailabilityBlock, InstrumentComponent, InstrumentComponentAvailabilityBlock } from './types';
 
 const night = observingNightInterval('GS', '2026-10-15');
 
-const piece = (over: Partial<InstrumentComponent> = {}): InstrumentComponent => ({
-  id: 'k-gs-R400_G5325',
-  instrument: 'GMOS',
-  componentType: 'DISPERSER',
-  code: 'R400_G5325',
-  name: 'R400',
-  barcode: null,
-  aliases: ['R400'],
-  ...over,
-});
+const piece = (over: Partial<InstrumentComponent> = {}): InstrumentComponent =>
+  domainInstrumentComponent({ aliases: ['R400'], ...over });
 
 const block = (over: Partial<InstrumentComponentAvailabilityBlock> = {}): InstrumentComponentAvailabilityBlock => ({
   id: 'b1',
   componentId: 'k-gs-R400_G5325',
   usage: 'SCIENCE',
   location: 'INSTALLED',
-  interval: { start: night.start - 30 * 86_400_000, end: night.end + 30 * 86_400_000 },
+  interval: { start: night.start - 30 * DAY_MS, end: night.end + 30 * DAY_MS },
   note: null,
   ...over,
 });
 
-const instrumentBlock: InstrumentAvailabilityBlock = {
-  id: 'm1',
-  instrument: 'GMOS',
-  publishedName: 'GMOS',
-  usage: 'SCIENCE',
+const instrumentBlock = domainInstrumentBlock({
   port: 3,
-  place: null,
-  interval: { start: night.start - 60 * 86_400_000, end: night.end + 60 * 86_400_000 },
-  note: null,
-};
+  interval: { start: night.start - 60 * DAY_MS, end: night.end + 60 * DAY_MS },
+});
 
 const rowsOf = (
   blocks: readonly InstrumentComponentAvailabilityBlock[],
@@ -68,13 +56,13 @@ describe('where a piece is', () => {
   it('reports where the piece ended up when it moves during the night', () => {
     const midnight = (night.start + night.end) / 2;
     const [row] = rowsOf([
-      block({ id: 'a', interval: { start: night.start - 86_400_000, end: midnight } }),
+      block({ id: 'a', interval: { start: night.start - DAY_MS, end: midnight } }),
       block({
         id: 'b',
         location: 'LAB',
         usage: 'UNAVAILABLE',
         note: 'Failed; removed for repair',
-        interval: { start: midnight, end: night.end + 86_400_000 },
+        interval: { start: midnight, end: night.end + DAY_MS },
       }),
     ]);
 
@@ -89,19 +77,19 @@ describe('when a piece changes tonight', () => {
 
   it('names the instant two abutting records meet, once', () => {
     const [row] = rowsOf([
-      block({ id: 'a', interval: { start: night.start - 86_400_000, end: midnight } }),
-      block({ id: 'b', location: 'LAB', interval: { start: midnight, end: night.end + 86_400_000 } }),
+      block({ id: 'a', interval: { start: night.start - DAY_MS, end: midnight } }),
+      block({ id: 'b', location: 'LAB', interval: { start: midnight, end: night.end + DAY_MS } }),
     ]);
 
     expect(row?.transitions).toEqual([midnight]);
   });
 
   it('names both edges of a gap - the record ending and the next beginning', () => {
-    const off = midnight - 3_600_000;
-    const on = midnight + 3_600_000;
+    const off = midnight - HOUR_MS;
+    const on = midnight + HOUR_MS;
     const [row] = rowsOf([
-      block({ id: 'a', interval: { start: night.start - 86_400_000, end: off } }),
-      block({ id: 'b', location: 'LAB', interval: { start: on, end: night.end + 86_400_000 } }),
+      block({ id: 'a', interval: { start: night.start - DAY_MS, end: off } }),
+      block({ id: 'b', location: 'LAB', interval: { start: on, end: night.end + DAY_MS } }),
     ]);
 
     expect(row?.transitions).toEqual([off, on]);
@@ -120,7 +108,7 @@ describe('history', () => {
   it('lists a piece blocks oldest first, and only that piece', () => {
     const mine = [
       block({ id: 'later', interval: { start: night.start, end: night.end } }),
-      block({ id: 'earlier', interval: { start: night.start - 86_400_000, end: night.start } }),
+      block({ id: 'earlier', interval: { start: night.start - DAY_MS, end: night.start } }),
     ];
     const other = block({ id: 'other', componentId: 'k-gs-other' });
 

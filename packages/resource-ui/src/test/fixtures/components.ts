@@ -1,7 +1,11 @@
 import type { MockedResponseOf } from '@gemini-hlsw/lucuma-common-ui/testing';
 import type { ComponentBrowserQuery, ComponentBrowserQueryVariables } from '@gql/gen/graphql';
 import { COMPONENT_BROWSER_QUERY } from '@gql/resource';
-import type { InstrumentComponentAvailabilityBlockItem, InstrumentComponentItem } from '@gql/types';
+import type {
+  InstrumentComponentAvailabilityBlockItem,
+  InstrumentComponentItem,
+  InstrumentComponentRef,
+} from '@gql/types';
 
 import { overNights } from './blocks';
 
@@ -24,8 +28,13 @@ export const instrumentComponent = ({
   aliases,
 });
 
+const DEFAULT_COMPONENT_REF: InstrumentComponentRef = {
+  __typename: 'InstrumentComponent',
+  id: instrumentComponent().id,
+};
+
 export const instrumentComponentAvailabilityBlock = ({
-  component = instrumentComponent(),
+  component = DEFAULT_COMPONENT_REF,
   interval = overNights('GS', '2025-08-02', '2026-02-01'),
   usage = 'SCIENCE',
   location = 'INSTALLED',

@@ -1,16 +1,15 @@
 import { ApolloClient, ApolloLink, gql, InMemoryCache } from '@apollo/client';
-import { Observable } from '@apollo/client/utilities';
 import { toastAtom } from '@gemini-hlsw/lucuma-common-ui';
 import { fakeJwt, standardUser } from '@gemini-hlsw/lucuma-common-ui/testing';
-import { createStore, Provider as JotaiProvider, type Store } from 'jotai';
-import { PrimeReactProvider } from 'primereact/api';
+import { createStore, type Store } from 'jotai';
 import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
 import { page } from 'vitest/browser';
-import { render } from 'vitest-browser-react';
 
 import { odbTokenAtom, sessionCheckedAtom } from '@/components/atoms/auth';
 import { ToastOutlet } from '@/components/ui/ToastOutlet';
-import { captureHeader, createLinkClient } from '@/test/linkClient';
+import { fakeTimeouts, UNDECODABLE_TOKEN } from '@/test/helpers';
+import { captureHeader, captureOperations, createLinkClient, respondWith } from '@/test/linkClient';
+import { renderWithContext } from '@/test/render';
 
 import { authLink, createClient, liveLink, sessionHoldLink } from './ApolloConfigs';
 
@@ -34,12 +33,15 @@ const ANSWERS = [
 ];
 
 const TOKEN = fakeJwt(standardUser('staff'));
-const UNDECODABLE_TOKEN = 'header.payload.signature';
 
 let store: Store;
 
 beforeEach(() => {
   store = createStore();
+});
+
+afterEach(() => {
+  vi.useRealTimers();
 });
 
 const headerSent = async (name: string, context?: ApolloLink.OperationContext): Promise<string | null | undefined> => {
@@ -87,8 +89,9 @@ describe(authLink, () => {
 
 describe('two link chains on two stores', () => {
   it('should send no bearer through a chain built on another store when a token is set on the first', async () => {
+    const first = createStore();
     const other = createStore();
-    store.set(odbTokenAtom, TOKEN);
+    first.set(odbTokenAtom, TOKEN);
     const capture = captureHeader('Authorization');
     const linkClient = createLinkClient(ApolloLink.from([authLink(other), capture.link]), ANSWERS);
 
@@ -100,11 +103,7 @@ describe('two link chains on two stores', () => {
 
 describe(sessionHoldLink, () => {
   const heldApollo = () => {
-    const entered: string[] = [];
-    const enter = new ApolloLink((operation, forward) => {
-      entered.push(operation.operationName ?? '');
-      return forward(operation);
-    });
+    const { link: enter, names: entered } = captureOperations();
     const capture = captureHeader('Authorization');
     const linkClient = createLinkClient(
       ApolloLink.from([enter, sessionHoldLink(store), authLink(store), capture.link]),
@@ -180,61 +179,48 @@ describe("the live client's request chain", () => {
   });
 });
 
-type Answer = (observer: {
-  next: (result: ApolloLink.Result) => void;
-  error: (error: unknown) => void;
-  complete: () => void;
-}) => void;
+type Outcome = ApolloLink.Result | Error;
 
-const answering =
-  (result: ApolloLink.Result): Answer =>
-  (observer) => {
-    observer.next(result);
-    observer.complete();
-  };
-const served = answering({ data: { publishedSemesters: [] } });
-const unreachable: Answer = (observer) => {
-  observer.error(new Error('Failed to fetch'));
+const served: Outcome = { data: { publishedSemesters: [] } };
+const unreachable: Outcome = new Error('Failed to fetch');
+const failed: Outcome = { data: null, errors: [{ message: 'Cannot query field "publishedSemesters"' }] };
+const unauthenticated: Outcome = {
+  data: null,
+  errors: [{ message: "Field 'publishedSemesters' requires authentication." }],
 };
-const failed = answering({ data: null, errors: [{ message: 'Cannot query field "publishedSemesters"' }] });
+const refused: Outcome = { data: null, errors: [{ message: 'Access denied.' }] };
+
+interface LiveChain {
+  readonly ask: (next: Outcome) => Promise<void>;
+  readonly summaries: () => (string | null)[];
+}
+
+/** The live chain over a scripted answer, with its toast outlet mounted; MockLink cannot change its answer between calls. */
+const liveChain = async (chainStore: Store): Promise<LiveChain> => {
+  chainStore.set(sessionCheckedAtom, true);
+  let answer: Outcome = served;
+  const client = new ApolloClient({
+    link: liveLink(chainStore, new ApolloLink(() => respondWith(answer))),
+    cache: new InMemoryCache(),
+  });
+  const screen = await renderWithContext(<ToastOutlet />, { store: chainStore });
+  await expect.poll(() => chainStore.get(toastAtom)).not.toBeNull();
+  return {
+    ask: async (next) => {
+      answer = next;
+      await client.query({ query: QUERY, fetchPolicy: 'no-cache' }).catch(() => undefined);
+    },
+    summaries: () => [...screen.container.querySelectorAll('.p-toast-summary')].map((summary) => summary.textContent),
+  };
+};
 
 describe(liveLink, () => {
-  const unauthenticated = answering({
-    data: null,
-    errors: [{ message: "Field 'publishedSemesters' requires authentication." }],
-  });
-  const refused = answering({ data: null, errors: [{ message: 'Access denied.' }] });
-
-  let answer: Answer = served;
-  let liveClient: ApolloClient;
-
-  const ask = async (next: Answer): Promise<void> => {
-    answer = next;
-    await liveClient.query({ query: QUERY, fetchPolicy: 'no-cache' }).catch(() => undefined);
-  };
-
-  const summaries = (): (string | null)[] =>
-    [...document.querySelectorAll('.p-toast-summary')].map((summary) => summary.textContent);
+  let ask: LiveChain['ask'];
+  let summaries: LiveChain['summaries'];
 
   beforeEach(async () => {
-    store.set(sessionCheckedAtom, true);
-    liveClient = new ApolloClient({
-      link: liveLink(store, new ApolloLink(() => new Observable<ApolloLink.Result>((observer) => answer(observer)))),
-      cache: new InMemoryCache(),
-    });
-    await render(
-      <PrimeReactProvider>
-        <JotaiProvider store={store}>
-          <ToastOutlet />
-        </JotaiProvider>
-      </PrimeReactProvider>,
-    );
-    await expect.poll(() => store.get(toastAtom)).not.toBeNull();
+    ({ ask, summaries } = await liveChain(store));
     await ask(served);
-  });
-
-  afterEach(() => {
-    vi.useRealTimers();
   });
 
   it.each([
@@ -263,7 +249,7 @@ describe(liveLink, () => {
   });
 
   it('keeps the warning up past the default toast life', async () => {
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    fakeTimeouts();
     await ask(unreachable);
     await expect.poll(summaries).toEqual(['The live server could not be reached.']);
 
@@ -305,37 +291,9 @@ describe(liveLink, () => {
 });
 
 describe('two live chains on two stores', () => {
-  const liveChain = async () => {
-    const chainStore = createStore();
-    chainStore.set(sessionCheckedAtom, true);
-    let answer: Answer = served;
-    const client = new ApolloClient({
-      link: liveLink(
-        chainStore,
-        new ApolloLink(() => new Observable<ApolloLink.Result>((observer) => answer(observer))),
-      ),
-      cache: new InMemoryCache(),
-    });
-    const screen = await render(
-      <PrimeReactProvider>
-        <JotaiProvider store={chainStore}>
-          <ToastOutlet />
-        </JotaiProvider>
-      </PrimeReactProvider>,
-    );
-    await expect.poll(() => chainStore.get(toastAtom)).not.toBeNull();
-    return {
-      ask: async (next: Answer): Promise<void> => {
-        answer = next;
-        await client.query({ query: QUERY, fetchPolicy: 'no-cache' }).catch(() => undefined);
-      },
-      summaries: () => [...screen.container.querySelectorAll('.p-toast-summary')].map((summary) => summary.textContent),
-    };
-  };
-
   it("should keep the first store's standing warning when the second store's chain succeeds", async () => {
-    const first = await liveChain();
-    const other = await liveChain();
+    const first = await liveChain(createStore());
+    const other = await liveChain(createStore());
     await first.ask(unreachable);
     await expect.poll(first.summaries).toEqual(['The live server could not be reached.']);
 

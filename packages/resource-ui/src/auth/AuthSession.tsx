@@ -8,7 +8,12 @@ import { type SessionTimings, startSession } from './session';
 
 const hasTokenAtom = atom((get) => get(odbTokenAtom) !== null);
 
-export function AuthSession({ children, timings }: { children: ReactNode; timings?: SessionTimings }): ReactNode {
+export interface AuthSessionProps {
+  children: ReactNode;
+  timings?: SessionTimings;
+}
+
+export function AuthSession({ children, timings }: AuthSessionProps): ReactNode {
   const client = useApolloClient();
   const store = useStore();
 

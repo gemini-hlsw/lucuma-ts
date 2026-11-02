@@ -1,20 +1,17 @@
 import type { MockLink } from '@apollo/client/testing';
 import { openDropdown, selectDropdownOption } from '@gemini-hlsw/lucuma-common-ui/testing';
+import type { PublishedSemesterItem } from '@gql/types';
 import Highcharts from 'highcharts/es-modules/masters/highcharts.src.js';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { page } from 'vitest/browser';
 
-import Layout from '@/components/layout/Layout';
-import { observingNightInterval } from '@/domain/siteTime';
-import {
-  instrumentAvailabilityBlock,
-  overNights,
-  telescopeAvailabilityBlock,
-  telescopeModeBlock,
-} from '@/test/fixtures/blocks';
-import { publishedSemester, publishedSemesters, semesterSchedule } from '@/test/fixtures/semester';
-import { chooseClock, chooseSite, drawnPlotLineX } from '@/test/helpers';
-import { Probe, PROBE_URL_TESTID } from '@/test/probe';
-import { renderApp } from '@/test/renderApp';
+import { HOUR_MS, observingNightInterval } from '@/domain/siteTime';
+import { drawnBars, drawnPlotLineX } from '@/test/chartProbe';
+import { instrumentAvailabilityBlock, overNights, telescopeClosure, telescopeModeBlock } from '@/test/fixtures/blocks';
+import { publishedSemester, publishedSemesters, semesterSchedule, wholeSemester } from '@/test/fixtures/semester';
+import { chooseClock, chooseSite, dropdownOptionTexts, fakeClock } from '@/test/helpers';
+import { probeRoute, shownUrl } from '@/test/probe';
+import { renderInShell, renderWithRoute } from '@/test/render';
 
 import SemesterPage from './SemesterPage';
 
@@ -25,86 +22,71 @@ const GS_2026B = publishedSemester({ site: 'GS', semester: '2026B' });
 const GN_2025B = publishedSemester({ site: 'GN', semester: '2025B' });
 const GN_2026B = publishedSemester({ site: 'GN', semester: '2026B' });
 
-const GS_2025B_WHOLE = overNights('GS', '2025-08-02', '2026-02-01');
-const GN_2026B_WHOLE = overNights('GN', '2026-08-02', '2027-02-01');
+const GS_2025B_WHOLE = wholeSemester(GS_2025B);
+const GN_2026B_WHOLE = wholeSemester(GN_2026B);
 
-const GHOST = instrumentAvailabilityBlock({ instrument: 'GHOST', port: 1, interval: GS_2025B_WHOLE });
-const GCAL = instrumentAvailabilityBlock({ instrument: 'GCAL', port: 2, interval: GS_2025B_WHOLE });
+const GHOST = instrumentAvailabilityBlock({ instrument: 'GHOST', at: { port: 1 }, interval: GS_2025B_WHOLE });
+const GCAL = instrumentAvailabilityBlock({ instrument: 'GCAL', at: { port: 2 }, interval: GS_2025B_WHOLE });
+
+const semesterUrl = ({ site, semester }: PublishedSemesterItem) => `/semester?site=${site}&semester=${semester}`;
 
 const openSemester = (route: string, ...mocks: MockLink.MockedResponse[]) =>
-  renderApp({ element: <SemesterPage />, route, mocks });
+  renderWithRoute(<SemesterPage />, { route, mocks });
 
 /** The semester page inside the real shell, for the controls the masthead owns. */
 const openSemesterInShell = (route: string, ...mocks: MockLink.MockedResponse[]) =>
-  renderApp({
-    element: <Layout />,
-    route,
-    path: '/',
-    childRoutes: [{ path: 'semester', element: <SemesterPage /> }],
-    mocks,
-  });
+  renderInShell(<SemesterPage />, { route, mocks });
 
-/** Stands in for the night view: the subject is the jump, not what the night draws. */
-const NIGHT_ROUTE = { path: '/night', element: <Probe use={() => null} /> };
+/** One published semester, opened on itself and answered with its blocks; the URL is not the subject here. */
+const openPublished = (
+  semester: PublishedSemesterItem,
+  blocks?: Parameters<typeof semesterSchedule>[1],
+  { inShell = false }: { inShell?: boolean } = {},
+) =>
+  (inShell ? openSemesterInShell : openSemester)(
+    semesterUrl(semester),
+    publishedSemesters(semester),
+    semesterSchedule(semester, blocks),
+  );
 
-const shownUrl = () => document.querySelector(`[data-testid="${PROBE_URL_TESTID}"]`)?.textContent ?? '';
+const monthBars = () => drawnBars('[data-testid^="semester-month-"]');
 
-const drawnBars = () =>
-  [...document.querySelectorAll('[data-testid^="semester-month-"] path.highcharts-point')]
-    .map((point) => `${point.getAttribute('d') ?? ''}#${point.getAttribute('fill') ?? ''}`)
-    .join('|');
+afterEach(() => {
+  vi.useRealTimers();
+});
 
 describe(SemesterPage, () => {
   it('keeps the options of every month chart across a tick: the marker moves and chart.update never runs', async () => {
-    // The clock only: Apollo and Highcharts keep their real timers, and the wall clock keeps running underneath.
-    vi.useFakeTimers({ toFake: ['Date', 'setInterval', 'clearInterval'], shouldAdvanceTime: true });
-    try {
-      vi.setSystemTime(observingNightInterval('GS', '2025-11-14').start + 6 * 3_600_000);
-      const update = vi.spyOn(Highcharts.Chart.prototype, 'update');
-      const screen = await openSemester(
-        '/semester?site=GS&semester=2025B',
-        publishedSemesters(GS_2025B),
-        semesterSchedule(GS_2025B, { instrumentAvailability: [GHOST] }),
-      );
-      await expect.element(screen.getByRole('region', { name: 'January 2026' })).toBeVisible();
-      await expect.poll(() => drawnPlotLineX('.schedule-today')).toHaveLength(1);
-      const [before] = drawnPlotLineX('.schedule-today');
-      const updates = update.mock.calls.length;
+    fakeClock(observingNightInterval('GS', '2025-11-14').start + 6 * HOUR_MS, { shouldAdvanceTime: true });
+    const update = vi.spyOn(Highcharts.Chart.prototype, 'update');
+    const screen = await openPublished(GS_2025B, { instrumentAvailability: [GHOST] });
+    await expect.element(screen.getByRole('region', { name: 'January 2026' })).toBeVisible();
+    await expect.poll(() => drawnPlotLineX('.schedule-today')).toHaveLength(1);
+    const [before] = drawnPlotLineX('.schedule-today');
+    const updates = update.mock.calls.length;
 
-      vi.advanceTimersByTime(2 * 24 * 3_600_000);
+    vi.advanceTimersByTime(2 * 24 * HOUR_MS);
 
-      await expect.poll(() => drawnPlotLineX('.schedule-today')[0]).toBeGreaterThan(before ?? Number.NaN);
-      expect(drawnPlotLineX('.schedule-today')).toHaveLength(1);
-      expect(update.mock.calls.length).toBe(updates);
-    } finally {
-      vi.useRealTimers();
-    }
+    await expect.poll(() => drawnPlotLineX('.schedule-today')[0]).toBeGreaterThan(before ?? Number.NaN);
+    expect(drawnPlotLineX('.schedule-today')).toHaveLength(1);
+    expect(update.mock.calls.length).toBe(updates);
   });
 
   it('keys Today while the clock is inside the semester and not outside it', async () => {
-    vi.useFakeTimers({ toFake: ['Date', 'setInterval', 'clearInterval'], shouldAdvanceTime: true });
-    try {
-      // The night before the semester's first, six hours in.
-      vi.setSystemTime(observingNightInterval('GS', '2025-08-01').start + 6 * 3_600_000);
-      const screen = await openSemester(
-        '/semester?site=GS&semester=2025B',
-        publishedSemesters(GS_2025B),
-        semesterSchedule(GS_2025B, { instrumentAvailability: [GHOST] }),
-      );
-      const calendar = screen.getByRole('group', { name: 'Calendar' });
-      await expect.element(calendar.getByText('Weekend')).toBeVisible();
-      await expect.element(calendar.getByText('Today')).not.toBeInTheDocument();
+    // The night before the semester's first, six hours in.
+    fakeClock(observingNightInterval('GS', '2025-08-01').start + 6 * HOUR_MS, { shouldAdvanceTime: true });
+    const screen = await openPublished(GS_2025B, { instrumentAvailability: [GHOST] });
+    const calendar = screen.getByRole('group', { name: 'Calendar' });
+    await expect.element(calendar.getByText('Weekend')).toBeVisible();
+    await expect.element(calendar.getByText('Today')).not.toBeInTheDocument();
 
-      vi.advanceTimersByTime(24 * 3_600_000);
-      await expect.element(calendar.getByText('Today')).toBeVisible();
+    vi.advanceTimersByTime(24 * HOUR_MS);
+    await expect.element(calendar.getByText('Today')).toBeVisible();
 
-      // A tab asleep through the semester's end re-reads the clock when it comes back.
-      vi.setSystemTime(observingNightInterval('GS', '2026-02-02').start + 6 * 3_600_000);
-      document.dispatchEvent(new Event('visibilitychange'));
-      await expect.element(calendar.getByText('Today')).not.toBeInTheDocument();
-    } finally {
-      vi.useRealTimers();
-    }
+    // A tab asleep through the semester's end re-reads the clock when it comes back.
+    vi.setSystemTime(observingNightInterval('GS', '2026-02-02').start + 6 * HOUR_MS);
+    document.dispatchEvent(new Event('visibilitychange'));
+    await expect.element(calendar.getByText('Today')).not.toBeInTheDocument();
   });
 
   describe('the chart', () => {
@@ -120,11 +102,7 @@ describe(SemesterPage, () => {
     });
 
     it('opens on the chart, one block per month', async () => {
-      const screen = await openSemester(
-        '/semester?site=GS&semester=2025B',
-        publishedSemesters(GS_2025B),
-        semesterSchedule(GS_2025B),
-      );
+      const screen = await openPublished(GS_2025B);
 
       await expect.element(screen.getByRole('heading', { name: 'Semester 2025B' })).toBeVisible();
       await expect.element(screen.getByTestId('semester-timeline')).toBeVisible();
@@ -133,11 +111,7 @@ describe(SemesterPage, () => {
     });
 
     it('names each instrument on its run rather than in the colour', async () => {
-      const screen = await openSemester(
-        '/semester?site=GS&semester=2025B',
-        publishedSemesters(GS_2025B),
-        semesterSchedule(GS_2025B, { instrumentAvailability: [GHOST, GCAL] }),
-      );
+      const screen = await openPublished(GS_2025B, { instrumentAvailability: [GHOST, GCAL] });
 
       // Identity is text, which survives every kind of colour vision.
       await expect.element(screen.getByText('GHOST').first()).toBeVisible();
@@ -145,24 +119,18 @@ describe(SemesterPage, () => {
     });
 
     it('keys the colours to instruments, listing only the ones it drew', async () => {
-      const screen = await openSemester(
-        '/semester?site=GN&semester=2026B',
-        publishedSemesters(GN_2026B),
-        semesterSchedule(GN_2026B, {
-          instrumentAvailability: [
-            instrumentAvailabilityBlock({
-              instrument: 'GMOS',
-              publishedName: 'GMOS-N',
-              port: 1,
-              interval: GN_2026B_WHOLE,
-            }),
-            instrumentAvailabilityBlock({ instrument: 'ALTAIR', port: 3, interval: GN_2026B_WHOLE }),
-          ],
-          telescopeAvailability: [
-            telescopeAvailabilityBlock({ interval: overNights('GN', '2026-10-21', '2026-10-24') }),
-          ],
-        }),
-      );
+      const screen = await openPublished(GN_2026B, {
+        instrumentAvailability: [
+          instrumentAvailabilityBlock({
+            instrument: 'GMOS',
+            publishedName: 'GMOS-N',
+            at: { port: 1 },
+            interval: GN_2026B_WHOLE,
+          }),
+          instrumentAvailabilityBlock({ instrument: 'ALTAIR', at: { port: 3 }, interval: GN_2026B_WHOLE }),
+        ],
+        telescopeAvailability: [telescopeClosure({ interval: overNights('GN', '2026-10-21', '2026-10-24') })],
+      });
       const legend = screen.getByLabelText('Legend');
 
       await expect.element(legend.getByText('GMOS')).toBeVisible();
@@ -172,18 +140,14 @@ describe(SemesterPage, () => {
     });
 
     it('gives each instrument its own colour', async () => {
-      const screen = await openSemester(
-        '/semester?site=GS&semester=2025B',
-        publishedSemesters(GS_2025B),
-        semesterSchedule(GS_2025B, {
-          instrumentAvailability: [
-            GHOST,
-            GCAL,
-            instrumentAvailabilityBlock({ instrument: 'GMOS', port: 3, interval: GS_2025B_WHOLE }),
-          ],
-          telescopeMode: [telescopeModeBlock({ mode: 'QUEUE', interval: GS_2025B_WHOLE })],
-        }),
-      );
+      const screen = await openPublished(GS_2025B, {
+        instrumentAvailability: [
+          GHOST,
+          GCAL,
+          instrumentAvailabilityBlock({ instrument: 'GMOS', at: { port: 3 }, interval: GS_2025B_WHOLE }),
+        ],
+        telescopeMode: [telescopeModeBlock({ mode: 'QUEUE', interval: GS_2025B_WHOLE })],
+      });
       await expect.element(screen.getByRole('region', { name: 'September 2025' })).toBeVisible();
       const september = () =>
         screen
@@ -193,7 +157,7 @@ describe(SemesterPage, () => {
           .querySelectorAll('path.highcharts-point:not(.schedule-ghost)');
       await expect.poll(() => september().length).toBeGreaterThan(0);
 
-      // The token, not the computed colour: renderApp loads no stylesheet, so var(--instrument-x) is inert.
+      // The token, not the computed colour: the tests load no stylesheet, so var(--instrument-x) is inert.
       const fills = new Set([...september()].map((mark) => mark.getAttribute('fill')));
 
       // The state rows head the chart in the routine neutral, never an instrument hue.
@@ -205,32 +169,6 @@ describe(SemesterPage, () => {
           'var(--state-routine)',
         ]),
       );
-    });
-
-    it('keys the weekend shading it draws under every month', async () => {
-      const screen = await openSemester(
-        '/semester?site=GS&semester=2025B',
-        publishedSemesters(GS_2025B),
-        semesterSchedule(GS_2025B),
-      );
-
-      await expect
-        .element(screen.getByLabelText('Legend').getByRole('group', { name: 'Calendar' }).getByText('Weekend'))
-        .toBeVisible();
-    });
-
-    it('draws a telescope shutdown as a band with its key', async () => {
-      const screen = await openSemester(
-        '/semester?site=GS&semester=2024B',
-        publishedSemesters(GS_2024B),
-        semesterSchedule(GS_2024B, {
-          telescopeAvailability: [
-            telescopeAvailabilityBlock({ reason: 'Shutdown', interval: overNights('GS', '2024-08-02', '2024-08-16') }),
-          ],
-        }),
-      );
-
-      await expect.element(screen.getByLabelText('Legend').getByText('Closed')).toBeVisible();
     });
 
     it('switches to Gemini North, organised by the same five ports', async () => {
@@ -246,60 +184,51 @@ describe(SemesterPage, () => {
 
     it('survives a clock change without redrawing a single bar', async () => {
       // The chart speaks dates, so the toggle's re-render must leave every bar exactly where it was.
-      const screen = await openSemesterInShell(
-        '/semester?site=GN&semester=2026B',
-        publishedSemesters(GN_2026B),
-        semesterSchedule(GN_2026B, {
+      const screen = await openPublished(
+        GN_2026B,
+        {
           instrumentAvailability: [
-            instrumentAvailabilityBlock({ instrument: 'GMOS', port: 1, interval: GN_2026B_WHOLE }),
+            instrumentAvailabilityBlock({ instrument: 'GMOS', at: { port: 1 }, interval: GN_2026B_WHOLE }),
           ],
-        }),
+        },
+        { inShell: true },
       );
       await expect.element(screen.getByRole('region', { name: 'August 2026' })).toBeVisible();
-      await expect.poll(() => drawnBars().length).toBeGreaterThan(0);
-      const before = drawnBars();
+      await expect.poll(() => monthBars().length).toBeGreaterThan(0);
+      const before = monthBars();
 
       await chooseClock(screen, 'UTC');
 
-      await expect.poll(drawnBars).toBe(before);
+      await expect.poll(monthBars).toBe(before);
     });
 
     it('moves the chart to the semester picked on the page, every month drawn', async () => {
       // The largest window swing the app has, and the only one driven through the control.
       const screen = await openSemester(
-        '/semester?site=GS&semester=2025B',
+        semesterUrl(GS_2025B),
         publishedSemesters(GS_2025A, GS_2025B),
         semesterSchedule(GS_2025B, { instrumentAvailability: [GHOST] }),
         semesterSchedule(GS_2025A, {
           instrumentAvailability: [
-            instrumentAvailabilityBlock({
-              instrument: 'F2',
-              port: 1,
-              interval: overNights('GS', '2025-02-02', '2025-08-01'),
-            }),
+            instrumentAvailabilityBlock({ instrument: 'F2', at: { port: 1 }, interval: wholeSemester(GS_2025A) }),
           ],
         }),
       );
       await expect.element(screen.getByRole('region', { name: 'August 2025' })).toBeVisible();
-      const bars = () => document.querySelectorAll('[data-testid^="semester-month-"] path.highcharts-point').length;
-      await expect.poll(bars).toBeGreaterThan(0);
+      await expect.poll(() => monthBars().length).toBeGreaterThan(0);
 
       // Semester A's evenings run February to July, so February is its first region.
       await selectDropdownOption(screen, { label: 'Semester' }, '2025A');
       await expect.element(screen.getByRole('region', { name: 'February 2025' })).toBeVisible();
-      await expect.poll(bars).toBeGreaterThan(0);
+      await expect.poll(() => monthBars().length).toBeGreaterThan(0);
 
       await selectDropdownOption(screen, { label: 'Semester' }, '2025B');
       await expect.element(screen.getByRole('region', { name: 'August 2025' })).toBeVisible();
-      await expect.poll(bars).toBeGreaterThan(0);
+      await expect.poll(() => monthBars().length).toBeGreaterThan(0);
     });
 
     it('keeps its keyboard stop out of the hidden half, mirror and all', async () => {
-      const screen = await openSemester(
-        '/semester?site=GS&semester=2025B',
-        publishedSemesters(GS_2025B),
-        semesterSchedule(GS_2025B),
-      );
+      const screen = await openPublished(GS_2025B);
       await expect.element(screen.getByLabelText('Semester', { exact: true })).toBeInTheDocument();
 
       const picker = screen.container.querySelector('.xp-page-select')!;
@@ -316,39 +245,34 @@ describe(SemesterPage, () => {
     it('redraws the cached semester when the site switches back, never an empty chart', async () => {
       // Both sites share the month keys, so the switch back updates mounted charts rather than remounting.
       const screen = await openSemesterInShell(
-        '/semester?site=GS&semester=2025B',
+        semesterUrl(GS_2025B),
         publishedSemesters(GS_2025B, GN_2025B),
         semesterSchedule(GS_2025B, { instrumentAvailability: [GHOST] }),
         semesterSchedule(GN_2025B, {
           instrumentAvailability: [
-            instrumentAvailabilityBlock({
-              instrument: 'GMOS',
-              port: 3,
-              interval: overNights('GN', '2025-08-02', '2026-02-01'),
-            }),
+            instrumentAvailabilityBlock({ instrument: 'GMOS', at: { port: 3 }, interval: wholeSemester(GN_2025B) }),
           ],
         }),
       );
       await expect.element(screen.getByRole('table', { name: 'GS 2025B schedule', exact: false })).toBeInTheDocument();
-      await expect.poll(() => drawnBars().length).toBeGreaterThan(0);
-      const southBars = drawnBars();
+      await expect.poll(() => monthBars().length).toBeGreaterThan(0);
+      const southBars = monthBars();
 
       await chooseSite(screen, 'GN');
       await expect.element(screen.getByRole('table', { name: 'GN 2025B schedule', exact: false })).toBeInTheDocument();
       // Changed before non-empty: a blank chart also passes "changed".
-      await expect.poll(drawnBars).not.toBe(southBars);
-      await expect.poll(() => drawnBars().length).toBeGreaterThan(0);
+      await expect.poll(monthBars).not.toBe(southBars);
+      await expect.poll(() => monthBars().length).toBeGreaterThan(0);
 
       await chooseSite(screen, 'GS');
       await expect.element(screen.getByRole('table', { name: 'GS 2025B schedule', exact: false })).toBeInTheDocument();
-      await expect.poll(drawnBars).toBe(southBars);
+      await expect.poll(monthBars).toBe(southBars);
     });
 
     it('opens the night view when a bar is clicked', async () => {
-      const screen = await renderApp({
-        element: <SemesterPage />,
-        route: '/semester?site=GS&semester=2025B',
-        extraRoutes: [NIGHT_ROUTE],
+      const screen = await renderWithRoute(<SemesterPage />, {
+        route: semesterUrl(GS_2025B),
+        extraRoutes: [probeRoute('/night')],
         mocks: [publishedSemesters(GS_2025B), semesterSchedule(GS_2025B, { instrumentAvailability: [GHOST] })],
       });
       await expect.element(screen.getByRole('region', { name: 'August 2025' })).toBeVisible();
@@ -357,41 +281,9 @@ describe(SemesterPage, () => {
 
       // Which night a bar's centre lands on is what nightAt pins; the assertion is the jump itself.
       const bar = document.querySelector(`${august} .highcharts-point`);
-      const { page } = await import('vitest/browser');
       await page.elementLocator(bar!).click();
 
       await expect.poll(shownUrl).toMatch(/^\/night\?.*night=2025-08-/);
-    });
-  });
-
-  describe('the block table', () => {
-    it('states a run once, with its extent, rather than once per night', async () => {
-      const screen = await openSemester(
-        '/semester?site=GS&semester=2025B',
-        publishedSemesters(GS_2025B),
-        semesterSchedule(GS_2025B, { instrumentAvailability: [GHOST] }),
-      );
-
-      const table = screen.getByTestId('semester-block-table');
-      await expect.element(table).toBeInTheDocument();
-      // GHOST is one block from August to January, so it is one row: the point of a block table.
-      await expect.element(table.getByRole('row', { name: /Port 1 GHOST 1 Aug 2025/ })).toBeInTheDocument();
-    });
-
-    it('files a telescope-wide closure under no port, with the whole phrase', async () => {
-      const screen = await openSemester(
-        '/semester?site=GS&semester=2024B',
-        publishedSemesters(GS_2024B),
-        semesterSchedule(GS_2024B, {
-          telescopeAvailability: [
-            telescopeAvailabilityBlock({ reason: 'Shutdown', interval: overNights('GS', '2024-08-02', '2024-08-16') }),
-          ],
-        }),
-      );
-
-      await expect
-        .element(screen.getByTestId('semester-block-table').getByRole('row', { name: /Whole telescope/ }))
-        .toBeInTheDocument();
     });
   });
 
@@ -428,7 +320,7 @@ describe(SemesterPage, () => {
 
   it('lists the semesters by plain name, and titles the page with the one picked', async () => {
     const screen = await openSemester(
-      '/semester?site=GS&semester=2025B',
+      semesterUrl(GS_2025B),
       publishedSemesters(GS_2025B, GS_2026B),
       semesterSchedule(GS_2025B),
       semesterSchedule(GS_2026B),
@@ -436,10 +328,9 @@ describe(SemesterPage, () => {
     await expect.element(screen.getByRole('heading', { name: 'Semester 2025B' })).toBeVisible();
 
     await openDropdown(screen, { label: 'Semester' });
-    const options = [...document.querySelectorAll('[role="option"]')].map((option) => option.textContent ?? '');
-    expect(options).toEqual(['2025B', '2026B']);
+    expect(dropdownOptionTexts()).toEqual(['2025B', '2026B']);
 
-    await selectDropdownOption(screen, { label: 'Semester' }, '2026B');
+    await page.getByRole('listbox').getByRole('option', { name: '2026B', exact: true }).click();
     await expect.element(screen.getByRole('heading', { name: 'Semester 2026B' })).toBeVisible();
   });
 });

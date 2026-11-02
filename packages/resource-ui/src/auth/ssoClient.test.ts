@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { CURRENT_ENV } from '@/app/environment';
+import { fakeTimeouts } from '@/test/helpers';
 
 import { SESSION_TIMINGS } from './session';
 import { refreshSession, signInUrl } from './ssoClient';
@@ -110,7 +111,7 @@ describe(refreshSession, () => {
   });
 
   it('gives SSO the full 10 s by default', async () => {
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    fakeTimeouts();
     const fetchMock = hang();
 
     const state = settling(refreshSession(new AbortController().signal));

@@ -48,7 +48,8 @@ export const firstEveningDate = (site: Site, interval: Interval): string =>
 export const lastEveningDate = (site: Site, interval: Interval): string =>
   addDays(observingNightOf(site, interval.end - 1), -1);
 
-export const DAY_MS = 24 * 60 * 60 * 1000;
+export const HOUR_MS = 3_600_000;
+export const DAY_MS = 24 * HOUR_MS;
 
 /** Counted over evening dates, not elapsed hours: a night is 23 or 25 hours across a GS DST change. */
 export const nightCount = (site: Site, interval: Interval): number => {

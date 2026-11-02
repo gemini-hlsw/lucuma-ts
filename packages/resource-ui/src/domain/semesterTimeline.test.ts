@@ -1,41 +1,18 @@
 import { describe, expect, it } from 'vitest';
 
-import { scheduleOf } from '@/test/fixtures/domain';
+import {
+  domainInstrumentBlock,
+  domainTelescopeClosure,
+  nightsSpan,
+  PORT_ROW_LABELS,
+  scheduleOf,
+} from '@/test/fixtures/domain';
 
 import { clip } from './interval';
-import { portRowLabel, TELESCOPE_PORTS } from './ports';
 import { buildSemesterTimeline } from './semesterTimeline';
 import { observingNightInterval } from './siteTime';
 import { subtract } from './timeline';
-import type { InstrumentAvailabilityBlock, Schedule, TelescopeAvailabilityBlock } from './types';
-
-const night = (label: string) => observingNightInterval('GS', label);
-
-/** [start of the night labelled `from`, end of the night labelled `to`). */
-const span = (from: string, to: string) => ({ start: night(from).start, end: night(to).end });
-
-/** Every month draws the telescope's ports, whatever the semester holds. */
-const ROWS = TELESCOPE_PORTS.map(portRowLabel);
-
-const instrumentBlock = (
-  over: Partial<InstrumentAvailabilityBlock> & Pick<InstrumentAvailabilityBlock, 'id' | 'port' | 'interval'>,
-): InstrumentAvailabilityBlock => ({
-  instrument: 'GMOS',
-  publishedName: 'GMOS',
-  usage: 'SCIENCE',
-  place: null,
-  note: null,
-  ...over,
-});
-
-const telescopeBlock = (
-  over: Partial<TelescopeAvailabilityBlock> & Pick<TelescopeAvailabilityBlock, 'id' | 'interval'>,
-): TelescopeAvailabilityBlock => ({
-  availability: 'CLOSED',
-  port: null,
-  reason: null,
-  ...over,
-});
+import type { Schedule } from './types';
 
 const build = (over: Partial<Schedule> = {}) =>
   buildSemesterTimeline({ site: 'GS', firstNight: '2026-08-02', lastNight: '2027-02-01', schedule: scheduleOf(over) });
@@ -67,13 +44,18 @@ describe('interval helpers', () => {
 
 describe('closures at Gemini South', () => {
   // The sheet spells the phrase down the port rows one word at a time, plus a telescope-wide record.
-  const SHUTDOWN = span('2026-08-02', '2026-08-07');
+  const SHUTDOWN = nightsSpan('GS', '2026-08-02', '2026-08-07');
   const PUBLISHED_CLOSURES = [
-    telescopeBlock({ id: 'wide', port: null, interval: SHUTDOWN, reason: 'Telescope Shutdown A&G Maintenance' }),
-    telescopeBlock({ id: 'c1', port: 1, interval: SHUTDOWN, reason: null }),
-    telescopeBlock({ id: 'c2', port: 2, interval: SHUTDOWN, reason: 'Telescope' }),
-    telescopeBlock({ id: 'c3', port: 3, interval: SHUTDOWN, reason: 'Shutdown' }),
-    telescopeBlock({ id: 'c5', port: 5, interval: SHUTDOWN, reason: 'Maintenance' }),
+    domainTelescopeClosure({
+      id: 'wide',
+      port: null,
+      interval: SHUTDOWN,
+      reason: 'Telescope Shutdown A&G Maintenance',
+    }),
+    domainTelescopeClosure({ id: 'c1', port: 1, interval: SHUTDOWN, reason: null }),
+    domainTelescopeClosure({ id: 'c2', port: 2, interval: SHUTDOWN, reason: 'Telescope' }),
+    domainTelescopeClosure({ id: 'c3', port: 3, interval: SHUTDOWN, reason: 'Shutdown' }),
+    domainTelescopeClosure({ id: 'c5', port: 5, interval: SHUTDOWN, reason: 'Maintenance' }),
   ];
 
   it('draws the telescope-wide closure once, as a band with the whole phrase', () => {
@@ -87,7 +69,7 @@ describe('closures at Gemini South', () => {
     const timeline = build({ telescopeAvailability: PUBLISHED_CLOSURES });
 
     // Port 2 says "Telescope" and Port 3 "Shutdown": per row that reads as though they were named so.
-    for (const row of ROWS) {
+    for (const row of PORT_ROW_LABELS) {
       expect(rowIn(timeline, 'August 2026', row)?.blocks).toEqual([]);
     }
   });
@@ -97,7 +79,12 @@ describe('closures at Gemini South', () => {
     const timeline = build({
       telescopeAvailability: [
         ...PUBLISHED_CLOSURES,
-        telescopeBlock({ id: 'ag', port: 4, interval: span('2026-08-02', '2027-02-01'), reason: 'A&G' }),
+        domainTelescopeClosure({
+          id: 'ag',
+          port: 4,
+          interval: nightsSpan('GS', '2026-08-02', '2027-02-01'),
+          reason: 'A&G',
+        }),
       ],
     });
     const august = rowIn(timeline, 'August 2026', 'Port 4');
@@ -115,19 +102,19 @@ describe('unknown bands', () => {
     // One row per port, so the named run keeps its whole span and the unknown keeps only its own.
     const timeline = build({
       instrumentAvailability: [
-        instrumentBlock({
+        domainInstrumentBlock({
           id: 'miq',
           port: 2,
           instrument: 'UNKNOWN',
           publishedName: 'Unknown',
-          interval: span('2026-09-25', '2026-10-22'),
+          interval: nightsSpan('GS', '2026-09-25', '2026-10-22'),
         }),
-        instrumentBlock({
+        domainInstrumentBlock({
           id: 'alopeke',
           port: 2,
           instrument: 'ALOPEKE',
           publishedName: "'Alopeke Run",
-          interval: span('2026-09-25', '2026-10-01'),
+          interval: nightsSpan('GS', '2026-09-25', '2026-10-01'),
         }),
       ],
     });
@@ -139,17 +126,16 @@ describe('unknown bands', () => {
     expect(september?.blocks.map((block) => block.label)).toEqual(["'Alopeke Run"]);
     // October holds the unknown's own remainder, starting where 'Alopeke ends.
     expect(october?.blocks.map((block) => block.label)).toEqual(['Unknown']);
-    expect(october?.blocks[0]?.fullInterval.start).toBe(night('2026-10-01').end);
+    expect(october?.blocks[0]?.fullInterval.start).toBe(observingNightInterval('GS', '2026-10-01').end);
   });
 });
 
 describe('months', () => {
-  const GHOST = instrumentBlock({
+  const GHOST = domainInstrumentBlock({
     id: 'ghost',
     port: 1,
     instrument: 'GHOST',
-    publishedName: 'GHOST',
-    interval: span('2026-08-08', '2027-02-01'),
+    interval: nightsSpan('GS', '2026-08-08', '2027-02-01'),
   });
 
   it('files a night under the month its evening falls in, as the sheet does', () => {
@@ -197,12 +183,12 @@ describe('the legend', () => {
   it('treats a published ENGINEERING run as an instrument, because the sheet does', () => {
     const timeline = build({
       instrumentAvailability: [
-        instrumentBlock({
+        domainInstrumentBlock({
           id: 'eng',
           port: 3,
           instrument: 'ENGINEERING',
           publishedName: 'Engineering',
-          interval: span('2026-10-05', '2026-10-09'),
+          interval: nightsSpan('GS', '2026-10-05', '2026-10-09'),
         }),
       ],
     });

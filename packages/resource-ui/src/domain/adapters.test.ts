@@ -1,17 +1,22 @@
+import type { InstrumentAvailabilityBlockItem, InstrumentLocationItem } from '@gql/types';
 import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
+
+import { instrumentAvailabilityBlock } from '@/test/fixtures/blocks';
+import { publishedSemester } from '@/test/fixtures/semester';
 
 import { toInstrumentAvailability, toPublishedSemesters } from './adapters';
 
-type Block = Parameters<typeof toInstrumentAvailability>[0][number];
-
-/** The warning dedupes on `publishedName` in a set nothing clears, so each test needs a fresh name. */
-const block = (location: Block['location'], publishedName = 'GMOS-S'): Block => ({
-  __typename: 'InstrumentAvailabilityBlock',
-  instrument: 'GMOS',
-  publishedName,
-  usage: 'SCIENCE',
-  note: null,
-  interval: { __typename: 'TimestampInterval', start: '2026-08-09T18:00:00Z', end: '2026-08-10T18:00:00Z' },
+/**
+ * Overrides `location` after the fixture because its `at` type refuses the PORT-with-null-port record under test.
+ * The warning dedupes on `publishedName` in a set nothing clears, so each test needs a fresh name.
+ */
+const block = (location: InstrumentLocationItem, publishedName = 'GMOS-S'): InstrumentAvailabilityBlockItem => ({
+  ...instrumentAvailabilityBlock({
+    instrument: 'GMOS',
+    publishedName,
+    interval: { __typename: 'TimestampInterval', start: '2026-08-09T18:00:00Z', end: '2026-08-10T18:00:00Z' },
+    at: { port: 1 },
+  }),
   location,
 });
 
@@ -75,20 +80,15 @@ describe(toInstrumentAvailability, () => {
   });
 });
 
-type SemesterEntry = Parameters<typeof toPublishedSemesters>[0][number];
-
-const semesterEntry = (nights: SemesterEntry['nights']): SemesterEntry => ({
-  __typename: 'PublishedSemester',
-  site: 'GS',
-  semester: '2025B',
-  nights,
-});
-
 describe(toPublishedSemesters, () => {
   it('reads the exclusive nights end as the last night before it', () => {
     // The exclusive end names the first uncovered date; passing it through adds a night that was never scheduled.
     const [semester] = toPublishedSemesters([
-      semesterEntry({ __typename: 'DateInterval', start: '2025-08-01', end: '2026-02-01' }),
+      publishedSemester({
+        site: 'GS',
+        semester: '2025B',
+        nights: { __typename: 'DateInterval', start: '2025-08-01', end: '2026-02-01' },
+      }),
     ]);
 
     expect(semester).toMatchObject({ firstNight: '2025-08-01', lastNight: '2026-01-31' });

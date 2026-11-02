@@ -9,14 +9,20 @@ import NightPage from '@/app/pages/NightPage';
 import { setLastSite } from '@/app/useLastSite';
 import orcidLogo from '@/assets/orcid-logo.svg';
 import { AuthSession } from '@/auth/AuthSession';
-import { SESSION_CHANNEL, SESSION_TIMINGS, SIGNED_OUT_MESSAGE, startSession } from '@/auth/session';
+import {
+  SESSION_CHANNEL,
+  SESSION_TIMINGS,
+  type SessionTimings,
+  SIGNED_OUT_MESSAGE,
+  startSession,
+} from '@/auth/session';
 import { signInUrl } from '@/auth/ssoClient';
-import { sessionCheckedAtom, setToken } from '@/components/atoms/auth';
-import { store } from '@/components/atoms/store';
+import { odbTokenAtom, sessionCheckedAtom, setToken } from '@/components/atoms/auth';
 import { ToastOutlet } from '@/components/ui/ToastOutlet';
+import { nightAxisLabels } from '@/test/chartProbe';
 import { nightSchedule } from '@/test/fixtures/night';
-import { chooseClock, chooseSite, nightAxisLabels, openAppMenu } from '@/test/helpers';
-import { renderApp, type RenderedApp } from '@/test/renderApp';
+import { chooseClock, chooseSite, clockChoice, fakeTimeouts, openAppMenu } from '@/test/helpers';
+import { renderInShell, type RenderResultWithRoute, renderWithRoute } from '@/test/render';
 import { ssoCall, ssoRefreshes, stubSso } from '@/test/sso';
 
 import Layout from './Layout';
@@ -29,10 +35,26 @@ const NAVBAR_WITH_TOASTS = (
   </>
 );
 
-const renderNavbar = async (route = '/') => renderApp({ element: NAVBAR_WITH_TOASTS, route, mocks: [] });
+type Session = [[typeof odbTokenAtom, string | null], [typeof sessionCheckedAtom, boolean]];
+const session = (token: string | null = null, checked = true): Session => [
+  [odbTokenAtom, token],
+  [sessionCheckedAtom, checked],
+];
+
+/** A function, so each token's `exp` counts from the moment the test asks for it. */
+const staffToken = () => fakeJwt(standardUser('staff'));
+
+const renderNavbar = async (route = '/') => renderWithRoute(NAVBAR_WITH_TOASTS, { route, initialValues: session() });
 
 const renderSignedIn = async () =>
-  renderApp({ element: NAVBAR_WITH_TOASTS, route: '/', token: fakeJwt(standardUser('staff')), mocks: [] });
+  renderWithRoute(NAVBAR_WITH_TOASTS, { route: '/', initialValues: session(staffToken()) });
+
+/** The bar under the real session keeper, so SSO's answers and other tabs' messages reach it. */
+const renderInSession = async (token = staffToken(), timings?: SessionTimings) =>
+  renderWithRoute(<AuthSession {...(timings ? { timings } : {})}>{NAVBAR_WITH_TOASTS}</AuthSession>, {
+    route: '/',
+    initialValues: session(token),
+  });
 
 const NIGHT = '2026-11-14';
 
@@ -40,13 +62,7 @@ const NIGHT = '2026-11-14';
 const NIGHT_SCHEDULE = nightSchedule({ site: 'GS', night: NIGHT });
 
 const openNightInShell = async () =>
-  renderApp({
-    element: <Layout />,
-    route: `/night?site=GS&night=${NIGHT}`,
-    path: '/',
-    childRoutes: [{ path: 'night', element: <NightPage /> }],
-    mocks: [NIGHT_SCHEDULE],
-  });
+  renderInShell(<NightPage />, { route: `/night?site=GS&night=${NIGHT}`, mocks: [NIGHT_SCHEDULE] });
 
 const SESSION_ENDED = 'Your session ended';
 const LOGOUT_UNREACHABLE = 'Logout did not reach SSO';
@@ -84,19 +100,15 @@ const noticesShowing = (): string[] =>
     .filter((text) => text !== FLUSH.summary);
 
 /** Once this toast renders, so has every update queued before it, including a show from a promise already settled, whose callbacks run before React renders. */
-async function afterPendingWork(): Promise<void> {
-  const toast = store.get(toastAtom)!;
+async function afterPendingWork(screen: RenderResultWithRoute): Promise<void> {
+  const toast = screen.store.get(toastAtom)!;
   toast.show(FLUSH);
   await expect.element(toastNamed(FLUSH.summary)).toBeInTheDocument();
   toast.remove(FLUSH);
 }
 
-const fakeTimeouts = (): void => {
-  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
-};
-
 /** Logs out without polling for the menu, so it does not mix polling with fake timers. */
-const logOutAtOnce = async (screen: RenderedApp): Promise<void> => {
+const logOutAtOnce = async (screen: RenderResultWithRoute): Promise<void> => {
   await screen.getByRole('button', { name: 'Menu' }).click();
   await page.getByRole('menuitem', { name: 'Logout' }).click();
 };
@@ -110,22 +122,23 @@ const settleOverlay = async (): Promise<void> => {
 const MENU_CLOSERS: readonly [string, (screen: LocatorSelectors) => Promise<void>][] = [
   ['Escape', () => userEvent.keyboard('{Escape}')],
   ['a click outside', (screen) => userEvent.click(screen.getByTestId('account-control'))],
-  ['choosing an item', () => page.getByRole('menuitemradio', { name: 'Clock: UTC', exact: true }).click()],
+  ['choosing an item', () => clockChoice('UTC').click()],
 ];
 
-describe(Navbar, () => {
-  afterEach(() => {
-    vi.useRealTimers();
-  });
+afterEach(() => {
+  vi.useRealTimers();
+});
 
+describe(Navbar, () => {
   it('renders the Resource wordmark', async () => {
     const screen = await renderNavbar();
 
     await expect.element(screen.getByText('Resource')).toBeVisible();
   });
 
-  it('links the wordmark to tonight, dropping the deep-linked night', async () => {
+  it('should link the wordmark to tonight, dropping the night, page state and clock, when the reader is deep-linked', async () => {
     const screen = await renderNavbar('/semester?site=GS&night=2026-11-14&q=GPI');
+    await chooseClock(screen, 'UTC');
 
     const brand = screen.getByRole('link', { name: 'Resource', exact: false });
     await expect.element(brand).toHaveAttribute('href', '/night?site=GS');
@@ -144,7 +157,7 @@ describe(Navbar, () => {
     await expect.element(first.getByRole('button', { name: 'Gemini North' })).toHaveAttribute('aria-pressed', 'true');
 
     await chooseSite(first, 'GS');
-    await expect.poll(() => first.router.state.location.search).toContain('site=GS');
+    await expect.poll(() => first.router.location.search).toContain('site=GS');
     await first.unmount();
 
     const second = await renderNavbar('/night');
@@ -155,21 +168,21 @@ describe(Navbar, () => {
   it('writes the site it resolved into the URL, so Back and a copied link both carry it', async () => {
     const screen = await renderNavbar('/night');
 
-    await expect.poll(() => screen.router.state.location.search).toBe('?site=GN');
-    expect(screen.router.state.historyAction).toBe('REPLACE');
+    await expect.poll(() => screen.router.location.search).toBe('?site=GN');
+    expect(screen.router.navigationType).toBe('REPLACE');
 
     await chooseSite(screen, 'GS');
-    await expect.poll(() => screen.router.state.location.search).toBe('?site=GS');
+    await expect.poll(() => screen.router.location.search).toBe('?site=GS');
 
     await screen.router.navigate(-1);
-    await expect.poll(() => screen.router.state.location.search).toBe('?site=GN');
+    await expect.poll(() => screen.router.location.search).toBe('?site=GN');
     await expect.element(screen.getByRole('button', { name: 'Gemini North' })).toHaveAttribute('aria-pressed', 'true');
   });
 
   it('corrects a site the URL names but cannot mean, rather than rendering one and saying another', async () => {
     const screen = await renderNavbar('/night?site=gs');
 
-    await expect.poll(() => screen.router.state.location.search).toBe('?site=GN');
+    await expect.poll(() => screen.router.location.search).toBe('?site=GN');
     await expect.element(screen.getByRole('button', { name: 'Gemini North' })).toHaveAttribute('aria-pressed', 'true');
   });
 
@@ -200,7 +213,7 @@ describe(Navbar, () => {
 
     await openAppMenu(screen);
 
-    const radio = page.getByRole('menuitemradio', { name: 'Clock: UTC', exact: true }).element();
+    const radio = clockChoice('UTC').element();
     expect(radio.querySelectorAll('a[href], button, input, [tabindex]:not([tabindex="-1"])')).toHaveLength(0);
   });
 
@@ -210,7 +223,7 @@ describe(Navbar, () => {
     screen.getByRole('button', { name: 'Gemini North' }).element().focus();
     await userEvent.keyboard('{Enter}');
 
-    await expect.poll(() => screen.router.state.location.search).toContain('site=GN');
+    await expect.poll(() => screen.router.location.search).toContain('site=GN');
   });
 
   it('offers no way to choose a backend - there is one, and it is not a setting', async () => {
@@ -223,12 +236,8 @@ describe(Navbar, () => {
   it('offers the clock in the menu, defaulting to the site clock', async () => {
     const screen = await renderNavbar();
     await openAppMenu(screen);
-    await expect
-      .element(page.getByRole('menuitemradio', { name: 'Clock: Site time', exact: true }))
-      .toHaveAttribute('aria-checked', 'true');
-    await expect
-      .element(page.getByRole('menuitemradio', { name: 'Clock: UTC', exact: true }))
-      .toHaveAttribute('aria-checked', 'false');
+    await expect.element(clockChoice('Site time')).toHaveAttribute('aria-checked', 'true');
+    await expect.element(clockChoice('UTC')).toHaveAttribute('aria-checked', 'false');
   });
 
   it('keeps the clock out of the bar - it is a habit, not a selection', async () => {
@@ -260,7 +269,7 @@ describe(Navbar, () => {
     await expect.poll(() => nightAxisLabels()[0]).toBe('14:00');
 
     await openAppMenu(screen);
-    const utc = page.getByRole('menuitemradio', { name: 'Clock: UTC', exact: true });
+    const utc = clockChoice('UTC');
     const menuList = () => document.querySelector('ul[role="menu"]');
     await userEvent.keyboard('{ArrowDown}{ArrowDown}');
     expect(menuList()?.getAttribute('aria-activedescendant')).toBe(utc.element().id);
@@ -269,16 +278,7 @@ describe(Navbar, () => {
 
     await expect.poll(() => nightAxisLabels()[0]).toBe('18:00');
     await openAppMenu(screen);
-    await expect
-      .element(page.getByRole('menuitemradio', { name: 'Clock: UTC', exact: true }))
-      .toHaveAttribute('aria-checked', 'true');
-  });
-
-  it('leaves the clock out of the way home - the browser remembers it, the link does not', async () => {
-    const screen = await renderNavbar('/semester?site=GS&night=2026-11-14');
-
-    const brand = screen.getByRole('link', { name: 'Resource', exact: false });
-    await expect.element(brand).toHaveAttribute('href', '/night?site=GS');
+    await expect.element(clockChoice('UTC')).toHaveAttribute('aria-checked', 'true');
   });
 
   it('remembers the clock across a remount, which is what a habit means', async () => {
@@ -289,9 +289,7 @@ describe(Navbar, () => {
     const second = await renderNavbar();
     await openAppMenu(second);
 
-    await expect
-      .element(page.getByRole('menuitemradio', { name: 'Clock: UTC', exact: true }))
-      .toHaveAttribute('aria-checked', 'true');
+    await expect.element(clockChoice('UTC')).toHaveAttribute('aria-checked', 'true');
   });
 
   it('carries no environment badge - the banner above the shell says it instead', async () => {
@@ -377,7 +375,7 @@ describe(Navbar, () => {
   it.each([['{Tab}'], ['{Shift>}{Tab}{/Shift}']])(
     'closes the menu on %s and hands focus back to the button, so the tab sequence continues from it',
     async (keys) => {
-      const screen = await renderApp({ element: <Layout />, route: '/night?site=GS', mocks: [] });
+      const screen = await renderWithRoute(<Layout />, { route: '/night?site=GS' });
       const menuButton = screen.getByRole('button', { name: 'Menu' }).element();
 
       await openAppMenu(screen);
@@ -428,20 +426,14 @@ describe(Navbar, () => {
   });
 
   it.each([
-    ['signed out', { token: null }, 'Not signed in', null, 'Login with ORCID'],
-    [
-      'the token has expired',
-      { token: fakeJwt(standardUser('staff'), -60) },
-      'Not signed in',
-      null,
-      'Login with ORCID',
-    ],
-    ['signed in', { token: fakeJwt(standardUser('staff')) }, 'Ada Lovelace', 'Ada Lovelace', 'Logout'],
-    ['checking', { sessionChecked: false }, 'Checking sign-in', null, null],
+    ['signed out', session(), 'Not signed in', null, 'Login with ORCID'],
+    ['the token has expired', session(fakeJwt(standardUser('staff'), -60)), 'Not signed in', null, 'Login with ORCID'],
+    ['signed in', session(staffToken()), 'Ada Lovelace', 'Ada Lovelace', 'Logout'],
+    ['checking', session(null, false), 'Checking sign-in', null, null],
   ])(
     'names the account and offers only the auth item that applies when %s',
-    async (_state, options, label, title, item) => {
-      const screen = await renderApp({ element: <Navbar />, route: '/', ...options, mocks: [] });
+    async (_state, initialValues, label, title, item) => {
+      const screen = await renderWithRoute(<Navbar />, { route: '/', initialValues });
 
       const account = screen.getByTestId('account-control');
       await expect.element(account).toHaveTextContent(label);
@@ -469,7 +461,7 @@ describe(Navbar, () => {
       .toBeVisible();
     expect(screen.getByRole('status').element().textContent).toBe('Logged out');
 
-    setToken(screen.store, fakeJwt(standardUser('staff')));
+    setToken(screen.store, staffToken());
 
     await expect.element(toastNamed(LOGOUT_UNREACHABLE)).not.toBeInTheDocument();
   });
@@ -495,7 +487,7 @@ describe(Navbar, () => {
     const menuButton = screen.getByRole('button', { name: 'Menu' }).element();
     await expect.poll(() => document.activeElement).toBe(menuButton);
 
-    setToken(screen.store, fakeJwt(standardUser('staff')));
+    setToken(screen.store, staffToken());
     await expect.element(screen.getByTestId('account-control')).toHaveTextContent('Ada Lovelace');
     await expect.element(screen.getByRole('status')).toHaveTextContent('');
 
@@ -533,12 +525,7 @@ describe(Navbar, () => {
 
   it('shows a notice when SSO refuses to renew the session', async () => {
     stubSso();
-    await renderApp({
-      element: <AuthSession timings={RENEW_AT_ONCE}>{NAVBAR_WITH_TOASTS}</AuthSession>,
-      route: '/',
-      token: fakeJwt(standardUser('staff'), 60),
-      mocks: [],
-    });
+    await renderInSession(fakeJwt(standardUser('staff'), 60), RENEW_AT_ONCE);
 
     await expect.poll(() => ssoRefreshes()).toHaveLength(1);
     ssoRefreshes()[0]?.answer({ status: 403 });
@@ -555,12 +542,7 @@ describe(Navbar, () => {
 
   it('says the reader signed out in another tab, and after a fresh sign-in that the session ended', async () => {
     stubSso();
-    const screen = await renderApp({
-      element: <AuthSession>{NAVBAR_WITH_TOASTS}</AuthSession>,
-      route: '/',
-      token: fakeJwt(standardUser('staff')),
-      mocks: [],
-    });
+    const screen = await renderInSession();
     const otherTab = new BroadcastChannel(SESSION_CHANNEL);
 
     try {
@@ -587,10 +569,10 @@ describe(Navbar, () => {
   });
 
   it.each([
-    ['from the first render', { token: null, sessionChecked: true }],
-    ['once the first check settles', { token: null, sessionChecked: false }],
-  ])('shows no session-ended notice to a visitor signed out %s', async (_when, options) => {
-    const screen = await renderApp({ element: NAVBAR_WITH_TOASTS, route: '/', ...options, mocks: [] });
+    ['from the first render', session(null, true)],
+    ['once the first check settles', session(null, false)],
+  ])('shows no session-ended notice to a visitor signed out %s', async (_when, initialValues) => {
+    const screen = await renderWithRoute(NAVBAR_WITH_TOASTS, { route: '/', initialValues });
 
     screen.store.set(sessionCheckedAtom, true);
 
@@ -599,10 +581,10 @@ describe(Navbar, () => {
   });
 
   it.each([
-    [SESSION_ENDED, (screen: RenderedApp) => setToken(screen.store, null)],
+    [SESSION_ENDED, (screen: RenderResultWithRoute) => setToken(screen.store, null)],
     [
       LOGOUT_UNREACHABLE,
-      async (screen: RenderedApp) => {
+      async (screen: RenderResultWithRoute) => {
         await logOutAtOnce(screen);
         ssoCall(0).fail();
         await vi.advanceTimersByTimeAsync(0);
@@ -623,12 +605,7 @@ describe(Navbar, () => {
   it(`keeps "${SIGNED_OUT_ELSEWHERE}" on screen ten minutes on`, async () => {
     fakeTimeouts();
     stubSso();
-    await renderApp({
-      element: <AuthSession>{NAVBAR_WITH_TOASTS}</AuthSession>,
-      route: '/',
-      token: fakeJwt(standardUser('staff')),
-      mocks: [],
-    });
+    await renderInSession();
     const otherTab = new BroadcastChannel(SESSION_CHANNEL);
     // A channel delivers to its listeners in the order they opened, so this one hears the message after the session keeper has.
     const listener = new BroadcastChannel(SESSION_CHANNEL);
@@ -654,8 +631,8 @@ describe(Navbar, () => {
     [
       'when SSO fails only after the reader signed in again',
       '',
-      (screen: RenderedApp) => {
-        setToken(screen.store, fakeJwt(standardUser('staff')));
+      (screen: RenderResultWithRoute) => {
+        setToken(screen.store, staffToken());
         ssoCall(0).fail();
       },
     ],
@@ -677,12 +654,12 @@ describe(Navbar, () => {
     setToken(screen.store, null);
     await expectShowing(SESSION_ENDED);
 
-    setToken(screen.store, fakeJwt(standardUser('staff')));
+    setToken(screen.store, staffToken());
     await expect.element(toastNamed(SESSION_ENDED)).not.toBeInTheDocument();
 
     setToken(screen.store, null);
     await expectShowing(SESSION_ENDED);
-    await afterPendingWork();
+    await afterPendingWork(screen);
 
     expect(noticesShowing().filter((text) => text.startsWith(SESSION_ENDED))).toHaveLength(1);
   });
@@ -690,7 +667,7 @@ describe(Navbar, () => {
   it('warns when the session ends on its own after an earlier logout and a fresh sign-in', async () => {
     const screen = await logOutFromMenu();
     ssoCall(0).answer({ status: 200 });
-    setToken(screen.store, fakeJwt(standardUser('staff')));
+    setToken(screen.store, staffToken());
     await expect.element(screen.getByTestId('account-control')).toHaveTextContent('Ada Lovelace');
 
     setToken(screen.store, null);

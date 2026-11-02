@@ -6,7 +6,11 @@ import type { FinderRow } from '@/domain/componentFinder';
 
 import { componentStatus } from './componentLabels';
 
-export function ComponentIdentityCell({ row }: { row: FinderRow }): JSX.Element {
+export interface ComponentIdentityCellProps {
+  row: FinderRow;
+}
+
+export function ComponentIdentityCell({ row }: ComponentIdentityCellProps): JSX.Element {
   return (
     <span className="flex flex-col">
       <span className="font-medium text-foreground">{row.component.name}</span>
@@ -19,7 +23,11 @@ export function ComponentIdentityCell({ row }: { row: FinderRow }): JSX.Element 
 }
 
 /** The badge alone: the record's note is its own column (`NoteCell`), never a second line here. */
-export function StatusCell({ row }: { row: FinderRow }): JSX.Element | null {
+export interface StatusCellProps {
+  row: FinderRow;
+}
+
+export function StatusCell({ row }: StatusCellProps): JSX.Element | null {
   const status = componentStatus(row.usage, row.where.kind === 'STORED', row.note);
   return status === null ? null : <StatusTag status={status} />;
 }

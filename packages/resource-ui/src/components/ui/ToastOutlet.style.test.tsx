@@ -2,15 +2,12 @@ import '@/styles/global.css';
 import '@/styles/main.css';
 
 import { toastAtom } from '@gemini-hlsw/lucuma-common-ui';
-import { Provider as JotaiProvider } from 'jotai';
-import { PrimeReactProvider } from 'primereact/api';
 import type { ToastMessage } from 'primereact/toast';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
-import { render } from 'vitest-browser-react';
 
-import { store } from '@/components/atoms/store';
-import { contrastRatio, pixelOver } from '@/test/styleProbe';
+import { renderWithContext } from '@/test/render';
+import { contrastOn, pixelOver } from '@/test/styleProbe';
 
 import { ToastOutlet } from './ToastOutlet';
 
@@ -22,23 +19,15 @@ const EXPIRED = {
 } satisfies ToastMessage;
 
 const showSticky = async (message: ToastMessage & { severity: string; summary: string }) => {
-  const screen = await render(
-    <PrimeReactProvider>
-      <JotaiProvider store={store}>
-        <ToastOutlet />
-      </JotaiProvider>
-    </PrimeReactProvider>,
-  );
-  await expect.poll(() => store.get(toastAtom)).not.toBeNull();
-  store.get(toastAtom)!.show(message);
+  const screen = await renderWithContext(<ToastOutlet />);
+  await expect.poll(() => screen.store.get(toastAtom)).not.toBeNull();
+  screen.store.get(toastAtom)!.show(message);
   await expect.element(screen.getByText(message.summary)).toBeVisible();
   return document.querySelector<HTMLElement>(`.p-toast-message-${message.severity}`)!;
 };
 
 const fillOf = (message: HTMLElement) =>
   pixelOver(getComputedStyle(message).backgroundColor, getComputedStyle(document.body).backgroundColor);
-
-const asCss = ([r, g, b]: readonly number[]) => `rgb(${r} ${g} ${b})`;
 
 describe(ToastOutlet, () => {
   beforeAll(() => {
@@ -51,8 +40,7 @@ describe(ToastOutlet, () => {
     expect(getComputedStyle(document.querySelector('.p-toast')!).opacity).toBe('1');
     const fill = fillOf(message);
     for (const words of [message.querySelector('.p-toast-summary')!, message.querySelector('.p-toast-detail')!]) {
-      const ink = pixelOver(getComputedStyle(words).color, asCss(fill));
-      expect(contrastRatio(ink, fill)).toBeGreaterThanOrEqual(4.5);
+      expect(contrastOn(getComputedStyle(words).color, fill)).toBeGreaterThanOrEqual(4.5);
     }
   });
 
@@ -69,8 +57,7 @@ describe(ToastOutlet, () => {
       expect(style.outlineStyle).toBe('solid');
       expect(style.outlineWidth).toBe('2px');
       const fill = fillOf(message);
-      const ring = pixelOver(style.outlineColor, asCss(fill));
-      expect(contrastRatio(ring, fill)).toBeGreaterThanOrEqual(3);
+      expect(contrastOn(style.outlineColor, fill)).toBeGreaterThanOrEqual(3);
     },
   );
 

@@ -7,10 +7,7 @@ import { carrySelection, searchString } from '@/app/carriedSelection';
 import { FOCUS_RING } from '@/components/ui/styles';
 
 import type { SidebarMenuItem } from './SidebarMenu';
-import { SIDEBAR_MENU_SECTIONS } from './SidebarMenu';
-
-/** The sections group the sidebar; a phone bar has room for the destinations alone. */
-const ITEMS: SidebarMenuItem[] = SIDEBAR_MENU_SECTIONS.flatMap((section) => section.items);
+import { SIDEBAR_MENU_ITEMS } from './SidebarMenu';
 
 /** Real `NavLink`s, so the router sets `aria-current` and the CSS highlight cannot go stale. */
 function BottomNavItem({ item }: { item: SidebarMenuItem }): JSX.Element {
@@ -28,7 +25,7 @@ function BottomNavItem({ item }: { item: SidebarMenuItem }): JSX.Element {
 export default function BottomNav(): JSX.Element {
   return (
     <nav aria-label="Primary navigation" className="xp-bottomnav print:hidden">
-      {ITEMS.map((item) => (
+      {SIDEBAR_MENU_ITEMS.map((item) => (
         <BottomNavItem key={item.to} item={item} />
       ))}
     </nav>

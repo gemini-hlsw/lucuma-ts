@@ -1,11 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
 import { contains, overlaps } from './interval';
-import { observingNightInterval } from './siteTime';
+import { DAY_MS, HOUR_MS, observingNightInterval } from './siteTime';
 
 /** The window a finder asks its records about. */
 const night = observingNightInterval('GS', '2026-10-15');
-const HOUR = 3_600_000;
 
 describe(contains, () => {
   it('takes the opening instant and refuses the closing one', () => {
@@ -19,32 +18,32 @@ describe(contains, () => {
 describe(overlaps, () => {
   it('leaves out a record that ends exactly where the night begins', () => {
     // Half-open [start, end): the closing instant belongs to the next record, so it cannot count for both.
-    const ended = { start: night.start - 12 * HOUR, end: night.start };
+    const ended = { start: night.start - 12 * HOUR_MS, end: night.start };
 
     expect(overlaps(ended, night)).toBe(false);
   });
 
   it('leaves out a record that begins exactly where the night ends', () => {
-    const next = { start: night.end, end: night.end + 12 * HOUR };
+    const next = { start: night.end, end: night.end + 12 * HOUR_MS };
 
     expect(overlaps(next, night)).toBe(false);
   });
 
   it('takes a record that reaches one millisecond into the night', () => {
-    const reaching = { start: night.start - 12 * HOUR, end: night.start + 1 };
+    const reaching = { start: night.start - 12 * HOUR_MS, end: night.start + 1 };
 
     expect(overlaps(reaching, night)).toBe(true);
   });
 
   it('takes a record that begins one millisecond before the night ends', () => {
-    const arriving = { start: night.end - 1, end: night.end + 12 * HOUR };
+    const arriving = { start: night.end - 1, end: night.end + 12 * HOUR_MS };
 
     expect(overlaps(arriving, night)).toBe(true);
   });
 
   it('takes a record wholly inside the night, and a night wholly inside a record', () => {
-    const inside = { start: night.start + 6 * HOUR, end: night.start + 9 * HOUR };
-    const around = { start: night.start - 30 * 24 * HOUR, end: night.end + 30 * 24 * HOUR };
+    const inside = { start: night.start + 6 * HOUR_MS, end: night.start + 9 * HOUR_MS };
+    const around = { start: night.start - 30 * DAY_MS, end: night.end + 30 * DAY_MS };
 
     expect(overlaps(inside, night)).toBe(true);
     expect(overlaps(around, night)).toBe(true);
