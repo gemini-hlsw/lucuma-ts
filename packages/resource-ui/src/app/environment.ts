@@ -30,10 +30,7 @@ export const CURRENT_ENV = environmentFor(window.location.hostname);
 
 export const liveGraphqlEndpoint = CURRENT_ENV.graphqlEndpoint;
 
-const PRODUCTION_HOSTS: readonly string[] = [];
-
 export const environmentLabel = (hostname: string): string | null => {
-  if (PRODUCTION_HOSTS.includes(hostname)) return null;
   const { name } = environmentFor(hostname);
-  return name.charAt(0).toUpperCase() + name.slice(1);
+  return name === 'production' ? null : name.charAt(0).toUpperCase() + name.slice(1);
 };
