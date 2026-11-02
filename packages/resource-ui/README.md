@@ -5,13 +5,13 @@ an accurate, readable, interactive reproduction of the telescope schedules -
 tonight, a week, and a semester of observing nights - plus the two inventory browsers,
 the ICTD half: `/instruments` ("where is GNIRS, tonight - and if it is on no port, say
 so") and `/components` ("where is the R400 grating"). **v1 is read-only**: Resource
-reproduces schedules that already exist; nothing edits them. [CLAUDE.md](CLAUDE.md) is
-the working guide and design record.
+reproduces schedules that already exist; nothing edits them. [CLAUDE.md](CLAUDE.md) holds
+the rules the code cannot state for itself, [DESIGN.md](DESIGN.md) the design system.
 
 React 19 + Apollo Client + Highcharts (XRange) + PrimeReact +
 Tailwind CSS 4. The schema is the backend's, from `@gemini-hlsw/lucuma-odb-schemas/resource`
 (gemini-hlsw/lucuma-odb#3050); where it and this package disagree, the backend wins.
-CLAUDE.md lists the operations the UI runs and records the v1 scope trims.
+The operations the UI runs are in `src/gql/resource.ts`.
 
 ## Development
 
@@ -47,8 +47,7 @@ menu with an ORCID account. A session started on any other gemini.edu app is alr
 pnpm resource-ui codegen
 ```
 
-Regenerates the typed GraphQL operations and the expanded schema the tests read, both into
-`src/gql/gen/` (gitignored). Run it whenever an operation in `src/gql/` changes or the
+Regenerates the typed GraphQL operations into `src/gql/gen/` (gitignored). Run it whenever an operation in `src/gql/` changes or the
 schema package is bumped. `prebuild` runs it automatically on build.
 
 ### Tests and checks

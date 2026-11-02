@@ -1,371 +1,92 @@
 # CLAUDE.md - resource-ui
 
-Working guide for `@gemini-hlsw/resource-ui`, the web UI for the GPP **Resource** service.
-This file carries **engineering mechanics only**. Product truth lives in
-[PRODUCT.md](PRODUCT.md); every visual and interface decision lives in [DESIGN.md](DESIGN.md).
-When a change touches what the app looks like or how it behaves for a reader, those two files
-are the authorities - do not record such decisions here. The package is unpublished and
-pre-v1: what is written here are live constraints, not history. When something is removed, it
-leaves this file with it.
+Rules for `@gemini-hlsw/resource-ui` that the code cannot state for itself. Product scope is
+[PRODUCT.md](PRODUCT.md), every visual decision is [DESIGN.md](DESIGN.md), and commands and local
+sign-in are [README.md](README.md). The root CLAUDE.md's conventions (Vitest, toasts, helpers,
+Tailwind, codegen) apply unchanged and are not repeated here.
 
-## State of the package
+## Backend
 
-The v1 read surface is complete; PRODUCT.md names the five destinations it draws.
+- **One backend, over HTTP, at `/resource/graphql`.** Never execute a GraphQL schema in the
+  browser: that ships an executable schema and the SDL in the bundle. Every data field needs the
+  SSO bearer, so signed out every view is empty under the sign-in toast; that is not a bug.
+- **Signed-in dev means `https://local.gemini.edu:5173` and nothing else.** The SSO origin check
+  refuses `localhost` and the session cookie is `SameSite=Strict`, so any other name loads signed
+  out. README has the setup.
 
-**The app reads one backend, over HTTP** - the live Resource service at `/resource/graphql`
-(gemini-hlsw/lucuma-odb#3050). In dev the vite proxy carries that path to the dev deployment,
-purely to sidestep CORS. Every data field needs an SSO Bearer token: without one the service
-answers "Field 'X' requires authentication.", and the app shows the sign-in toast
-(`src/gql/ApolloConfigs.ts`). Introspection works anonymously, and the GraphiQL playground is at
-https://resource-api-dev.gemini.edu/resource/playground.html.
+## Data
 
-**No data source runs in the client.** The app must never execute a GraphQL schema in the
-browser - that puts an executable schema and the SDL into a frontend bundle. There is no control
-to choose a backend and no second link.
+- **Response → `domain/adapters.ts` → `domain/types.ts` → components.** Null handling and
+  timestamp parsing happen in the adapters; components never see a generated shape.
+- **Every object type a document selects gets its own fragment in `src/gql/resource.ts`**, and
+  the app imports the fragment type from `src/gql/types.ts` under its short name
+  (`TimestampIntervalItem`, not `…Fragment`). A window sent as variables is a `ScheduleSpan`,
+  never a fragment type, so `__typename` never enters a request.
+- **Blocks have no `id`, on purpose.** The same block comes back clipped from the night query and
+  unclipped from the range queries, so a block is a projection onto a window, not a record. With
+  an `id` Apollo would normalize it and write one window's answer over another's, emptying a
+  scheduled night. Row keys come from response position in the adapters.
+- **Intervals only, never a `date` on a block.** Partial nights are first-class; a date field
+  would make them a retrofit.
+- **A gap means "not recorded", never "unavailable".** A blank port row stays, because a missing
+  row would say the port does not exist.
+- **`toLocation` in `domain/adapters.ts` is the only place that checks the `place`/`port` pair.**
+  A contradictory record reads as off-port with a dev warning, never an error, so one bad record
+  cannot empty a night. No location literals at call sites.
 
-## Selection and URL state
+## Views
 
-The interaction rules for selection (masthead vs page controls, Tonight as the front door,
-the clock toggle, finder scoping) are DESIGN.md's. The mechanics:
+- **Every schedule view goes through `projectWindow` in `domain/timeline.ts`** (or
+  `collectSchedule` once plus `placeWindow` per window, as the semester does per month). Nothing
+  else reads an availability block. A view adds only its own axis and extras; chart pieces every
+  view composes live in `features/timeline/timelineOptions.ts`.
+- **`features/timeline/instruments.ts` owns every instrument's name, colour and ink.**
+- **The two finder pages are not shared on purpose**: their shapes diverge, and a `FinderPage`
+  with a dozen props would hide nothing.
 
-- **Three selections, three mechanisms.** Which belongs where is DESIGN.md's rule; these are
-  the parts:
-  - **Site** rides the URL through `app/useSelection.ts`, and its absence resolves to
-    `app/useLastSite.ts` rather than a hard-coded GN. `setSite` writes both. It is also the one
-    parameter written back when absent (a replace, so Back is unaffected) - DESIGN.md says why
-    a remembered default cannot be left implicit the way every other default is.
-  - **Semester** is `app/useSemester.ts`, which owns the page-scoped `semester` param through
-    `useUrlParam` and resolves it with `domain/semesterChoice.ts`'s `resolveSemester`. Only /semester
-    may call it, and no other page reads the published semesters at all.
-  - **Clock** is `app/useClockPreference.ts`, built on `app/preference.ts`: a
-    `useSyncExternalStore` over `localStorage`, so every reader re-renders on a write from any
-    tree. It is not in the URL. `displayTimeZone` in `domain/siteTime.ts` is still the one zone
-    resolver, threaded as a required parameter so no formatter can silently stay site-local.
-- **`app/preference.ts` is the one way to persist a reader's habit.** Add a preference by
-  calling `createPreference`, not by reaching for `localStorage`: it validates what it reads
-  back, notifies every subscriber, and holds the session's own choice in a closure so a denied
-  write costs the choice its persistence rather than its effect. Tests start with no habit -
-  `src/test/setup.ts` clears storage and fires the storage event that invalidates that closure.
-- **Every night-shaped thing opens its night view through `app/useOpenNight.ts`** - chart
-  bars on the week and semester charts both route through the one hook.
-- **Page-scoped parameters go through `app/useUrlParam.ts`.** Defaults are deleted from the
-  URL, not written.
-- **A navigation carries `site` and `night` and nothing else**, through
-  `app/carriedSelection.ts` - the one answer to what survives a link. A menu link to the
-  inventory carries `site` alone (`carries` in `SidebarMenu.ts`), since those pages answer for
-  tonight and never read a night. Every other parameter
-  (`semester`, `q`, `instrument`, `type`, `location`) is one page's, and is
-  dropped at the boundary rather than following the reader into a view that never reads it.
-  This is react-router's own default for `to`; carrying more would be the hand-written
-  override, so a new link needs no convention, only the helper where it wants site and night.
-- The finder pages' window comes from `app/useRecentSpan.ts`: the 400 days ending tonight, the longest
-  window the Resource service accepts.
+## URL and state
 
-## Auth mechanics
+- **Site rides the URL** through `app/useSelection.ts`, falling back to `app/useLastSite.ts`; it
+  is the one parameter written back when absent, as a replace. Page parameters go through
+  `app/useUrlParam.ts`, and a default is deleted from the URL, not written.
+- **A link carries `site` and `night` and nothing else**, through `app/carriedSelection.ts`.
+  Every other parameter is one page's and is dropped at the boundary.
+- **A reader's habit is a `createPreference` from `app/preference.ts`**, never raw storage. The
+  session token is not a habit: it lives in common-ui's `odbTokenAtom`, reached only through
+  `@/components/atoms/auth`, and must not outlive the tab.
 
-The masthead says who is signed in and the app menu holds the login and the logout. No view is
-gated on a session - a signed-out reader can open every one - and what a session buys today is
-the `Authorization: Bearer <JWT>` header every Resource data field requires; signed out, every
-view is empty under the sign-in toast.
+## Session
 
-- **The token lives in common-ui's `odbTokenAtom`**, a sessionStorage-backed Jotai atom, and the
-  app reaches it - and `userAtom`, `isLoggedInAtom`, `sessionStatusAtom` - only through
-  `@/components/atoms/auth`. **`app/preference.ts` is not for it**: a session is not a reader's
-  habit and must not outlive the tab.
-- **`src/auth/session.ts` is the one session keeper** - a module-level controller over the shared
-  store (`components/atoms/store.ts`). It bootstraps from the SSO cookie, re-refreshes from the
-  token's own `exp`, keeps one request in flight, and backs off only when SSO is unreachable (30 s
-  doubling to 16 min, with or without a token - the `SESSION_TIMINGS` defaults `startSession` takes,
-  which tests shrink to tens of milliseconds to run on the real clock); a rejected refresh signs the
-  reader out and arms no timer, though refocusing the tab still asks SSO for the cookie once 30 s
-  have passed since the last attempt, which is how a session started in another gemini.edu tab gets
-  picked up; a token leaves the store when its `exp` passes, at once if it is restored or arrives
-  expired (with a console warning when SSO issued it that way), and the auth link also checks `exp`
-  itself because a sleeping tab fires that timer late; `signOut` tears the keeper down whether or
-  not SSO answers, so only a full page load can sign the reader back in. Before asking SSO it
-  announces the logout on the `resource-session` BroadcastChannel, which a keeper holds open only
-  while it runs; every other tab's keeper then signs out the same way without calling SSO, first
-  setting `signedOutElsewhereAtom` so that tab's toast says where the logout happened. It
-  announces again once the logout call settles, for a tab that loaded in between.
-  Non-React callers - the Apollo auth link, `signOut` - read the store directly rather than a hook.
-- **`auth/AuthSession.tsx` starts that keeper once**, wrapped around `<App />` in `main.tsx`, and
-  renders the app at once. The requests wait instead: `sessionHoldLink`, first in the live chain
-  (`gql/ApolloConfigs.ts`), holds each one until `sessionCheckedAtom` is true, so none goes out
-  before the bearer is known and a signed-in cold load sends each query once, with the bearer.
-  `AuthSession` also refetches every active query when the reader signs in or out later. The
-  check is bounded: `refreshSession` gives up on SSO after 10 s and reads the silence as
-  `unreachable`, so a hung answer releases the requests signed out and the keeper's backoff and
-  token-retention rules take over.
-- **Tests sign in through `renderApp`**: `renderApp({ token: fakeJwt(standardUser('staff')) })`
-  (`@gemini-hlsw/lucuma-common-ui/testing`). Every test starts signed out because `src/test/setup.ts` resets the
-  session before it (it clears localStorage, then writes `odbTokenAtom` null - overwriting the
-  token in sessionStorage - and `sessionCheckedAtom` false on the shared store); each render then
-  hydrates the shared store (`components/atoms/store.ts`), the one `authLink` and `signOut` read,
-  with the token and `sessionCheckedAtom` on top of that. Two trees rendered in one test share that
-  session, and the later `renderApp` call sets it.
-- **The SSO host is absolute in every environment** (`app/environment.ts`'s `ssoUri`) - the cookie
-  flows cannot go through the dev-server proxy. Each SSO host admits origins under its own domain
-  and refuses the rest: staging's `sso-test.gpp.gemini.edu` answers `gemini.edu` and not
-  `resource-staging.lucuma.xyz`, so staging reads signed out until that host is admitted, and
-  neither host answers a `localhost` origin, so `pnpm resource-ui dev` reads signed out (the
-  blocked refresh takes the unreachable path and retries on its backoff). `dev:https` with
-  `local.gemini.edu` aliased in `/etc/hosts` is the way in (README, "Signing in locally"): the
-  name is admitted, and https is what lets the browser send the `SameSite=Strict` cookie.
-
-## The views
-
-**Do not give a view its own path from records to pixels.** Every schedule view is a **Window**
-(glossary): it hands its nights and its Schedule (glossary) to `projectWindow` in `domain/timeline.ts` and gets
-back the placed rows, the closure bands and the legend. Nothing else reads an
-`InstrumentAvailabilityBlock`, and the state-row, placement and legend rules live and are tested in
-that one module. A view that draws several windows over one schedule, as the semester does per
-month, calls `collectSchedule` once and `placeWindow` per window instead of `projectWindow` per
-window. A view adds only its own extra - the night's transitions, the week's nights, the
-semester's months - plus its own axis and its own way of phrasing a span (dates and nights for the
-semester and week, clock times for a night). Adding a fourth window should not mean copying any of
-it: `timelineNights` in `domain/timeline.ts` lists a window's nights, and `timelineOptions.ts` holds
-the pieces every chart composes (`nowMarker`, `weekendBands`, `nightLines`, `midpointTicks` /
-`midpointLabel`, `closureBandPlotBand`).
-
-| View           | What it draws                                                                      | Its module                   |
-| -------------- | ---------------------------------------------------------------------------------- | ---------------------------- |
-| Night          | the chart alone                                                                    | `features/night/`            |
-| Week           | the run chart alone                                                                | `features/week/`             |
-| Semester       | an xrange per month: how long a run lasts                                          | `features/semester/`         |
-| `/instruments` | a row per instrument the site's records name, expanding into its runs              | `domain/instrumentFinder.ts` |
-| `/components`  | the ICTD half: the piece catalog grouped by instrument, expanding into its history | `domain/componentFinder.ts`  |
-
-What each view may draw and how (change-feed rules, legend
-order, colour and treatment) is specified in DESIGN.md. Structural rules the code does not
-state for itself:
-
-- **Every schedule view heads itself with the Telescope, Mode and ToO rows** when records
-  reach its window; `projectWindow` does it (`NOTABLE_MODE`/`NOTABLE_TOO` mark the states
-  DESIGN.md calls notable). All chart layout is derived from the rows inside the shared
-  builders - no view passes categories or header counts alongside its data.
-- **A window never takes `now`.** `TimelineLegendBar` decides the Now key from the page clock and
-  the window's span, so a tick rebuilds no rows or chart options. Its key table is the one place a
-  legend key becomes words and a swatch: a key the projection adds is drawn there or nowhere.
-- **The two browser pages are deliberately not shared.** The shapes diverge - grouped subheaders against
-  a flat list, two filters against one, different expansions - and a `FinderPage` taking a dozen props
-  would hide nothing. Both open a row into `components/ui/RecordHistoryTable.tsx`.
-- **The Night page's content depends on its night query alone**: loading, error, nothing recorded
-  (`dataAvailable` false), or the chart. Whether a semester covers the night does not enter it.
-
-## Shared modules
-
-A thing drawn in two places is drawn from one module, taking a presentation shape rather than either page's
-domain row. This is the rule the whole of `components/ui/` follows;
-`src/features/components/componentCells.tsx` holds the one copy of each component cell, so no
-two views can disagree about a closure. The visual and state rules for
-these components are DESIGN.md's; this table is the ownership map.
-
-| Module                                   | What it owns                                                                                                                                                                                                                                                                                                                                                             |
-| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `WhereCell`                              | A `WhereReading`: coarse presence (on the telescope / off it / not recorded), the place in words, and the change tag. `componentLabels.componentWhere` and `InstrumentsPage.instrumentWhere` map onto it, one line each.                                                                                                                                                 |
-| `PageHeader`                             | Every destination's title and right-hand controls slot.                                                                                                                                                                                                                                                                                                                  |
-| `PageStatus`                             | The three page-state components (`ErrorAlert`, `Loading`, `EmptyPanel`); which state may look like what is DESIGN.md's.                                                                                                                                                                                                                                                  |
-| `NightStepper`                           | The Tonight / arrows / date toolbar, its chrome, aria labels and cleared-input guard. The page owns the date vocabulary.                                                                                                                                                                                                                                                 |
-| `LabelledControl`                        | Binds a caption to its control **by id**, as a render prop, so the caller decides which prop carries it (`id` on an input, `inputId` on a PrimeReact Dropdown). It must not wrap the control: implicit labelling only reaches a labelable element, and a label wrapping a Dropdown named nothing and swallowed the control's words into the name ("Instrument All All"). |
-| `FilterField`                            | The finder bar's layout over `LabelledControl`. `filterOptions.countedOption` is the "(12)" suffix.                                                                                                                                                                                                                                                                      |
-| `features/timeline/instruments.ts`       | Every instrument's display name, colour and ink. The charts, the swatch and the inventory pages all read it; no page reaches into `timelineOptions.ts` for a name.                                                                                                                                                                                                       |
-| `InstrumentSwatch`                       | Colour square plus name (in `features/timeline/`, beside the palette it reads).                                                                                                                                                                                                                                                                                          |
-| `domain/interval.ts`                     | The one overlap rule (`clip`, with `overlaps` on top of it) and the finders' `transitionsOf`.                                                                                                                                                                                                                                                                            |
-| `siteTime.eveningLabel` / `eveningRange` | The one evening formatter. Style is a parameter (`dayMonth`, `dayMonthYear`) because that choice is about what the page already says, never about what the date means.                                                                                                                                                                                                   |
-
-- **Toasts go through the one PrimeReact `Toast` that `ToastOutlet` mounts in `main.tsx`.**
-  `useToastApi()` from `@gemini-hlsw/lucuma-common-ui` is the default in components and hooks:
-  `toast.error(summary, detail?)`, one method per severity, each returning a function that removes
-  that toast, so `useEffect(() => toast.error(...), [toast])` withdraws it on cleanup. Use
-  `useToast()` (the raw handle, null until the outlet mounts) only for options the API lacks
-  (`sticky`, `closable`), `clear` or `replace`. Code outside React uses
-  `store.get(toastAtom)`. For a toast that several places show or withdraw, keep a module-level
-  `ToastMessage` constant with string `summary` and `detail` (the live-server failure toasts carry a
-  summary alone) and withdraw it with `remove(thatConstant)`: PrimeReact removes by deep equality.
-  What a toast says and looks like is DESIGN.md's ("Toasts").
-- **A component's props are a named `interface`, `<Component>Props`, exported beside it** (as
-  `TimelineLegendBarProps`), so a test or a parent can name what the component takes without reading
-  its destructure. New components are written this way; an inline props shape moves when its file is
-  next touched.
-
-## Gotchas that cost real debugging
-
-Fixed structurally - do not undo it.
-
-- **Availability blocks are contextual values, never cache entities.** The same block type comes back
-  clipped from the night projection and unclipped from the range queries (`clip: false` on every one), so a
-  block is a projection onto a window rather than a record. No block type has an `id`, so Apollo keeps each
-  block inside its own query result instead of normalizing it, and `domain/adapters.ts` makes row keys from
-  response position. A stable `id` would let Apollo write one window's answer over another's and empty a
-  scheduled night (empty chart, "no components tonight"). `InstrumentComponent` keeps its id and stays
-  normalized, being identity-only.
-
-## Commands
-
-**`README.md` is the command reference** - every script, signing in locally, codegen, the
-first-time `playwright install chromium`, and why `dev` shows the sign-in toast. It is not repeated here.
-
-## GraphQL and codegen
-
-The schema is `@gemini-hlsw/lucuma-odb-schemas/resource`, read by codegen (`tasks/codegen.ts`) and
-by `@graphql-eslint` (`eslint.config.js`). Codegen writes the typed operations into `src/gql/gen/`
-and prints the expanded schema to `src/gql/gen/schema.graphql`, which the tests read. **After
-changing an operation or bumping the schema package, run `codegen`**; `prebuild` does it on build.
-
-- Operations live in `src/gql/resource.ts`; hooks returning **domain models** (not raw fragments) in
-  `src/gql/hooks.ts`. Generated object types are reached as `import type * as Gql`, in the adapters
-  and hooks only.
-- The client preset only emits types an operation selects. If a type is missing from `gen/`, the fix
-  is an operation that selects it, not a hand-written duplicate.
-- `tasks/printSchemaPlugin.ts` is named by path, not as `schema-ast`, because the CLI resolves a
-  named plugin from its own install directory, which here lands on a copy built against graphql 17
-  whose type predicates answer false for this package's graphql 16 objects.
-- `require-selections` asks for an `id` wherever a type has one, which is why `InstrumentComponent`
-  selections carry it. The `src/*/gen` entry in `eslint.config.shared.js`'s `globalIgnores` keeps the
-  generated schema out of the operation rules; narrowing it turns that file into forty lint errors.
-
-Every view gets its whole window in one response, all range queries `clip: false`. That is one
-request per page load, except on Semester, which first reads `PublishedSemesters` to learn its window:
-
-| Operation            | What it reads                                                                                                           | Views                                            |
-| -------------------- | ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
-| `PublishedSemesters` | `publishedSemesters`: `site`, `semester` and the night span only                                                        | Semester: its picker and its window              |
-| `SemesterSchedule`   | `instrumentAvailability`, `telescopeAvailability`, `tooSupport`, `telescopeMode`                                        | Semester; `/instruments`, over the past 400 days |
-| `NightSchedule`      | `telescopeNight` (`dataAvailable` and the interval) plus those four                                                     | Night                                            |
-| `WeekSchedule`       | `telescopeNights` (per-night `dataAvailable`) plus the four of `SemesterSchedule` and `instrumentComponentAvailability` | Week                                             |
-| `ComponentBrowser`   | `components`, `instrumentComponentAvailability`, `instrumentAvailability`                                               | `/components`, over the past 400 days            |
-
-## Data flow
-
-GraphQL response → **pure adapters** (`src/domain/adapters.ts`) → **UI domain models**
-(`src/domain/types.ts`) → components. All null handling and timestamp parsing lives in the adapters;
-components never touch generated fragment shapes.
-
-`src/domain/` holds the pure modules - date, interval and semester math, the
-timeline projections, the two finders - each with unit tests beside it. Keep
-date math and chart builders pure; keep components focused on rendering and interaction.
-
-## Non-negotiables
-
-**The API contract half of these is the backend's**: half-open intervals, a block as a value rather
-than an entity, partial nights as first-class, I4 absence and clipping are the Resource service's
-rules. What follows is the half that is this app's, plus the rules with no
-other home.
-
-- **Never put a `date` on a block.** Intervals only. The moment a `LocalDate` becomes a field, partial
-  nights turn into a retrofit. (Referred to across the code as **the partial-night non-negotiable**.)
-- **A gap means "not recorded", never "unavailable"** (invariant **I4**, stated in PRODUCT.md;
-  how gaps may render is DESIGN.md's).
-- **`toLocation` in `domain/adapters.ts` is the only place the app re-checks the `place`/`port` pairing**,
-  and a contradictory record reads as off-port/`UNKNOWN` with a dev-mode warning, never an error, because
-  one bad record must not empty a night. Do not build a location literal at a call site, and do not push
-  the pair past the adapter: the domain model carries the exclusive form (`InstrumentAvailabilityBlock.port` xor
-  `InstrumentAvailabilityBlock.place`, whose type `OffPortPlace` excludes `PORT`).
-- **A record's port is its row; there is no row label.** `domain/ports.ts` renders the label from the port
-  - do not reintroduce a display string the model can derive. The row set is `TELESCOPE_PORTS` unioned
-    with any port the records name, so a quiet port keeps its blank row (blank says "nothing recorded"; a
-    missing row would say the port does not exist) and a record on an unexpected port still draws.
-- **A block has no `id`**; row keys are the adapters'. `InstrumentComponent` keeps its id, being real
-  hardware. The cache lock that enforces this is under "Gotchas" above.
-- **One capability per commit**, with its tests. The message is one concise Conventional Commits
-  subject that says what the commit did (`feat(resource-ui): sign in and out from the app menu`), no
-  body unless it states a fact the diff cannot show. Fold fixes and test additions into the commit
-  they belong to before opening a PR, so history reads as capabilities, and never add AI or tool
-  attribution trailers.
-- **Comments are the exception, not the default.** Ship code with none; add one sentence only where
-  the code cannot carry a constraint from outside the file (a library quirk, a rejected approach and
-  why). Never history, attribution, session talk, or a restatement of what the code says.
+- **`src/auth/session.ts` runs on the store it is given**, as do the link factories in
+  `gql/ApolloConfigs.ts`. `main.tsx` is the only non-test module that imports
+  `components/atoms/store.ts`; everything else takes the store from the provider.
+- **Requests wait for the session check, the app does not.** `sessionHoldLink` holds each request
+  until `sessionCheckedAtom` is true, so a cold load sends each query once, with the bearer. The
+  check is bounded by `REFRESH_TIMEOUT_MS`, so a hung SSO releases the requests signed out.
+- **A logout is announced on the `resource-session` BroadcastChannel**, so other tabs sign out
+  without calling SSO.
 
 ## Testing
 
-Browser-mode Vitest (Playwright chromium). Three classes of test, named by what they mount:
+- **The GraphQL answer at the link is the one seam.** No `vi.mock` of an app module: real
+  children, the real router, a fresh Jotai store per render (`src/test/render.tsx`), and `vi.fn()`
+  props. Mocks are built per operation by `src/test/fixtures/` with only the blocks the assertion
+  needs; each answers once, and an unanswered query fails the test, so a fixture must match the
+  variables the page sends.
+- **`odbTokenAtom` snapshots `sessionStorage` when its module loads**, so two stores mounted in
+  one test share a token.
+- **URL hooks are driven through the URL**, with `test/probe.tsx` inside the real router, never
+  `renderHook`. One `Probe` per route: two at the same position with different hook counts is a
+  hook-order violation.
+- **PrimeReact overlays render into `document.body`.** Reach a dropdown through `openDropdown` /
+  `selectDropdownOption` from `@gemini-hlsw/lucuma-common-ui/testing`.
+- **Tests load no app stylesheet.** A test that needs styling to pass is testing the stylesheet.
 
-| Class     | Mounts                                                           | May replace                                  |
-| --------- | ---------------------------------------------------------------- | -------------------------------------------- |
-| unit      | nothing: a function, a link chain, a module over the store       | `fetch`; timers only for "never fires"       |
-| component | one component with props and real children, a router if it links | nothing: callbacks are `vi.fn()` props       |
-| page      | a page under a route through the shared render helper            | the network only: typed fixtures at the link |
+## Styling
 
-A page test covers wiring only: its status states, the operation it sends, URL in and out, cache across
-navigation, and one happy path per control; wording, columns, labels and the full matrix of a control's
-presses belong to the component test. No `vi.mock` of an app module: real children, the router, the shared
-store and `vi.fn()` props, with the GraphQL answer at the link as the one seam. Tests drive real interactions
-with accessible queries (`getByRole`, `getByLabelText`). Pass the render helper its `mocks`, built per
-operation by `src/test/fixtures/` with only the **Blocks** the assertion depends on. A query no mock answers fails the test
-(`failOnUnansweredQueries`, registered by common-ui's shared `test/setup.ts`), so a fixture must match the variables the page sends.
-`src/gql/resource.test.ts` validates every document against the schema. Link-chain tests (session
-hold, auth header, toasts) run the real links ahead of canned answers through `src/test/linkClient.ts`.
-
-- **Every control whose press, toggle or hover changes what is displayed gets a browser test driving the real
-  interaction.** Test both directions where they exist: what must change with the control (the night chart's
-  axis under the Site | UTC clock) _and_ what must not (the semester chart's geometry and fills across the same
-  toggle). Guard "must change" assertions non-empty first, so a blanked chart cannot pass as merely "different".
-- **Anchor on fixture dates, never the wall clock.** Where a test must involve "now", derive it with the same
-  function the page uses.
-- **PrimeReact overlays render into `document.body`**, outside the render container, so a Dropdown panel is
-  unreachable from `renderApp` locators. Drive dropdowns through `openDropdown` /
-  `selectDropdownOption` from `@gemini-hlsw/lucuma-common-ui/testing` (find one by `{ label }`), which reaches the panel via `page`, scoped through `getByRole('listbox')` so the
-  hidden native `<select>` mirror does not also match.
-- **The tests load no app stylesheet**: a test that needs styling to pass is testing the stylesheet.
-  A test whose subject is behaviour the stylesheet decides - a breakpoint, a contrast swap, a pixel
-  budget - is the exception, and imports only what it needs. Loading `global.css` + `main.css` means
-  also putting `.dark` in scope, on the root as `main.tsx` does or around the subject, or none of the
-  theme's rules apply. Grep the existing exceptions before adding one.
-- **The URL hooks in `src/app/` are driven through the URL**, not through `renderHook`: `test/probe.tsx` renders
-  a hook inside the real router, prints what a test asserts on and offers buttons standing in for the app's
-  controls. One `Probe` per route, though - two routes rendering it at the same position let React reuse the
-  fiber, and two `use` bodies with different hook counts is a hook-order violation.
-- Prefer tests driven by configuration (e.g. `SIDEBAR_MENU_SECTIONS`) over hard-coded lists.
-- Don't assert on internal React structure.
-
-## Styling mechanics
-
-What the theme looks like - tokens, palette, density, type, component treatments - is
-DESIGN.md's alone. The tokens themselves live in `src/styles/global.css` (`@theme`) and are
-wired into PrimeReact by `shell.css`. What follows is only the mechanics of making a style
-land.
-
-**When a Tailwind utility loses to a PrimeReact control, the winner is `lucuma-ui-css`, not PrimeReact.**
-PrimeReact's own classes are wrapped in `@layer primereact` and set almost nothing (`.p-tag` gets three
-flexbox properties), so they lose to anything. The theme is `lucuma-ui-css`, and `lucuma-ui.scss` loads it
-**unlayered** inside `.dark { }` - so its rules are `.dark .p-tag` at 0-2-0, beating a Tailwind utility at
-0-1-0 in `@layer utilities` twice over: unlayered outranks layered, and the specificity is higher anyway.
-Declaring PrimeReact's documented layer order (`@layer tailwind-base, primereact, tailwind-utilities`) does
-nothing here, because PrimeReact's layer is not the competitor - do not reach for it.
-
-Override through the variables first: `shell.css` re-tints `lucuma-ui-css` by reassigning its own
-`--surface-*`, `--text-color`, `--primary-color` and `--highlight-*`, which is why the app matches without
-fighting any selector. Where the theme hardcodes a value with no variable behind it - the `.p-tag` size,
-fill and ink - a rule of the theme's own shape in `shell.css` (`.dark .p-tag`, and
-`.dark .p-tag.p-tag-success, .dark .p-tag.p-tag-danger`) ties on specificity and wins on source order:
-that is how the tag's Dense size and the success and danger inks land with no `!` at all. Reach for `!`
-only when the override is one instance rather than a selector the theme already names - the single `!`
-left in this package is `StatusTag`'s muted Spare tag, picked out by utility classes at 0-1-0 that cannot
-otherwise reach `.dark .p-tag`'s 0-2-0 fill and ink.
-
-**The type scale and the rem-versus-px rule are DESIGN.md's** - the steps and their roles, the
-`DENSE`/`TICK` chart mirrors, and which values grow with the reader's own font-size setting. One
-mechanic it does not carry:
-
-- **An `aria-hidden` icon glyph takes its size from FontAwesome's own `size` prop** (`size="sm"` =
-  0.875em, `size="xs"` = 0.75em, omitted = 1em), never a class of ours: FA's scale is already em and
-  each step carries the `line-height` and `vertical-align` correction that keeps the glyph on the
-  text's baseline, which a hand-rolled em utility gets wrong. **In the masthead, add `widthAuto`** -
-  FontAwesome 7 pads every icon to a fixed 1.25em canvas and the bar cannot spare that width. Leave
-  it padded in the app menu, where it aligns the icon column. The ORCID logo on the login item is an
-  `<img>` with no `size` prop and takes that same box as `h-[1em] w-[1.25em] object-contain`, so it
-  sits in the column.
-
-Prefer Tailwind utilities over CSS files except where Tailwind can't express it (complex selectors,
-keyframes, third-party overrides).
-
-## Architecture docs
-
-`lucuma-odb/resource/docs/` is authoritative for the v1 backend domain and API, with the v1 scope trims applied
-here: the schedule lifecycle, change log and restrictions are out of scope - every view reads the one published
-record, and editing was descoped from v1. When the backend schema and anything in this package disagree, the
-backend wins (ADR 0001).
-
-## Agent skills
-
-- Domain docs: glossary at `packages/resource-ui/docs/GLOSSARY.md`, ADRs in `packages/resource-ui/docs/adr/`. See `packages/resource-ui/docs/agents/domain.md`.
+- **When a Tailwind utility loses to a PrimeReact control, the winner is `lucuma-ui-css`, not
+  PrimeReact.** `lucuma-ui.scss` loads the theme unlayered inside `.dark { }`, so its rules
+  (`.dark .p-tag`, 0-2-0) beat a layered utility (0-1-0) twice over. Declaring PrimeReact's layer
+  order does nothing here. Override through the theme's own variables in `shell.css` first; where
+  the theme hardcodes a value, a `.dark .p-tag`-shaped rule in `shell.css` ties on specificity and
+  wins on source order.
