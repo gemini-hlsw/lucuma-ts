@@ -1,4 +1,4 @@
-import { toastAtom, VERSION_SUFFIX } from '@gemini-hlsw/lucuma-common-ui';
+import { SESSION_TIMINGS, SIGNED_OUT_MESSAGE, toastAtom, VERSION_SUFFIX } from '@gemini-hlsw/lucuma-common-ui';
 import { fakeJwt, standardUser } from '@gemini-hlsw/lucuma-common-ui/testing';
 import type { ToastMessage } from 'primereact/toast';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -9,7 +9,7 @@ import NightPage from '@/app/pages/NightPage';
 import { setLastSite } from '@/app/useLastSite';
 import orcidLogo from '@/assets/orcid-logo.svg';
 import { AuthSession } from '@/auth/AuthSession';
-import { SESSION_CHANNEL, SESSION_TIMINGS, SIGNED_OUT_MESSAGE, startSession } from '@/auth/session';
+import { session, SESSION_CHANNEL } from '@/auth/session';
 import { signInUrl } from '@/auth/ssoClient';
 import { sessionCheckedAtom, setToken } from '@/components/atoms/auth';
 import { store } from '@/components/atoms/store';
@@ -575,7 +575,7 @@ describe(Navbar, () => {
     setToken(screen.store, fakeJwt(standardUser('staff'), 60));
     await expect.element(toastNamed(SIGNED_OUT_ELSEWHERE)).not.toBeInTheDocument();
 
-    const stop = startSession(RENEW_AT_ONCE);
+    const stop = session.start({ timings: RENEW_AT_ONCE });
     try {
       await expect.poll(() => ssoRefreshes()).toHaveLength(1);
       ssoRefreshes()[0]?.answer({ status: 403 });

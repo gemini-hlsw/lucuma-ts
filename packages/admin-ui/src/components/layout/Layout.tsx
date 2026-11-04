@@ -1,7 +1,6 @@
 import './Layout.css';
 
 import { Bars, cn, Copy, SignOut, useToastApi, VERSION_SUFFIX } from '@gemini-hlsw/lucuma-common-ui';
-import { useSetAtom } from 'jotai';
 import { Dialog } from 'primereact/dialog';
 import { Dropdown } from 'primereact/dropdown';
 import { type JSX, useState } from 'react';
@@ -9,9 +8,9 @@ import { NavLink, Outlet } from 'react-router';
 
 import { useTheme } from '@/app/useTheme';
 import { CURRENT_ENV } from '@/auth/environments';
-import * as sso from '@/auth/ssoClient';
+import { useSession } from '@/auth/session';
 import { displayName, type StandardRole } from '@/auth/user';
-import { odbTokenAtom, useIsLoggedIn, useUser } from '@/components/atoms/auth';
+import { useIsLoggedIn, useUser } from '@/components/atoms/auth';
 import { VersionCheck } from '@/components/VersionCheck';
 
 /** The build version in Explore's `DATE-COMMIT-ENV` form (sc-9615): the
@@ -71,30 +70,22 @@ export default function Layout(): JSX.Element {
   const [aboutOpen, setAboutOpen] = useState(false);
   const user = useUser();
   const isLoggedIn = useIsLoggedIn();
-  const setToken = useSetAtom(odbTokenAtom);
+  const session = useSession();
   const role = user?.type === 'standard' ? user.role.type : (user?.type ?? 'guest');
   // Every role on the account (active + others), for the header role menu.
   const allRoles: readonly StandardRole[] = user?.type === 'standard' ? [user.role, ...user.otherRoles] : [];
   const roleLabel = (r: StandardRole): string =>
     r.type === 'ngo' && r.partner ? `NGO · ${r.partner.toUpperCase()}` : r.type.toUpperCase();
 
+  // Through the keeper, so an in-flight renewal cannot overwrite the new role's token.
   const switchRole = async (next: StandardRole): Promise<void> => {
-    try {
-      setToken(await sso.setRole(next.id));
-    } catch (err) {
-      toast.error('Role switch failed', err instanceof Error ? err.message : String(err));
-    }
+    const outcome = await session.switchRole(next);
+    if (outcome.kind === 'failed') toast.error('Role switch failed', outcome.error.message);
   };
 
-  // Drop the local token first — that alone signs the app out — then end the
-  // SSO session, reporting a failure (the cookie expires on its own).
   const signOut = async (): Promise<void> => {
-    setToken(null);
-    try {
-      await sso.logout();
-    } catch (err) {
-      toast.error('Sign-out incomplete', err instanceof Error ? err.message : String(err));
-    }
+    const { reachedSso } = await session.signOut();
+    if (!reachedSso) toast.error('Sign-out incomplete', 'SSO could not end the session; it expires on its own.');
   };
 
   const copyVersion = async (): Promise<void> => {

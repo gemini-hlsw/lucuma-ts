@@ -10,27 +10,76 @@
  *   GET  /auth/v1/set-role?role= → switch active role (then refresh)
  *   POST /api/v1/logout          → clear the session
  *
- * All are cookie-based, so every call sends credentials. `refreshToken` and
+ * All are cookie-based, so every call sends credentials. `refreshSession`
+ * never rejects. `refreshToken` and
  * `guestLogin` resolve null on failure (a missing session is the normal
  * signed-out state, not an error); `setRole`/`logout` throw so callers can
  * surface the failure.
  */
 
+/** Outcome of a refresh: a fresh token, `rejected` (no session: 401, 403 or an empty body), or
+ *  `unreachable` (SSO did not answer, so the app keeps its token). */
+export type RefreshResult =
+  { readonly kind: 'token'; readonly token: string } | { readonly kind: 'rejected' } | { readonly kind: 'unreachable' };
+
+/** How long `refreshSession` waits for SSO before it reports `unreachable`. */
+export const REFRESH_TIMEOUT_MS = 10_000;
+
+const UNREACHABLE: RefreshResult = { kind: 'unreachable' };
+
+async function exchange(ssoUri: string, signal: AbortSignal): Promise<RefreshResult> {
+  try {
+    const response = await fetch(new URL('/api/v1/refresh-token', ssoUri), {
+      method: 'POST',
+      credentials: 'include',
+      signal,
+    });
+    if (response.status === 401 || response.status === 403) return { kind: 'rejected' };
+    if (!response.ok) return UNREACHABLE;
+    const token = (await response.text()).trim();
+    return token === '' ? { kind: 'rejected' } : { kind: 'token', token };
+  } catch {
+    return UNREACHABLE;
+  }
+}
+
+/** Exchange the SSO cookie for a fresh JWT. Never rejects. The request aborts when
+ *  `signal` aborts, or after `timeoutMs`. */
+export async function refreshSession(
+  ssoUri: string,
+  signal?: AbortSignal,
+  timeoutMs = REFRESH_TIMEOUT_MS,
+): Promise<RefreshResult> {
+  const deadline = new AbortController();
+  const followCaller = (): void => {
+    deadline.abort(signal?.reason);
+  };
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    // Linked by hand, since AbortSignal.any is newer than the browsers the builds target.
+    if (signal?.aborted) followCaller();
+    else signal?.addEventListener('abort', followCaller, { once: true });
+    // A setTimeout, not AbortSignal.timeout, so fake timers can drive it.
+    const timedOut = new Promise<RefreshResult>((resolve) => {
+      timer = setTimeout(() => {
+        deadline.abort(new DOMException('SSO did not answer the refresh in time.', 'TimeoutError'));
+        resolve(UNREACHABLE);
+      }, timeoutMs);
+    });
+    return await Promise.race([exchange(ssoUri, deadline.signal), timedOut]);
+  } catch {
+    return UNREACHABLE;
+  } finally {
+    clearTimeout(timer);
+    signal?.removeEventListener('abort', followCaller);
+  }
+}
+
 /** Exchange the SSO session cookie for a fresh JWT. Returns the token, or null
  *  when there is no session (or SSO is unreachable). */
 export async function refreshToken(ssoUri: string, signal?: AbortSignal): Promise<string | null> {
-  try {
-    const res = await fetch(new URL('/api/v1/refresh-token', ssoUri), {
-      method: 'POST',
-      credentials: 'include',
-      signal: signal ?? null,
-    });
-    if (!res.ok) return null;
-    const token = (await res.text()).trim();
-    return token || null;
-  } catch {
-    return null;
-  }
+  const result = await refreshSession(ssoUri, signal);
+  return result.kind === 'token' ? result.token : null;
 }
 
 /** Guest token (no ORCID). Returns the token, or null on failure. */
@@ -77,12 +126,11 @@ function sameOriginOr(root: URL, returnTo: string): URL {
 }
 
 /** Switch the session's active role. Throws when SSO rejects the switch or is
- *  unreachable. The switch takes effect on the session cookie; call
- *  `refreshToken` afterwards to obtain the JWT that reflects the new role. */
-export async function setActiveRole(ssoUri: string, roleId: string): Promise<void> {
+ *  unreachable, or once `signal` aborts. Call `refreshToken` afterwards for a JWT with the new role. */
+export async function setActiveRole(ssoUri: string, roleId: string, signal?: AbortSignal): Promise<void> {
   const url = new URL('/auth/v1/set-role', ssoUri);
   url.searchParams.set('role', roleId);
-  const res = await fetch(url, { method: 'GET', credentials: 'include' });
+  const res = await fetch(url, { method: 'GET', credentials: 'include', signal: signal ?? null });
   if (!res.ok) throw new Error(`SSO rejected the role switch (${await failureDetail(res)}).`);
 }
 

@@ -1,27 +1,11 @@
 import { useApolloClient } from '@apollo/client/react';
-import { atom } from 'jotai';
-import { type ReactNode, useEffect } from 'react';
+import { type SessionTimings, useSessionKeeper } from '@gemini-hlsw/lucuma-common-ui';
+import type { ReactNode } from 'react';
 
-import { odbTokenAtom } from '@/components/atoms/auth';
-import { store } from '@/components/atoms/store';
+import { session } from './session';
 
-import { type SessionTimings, startSession } from './session';
-
-const hasTokenAtom = atom((get) => get(odbTokenAtom) !== null);
-
+/** Keeps the SSO session alive. Refetches the page's queries on sign-in and sign-out. */
 export function AuthSession({ children, timings }: { children: ReactNode; timings?: SessionTimings }): ReactNode {
-  const client = useApolloClient();
-
-  useEffect(() => startSession(timings), [timings]);
-
-  useEffect(
-    () =>
-      store.sub(hasTokenAtom, () => {
-        // Each query's failure already reaches its component and the toast through the link chain.
-        client.refetchObservableQueries().catch(() => undefined);
-      }),
-    [client],
-  );
-
+  useSessionKeeper(session, { client: useApolloClient(), timings });
   return children;
 }

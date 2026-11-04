@@ -4,9 +4,7 @@ import { useServerConfigValue } from '@gql/server/ServerConfiguration';
 import { useCallback, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 
-import { useSetOdbToken } from '@/components/atoms/auth';
-
-import type { StandardRole } from './user';
+import { useSession } from './session';
 
 /**
  * Hook to get the SSO login page URL. SSO returns to the page that sent the user
@@ -24,63 +22,17 @@ export function useSignInURL() {
 }
 
 /**
- * Hook to sign out the user. Clearing the token and logging out from the SSO.
+ * Hook to sign out. Every tab drops its token, then the SSO session ends.
  */
 export function useSignout() {
-  const setToken = useSetOdbToken();
-  const { ssoUri } = useServerConfigValue();
+  const session = useSession();
 
   const signout = useCallback(async () => {
-    setToken(null);
-    try {
-      await sso.logout(ssoUri);
-    } catch (error) {
-      console.error('Error logging out', error);
-    }
-  }, [setToken, ssoUri]);
+    const { reachedSso } = await session.signOut();
+    if (!reachedSso) console.error('Error logging out: SSO could not end the session.');
+  }, [session]);
 
   return signout;
-}
-
-/**
- * Hook to refresh the token. It fetches a new token from the SSO and sets it in the state.
- */
-export function useRefreshToken() {
-  const setToken = useSetOdbToken();
-  const { ssoUri } = useServerConfigValue();
-
-  const refreshToken = useCallback(async () => {
-    // A failed refresh means there's no valid session — the normal signed-out
-    // state — so leave the token as-is rather than treating it as an error.
-    const token = await sso.refreshToken(ssoUri);
-    if (token) setToken(token);
-  }, [setToken, ssoUri]);
-  return refreshToken;
-}
-
-export function useSetRole() {
-  const refreshToken = useRefreshToken();
-  const toast = useToastApi();
-  const { ssoUri } = useServerConfigValue();
-
-  const setRole = useCallback(
-    async (role: StandardRole) => {
-      try {
-        await sso.setActiveRole(ssoUri, role.id);
-        // Pull the new role's JWT through navigate's own refresh, which writes
-        // the token atom the rest of the app reads.
-        await refreshToken();
-      } catch (error) {
-        toast.error(
-          'Error',
-          `Error while switching to role ${role.type}.\n${error instanceof Error ? error.message : String(error)}`,
-        );
-      }
-    },
-    [refreshToken, toast, ssoUri],
-  );
-
-  return setRole;
 }
 
 interface LocationInterface {
@@ -94,7 +46,7 @@ interface LocationInterface {
  */
 export function useGuestLogin() {
   const toast = useToastApi();
-  const setToken = useSetOdbToken();
+  const session = useSession();
   const { state: locationState } = useLocation() as { state: LocationInterface };
 
   const { ssoUri } = useServerConfigValue();
@@ -107,12 +59,13 @@ export function useGuestLogin() {
       toast.error('Login Error', 'Error while logging in as guest');
       return;
     }
-    setToken(token);
+    // Through the keeper, so the guest token renews even after an earlier sign-out.
+    session.signIn(token);
 
     const from = locationState?.from?.pathname ?? '/';
     toast.success('Login Success', 'Logged in as guest');
     await navigate(from, { replace: true });
-  }, [locationState, navigate, setToken, ssoUri, toast]);
+  }, [locationState, navigate, session, ssoUri, toast]);
 
   return guestLogin;
 }

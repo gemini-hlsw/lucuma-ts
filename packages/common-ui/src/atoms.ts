@@ -1,4 +1,4 @@
-import { atom, useAtom, useAtomValue, useSetAtom } from 'jotai';
+import { atom, type Store, useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { atomWithStorage, createJSONStorage } from 'jotai/utils';
 
 import type { User } from './auth.ts';
@@ -59,3 +59,32 @@ export const isLoggedInAtom = atom((get) => {
   return user !== null && (exp ? exp > new Date() : false);
 });
 export const useIsLoggedIn = () => useAtomValue(isLoggedInAtom);
+
+/* Session state, written by the session keeper (session.ts). */
+
+/** True once the keeper has checked the session with SSO, or found a live token. */
+export const sessionCheckedAtom = atom(false);
+
+/** True when another tab signed out this tab. A new token clears it. */
+export const signedOutElsewhereAtom = atom(false);
+export const useSignedOutElsewhere = () => useAtomValue(signedOutElsewhereAtom);
+
+/** `checking` until the first answer, so a returning reader does not see a signed-out screen. */
+export type SessionStatus = 'checking' | 'signed-out' | 'signed-in';
+
+export const sessionStatusAtom = atom<SessionStatus>((get) => {
+  if (get(isLoggedInAtom)) return 'signed-in';
+  return get(sessionCheckedAtom) ? 'signed-out' : 'checking';
+});
+export const useSessionStatus = () => useAtomValue(sessionStatusAtom);
+
+/** Hold `token` (or null to sign out) in `store`. A storage error (quota, private mode)
+ *  keeps the token for this tab. An AggregateError from a failing subscriber is rethrown. */
+export function setToken(store: Store, token: string | null): void {
+  if (token !== null) store.set(signedOutElsewhereAtom, false);
+  try {
+    store.set(odbTokenAtom, token);
+  } catch (error) {
+    if (error instanceof AggregateError) throw error;
+  }
+}

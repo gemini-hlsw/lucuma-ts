@@ -1,12 +1,12 @@
 import './AuthGate.css';
 
 import { Lock, SignIn, SignOut } from '@gemini-hlsw/lucuma-common-ui';
-import { useSetAtom } from 'jotai';
 import { Button } from 'primereact/button';
 import type { JSX, ReactNode } from 'react';
 
-import { odbTokenAtom, useCanAccessAdmin, useIsLoggedIn, useUser } from '@/components/atoms/auth';
+import { useCanAccessAdmin, useIsLoggedIn, useUser } from '@/components/atoms/auth';
 
+import { useSession } from './session';
 import * as sso from './ssoClient';
 import { currentAccess } from './user';
 
@@ -20,18 +20,7 @@ export function AuthGate({ children }: { children: ReactNode }): JSX.Element {
   const user = useUser();
   const isLoggedIn = useIsLoggedIn();
   const canAccessAdmin = useCanAccessAdmin();
-  const setToken = useSetAtom(odbTokenAtom);
-
-  // Drop the local token first — that alone signs the app out — then end the
-  // SSO session. If that call fails the cookie just expires on its own.
-  const signOut = async (): Promise<void> => {
-    setToken(null);
-    try {
-      await sso.logout();
-    } catch {
-      // Nothing actionable from the gate; the local sign-out already happened.
-    }
-  };
+  const session = useSession();
 
   if (!isLoggedIn) {
     return (
@@ -60,7 +49,8 @@ export function AuthGate({ children }: { children: ReactNode }): JSX.Element {
           view.
         </p>
         <div className="gate-actions">
-          <Button label="Sign out" icon={<SignOut />} outlined onClick={() => void signOut()} />
+          {/* A failed SSO logout is ignored: the cookie expires on its own. */}
+          <Button label="Sign out" icon={<SignOut />} outlined onClick={() => void session.signOut()} />
         </div>
       </GateScreen>
     );

@@ -72,10 +72,11 @@ view is empty under the sign-in toast.
   app reaches it - and `userAtom`, `isLoggedInAtom`, `sessionStatusAtom` - only through
   `@/components/atoms/auth`. **`app/preference.ts` is not for it**: a session is not a reader's
   habit and must not outlive the tab.
-- **`src/auth/session.ts` is the one session keeper** - a module-level controller over the shared
-  store (`components/atoms/store.ts`). It bootstraps from the SSO cookie, re-refreshes from the
+- **`src/auth/session.ts` is the one session keeper** - Resource's binding of the keeper every
+  GPP app shares (`createSession` in `packages/common-ui/src/session.ts`, tested there) to the
+  shared store (`components/atoms/store.ts`), the environment's SSO and no role policy. It bootstraps from the SSO cookie, re-refreshes from the
   token's own `exp`, keeps one request in flight, and backs off only when SSO is unreachable (30 s
-  doubling to 16 min, with or without a token - the `SESSION_TIMINGS` defaults `startSession` takes,
+  doubling to 16 min, with or without a token - the `SESSION_TIMINGS` defaults `session.start` takes,
   which tests shrink to tens of milliseconds to run on the real clock); a rejected refresh signs the
   reader out and arms no timer, though refocusing the tab still asks SSO for the cookie once 30 s
   have passed since the last attempt, which is how a session started in another gemini.edu tab gets
@@ -88,12 +89,12 @@ view is empty under the sign-in toast.
   setting `signedOutElsewhereAtom` so that tab's toast says where the logout happened. It
   announces again once the logout call settles, for a tab that loaded in between.
   Non-React callers - the Apollo auth link, `signOut` - read the store directly rather than a hook.
-- **`auth/AuthSession.tsx` starts that keeper once**, wrapped around `<App />` in `main.tsx`, and
+- **`auth/AuthSession.tsx` starts that keeper once** (through common-ui's `useSessionKeeper`), wrapped around `<App />` in `main.tsx`, and
   renders the app at once. The requests wait instead: `sessionHoldLink`, first in the live chain
   (`gql/ApolloConfigs.ts`), holds each one until `sessionCheckedAtom` is true, so none goes out
   before the bearer is known and a signed-in cold load sends each query once, with the bearer.
   `AuthSession` also refetches every active query when the reader signs in or out later. The
-  check is bounded: `refreshSession` gives up on SSO after 10 s and reads the silence as
+  check is bounded: common-ui's `refreshSession` (`sso.ts`) gives up on SSO after 10 s and reads the silence as
   `unreachable`, so a hung answer releases the requests signed out and the keeper's backoff and
   token-retention rules take over.
 - **Tests sign in through `renderApp`**: `renderApp({ token: fakeJwt(standardUser('staff')) })`
