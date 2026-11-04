@@ -1,4 +1,4 @@
-import { ApolloClient, ApolloLink, gql } from '@apollo/client';
+import { ApolloClient, ApolloLink, gql, InMemoryCache } from '@apollo/client';
 import { Observable } from '@apollo/client/utilities';
 import { toastAtom } from '@gemini-hlsw/lucuma-common-ui';
 import { fakeJwt, standardUser } from '@gemini-hlsw/lucuma-common-ui/testing';
@@ -14,7 +14,6 @@ import { ToastOutlet } from '@/components/ui/ToastOutlet';
 import { captureHeader, createLinkClient } from '@/test/linkClient';
 
 import { authLink, client, liveLink, sessionHoldLink } from './ApolloConfigs';
-import { buildCache } from './cache';
 
 const QUERY = gql`
   query AuthHeaderProbe {
@@ -185,7 +184,7 @@ describe(liveLink, () => {
   let answer: Answer = served;
   const liveClient = new ApolloClient({
     link: liveLink(new ApolloLink(() => new Observable<ApolloLink.Result>((observer) => answer(observer)))),
-    cache: buildCache(),
+    cache: new InMemoryCache(),
   });
 
   const ask = async (next: Answer): Promise<void> => {
