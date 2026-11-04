@@ -1,5 +1,5 @@
 import { openDropdown, selectDropdownOption } from '@gemini-hlsw/lucuma-common-ui/testing';
-import type { InstrumentAvailabilityBlockItemFragment } from '@gql/gen/graphql';
+import type { InstrumentAvailabilityBlockItem } from '@gql/types';
 import { describe, expect, it } from 'vitest';
 
 import type { Site } from '@/domain/types';
@@ -52,11 +52,7 @@ const GNIRS_SPLIT = [
 ];
 
 /** The blocks the site's schedule holds over the recent window. */
-const openInstruments = (
-  route: string,
-  site: Site,
-  instrumentAvailability: InstrumentAvailabilityBlockItemFragment[],
-) =>
+const openInstruments = (route: string, site: Site, instrumentAvailability: InstrumentAvailabilityBlockItem[]) =>
   renderApp({
     element: <InstrumentsPage />,
     route,

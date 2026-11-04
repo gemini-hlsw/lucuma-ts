@@ -6,7 +6,7 @@ import { useSelection } from '@/app/useSelection';
 import { NightStepper } from '@/components/ui/NightStepper';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { EmptyPanel, ErrorAlert, Loading } from '@/components/ui/PageStatus';
-import { toApiInterval } from '@/domain/adapters';
+import { toScheduleSpan } from '@/domain/adapters';
 import { addDays } from '@/domain/semester';
 import { EMPTY_SCHEDULE } from '@/domain/types';
 import { buildWeekTimeline, WEEK_NIGHTS } from '@/domain/weekTimeline';
@@ -32,7 +32,7 @@ export default function WeekPage(): JSX.Element {
     schedule: EMPTY_SCHEDULE,
     nightsWithData: undefined,
   });
-  const bounds = toApiInterval(draft.interval);
+  const bounds = toScheduleSpan(draft.interval);
 
   const { schedule, loading, error, nightsWithData, nightsResolved } = useWeekSchedule(site, nights, bounds);
 
