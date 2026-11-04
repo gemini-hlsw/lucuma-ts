@@ -194,12 +194,11 @@ Fixed structurally - do not undo it.
 
 - **Availability blocks are contextual values, never cache entities.** The same block type comes back
   clipped from the night projection and unclipped from the range queries (`clip: false` on every one), so a
-  block is a projection onto a window rather than a record. A stable `id` lets Apollo normalize one window's
-  answer onto another's and empty a scheduled night (empty chart, "no components tonight"). No block
-  type has an `id`; `domain/adapters.ts` makes row keys from
-  response position; `src/gql/cache.ts` sets `keyFields: false` on every `…Block` type as the second lock, and
-  `cache.test.ts` reads the schema so a new block type cannot quietly miss the list. `InstrumentComponent`
-  keeps its id and stays normalized, being identity-only.
+  block is a projection onto a window rather than a record. No block type has an `id`, so Apollo keeps each
+  block inside its own query result instead of normalizing it, and `domain/adapters.ts` makes row keys from
+  response position. A stable `id` would let Apollo write one window's answer over another's and empty a
+  scheduled night (empty chart, "no components tonight"). `InstrumentComponent` keeps its id and stays
+  normalized, being identity-only.
 
 ## Commands
 

@@ -1,7 +1,5 @@
-import { ApolloClient, ApolloLink } from '@apollo/client';
+import { ApolloClient, ApolloLink, InMemoryCache } from '@apollo/client';
 import { MockLink } from '@apollo/client/testing';
-
-import { buildCache } from '@/gql/cache';
 
 /** Runs `links` ahead of canned answers, each reusable, so a test drives the real link chain without a schema. */
 export const createLinkClient = (links: ApolloLink, answers: readonly MockLink.MockedResponse[]): ApolloClient =>
@@ -10,7 +8,7 @@ export const createLinkClient = (links: ApolloLink, answers: readonly MockLink.M
       links,
       new MockLink(answers.map((answer) => ({ maxUsageCount: Number.POSITIVE_INFINITY, ...answer }))),
     ]),
-    cache: buildCache(),
+    cache: new InMemoryCache(),
   });
 
 /** Records the named header on each operation that reaches it, `null` where the operation does not set it. */

@@ -1,4 +1,4 @@
-import { ApolloClient, ApolloLink, HttpLink } from '@apollo/client';
+import { ApolloClient, ApolloLink, HttpLink, InMemoryCache } from '@apollo/client';
 import { CombinedGraphQLErrors } from '@apollo/client/errors';
 import { SetContextLink } from '@apollo/client/link/context';
 import { ErrorLink } from '@apollo/client/link/error';
@@ -9,8 +9,6 @@ import type { ToastMessage } from 'primereact/toast';
 import { liveGraphqlEndpoint } from '@/app/environment';
 import { odbTokenAtom, sessionCheckedAtom, tokenExpAtom } from '@/components/atoms/auth';
 import { store } from '@/components/atoms/store';
-
-import { buildCache } from './cache';
 
 const UNREACHABLE = {
   severity: 'warn',
@@ -138,5 +136,5 @@ export const client = new ApolloClient({
     version: import.meta.env.FRONTEND_VERSION,
   },
   link: liveLink(new HttpLink({ uri: withAbsoluteUri(liveGraphqlEndpoint) })),
-  cache: buildCache(),
+  cache: new InMemoryCache(),
 });
