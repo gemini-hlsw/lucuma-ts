@@ -49,4 +49,8 @@ describe(environmentLabel, () => {
   it('names the staging serving as its own environment', () => {
     expect(environmentLabel('resource-test.gemini.edu')).toBe('Staging');
   });
+
+  it('should answer nothing when the hostname is the production serving', () => {
+    expect(environmentLabel('resource.gemini.edu')).toBeNull();
+  });
 });
