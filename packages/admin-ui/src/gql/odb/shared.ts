@@ -25,8 +25,6 @@ export function normalizeInstrument(name: string): string {
  *  computes it dynamically from wavelength + airmass) — show its arcsecond
  *  bound instead of fabricating one. Source: lucuma-core ImageQuality.scala. */
 const IMAGE_QUALITY_ARCSEC: Record<ImageQualityPreset, string> = {
-  POINT_ONE: '0.1',
-  POINT_TWO: '0.2',
   POINT_THREE: '0.3',
   POINT_FOUR: '0.4',
   POINT_SIX: '0.6',
