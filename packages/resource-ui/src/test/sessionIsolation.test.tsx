@@ -1,9 +1,9 @@
 import { fakeJwt, standardUser } from '@gemini-hlsw/lucuma-common-ui/testing';
+import { createStore } from 'jotai';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { pendingRefresh, startSession } from '@/auth/session';
 import { odbTokenAtom, sessionCheckedAtom, sessionStatusAtom, useSessionStatus } from '@/components/atoms/auth';
-import { store } from '@/components/atoms/store';
 import { Probe } from '@/test/probe';
 import { renderApp } from '@/test/renderApp';
 import { ssoCall, ssoRefreshes, stubSso } from '@/test/sso';
@@ -24,8 +24,9 @@ describe('session state between tests', () => {
     await expect.element(screen.getByTestId('probe-status')).toHaveTextContent('signed-in');
   });
 
-  it('starts the next test signed out, so a bootstrap asks SSO', async () => {
-    const stop = startSession();
+  it('should bootstrap signed out when the next test starts a keeper on a fresh store', async () => {
+    const store = createStore();
+    const stop = startSession(store);
 
     expect(store.get(sessionCheckedAtom)).toBe(false);
     expect(ssoRefreshes()).toHaveLength(1);

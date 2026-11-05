@@ -575,7 +575,7 @@ describe(Navbar, () => {
     setToken(screen.store, fakeJwt(standardUser('staff'), 60));
     await expect.element(toastNamed(SIGNED_OUT_ELSEWHERE)).not.toBeInTheDocument();
 
-    const stop = startSession(RENEW_AT_ONCE);
+    const stop = startSession(screen.store, RENEW_AT_ONCE);
     try {
       await expect.poll(() => ssoRefreshes()).toHaveLength(1);
       ssoRefreshes()[0]?.answer({ status: 403 });

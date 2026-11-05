@@ -1,9 +1,8 @@
 import { useApolloClient } from '@apollo/client/react';
-import { atom } from 'jotai';
+import { atom, useStore } from 'jotai';
 import { type ReactNode, useEffect } from 'react';
 
 import { odbTokenAtom } from '@/components/atoms/auth';
-import { store } from '@/components/atoms/store';
 
 import { type SessionTimings, startSession } from './session';
 
@@ -11,8 +10,9 @@ const hasTokenAtom = atom((get) => get(odbTokenAtom) !== null);
 
 export function AuthSession({ children, timings }: { children: ReactNode; timings?: SessionTimings }): ReactNode {
   const client = useApolloClient();
+  const store = useStore();
 
-  useEffect(() => startSession(timings), [timings]);
+  useEffect(() => startSession(store, timings), [store, timings]);
 
   useEffect(
     () =>
@@ -20,7 +20,7 @@ export function AuthSession({ children, timings }: { children: ReactNode; timing
         // Each query's failure already reaches its component and the toast through the link chain.
         client.refetchObservableQueries().catch(() => undefined);
       }),
-    [client],
+    [client, store],
   );
 
   return children;

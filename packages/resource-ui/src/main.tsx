@@ -11,7 +11,7 @@ import App from './app/App';
 import { AuthSession } from './auth/AuthSession';
 import { store } from './components/atoms/store';
 import { ToastOutlet } from './components/ui/ToastOutlet';
-import { client } from './gql/ApolloConfigs';
+import { createClient } from './gql/ApolloConfigs';
 
 // The lucuma-ui PrimeReact theme is scoped under `.dark`, and dialogs portal to <body>.
 document.documentElement.classList.add('dark');
@@ -22,6 +22,7 @@ if (!rootElement) {
 }
 
 const root: Root = createRoot(rootElement);
+const client = createClient(store);
 
 const app: ReactNode = (
   <StrictMode>
