@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
+import { nightsSpan } from '@/test/fixtures/domain';
+
 import {
   firstEveningDate,
+  HOUR_MS,
   lastEveningDate,
   nextNightBoundary,
   nightCount,
@@ -54,7 +57,7 @@ describe(observingNightOf, () => {
     // Chile springs forward inside the night labelled 2026-09-06, so a fixed offset misfiles an end.
     const short = observingNightInterval('GS', '2026-09-06');
 
-    expect(short.end - short.start).toBe(23 * 3_600_000);
+    expect(short.end - short.start).toBe(23 * HOUR_MS);
     expect(observingNightOf('GS', short.start)).toBe('2026-09-06');
     expect(observingNightOf('GS', short.end - 1)).toBe('2026-09-06');
   });
@@ -66,7 +69,7 @@ describe(nextNightBoundary, () => {
     const night = observingNightInterval('GS', '2026-11-14');
 
     expect(nextNightBoundary('GS', night.start)).toBe(night.end);
-    expect(nextNightBoundary('GS', night.start + 6 * 3_600_000)).toBe(night.end);
+    expect(nextNightBoundary('GS', night.start + 6 * HOUR_MS)).toBe(night.end);
     expect(nextNightBoundary('GS', night.end - 1)).toBe(night.end);
   });
 
@@ -80,66 +83,56 @@ describe(nextNightBoundary, () => {
     const short = observingNightInterval('GS', '2026-09-06');
 
     expect(nextNightBoundary('GS', short.start)).toBe(short.end);
-    expect(short.end - short.start).toBe(23 * 3_600_000);
+    expect(short.end - short.start).toBe(23 * HOUR_MS);
   });
 });
 
 /** Both ends are the evening the night begins, so neither may come from the exclusive end instant. */
 describe('naming the evenings an interval covers', () => {
-  const spanning = (site: 'GN' | 'GS', first: string, last: string) => ({
-    start: observingNightInterval(site, first).start,
-    end: observingNightInterval(site, last).end,
-  });
-
   it('names the first evening as the night before the first label', () => {
-    expect(firstEveningDate('GS', spanning('GS', '2026-08-08', '2026-08-14'))).toBe('2026-08-07');
+    expect(firstEveningDate('GS', nightsSpan('GS', '2026-08-08', '2026-08-14'))).toBe('2026-08-07');
   });
 
   it('names the last evening as the night before the last label, not the label', () => {
     // Reading the calendar date an hour before the end gives the label, a day late; the sheet heads it 13.
-    expect(lastEveningDate('GS', spanning('GS', '2026-08-08', '2026-08-14'))).toBe('2026-08-13');
+    expect(lastEveningDate('GS', nightsSpan('GS', '2026-08-08', '2026-08-14'))).toBe('2026-08-13');
   });
 
   it('names a single night the same at both ends', () => {
-    const one = spanning('GS', '2026-08-08', '2026-08-08');
+    const one = nightsSpan('GS', '2026-08-08', '2026-08-08');
     expect(firstEveningDate('GS', one)).toBe('2026-08-07');
     expect(lastEveningDate('GS', one)).toBe('2026-08-07');
   });
 
   it('is exact across a Gemini South DST change, where a night is 23 or 25 hours', () => {
     // Chile springs forward in September, so a fixed hour offset is wrong on one side of this span.
-    const across = spanning('GS', '2026-09-05', '2026-09-08');
+    const across = nightsSpan('GS', '2026-09-05', '2026-09-08');
     expect(firstEveningDate('GS', across)).toBe('2026-09-04');
     expect(lastEveningDate('GS', across)).toBe('2026-09-07');
   });
 
   it('holds at Gemini North, which has no DST at all', () => {
-    const span = spanning('GN', '2026-08-08', '2026-08-14');
+    const span = nightsSpan('GN', '2026-08-08', '2026-08-14');
     expect(firstEveningDate('GN', span)).toBe('2026-08-07');
     expect(lastEveningDate('GN', span)).toBe('2026-08-13');
   });
 });
 
 describe('counting the nights an interval covers', () => {
-  const spanning = (site: 'GN' | 'GS', first: string, last: string) => ({
-    start: observingNightInterval(site, first).start,
-    end: observingNightInterval(site, last).end,
-  });
-
   it('counts one night as one, not zero', () => {
-    expect(nightCount('GS', spanning('GS', '2026-08-08', '2026-08-08'))).toBe(1);
+    expect(nightCount('GS', nightsSpan('GS', '2026-08-08', '2026-08-08'))).toBe(1);
   });
 
   it('counts both ends in', () => {
-    expect(nightCount('GS', spanning('GS', '2026-08-08', '2026-08-14'))).toBe(7);
+    expect(nightCount('GS', nightsSpan('GS', '2026-08-08', '2026-08-14'))).toBe(7);
   });
 
   it('is exact across a Gemini South DST change, where dividing by 24 hours is not', () => {
     // Four nights, one of them 23 hours: 95 elapsed hours floors to 3 and rounds to 4 only by luck.
-    expect(nightCount('GS', spanning('GS', '2026-09-05', '2026-09-08'))).toBe(4);
+    expect(nightCount('GS', nightsSpan('GS', '2026-09-05', '2026-09-08'))).toBe(4);
   });
 
   it('holds at Gemini North', () => {
-    expect(nightCount('GN', spanning('GN', '2026-08-08', '2026-08-14'))).toBe(7);
+    expect(nightCount('GN', nightsSpan('GN', '2026-08-08', '2026-08-14'))).toBe(7);
   });
 });

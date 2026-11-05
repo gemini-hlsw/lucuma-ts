@@ -3,15 +3,8 @@ import { createStore, type Store } from 'jotai';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { isLoggedInAtom, odbTokenAtom, sessionCheckedAtom, sessionStatusAtom } from '@/components/atoms/auth';
-import { store as appStore } from '@/components/atoms/store';
-import {
-  type PendingSsoCall,
-  ssoCall as call,
-  ssoCalls,
-  ssoLogout,
-  ssoRefreshes as refreshes,
-  stubSso,
-} from '@/test/sso';
+import { fakeTimeouts, UNDECODABLE_TOKEN } from '@/test/helpers';
+import { answerRefresh, ssoCall as call, ssoCalls, ssoLogout, ssoRefreshes as refreshes, stubSso } from '@/test/sso';
 
 import {
   pendingRefresh,
@@ -30,18 +23,14 @@ let store: Store;
 let stop: (() => void) | undefined;
 let otherTab: BroadcastChannel;
 
-const fakeTimeouts = (): void => {
-  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+const holdToken = (expiresInSeconds?: number): string => {
+  const token = fakeJwt(standardUser('staff'), expiresInSeconds);
+  store.set(odbTokenAtom, token);
+  return token;
 };
 
 async function expectRefreshes(count: number): Promise<void> {
   await expect.poll(() => refreshes(), { interval: 1 }).toHaveLength(count);
-}
-
-async function answerRefresh(index: number, response: Parameters<PendingSsoCall['answer']>[0]): Promise<void> {
-  const settled = pendingRefresh();
-  call(index).answer(response);
-  await settled;
 }
 
 /** Resolves once `data` from the other tab has been delivered to every channel open before the call. */
@@ -70,12 +59,13 @@ afterEach(() => {
 
 describe(startSession, () => {
   it('should mark the session checked on the store it was started with when that store holds a token', () => {
-    store.set(odbTokenAtom, fakeJwt(standardUser('staff')));
+    const other = createStore();
+    holdToken();
 
     stop = startSession(store);
 
     expect(store.get(sessionCheckedAtom)).toBe(true);
-    expect(appStore.get(sessionCheckedAtom)).toBe(false);
+    expect(other.get(sessionCheckedAtom)).toBe(false);
   });
 
   it('signs a returning reader in from the SSO session cookie', async () => {
@@ -100,8 +90,7 @@ describe(startSession, () => {
   });
 
   it('asks SSO nothing when the stored token is still good', () => {
-    const token = fakeJwt(standardUser('staff'));
-    store.set(odbTokenAtom, token);
+    const token = holdToken();
 
     stop = startSession(store);
 
@@ -111,7 +100,7 @@ describe(startSession, () => {
   });
 
   it('refreshes once the token reaches its own refresh deadline', async () => {
-    store.set(odbTokenAtom, fakeJwt(standardUser('staff'), 0.1));
+    holdToken(0.1);
 
     stop = startSession(store, { ...FAST, refreshAheadMs: 60 });
     expect(refreshes()).toHaveLength(0);
@@ -121,7 +110,7 @@ describe(startSession, () => {
 
   it('asks nothing before the token own refresh deadline', () => {
     fakeTimeouts();
-    store.set(odbTokenAtom, fakeJwt(standardUser('staff'), 120));
+    holdToken(120);
 
     stop = startSession(store);
 
@@ -131,7 +120,7 @@ describe(startSession, () => {
 
   it('asks nothing inside the minimum interval after an answer, from a refocus or its own timer', async () => {
     fakeTimeouts();
-    store.set(odbTokenAtom, fakeJwt(standardUser('staff'), 20));
+    holdToken(20);
 
     stop = startSession(store);
     document.dispatchEvent(new Event('visibilitychange'));
@@ -145,8 +134,7 @@ describe(startSession, () => {
   });
 
   it('asks again once the minimum interval passes when the fresh token expires when the old one did', async () => {
-    const token = fakeJwt(standardUser('staff'), 20);
-    store.set(odbTokenAtom, token);
+    const token = holdToken(20);
 
     stop = startSession(store, FAST);
     await expectRefreshes(1);
@@ -157,7 +145,7 @@ describe(startSession, () => {
   });
 
   it('keeps one in-flight refresh when a second trigger crosses the retry floor before it lands', async () => {
-    store.set(odbTokenAtom, fakeJwt(standardUser('staff'), 20));
+    holdToken(20);
 
     stop = startSession(store, { ...SESSION_TIMINGS, minIntervalMs: 0 });
     document.dispatchEvent(new Event('visibilitychange'));
@@ -240,7 +228,7 @@ describe(startSession, () => {
     [
       'SSO rejects the refresh of a held token',
       async () => {
-        store.set(odbTokenAtom, fakeJwt(standardUser('staff'), 20));
+        holdToken(20);
         stop = startSession(store);
         document.dispatchEvent(new Event('visibilitychange'));
         await answerRefresh(0, { status: 401 });
@@ -250,7 +238,7 @@ describe(startSession, () => {
       'SSO hands back a token that cannot be decoded',
       async () => {
         stop = startSession(store);
-        await answerRefresh(0, { body: 'header.payload.signature' });
+        await answerRefresh(0, { body: UNDECODABLE_TOKEN });
       },
     ],
     [
@@ -264,7 +252,7 @@ describe(startSession, () => {
     [
       'SSO will not renew a stored token that has already expired',
       async () => {
-        store.set(odbTokenAtom, fakeJwt(standardUser('staff'), -60));
+        holdToken(-60);
         stop = startSession(store);
         await answerRefresh(0, { status: 403 });
       },
@@ -282,7 +270,7 @@ describe(startSession, () => {
     stop = startSession(store);
     expect(refreshes()).toHaveLength(1);
 
-    await answerRefresh(0, { body: 'header.payload.signature' });
+    await answerRefresh(0, { body: UNDECODABLE_TOKEN });
 
     await expect.poll(() => store.get(odbTokenAtom)).toBeNull();
     expect(store.get(sessionStatusAtom)).toBe('signed-out');
@@ -305,7 +293,7 @@ describe(startSession, () => {
   });
 
   it('treats a stored undecodable token as no token at bootstrap', async () => {
-    store.set(odbTokenAtom, 'header.payload.signature');
+    store.set(odbTokenAtom, UNDECODABLE_TOKEN);
 
     stop = startSession(store);
     expect(refreshes()).toHaveLength(1);
@@ -316,7 +304,7 @@ describe(startSession, () => {
   });
 
   it('signs the reader out when a refresh is rejected', async () => {
-    store.set(odbTokenAtom, fakeJwt(standardUser('staff'), 20));
+    holdToken(20);
 
     stop = startSession(store, FAST);
     await expectRefreshes(1);
@@ -328,7 +316,7 @@ describe(startSession, () => {
   });
 
   it('refreshes a token past its deadline as soon as the tab is looked at again', async () => {
-    store.set(odbTokenAtom, fakeJwt(standardUser('staff'), 20));
+    holdToken(20);
 
     stop = startSession(store);
     document.dispatchEvent(new Event('visibilitychange'));
@@ -343,8 +331,7 @@ describe(startSession, () => {
 
   it('arms nothing early for a token that expires past the longest timer', () => {
     fakeTimeouts();
-    const token = fakeJwt(standardUser('staff'), 30 * 24 * 60 * 60);
-    store.set(odbTokenAtom, token);
+    const token = holdToken(30 * 24 * 60 * 60);
 
     stop = startSession(store);
 
@@ -354,8 +341,7 @@ describe(startSession, () => {
   });
 
   it('refreshes at the longest timer and holds the token until its own expiry', async () => {
-    const token = fakeJwt(standardUser('staff'), 2);
-    store.set(odbTokenAtom, token);
+    const token = holdToken(2);
 
     stop = startSession(store, { ...FAST, refreshAheadMs: 10, maxTimerMs: 20 });
 
@@ -382,24 +368,20 @@ describe(startSession, () => {
 
   it('settles and reports when a token subscriber throws, instead of rejecting the refresh', async () => {
     const reported = vi.spyOn(console, 'error').mockImplementation(() => undefined);
-    const unsubscribe = store.sub(odbTokenAtom, () => {
+    store.sub(odbTokenAtom, () => {
       throw new Error('a token subscriber failed');
     });
 
-    try {
-      stop = startSession(store, FAST);
-      const token = fakeJwt(standardUser('staff'), 20);
+    stop = startSession(store, FAST);
+    const token = fakeJwt(standardUser('staff'), 20);
 
-      await answerRefresh(0, { body: token });
+    await answerRefresh(0, { body: token });
 
-      expect(store.get(odbTokenAtom)).toBe(token);
-      expect(store.get(sessionCheckedAtom)).toBe(true);
-      expect(reported).toHaveBeenCalledTimes(1);
+    expect(store.get(odbTokenAtom)).toBe(token);
+    expect(store.get(sessionCheckedAtom)).toBe(true);
+    expect(reported).toHaveBeenCalledTimes(1);
 
-      await expectRefreshes(2);
-    } finally {
-      unsubscribe();
-    }
+    await expectRefreshes(2);
   });
 
   it('leaves one live session when React mounts, unmounts and mounts again', async () => {
@@ -424,7 +406,7 @@ describe(startSession, () => {
   });
 
   it('drops a stored token that has already expired at once, and signs out when SSO will not renew it', async () => {
-    store.set(odbTokenAtom, fakeJwt(standardUser('staff'), -60));
+    holdToken(-60);
 
     stop = startSession(store);
     expect(refreshes()).toHaveLength(1);
@@ -438,7 +420,7 @@ describe(startSession, () => {
   });
 
   it('drops a token once it expires while SSO is unreachable, and keeps asking on the backoff', async () => {
-    store.set(odbTokenAtom, fakeJwt(standardUser('staff'), 0.02));
+    holdToken(0.02);
 
     stop = startSession(store, FAST);
     await expectRefreshes(1);
@@ -457,7 +439,7 @@ describe(startSession, () => {
   it('does not let a tab focus inside the backoff window pull the retry forward', async () => {
     // Only a moved clock can put the focus past the minimum interval yet inside the grown backoff.
     vi.useFakeTimers({ toFake: ['Date'] });
-    store.set(odbTokenAtom, fakeJwt(standardUser('staff'), 20));
+    holdToken(20);
 
     stop = startSession(store);
     document.dispatchEvent(new Event('visibilitychange'));
@@ -473,7 +455,7 @@ describe(startSession, () => {
   });
 
   it('reports signed-out once the token expires mid-refresh, and signed-in again when the refresh lands', async () => {
-    store.set(odbTokenAtom, fakeJwt(standardUser('staff'), 0.03));
+    holdToken(0.03);
 
     stop = startSession(store, FAST);
     expect(store.get(sessionStatusAtom)).toBe('signed-in');
@@ -491,8 +473,7 @@ describe(startSession, () => {
   it('leaves the token alone once stopped before it expires', () => {
     // Date moves with the timers here, or the expiry timer would find the token live and re-arm.
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
-    const token = fakeJwt(standardUser('staff'), 20);
-    store.set(odbTokenAtom, token);
+    const token = holdToken(20);
 
     const stopNow = startSession(store);
 
@@ -506,7 +487,7 @@ describe(startSession, () => {
 describe(signOut, () => {
   it('discards a refresh already in flight when signOut runs, and arms no new timer once it lands', async () => {
     fakeTimeouts();
-    store.set(odbTokenAtom, fakeJwt(standardUser('staff'), 20));
+    holdToken(20);
 
     stop = startSession(store);
     document.dispatchEvent(new Event('visibilitychange'));
@@ -562,29 +543,25 @@ describe(signOut, () => {
 
   it('still resolves and posts the logout when a token subscriber throws', async () => {
     const reported = vi.spyOn(console, 'error').mockImplementation(() => undefined);
-    store.set(odbTokenAtom, fakeJwt(standardUser('staff')));
+    holdToken();
     stop = startSession(store);
 
-    const unsubscribe = store.sub(odbTokenAtom, () => {
+    store.sub(odbTokenAtom, () => {
       throw new Error('a token subscriber failed');
     });
 
-    try {
-      const signedOut = signOut(store);
-      ssoLogout().answer({ status: 200 });
+    const signedOut = signOut(store);
+    ssoLogout().answer({ status: 200 });
 
-      expect(await signedOut).toEqual({ reachedSso: true });
-      expect(store.get(odbTokenAtom)).toBeNull();
-      expect(store.get(sessionCheckedAtom)).toBe(true);
-      expect(reported).toHaveBeenCalledTimes(1);
-    } finally {
-      unsubscribe();
-    }
+    expect(await signedOut).toEqual({ reachedSso: true });
+    expect(store.get(odbTokenAtom)).toBeNull();
+    expect(store.get(sessionCheckedAtom)).toBe(true);
+    expect(reported).toHaveBeenCalledTimes(1);
   });
 
   it('keeps the reader signed out when the tab is looked at again after a failed logout', async () => {
     fakeTimeouts();
-    store.set(odbTokenAtom, fakeJwt(standardUser('staff'), 20));
+    holdToken(20);
 
     stop = startSession(store);
 
@@ -600,7 +577,7 @@ describe(signOut, () => {
   });
 
   it('tells every other tab before it asks SSO, so they sign out even when the logout fails', async () => {
-    store.set(odbTokenAtom, fakeJwt(standardUser('staff')));
+    holdToken();
     stop = startSession(store);
     const announced = new Promise<unknown>((resolve) => {
       otherTab.addEventListener('message', (event) => resolve(event.data), { once: true });
@@ -614,7 +591,7 @@ describe(signOut, () => {
   });
 
   it('signs out a tab that loaded while SSO was still logging out', async () => {
-    store.set(odbTokenAtom, fakeJwt(standardUser('staff')));
+    holdToken();
     stop = startSession(store);
     const signedOut = signOut(store);
 
@@ -652,8 +629,7 @@ describe(signOut, () => {
 
 describe('a logout in another tab', () => {
   const signedInHere = (): string => {
-    const token = fakeJwt(standardUser('staff'));
-    store.set(odbTokenAtom, token);
+    const token = holdToken();
     stop = startSession(store);
     return token;
   };
@@ -702,8 +678,7 @@ describe('a logout in another tab', () => {
   it('leaves no channel open from a keeper started again over a running one', async () => {
     startSession(store);
     stop = startSession(store);
-    const token = fakeJwt(standardUser('staff'));
-    store.set(odbTokenAtom, token);
+    const token = holdToken();
 
     await announceFromOtherTab(SIGNED_OUT_MESSAGE);
     expect(store.get(odbTokenAtom)).toBeNull();
@@ -728,17 +703,13 @@ describe('a logout in another tab', () => {
   it('still tears the keeper down when a token subscriber throws', async () => {
     const reported = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     signedInHere();
-    const unsubscribe = store.sub(odbTokenAtom, () => {
+    store.sub(odbTokenAtom, () => {
       throw new Error('a token subscriber failed');
     });
 
-    try {
-      await announceFromOtherTab(SIGNED_OUT_MESSAGE);
-      expect(store.get(odbTokenAtom)).toBeNull();
-      expect(store.get(sessionCheckedAtom)).toBe(true);
-      expect(reported).toHaveBeenCalledTimes(1);
-    } finally {
-      unsubscribe();
-    }
+    await announceFromOtherTab(SIGNED_OUT_MESSAGE);
+    expect(store.get(odbTokenAtom)).toBeNull();
+    expect(store.get(sessionCheckedAtom)).toBe(true);
+    expect(reported).toHaveBeenCalledTimes(1);
   });
 });

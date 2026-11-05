@@ -1,5 +1,8 @@
-import type { JSX, ReactNode } from 'react';
+/* eslint-disable react-refresh/only-export-components -- a test helper never hot-reloads */
+import type { JSX } from 'react';
 import { useLocation } from 'react-router';
+
+import type { StubRoute } from '@/test/render';
 
 export interface ProbeAction {
   /** The button's label, which the test clicks by name. */
@@ -13,13 +16,20 @@ export interface ProbeProps<T> {
   /** What to print, keyed so a test can wait on one value changing. */
   readonly readout?: (value: T) => Record<string, string>;
   readonly actions?: (value: T) => readonly ProbeAction[];
-  readonly children?: ReactNode;
 }
 
 /** `pathname?search` - what a copied link would say, which is what these hooks control. */
 export const PROBE_URL_TESTID = 'probe-url';
 
-export function Probe<T>({ use, readout, actions, children }: ProbeProps<T>): JSX.Element {
+export const shownUrl = (): string => document.querySelector(`[data-testid="${PROBE_URL_TESTID}"]`)?.textContent ?? '';
+
+/** Stands in for a view a link opens, when the subject is the jump and not what the view draws. */
+export const probeRoute = (path: string): StubRoute => ({
+  path,
+  element: <Probe use={() => null} />,
+});
+
+export function Probe<T>({ use, readout, actions }: ProbeProps<T>): JSX.Element {
   const value = use();
   const location = useLocation();
 
@@ -36,7 +46,6 @@ export function Probe<T>({ use, readout, actions, children }: ProbeProps<T>): JS
           {action.label}
         </button>
       ))}
-      {children}
     </div>
   );
 }

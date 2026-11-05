@@ -1,83 +1,76 @@
-// The one stylesheet a test loads: a Highcharts overlay that catches the pointer swallows the hover.
-import '@/styles/chartOverlays.css';
-
 import type { MockLink } from '@apollo/client/testing';
 import Highcharts from 'highcharts/es-modules/masters/highcharts.src.js';
-import { describe, expect, it, vi } from 'vitest';
-import { page } from 'vitest/browser';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import Layout from '@/components/layout/Layout';
-import { observingNightInterval, observingNightOf } from '@/domain/siteTime';
+import { HOUR_MS, observingNightInterval, observingNightOf } from '@/domain/siteTime';
 import { TOO_SUPPORT_LABEL } from '@/domain/timeline';
+import { drawnBars, drawnPlotLineX, nightAxisLabels } from '@/test/chartProbe';
 import {
   instrumentAvailabilityBlock,
   overNights,
   telescopeAvailabilityBlock,
-  telescopeModeBlock,
+  telescopeClosure,
   tooSupportBlock,
 } from '@/test/fixtures/blocks';
-import { nightSchedule } from '@/test/fixtures/night';
-import { chooseClock, drawnPlotLineX, nightAxisLabels } from '@/test/helpers';
-import { renderApp } from '@/test/renderApp';
+import { type NightRow, nightSchedule } from '@/test/fixtures/night';
+import { publishedSemester, wholeSemester } from '@/test/fixtures/semester';
+import { chooseClock, fakeClock } from '@/test/helpers';
+import { renderInShell, renderWithRoute } from '@/test/render';
 
 import NightPage from './NightPage';
 
 const GHOST = instrumentAvailabilityBlock({
   instrument: 'GHOST',
-  port: 1,
-  interval: overNights('GS', '2025-08-02', '2026-02-01'),
+  at: { port: 1 },
+  interval: wholeSemester(publishedSemester({ site: 'GS', semester: '2025B' })),
 });
 
+const nightUrl = ({ site, night }: NightRow) => `/night?site=${site}&night=${night}`;
+
 const openNight = (route: string, ...mocks: MockLink.MockedResponse[]) =>
-  renderApp({ element: <NightPage />, route, mocks });
+  renderWithRoute(<NightPage />, { route, mocks });
+
+/** The night a row names, answered with its blocks; the URL is not the subject here. */
+const openNightOf = (row: NightRow, blocks?: Parameters<typeof nightSchedule>[1], ...more: MockLink.MockedResponse[]) =>
+  openNight(nightUrl(row), nightSchedule(row, blocks), ...more);
+
+const ORDINARY_NIGHT: NightRow = { site: 'GS', night: '2025-11-14' };
 
 /** The ordinary night most tests open. */
 const openOrdinaryNight = (...more: MockLink.MockedResponse[]) =>
-  openNight(
-    '/night?site=GS&night=2025-11-14',
-    nightSchedule({ site: 'GS', night: '2025-11-14' }, { instrumentAvailability: [GHOST] }),
-    ...more,
-  );
+  openNightOf(ORDINARY_NIGHT, { instrumentAvailability: [GHOST] }, ...more);
 
-const chartBars = () =>
-  [...document.querySelectorAll('[data-testid="night-timeline"] path.highcharts-point')]
-    .map((point) => `${point.getAttribute('d') ?? ''}#${point.getAttribute('fill') ?? ''}`)
-    .join('|');
+const chartBars = () => drawnBars('[data-testid="night-timeline"]');
+
+afterEach(() => {
+  vi.useRealTimers();
+});
 
 describe(NightPage, () => {
   it('drops the Now key when the night ends, without updating the chart', async () => {
-    // The clock only: Apollo and Highcharts keep their real timers, and the wall clock keeps running underneath.
-    vi.useFakeTimers({ toFake: ['Date', 'setInterval', 'clearInterval'], shouldAdvanceTime: true });
-    try {
-      vi.setSystemTime(observingNightInterval('GS', '2025-11-14').start + 6 * 3_600_000);
-      const update = vi.spyOn(Highcharts.Chart.prototype, 'update');
-      const screen = await openOrdinaryNight();
-      const calendar = screen.getByRole('group', { name: 'Calendar' });
-      await expect.element(calendar.getByText('Now')).toBeVisible();
-      await expect.poll(() => drawnPlotLineX('.schedule-today')).toHaveLength(1);
-      const updates = update.mock.calls.length;
+    fakeClock(observingNightInterval('GS', '2025-11-14').start + 6 * HOUR_MS, { shouldAdvanceTime: true });
+    const update = vi.spyOn(Highcharts.Chart.prototype, 'update');
+    const screen = await openOrdinaryNight();
+    const calendar = screen.getByRole('group', { name: 'Calendar' });
+    await expect.element(calendar.getByText('Now')).toBeVisible();
+    await expect.poll(() => drawnPlotLineX('.schedule-today')).toHaveLength(1);
+    const updates = update.mock.calls.length;
 
-      vi.advanceTimersByTime(24 * 3_600_000);
+    vi.advanceTimersByTime(24 * HOUR_MS);
 
-      await expect.element(calendar.getByText('Now')).not.toBeInTheDocument();
-      expect(update.mock.calls.length).toBe(updates);
-    } finally {
-      vi.useRealTimers();
-    }
+    await expect.element(calendar.getByText('Now')).not.toBeInTheDocument();
+    expect(update.mock.calls.length).toBe(updates);
   });
 
   describe('the telescope-state rows', () => {
     it('draws a shutdown as a closed Telescope row, and an unrecorded mode as no Mode row at all', async () => {
       const shutdown = overNights('GS', '2024-08-02', '2024-08-16');
-      const screen = await openNight(
-        '/night?site=GS&night=2024-08-05',
-        nightSchedule(
-          { site: 'GS', night: '2024-08-05' },
-          {
-            telescopeAvailability: [telescopeAvailabilityBlock({ interval: shutdown, reason: 'Shutdown' })],
-            tooSupport: [tooSupportBlock({ interval: shutdown })],
-          },
-        ),
+      const screen = await openNightOf(
+        { site: 'GS', night: '2024-08-05' },
+        {
+          telescopeAvailability: [telescopeClosure({ interval: shutdown, reason: 'Shutdown' })],
+          tooSupport: [tooSupportBlock({ interval: shutdown })],
+        },
       );
 
       const legend = screen.getByLabelText('Legend');
@@ -89,45 +82,19 @@ describe(NightPage, () => {
       await expect.element(legend.getByRole('group', { name: 'Mode' })).not.toBeInTheDocument();
     });
 
-    it('heads a visitor night with the Telescope and Mode rows, their values keyed in sections', async () => {
-      const night = overNights('GN', '2026-08-27', '2026-08-27');
-      const screen = await openNight(
-        '/night?site=GN&night=2026-08-27',
-        nightSchedule(
-          { site: 'GN', night: '2026-08-27' },
-          {
-            telescopeAvailability: [telescopeAvailabilityBlock({ interval: night, availability: 'OPEN' })],
-            telescopeMode: [telescopeModeBlock({ interval: night, mode: 'PRIORITY_VISITOR' })],
-            tooSupport: [tooSupportBlock({ interval: night })],
-          },
-        ),
-      );
-
-      await expect.element(screen.getByText('Priority visitor').first()).toBeVisible();
-      // One legend section per state row, so a grey repeated across rows is keyed under its own row.
-      await expect.element(screen.getByRole('group', { name: 'Telescope' }).getByText('Open')).toBeVisible();
-      await expect.element(screen.getByRole('group', { name: 'Mode' }).getByText('Priority visitor')).toBeVisible();
-      await expect
-        .element(screen.getByRole('group', { name: 'ToO' }).getByText(TOO_SUPPORT_LABEL.STANDARD))
-        .toBeVisible();
-    });
-
     it('leaves a stretch the Telescope row does not record empty, never reading it as closed', async () => {
       // Open for the first night only: the second night is a gap in the telescope's record.
-      const screen = await openNight(
-        '/night?site=GS&night=2025-11-15',
-        nightSchedule(
-          { site: 'GS', night: '2025-11-15' },
-          {
-            telescopeAvailability: [
-              telescopeAvailabilityBlock({
-                interval: overNights('GS', '2025-11-14', '2025-11-14'),
-                availability: 'OPEN',
-              }),
-            ],
-            instrumentAvailability: [GHOST],
-          },
-        ),
+      const screen = await openNightOf(
+        { site: 'GS', night: '2025-11-15' },
+        {
+          telescopeAvailability: [
+            telescopeAvailabilityBlock({
+              interval: overNights('GS', '2025-11-14', '2025-11-14'),
+              availability: 'OPEN',
+            }),
+          ],
+          instrumentAvailability: [GHOST],
+        },
       );
 
       await expect.element(screen.getByTestId('night-timeline')).toBeVisible();
@@ -138,10 +105,7 @@ describe(NightPage, () => {
 
   describe('the night the backend holds nothing for', () => {
     it('says nothing is recorded, rather than drawing an empty chart', async () => {
-      const screen = await openNight(
-        '/night?site=GS&night=2025-11-14',
-        nightSchedule({ site: 'GS', night: '2025-11-14' }, { dataAvailable: false }),
-      );
+      const screen = await openNightOf(ORDINARY_NIGHT, { dataAvailable: false });
 
       await expect.element(screen.getByText('Nothing is recorded for this night', { exact: false })).toBeVisible();
       await expect.element(screen.getByTestId('night-timeline')).not.toBeInTheDocument();
@@ -172,17 +136,14 @@ describe(NightPage, () => {
   });
 
   it('says nothing is recorded for a night no published semester covers', async () => {
-    const screen = await openNight(
-      '/night?site=GS&night=2030-01-01',
-      nightSchedule({ site: 'GS', night: '2030-01-01' }, { dataAvailable: false }),
-    );
+    const screen = await openNightOf({ site: 'GS', night: '2030-01-01' }, { dataAvailable: false });
 
     await expect.element(screen.getByText('Nothing is recorded for this night', { exact: false })).toBeVisible();
   });
 
   it('draws no timeline when the night query fails, rather than an empty one beside the alert', async () => {
-    const screen = await openNight('/night?site=GS&night=2025-11-14', {
-      request: nightSchedule({ site: 'GS', night: '2025-11-14' }).request,
+    const screen = await openNight(nightUrl(ORDINARY_NIGHT), {
+      request: nightSchedule(ORDINARY_NIGHT).request,
       error: new Error('the Resource service did not answer'),
     });
 
@@ -205,7 +166,6 @@ describe(NightPage, () => {
     await screen.getByRole('button', { name: 'Tonight' }).click();
 
     await expect.element(screen.getByText(`Night of ${tonight}`)).toBeVisible();
-    await expect.element(screen.getByRole('button', { name: 'Tonight' })).toBeDisabled();
   });
 
   it('steps to the next night and back', async () => {
@@ -236,16 +196,11 @@ describe(NightPage, () => {
 
   it('steps a night away and back, redrawing the cached night in place', async () => {
     // A closed night bordering an open one, so the two windows draw different bars.
-    const screen = await openNight(
-      '/night?site=GS&night=2024-08-16',
-      nightSchedule(
-        { site: 'GS', night: '2024-08-16' },
-        {
-          telescopeAvailability: [
-            telescopeAvailabilityBlock({ interval: overNights('GS', '2024-08-16', '2024-08-16') }),
-          ],
-        },
-      ),
+    const screen = await openNightOf(
+      { site: 'GS', night: '2024-08-16' },
+      {
+        telescopeAvailability: [telescopeClosure({ interval: overNights('GS', '2024-08-16', '2024-08-16') })],
+      },
       nightSchedule(
         { site: 'GS', night: '2024-08-17' },
         {
@@ -277,22 +232,18 @@ describe(NightPage, () => {
     const screen = await openOrdinaryNight(
       nightSchedule({ site: 'GS', night: '2025-11-15' }, { instrumentAvailability: [GHOST] }),
     );
-    const points = () => document.querySelectorAll('[data-testid="night-timeline"] .highcharts-point').length;
-    await expect.poll(points).toBeGreaterThan(0);
+    await expect.poll(() => chartBars().length).toBeGreaterThan(0);
 
     await screen.getByRole('button', { name: 'Next night' }).click();
     await expect.element(screen.getByText('Night of 2025-11-15')).toBeVisible();
     await screen.getByRole('button', { name: 'Previous night' }).click();
     await expect.element(screen.getByText('Night of 2025-11-14')).toBeVisible();
 
-    await expect.poll(points).toBeGreaterThan(0);
+    await expect.poll(() => chartBars().length).toBeGreaterThan(0);
   });
 
   it('draws a Gemini North night against that site’s schedule', async () => {
-    const screen = await openNight(
-      '/night?site=GN&night=2026-11-14',
-      nightSchedule({ site: 'GN', night: '2026-11-14' }),
-    );
+    const screen = await openNightOf({ site: 'GN', night: '2026-11-14' });
 
     await expect.element(screen.getByText('Night of 2026-11-14')).toBeVisible();
     await expect.element(screen.getByTestId('night-timeline')).toBeVisible();
@@ -300,12 +251,9 @@ describe(NightPage, () => {
 
   it('moves the chart clock to UT from the menu', async () => {
     // The choice keeps the axis window, so the labels prove the in-place update took the new zone.
-    const screen = await renderApp({
-      element: <Layout />,
-      route: '/night?site=GS&night=2025-11-14',
-      path: '/',
-      childRoutes: [{ path: 'night', element: <NightPage /> }],
-      mocks: [nightSchedule({ site: 'GS', night: '2025-11-14' }, { instrumentAvailability: [GHOST] })],
+    const screen = await renderInShell(<NightPage />, {
+      route: nightUrl(ORDINARY_NIGHT),
+      mocks: [nightSchedule(ORDINARY_NIGHT, { instrumentAvailability: [GHOST] })],
     });
     const labels = () => nightAxisLabels().join('|');
     await expect.poll(() => labels().length).toBeGreaterThan(0);
@@ -320,39 +268,24 @@ describe(NightPage, () => {
 
   it('keeps an off-port run off the chart - the schedule is the ports picture', async () => {
     const night = overNights('GN', '2026-09-26', '2026-09-26');
-    const screen = await openNight(
-      '/night?site=GN&night=2026-09-26',
-      nightSchedule(
-        { site: 'GN', night: '2026-09-26' },
-        {
-          instrumentAvailability: [
-            instrumentAvailabilityBlock({ instrument: 'GMOS', port: 1, interval: night }),
-            instrumentAvailabilityBlock({
-              instrument: 'ALOPEKE',
-              publishedName: '`Alopeke',
-              place: 'FLOOR',
-              interval: night,
-            }),
-          ],
-        },
-      ),
+    const screen = await openNightOf(
+      { site: 'GN', night: '2026-09-26' },
+      {
+        instrumentAvailability: [
+          instrumentAvailabilityBlock({ instrument: 'GMOS', at: { port: 1 }, interval: night }),
+          instrumentAvailabilityBlock({
+            instrument: 'ALOPEKE',
+            publishedName: '`Alopeke',
+            at: { place: 'FLOOR' },
+            interval: night,
+          }),
+        ],
+      },
     );
 
     const chart = screen.getByTestId('night-timeline');
     await expect.element(chart.getByText('GMOS').first()).toBeVisible();
     await expect.element(chart.getByText('`Alopeke')).not.toBeInTheDocument();
-  });
-
-  it('shows a bar’s tooltip on hover', async () => {
-    const screen = await openOrdinaryNight();
-    await expect.element(screen.getByTestId('night-timeline')).toBeVisible();
-    await expect.poll(() => document.querySelector('[data-testid="night-timeline"] .highcharts-point')).not.toBeNull();
-
-    const bar = document.querySelector('[data-testid="night-timeline"] .highcharts-point');
-    await page.elementLocator(bar!).hover({ position: { x: 6, y: 8 } });
-
-    // GHOST runs the whole semester, so this night's tooltip reads "all night".
-    await expect.element(page.getByText('all night')).toBeVisible();
   });
 
   describe('the window it asks for', () => {

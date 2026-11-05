@@ -1,7 +1,7 @@
 import type { Options, XAxisPlotLinesOptions } from 'highcharts';
 
 import type { NightTimeline } from '@/domain/nightTimeline';
-import { displayTimeZone, type TimeDisplay, zoneFormatters } from '@/domain/siteTime';
+import { displayTimeZone, HOUR_MS, type TimeDisplay, zoneFormatters } from '@/domain/siteTime';
 import type { TimelineBlock } from '@/domain/timeline';
 import type { Site } from '@/domain/types';
 import {
@@ -15,7 +15,6 @@ import {
 
 export const ROW_HEIGHT_REM = 2.125;
 const BOTTOM_MARGIN_REM = 2.125;
-const HOUR_MS = 3_600_000;
 
 const clockFormat = zoneFormatters('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
 

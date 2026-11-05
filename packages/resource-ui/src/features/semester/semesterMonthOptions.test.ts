@@ -1,13 +1,18 @@
 /** Through the builder, so label, colour and tooltip decisions are checkable without a browser. */
-import type { AxisLabelsFormatterContextObject } from 'highcharts';
 import { describe, expect, it } from 'vitest';
 
-import { portRowLabel, TELESCOPE_PORTS } from '@/domain/ports';
 import { buildSemesterTimeline, type TimelineMonth } from '@/domain/semesterTimeline';
 import { observingNightInterval } from '@/domain/siteTime';
-import type { InstrumentAvailabilityBlock, Site, TelescopeAvailabilityBlock } from '@/domain/types';
+import type { Site } from '@/domain/types';
 import { buildTimelinePoints, DENSE, eveningDescriber, TICK } from '@/features/timeline/timelineOptions';
-import { scheduleOf } from '@/test/fixtures/domain';
+import { axisLabel, singleXAxis } from '@/test/chartOptions';
+import {
+  domainInstrumentBlock,
+  domainTelescopeClosure,
+  nightsSpan,
+  PORT_ROW_LABELS,
+  scheduleOf,
+} from '@/test/fixtures/domain';
 import { collectFontSizes } from '@/test/fontSizes';
 
 import {
@@ -19,30 +24,18 @@ import {
 
 const buildMonthPoints = (month: TimelineMonth, site: Site) => buildTimelinePoints(month.rows, eveningDescriber(site));
 
-const night = (label: string) => observingNightInterval('GS', label);
-const span = (from: string, to: string) => ({ start: night(from).start, end: night(to).end });
-
-/** Every month draws the telescope's ports, whatever the semester holds. */
-const ROWS = TELESCOPE_PORTS.map(portRowLabel);
-
-const GHOST: InstrumentAvailabilityBlock = {
+const GHOST = domainInstrumentBlock({
   id: 'ghost',
   instrument: 'GHOST',
-  publishedName: 'GHOST',
-  usage: 'SCIENCE',
-  port: 1,
-  place: null,
-  note: null,
-  interval: span('2026-08-08', '2027-02-01'),
-};
+  interval: nightsSpan('GS', '2026-08-08', '2027-02-01'),
+});
 
-const AG: TelescopeAvailabilityBlock = {
+const AG = domainTelescopeClosure({
   id: 'ag',
-  availability: 'CLOSED',
   port: 4,
   reason: 'A&G',
-  interval: span('2026-08-02', '2027-02-01'),
-};
+  interval: nightsSpan('GS', '2026-08-02', '2027-02-01'),
+});
 
 const timeline = buildSemesterTimeline({
   site: 'GS',
@@ -146,18 +139,11 @@ describe('day numbers', () => {
 });
 
 describe('the axis', () => {
-  const axisOf = () => {
-    const { xAxis } = buildSemesterMonthOptions({ month: august, site: 'GS' });
-    if (xAxis === undefined || Array.isArray(xAxis)) {
-      throw new Error('expected a single x axis');
-    }
-    return xAxis;
-  };
+  const axisOf = () => singleXAxis(buildSemesterMonthOptions({ month: august, site: 'GS' }));
 
   it("numbers the tick in the middle of each night with its evening's day, and any other value with nothing", () => {
-    const formatter = axisOf().labels?.formatter;
-    const label = (value: number) =>
-      formatter?.call({ value } as AxisLabelsFormatterContextObject, {} as never) ?? 'no formatter';
+    const axis = axisOf();
+    const label = (value: number) => axisLabel(axis, { value });
     const labels = dayTickPositions(august, 1).map(label);
 
     expect(labels.slice(0, 3)).toEqual(['1', '2', '3']);
@@ -171,7 +157,9 @@ describe('the axis', () => {
 
     expect(lines.map((line) => line.value)).toEqual(august.nights.map((entry) => entry.interval.start));
     expect(weekStarts.map((line) => line.value)).toEqual(
-      ['2026-08-03', '2026-08-10', '2026-08-17', '2026-08-24', '2026-08-31'].map((label) => night(label).start),
+      ['2026-08-03', '2026-08-10', '2026-08-17', '2026-08-24', '2026-08-31'].map(
+        (label) => observingNightInterval('GS', label).start,
+      ),
     );
   });
 
@@ -185,7 +173,11 @@ describe('the axis', () => {
   it('pins the rows so a row with nothing on it keeps its height', () => {
     const options = buildSemesterMonthOptions({ month: august, site: 'GS' });
 
-    expect(options.yAxis).toMatchObject({ min: 0, max: ROWS.length - 1, categories: ROWS });
+    expect(options.yAxis).toMatchObject({
+      min: 0,
+      max: PORT_ROW_LABELS.length - 1,
+      categories: PORT_ROW_LABELS,
+    });
   });
 
   it('sets every chart label at Data-small but the day ticks, whatever the month width', () => {
@@ -206,13 +198,11 @@ describe('the weekend bands', () => {
 });
 
 describe('the telescope-wide closure band', () => {
-  const shutdown: TelescopeAvailabilityBlock = {
+  const shutdown = domainTelescopeClosure({
     id: 'wide',
-    availability: 'CLOSED',
-    port: null,
     reason: 'Telescope Shutdown A&G Maintenance',
-    interval: span('2026-08-03', '2026-08-06'),
-  };
+    interval: nightsSpan('GS', '2026-08-03', '2026-08-06'),
+  });
   const month = buildSemesterTimeline({
     site: 'GS',
     firstNight: '2026-08-02',

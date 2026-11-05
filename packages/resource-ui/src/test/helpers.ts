@@ -1,8 +1,26 @@
-import { expect } from 'vitest';
-import { type LocatorSelectors, page, userEvent } from 'vitest/browser';
+import { expect, vi } from 'vitest';
+import { type Locator, type LocatorSelectors, page, userEvent } from 'vitest/browser';
 
-export async function chooseSite(sut: LocatorSelectors, site: 'GN' | 'GS'): Promise<void> {
-  await sut.getByRole('button', { name: site === 'GN' ? 'Gemini North' : 'Gemini South' }).click();
+import { type Site, SITE_NAMES } from '@/domain/types';
+
+export const UNDECODABLE_TOKEN = 'header.payload.signature';
+
+/** Timeouts alone, for a timer that must never fire; React's scheduler keeps its real clock. */
+export const fakeTimeouts = (): void => {
+  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+};
+
+/**
+ * The clock alone: `expect.poll`, the router, Apollo and Highcharts keep the real `setTimeout`.
+ * `shouldAdvanceTime` keeps the wall clock running underneath, for a subject that waits on real time too.
+ */
+export const fakeClock = (at: number, { shouldAdvanceTime = false }: { shouldAdvanceTime?: boolean } = {}): void => {
+  vi.useFakeTimers({ toFake: ['Date', 'setInterval', 'clearInterval'], shouldAdvanceTime });
+  vi.setSystemTime(at);
+};
+
+export async function chooseSite(sut: LocatorSelectors, site: Site): Promise<void> {
+  await sut.getByRole('button', { name: SITE_NAMES[site] }).click();
 }
 
 export async function openAppMenu(sut: LocatorSelectors): Promise<void> {
@@ -16,18 +34,17 @@ export async function openAppMenu(sut: LocatorSelectors): Promise<void> {
  */
 export async function chooseClock(sut: LocatorSelectors, label: 'Site time' | 'UTC'): Promise<void> {
   await openAppMenu(sut);
-  const choice = page.getByRole('menuitemradio', { name: `Clock: ${label}`, exact: true });
+  const choice = clockChoice(label);
   await expect.element(choice).toBeVisible();
   await userEvent.click(choice);
 }
 
-export const nightAxisLabels = (): string[] =>
-  [...document.querySelectorAll('[data-testid="night-timeline"] .highcharts-xaxis-labels text')].map(
-    (tick) => tick.textContent ?? '',
-  );
+export const clockChoice = (label: 'Site time' | 'UTC'): Locator =>
+  page.getByRole('menuitemradio', { name: `Clock: ${label}`, exact: true });
 
-/** Highcharts keeps a plot line it will not draw as a hidden or path-less element, so presence proves nothing. */
-export const drawnPlotLineX = (selector: string): number[] =>
-  [...document.querySelectorAll<SVGPathElement>(`.highcharts-plot-line${selector}`)]
-    .filter((line) => line.getAttribute('d') !== null && getComputedStyle(line).visibility !== 'hidden')
-    .map((line) => Number(/M\s*([\d.]+)/u.exec(line.getAttribute('d') ?? '')?.[1]));
+/** The text of every element `selector` matches, in document order. */
+export const textsOf = (selector: string): readonly string[] =>
+  [...document.querySelectorAll(selector)].map((node) => node.textContent ?? '');
+
+/** The open dropdown's options, in order; PrimeReact renders the panel into `document.body`. */
+export const dropdownOptionTexts = (): readonly string[] => textsOf('[role="option"]');

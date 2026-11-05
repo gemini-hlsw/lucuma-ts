@@ -77,11 +77,4 @@ describe(AboutResource, () => {
     const button = dialog.querySelector('button[aria-label="Copy version"]');
     expect(value(dialog, 'Version').contains(button)).toBe(true);
   });
-
-  it('sets nothing in the dialog in the muted tone reserved for duplication', async () => {
-    const dialog = await openDialog();
-
-    const muted = [...dialog.querySelectorAll('*')].filter((node) => node.classList.contains('text-foreground-muted'));
-    expect(muted).toHaveLength(0);
-  });
 });

@@ -1,13 +1,20 @@
-import type { AxisLabelsFormatterContextObject, XAxisOptions, YAxisOptions } from 'highcharts';
+import type { XAxisOptions, YAxisOptions } from 'highcharts';
 import { describe, expect, it } from 'vitest';
 
 import { buildNightTimeline } from '@/domain/nightTimeline';
-import { portRowLabel, TELESCOPE_PORTS } from '@/domain/ports';
-import { observingNightInterval } from '@/domain/siteTime';
+import { DAY_MS, HOUR_MS, observingNightInterval } from '@/domain/siteTime';
 import { TOO_SUPPORT_LABEL } from '@/domain/timeline';
-import type { InstrumentAvailabilityBlock, TelescopeAvailabilityBlock } from '@/domain/types';
+import type { InstrumentAvailabilityBlock, Schedule, TelescopeAvailabilityBlock } from '@/domain/types';
 import { buildTimelinePoints, DENSE, readerPx, TICK, type TimelinePoint } from '@/features/timeline/timelineOptions';
-import { scheduleOf } from '@/test/fixtures/domain';
+import { axisLabel, singleXAxis } from '@/test/chartOptions';
+import {
+  domainInstrumentBlock,
+  domainTelescopeClosure,
+  domainTelescopeModeBlock,
+  domainTooSupportBlock,
+  PORT_ROW_LABELS,
+  scheduleOf,
+} from '@/test/fixtures/domain';
 import { collectFontSizes } from '@/test/fontSizes';
 
 import {
@@ -21,23 +28,12 @@ import {
 
 const NIGHT = '2026-11-14';
 const interval = observingNightInterval('GS', NIGHT);
-/** Every night draws the telescope's ports, whatever tonight happens to hold. */
-const ROWS = TELESCOPE_PORTS.map(portRowLabel);
-const HOUR = 3_600_000;
 
-const instrumentBlock = (
-  over: Partial<InstrumentAvailabilityBlock> & Pick<InstrumentAvailabilityBlock, 'id' | 'port' | 'interval'>,
-): InstrumentAvailabilityBlock => ({
-  instrument: 'GMOS',
-  publishedName: 'GMOS',
-  usage: 'SCIENCE',
-  place: null,
-  note: null,
-  ...over,
-});
+const build = (schedule: Partial<Schedule> = {}) =>
+  buildNightTimeline({ site: 'GS', observingNight: NIGHT, schedule: scheduleOf(schedule) });
 
-const build = (instrumentAvailability: readonly InstrumentAvailabilityBlock[] = []) =>
-  buildNightTimeline({ site: 'GS', observingNight: NIGHT, schedule: scheduleOf({ instrumentAvailability }) });
+const onPort3 = (over: Partial<InstrumentAvailabilityBlock> = {}): InstrumentAvailabilityBlock =>
+  domainInstrumentBlock({ id: 'a', port: 3, interval, ...over });
 
 describe('clock and duration labels', () => {
   it('reads the clock in the site zone, not the browser one', () => {
@@ -63,8 +59,8 @@ describe('clock and duration labels', () => {
   });
 
   it('phrases a duration in hours and minutes', () => {
-    expect(durationLabel(2 * HOUR)).toBe('2 h');
-    expect(durationLabel(2 * HOUR + 15 * 60_000)).toBe('2 h 15 m');
+    expect(durationLabel(2 * HOUR_MS)).toBe('2 h');
+    expect(durationLabel(2 * HOUR_MS + 15 * 60_000)).toBe('2 h 15 m');
     expect(durationLabel(45 * 60_000)).toBe('45 m');
   });
 });
@@ -73,46 +69,36 @@ describe('describing a block', () => {
   const describe_ = nightDescriber('GS', interval, 'site');
 
   it('says "all night" rather than a span, when nothing changes', () => {
-    const block = build([instrumentBlock({ id: 'a', port: 3, interval })]).rows[2]?.blocks[0];
+    const block = build({ instrumentAvailability: [onPort3()] }).rows[2]?.blocks[0];
 
     // A night is 23 or 25 hours either side of a DST change, so a duration would be noise.
     expect(describe_.range(block!)).toBe('all night');
   });
 
   it('gives clock times for a block that covers only part of the night', () => {
-    const partial = build([
-      instrumentBlock({
-        id: 'a',
-        port: 3,
-        interval: { start: interval.start + 6 * HOUR, end: interval.start + 9 * HOUR },
-      }),
-    ]).rows[2]?.blocks[0];
+    const partial = build({
+      instrumentAvailability: [
+        onPort3({ interval: { start: interval.start + 6 * HOUR_MS, end: interval.start + 9 * HOUR_MS } }),
+      ],
+    }).rows[2]?.blocks[0];
 
     expect(describe_.range(partial!)).toBe('20:00 to 23:00');
     expect(describe_.length(partial!)).toBe('3 h');
   });
 
   it('phrases the same block in UT under the masthead UTC clock', () => {
-    const partial = build([
-      instrumentBlock({
-        id: 'a',
-        port: 3,
-        interval: { start: interval.start + 6 * HOUR, end: interval.start + 9 * HOUR },
-      }),
-    ]).rows[2]?.blocks[0];
+    const partial = build({
+      instrumentAvailability: [
+        onPort3({ interval: { start: interval.start + 6 * HOUR_MS, end: interval.start + 9 * HOUR_MS } }),
+      ],
+    }).rows[2]?.blocks[0];
 
     expect(nightDescriber('GS', interval, 'utc').range(partial!)).toBe('23:00 to 02:00');
   });
 });
 
-/** The chart's single x axis; the builder never produces the array form. */
-const axisOf = (): XAxisOptions => {
-  const { xAxis } = buildNightChartOptions({ night: build(), site: 'GS', timeDisplay: 'site' });
-  if (xAxis === undefined || Array.isArray(xAxis)) {
-    throw new Error('expected a single x axis');
-  }
-  return xAxis;
-};
+const axisOf = (): XAxisOptions =>
+  singleXAxis(buildNightChartOptions({ night: build(), site: 'GS', timeDisplay: 'site' }));
 
 describe('the chart', () => {
   it('spans exactly the night', () => {
@@ -129,7 +115,7 @@ describe('the chart', () => {
   });
 
   it('marks every instant a row changes', () => {
-    const changeover = interval.start + 9 * HOUR;
+    const changeover = interval.start + 9 * HOUR_MS;
     const lines = buildTransitionLines([changeover]);
 
     expect(lines).toEqual([
@@ -139,13 +125,9 @@ describe('the chart', () => {
 
   it('sets every chart label at Data-small but the hour ticks, which are the tick tier', () => {
     // A closure band and the now marker's slot, so every label the night chart can set is in the walk.
-    const night = buildNightTimeline({
-      site: 'GS',
-      observingNight: NIGHT,
-      schedule: scheduleOf({
-        instrumentAvailability: [instrumentBlock({ id: 'a', port: 3, interval })],
-        telescopeAvailability: [{ id: 'wide', availability: 'CLOSED', port: null, reason: 'Shutdown', interval }],
-      }),
+    const night = build({
+      instrumentAvailability: [onPort3()],
+      telescopeAvailability: [domainTelescopeClosure({ id: 'wide', reason: 'Shutdown', interval })],
     });
     const options = buildNightChartOptions({ night, site: 'GS', timeDisplay: 'site' });
 
@@ -154,16 +136,10 @@ describe('the chart', () => {
 });
 
 describe('the telescope-state header band', () => {
-  const stateNight = buildNightTimeline({
-    site: 'GS',
-    observingNight: NIGHT,
-    schedule: scheduleOf({
-      instrumentAvailability: [instrumentBlock({ id: 'g1', port: 2, interval })],
-      telescopeMode: [
-        { id: 'm1', mode: 'PRIORITY_VISITOR', programReferences: [], partner: null, interval, note: null },
-      ],
-      tooSupport: [{ id: 't1', tooSupport: 'STANDARD', interval, note: null }],
-    }),
+  const stateNight = build({
+    instrumentAvailability: [domainInstrumentBlock({ id: 'g1', port: 2, interval })],
+    telescopeMode: [domainTelescopeModeBlock({ id: 'm1', mode: 'PRIORITY_VISITOR', interval })],
+    tooSupport: [domainTooSupportBlock({ id: 't1', interval })],
   });
   const options = buildNightChartOptions({ night: stateNight, site: 'GS', timeDisplay: 'site' });
   const yAxis = options.yAxis as YAxisOptions;
@@ -171,12 +147,14 @@ describe('the telescope-state header band', () => {
 
   it('names each group above its bars, at full bar size', () => {
     // A heading row over the state rows and one over the subjects, not an axis break.
-    expect(yAxis.categories).toEqual(['Telescope', 'Mode', 'ToO', 'Instruments', ...ROWS]);
+    expect(yAxis.categories).toEqual(['Telescope', 'Mode', 'ToO', 'Instruments', ...PORT_ROW_LABELS]);
     // The fixture's one instrument block is on Port 2 - category index 5 here.
     expect(data.some((bar) => bar.y === 0 || bar.y === 3)).toBe(false);
     expect(data.some((bar) => bar.y === 5)).toBe(true);
     // The heading rows are real height, not squeezed out of the rows.
-    expect(options.chart?.height).toBe(8 + readerPx(2.125) + (2 + 2 + ROWS.length) * readerPx(ROW_HEIGHT_REM));
+    expect(options.chart?.height).toBe(
+      8 + readerPx(2.125) + (2 + 2 + PORT_ROW_LABELS.length) * readerPx(ROW_HEIGHT_REM),
+    );
   });
 
   it('draws the state rows monochrome - bright only when the state is notable', () => {
@@ -188,9 +166,7 @@ describe('the telescope-state header band', () => {
   });
 
   it('styles only the headings; every data row keeps its full-strength label', () => {
-    const formatter = yAxis.labels?.formatter;
-    const printed = (pos: number, value: string) =>
-      formatter?.call({ pos, value } as AxisLabelsFormatterContextObject, {} as never) ?? '';
+    const printed = (pos: number, value: string) => axisLabel(yAxis, { value, pos });
 
     expect(printed(0, 'Telescope')).toContain('TELESCOPE');
     expect(printed(0, 'Telescope')).toContain('var(--timeline-text)');
@@ -201,20 +177,13 @@ describe('the telescope-state header band', () => {
   it('sets a heading at Dense, the one chart size the walk cannot see', () => {
     // A heading's font-size lives inside a formatter-built HTML string, invisible to collectFontSizes'
     // object walk, so this is the one place that has to assert the size directly.
-    const formatter = yAxis.labels?.formatter;
-    const printed = formatter?.call({ pos: 0, value: 'Telescope' } as AxisLabelsFormatterContextObject, {} as never);
-
-    expect(printed).toContain(`font-size: ${DENSE}`);
+    expect(axisLabel(yAxis, { value: 'Telescope', pos: 0 })).toContain(`font-size: ${DENSE}`);
   });
 });
 
 describe('instrument usability treatments', () => {
   const pointFor = (usage: InstrumentAvailabilityBlock['usage']) => {
-    const night = buildNightTimeline({
-      site: 'GS',
-      observingNight: NIGHT,
-      schedule: scheduleOf({ instrumentAvailability: [instrumentBlock({ id: 'a', port: 3, usage, interval })] }),
-    });
+    const night = build({ instrumentAvailability: [onPort3({ usage })] });
     return buildTimelinePoints(night.rows, nightDescriber('GS', interval, 'site'))[0];
   };
 
@@ -243,30 +212,16 @@ describe('instrument usability treatments', () => {
 });
 
 describe('a port closure on the night', () => {
-  const telescopeBlock = (
-    over: Partial<TelescopeAvailabilityBlock> & Pick<TelescopeAvailabilityBlock, 'id' | 'interval'>,
-  ): TelescopeAvailabilityBlock => ({
-    availability: 'CLOSED',
-    port: 3,
-    reason: null,
-    ...over,
-  });
-
-  const pointsFor = (telescopeAvailability: readonly TelescopeAvailabilityBlock[]) => {
-    const night = buildNightTimeline({
-      site: 'GS',
-      observingNight: NIGHT,
-      schedule: scheduleOf({ telescopeAvailability }),
-    });
-    return buildTimelinePoints(night.rows, nightDescriber('GS', interval, 'site'));
-  };
+  const pointsFor = (telescopeAvailability: readonly TelescopeAvailabilityBlock[]) =>
+    buildTimelinePoints(build({ telescopeAvailability }).rows, nightDescriber('GS', interval, 'site'));
 
   it('draws as the hollow absence every view gives it - the Telescope row owns the red', () => {
     // A port-scoped span is not the telescope closing, and painting it red says otherwise.
-    const half = telescopeBlock({
+    const half = domainTelescopeClosure({
       id: 'c1',
+      port: 3,
       reason: 'Baffle inspection',
-      interval: { start: interval.start, end: interval.start + 12 * HOUR },
+      interval: { start: interval.start, end: interval.start + 12 * HOUR_MS },
     });
     const point = pointsFor([half])[0];
 
@@ -276,32 +231,23 @@ describe('a port closure on the night', () => {
   });
 
   it('names an unreasoned span as the shared absence label', () => {
-    const bare = telescopeBlock({ id: 'c2', interval });
+    const bare = domainTelescopeClosure({ id: 'c2', port: 3, interval });
 
     expect(pointsFor([bare])[0]?.custom.label).toBe('No instrument scheduled');
   });
 });
 
 describe('a telescope-wide closure on the night', () => {
-  const shutdown: TelescopeAvailabilityBlock = {
+  const shutdown = domainTelescopeClosure({
     id: 'wide',
-    availability: 'CLOSED',
-    port: null,
     reason: 'Telescope Shutdown A&G Maintenance',
     // Several nights long, as the published shutdowns are: this night sees the middle of it.
-    interval: { start: interval.start - 2 * 24 * HOUR, end: interval.end + 2 * 24 * HOUR },
-  };
+    interval: { start: interval.start - 2 * DAY_MS, end: interval.end + 2 * DAY_MS },
+  });
 
   const closureBand = () => {
-    const night = buildNightTimeline({
-      site: 'GS',
-      observingNight: NIGHT,
-      schedule: scheduleOf({ telescopeAvailability: [shutdown] }),
-    });
-    const { xAxis } = buildNightChartOptions({ night, site: 'GS', timeDisplay: 'site' });
-    if (xAxis === undefined || Array.isArray(xAxis)) {
-      throw new Error('expected a single x axis');
-    }
+    const night = build({ telescopeAvailability: [shutdown] });
+    const xAxis = singleXAxis(buildNightChartOptions({ night, site: 'GS', timeDisplay: 'site' }));
     return (xAxis.plotBands ?? []).find((band) => band.className === 'schedule-closure-band');
   };
 

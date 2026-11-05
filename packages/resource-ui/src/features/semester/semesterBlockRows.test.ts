@@ -1,30 +1,17 @@
 import { describe, expect, it } from 'vitest';
 
 import { buildSemesterTimeline } from '@/domain/semesterTimeline';
-import { observingNightInterval } from '@/domain/siteTime';
-import type { InstrumentAvailabilityBlock, Schedule, TelescopeAvailabilityBlock } from '@/domain/types';
-import { scheduleOf } from '@/test/fixtures/domain';
+import type { InstrumentAvailabilityBlock, Schedule } from '@/domain/types';
+import { domainInstrumentBlock, domainTelescopeClosure, nightsSpan, scheduleOf } from '@/test/fixtures/domain';
 
 import { buildBlockRows, WHOLE_TELESCOPE } from './semesterBlockRows';
 
 const SITE = 'GS' as const;
 
-const nights = (first: string, last: string) => ({
-  start: observingNightInterval(SITE, first).start,
-  end: observingNightInterval(SITE, last).end,
-});
+const nights = (first: string, last: string) => nightsSpan(SITE, first, last);
 
-const instrumentBlock = (over: Partial<InstrumentAvailabilityBlock> = {}): InstrumentAvailabilityBlock => ({
-  id: 'm1',
-  instrument: 'GMOS',
-  publishedName: 'GMOS',
-  usage: 'SCIENCE',
-  port: 3,
-  place: null,
-  interval: nights('2026-08-08', '2026-08-14'),
-  note: null,
-  ...over,
-});
+const instrumentBlock = (over: Partial<InstrumentAvailabilityBlock> = {}): InstrumentAvailabilityBlock =>
+  domainInstrumentBlock({ id: 'm1', port: 3, interval: nights('2026-08-08', '2026-08-14'), ...over });
 
 interface Span {
   readonly firstNight: string;
@@ -66,13 +53,11 @@ describe(buildBlockRows, () => {
   });
 
   it('files a telescope-wide closure under no port, with the whole phrase', () => {
-    const telescopeBlock: TelescopeAvailabilityBlock = {
+    const telescopeBlock = domainTelescopeClosure({
       id: 'wide',
-      availability: 'CLOSED',
-      port: null,
       interval: nights('2026-08-08', '2026-08-10'),
       reason: 'Telescope Shutdown A&G Maintenance',
-    };
+    });
 
     const band = build({ instrumentAvailability: [], telescopeAvailability: [telescopeBlock] }).find(
       (row) => row.rowLabel === WHOLE_TELESCOPE,
@@ -81,13 +66,7 @@ describe(buildBlockRows, () => {
   });
 
   it('names an unlabelled absence rather than leaving the cell blank', () => {
-    const telescopeBlock: TelescopeAvailabilityBlock = {
-      id: 'p4',
-      availability: 'CLOSED',
-      port: 4,
-      interval: nights('2026-08-08', '2026-08-08'),
-      reason: null,
-    };
+    const telescopeBlock = domainTelescopeClosure({ id: 'p4', port: 4, interval: nights('2026-08-08', '2026-08-08') });
 
     const rows = build({ instrumentAvailability: [], telescopeAvailability: [telescopeBlock] });
     expect(rows[0]).toMatchObject({ rowLabel: 'Port 4', subject: 'No instrument scheduled', nights: '1 night' });

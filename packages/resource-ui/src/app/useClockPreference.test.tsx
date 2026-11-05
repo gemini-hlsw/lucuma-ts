@@ -1,16 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import { Probe } from '@/test/probe';
-import { renderApp } from '@/test/renderApp';
+import { renderWithRoute } from '@/test/render';
 
 import { setClockPreference, useClockPreference } from './useClockPreference';
 
 const openClock = async () =>
-  renderApp({
-    route: '/night?site=GS',
-    element: <Probe use={useClockPreference} readout={(clock) => ({ clock })} />,
-    mocks: [],
-  });
+  renderWithRoute(<Probe use={useClockPreference} readout={(clock) => ({ clock })} />, { route: '/night?site=GS' });
 
 describe(useClockPreference, () => {
   it('starts on the site clock, which is what a reader at the telescope works in', async () => {
@@ -65,7 +61,7 @@ describe(useClockPreference, () => {
     setClockPreference('utc');
 
     await expect.element(screen.getByTestId('probe-clock')).toHaveTextContent('utc');
-    expect(screen.router.state.location.search).toBe('?site=GS');
+    expect(screen.router.location.search).toBe('?site=GS');
   });
 
   it('picks up a write from another tab through the storage event, not just a write from this one', async () => {

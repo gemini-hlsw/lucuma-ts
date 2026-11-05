@@ -1,31 +1,24 @@
 /** The cases the schedule views cannot show: no port, and nothing recorded tonight. */
 import { describe, expect, it } from 'vitest';
 
+import { domainInstrumentBlock, nightsSpan } from '@/test/fixtures/domain';
+
 import { buildInstrumentRows, locationOptions, matchesInstrument, runsOf } from './instrumentFinder';
-import { observingNightInterval } from './siteTime';
+import { HOUR_MS, observingNightInterval } from './siteTime';
 import type { InstrumentAvailabilityBlock } from './types';
 
 const SITE = 'GS' as const;
 const NIGHT = '2026-08-10';
 const night = observingNightInterval(SITE, NIGHT);
 
-/** A span covering whole observing nights, inclusive of both. */
-const nights = (first: string, last: string) => ({
-  start: observingNightInterval(SITE, first).start,
-  end: observingNightInterval(SITE, last).end,
-});
-
-const instrumentBlock = (over: Partial<InstrumentAvailabilityBlock> = {}): InstrumentAvailabilityBlock => ({
-  id: 'm1',
-  instrument: 'GMOS',
-  publishedName: 'GMOS-S',
-  usage: 'SCIENCE',
-  port: 3,
-  place: null,
-  interval: nights('2026-08-08', '2026-08-14'),
-  note: null,
-  ...over,
-});
+/** GMOS-S on Port 3 for a week around the night, unless a test says otherwise. */
+const instrumentBlock = (over: Partial<InstrumentAvailabilityBlock> = {}): InstrumentAvailabilityBlock =>
+  domainInstrumentBlock({
+    publishedName: 'GMOS-S',
+    port: 3,
+    interval: nightsSpan(SITE, '2026-08-08', '2026-08-14'),
+    ...over,
+  });
 
 describe(buildInstrumentRows, () => {
   it('says which port an instrument is on tonight, and how long the run is', () => {
@@ -33,7 +26,7 @@ describe(buildInstrumentRows, () => {
 
     expect(row).toMatchObject({ instrument: 'GMOS', publishedName: 'GMOS-S', usage: 'SCIENCE' });
     expect(row?.where).toEqual({ kind: 'PORT', port: 3 });
-    expect(row?.run).toEqual(nights('2026-08-08', '2026-08-14'));
+    expect(row?.run).toEqual(nightsSpan(SITE, '2026-08-08', '2026-08-14'));
   });
 
   it('says an instrument is on no port rather than inventing a place for it', () => {
@@ -49,7 +42,7 @@ describe(buildInstrumentRows, () => {
 
   it('reports a night with no record as unrecorded, never as unavailable (I4)', () => {
     const [row] = buildInstrumentRows({
-      instrumentAvailability: [instrumentBlock({ interval: nights('2026-09-01', '2026-09-05') })],
+      instrumentAvailability: [instrumentBlock({ interval: nightsSpan(SITE, '2026-09-01', '2026-09-05') })],
       night,
     });
 
@@ -59,7 +52,7 @@ describe(buildInstrumentRows, () => {
   });
 
   it('reports where an instrument ended up when it moves during the night', () => {
-    const changeover = night.start + 9 * 3_600_000;
+    const changeover = night.start + 9 * HOUR_MS;
     const [row] = buildInstrumentRows({
       instrumentAvailability: [
         instrumentBlock({ id: 'a', interval: { start: night.start, end: changeover } }),
@@ -93,7 +86,7 @@ describe(locationOptions, () => {
         instrumentBlock({ instrument: 'F2', port: 1 }),
         instrumentBlock({ instrument: 'CAL_ZORRO', port: null, place: 'UNKNOWN' }),
         // Recorded elsewhere in the window, nothing tonight.
-        instrumentBlock({ instrument: 'CANOPUS', interval: nights('2026-09-01', '2026-09-05') }),
+        instrumentBlock({ instrument: 'CANOPUS', interval: nightsSpan(SITE, '2026-09-01', '2026-09-05') }),
       ],
       night,
     });
@@ -115,8 +108,8 @@ describe(locationOptions, () => {
 
 describe(runsOf, () => {
   it('gives an instrument its runs over the window, oldest first', () => {
-    const later = instrumentBlock({ id: 'b', interval: nights('2026-09-01', '2026-09-05') });
-    const earlier = instrumentBlock({ id: 'a', interval: nights('2026-08-01', '2026-08-05') });
+    const later = instrumentBlock({ id: 'b', interval: nightsSpan(SITE, '2026-09-01', '2026-09-05') });
+    const earlier = instrumentBlock({ id: 'a', interval: nightsSpan(SITE, '2026-08-01', '2026-08-05') });
 
     expect(runsOf('GMOS', [later, earlier]).map((run) => run.id)).toEqual(['a', 'b']);
   });

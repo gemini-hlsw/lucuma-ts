@@ -1,5 +1,6 @@
 import { ApolloClient, ApolloLink, InMemoryCache } from '@apollo/client';
 import { MockLink } from '@apollo/client/testing';
+import { Observable } from '@apollo/client/utilities';
 
 /** Runs `links` ahead of canned answers, each reusable, so a test drives the real link chain without a schema. */
 export const createLinkClient = (links: ApolloLink, answers: readonly MockLink.MockedResponse[]): ApolloClient =>
@@ -21,3 +22,24 @@ export const captureHeader = (name: string): { link: ApolloLink; sent: (string |
   });
   return { link, sent };
 };
+
+/** Records each operation's name as it passes, then forwards it. */
+export const captureOperations = (): { link: ApolloLink; names: string[] } => {
+  const names: string[] = [];
+  const link = new ApolloLink((operation, forward) => {
+    names.push(operation.operationName ?? '');
+    return forward(operation);
+  });
+  return { link, names };
+};
+
+/** A terminal answer: the result then completion, or the error alone. */
+export const respondWith = (outcome: ApolloLink.Result | Error): Observable<ApolloLink.Result> =>
+  new Observable<ApolloLink.Result>((observer) => {
+    if (outcome instanceof Error) {
+      observer.error(outcome);
+    } else {
+      observer.next(outcome);
+      observer.complete();
+    }
+  });

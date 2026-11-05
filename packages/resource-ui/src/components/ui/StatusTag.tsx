@@ -13,7 +13,11 @@ export interface RecordStatus {
   readonly tone: StatusTone;
 }
 
-export function StatusTag({ status }: { status: RecordStatus }): JSX.Element {
+interface StatusTagProps {
+  status: RecordStatus;
+}
+
+export function StatusTag({ status }: StatusTagProps): JSX.Element {
   return (
     <Tag
       value={status.label}

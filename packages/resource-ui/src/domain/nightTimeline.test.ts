@@ -1,27 +1,20 @@
 /** The partial-night cases are synthetic on purpose: only this view can show the capability holds. */
 import { describe, expect, it } from 'vitest';
 
-import { scheduleOf } from '@/test/fixtures/domain';
+import {
+  domainInstrumentBlock,
+  domainTelescopeModeBlock,
+  domainTooSupportBlock,
+  scheduleOf,
+} from '@/test/fixtures/domain';
 
 import { buildNightTimeline } from './nightTimeline';
-import { observingNightInterval } from './siteTime';
+import { HOUR_MS, observingNightInterval } from './siteTime';
 import { MODE_ROW_LABEL, TOO_ROW_LABEL, TOO_SUPPORT_LABEL } from './timeline';
-import type { InstrumentAvailabilityBlock, Schedule, TelescopeModeBlock, TooSupportBlock } from './types';
+import type { InstrumentAvailabilityBlock, Schedule } from './types';
 
 const NIGHT = '2026-11-14';
 const interval = observingNightInterval('GS', NIGHT);
-const HOUR = 3_600_000;
-
-const instrumentBlock = (
-  over: Partial<InstrumentAvailabilityBlock> & Pick<InstrumentAvailabilityBlock, 'id' | 'port' | 'interval'>,
-): InstrumentAvailabilityBlock => ({
-  instrument: 'GMOS',
-  publishedName: 'GMOS',
-  usage: 'SCIENCE',
-  place: null,
-  note: null,
-  ...over,
-});
 
 const build = (over: Partial<Schedule> = {}) =>
   buildNightTimeline({ site: 'GS', observingNight: NIGHT, schedule: scheduleOf(over) });
@@ -38,7 +31,7 @@ describe('the night window', () => {
 
   it('reports no transitions when the night is uniform, which every published night is', () => {
     const night = build({
-      instrumentAvailability: [instrumentBlock({ id: 'a', port: 3, interval })],
+      instrumentAvailability: [domainInstrumentBlock({ id: 'a', port: 3, interval })],
     });
 
     expect(night.transitions).toEqual([]);
@@ -47,20 +40,18 @@ describe('the night window', () => {
 
 describe('partial nights', () => {
   // Nothing ever assumed a block covers a whole night, so a mid-night change needs no special case.
-  const CHANGEOVER = interval.start + 9 * HOUR;
+  const CHANGEOVER = interval.start + 9 * HOUR_MS;
   const SPLIT_NIGHT: readonly InstrumentAvailabilityBlock[] = [
-    instrumentBlock({
+    domainInstrumentBlock({
       id: 'first',
       port: 3,
       instrument: 'GMOS',
-      publishedName: 'GMOS',
       interval: { start: interval.start, end: CHANGEOVER },
     }),
-    instrumentBlock({
+    domainInstrumentBlock({
       id: 'second',
       port: 3,
       instrument: 'F2',
-      publishedName: 'F2',
       interval: { start: CHANGEOVER, end: interval.end },
     }),
   ];
@@ -85,44 +76,32 @@ describe('partial nights', () => {
     const night = build({
       instrumentAvailability: [
         ...SPLIT_NIGHT,
-        instrumentBlock({
+        domainInstrumentBlock({
           id: 'other',
           port: 2,
           instrument: 'GHOST',
-          publishedName: 'GHOST',
-          interval: { start: interval.start + 3 * HOUR, end: interval.end },
+          interval: { start: interval.start + 3 * HOUR_MS, end: interval.end },
         }),
       ],
     });
 
     // The changeover boundary is one instant even though two blocks touch it.
-    expect(night.transitions).toEqual([interval.start + 3 * HOUR, CHANGEOVER]);
+    expect(night.transitions).toEqual([interval.start + 3 * HOUR_MS, CHANGEOVER]);
   });
 });
 
 describe('the telescope-state rows', () => {
-  const too = (
-    over: Partial<TooSupportBlock> & Pick<TooSupportBlock, 'id' | 'tooSupport' | 'interval'>,
-  ): TooSupportBlock => ({
-    note: null,
-    ...over,
-  });
-  const mode = (
-    over: Partial<TelescopeModeBlock> & Pick<TelescopeModeBlock, 'id' | 'mode' | 'interval'>,
-  ): TelescopeModeBlock => ({
-    programReferences: [],
-    partner: null,
-    note: null,
-    ...over,
-  });
-
   it('draws a mid-night ToO change as two blocks and names the instant', () => {
     // ToO support changes at an instant no port row changes at, and the row shows where.
-    const change = interval.start + 7 * HOUR;
+    const change = interval.start + 7 * HOUR_MS;
     const night = build({
       tooSupport: [
-        too({ id: 'before', tooSupport: 'STANDARD', interval: { start: interval.start, end: change } }),
-        too({ id: 'after', tooSupport: 'RAPID', interval: { start: change, end: interval.end } }),
+        domainTooSupportBlock({
+          id: 'before',
+          tooSupport: 'STANDARD',
+          interval: { start: interval.start, end: change },
+        }),
+        domainTooSupportBlock({ id: 'after', tooSupport: 'RAPID', interval: { start: change, end: interval.end } }),
       ],
     });
 
@@ -136,7 +115,12 @@ describe('the telescope-state rows', () => {
   it('hands the tooltip the programs a classical span is for', () => {
     const night = build({
       telescopeMode: [
-        mode({ id: 'm', mode: 'CLASSICAL', programReferences: ['G-2099B-0042-C', 'G-2099B-0043-C'], interval }),
+        domainTelescopeModeBlock({
+          id: 'm',
+          mode: 'CLASSICAL',
+          programReferences: ['G-2099B-0042-C', 'G-2099B-0043-C'],
+          interval,
+        }),
       ],
     });
 
@@ -145,7 +129,7 @@ describe('the telescope-state rows', () => {
 
   it('hands the tooltip the partner a block-scheduling span belongs to', () => {
     const night = build({
-      telescopeMode: [mode({ id: 'm', mode: 'BLOCK_SCHEDULING', partner: 'UH', interval })],
+      telescopeMode: [domainTelescopeModeBlock({ id: 'm', mode: 'BLOCK_SCHEDULING', partner: 'UH', interval })],
     });
 
     const block = rowIn(night, MODE_ROW_LABEL)?.blocks[0];

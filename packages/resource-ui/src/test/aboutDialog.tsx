@@ -4,8 +4,7 @@ import { render } from 'vitest-browser-react';
 
 import { AboutResource } from '@/components/layout/AboutResource';
 
-export async function openDialog(width = 1024, height = 768): Promise<HTMLElement> {
-  await page.viewport(width, height);
+export async function openDialog(): Promise<HTMLElement> {
   await render(<AboutResource visible onHide={() => undefined} />);
   const dialog = page.getByTestId('about-resource');
   await expect.element(dialog).toBeVisible();
