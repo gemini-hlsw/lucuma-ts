@@ -73,8 +73,9 @@ Tailwind, codegen) apply unchanged and are not repeated here.
   props. Mocks are built per operation by `src/test/fixtures/` with only the blocks the assertion
   needs; each answers once, and an unanswered query fails the test, so a fixture must match the
   variables the page sends.
-- **`odbTokenAtom` snapshots `sessionStorage` when its module loads**, so two stores mounted in
-  one test share a token.
+- **Test files run as same-origin iframes of one tab and would share its `sessionStorage`.**
+  `src/test/setup.ts` gives each file its own, because `odbTokenAtom` snapshots storage when its
+  module loads. Two stores mounted in one test still share a token.
 - **URL hooks are driven through the URL**, with `test/probe.tsx` inside the real router, never
   `renderHook`. One `Probe` per route: two at the same position with different hook counts is a
   hook-order violation.
