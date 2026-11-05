@@ -1,10 +1,12 @@
-import { ApolloClient, ApolloLink, HttpLink, InMemoryCache } from '@apollo/client';
+import { ApolloClient, ApolloLink, HttpLink } from '@apollo/client';
 import { SetContextLink } from '@apollo/client/link/context';
 import { withAbsoluteUri } from '@gemini-hlsw/lucuma-common-ui';
 
 import { CURRENT_ENV } from '@/auth/environments';
 import { odbTokenAtom } from '@/components/atoms/auth';
 import { store } from '@/components/atoms/store';
+
+import { makeCache } from './cache';
 
 /*
  * One Apollo client fronting the app's two GraphQL endpoints, split on the
@@ -40,5 +42,5 @@ export const client = new ApolloClient({
     version: import.meta.env.FRONTEND_VERSION,
   },
   link: authLink.concat(endpointLink),
-  cache: new InMemoryCache(),
+  cache: makeCache(),
 });
