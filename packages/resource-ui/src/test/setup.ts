@@ -1,7 +1,7 @@
 import { MockLink } from '@apollo/client/testing';
 import { beforeEach } from 'vitest';
 
-// Apollo's default is a random 20-50 ms delay; a mock that answers late can be unsubscribed by the next interaction and is then spent.
+// Apollo 4 mocks answer after 20-50 ms; a query re-issued inside that window finds its one-use mock spent.
 MockLink.defaultOptions = { delay: 0 };
 
 /**

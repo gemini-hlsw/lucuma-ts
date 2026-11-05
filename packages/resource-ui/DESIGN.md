@@ -400,8 +400,7 @@ the workflow into it, but keep masthead selections global and page controls loca
   first when anything joins the bar. The signed-in name is the right cluster's one item that
   varies with its content, and it is bounded: `.xp-account-name` caps it at 8.75rem with an
   ellipsis, the whole name staying in the control's `title`, and below `md` it is `sr-only`
-  altogether. `Layout.test.tsx` pins the bar's fit at 320, 390, 768 and 1024 with a
-  40-character name. Nothing clips between 320px and 1440px. The controls in
+  altogether. Nothing clips between 320px and 1440px. The controls in
   the bar are `lucuma-ui-css`'s and are sized in rem against a 16px root, so a reader who raises
   their browser font size spends this slack; re-measure rather than assuming it. Check the budget
   before adding an item: the flexible column is what gives way first, so whatever sits in it is
