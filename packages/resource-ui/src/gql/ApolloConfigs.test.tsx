@@ -9,7 +9,6 @@ import { page } from 'vitest/browser';
 import { render } from 'vitest-browser-react';
 
 import { odbTokenAtom, sessionCheckedAtom } from '@/components/atoms/auth';
-import { store as appStore } from '@/components/atoms/store';
 import { ToastOutlet } from '@/components/ui/ToastOutlet';
 import { captureHeader, createLinkClient } from '@/test/linkClient';
 
@@ -89,7 +88,7 @@ describe(authLink, () => {
 describe('two link chains on two stores', () => {
   it('should send no bearer through a chain built on another store when a token is set on the first', async () => {
     const other = createStore();
-    appStore.set(odbTokenAtom, TOKEN);
+    store.set(odbTokenAtom, TOKEN);
     const capture = captureHeader('Authorization');
     const linkClient = createLinkClient(ApolloLink.from([authLink(other), capture.link]), ANSWERS);
 
