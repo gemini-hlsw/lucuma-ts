@@ -13,7 +13,7 @@ export interface RecordStatus {
   readonly tone: StatusTone;
 }
 
-export interface StatusTagProps {
+interface StatusTagProps {
   status: RecordStatus;
 }
 

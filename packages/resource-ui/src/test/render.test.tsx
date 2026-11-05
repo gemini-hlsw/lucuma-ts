@@ -35,7 +35,7 @@ describe(renderWithContext, () => {
     await expect.element(screen.getByRole('status')).toHaveTextContent('signed-in');
   });
 
-  it('should start signed out when an earlier render in the test hydrated a token and storage was cleared', async () => {
+  it('should start with no token, still checking, when an earlier render hydrated one and storage was cleared', async () => {
     const first = await renderWithContext(Status, { initialValues: [[odbTokenAtom, fakeJwt(standardUser('staff'))]] });
     await expect.element(first.getByRole('status')).toHaveTextContent('signed-in');
     await first.unmount();

@@ -6,7 +6,7 @@ import type { FinderRow } from '@/domain/componentFinder';
 
 import { componentStatus } from './componentLabels';
 
-export interface ComponentIdentityCellProps {
+interface ComponentIdentityCellProps {
   row: FinderRow;
 }
 
@@ -23,7 +23,7 @@ export function ComponentIdentityCell({ row }: ComponentIdentityCellProps): JSX.
 }
 
 /** The badge alone: the record's note is its own column (`NoteCell`), never a second line here. */
-export interface StatusCellProps {
+interface StatusCellProps {
   row: FinderRow;
 }
 

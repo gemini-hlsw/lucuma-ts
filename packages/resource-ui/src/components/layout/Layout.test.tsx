@@ -54,10 +54,8 @@ async function renderShell({
     ],
   });
 }
-const accountNameSpan = (screen: RenderResultWithRoute): HTMLElement | undefined =>
-  [...screen.getByTestId('account-control').element().querySelectorAll('span')].find(
-    (span) => span.textContent === 'Not signed in',
-  );
+const accountName = (screen: RenderResultWithRoute): HTMLElement =>
+  screen.getByTestId('account-control').getByText('Not signed in', { exact: true }).element() as HTMLElement;
 
 function navigations(container: HTMLElement): { sidebar: Element; bottom: Element } {
   const sidebar = container.querySelector('aside');
@@ -270,10 +268,9 @@ describe(Layout, () => {
   it('moves the account name into the menu below `md`, keeping it announced in the bar', async () => {
     const screen = await renderShell({ at: PHONE });
 
-    const name = accountNameSpan(screen);
-    expect(name).toBeDefined();
-    expect(getComputedStyle(name!).display).not.toBe('none');
-    expect(name!.getBoundingClientRect().width).toBeLessThanOrEqual(2);
+    const name = accountName(screen);
+    expect(getComputedStyle(name).display).not.toBe('none');
+    expect(name.getBoundingClientRect().width).toBeLessThanOrEqual(2);
 
     await screen.getByRole('button', { name: 'Menu' }).click();
     await expect.element(page.getByRole('menu').getByText('Not signed in', { exact: true })).toBeVisible();
@@ -302,9 +299,8 @@ describe(Layout, () => {
   it('shows the account name on the bar at `md` and up, and heads the menu with it too', async () => {
     const screen = await renderShell();
 
-    const name = accountNameSpan(screen);
-    expect(name).toBeDefined();
-    expect(name!.getBoundingClientRect().width).toBeGreaterThan(10);
+    const name = accountName(screen);
+    expect(name.getBoundingClientRect().width).toBeGreaterThan(10);
     await openAppMenu(screen);
     await expect.element(page.getByRole('menu').getByText('Not signed in', { exact: true })).toBeVisible();
   });
