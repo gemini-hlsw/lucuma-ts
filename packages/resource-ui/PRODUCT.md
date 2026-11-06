@@ -24,13 +24,14 @@ compose schedules once writing arrives.
 
 Every view sits behind the session check. Opening any URL shows the loading mark until the check
 settles, at most the refresh timeout, then the page at that URL for a reader with a session and the
-sign-in screen for one without. A reader signs in on the sign-in screen, with ORCID or as a guest;
-the masthead names whoever is here (the person's display name, or "Guest User"), and a guest can
-still sign in with ORCID from the app menu. Guest is SSO's own guest session, so another tab or
-another GPP app on the domain picks it up, and a guest reads what a PI reads. There is no login
-route: the URL never changes on the way in, so a deep link survives either path. A session that
-ends under a reader - expiry, a refused refresh, a sign-out in another tab - returns them to the
-sign-in screen with a one-line notice. Writes will need an ORCID account.
+sign-in screen for one without; a reload asks SSO again, so a session ended elsewhere does not
+survive one. A reader signs in on the sign-in screen, with ORCID or as a guest; the masthead names
+whoever is here (the person's display name, or "Guest User"), and a guest can still sign in with
+ORCID from the app menu. Guest is SSO's own guest session, so another tab or another GPP app on the
+domain picks it up, and a guest reads what a PI reads. There is no login route: the URL never
+changes on the way in, so a deep link survives either path. A session that ends under a reader -
+expiry, a refused refresh, a sign-out in another tab - returns them to the sign-in screen with a
+one-line notice. Writes will need an ORCID account.
 
 ## Product Purpose
 

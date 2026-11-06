@@ -1,7 +1,6 @@
 import type { Store } from 'jotai';
 
 import {
-  isLoggedInAtom,
   odbTokenAtom,
   sessionCheckedAtom,
   sessionEndingAtom,
@@ -131,6 +130,9 @@ function createKeeper(store: Store, timings: SessionTimings): Keeper {
         case 'token': {
           backoffMs = 0;
           retryNotBefore = 0;
+          // The token subscriber treats a token written mid-refresh as newer than the refresh, so this one must not look in flight.
+          inFlight = undefined;
+          abortController = undefined;
           setToken(store, result.token);
           const exp = store.get(tokenExpAtom);
           if (exp !== null && exp.getTime() <= Date.now()) {
@@ -197,7 +199,22 @@ function createKeeper(store: Store, timings: SessionTimings): Keeper {
     void refresh();
   };
 
-  // Only a session that was signed in earns a notice.
+  const discardInFlight = (): void => {
+    abortController?.abort();
+    abortController = undefined;
+    inFlight = undefined;
+  };
+
+  // A token that arrived by another path, such as a guest sign-in, is newer than any answer still in flight.
+  const handleTokenChange = (): void => {
+    if (inFlight !== undefined && store.get(odbTokenAtom) !== null) {
+      discardInFlight();
+      store.set(sessionCheckedAtom, true);
+    }
+    arm();
+  };
+
+  // Only a session the gate opened earns a notice, so a stored token SSO refuses at load ends nothing.
   let lastStatus = store.get(sessionStatusAtom);
   const handleStatusChange = (): void => {
     const status = store.get(sessionStatusAtom);
@@ -207,7 +224,7 @@ function createKeeper(store: Store, timings: SessionTimings): Keeper {
     lastStatus = status;
   };
 
-  const unsubscribe = store.sub(odbTokenAtom, arm);
+  const unsubscribe = store.sub(odbTokenAtom, handleTokenChange);
   const unsubscribeStatus = store.sub(sessionStatusAtom, handleStatusChange);
   document.addEventListener('visibilitychange', handleVisibilityChange);
   const channel = new BroadcastChannel(SESSION_CHANNEL);
@@ -215,9 +232,7 @@ function createKeeper(store: Store, timings: SessionTimings): Keeper {
 
   const reset = (): void => {
     clearTimers();
-    abortController?.abort();
-    abortController = undefined;
-    inFlight = undefined;
+    discardInFlight();
     backoffMs = 0;
     retryNotBefore = 0;
     refreshDueAt = null;
@@ -232,11 +247,7 @@ function createKeeper(store: Store, timings: SessionTimings): Keeper {
     channel.close();
   };
 
-  if (store.get(isLoggedInAtom)) {
-    store.set(sessionCheckedAtom, true);
-  } else {
-    void refresh();
-  }
+  if (!store.get(sessionCheckedAtom)) void refresh();
   arm();
 
   return { channel, pendingRefresh: () => inFlight, reset, stop };

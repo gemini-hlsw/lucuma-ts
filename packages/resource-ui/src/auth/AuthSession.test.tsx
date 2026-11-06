@@ -23,7 +23,7 @@ import { fakeTimeouts, openAppMenu, toastNamed } from '@/test/helpers';
 import { captureHeader, captureOperations, createLinkClient, respondWith } from '@/test/linkClient';
 import { renderInShell, type RenderResultWithRoute, renderWithRoute } from '@/test/render';
 import { announceFromOtherTab, refuseRefresh, RENEW_AT_ONCE, staffToken } from '@/test/session';
-import { answerRefresh, ssoCall, ssoCalls, ssoLogout, ssoRefreshes, stubSso } from '@/test/sso';
+import { answerRefresh, failRefresh, ssoCall, ssoCalls, ssoLogout, ssoRefreshes, stubSso } from '@/test/sso';
 
 import { AuthSession } from './AuthSession';
 import {
@@ -127,10 +127,12 @@ const deniesAnonymous = new ApolloLink((operation, forward) => {
 
 const renderShell = async ({
   token = null,
+  checked = false,
   after,
   timings = SESSION_TIMINGS,
 }: {
   token?: string | null;
+  checked?: boolean;
   after?: ApolloLink;
   timings?: SessionTimings;
 } = {}) => {
@@ -139,7 +141,7 @@ const renderShell = async ({
     after === undefined ? logOperation : ApolloLink.from([logOperation, after]),
   );
   setToken(store, token);
-  store.set(sessionCheckedAtom, token !== null);
+  store.set(sessionCheckedAtom, checked);
   const screen = await renderInShell(<NightPage />, {
     route: SHELL_ROUTE,
     store,
@@ -404,17 +406,39 @@ describe(AuthSession, () => {
     expect(document.querySelector('.p-toast-message')).toBeNull();
   });
 
-  it('should send each request once, at once, with the bearer when a tab returns with a token', async () => {
-    const token = fakeJwt(standardUser('staff'));
-    const screen = await renderShell({ token });
+  it('should ask SSO once before sending anything, then send each request once with the fresh bearer, when a tab returns', async () => {
+    const screen = await renderShell({ token: staffToken() });
 
+    await expect.element(screen.getByText(GATE_LOADING)).toBeVisible();
+    await expect.poll(() => ssoRefreshes()).toHaveLength(1);
+    expect(screen.operations).toEqual([]);
+
+    const fresh = fakeJwt(standardUser('staff'), 7200);
+    await answerRefresh(0, { body: fresh });
+
+    await expect.element(screen.getByTestId('account-control')).toHaveTextContent('Ada Lovelace');
     await expect.element(screen.getByText(NIGHT_LOADING)).not.toBeInTheDocument();
     await screen.client.query({ query: RENEWAL_MARKER, fetchPolicy: 'network-only' });
 
     expect(screen.operations.length).toBeGreaterThan(1);
     expect(sentOnce(screen.operations)).toBe(true);
-    expect(screen.authorizations.every((authorization) => authorization === `Bearer ${token}`)).toBe(true);
-    expect(ssoCalls()).toHaveLength(0);
+    expect(screen.authorizations.every((authorization) => authorization === `Bearer ${fresh}`)).toBe(true);
+    expect(ssoRefreshes()).toHaveLength(1);
+  });
+
+  it('should open a returning tab on its stored token, sending each request with that bearer, when SSO cannot be reached', async () => {
+    const token = staffToken();
+    const screen = await renderShell({ token });
+    await expect.element(screen.getByText(GATE_LOADING)).toBeVisible();
+    await expect.poll(() => ssoRefreshes()).toHaveLength(1);
+    expect(screen.operations).toEqual([]);
+
+    await failRefresh(0);
+
+    await expect.element(screen.getByTestId('account-control')).toHaveTextContent('Ada Lovelace');
+    await expect.element(screen.getByText(NIGHT_LOADING)).not.toBeInTheDocument();
+    expect(screen.operations).toEqual(['NightSchedule']);
+    expect(screen.authorizations).toEqual([`Bearer ${token}`]);
   });
 
   it('should hold the data for the full 10 s when the first refresh goes unanswered', async () => {
@@ -466,7 +490,7 @@ describe(AuthSession, () => {
     ])(
       'should fetch a page afresh, not read it from the cache, when the reader comes back to it after a session ended by %s and a fresh sign-in',
       async (_, expiresInSeconds, end) => {
-        const screen = await renderShell({ token: fakeJwt(standardUser('staff'), expiresInSeconds) });
+        const screen = await renderShell({ token: fakeJwt(standardUser('staff'), expiresInSeconds), checked: true });
         await expect.element(screen.getByText(NIGHT_LOADING)).not.toBeInTheDocument();
         const page = await openSemesters(screen.client);
         await expect.element(page.getByTestId('semesters')).toHaveTextContent('0 semesters');

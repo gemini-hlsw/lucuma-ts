@@ -17,7 +17,7 @@ import { fakeTimeouts, openAppMenu, toastNamed } from '@/test/helpers';
 import { captureOperations, createLinkClient } from '@/test/linkClient';
 import { renderInShell } from '@/test/render';
 import { announceFromOtherTab, refuseRefresh, RENEW_AT_ONCE, staffToken } from '@/test/session';
-import { ssoCalls, ssoLogout, ssoRefreshes, stubSso } from '@/test/sso';
+import { answerRefresh, failRefresh, ssoCalls, ssoLogout, ssoRefreshes, stubSso } from '@/test/sso';
 
 import { AuthSession } from './AuthSession';
 import { SESSION_CHANNEL, SESSION_TIMINGS, type SessionTimings, SIGNED_OUT_MESSAGE } from './session';
@@ -37,7 +37,7 @@ const NIGHT = nightSchedule({ site: 'GS', night: '2025-11-14' });
 /** Each answer serves once, so a request the test did not expect fails as "No more mocked responses". */
 const openGate = async ({
   token = null,
-  checked = token !== null,
+  checked = false,
   timings = SESSION_TIMINGS,
   mocks = [NIGHT],
   after,
@@ -155,7 +155,11 @@ describe(SessionGateContainer, () => {
   ])(
     'should return to the splash with focus on its landmark when %s ends the session, saying "%s" and nothing about a menu',
     async (_, summary, severity, expiresInSeconds, timings, end) => {
-      const screen = await openGate({ token: fakeJwt(standardUser('staff'), expiresInSeconds), timings });
+      const screen = await openGate({
+        checked: true,
+        token: fakeJwt(standardUser('staff'), expiresInSeconds),
+        timings,
+      });
       await expect.element(screen.getByRole('heading', PAGE_HEADING)).toBeVisible();
 
       await end();
@@ -175,7 +179,7 @@ describe(SessionGateContainer, () => {
     ['SSO confirms', () => ssoLogout().answer({ status: 200 }), []],
     ['SSO is unreachable', () => ssoLogout().fail(), [expect.stringContaining(LOGOUT_UNREACHABLE)]],
   ])('should return to the splash, announced once, when Logout is pressed and %s', async (_, settle, toasts) => {
-    const screen = await openGate({ token: staffToken() });
+    const screen = await openGate({ checked: true, token: staffToken() });
     await expect.element(screen.getByRole('heading', PAGE_HEADING)).toBeVisible();
 
     await pressLogout(screen);
@@ -203,7 +207,7 @@ describe(SessionGateContainer, () => {
     ],
     ['a sign-out in another tab', () => announceFromOtherTab()],
   ])('should send nothing, so no request leaves without the bearer, when %s ends the session', async (_, end) => {
-    const screen = await openGate({ token: staffToken() });
+    const screen = await openGate({ checked: true, token: staffToken() });
     await expect.element(screen.getByRole('heading', PAGE_HEADING)).toBeVisible();
 
     await end(screen);
@@ -225,7 +229,7 @@ describe(SessionGateContainer, () => {
     });
     observer.observe(document.body, { subtree: true, childList: true });
     try {
-      const screen = await openGate({ token: staffToken(), after: holdFirst });
+      const screen = await openGate({ checked: true, token: staffToken(), after: holdFirst });
       await expect.element(screen.getByText('Loading the night…')).toBeVisible();
 
       await pressLogout(screen);
@@ -242,7 +246,7 @@ describe(SessionGateContainer, () => {
   });
 
   it('should take a standing session toast down and fetch the page afresh when a guest signs in again', async () => {
-    const screen = await openGate({ token: staffToken(), mocks: [NIGHT, NIGHT] });
+    const screen = await openGate({ checked: true, token: staffToken(), mocks: [NIGHT, NIGHT] });
     await expect.element(screen.getByRole('heading', PAGE_HEADING)).toBeVisible();
     await announceFromOtherTab();
     await expect.element(toastNamed(SIGNED_OUT_ELSEWHERE)).toBeVisible();
@@ -274,7 +278,7 @@ describe(SessionGateContainer, () => {
     };
 
     it('should still return to the splash when another tab signs out', async () => {
-      const screen = await openGate({ token: staffToken(), mocks: [NIGHT, NIGHT] });
+      const screen = await openGate({ checked: true, token: staffToken(), mocks: [NIGHT, NIGHT] });
       await logOutThenContinueAsGuest(screen, fakeJwt({ type: 'guest', id: 'u-guest' }));
 
       await announceFromOtherTab();
@@ -286,7 +290,7 @@ describe(SessionGateContainer, () => {
 
     it('should still refresh the guest token when it reaches the refresh-ahead mark', async () => {
       fakeTimeouts();
-      const screen = await openGate({ token: staffToken(), mocks: [NIGHT, NIGHT] });
+      const screen = await openGate({ checked: true, token: staffToken(), mocks: [NIGHT, NIGHT] });
       await logOutThenContinueAsGuest(screen, fakeJwt({ type: 'guest', id: 'u-guest' }, 120));
 
       await vi.advanceTimersByTimeAsync(89_000);
@@ -297,7 +301,7 @@ describe(SessionGateContainer, () => {
     });
 
     it('should still tell the other tabs when it presses Logout again', async () => {
-      const screen = await openGate({ token: staffToken(), mocks: [NIGHT, NIGHT] });
+      const screen = await openGate({ checked: true, token: staffToken(), mocks: [NIGHT, NIGHT] });
       await logOutThenContinueAsGuest(screen, fakeJwt({ type: 'guest', id: 'u-guest' }));
       const otherTab = new BroadcastChannel(SESSION_CHANNEL);
       const heard: unknown[] = [];
@@ -314,7 +318,84 @@ describe(SessionGateContainer, () => {
     });
   });
 
-  it('should show the page at its URL, never drawing the splash or the loading mark on the way, when the reader holds a token', async () => {
+  describe('a reload with a token stored', () => {
+    it('should ask SSO before showing anything but the loading mark, then show the splash with no notice, when SSO refuses', async () => {
+      const screen = await openGate({ token: staffToken() });
+
+      await expect.element(screen.getByText('Loading Resource…')).toBeVisible();
+      expect(screen.getByRole('heading', PAGE_HEADING).query()).toBeNull();
+      await expect.poll(() => ssoRefreshes()).toHaveLength(1);
+      expect(screen.operations).toEqual([]);
+
+      await answerRefresh(0, { status: 403 });
+
+      await expect.element(screen.getByRole('heading', SPLASH_HEADING)).toBeVisible();
+      expect(screen.getByRole('heading', PAGE_HEADING).query()).toBeNull();
+      await expect.element(screen.getByRole('main', { name: SPLASH_HEADING.name })).toHaveFocus();
+      expect(toastTexts()).toEqual([]);
+      expect(screen.operations).toEqual([]);
+    });
+
+    it('should show the splash with no notice, since the page never opened, when the stored token expires while SSO hangs', async () => {
+      const screen = await openGate({
+        token: fakeJwt(standardUser('staff'), 1.5),
+        timings: { ...SESSION_TIMINGS, refreshTimeoutMs: 3_000 },
+      });
+      await expect.element(screen.getByText('Loading Resource…')).toBeVisible();
+      await expect.poll(() => ssoRefreshes()).toHaveLength(1);
+
+      await expect.element(screen.getByRole('heading', SPLASH_HEADING), { timeout: 4_000 }).toBeVisible();
+      expect(ssoRefreshes()[0]?.signal?.aborted).toBe(true);
+      expect(screen.getByRole('heading', PAGE_HEADING).query()).toBeNull();
+      expect(toastTexts()).toEqual([]);
+      expect(screen.operations).toEqual([]);
+    });
+
+    const expectPageOnStoredToken = async (screen: Awaited<ReturnType<typeof openGate>>): Promise<void> => {
+      await expect.element(screen.getByRole('heading', PAGE_HEADING)).toBeVisible();
+      await expect.element(screen.getByTestId('account-control')).toHaveTextContent('Ada Lovelace');
+      await expect.element(screen.getByText('Loading the night…')).not.toBeInTheDocument();
+      expect(screen.getByRole('heading', SPLASH_HEADING).query()).toBeNull();
+      expect(toastTexts()).toEqual([]);
+      expect(screen.operations).toEqual(['NightSchedule']);
+    };
+
+    it('should keep the stored token and open the page on it when a network failure proves SSO unreachable', async () => {
+      const screen = await openGate({ token: staffToken() });
+      await expect.element(screen.getByText('Loading Resource…')).toBeVisible();
+      await expect.poll(() => ssoRefreshes()).toHaveLength(1);
+
+      await failRefresh(0);
+
+      await expectPageOnStoredToken(screen);
+    });
+
+    it('should keep the stored token and open the page on it when the refresh timeout proves SSO unreachable', async () => {
+      fakeTimeouts();
+      const screen = await openGate({ token: staffToken() });
+      await expect.element(screen.getByText('Loading Resource…')).toBeVisible();
+      await expect.poll(() => ssoRefreshes()).toHaveLength(1);
+
+      await vi.advanceTimersByTimeAsync(REFRESH_TIMEOUT_MS);
+
+      await expect.element(screen.getByRole('heading', PAGE_HEADING)).toBeVisible();
+      await vi.advanceTimersByTimeAsync(0);
+      await expectPageOnStoredToken(screen);
+    });
+
+    it('should show the splash without a notice when the stored token had already expired and SSO refuses', async () => {
+      const screen = await openGate({ token: fakeJwt(standardUser('staff'), -60) });
+      await expect.poll(() => ssoRefreshes()).toHaveLength(1);
+
+      await answerRefresh(0, { status: 403 });
+
+      await expect.element(screen.getByRole('heading', SPLASH_HEADING)).toBeVisible();
+      expect(toastTexts()).toEqual([]);
+      expect(screen.operations).toEqual([]);
+    });
+  });
+
+  it('should show the page at its URL, never drawing the splash on the way, when SSO confirms the token a reader holds', async () => {
     const drawn: string[] = [];
     const observer = new MutationObserver((records) => {
       for (const record of records) record.addedNodes.forEach((node) => drawn.push(node.textContent ?? ''));
@@ -322,6 +403,8 @@ describe(SessionGateContainer, () => {
     observer.observe(document.body, { subtree: true, childList: true });
     try {
       const screen = await openGate({ token: staffToken() });
+      await expect.poll(() => ssoRefreshes()).toHaveLength(1);
+      await answerRefresh(0, { body: staffToken() });
 
       await expect.element(screen.getByRole('heading', PAGE_HEADING)).toBeVisible();
       expect(screen.getByRole('heading', SPLASH_HEADING).query()).toBeNull();
@@ -329,8 +412,8 @@ describe(SessionGateContainer, () => {
     } finally {
       observer.disconnect();
     }
+    expect(drawn.some((text) => text.includes('Loading Resource'))).toBe(true);
     expect(drawn.some((text) => text.includes(PAGE_HEADING.name))).toBe(true);
     expect(drawn.filter((text) => text.includes(SPLASH_HEADING.name))).toEqual([]);
-    expect(drawn.filter((text) => text.includes('Loading Resource'))).toEqual([]);
   });
 });

@@ -25,8 +25,8 @@ export const useSessionEnding = () => ({ ending: useAtomValue(sessionEndingAtom)
 export type SessionStatus = 'checking' | 'signed-out' | 'signed-in';
 
 export const sessionStatusAtom = atom<SessionStatus>((get) => {
-  if (get(isLoggedInAtom)) return 'signed-in';
-  return get(sessionCheckedAtom) ? 'signed-out' : 'checking';
+  if (!get(sessionCheckedAtom)) return 'checking';
+  return get(isLoggedInAtom) ? 'signed-in' : 'signed-out';
 });
 
 export const useSessionStatus = () => ({ status: useAtomValue(sessionStatusAtom) });
