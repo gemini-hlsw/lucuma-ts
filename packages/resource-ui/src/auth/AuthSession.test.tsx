@@ -11,7 +11,7 @@ import { page } from 'vitest/browser';
 import { render } from 'vitest-browser-react';
 
 import NightPage from '@/app/pages/NightPage';
-import { isLoggedInAtom, odbTokenAtom, sessionCheckedAtom, sessionStatusAtom, setToken } from '@/components/atoms/auth';
+import { isLoggedInAtom, odbTokenAtom, sessionCheckedAtom, setToken } from '@/components/atoms/auth';
 import { Layout } from '@/components/layout/Layout';
 import { NavbarContainer } from '@/components/layout/NavbarContainer';
 import { ToastOutlet } from '@/components/ui/ToastOutlet';
@@ -103,8 +103,6 @@ const renderAuthSession = async (children: ReactNode = null, after?: ApolloLink)
   const screen = await renderInSession(client, children);
   return { screen, client, authorizations };
 };
-
-const survivingSsoCall = () => ssoCalls().find((made) => !made.signal?.aborted);
 
 const signIn = (expiresInSeconds?: number): string => {
   const token = fakeJwt(standardUser('staff'), expiresInSeconds);
@@ -259,50 +257,6 @@ describe(AuthSession, () => {
     expect(store.get(sessionCheckedAtom)).toBe(true);
   });
 
-  it('should send a query mounted beside the session once, with the bearer, when the bootstrap signs the reader in', async () => {
-    const { client, authorizations } = capturingApollo();
-
-    const screen = await render(
-      <StrictMode>
-        <JotaiProvider store={store}>
-          <ApolloProvider client={client}>
-            <AuthSession>{null}</AuthSession>
-            <SemesterCount />
-          </ApolloProvider>
-        </JotaiProvider>
-      </StrictMode>,
-    );
-
-    await expect.poll(() => ssoCalls().length).toBe(2);
-    await expect.element(screen.getByTestId('semesters')).toHaveTextContent('loading');
-    expect(authorizations).toEqual([]);
-
-    const token = fakeJwt(standardUser('staff'));
-    survivingSsoCall()?.answer({ body: token });
-    await pendingRefresh();
-
-    await expect.element(screen.getByTestId('semesters')).not.toHaveTextContent('loading');
-    expect(authorizations).toEqual([`Bearer ${token}`]);
-  });
-
-  it.each([
-    ['the bootstrap is rejected', () => survivingSsoCall()?.answer({ status: 403 })],
-    ['SSO proves unreachable', () => survivingSsoCall()?.fail()],
-  ])('should render the app at once and send its query signed out when %s', async (_, settle) => {
-    const { screen, authorizations } = await renderAuthSession(<SemesterCount />);
-
-    await expect.poll(() => ssoCalls().length).toBe(2);
-    await expect.element(screen.getByTestId('semesters')).toHaveTextContent('loading');
-    expect(authorizations).toEqual([]);
-
-    settle();
-    await pendingRefresh();
-
-    await expect.element(screen.getByTestId('semesters')).not.toHaveTextContent('loading');
-    expect(store.get(sessionStatusAtom)).toBe('signed-out');
-    expect(authorizations).toEqual([null]);
-  });
-
   it('should not refetch when the token is renewed', async () => {
     const token = signIn();
     const { screen, client, authorizations } = await renderAuthSession(<SemesterCount />);
@@ -394,7 +348,7 @@ describe(AuthSession, () => {
     expect(screen.authorizations).toEqual([`Bearer ${token}`]);
   });
 
-  it('should show no live-server failure when requests wait on the check', async () => {
+  it('should show no live-server failure when the check lets the page in on a cold load', async () => {
     const screen = await renderShell({ after: deniesAnonymous });
     await expect.element(screen.getByText(GATE_LOADING)).toBeVisible();
 

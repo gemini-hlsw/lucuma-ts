@@ -67,11 +67,10 @@ Tailwind, codegen) apply unchanged and are not repeated here.
   state; `auth/Splash.tsx` only draws, from props, so its layout and focus tests need no SSO stub.
   The banner is the gate's, so the shell draws none. Every load asks SSO before the gate opens, a
   stored token included; only an unreachable SSO lets a stored token stand, so an outage does not
-  sign out a reader whose token has life left.
-- **Requests wait for the session check, the app does not.** `sessionHoldLink` holds each request
-  until `sessionCheckedAtom` is true, so a cold load sends each query once, with the bearer. The
-  check is bounded by `REFRESH_TIMEOUT_MS`, so a hung SSO releases the requests: signed out, or on
-  the stored token when there is one.
+  sign out a reader whose token has life left. The check is bounded by `REFRESH_TIMEOUT_MS`, so a
+  hung SSO ends on the splash, or on the stored token when there is one. No request needs holding:
+  nothing that issues one mounts before the gate opens, so a cold load sends each query once, with
+  the bearer.
 - **A logout is announced on the `resource-session` BroadcastChannel**, so other tabs sign out
   without calling SSO. A sign-out only resets the keeper; the provider's unmount alone stops it,
   because a guest signs in on the same page and the keeper must still hear, renew and expire.
