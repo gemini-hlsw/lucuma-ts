@@ -8,14 +8,12 @@ import {
   LayerGroup,
   type User,
   UserIcon,
-  useToast,
 } from '@gemini-hlsw/lucuma-common-ui';
 import { useStore } from 'jotai';
 import { Button } from 'primereact/button';
 import { Menu } from 'primereact/menu';
 import type { MenuItem } from 'primereact/menuitem';
-import type { ToastMessage } from 'primereact/toast';
-import { type JSX, useEffect, useRef, useState } from 'react';
+import { type JSX, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 
 import { carrySelection, searchString } from '@/app/carriedSelection';
@@ -24,7 +22,7 @@ import { useSelection } from '@/app/useSelection';
 import orcidLogo from '@/assets/orcid-logo.svg';
 import { signOut } from '@/auth/session';
 import { signInUrl } from '@/auth/ssoClient';
-import { type SessionStatus, useSessionStatus, useSignedOutElsewhere, useUser } from '@/components/atoms/auth';
+import { type SessionStatus, useSessionStatus, useUser } from '@/components/atoms/auth';
 import { AboutResource } from '@/components/layout/AboutResource';
 import { SegmentedControl, type SegmentedOption } from '@/components/ui/SegmentedControl';
 import { FOCUS_RING } from '@/components/ui/styles';
@@ -37,25 +35,7 @@ const CHECKING_LABEL = 'Checking sign-in';
 
 const SIGNED_OUT_LABEL = 'Not signed in';
 
-const LOGGED_OUT_ANNOUNCEMENT = 'Logged out';
 const LOGIN_LABEL = 'Login with ORCID';
-const SESSION_ENDED_TOAST = {
-  severity: 'warn',
-  summary: 'Your session ended',
-  detail: `Choose "${LOGIN_LABEL}" from the menu to sign in again.`,
-  sticky: true,
-} as const satisfies ToastMessage;
-const SIGNED_OUT_ELSEWHERE_TOAST = {
-  severity: 'info',
-  summary: 'You signed out in another tab',
-  sticky: true,
-} as const satisfies ToastMessage;
-const LOGOUT_UNREACHABLE_TOAST = {
-  severity: 'warn',
-  summary: 'Logout did not reach SSO',
-  detail: 'Close the browser to end the session.',
-  sticky: true,
-} as const satisfies ToastMessage;
 const CLOCK_ITEM = 'xp-menu-clock';
 
 const CLOCK_GROUP_LABEL = 'Clock';
@@ -102,35 +82,16 @@ export function Navbar(): JSX.Element {
   const menuButton = useRef<Button>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
-  const [isAnnouncingSignOut, setIsAnnouncingSignOut] = useState(false);
-  const isSigningOut = useRef(false);
   const home = searchString(carrySelection(params, ['site']));
 
   const { site, setSite } = useSelection();
   const { value: timeDisplay } = useClockPreference();
   const { status } = useSessionStatus();
   const { user } = useUser();
-  const { isSignedOutElsewhere } = useSignedOutElsewhere();
-  const toast = useToast();
   const store = useStore();
 
   const isSignedIn = status === 'signed-in';
   const accountLabel = accountLabelOf(status, user);
-  const announcement = !isSignedIn && isAnnouncingSignOut ? LOGGED_OUT_ANNOUNCEMENT : '';
-
-  const previousStatus = useRef(status);
-  useEffect(() => {
-    const previous = previousStatus.current;
-    previousStatus.current = status;
-    if (status === 'signed-in') {
-      isSigningOut.current = false;
-      toast?.remove(SESSION_ENDED_TOAST);
-      toast?.remove(LOGOUT_UNREACHABLE_TOAST);
-      toast?.remove(SIGNED_OUT_ELSEWHERE_TOAST);
-    } else if (status === 'signed-out' && previous === 'signed-in' && !isSigningOut.current) {
-      toast?.show(isSignedOutElsewhere ? SIGNED_OUT_ELSEWHERE_TOAST : SESSION_ENDED_TOAST);
-    }
-  }, [isSignedOutElsewhere, status, toast]);
 
   const focusMenuButton = (): void => {
     if (menuButton.current instanceof HTMLButtonElement) menuButton.current.focus();
@@ -138,11 +99,7 @@ export function Navbar(): JSX.Element {
 
   const handleSignOut = (): void => {
     focusMenuButton();
-    setIsAnnouncingSignOut(true);
-    isSigningOut.current = true;
-    void signOut(store).then(({ reachedSso }) => {
-      if (!reachedSso && isSigningOut.current) toast?.show(LOGOUT_UNREACHABLE_TOAST);
-    });
+    void signOut(store);
   };
 
   const logoutItem: MenuItem = {
@@ -185,9 +142,6 @@ export function Navbar(): JSX.Element {
           <UserIcon size="sm" widthAuto aria-hidden="true" />
           {/* Only the icon fits the phone bar; the name stays announced, and the menu carries it for the eye. */}
           <span className="xp-account-name max-md:sr-only">{accountLabel}</span>
-        </span>
-        <span role="status" className="sr-only">
-          {announcement}
         </span>
         <Button
           type="button"

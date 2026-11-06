@@ -5,6 +5,7 @@ import { type ReactNode, useEffect } from 'react';
 import { odbTokenAtom } from '@/components/atoms/auth';
 
 import { type SessionTimings, startSession } from './session';
+import { SessionNoticesContainer } from './SessionNoticesContainer';
 
 const hasTokenAtom = atom((get) => get(odbTokenAtom) !== null);
 
@@ -28,5 +29,10 @@ export function AuthSession({ children, timings }: AuthSessionProps): ReactNode 
     [client, store],
   );
 
-  return children;
+  return (
+    <>
+      {children}
+      <SessionNoticesContainer />
+    </>
+  );
 }

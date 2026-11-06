@@ -68,6 +68,12 @@ Tailwind, codegen) apply unchanged and are not repeated here.
 - **The token going to null resets the Apollo store** (`AuthSession.tsx`), whatever ended the
   session, so the next sign-in, by anyone, fetches every page afresh instead of reading this one's
   cache.
+- **Every notice about the session itself comes from `auth/SessionNoticesContainer.tsx`**, mounted
+  by `AuthSession` above the shell. It reads only the session status and `sessionEndingAtom`, the
+  one union that `signOut` and the keeper write to say how the session ended, and hands the
+  screen-reader announcement to the `auth/SessionNotices.tsx` live region. The keeper records an
+  ending only for a session that was signed in. The masthead shows none, because it is not mounted
+  when they are due.
 
 ## Testing
 
@@ -84,6 +90,9 @@ Tailwind, codegen) apply unchanged and are not repeated here.
   hook-order violation.
 - **PrimeReact overlays render into `document.body`.** Reach a dropdown through `openDropdown` /
   `selectDropdownOption` from `@gemini-hlsw/lucuma-common-ui/testing`.
+- **A component that reads the store, the URL, a preference or SSO is an `XContainer`** beside a
+  view `X` that draws only from props. The view's tests need no store, router or SSO stub; the
+  container's tests own the outside-world behaviour, and no test lives in both.
 - **Tests load no app stylesheet.** A test that needs styling to pass is testing the stylesheet.
 
 ## Styling
