@@ -5,9 +5,9 @@ import { type Site, SITE_NAMES } from '@/domain/types';
 
 export const UNDECODABLE_TOKEN = 'header.payload.signature';
 
-/** Timeouts alone, for a timer that must never fire; React's scheduler keeps its real clock. */
+/** `Date` moves with the timeouts, since a delay set from a real `Date.now()` drifts off the fake timeline. */
 export const fakeTimeouts = (): void => {
-  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
 };
 
 /**
