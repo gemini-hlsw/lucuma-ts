@@ -25,8 +25,8 @@ import { chooseClock, chooseSite, clockChoice, fakeTimeouts, openAppMenu } from 
 import { renderInShell, type RenderResultWithRoute, renderWithRoute } from '@/test/render';
 import { ssoCall, ssoRefreshes, stubSso } from '@/test/sso';
 
-import Layout from './Layout';
-import Navbar from './Navbar';
+import { Layout } from './Layout';
+import { Navbar } from './Navbar';
 
 const NAVBAR_WITH_TOASTS = (
   <>
@@ -130,7 +130,7 @@ afterEach(() => {
 });
 
 describe(Navbar, () => {
-  it('renders the Resource wordmark', async () => {
+  it('should render the Resource wordmark when mounted', async () => {
     const screen = await renderNavbar();
 
     await expect.element(screen.getByText('Resource')).toBeVisible();
@@ -144,7 +144,7 @@ describe(Navbar, () => {
     await expect.element(brand).toHaveAttribute('href', '/night?site=GS');
   });
 
-  it('carries the site beside the wordmark, announcing the telescope behind the code', async () => {
+  it('should carry the site beside the wordmark, announcing the telescope behind the code, when given a site', async () => {
     const screen = await renderNavbar('/night?site=GS');
 
     await expect.element(screen.getByRole('group', { name: 'Site' })).toBeVisible();
@@ -152,7 +152,7 @@ describe(Navbar, () => {
     await expect.element(screen.getByRole('button', { name: 'Gemini North' })).toHaveAttribute('aria-pressed', 'false');
   });
 
-  it('remembers the site chosen, so the next visit opens where the reader works', async () => {
+  it('should remember the site, so the next visit opens where the reader works, when a site is chosen', async () => {
     const first = await renderNavbar('/night');
     await expect.element(first.getByRole('button', { name: 'Gemini North' })).toHaveAttribute('aria-pressed', 'true');
 
@@ -165,7 +165,7 @@ describe(Navbar, () => {
     await expect.element(second.getByRole('button', { name: 'Gemini South' })).toHaveAttribute('aria-pressed', 'true');
   });
 
-  it('writes the site it resolved into the URL, so Back and a copied link both carry it', async () => {
+  it('should write the site it resolved into the URL, so Back and a copied link both carry it, when it renders', async () => {
     const screen = await renderNavbar('/night');
 
     await expect.poll(() => screen.router.location.search).toBe('?site=GN');
@@ -179,27 +179,27 @@ describe(Navbar, () => {
     await expect.element(screen.getByRole('button', { name: 'Gemini North' })).toHaveAttribute('aria-pressed', 'true');
   });
 
-  it('corrects a site the URL names but cannot mean, rather than rendering one and saying another', async () => {
+  it('should correct the site rather than render one and say another when the URL names a site it cannot mean', async () => {
     const screen = await renderNavbar('/night?site=gs');
 
     await expect.poll(() => screen.router.location.search).toBe('?site=GN');
     await expect.element(screen.getByRole('button', { name: 'Gemini North' })).toHaveAttribute('aria-pressed', 'true');
   });
 
-  it('lets a shared link override the remembered site - the URL is the view', async () => {
+  it('should let a shared link override the remembered site, since the URL is the view, when the two differ', async () => {
     setLastSite('GS');
     const screen = await renderNavbar('/night?site=GN');
 
     await expect.element(screen.getByRole('button', { name: 'Gemini North' })).toHaveAttribute('aria-pressed', 'true');
   });
 
-  it('offers no semester control - the semester belongs to its own page', async () => {
+  it('should offer no semester control, since the semester belongs to its own page, when rendered', async () => {
     const screen = await renderNavbar('/night?site=GS&semester=2026B');
 
     await expect.element(screen.getByLabelText('Semester', { exact: true })).not.toBeInTheDocument();
   });
 
-  it('exposes both menu headers as named groups, not as stripped presentation rows', async () => {
+  it('should expose both menu headers as named groups, not as stripped presentation rows, when the menu opens', async () => {
     const screen = await renderNavbar();
 
     await openAppMenu(screen);
@@ -208,7 +208,7 @@ describe(Navbar, () => {
     }
   });
 
-  it('keeps one interactive element per clock row, so the row is the whole control', async () => {
+  it('should keep one interactive element per clock row, so the row is the whole control, when the menu opens', async () => {
     const screen = await renderNavbar();
 
     await openAppMenu(screen);
@@ -217,7 +217,7 @@ describe(Navbar, () => {
     expect(radio.querySelectorAll('a[href], button, input, [tabindex]:not([tabindex="-1"])')).toHaveLength(0);
   });
 
-  it('takes Enter on the site control, the way every button does', async () => {
+  it('should change the site, the way every button does, when Enter is pressed on the site control', async () => {
     const screen = await renderNavbar('/night?site=GS');
 
     screen.getByRole('button', { name: 'Gemini North' }).element().focus();
@@ -226,27 +226,27 @@ describe(Navbar, () => {
     await expect.poll(() => screen.router.location.search).toContain('site=GN');
   });
 
-  it('offers no way to choose a backend - there is one, and it is not a setting', async () => {
+  it('should offer no way to choose a backend, since there is one and it is not a setting, when rendered', async () => {
     const screen = await renderNavbar();
 
     await expect.element(screen.getByLabelText('Site', { exact: true })).toBeInTheDocument();
     await expect.element(screen.getByLabelText('Data', { exact: true })).not.toBeInTheDocument();
   });
 
-  it('offers the clock in the menu, defaulting to the site clock', async () => {
+  it('should offer the clock in the menu, defaulting to the site clock, when the menu opens', async () => {
     const screen = await renderNavbar();
     await openAppMenu(screen);
     await expect.element(clockChoice('Site time')).toHaveAttribute('aria-checked', 'true');
     await expect.element(clockChoice('UTC')).toHaveAttribute('aria-checked', 'false');
   });
 
-  it('keeps the clock out of the bar - it is a habit, not a selection', async () => {
+  it('should keep the clock out of the bar, since it is a habit and not a selection, when rendered', async () => {
     const screen = await renderNavbar();
 
     await expect.element(screen.getByRole('group', { name: 'Clock' })).not.toBeInTheDocument();
   });
 
-  it('switches every clock in the app to UT', async () => {
+  it('should switch every clock in the app to UT when UT is chosen', async () => {
     const screen = await openNightInShell();
     await expect.poll(() => nightAxisLabels()[0]).toBe('14:00');
 
@@ -254,7 +254,7 @@ describe(Navbar, () => {
     await expect.poll(() => nightAxisLabels()[0]).toBe('18:00');
   });
 
-  it('switches the clock from the keyboard, the row being the whole control', async () => {
+  it('should switch the clock, the row being the whole control, when it is chosen from the keyboard', async () => {
     const screen = await openNightInShell();
     await expect.poll(() => nightAxisLabels()[0]).toBe('14:00');
 
@@ -264,7 +264,7 @@ describe(Navbar, () => {
     await expect.poll(() => nightAxisLabels()[0]).toBe('18:00');
   });
 
-  it('operates the clock from the keyboard - the spike kept menu-native navigation for exactly this', async () => {
+  it('should operate the clock, which is why the spike kept menu-native navigation, when driven from the keyboard', async () => {
     const screen = await openNightInShell();
     await expect.poll(() => nightAxisLabels()[0]).toBe('14:00');
 
@@ -281,7 +281,7 @@ describe(Navbar, () => {
     await expect.element(clockChoice('UTC')).toHaveAttribute('aria-checked', 'true');
   });
 
-  it('remembers the clock across a remount, which is what a habit means', async () => {
+  it('should remember the clock, which is what a habit means, when the navbar remounts', async () => {
     const first = await renderNavbar();
     await chooseClock(first, 'UTC');
     await first.unmount();
@@ -292,13 +292,13 @@ describe(Navbar, () => {
     await expect.element(clockChoice('UTC')).toHaveAttribute('aria-checked', 'true');
   });
 
-  it('carries no environment badge - the banner above the shell says it instead', async () => {
+  it('should carry no environment badge, since the banner above the shell says it instead, when rendered', async () => {
     const screen = await renderNavbar();
 
     await expect.element(screen.getByTestId('env-marker')).not.toBeInTheDocument();
   });
 
-  it('opens About Resource from the hamburger menu, naming the running build', async () => {
+  it('should open About Resource, naming the running build, when it is chosen from the hamburger menu', async () => {
     const screen = await renderNavbar('/night?site=GS');
 
     await screen.getByRole('button', { name: 'Menu' }).click();
@@ -315,7 +315,7 @@ describe(Navbar, () => {
     await expect.element(dialog).not.toBeInTheDocument();
   });
 
-  it('hands focus back to the menu button when About is dismissed from the keyboard', async () => {
+  it('should hand focus back to the menu button when About is dismissed from the keyboard', async () => {
     const screen = await renderNavbar('/night?site=GS');
     const menuButton = screen.getByRole('button', { name: 'Menu' }).element() as HTMLElement;
 
@@ -331,7 +331,7 @@ describe(Navbar, () => {
     await expect.poll(() => document.activeElement).toBe(menuButton);
   });
 
-  it('hands focus back to the menu button when About is closed by its own button', async () => {
+  it('should hand focus back to the menu button when About is closed by its own button', async () => {
     const screen = await renderNavbar('/night?site=GS');
     const menuButton = screen.getByRole('button', { name: 'Menu' }).element() as HTMLElement;
 
@@ -345,7 +345,7 @@ describe(Navbar, () => {
     await expect.poll(() => document.activeElement).toBe(menuButton);
   });
 
-  it('offers the ORCID login as a link the browser follows', async () => {
+  it('should offer the ORCID login as a link the browser follows when the reader is signed out', async () => {
     const screen = await renderNavbar();
 
     await openAppMenu(screen);
@@ -359,7 +359,7 @@ describe(Navbar, () => {
     await expect.element(page.getByRole('menuitem', { name: 'Login with ORCID' })).not.toHaveAttribute('aria-disabled');
   });
 
-  it('closes the menu on a click outside it, and the click takes focus with it', async () => {
+  it('should close the menu, and let the click take focus with it, when the reader clicks outside it', async () => {
     const screen = await renderNavbar();
     const menuButton = screen.getByRole('button', { name: 'Menu' }).element();
 
@@ -373,7 +373,7 @@ describe(Navbar, () => {
   });
 
   it.each([['{Tab}'], ['{Shift>}{Tab}{/Shift}']])(
-    'closes the menu on %s and hands focus back to the button, so the tab sequence continues from it',
+    'should close the menu and hand focus back to the button, so the tab sequence continues from it, when %s is pressed',
     async (keys) => {
       const screen = await renderWithRoute(<Layout />, { route: '/night?site=GS' });
       const menuButton = screen.getByRole('button', { name: 'Menu' }).element();
@@ -388,7 +388,7 @@ describe(Navbar, () => {
   );
 
   it.each(MENU_CLOSERS)(
-    'tells assistive technology the menu is open and which list the button controls, until %s closes it',
+    'should tell assistive technology the menu is open and which list the button controls when the menu opens, until %s closes it',
     async (_how, close) => {
       const screen = await renderNavbar();
       const menuButton = screen.getByRole('button', { name: 'Menu' });
@@ -408,7 +408,7 @@ describe(Navbar, () => {
     },
   );
 
-  it('names the list that carries the menu role, not the wrapper around it', async () => {
+  it('should name the list that carries the menu role, not the wrapper around it, when the menu opens', async () => {
     const screen = await renderNavbar();
 
     await openAppMenu(screen);
@@ -416,7 +416,7 @@ describe(Navbar, () => {
     await expect.element(page.getByRole('menu', { name: 'Application menu' })).toBeVisible();
   });
 
-  it('reads About first and the account block last, the order Explore uses', async () => {
+  it('should read About first and the account block last, the order Explore uses, when the menu opens', async () => {
     const screen = await renderNavbar();
 
     await openAppMenu(screen);
@@ -449,7 +449,7 @@ describe(Navbar, () => {
     },
   );
 
-  it('warns in a toast when the logout never reached SSO, until the next sign-in', async () => {
+  it('should warn in a toast until the next sign-in when the logout never reached SSO', async () => {
     const screen = await logOutFromMenu();
     await expect.element(screen.getByRole('status')).toHaveTextContent('Logged out');
 
@@ -466,7 +466,7 @@ describe(Navbar, () => {
     await expect.element(toastNamed(LOGOUT_UNREACHABLE)).not.toBeInTheDocument();
   });
 
-  it('keeps every row of the menu to what `role="menu"` may own, at every depth', async () => {
+  it('should keep every row of the menu, at every depth, to what `role="menu"` may own when the menu opens', async () => {
     const screen = await renderNavbar();
 
     await openAppMenu(screen);
@@ -480,7 +480,7 @@ describe(Navbar, () => {
     expect([...menu.querySelectorAll(MENU_FORBIDDEN.join(', '))]).toHaveLength(0);
   });
 
-  it('signs out before SSO answers, hands focus back to the menu button, and re-announces after a fresh sign-in', async () => {
+  it('should sign out before SSO answers, hand focus back to the menu button, and announce again after a fresh sign-in, when the reader logs out from the menu', async () => {
     const screen = await logOutFromMenu();
     await expect.element(screen.getByTestId('account-control')).toHaveTextContent('Not signed in');
     await expect.element(screen.getByRole('status')).toHaveTextContent('Logged out');
@@ -499,7 +499,7 @@ describe(Navbar, () => {
     await expect.element(screen.getByRole('status')).toHaveTextContent('Logged out');
   });
 
-  it('sends the login return address to the page actually open, not a fixed default', async () => {
+  it('should send the login return address to the page actually open, not a fixed default, when ORCID login is offered', async () => {
     const original = window.location.href;
     try {
       history.pushState(null, '', '/night?site=GS&night=2026-11-14');
@@ -523,7 +523,7 @@ describe(Navbar, () => {
     }
   });
 
-  it('shows a notice when SSO refuses to renew the session', async () => {
+  it('should show a notice when SSO refuses to renew the session', async () => {
     stubSso();
     await renderInSession(fakeJwt(standardUser('staff'), 60), RENEW_AT_ONCE);
 
@@ -540,7 +540,7 @@ describe(Navbar, () => {
       .toBeVisible();
   });
 
-  it('says the reader signed out in another tab, and after a fresh sign-in that the session ended', async () => {
+  it('should say the reader signed out in another tab, and after a fresh sign-in that the session ended, when each ends the session in turn', async () => {
     stubSso();
     const screen = await renderInSession();
     const otherTab = new BroadcastChannel(SESSION_CHANNEL);
@@ -571,7 +571,7 @@ describe(Navbar, () => {
   it.each([
     ['from the first render', session(null, true)],
     ['once the first check settles', session(null, false)],
-  ])('shows no session-ended notice to a visitor signed out %s', async (_when, initialValues) => {
+  ])('should show no session-ended notice when a visitor is signed out %s', async (_when, initialValues) => {
     const screen = await renderWithRoute(NAVBAR_WITH_TOASTS, { route: '/', initialValues });
 
     screen.store.set(sessionCheckedAtom, true);
@@ -590,7 +590,7 @@ describe(Navbar, () => {
         await vi.advanceTimersByTimeAsync(0);
       },
     ],
-  ])('keeps "%s" on screen ten minutes on', async (summary, end) => {
+  ])('should keep "%s" on screen when ten minutes pass', async (summary, end) => {
     fakeTimeouts();
     stubSso();
     const screen = await renderSignedIn();
@@ -602,7 +602,7 @@ describe(Navbar, () => {
     await expect.poll(noticesShowing).toContainEqual(expect.stringContaining(summary));
   });
 
-  it(`keeps "${SIGNED_OUT_ELSEWHERE}" on screen ten minutes on`, async () => {
+  it(`should keep "${SIGNED_OUT_ELSEWHERE}" on screen when ten minutes pass`, async () => {
     fakeTimeouts();
     stubSso();
     await renderInSession();
@@ -629,14 +629,14 @@ describe(Navbar, () => {
   it.each([
     ['after the reader logs out', 'Logged out', () => ssoCall(0).answer({ status: 200 })],
     [
-      'when SSO fails only after the reader signed in again',
+      'SSO fails only after the reader signed in again',
       '',
       (screen: RenderResultWithRoute) => {
         setToken(screen.store, staffToken());
         ssoCall(0).fail();
       },
     ],
-  ])('shows no notice %s', async (_when, announcement, settle) => {
+  ])('should show no notice when the reader logs out and %s', async (_when, announcement, settle) => {
     fakeTimeouts();
     stubSso();
     const screen = await renderSignedIn();
@@ -649,7 +649,7 @@ describe(Navbar, () => {
     expect(noticesShowing()).toEqual([]);
   });
 
-  it('removes the session-ended notice once the reader signs in, and shows one when the next session ends', async () => {
+  it('should remove the session-ended notice once the reader signs in, and show one when the next session ends', async () => {
     const screen = await renderSignedIn();
     setToken(screen.store, null);
     await expectShowing(SESSION_ENDED);
@@ -664,7 +664,7 @@ describe(Navbar, () => {
     expect(noticesShowing().filter((text) => text.startsWith(SESSION_ENDED))).toHaveLength(1);
   });
 
-  it('warns when the session ends on its own after an earlier logout and a fresh sign-in', async () => {
+  it('should warn when the session ends on its own after an earlier logout and a fresh sign-in', async () => {
     const screen = await logOutFromMenu();
     ssoCall(0).answer({ status: 200 });
     setToken(screen.store, staffToken());
@@ -675,7 +675,7 @@ describe(Navbar, () => {
     await expectShowing(SESSION_ENDED);
   });
 
-  it('shows the session-ended notice above the open About dialog without taking focus from it', async () => {
+  it('should show the session-ended notice above the open About dialog, without taking focus from it, when the session ends under it', async () => {
     const screen = await renderSignedIn();
     await openAppMenu(screen);
     await page.getByRole('menuitem', { name: 'About Resource' }).click();

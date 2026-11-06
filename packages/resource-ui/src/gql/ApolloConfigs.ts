@@ -14,17 +14,17 @@ const UNREACHABLE = {
   severity: 'warn',
   summary: 'The live server could not be reached.',
   sticky: true,
-} satisfies ToastMessage;
+} as const satisfies ToastMessage;
 const FAILED = {
   severity: 'warn',
   summary: 'The live server answered with an error.',
   sticky: true,
-} satisfies ToastMessage;
+} as const satisfies ToastMessage;
 const REFUSED = {
   severity: 'warn',
   summary: 'The live server could not verify your sign-in.',
   sticky: true,
-} satisfies ToastMessage;
+} as const satisfies ToastMessage;
 
 const isSignInError = (message: string): boolean =>
   message === 'Access denied.' || message.endsWith(' requires authentication.');

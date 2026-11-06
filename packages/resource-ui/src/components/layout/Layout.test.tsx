@@ -11,7 +11,7 @@ import { odbTokenAtom, sessionCheckedAtom } from '@/components/atoms/auth';
 import { chooseClock, chooseSite, clockChoice, openAppMenu } from '@/test/helpers';
 import { type RenderResultWithRoute, renderWithRoute } from '@/test/render';
 
-import Layout from './Layout';
+import { Layout } from './Layout';
 import { SIDEBAR_MENU_ITEMS } from './SidebarMenu';
 
 const CHILD_ROUTES = SIDEBAR_MENU_ITEMS.map((item) => ({
@@ -52,7 +52,7 @@ describe(Layout, () => {
     document.documentElement.classList.add('dark');
   });
 
-  it('opens every destination from the phone bar', async () => {
+  it('should open every destination from the phone bar when at phone width', async () => {
     const screen = await renderShell({ at: PHONE });
 
     const nav = screen.getByRole('navigation', { name: /primary navigation/i });
@@ -66,7 +66,7 @@ describe(Layout, () => {
     }
   });
 
-  it('keeps the masthead selections and the menu operable at phone width', async () => {
+  it('should keep the masthead selections and the menu operable when at phone width', async () => {
     const screen = await renderShell({ at: PHONE, route: '/night?site=GS&night=2026-11-14' });
 
     await chooseSite(screen, 'GN');
@@ -76,7 +76,7 @@ describe(Layout, () => {
     await expect.element(clockChoice('UTC')).toHaveAttribute('aria-checked', 'true');
   });
 
-  it('exposes exactly one Primary navigation to assistive tech at either width', async () => {
+  it('should expose exactly one Primary navigation to assistive tech when at either width', async () => {
     const screen = await renderShell({ at: PHONE });
     const nav = screen.getByRole('navigation', { name: 'Primary navigation', exact: true });
     await expect.poll(() => nav.elements().length).toBe(1);

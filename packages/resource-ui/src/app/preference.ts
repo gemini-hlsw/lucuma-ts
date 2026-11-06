@@ -13,7 +13,7 @@ export function createPreference<T extends string>(
   key: string,
   allowed: readonly T[],
   fallback: T,
-): readonly [() => T, (value: T) => void] {
+): readonly [() => { readonly value: T }, (value: T) => void] {
   const listeners = new Set<Listener>();
 
   /** What this session chose, whether or not storage accepted it. Null means storage is the truth. */
@@ -55,8 +55,8 @@ export function createPreference<T extends string>(
     return () => listeners.delete(listener);
   };
 
-  function usePreference(): T {
-    return useSyncExternalStore(subscribe, getSnapshot);
+  function usePreference(): { readonly value: T } {
+    return { value: useSyncExternalStore(subscribe, getSnapshot) };
   }
 
   const set = (value: T): void => {

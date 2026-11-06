@@ -3,10 +3,10 @@ import { Outlet } from 'react-router';
 
 import BottomNav from './BottomNav';
 import { EnvBanner } from './EnvBanner';
-import Navbar from './Navbar';
+import { Navbar } from './Navbar';
 import Sidebar from './Sidebar';
 
-export default function Layout(): JSX.Element {
+export function Layout(): JSX.Element {
   return (
     <div className="xp-shell grid grid-rows-[auto_1fr_auto] overflow-hidden print:block print:overflow-visible">
       {/* A real block, not `contents`, so the row heights to both and the body geometry never moves. */}

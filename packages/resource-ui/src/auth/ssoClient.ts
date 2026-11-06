@@ -7,7 +7,7 @@ export type RefreshResult =
 
 export const REFRESH_TIMEOUT_MS = 10_000;
 
-const UNREACHABLE: RefreshResult = { kind: 'unreachable' };
+const UNREACHABLE = { kind: 'unreachable' } as const satisfies RefreshResult;
 
 async function exchange(signal: AbortSignal): Promise<RefreshResult> {
   try {
@@ -27,14 +27,14 @@ async function exchange(signal: AbortSignal): Promise<RefreshResult> {
 
 export async function refreshSession(signal?: AbortSignal, timeoutMs = REFRESH_TIMEOUT_MS): Promise<RefreshResult> {
   const deadline = new AbortController();
-  const followCaller = (): void => {
+  const handleCallerAbort = (): void => {
     deadline.abort(signal?.reason);
   };
   let timer: ReturnType<typeof setTimeout> | undefined;
   try {
     // Linked by hand, since AbortSignal.any is newer than the browsers the build targets.
-    if (signal?.aborted) followCaller();
-    else signal?.addEventListener('abort', followCaller, { once: true });
+    if (signal?.aborted) handleCallerAbort();
+    else signal?.addEventListener('abort', handleCallerAbort, { once: true });
     // Unlike AbortSignal.timeout, a setTimeout runs on a clock fake timers can drive.
     const timedOut = new Promise<RefreshResult>((resolve) => {
       timer = setTimeout(() => {
@@ -47,7 +47,7 @@ export async function refreshSession(signal?: AbortSignal, timeoutMs = REFRESH_T
     return UNREACHABLE;
   } finally {
     clearTimeout(timer);
-    signal?.removeEventListener('abort', followCaller);
+    signal?.removeEventListener('abort', handleCallerAbort);
   }
 }
 

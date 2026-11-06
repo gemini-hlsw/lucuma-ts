@@ -10,7 +10,7 @@ import { render } from 'vitest-browser-react';
 
 import NightPage from '@/app/pages/NightPage';
 import { isLoggedInAtom, odbTokenAtom, sessionCheckedAtom, sessionStatusAtom, setToken } from '@/components/atoms/auth';
-import Layout from '@/components/layout/Layout';
+import { Layout } from '@/components/layout/Layout';
 import { ToastOutlet } from '@/components/ui/ToastOutlet';
 import { liveLink } from '@/gql/ApolloConfigs';
 import { usePublishedSemesters } from '@/gql/hooks';
@@ -146,7 +146,7 @@ afterEach(() => {
 });
 
 describe(AuthSession, () => {
-  it('settles into one signed-in controller after the StrictMode double-mount, the aborted bootstrap uncounted', async () => {
+  it('should settle into one signed-in controller, not counting the aborted bootstrap, when StrictMode mounts twice', async () => {
     await renderAuthSession();
 
     await expect.poll(() => ssoCalls().length).toBe(2);
@@ -162,7 +162,7 @@ describe(AuthSession, () => {
     expect(store.get(sessionCheckedAtom)).toBe(true);
   });
 
-  it('holds a query mounted beside the session until the bootstrap signs the reader in, then sends it once with the bearer', async () => {
+  it('should send a query mounted beside the session once, with the bearer, when the bootstrap signs the reader in', async () => {
     const { client, authorizations } = capturingApollo();
 
     const screen = await render(
@@ -191,7 +191,7 @@ describe(AuthSession, () => {
   it.each([
     ['the bootstrap is rejected', () => survivingSsoCall()?.answer({ status: 403 })],
     ['SSO proves unreachable', () => survivingSsoCall()?.fail()],
-  ])('renders the app at once, holding its query until %s, then sends it signed out', async (_, settle) => {
+  ])('should render the app at once and send its query signed out when %s', async (_, settle) => {
     const { screen, authorizations } = await renderAuthSession(<SemesterCount />);
 
     await expect.poll(() => ssoCalls().length).toBe(2);
@@ -206,7 +206,7 @@ describe(AuthSession, () => {
     expect(authorizations).toEqual([null]);
   });
 
-  it('does not refetch on a token renewal', async () => {
+  it('should not refetch when the token is renewed', async () => {
     const token = signIn();
     const { screen, client, authorizations } = await renderAuthSession(<SemesterCount />);
     await expect.element(screen.getByTestId('semesters')).not.toHaveTextContent('loading');
@@ -219,7 +219,7 @@ describe(AuthSession, () => {
     expect(ssoCalls()).toHaveLength(0);
   });
 
-  it('refetches when the reader signs out, and the new answer reaches the page', async () => {
+  it('should refetch, and the new answer reach the page, when the reader signs out', async () => {
     const token = signIn();
     const { screen, authorizations } = await renderAuthSession(
       <SemesterCount />,
@@ -235,7 +235,7 @@ describe(AuthSession, () => {
     await expect.element(screen.getByTestId('semesters')).toHaveTextContent('1 semesters');
   });
 
-  it('keeps the page up when the refetch fails', async () => {
+  it('should keep the page up when the refetch fails', async () => {
     const token = signIn();
     const { screen, authorizations } = await renderAuthSession(<SemesterCount />, onSecondRequest(new Error('down')));
     await expect.element(screen.getByTestId('semesters')).not.toHaveTextContent('loading');
@@ -246,7 +246,7 @@ describe(AuthSession, () => {
     await expect.element(screen.getByTestId('semesters')).toBeInTheDocument();
   });
 
-  it('drops the refetch subscription on unmount, leaving a query still open on its client alone', async () => {
+  it('should drop the refetch subscription, leaving a query still open on its client alone, when it unmounts', async () => {
     const token = signIn();
     const stranded = capturingApollo();
     const probe = await render(
@@ -268,7 +268,7 @@ describe(AuthSession, () => {
     expect(stranded.authorizations).toEqual([`Bearer ${token}`]);
   });
 
-  it('stops the controller on unmount, so no refresh timer survives it', async () => {
+  it('should stop the controller, so no refresh timer survives, when it unmounts', async () => {
     fakeTimeouts();
     signIn(120);
 
@@ -279,7 +279,7 @@ describe(AuthSession, () => {
     expect(ssoCalls()).toHaveLength(0);
   });
 
-  it('draws the shell at once and sends nothing before the check settles, then each page query once with the bearer it found', async () => {
+  it('should draw the shell at once and send nothing before the check settles, then each page query once with the bearer it found, when the page loads', async () => {
     const screen = await renderShell();
 
     await expect.element(screen.getByTestId('account-control')).toHaveTextContent('Checking sign-in');
@@ -297,7 +297,7 @@ describe(AuthSession, () => {
     expect(screen.authorizations).toEqual([`Bearer ${token}`]);
   });
 
-  it('shows no live-server failure while requests wait on the check', async () => {
+  it('should show no live-server failure when requests wait on the check', async () => {
     const screen = await renderShell({ after: deniesAnonymous });
     await expect.element(screen.getByText(NIGHT_LOADING)).toBeVisible();
 
@@ -308,7 +308,7 @@ describe(AuthSession, () => {
     expect(document.querySelector('.p-toast-message')).toBeNull();
   });
 
-  it('sends a returning tab its requests at once with the bearer, each once', async () => {
+  it('should send each request once, at once, with the bearer when a tab returns with a token', async () => {
     const token = fakeJwt(standardUser('staff'));
     const screen = await renderShell({ token });
 
@@ -321,7 +321,7 @@ describe(AuthSession, () => {
     expect(ssoCalls()).toHaveLength(0);
   });
 
-  it('holds the data for the full 10 s while the first refresh goes unanswered', async () => {
+  it('should hold the data for the full 10 s when the first refresh goes unanswered', async () => {
     fakeTimeouts();
     const screen = await renderShell();
 
@@ -332,7 +332,7 @@ describe(AuthSession, () => {
     expect(screen.operations).toEqual([]);
   });
 
-  it('sends the data without a bearer once the first refresh goes unanswered past the bound', async () => {
+  it('should send the data without a bearer when the first refresh goes unanswered past the bound', async () => {
     const screen = await renderShell({ timings: { ...SESSION_TIMINGS, refreshTimeoutMs: 20 } });
 
     await expect.element(screen.getByTestId('account-control')).toHaveTextContent('Not signed in');
@@ -341,7 +341,7 @@ describe(AuthSession, () => {
     expect(screen.authorizations).toEqual([null]);
   });
 
-  it('never draws "Not signed in" on the way to signing in from an answer at 9 s', async () => {
+  it('should never draw "Not signed in" on the way to signing in when SSO answers at 9 s', async () => {
     fakeTimeouts();
     const drawn: string[] = [];
     const observer = new MutationObserver((records) => {

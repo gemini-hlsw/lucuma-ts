@@ -44,18 +44,18 @@ const SESSION_ENDED_TOAST = {
   summary: 'Your session ended',
   detail: `Choose "${LOGIN_LABEL}" from the menu to sign in again.`,
   sticky: true,
-} satisfies ToastMessage;
+} as const satisfies ToastMessage;
 const SIGNED_OUT_ELSEWHERE_TOAST = {
   severity: 'info',
   summary: 'You signed out in another tab',
   sticky: true,
-} satisfies ToastMessage;
+} as const satisfies ToastMessage;
 const LOGOUT_UNREACHABLE_TOAST = {
   severity: 'warn',
   summary: 'Logout did not reach SSO',
   detail: 'Close the browser to end the session.',
   sticky: true,
-} satisfies ToastMessage;
+} as const satisfies ToastMessage;
 const CLOCK_ITEM = 'xp-menu-clock';
 
 const CLOCK_GROUP_LABEL = 'Clock';
@@ -80,10 +80,10 @@ const SITE_OPTIONS: readonly SegmentedOption<Site>[] = SITES.map((value) => ({
 }));
 
 /** Display only: observing-night labels and evening dates are the site's calendar and never move. */
-const CLOCK_CHOICES: readonly { readonly label: string; readonly value: TimeDisplay }[] = [
+const CLOCK_CHOICES = [
   { label: 'Site time', value: 'site' },
   { label: 'UTC', value: 'utc' },
-];
+] as const satisfies readonly { readonly label: string; readonly value: TimeDisplay }[];
 function accountLabelOf(status: SessionStatus, user: User | null): string {
   switch (status) {
     case 'checking':
@@ -96,59 +96,59 @@ function accountLabelOf(status: SessionStatus, user: User | null): string {
 }
 
 /** One row at every width, under the environment banner; nothing here is conditional, so the shell below never moves. */
-export default function Navbar(): JSX.Element {
+export function Navbar(): JSX.Element {
   const [params] = useSearchParams();
   const menu = useRef<Menu>(null);
   const menuButton = useRef<Button>(null);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [aboutOpen, setAboutOpen] = useState(false);
-  const [announceSignOut, setAnnounceSignOut] = useState(false);
-  const signingOut = useRef(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isAboutOpen, setIsAboutOpen] = useState(false);
+  const [isAnnouncingSignOut, setIsAnnouncingSignOut] = useState(false);
+  const isSigningOut = useRef(false);
   const home = searchString(carrySelection(params, ['site']));
 
   const { site, setSite } = useSelection();
-  const timeDisplay = useClockPreference();
-  const status = useSessionStatus();
-  const user = useUser();
-  const signedOutElsewhere = useSignedOutElsewhere();
+  const { value: timeDisplay } = useClockPreference();
+  const { status } = useSessionStatus();
+  const { user } = useUser();
+  const { isSignedOutElsewhere } = useSignedOutElsewhere();
   const toast = useToast();
   const store = useStore();
 
-  const signedIn = status === 'signed-in';
+  const isSignedIn = status === 'signed-in';
   const accountLabel = accountLabelOf(status, user);
-  const announcement = !signedIn && announceSignOut ? LOGGED_OUT_ANNOUNCEMENT : '';
+  const announcement = !isSignedIn && isAnnouncingSignOut ? LOGGED_OUT_ANNOUNCEMENT : '';
 
   const previousStatus = useRef(status);
   useEffect(() => {
     const previous = previousStatus.current;
     previousStatus.current = status;
     if (status === 'signed-in') {
-      signingOut.current = false;
+      isSigningOut.current = false;
       toast?.remove(SESSION_ENDED_TOAST);
       toast?.remove(LOGOUT_UNREACHABLE_TOAST);
       toast?.remove(SIGNED_OUT_ELSEWHERE_TOAST);
-    } else if (status === 'signed-out' && previous === 'signed-in' && !signingOut.current) {
-      toast?.show(signedOutElsewhere ? SIGNED_OUT_ELSEWHERE_TOAST : SESSION_ENDED_TOAST);
+    } else if (status === 'signed-out' && previous === 'signed-in' && !isSigningOut.current) {
+      toast?.show(isSignedOutElsewhere ? SIGNED_OUT_ELSEWHERE_TOAST : SESSION_ENDED_TOAST);
     }
-  }, [signedOutElsewhere, status, toast]);
+  }, [isSignedOutElsewhere, status, toast]);
 
   const focusMenuButton = (): void => {
     if (menuButton.current instanceof HTMLButtonElement) menuButton.current.focus();
   };
 
-  const onSignOut = (): void => {
+  const handleSignOut = (): void => {
     focusMenuButton();
-    setAnnounceSignOut(true);
-    signingOut.current = true;
+    setIsAnnouncingSignOut(true);
+    isSigningOut.current = true;
     void signOut(store).then(({ reachedSso }) => {
-      if (!reachedSso && signingOut.current) toast?.show(LOGOUT_UNREACHABLE_TOAST);
+      if (!reachedSso && isSigningOut.current) toast?.show(LOGOUT_UNREACHABLE_TOAST);
     });
   };
 
   const logoutItem: MenuItem = {
     label: 'Logout',
     icon: <ArrowRightFromBracket className={MENU_ICON} aria-hidden="true" />,
-    command: onSignOut,
+    command: handleSignOut,
   };
 
   const loginItem: MenuItem = {
@@ -179,7 +179,7 @@ export default function Navbar(): JSX.Element {
         <span
           data-testid="account-control"
           className="flex items-center gap-1.5 text-xs tracking-wide text-foreground-secondary"
-          title={signedIn ? accountLabel : undefined}
+          title={isSignedIn ? accountLabel : undefined}
         >
           {/* A glyph, not type: the name beside it is what the row says. */}
           <UserIcon size="sm" widthAuto aria-hidden="true" />
@@ -197,8 +197,8 @@ export default function Navbar(): JSX.Element {
           ref={menuButton}
           aria-label="Menu"
           aria-haspopup="menu"
-          aria-expanded={menuOpen}
-          aria-controls={menuOpen ? MENU_ID : undefined}
+          aria-expanded={isMenuOpen}
+          aria-controls={isMenuOpen ? MENU_ID : undefined}
           icon={<Bars widthAuto aria-hidden="true" />}
           onClick={(event) => {
             menu.current?.toggle(event);
@@ -211,7 +211,7 @@ export default function Navbar(): JSX.Element {
               label: 'About Resource',
               icon: <Info className={MENU_ICON} aria-hidden="true" />,
               command: () => {
-                setAboutOpen(true);
+                setIsAboutOpen(true);
               },
             },
             { label: CLOCK_GROUP_LABEL, className: 'xp-menu-section', items: [] },
@@ -228,14 +228,14 @@ export default function Navbar(): JSX.Element {
             })),
             { separator: true },
             { label: accountLabel, className: 'xp-menu-account', items: [] },
-            ...(signedIn ? [logoutItem] : []),
+            ...(isSignedIn ? [logoutItem] : []),
             ...(status === 'signed-out' ? [loginItem] : []),
           ]}
           onShow={() => {
-            setMenuOpen(true);
+            setIsMenuOpen(true);
           }}
           onHide={() => {
-            setMenuOpen(false);
+            setIsMenuOpen(false);
           }}
           pt={{
             menu: {
@@ -270,9 +270,9 @@ export default function Navbar(): JSX.Element {
       </div>
 
       <AboutResource
-        visible={aboutOpen}
+        visible={isAboutOpen}
         onHide={() => {
-          setAboutOpen(false);
+          setIsAboutOpen(false);
           focusMenuButton();
         }}
       />

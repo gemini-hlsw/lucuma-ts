@@ -20,13 +20,13 @@ export interface SessionTimings {
   readonly refreshTimeoutMs: number;
 }
 
-export const SESSION_TIMINGS: SessionTimings = {
+export const SESSION_TIMINGS = {
   refreshAheadMs: 30_000,
   minIntervalMs: 30_000,
   backoffCapMs: 16 * 60_000,
   maxTimerMs: 2_147_483_647,
   refreshTimeoutMs: REFRESH_TIMEOUT_MS,
-};
+} as const satisfies SessionTimings;
 
 export const SESSION_CHANNEL = 'resource-session';
 export const SIGNED_OUT_MESSAGE = 'signed-out';
@@ -177,13 +177,13 @@ function createKeeper(store: Store, timings: SessionTimings): Keeper {
     return run;
   };
 
-  const onSignedOutElsewhere = (event: MessageEvent<unknown>): void => {
+  const handleSignedOutElsewhere = (event: MessageEvent<unknown>): void => {
     if (event.data !== SIGNED_OUT_MESSAGE) return;
     store.set(signedOutElsewhereAtom, true);
     endSession(store, 'Sign out in another tab');
   };
 
-  const onVisibilityChange = (): void => {
+  const handleVisibilityChange = (): void => {
     if (document.visibilityState !== 'visible') return;
     if (Date.now() - lastAttemptAt < timings.minIntervalMs) return;
     if (Date.now() < retryNotBefore) return;
@@ -193,9 +193,9 @@ function createKeeper(store: Store, timings: SessionTimings): Keeper {
   };
 
   const unsubscribe = store.sub(odbTokenAtom, arm);
-  document.addEventListener('visibilitychange', onVisibilityChange);
+  document.addEventListener('visibilitychange', handleVisibilityChange);
   const channel = new BroadcastChannel(SESSION_CHANNEL);
-  channel.addEventListener('message', onSignedOutElsewhere);
+  channel.addEventListener('message', handleSignedOutElsewhere);
 
   const stop = (): void => {
     clearTimers();
@@ -203,7 +203,7 @@ function createKeeper(store: Store, timings: SessionTimings): Keeper {
     abortController = undefined;
     inFlight = undefined;
     unsubscribe();
-    document.removeEventListener('visibilitychange', onVisibilityChange);
+    document.removeEventListener('visibilitychange', handleVisibilityChange);
     channel.close();
   };
 

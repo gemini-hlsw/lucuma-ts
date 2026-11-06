@@ -18,17 +18,17 @@ beforeEach(() => {
 });
 
 describe(useSessionStatus, () => {
-  it('reads checking before the session has been asked', () => {
+  it('should read checking when the session has not been asked yet', () => {
     expect(store.get(sessionStatusAtom)).toBe('checking');
   });
 
-  it('reads signed-out once checked with no token', () => {
+  it('should read signed-out when checked with no token', () => {
     store.set(sessionCheckedAtom, true);
 
     expect(store.get(sessionStatusAtom)).toBe('signed-out');
   });
 
-  it('reads signed-in for a valid token, checked or not', () => {
+  it('should read signed-in when the token is valid, checked or not', () => {
     store.set(odbTokenAtom, fakeJwt(standardUser('staff')));
 
     expect(store.get(sessionStatusAtom)).toBe('signed-in');
@@ -37,14 +37,14 @@ describe(useSessionStatus, () => {
     expect(store.get(sessionStatusAtom)).toBe('signed-in');
   });
 
-  it('reads signed-out for an expired token once the session has been checked', () => {
+  it('should read signed-out when the token has expired and the session has been checked', () => {
     store.set(odbTokenAtom, fakeJwt(standardUser('staff'), -10));
     store.set(sessionCheckedAtom, true);
 
     expect(store.get(sessionStatusAtom)).toBe('signed-out');
   });
 
-  it('reads checking, not signed-out, for an expired token before the session has been checked', () => {
+  it('should read checking, not signed-out, when the token has expired but the session has not been checked', () => {
     store.set(odbTokenAtom, fakeJwt(standardUser('staff'), -10));
 
     expect(store.get(sessionStatusAtom)).toBe('checking');
@@ -52,7 +52,7 @@ describe(useSessionStatus, () => {
 });
 
 describe(setToken, () => {
-  it('holds the session for the tab when storage refuses to persist it', () => {
+  it('should hold the session for the tab when storage refuses to persist it', () => {
     const jwt = fakeJwt(standardUser('staff'));
     vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
       throw new DOMException('quota exceeded', 'QuotaExceededError');
@@ -66,7 +66,7 @@ describe(setToken, () => {
     expect(store.get(isLoggedInAtom)).toBe(true);
   });
 
-  it('lets a subscriber failure out instead of reading it as a refused write', () => {
+  it('should let the failure out instead of reading it as a refused write when a subscriber throws', () => {
     store.sub(odbTokenAtom, () => {
       throw new Error('a token subscriber failed');
     });

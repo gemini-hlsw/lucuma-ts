@@ -6,23 +6,25 @@ import { renderWithRoute } from '@/test/render';
 import { setClockPreference, useClockPreference } from './useClockPreference';
 
 const openClock = async () =>
-  renderWithRoute(<Probe use={useClockPreference} readout={(clock) => ({ clock })} />, { route: '/night?site=GS' });
+  renderWithRoute(<Probe use={useClockPreference} readout={({ value }) => ({ clock: value })} />, {
+    route: '/night?site=GS',
+  });
 
 describe(useClockPreference, () => {
-  it('starts on the site clock, which is what a reader at the telescope works in', async () => {
+  it('should start on the site clock, the one a reader at the telescope works in, when the browser holds no habit', async () => {
     const screen = await openClock();
 
     await expect.element(screen.getByTestId('probe-clock')).toHaveTextContent('site');
   });
 
-  it('reads a habit the browser already holds', async () => {
+  it('should read the habit when the browser already holds one', async () => {
     localStorage.setItem('resource.clock', 'utc');
     const screen = await openClock();
 
     await expect.element(screen.getByTestId('probe-clock')).toHaveTextContent('utc');
   });
 
-  it('degrades a value it does not recognise, rather than rendering it', async () => {
+  it('should degrade to the default rather than render the value when storage holds one it does not recognise', async () => {
     // Storage is shared with whatever wrote it last, including an older build of this app.
     localStorage.setItem('resource.clock', 'martian');
     const screen = await openClock();
@@ -30,7 +32,7 @@ describe(useClockPreference, () => {
     await expect.element(screen.getByTestId('probe-clock')).toHaveTextContent('site');
   });
 
-  it('re-renders every reader on a write, not just the one that wrote', async () => {
+  it('should re-render every reader, not just the one that wrote, when the choice is written', async () => {
     const screen = await openClock();
     await expect.element(screen.getByTestId('probe-clock')).toHaveTextContent('site');
 
@@ -40,7 +42,7 @@ describe(useClockPreference, () => {
     await expect.element(screen.getByTestId('probe-clock')).toHaveTextContent('utc');
   });
 
-  it('holds the choice for the session even when storage refuses the write', async () => {
+  it('should hold the choice for the session when storage refuses the write', async () => {
     const screen = await openClock();
     // Private mode and blocked cookies both throw here; the control must not become a no-op.
     const denied = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
@@ -55,7 +57,7 @@ describe(useClockPreference, () => {
     }
   });
 
-  it('keeps the habit out of the URL, which is what makes a shared link the recipient s own', async () => {
+  it("should keep the habit out of the URL, so a shared link stays the recipient's own, when a clock is chosen", async () => {
     const screen = await openClock();
 
     setClockPreference('utc');
@@ -64,7 +66,7 @@ describe(useClockPreference, () => {
     expect(screen.router.location.search).toBe('?site=GS');
   });
 
-  it('picks up a write from another tab through the storage event, not just a write from this one', async () => {
+  it('should pick up the write through the storage event, not just a write from this tab, when another tab writes', async () => {
     const screen = await openClock();
     await expect.element(screen.getByTestId('probe-clock')).toHaveTextContent('site');
 
@@ -78,7 +80,7 @@ describe(useClockPreference, () => {
     await expect.element(screen.getByTestId('probe-clock')).toHaveTextContent('utc');
   });
 
-  it('writes the choice to storage, not just the closure, so a reload survives it', async () => {
+  it('should write the choice to storage, not just the closure, so a reload survives it, when a clock is chosen', async () => {
     const screen = await openClock();
 
     setClockPreference('utc');
@@ -94,7 +96,7 @@ describe(useClockPreference, () => {
     await expect.element(screen.getByTestId('probe-clock')).toHaveTextContent('utc');
   });
 
-  it('degrades to the default rather than crashing when storage refuses to be read', async () => {
+  it('should degrade to the default rather than crash when storage refuses to be read', async () => {
     // eslint-disable-next-line @typescript-eslint/unbound-method
     const getItem = Storage.prototype.getItem;
     Storage.prototype.getItem = () => {
@@ -109,7 +111,7 @@ describe(useClockPreference, () => {
     }
   });
 
-  it('does not crash the reader when storage refuses to be written', async () => {
+  it('should not crash the reader when storage refuses to be written', async () => {
     // eslint-disable-next-line @typescript-eslint/unbound-method
     const setItem = Storage.prototype.setItem;
     Storage.prototype.setItem = () => {
