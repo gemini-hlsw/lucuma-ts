@@ -8,7 +8,7 @@ import { atom, type Store } from 'jotai';
 import type { ToastMessage } from 'primereact/toast';
 
 import { liveGraphqlEndpoint } from '@/app/environment';
-import { odbTokenAtom, sessionCheckedAtom, tokenExpAtom } from '@/components/atoms/auth';
+import { odbTokenAtom, tokenExpAtom } from '@/components/atoms/auth';
 
 const UNREACHABLE = {
   severity: 'warn',
@@ -64,31 +64,6 @@ const clearLiveFailure = (store: Store): void => {
   }
 };
 
-/** Holds each request until the first session check settles, so none goes out before the bearer is known. */
-export const sessionHoldLink = (store: Store): ApolloLink =>
-  new ApolloLink(
-    (operation, forward) =>
-      new Observable<ApolloLink.Result>((observer) => {
-        let forwarded: { unsubscribe: () => void } | undefined;
-        let unsubscribe: (() => void) | undefined;
-        const release = (): void => {
-          if (forwarded !== undefined || !store.get(sessionCheckedAtom)) {
-            return;
-          }
-          unsubscribe?.();
-          forwarded = forward(operation).subscribe(observer);
-        };
-        release();
-        if (forwarded === undefined) {
-          unsubscribe = store.sub(sessionCheckedAtom, release);
-        }
-        return () => {
-          unsubscribe?.();
-          forwarded?.unsubscribe();
-        };
-      }),
-  );
-
 export const authLink = (store: Store): ApolloLink =>
   new SetContextLink((prevContext) => {
     const token = store.get(odbTokenAtom);
@@ -123,7 +98,6 @@ export const clearOnSuccessLink = (store: Store): ApolloLink =>
 /** The live client's chain in front of `transport`, which is the HttpLink everywhere but a test. */
 export const liveLink = (store: Store, transport: ApolloLink): ApolloLink =>
   ApolloLink.from([
-    sessionHoldLink(store),
     authLink(store),
     clearOnSuccessLink(store),
     new ErrorLink(({ error }) => {

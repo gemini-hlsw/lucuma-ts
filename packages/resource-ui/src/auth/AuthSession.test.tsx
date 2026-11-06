@@ -2,7 +2,6 @@ import { type ApolloClient, ApolloLink, gql } from '@apollo/client';
 import { ApolloProvider } from '@apollo/client/react';
 import type { MockLink } from '@apollo/client/testing';
 import { Observable } from '@apollo/client/utilities';
-import { toastAtom } from '@gemini-hlsw/lucuma-common-ui';
 import { fakeJwt, standardUser } from '@gemini-hlsw/lucuma-common-ui/testing';
 import { createStore, Provider as JotaiProvider, type Store } from 'jotai';
 import { type JSX, type ReactNode, StrictMode } from 'react';
@@ -10,8 +9,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render } from 'vitest-browser-react';
 
 import NightPage from '@/app/pages/NightPage';
-import { isLoggedInAtom, odbTokenAtom, sessionCheckedAtom, sessionStatusAtom, setToken } from '@/components/atoms/auth';
-import { Layout } from '@/components/layout/Layout';
+import { isLoggedInAtom, odbTokenAtom, sessionCheckedAtom, setToken } from '@/components/atoms/auth';
 import { ToastOutlet } from '@/components/ui/ToastOutlet';
 import { liveLink } from '@/gql/ApolloConfigs';
 import { usePublishedSemesters } from '@/gql/hooks';
@@ -19,12 +17,12 @@ import { nightSchedule } from '@/test/fixtures/night';
 import { publishedSemester, publishedSemesters } from '@/test/fixtures/semester';
 import { afterPendingWork, fakeTimeouts, toastsShowing } from '@/test/helpers';
 import { captureHeader, captureOperations, createLinkClient, respondWith } from '@/test/linkClient';
-import { renderInShell, renderWithRoute } from '@/test/render';
+import { renderWithRoute } from '@/test/render';
 import { announceFromOtherTab, staffToken } from '@/test/session';
 import { answerRefresh, failRefresh, ssoCalls, ssoLogout, ssoRefreshes, stubSso } from '@/test/sso';
 
 import { AuthSession } from './AuthSession';
-import { pendingRefresh, SESSION_TIMINGS, type SessionTimings, signOut } from './session';
+import { pendingRefresh, signOut } from './session';
 import { SessionGateContainer } from './SessionGateContainer';
 import { REFRESH_TIMEOUT_MS } from './ssoClient';
 
@@ -51,7 +49,6 @@ const onSecondRequest = (outcome: ApolloLink.Result | Error): ApolloLink => {
   });
 };
 
-const SHELL_ROUTE = '/night?site=GS&night=2025-11-14';
 const NO_SEMESTERS = publishedSemesters();
 const EMPTY_NIGHT = nightSchedule({ site: 'GS', night: '2025-11-14' });
 
@@ -89,8 +86,6 @@ const renderAuthSession = async (children: ReactNode = null, after?: ApolloLink)
   return { screen, client, authorizations };
 };
 
-const survivingSsoCall = () => ssoCalls().find((made) => !made.signal?.aborted);
-
 const signIn = (expiresInSeconds?: number): string => {
   const token = fakeJwt(standardUser('staff'), expiresInSeconds);
   store.set(odbTokenAtom, token);
@@ -102,46 +97,6 @@ const ROUTE = '/night?site=GS&night=2025-11-14';
 const NIGHT_LOADING = 'Loading the night…';
 const GATE_LOADING = 'Loading Resource…';
 const SPLASH_HEADING = { level: 1, name: 'Sign in to read the schedule' };
-
-/** Stands in for a Resource service that denies an anonymous caller, answering with an error and no data. */
-const deniesAnonymous = new ApolloLink((operation, forward) => {
-  const headers = (operation.getContext().headers ?? {}) as Record<string, string>;
-  return Object.hasOwn(headers, 'Authorization')
-    ? forward(operation)
-    : respondWith({ errors: [{ message: 'Access denied.' }] });
-});
-
-const renderShell = async ({
-  token = null,
-  after,
-  timings = SESSION_TIMINGS,
-}: {
-  token?: string | null;
-  after?: ApolloLink;
-  timings?: SessionTimings;
-} = {}) => {
-  const { link: logOperation, names: operations } = captureOperations();
-  const { client, authorizations } = capturingApollo(
-    after === undefined ? logOperation : ApolloLink.from([logOperation, after]),
-  );
-  setToken(store, token);
-  store.set(sessionCheckedAtom, token !== null);
-  const screen = await renderInShell(<NightPage />, {
-    route: SHELL_ROUTE,
-    store,
-    shell: (
-      <ApolloProvider client={client}>
-        <AuthSession timings={timings}>
-          <SessionGateContainer>
-            <Layout />
-          </SessionGateContainer>
-          <ToastOutlet />
-        </AuthSession>
-      </ApolloProvider>
-    ),
-  });
-  return Object.assign(screen, { client, authorizations, operations });
-};
 
 /** The tree `main.tsx` mounts, with `app` for the router, so the session, the gate and the link chain meet as they do there. */
 const renderGated = async ({
@@ -218,50 +173,6 @@ describe(AuthSession, () => {
     expect(store.get(sessionCheckedAtom)).toBe(true);
   });
 
-  it('holds a query mounted beside the session until the bootstrap signs the reader in, then sends it once with the bearer', async () => {
-    const { client, authorizations } = capturingApollo();
-
-    const screen = await render(
-      <StrictMode>
-        <JotaiProvider store={store}>
-          <ApolloProvider client={client}>
-            <AuthSession>{null}</AuthSession>
-            <SemesterCount />
-          </ApolloProvider>
-        </JotaiProvider>
-      </StrictMode>,
-    );
-
-    await expect.poll(() => ssoCalls().length).toBe(2);
-    await expect.element(screen.getByTestId('semesters')).toHaveTextContent('loading');
-    expect(authorizations).toEqual([]);
-
-    const token = fakeJwt(standardUser('staff'));
-    survivingSsoCall()?.answer({ body: token });
-    await pendingRefresh();
-
-    await expect.element(screen.getByTestId('semesters')).not.toHaveTextContent('loading');
-    expect(authorizations).toEqual([`Bearer ${token}`]);
-  });
-
-  it.each([
-    ['the bootstrap is rejected', () => survivingSsoCall()?.answer({ status: 403 })],
-    ['SSO proves unreachable', () => survivingSsoCall()?.fail()],
-  ])('renders the app at once, holding its query until %s, then sends it signed out', async (_, settle) => {
-    const { screen, authorizations } = await renderAuthSession(<SemesterCount />);
-
-    await expect.poll(() => ssoCalls().length).toBe(2);
-    await expect.element(screen.getByTestId('semesters')).toHaveTextContent('loading');
-    expect(authorizations).toEqual([]);
-
-    settle();
-    await pendingRefresh();
-
-    await expect.element(screen.getByTestId('semesters')).not.toHaveTextContent('loading');
-    expect(store.get(sessionStatusAtom)).toBe('signed-out');
-    expect(authorizations).toEqual([null]);
-  });
-
   it('does not refetch on a token renewal', async () => {
     const token = signIn();
     const { screen, client, authorizations } = await renderAuthSession(<SemesterCount />);
@@ -335,28 +246,6 @@ describe(AuthSession, () => {
 
     vi.advanceTimersByTime(200_000);
     expect(ssoCalls()).toHaveLength(0);
-  });
-
-  it('should show no live-server failure when requests wait on the check', async () => {
-    const screen = await renderShell({ after: deniesAnonymous });
-    await expect.element(screen.getByText(GATE_LOADING)).toBeVisible();
-
-    await answerRefresh(0, { body: fakeJwt(standardUser('staff')) });
-    await expect.element(screen.getByText(GATE_LOADING)).not.toBeInTheDocument();
-    await expect.element(screen.getByText(NIGHT_LOADING)).not.toBeInTheDocument();
-
-    expect(store.get(toastAtom)).not.toBeNull();
-    expect(document.querySelector('.p-toast-message')).toBeNull();
-  });
-
-  it('should hold the data for the full 10 s when the first refresh goes unanswered', async () => {
-    fakeTimeouts();
-    const screen = await renderShell();
-
-    await vi.advanceTimersByTimeAsync(9_999);
-
-    expect(screen.getByText(GATE_LOADING).element()).toBeVisible();
-    expect(screen.operations).toEqual([]);
   });
 
   it('should fetch a page afresh, not read it from the cache, when the reader comes back to it after the session ended and a fresh sign-in', async () => {
