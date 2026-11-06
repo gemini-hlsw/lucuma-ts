@@ -35,6 +35,7 @@ export const SIGNED_OUT_MESSAGE = 'signed-out';
 interface Keeper {
   readonly channel: BroadcastChannel;
   readonly pendingRefresh: () => Promise<void> | undefined;
+  readonly reset: () => void;
   readonly stop: () => void;
 }
 
@@ -56,7 +57,7 @@ function dropToken(store: Store, reason: string): void {
 }
 
 function endSession(store: Store, reason: string): void {
-  stopCurrent();
+  current?.reset();
   dropToken(store, reason);
   store.set(sessionCheckedAtom, true);
 }
@@ -70,6 +71,8 @@ function createKeeper(store: Store, timings: SessionTimings): Keeper {
   let retryNotBefore = 0;
   let refreshDueAt: number | null = null;
   let lastAttemptAt = 0;
+  // The SSO cookie may outlive a failed logout, so until a new token arrives nothing asks to renew.
+  let hasEnded = false;
 
   const clearTimers = (): void => {
     if (timer !== undefined) clearTimeout(timer);
@@ -107,6 +110,7 @@ function createKeeper(store: Store, timings: SessionTimings): Keeper {
     const exp = store.get(tokenExpAtom);
     // Dropping an expired token keeps its deadline, so the refresh it was waiting on still runs.
     if (store.get(odbTokenAtom) !== null) {
+      hasEnded = false;
       refreshDueAt = exp !== null && exp.getTime() > now ? exp.getTime() - timings.refreshAheadMs : null;
     }
     const backoffDue = retryNotBefore === 0 ? null : retryNotBefore;
@@ -185,7 +189,7 @@ function createKeeper(store: Store, timings: SessionTimings): Keeper {
   };
 
   const handleVisibilityChange = (): void => {
-    if (document.visibilityState !== 'visible') return;
+    if (hasEnded || document.visibilityState !== 'visible') return;
     if (Date.now() - lastAttemptAt < timings.minIntervalMs) return;
     if (Date.now() < retryNotBefore) return;
     const exp = store.get(tokenExpAtom);
@@ -209,11 +213,19 @@ function createKeeper(store: Store, timings: SessionTimings): Keeper {
   const channel = new BroadcastChannel(SESSION_CHANNEL);
   channel.addEventListener('message', handleSignedOutElsewhere);
 
-  const stop = (): void => {
+  const reset = (): void => {
     clearTimers();
     abortController?.abort();
     abortController = undefined;
     inFlight = undefined;
+    backoffMs = 0;
+    retryNotBefore = 0;
+    refreshDueAt = null;
+    hasEnded = true;
+  };
+
+  const stop = (): void => {
+    reset();
     unsubscribe();
     unsubscribeStatus();
     document.removeEventListener('visibilitychange', handleVisibilityChange);
@@ -227,7 +239,7 @@ function createKeeper(store: Store, timings: SessionTimings): Keeper {
   }
   arm();
 
-  return { channel, pendingRefresh: () => inFlight, stop };
+  return { channel, pendingRefresh: () => inFlight, reset, stop };
 }
 
 export function startSession(store: Store, timings: SessionTimings = SESSION_TIMINGS): () => void {
@@ -253,10 +265,15 @@ export async function signOut(store: Store): Promise<{ reachedSso: boolean }> {
     store.set(sessionEndingAtom, reachedSso ? 'logged-out' : 'logout-missed-sso');
   }
   // A tab that loaded during the logout missed the first post and may have renewed from the cookie.
+  // The keeper's channel does not hear itself, so a guest who signed in here meanwhile stays.
   if (announced) {
-    const late = new BroadcastChannel(SESSION_CHANNEL);
-    late.postMessage(SIGNED_OUT_MESSAGE);
-    late.close();
+    if (current === undefined) {
+      const late = new BroadcastChannel(SESSION_CHANNEL);
+      late.postMessage(SIGNED_OUT_MESSAGE);
+      late.close();
+    } else {
+      current.channel.postMessage(SIGNED_OUT_MESSAGE);
+    }
   }
   return { reachedSso };
 }

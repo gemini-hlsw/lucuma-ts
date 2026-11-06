@@ -70,7 +70,8 @@ Tailwind, codegen) apply unchanged and are not repeated here.
   until `sessionCheckedAtom` is true, so a cold load sends each query once, with the bearer. The
   check is bounded by `REFRESH_TIMEOUT_MS`, so a hung SSO releases the requests signed out.
 - **A logout is announced on the `resource-session` BroadcastChannel**, so other tabs sign out
-  without calling SSO.
+  without calling SSO. A sign-out only resets the keeper; the provider's unmount alone stops it,
+  because a guest signs in on the same page and the keeper must still hear, renew and expire.
 - **The token going to null clears the Apollo store** (`AuthSession.tsx`), whatever ended the
   session, so the next sign-in, by anyone, fetches every page afresh instead of reading this one's
   cache. It is `clearStore`, not `resetStore`: the gate unmounts every page, so there is nothing

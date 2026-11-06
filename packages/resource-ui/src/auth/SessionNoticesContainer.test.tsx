@@ -131,7 +131,10 @@ describe(SessionNoticesContainer, () => {
     expect(toastsShowing()).toEqual([]);
   });
 
-  it.each<[string, () => Promise<void> | void]>([['Your session ended', () => setToken(store, null)]])(
+  it.each<[string, () => Promise<void> | void]>([
+    ['Your session ended', () => setToken(store, null)],
+    ['You signed out in another tab', () => announceFromOtherTab()],
+  ])(
     'should take "%s" down once the reader signs in, and show it once when the next session ends that way',
     async (summary, end) => {
       await renderNotices();
@@ -148,4 +151,16 @@ describe(SessionNoticesContainer, () => {
       expect(toastsShowing().filter((text) => text.startsWith(summary))).toHaveLength(1);
     },
   );
+
+  it('should warn when the session ends on its own after an earlier logout and a fresh sign-in', async () => {
+    await renderNotices();
+    const signedOut = signOut(store);
+    ssoLogout().answer({ status: 200 });
+    await signedOut;
+    setToken(store, staffToken());
+
+    setToken(store, null);
+
+    await expectShowing('Your session ended');
+  });
 });
