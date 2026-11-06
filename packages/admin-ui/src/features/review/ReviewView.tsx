@@ -5,12 +5,11 @@ import { Button } from 'primereact/button';
 import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
 import { InputTextarea } from 'primereact/inputtextarea';
-import { type JSX, type ReactNode, useState } from 'react';
+import { type JSX, type ReactNode, useLayoutEffect, useRef, useState } from 'react';
 
 import { ConflictsTable } from '@/components/ConflictsTable';
 import { DuplicatesTable } from '@/components/DuplicatesTable';
 import { Tile } from '@/components/Tile';
-import { useRowSelection } from '@/components/useRowSelection';
 import type { ObservationRow } from '@/gql/types';
 
 /** Minimal shape a reviewed item satisfies. Proposals is the only page that
@@ -41,6 +40,10 @@ export interface ReviewViewProps<T extends ReviewItem> {
   /** True while the page's resolve mutation is in flight (disables Resolve). */
   readonly resolving?: boolean;
   readonly items: readonly T[];
+  /** The selected item, owned by the page because what it shows beside the
+   *  table (a proposal's configuration requests) belongs to that item. */
+  readonly selected: T | null;
+  readonly onSelect: (id: string | null) => void;
   /** Columns for the master list table. */
   readonly columns: readonly ReviewColumn<T>[];
   /** The detail panel's body for the selected item (abstract, justification…). */
@@ -80,6 +83,8 @@ export function ReviewView<T extends ReviewItem>(props: ReviewViewProps<T>): JSX
     controls,
     resolving = false,
     items,
+    selected,
+    onSelect,
     columns,
     renderDetail,
     renderExtra,
@@ -91,16 +96,16 @@ export function ReviewView<T extends ReviewItem>(props: ReviewViewProps<T>): JSX
   } = props;
 
   const nounTitle = `${noun[0]!.toUpperCase()}${noun.slice(1)}`;
-  const visible = items;
-  const [selected, setSelectedId] = useRowSelection(visible, 'id');
-
   const [decision, setDecision] = useState<Decision | null>(null);
   const [response, setResponse] = useState('');
 
-  /** Select an item, clearing any in-progress decision/response from the
-   *  previously selected one (they belong to that item, not the new one). */
-  function select(id: string | null): void {
-    setSelectedId(id);
+  // The decision and response belong to the item they were drafted for, so they
+  // are dropped whenever the selection moves, however it moves (a facet hiding
+  // the selected item falls back to another, with no click).
+  const selectedId = selected?.id ?? null;
+  const [draftFor, setDraftFor] = useState<string | null>(null);
+  if (selectedId !== draftFor) {
+    setDraftFor(selectedId);
     setDecision(null);
     setResponse('');
   }
@@ -111,10 +116,18 @@ export function ReviewView<T extends ReviewItem>(props: ReviewViewProps<T>): JSX
     setResponse(boilerplate(item, next));
   }
 
+  // The item on screen now, for a resolve that outlives its selection. A layout
+  // effect, so it is current before any promise can settle after the render.
+  const shownId = useRef(selectedId);
+  useLayoutEffect(() => {
+    shownId.current = selectedId;
+  }, [selectedId]);
+
   function resolve(item: T): void {
     if (!decision) return;
     void onResolve(item, decision, response).then((ok) => {
-      if (ok) {
+      // A late success must not clear the draft of whichever item is showing now.
+      if (ok && shownId.current === item.id) {
         setDecision(null);
         setResponse('');
       }
@@ -133,11 +146,11 @@ export function ReviewView<T extends ReviewItem>(props: ReviewViewProps<T>): JSX
       <Tile title={title} controls={listControls} flush>
         <p className="review-blurb">{blurb}</p>
         <DataTable
-          value={visible as T[]}
+          value={items as T[]}
           dataKey="id"
           selectionMode="single"
           selection={selected ?? undefined}
-          onSelectionChange={(e) => select((e.value as T | null)?.id ?? null)}
+          onSelectionChange={(e) => onSelect((e.value as T | null)?.id ?? null)}
           emptyMessage={`No ${noun}s match the filters.`}
           className="review-table"
         >

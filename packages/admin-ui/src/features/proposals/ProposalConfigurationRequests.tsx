@@ -2,48 +2,53 @@ import { TriangleExclamation } from '@gemini-hlsw/lucuma-common-ui';
 import { type JSX, useMemo } from 'react';
 
 import { friendlyError } from '@/gql/errors';
-import {
-  observationsByIdFrom,
-  PROGRAM_CONFIGURATION_REQUESTS_QUERY,
-  useProgramConfigurationRequests,
-  useProgramObservations,
-  useResolveChangeRequests,
-} from '@/gql/odb/changeRequests';
 
-import { ConfigurationRequestReview } from '../review/ConfigurationRequestReview';
+import { ConfigurationRequestTable } from '../review/ConfigurationRequestTable';
+import type { ProposalRequests } from './useProposalRequests';
 
 /**
- * A proposal's configuration requests, approved or denied per request before the
- * proposal itself is decided (sc-9595) — the Change Requests tab's flow, reused.
- * Loaded for the selected proposal only: the Proposals query already walks every
- * program, and a program's requests are not needed until it is opened. Renders
- * nothing while there are none, since most proposals have none, but says so when
- * a query fails: a load error must not read as "nothing to review".
+ * A proposal's configuration requests, ticked to be approved when the proposal
+ * is accepted (sc-9595). The ones left unticked are denied then, and a rejected
+ * proposal leaves them all alone; the page applies that, this only draws the
+ * choice. Every pending request starts ticked.
+ *
+ * Renders nothing while there are none, since most proposals have none, but says
+ * so when a query fails: a load error must not read as "nothing to review".
  */
 export function ProposalConfigurationRequests({
   programId,
-  programLabel,
+  proposalRequests,
+  declined,
+  onDeclinedChange,
+  decided,
+  locked,
 }: {
   readonly programId: string;
-  readonly programLabel: string;
+  readonly proposalRequests: ProposalRequests;
+  /** Ids of the pending requests the reviewer unticked. */
+  readonly declined: ReadonlySet<string>;
+  readonly onDeclinedChange: (declined: ReadonlySet<string>) => void;
+  /** The proposal already has its decision, so the requests are only shown. */
+  readonly decided: boolean;
+  /** A resolve is in flight: what was ticked when it started is what it sends, so the ticks stay as they are. */
+  readonly locked: boolean;
 }): JSX.Element | null {
   const {
     requests,
+    requestsError,
+    requestsIncomplete,
     partial,
-    incomplete: requestsIncomplete,
-    error: requestsError,
-  } = useProgramConfigurationRequests(programId);
-  // Every observation of the program, paged like the Change Requests tab, so a
-  // request's Target and Windows resolve however many observations there are.
-  const {
-    matches: observations,
-    error: observationsError,
-    incomplete: observationsIncomplete,
-  } = useProgramObservations(programId);
-  const observationsById = useMemo(() => observationsByIdFrom(observations), [observations]);
-  // Refetch this program's requests — not the Change Requests list — so the
-  // resolved statuses reload in place.
-  const { resolve, loading: saving } = useResolveChangeRequests(PROGRAM_CONFIGURATION_REQUESTS_QUERY);
+    observations,
+    observationsById,
+    observationsError,
+    observationsIncomplete,
+  } = proposalRequests;
+
+  const pending = useMemo(() => requests.filter((r) => r.status === 'REQUESTED'), [requests]);
+  const approvedIds = useMemo(
+    () => new Set(pending.filter((r) => !declined.has(r.id)).map((r) => r.id)),
+    [pending, declined],
+  );
 
   // A walk that cannot finish leaves only some of the requests: say so, rather than show them as all.
   if (requestsError || requestsIncomplete) {
@@ -56,12 +61,17 @@ export function ProposalConfigurationRequests({
   }
   // Nothing until the first load has finished, and nothing while only some pages
   // are in: a partial list must not pass for the whole set, and a loading line
-  // would flash on the many proposals that have none. A reload after a resolve
-  // keeps what is on screen, so the review is not torn down under the reviewer.
+  // would flash on the many proposals that have none. A reload after accepting
+  // keeps what is on screen, so the outcome shows in place.
   if (partial || requests.length === 0) return null;
   return (
     <>
       <h3 className="review-obs-title">Configuration Requests</h3>
+      {!decided && (
+        <p className="review-blurb">
+          Tick the requests to approve when the proposal is accepted; the other pending ones are denied.
+        </p>
+      )}
       {/* With errorPolicy 'all' a benign per-observation warning arrives alongside
           good data, so only an error with nothing loaded counts as a failure. */}
       {(observationsIncomplete || (observationsError && observations.length === 0)) && (
@@ -70,14 +80,20 @@ export function ProposalConfigurationRequests({
           {observationsError ? <>: {friendlyError(observationsError)}</> : '.'}
         </p>
       )}
-      <ConfigurationRequestReview
+      <ConfigurationRequestTable
+        key={programId}
         requests={requests}
-        programLabel={programLabel}
-        kind="proposal"
         observationsById={observationsById}
-        resetKey={programId}
-        saving={saving}
-        onResolve={resolve}
+        selection={
+          decided
+            ? undefined
+            : {
+                selectedIds: approvedIds,
+                isSelectable: (r) => !locked && r.status === 'REQUESTED',
+                onChange: (ticked) =>
+                  onDeclinedChange(new Set(pending.filter((r) => !ticked.has(r.id)).map((r) => r.id))),
+              }
+        }
       />
     </>
   );
