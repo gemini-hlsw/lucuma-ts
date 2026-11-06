@@ -21,7 +21,7 @@ import { afterPendingWork, fakeTimeouts, toastsShowing } from '@/test/helpers';
 import { captureHeader, captureOperations, createLinkClient, respondWith } from '@/test/linkClient';
 import { renderInShell, renderWithRoute } from '@/test/render';
 import { announceFromOtherTab, staffToken } from '@/test/session';
-import { answerRefresh, ssoCalls, ssoLogout, ssoRefreshes, stubSso } from '@/test/sso';
+import { answerRefresh, failRefresh, ssoCalls, ssoLogout, ssoRefreshes, stubSso } from '@/test/sso';
 
 import { AuthSession } from './AuthSession';
 import { pendingRefresh, SESSION_TIMINGS, type SessionTimings, signOut } from './session';
@@ -142,8 +142,6 @@ const renderShell = async ({
   });
   return Object.assign(screen, { client, authorizations, operations });
 };
-
-const sentOnce = (operations: readonly string[]): boolean => new Set(operations).size === operations.length;
 
 /** The tree `main.tsx` mounts, with `app` for the router, so the session, the gate and the link chain meet as they do there. */
 const renderGated = async ({
@@ -351,19 +349,6 @@ describe(AuthSession, () => {
     expect(document.querySelector('.p-toast-message')).toBeNull();
   });
 
-  it('sends a returning tab its requests at once with the bearer, each once', async () => {
-    const token = fakeJwt(standardUser('staff'));
-    const screen = await renderShell({ token });
-
-    await expect.element(screen.getByText(NIGHT_LOADING)).not.toBeInTheDocument();
-    await screen.client.query({ query: RENEWAL_MARKER, fetchPolicy: 'network-only' });
-
-    expect(screen.operations.length).toBeGreaterThan(1);
-    expect(sentOnce(screen.operations)).toBe(true);
-    expect(screen.authorizations.every((authorization) => authorization === `Bearer ${token}`)).toBe(true);
-    expect(ssoCalls()).toHaveLength(0);
-  });
-
   it('should hold the data for the full 10 s when the first refresh goes unanswered', async () => {
     fakeTimeouts();
     const screen = await renderShell();
@@ -372,36 +357,6 @@ describe(AuthSession, () => {
 
     expect(screen.getByText(GATE_LOADING).element()).toBeVisible();
     expect(screen.operations).toEqual([]);
-  });
-
-  it('should never draw the splash on the way to signing in when SSO answers at 9 s', async () => {
-    fakeTimeouts();
-    const drawn: string[] = [];
-    const observer = new MutationObserver((records) => {
-      for (const record of records) {
-        drawn.push(record.target.textContent ?? '');
-        record.addedNodes.forEach((node) => drawn.push(node.textContent ?? ''));
-      }
-    });
-    observer.observe(document.body, { subtree: true, childList: true, characterData: true });
-    try {
-      const screen = await renderShell();
-      expect(screen.getByText(GATE_LOADING).element()).toBeVisible();
-
-      await vi.advanceTimersByTimeAsync(9_000);
-
-      await answerRefresh(0, { body: fakeJwt(standardUser('staff')) });
-
-      await vi.advanceTimersByTimeAsync(60_000);
-
-      expect(screen.getByTestId('account-control').element()).toHaveTextContent('Ada Lovelace');
-    } finally {
-      observer.disconnect();
-    }
-
-    expect(drawn.some((text) => text.includes(GATE_LOADING))).toBe(true);
-    expect(drawn.filter((text) => text.includes(SPLASH_HEADING.name))).toEqual([]);
-    expect(ssoRefreshes()).toHaveLength(1);
   });
 
   it('should fetch a page afresh, not read it from the cache, when the reader comes back to it after the session ended and a fresh sign-in', async () => {
@@ -436,7 +391,10 @@ describe(AuthSession, () => {
       expect(screen.getByText(GATE_LOADING).query()).toBeNull();
     });
 
-    it.each([['no token stored', () => null]])(
+    it.each([
+      ['no token stored', () => null],
+      ['a token stored', staffToken],
+    ])(
       'should draw only the loading mark and send nothing until SSO answers, then the page, never the splash, with each query sent once with the fresh bearer, when the page loads with %s',
       async (_, stored) => {
         const drawn = recordDrawn();
@@ -462,6 +420,43 @@ describe(AuthSession, () => {
         expect(drawn.texts.filter((text) => text.includes(SPLASH_HEADING.name))).toEqual([]);
       },
     );
+
+    it('should ask SSO before showing anything but the loading mark, then show the splash with no notice, when SSO refuses a stored token', async () => {
+      const screen = await renderGated({ token: staffToken() });
+
+      await expect.element(screen.getByText(GATE_LOADING)).toBeVisible();
+      expect(screen.getByTestId('semesters').query()).toBeNull();
+      await expect.poll(() => ssoRefreshes()).toHaveLength(1);
+      expect(screen.operations).toEqual([]);
+
+      await answerRefresh(0, { status: 403 });
+
+      await expect.element(screen.getByRole('heading', SPLASH_HEADING)).toBeVisible();
+      expect(screen.getByTestId('semesters').query()).toBeNull();
+      await afterPendingWork(store);
+      expect(toastsShowing()).toEqual([]);
+      expect(screen.operations).toEqual([]);
+    });
+
+    it.each([
+      ['a network failure', () => failRefresh(0)],
+      ['the refresh timeout', () => vi.advanceTimersByTimeAsync(REFRESH_TIMEOUT_MS)],
+    ])('should keep a stored token and open the page on it when %s proves SSO unreachable', async (_, unreachable) => {
+      fakeTimeouts();
+      const token = staffToken();
+      const screen = await renderGated({ token });
+      await expect.element(screen.getByText(GATE_LOADING)).toBeVisible();
+      await expect.poll(() => ssoRefreshes()).toHaveLength(1);
+
+      await unreachable();
+
+      await expect.element(screen.getByTestId('semesters')).toHaveTextContent('0 semesters');
+      expect(screen.getByRole('heading', SPLASH_HEADING).query()).toBeNull();
+      await afterPendingWork(store);
+      expect(toastsShowing()).toEqual([]);
+      expect(screen.operations).toEqual(['PublishedSemesters']);
+      expect(screen.authorizations).toEqual([`Bearer ${token}`]);
+    });
 
     it('should send nothing, so no request leaves without the bearer, when the session ends', async () => {
       const screen = await renderGated({ token: staffToken(), checked: true });

@@ -29,10 +29,10 @@ describe(useSessionStatus, () => {
     expect(store.get(sessionStatusAtom)).toBe('signed-out');
   });
 
-  it('reads signed-in for a valid token, checked or not', () => {
+  it('should read checking until the session has been checked, then signed-in, when the token is valid', () => {
     store.set(odbTokenAtom, fakeJwt(standardUser('staff')));
 
-    expect(store.get(sessionStatusAtom)).toBe('signed-in');
+    expect(store.get(sessionStatusAtom)).toBe('checking');
 
     store.set(sessionCheckedAtom, true);
     expect(store.get(sessionStatusAtom)).toBe('signed-in');

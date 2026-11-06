@@ -11,7 +11,15 @@ import {
   setToken,
 } from '@/components/atoms/auth';
 import { fakeTimeouts, UNDECODABLE_TOKEN } from '@/test/helpers';
-import { answerRefresh, ssoCall as call, ssoCalls, ssoLogout, ssoRefreshes as refreshes, stubSso } from '@/test/sso';
+import {
+  answerRefresh,
+  failRefresh,
+  ssoCall as call,
+  ssoCalls,
+  ssoLogout,
+  ssoRefreshes as refreshes,
+  stubSso,
+} from '@/test/sso';
 
 import {
   pendingRefresh,
@@ -33,6 +41,13 @@ let otherTab: BroadcastChannel;
 const holdToken = (expiresInSeconds?: number): string => {
   const token = fakeJwt(standardUser('staff'), expiresInSeconds);
   store.set(odbTokenAtom, token);
+  return token;
+};
+
+/** A tab already past its load-time check, so the keeper has nothing to ask at start. */
+const checkedToken = (expiresInSeconds?: number): string => {
+  const token = holdToken(expiresInSeconds);
+  store.set(sessionCheckedAtom, true);
   return token;
 };
 
@@ -65,11 +80,14 @@ afterEach(() => {
 });
 
 describe(startSession, () => {
-  it('should mark the session checked on the store it was started with when that store holds a token', () => {
+  it('should ask SSO for the store it was started with, and mark only that store checked, when SSO answers', async () => {
     const other = createStore();
     holdToken();
 
     stop = startSession(store);
+    expect(store.get(sessionCheckedAtom)).toBe(false);
+
+    await answerRefresh(0, { body: fakeJwt(standardUser('staff')) });
 
     expect(store.get(sessionCheckedAtom)).toBe(true);
     expect(other.get(sessionCheckedAtom)).toBe(false);
@@ -96,18 +114,32 @@ describe(startSession, () => {
     expect(store.get(sessionCheckedAtom)).toBe(true);
   });
 
-  it('asks SSO nothing when the stored token is still good', () => {
+  it('should ask SSO once and take the fresh token over the stored one when the stored token is still good', async () => {
     const token = holdToken();
 
     stop = startSession(store);
 
-    expect(ssoCalls()).toHaveLength(0);
-    expect(store.get(sessionCheckedAtom)).toBe(true);
+    expect(refreshes()).toHaveLength(1);
+    expect(store.get(sessionCheckedAtom)).toBe(false);
     expect(store.get(odbTokenAtom)).toBe(token);
+
+    const fresh = fakeJwt(standardUser('staff'), 7200);
+    await answerRefresh(0, { body: fresh });
+
+    expect(store.get(odbTokenAtom)).toBe(fresh);
+    expect(store.get(sessionCheckedAtom)).toBe(true);
   });
 
-  it('refreshes once the token reaches its own refresh deadline', async () => {
-    holdToken(0.1);
+  it('should ask nothing at start when the store is already checked', () => {
+    checkedToken();
+
+    stop = startSession(store);
+
+    expect(ssoCalls()).toHaveLength(0);
+  });
+
+  it('should refresh when the token reaches its own refresh deadline', async () => {
+    checkedToken(0.1);
 
     stop = startSession(store, { ...FAST, refreshAheadMs: 60 });
     expect(refreshes()).toHaveLength(0);
@@ -115,9 +147,9 @@ describe(startSession, () => {
     await expectRefreshes(1);
   });
 
-  it('asks nothing before the token own refresh deadline', () => {
+  it('should ask nothing when the token has not reached its own refresh deadline', () => {
     fakeTimeouts();
-    holdToken(120);
+    checkedToken(120);
 
     stop = startSession(store);
 
@@ -171,20 +203,26 @@ describe(startSession, () => {
   });
 
   it.each(['a still-valid token', 'no token'] as const)(
-    'asks again after the backoff when SSO cannot be reached, holding %s',
+    'should hold %s and ask again at the backoff mark when the load-time check cannot reach SSO',
     async (holding) => {
-      const token = holding === 'no token' ? null : fakeJwt(standardUser('staff'), 20);
+      fakeTimeouts();
+      const token = holding === 'no token' ? null : fakeJwt(standardUser('staff'), 50);
       store.set(odbTokenAtom, token);
 
-      stop = startSession(store, FAST);
-      await expectRefreshes(1);
+      stop = startSession(store);
+      expect(refreshes()).toHaveLength(1);
 
-      await answerRefresh(0, { status: 500 });
+      await failRefresh(0);
 
       expect(store.get(odbTokenAtom)).toBe(token);
       expect(store.get(sessionCheckedAtom)).toBe(true);
+      vi.advanceTimersByTime(SESSION_TIMINGS.minIntervalMs - 1);
+      expect(refreshes()).toHaveLength(1);
 
-      await expectRefreshes(2);
+      vi.advanceTimersByTime(1);
+
+      expect(refreshes()).toHaveLength(2);
+      expect(store.get(odbTokenAtom)).toBe(token);
     },
   );
 
@@ -336,9 +374,9 @@ describe(startSession, () => {
     expect(refreshes()).toHaveLength(1);
   });
 
-  it('arms nothing early for a token that expires past the longest timer', () => {
+  it('should arm nothing early when the token expires past the longest timer', () => {
     fakeTimeouts();
-    const token = holdToken(30 * 24 * 60 * 60);
+    const token = checkedToken(30 * 24 * 60 * 60);
 
     stop = startSession(store);
 
@@ -371,6 +409,24 @@ describe(startSession, () => {
 
     expect(store.get(odbTokenAtom)).toBeNull();
     expect(store.get(sessionCheckedAtom)).toBe(false);
+  });
+
+  it('should keep the token over the refresh still in flight, and call the session checked, when a token arrives by another path', async () => {
+    holdToken(20);
+    stop = startSession(store);
+    const settled = pendingRefresh();
+    expect(refreshes()).toHaveLength(1);
+
+    const guest = fakeJwt({ type: 'guest', id: 'u-guest' });
+    store.set(odbTokenAtom, guest);
+
+    expect(store.get(sessionStatusAtom)).toBe('signed-in');
+
+    call(0).answer({ body: fakeJwt(standardUser('staff')) });
+    await settled;
+
+    expect(store.get(odbTokenAtom)).toBe(guest);
+    expect(refreshes()).toHaveLength(1);
   });
 
   it('settles and reports when a token subscriber throws, instead of rejecting the refresh', async () => {
@@ -461,10 +517,26 @@ describe(startSession, () => {
     expect(refreshes()).toHaveLength(2);
   });
 
-  it('reports signed-out once the token expires mid-refresh, and signed-in again when the refresh lands', async () => {
+  it('should stay checking, then report signed-in once the refresh lands, when the token expires mid-refresh', async () => {
     holdToken(0.03);
 
     stop = startSession(store, FAST);
+    expect(store.get(sessionStatusAtom)).toBe('checking');
+    await expectRefreshes(1);
+
+    await expect.poll(() => store.get(odbTokenAtom)).toBeNull();
+    expect(store.get(sessionStatusAtom)).toBe('checking');
+    expect(refreshes()).toHaveLength(1);
+
+    await answerRefresh(0, { body: fakeJwt(standardUser('staff')) });
+
+    expect(store.get(sessionStatusAtom)).toBe('signed-in');
+  });
+
+  it('should report signed-out, then signed-in once the refresh lands, when the token of a checked tab expires mid-refresh', async () => {
+    checkedToken(0.03);
+
+    stop = startSession(store, { ...FAST, refreshAheadMs: 20 });
     expect(store.get(sessionStatusAtom)).toBe('signed-in');
     await expectRefreshes(1);
 
@@ -566,9 +638,9 @@ describe(signOut, () => {
     expect(reported).toHaveBeenCalledTimes(1);
   });
 
-  it('keeps the reader signed out when the tab is looked at again after a failed logout', async () => {
+  it('should keep the reader signed out when the tab is looked at again after a failed logout', async () => {
     fakeTimeouts();
-    holdToken(20);
+    checkedToken(20);
 
     stop = startSession(store);
 
@@ -642,7 +714,7 @@ describe(signOut, () => {
 
   describe('a reader who signed out and signed in again', () => {
     const signOutThenSignInAgain = async (expiresInSeconds?: number): Promise<void> => {
-      holdToken();
+      checkedToken();
       stop = startSession(store);
       const signedOut = signOut(store);
       ssoLogout().answer({ status: 200 });
@@ -685,7 +757,7 @@ describe(signOut, () => {
 
 describe('a logout in another tab', () => {
   const signedInHere = (): string => {
-    const token = holdToken();
+    const token = checkedToken();
     stop = startSession(store);
     return token;
   };
@@ -744,7 +816,7 @@ describe('a logout in another tab', () => {
   });
 
   it('should leave no listener behind when a keeper is started again over a running one', () => {
-    holdToken(20);
+    checkedToken(20);
     startSession(store);
     stop = startSession(store);
 
@@ -780,7 +852,7 @@ describe('a logout in another tab', () => {
 
 describe('how the session ended', () => {
   it('should record a lapse when SSO refuses to renew a session the gate had opened', async () => {
-    holdToken(20);
+    checkedToken(20);
     stop = startSession(store, FAST);
     await expectRefreshes(1);
 
@@ -790,7 +862,7 @@ describe('how the session ended', () => {
   });
 
   it('should record a lapse when the token of a session the gate had opened expires', async () => {
-    holdToken(0.03);
+    checkedToken(0.03);
     stop = startSession(store, { ...FAST, refreshAheadMs: 20 });
     await expectRefreshes(1);
 
@@ -800,7 +872,7 @@ describe('how the session ended', () => {
   });
 
   it('should record a logout in another tab when it ends a session the gate had opened', async () => {
-    holdToken();
+    checkedToken();
     stop = startSession(store);
 
     await announceFromOtherTab(SIGNED_OUT_MESSAGE);
@@ -808,8 +880,37 @@ describe('how the session ended', () => {
     expect(store.get(sessionEndingAtom)).toBe('logged-out-elsewhere');
   });
 
-  it('should keep the lapse when another tab logs out after the session already ended', async () => {
+  it('should record nothing when SSO refuses a stored token before the gate opened', async () => {
     holdToken();
+    stop = startSession(store);
+
+    await answerRefresh(0, { status: 403 });
+
+    expect(store.get(sessionStatusAtom)).toBe('signed-out');
+    expect(store.get(sessionEndingAtom)).toBe('none');
+  });
+
+  it('should record nothing when a stored token expires before the gate opened', async () => {
+    holdToken(0.02);
+    stop = startSession(store);
+
+    await expect.poll(() => store.get(odbTokenAtom)).toBeNull();
+
+    expect(store.get(sessionEndingAtom)).toBe('none');
+  });
+
+  it('should record nothing when another tab logs out before the gate opened', async () => {
+    holdToken();
+    stop = startSession(store);
+
+    await announceFromOtherTab(SIGNED_OUT_MESSAGE);
+
+    expect(store.get(sessionStatusAtom)).toBe('signed-out');
+    expect(store.get(sessionEndingAtom)).toBe('none');
+  });
+
+  it('should keep the lapse when another tab logs out after the session already ended', async () => {
+    checkedToken();
     stop = startSession(store);
     setToken(store, null);
 
@@ -824,7 +925,7 @@ describe('how the session ended', () => {
   ] as const)(
     'should record a logout in flight, then one that %s, when the reader signs out',
     async (_, status, ending) => {
-      holdToken();
+      checkedToken();
       stop = startSession(store);
 
       const signedOut = signOut(store);

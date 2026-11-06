@@ -65,10 +65,13 @@ Tailwind, codegen) apply unchanged and are not repeated here.
   environment banner while the status is `checking`, then the splash signed out or the app signed
   in, at the URL that was opened. `auth/SplashContainer.tsx` makes the guest call and owns its
   state; `auth/Splash.tsx` only draws, from props, so its layout and focus tests need no SSO stub.
-  The banner is the gate's, so the shell draws none.
+  The banner is the gate's, so the shell draws none. Every load asks SSO before the gate opens, a
+  stored token included; only an unreachable SSO lets a stored token stand, so an outage does not
+  sign out a reader whose token has life left.
 - **Requests wait for the session check, the app does not.** `sessionHoldLink` holds each request
   until `sessionCheckedAtom` is true, so a cold load sends each query once, with the bearer. The
-  check is bounded by `REFRESH_TIMEOUT_MS`, so a hung SSO releases the requests signed out.
+  check is bounded by `REFRESH_TIMEOUT_MS`, so a hung SSO releases the requests: signed out, or on
+  the stored token when there is one.
 - **A logout is announced on the `resource-session` BroadcastChannel**, so other tabs sign out
   without calling SSO. A sign-out only resets the keeper; the provider's unmount alone stops it,
   because a guest signs in on the same page and the keeper must still hear, renew and expire.
@@ -80,8 +83,9 @@ Tailwind, codegen) apply unchanged and are not repeated here.
   by `AuthSession` above the shell. It reads only the session status and `sessionEndingAtom`, the
   one union that `signOut` and the keeper write to say how the session ended, and hands the
   screen-reader announcement to the `auth/SessionNotices.tsx` live region. The keeper records an
-  ending only for a session that was signed in. The masthead shows none, because it is not mounted
-  when they are due.
+  ending only for a session the gate had opened in this page life, so a cold load whose stored
+  token SSO refuses stays `none` and gets the plain splash. The masthead shows none, because it is
+  not mounted when they are due.
 
 ## Testing
 
