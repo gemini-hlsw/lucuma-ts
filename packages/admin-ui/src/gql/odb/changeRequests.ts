@@ -4,7 +4,6 @@
  */
 import { skipToken, useMutation, useQuery } from '@apollo/client/react';
 import { isNullish, parseNumber, useAllPages } from '@gemini-hlsw/lucuma-common-ui';
-import type { DocumentNode } from 'graphql';
 import { useCallback, useMemo } from 'react';
 
 import type {
@@ -20,7 +19,8 @@ import type { ConfigurationRequestItemFragment, Instrument, ObservationItemFragm
 import { formatConditions, formatDec, formatRa, isScienceObservation, mapObservationRow } from './shared';
 
 /** One ConfigurationRequest as both review views render it — the Change
- *  Requests tab (sc-9094) and the Proposals tab's per-CR approve/deny (sc-9595).
+ *  Requests tab (sc-9094) and the Proposals tab's approval of a proposal's
+ *  requests (sc-9595).
  *  A named fragment so `mapConfigurationRequests` maps requests whether they
  *  arrive via the top-level `configurationRequests` query or a program's own
  *  `configurationRequests` field. */
@@ -284,6 +284,36 @@ export const RESOLVE_KEEPING_FEEDBACK_MUTATION = graphql(`
   }
 `);
 
+/** Approve and deny a proposal's configuration requests when the proposal is
+ *  accepted (sc-9595): the reviewer's ticked requests become APPROVED, the rest
+ *  DENIED. Both groups go by explicit id and only where the request is still
+ *  REQUESTED, so a request the reviewer never saw, or one withdrawn or decided
+ *  since the page loaded, keeps its outcome. A group may be empty (`IN: []`
+ *  matches nothing, checked against dev). `feedback` is left out of SET, so any
+ *  stored response survives. */
+export const RESOLVE_PROPOSAL_REQUESTS_MUTATION = graphql(`
+  mutation AdminResolveProposalRequests($approved: [ConfigurationRequestId!]!, $denied: [ConfigurationRequestId!]!) {
+    approved: updateConfigurationRequests(
+      input: { WHERE: { id: { IN: $approved }, status: { EQ: REQUESTED } }, SET: { status: APPROVED } }
+    ) {
+      requests {
+        id
+        status
+        feedback
+      }
+    }
+    denied: updateConfigurationRequests(
+      input: { WHERE: { id: { IN: $denied }, status: { EQ: REQUESTED } }, SET: { status: DENIED } }
+    ) {
+      requests {
+        id
+        status
+        feedback
+      }
+    }
+  }
+`);
+
 /** Group change requests by program and synthesize each program's overall
  *  Status per the sc-9094 mockup: Approved = all approved, Denied = all
  *  denied, Open = at least one REQUESTED, Mixed = a mix of approved/denied
@@ -320,18 +350,17 @@ export function groupChangeRequestsByProgram(requests: readonly ChangeRequest[])
   });
 }
 
+const RELOAD_CHANGE_REQUESTS = { refetchQueries: [CHANGE_REQUESTS_QUERY], awaitRefetchQueries: true };
+
 /** Resolve the requests, writing `response` as the staff feedback.
  *
  *  A null `response` means the reviewer left no response, which keeps whatever
  *  is stored rather than erasing it — the two cases need different documents,
- *  since a nulled variable clears the field. `refetchQuery` is the list the
- *  calling view reads from, so the resolved statuses reload in place — the Change
- *  Requests query for that tab, or one program's own requests query for the
- *  per-request approval in the Proposals detail (sc-9595). */
-export function useResolveChangeRequests(refetchQuery: DocumentNode = CHANGE_REQUESTS_QUERY) {
-  const options = useMemo(() => ({ refetchQueries: [refetchQuery], awaitRefetchQueries: true }), [refetchQuery]);
-  const [withFeedback, withState] = useMutation(RESOLVE_WITH_FEEDBACK_MUTATION, options);
-  const [keepingFeedback, keepState] = useMutation(RESOLVE_KEEPING_FEEDBACK_MUTATION, options);
+ *  since a nulled variable clears the field. The Change Requests list is
+ *  refetched, so the resolved statuses reload in place. */
+export function useResolveChangeRequests() {
+  const [withFeedback, withState] = useMutation(RESOLVE_WITH_FEEDBACK_MUTATION, RELOAD_CHANGE_REQUESTS);
+  const [keepingFeedback, keepState] = useMutation(RESOLVE_KEEPING_FEEDBACK_MUTATION, RELOAD_CHANGE_REQUESTS);
   const resolve = useCallback(
     (ids: readonly string[], status: ConfigurationRequestStatus, response: string | null) =>
       response === null
@@ -340,4 +369,20 @@ export function useResolveChangeRequests(refetchQuery: DocumentNode = CHANGE_REQ
     [withFeedback, keepingFeedback],
   );
   return { resolve, loading: withState.loading || keepState.loading };
+}
+
+/** Resolve a proposal's configuration requests as it is accepted (sc-9595). The
+ *  program's own requests are refetched so the table shows the outcome, but the
+ *  reload is not awaited: it is only a refresh, and a failure of it must not make
+ *  writes that landed read as a failed resolve. */
+export function useResolveProposalRequests() {
+  const [mutate, { loading }] = useMutation(RESOLVE_PROPOSAL_REQUESTS_MUTATION, {
+    refetchQueries: [PROGRAM_CONFIGURATION_REQUESTS_QUERY],
+  });
+  const resolve = useCallback(
+    (approved: readonly string[], denied: readonly string[]) =>
+      mutate({ variables: { approved: [...approved], denied: [...denied] } }),
+    [mutate],
+  );
+  return { resolve, loading };
 }
