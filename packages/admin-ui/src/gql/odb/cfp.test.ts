@@ -4,10 +4,9 @@ import type { CallForProposals } from '../types';
 import { blankCall, cfpPropertiesInput, createCfpInput, mapCfps, semesterDates } from './cfp';
 import type { CallForProposalsItemFragment } from './gen/graphql';
 
-type RawCfp = CallForProposalsItemFragment;
-type RawLimits = NonNullable<RawCfp['keck']>['coordinateLimits'];
-type RawPartner = RawCfp['partners'][number];
-type RawExchangePartner = NonNullable<RawCfp['gemini']>['exchangePartners'][number];
+type RawLimits = NonNullable<CallForProposalsItemFragment['keck']>['coordinateLimits'];
+type RawPartner = CallForProposalsItemFragment['partners'][number];
+type RawExchangePartner = NonNullable<CallForProposalsItemFragment['gemini']>['exchangePartners'][number];
 
 function limits(raStart: number, raEnd: number, decStart: number, decEnd: number): RawLimits {
   return {
@@ -47,7 +46,9 @@ function exchangePartner(
 
 /** The fields common to every call fixture; each `…Call` helper adds exactly
  *  one observatory block, mirroring the ODB one-of invariant. */
-function base(overrides: Partial<RawCfp>): Omit<RawCfp, 'observatory' | 'gemini' | 'keck' | 'subaru'> {
+function base(
+  overrides: Partial<CallForProposalsItemFragment>,
+): Omit<CallForProposalsItemFragment, 'observatory' | 'gemini' | 'keck' | 'subaru'> {
   return {
     __typename: 'CallForProposals',
     id: 'c-101',
@@ -61,7 +62,10 @@ function base(overrides: Partial<RawCfp>): Omit<RawCfp, 'observatory' | 'gemini'
   };
 }
 
-function geminiCall(overrides: Partial<RawCfp> = {}, gemini: Partial<NonNullable<RawCfp['gemini']>> = {}): RawCfp {
+function geminiCall(
+  overrides: Partial<CallForProposalsItemFragment> = {},
+  gemini: Partial<NonNullable<CallForProposalsItemFragment['gemini']>> = {},
+): CallForProposalsItemFragment {
   return {
     ...base(overrides),
     observatory: 'GEMINI',
@@ -85,7 +89,7 @@ function geminiCall(overrides: Partial<RawCfp> = {}, gemini: Partial<NonNullable
   };
 }
 
-function keckCall(overrides: Partial<RawCfp> = {}): RawCfp {
+function keckCall(overrides: Partial<CallForProposalsItemFragment> = {}): CallForProposalsItemFragment {
   return {
     ...base({ id: 'c-368', title: '2026B Keck Exchange', ...overrides }),
     observatory: 'KECK',
@@ -99,7 +103,7 @@ function keckCall(overrides: Partial<RawCfp> = {}): RawCfp {
   };
 }
 
-function subaruCall(overrides: Partial<RawCfp> = {}): RawCfp {
+function subaruCall(overrides: Partial<CallForProposalsItemFragment> = {}): CallForProposalsItemFragment {
   return {
     ...base({ id: 'c-367', title: '2026B Subaru Exchange', ...overrides }),
     observatory: 'SUBARU',

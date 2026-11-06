@@ -9,10 +9,8 @@ import type { CallForProposalsItemFragment } from './gen/graphql';
 
 const STAFF_TOKEN = fakeJwt(standardUser('staff'));
 
-type RawCfp = CallForProposalsItemFragment;
-
 /** A minimal Gemini call match; only `id` matters for these paging tests. */
-const cfp = (id: string): RawCfp => ({
+const cfp = (id: string): CallForProposalsItemFragment => ({
   __typename: 'CallForProposals',
   id,
   existence: 'PRESENT',
@@ -52,7 +50,11 @@ const cfp = (id: string): RawCfp => ({
   subaru: null,
 });
 
-const page = (offset: string | null, matches: RawCfp[], hasMore: boolean): MockedResponseOf<typeof CFPS_QUERY> => ({
+const page = (
+  offset: string | null,
+  matches: CallForProposalsItemFragment[],
+  hasMore: boolean,
+): MockedResponseOf<typeof CFPS_QUERY> => ({
   request: { query: CFPS_QUERY, variables: { offset } },
   result: { data: { callsForProposals: { __typename: 'CallsForProposalsSelectResult', matches, hasMore } } },
 });

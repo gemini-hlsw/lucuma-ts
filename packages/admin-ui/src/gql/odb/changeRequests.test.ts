@@ -6,9 +6,7 @@ import type { ChangeRequest } from '../types';
 import { groupChangeRequestsByProgram, mapConfigurationRequests, observationsByIdFrom } from './changeRequests';
 import type { ConfigurationRequestItemFragment, ObservationItemFragment } from './gen/graphql';
 
-type RawRequest = ConfigurationRequestItemFragment;
-
-function request(overrides: Partial<RawRequest>): RawRequest {
+function request(overrides: Partial<ConfigurationRequestItemFragment>): ConfigurationRequestItemFragment {
   return {
     __typename: 'ConfigurationRequest',
     id: 'x-357',

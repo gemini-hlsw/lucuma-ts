@@ -10,8 +10,7 @@ import {
   proposalTypeInput,
 } from './programs';
 
-type RawProgram = ProgramItemFragment;
-type RawProgramUser = RawProgram['users'][number];
+type RawProgramUser = ProgramItemFragment['users'][number];
 
 function programUser(
   id: string,
@@ -33,7 +32,7 @@ function programUser(
   };
 }
 
-function program(overrides: Partial<RawProgram>): RawProgram {
+function program(overrides: Partial<ProgramItemFragment>): ProgramItemFragment {
   return {
     __typename: 'Program',
     id: 'p-1322',

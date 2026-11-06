@@ -17,9 +17,7 @@ import ChangeRequestsPage from './ChangeRequestsPage';
 
 const STAFF_TOKEN = fakeJwt(standardUser('staff'));
 
-type RawRequest = ConfigurationRequestItemFragment;
-
-const request = (): RawRequest => ({
+const request = (): ConfigurationRequestItemFragment => ({
   __typename: 'ConfigurationRequest',
   id: 'x-1',
   status: 'REQUESTED',

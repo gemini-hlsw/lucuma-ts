@@ -23,9 +23,7 @@ const STAFF_TOKEN = fakeJwt(standardUser('staff'));
 // sit in it — derived, not hardcoded, so this can't rot at the semester turn.
 const REFERENCE = `G-${currentSemester()}-1234-Q`;
 
-type RawProgram = ProgramItemFragment;
-
-const program = (resourceCount: number, resourceLimit: number): RawProgram => ({
+const program = (resourceCount: number, resourceLimit: number): ProgramItemFragment => ({
   __typename: 'Program',
   id: 'p-1',
   name: 'Globular Cluster Abundances',
