@@ -3,7 +3,6 @@ import { dateToLocalObservingNight } from '@gemini-hlsw/lucuma-core';
 import { describe, expect, it } from 'vitest';
 import { userEvent } from 'vitest/browser';
 
-import type { AdminChangeRequestsResult } from '@/gql/odb/changeRequests';
 import {
   CHANGE_REQUESTS_QUERY,
   PROGRAM_OBSERVATIONS_QUERY,
@@ -11,15 +10,14 @@ import {
   RESOLVE_WITH_FEEDBACK_MUTATION,
 } from '@/gql/odb/changeRequests';
 import { CONFLICTS_QUERY, similarModeTypes } from '@/gql/odb/conflicts';
+import type { ConfigurationRequestItemFragment } from '@/gql/odb/gen/graphql';
 import { type MockedResponseOf, renderWithContext } from '@/test/render';
 
 import ChangeRequestsPage from './ChangeRequestsPage';
 
 const STAFF_TOKEN = fakeJwt(standardUser('staff'));
 
-type RawRequest = AdminChangeRequestsResult['configurationRequests']['matches'][number];
-
-const request = (): RawRequest => ({
+const request = (): ConfigurationRequestItemFragment => ({
   __typename: 'ConfigurationRequest',
   id: 'x-1',
   status: 'REQUESTED',

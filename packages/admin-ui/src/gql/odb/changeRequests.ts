@@ -15,15 +15,14 @@ import type {
   ProgramWithChangeRequests,
   Site,
 } from '../types';
-import type { DocumentType } from './gen';
 import { graphql } from './gen';
-import type { Instrument, ObservationItemFragment } from './gen/graphql';
+import type { ConfigurationRequestItemFragment, Instrument, ObservationItemFragment } from './gen/graphql';
 import { formatConditions, formatDec, formatRa, isScienceObservation, mapObservationRow } from './shared';
 
 /** One ConfigurationRequest as both review views render it — the Change
  *  Requests tab (sc-9094) and the Proposals tab's per-CR approve/deny (sc-9595).
- *  A named fragment so `mapChangeRequests` maps requests whether they arrive via
- *  the top-level `configurationRequests` query or a program's own
+ *  A named fragment so `mapConfigurationRequests` maps requests whether they
+ *  arrive via the top-level `configurationRequests` query or a program's own
  *  `configurationRequests` field. */
 export const CONFIGURATION_REQUEST_FRAGMENT = graphql(`
   fragment ConfigurationRequestItem on ConfigurationRequest {
@@ -92,9 +91,6 @@ export const CHANGE_REQUESTS_QUERY = graphql(`
   }
 `);
 
-export type AdminChangeRequestsResult = DocumentType<typeof CHANGE_REQUESTS_QUERY>;
-type ConfigurationRequestItem = DocumentType<typeof CONFIGURATION_REQUEST_FRAGMENT>;
-
 /** Gemini instrument enum → display label + site. Instruments not listed here
  *  (e.g. visiting instruments) default to North, since that's unverifiable
  *  from the enum alone — flagged via the label itself. */
@@ -106,17 +102,11 @@ const INSTRUMENT_SITE: Partial<Record<Instrument, { label: string; site: Site }>
   IGRINS2: { label: 'IGRINS-2', site: 'NORTH' },
 };
 
-/** Map the Change Requests query result — the top-level configurationRequests
- *  list — onto the view shape. */
-export function mapChangeRequests(raw: AdminChangeRequestsResult): ChangeRequest[] {
-  return mapConfigurationRequests(raw.configurationRequests.matches);
-}
-
 /** Map raw ConfigurationRequest rows onto the view shape, from either source
  *  (the CR query or one program's requests). `observations` is left empty here —
  *  a request carries only observation ids; the review panel fills the rows from
  *  the program's observations (see useProgramObservations). */
-export function mapConfigurationRequests(matches: readonly ConfigurationRequestItem[]): ChangeRequest[] {
+export function mapConfigurationRequests(matches: readonly ConfigurationRequestItemFragment[]): ChangeRequest[] {
   return matches.map((c): ChangeRequest => {
     const prof = c.program.pi?.user?.profile;
     const coords = c.configuration.target?.coordinates;
