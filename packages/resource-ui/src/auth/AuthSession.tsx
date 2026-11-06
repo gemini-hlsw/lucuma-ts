@@ -24,7 +24,8 @@ export function AuthSession({ children, timings }: AuthSessionProps): ReactNode 
     () =>
       store.sub(hasTokenAtom, () => {
         // Each query's failure already reaches its component and the toast through the link chain.
-        (store.get(hasTokenAtom) ? client.refetchObservableQueries() : client.resetStore()).catch(() => undefined);
+        // Sign-out clears without a refetch: the gate unmounts every page, so a refetch would only go out unauthenticated.
+        (store.get(hasTokenAtom) ? client.refetchObservableQueries() : client.clearStore()).catch(() => undefined);
       }),
     [client, store],
   );

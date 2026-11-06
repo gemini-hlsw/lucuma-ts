@@ -6,6 +6,7 @@ import { Dialog } from 'primereact/dialog';
 import { type JSX, type ReactNode, useState } from 'react';
 
 import { CURRENT_ENV, liveGraphqlEndpoint } from '@/app/environment';
+import { PRODUCT_NAME } from '@/app/product';
 
 const VERSION_BASE = import.meta.env.FRONTEND_VERSION;
 const BUILD_SUFFIX = `-${VERSION_SUFFIX[CURRENT_ENV.name]}`;
@@ -78,7 +79,7 @@ export function AboutResource({ visible, onHide }: { visible: boolean; onHide: (
       dismissableMask
       resizable={false}
       className="xp-about-dialog w-[min(30rem,92vw)]"
-      header={<span className="xp-wordmark">Resource</span>}
+      header={<span className="xp-wordmark">{PRODUCT_NAME}</span>}
       data-testid="about-resource"
     >
       <div className="flex flex-col gap-5 py-5">

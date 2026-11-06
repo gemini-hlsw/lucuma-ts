@@ -11,7 +11,7 @@ import { odbTokenAtom, sessionCheckedAtom } from '@/components/atoms/auth';
 import { chooseClock, chooseSite, clockChoice, openAppMenu } from '@/test/helpers';
 import { type RenderResultWithRoute, renderWithRoute } from '@/test/render';
 
-import Layout from './Layout';
+import { Layout } from './Layout';
 import { SIDEBAR_MENU_ITEMS } from './SidebarMenu';
 
 const CHILD_ROUTES = SIDEBAR_MENU_ITEMS.map((item) => ({

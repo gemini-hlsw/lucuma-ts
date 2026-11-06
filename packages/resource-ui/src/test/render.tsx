@@ -15,7 +15,7 @@ import {
 import type { ComponentRenderOptions, RenderResult } from 'vitest-browser-react';
 import { render } from 'vitest-browser-react';
 
-import Layout from '@/components/layout/Layout';
+import { Layout } from '@/components/layout/Layout';
 
 export interface RenderWithContextOptions<T> {
   /** Each operation answered once from a typed response built in `test/fixtures/`. */

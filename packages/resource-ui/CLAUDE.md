@@ -9,7 +9,7 @@ Tailwind, codegen) apply unchanged and are not repeated here.
 
 - **One backend, over HTTP, at `/resource/graphql`.** Never execute a GraphQL schema in the
   browser: that ships an executable schema and the SDL in the bundle. Every data field needs the
-  SSO bearer, so signed out every view is empty under the sign-in toast; that is not a bug.
+  SSO bearer, so the session gate shows the sign-in screen until a session exists.
 - **Signed-in dev means `https://local.gemini.edu:5173` and nothing else.** The SSO origin check
   refuses `localhost` and the session cookie is `SameSite=Strict`, so any other name loads signed
   out. README has the setup.
@@ -60,14 +60,21 @@ Tailwind, codegen) apply unchanged and are not repeated here.
 - **`src/auth/session.ts` runs on the store it is given**, as do the link factories in
   `gql/ApolloConfigs.ts`. `main.tsx` is the only non-test module that imports
   `components/atoms/store.ts`; everything else takes the store from the provider.
+- **Nothing mounts before the session check settles.** `auth/SessionGateContainer.tsx` hands
+  `sessionStatusAtom` to `auth/SessionGate.tsx`, which draws only the loading mark under the
+  environment banner while the status is `checking`, then the splash signed out or the app signed
+  in, at the URL that was opened. `auth/SplashContainer.tsx` makes the guest call and owns its
+  state; `auth/Splash.tsx` only draws, from props, so its layout and focus tests need no SSO stub.
+  The banner is the gate's, so the shell draws none.
 - **Requests wait for the session check, the app does not.** `sessionHoldLink` holds each request
   until `sessionCheckedAtom` is true, so a cold load sends each query once, with the bearer. The
   check is bounded by `REFRESH_TIMEOUT_MS`, so a hung SSO releases the requests signed out.
 - **A logout is announced on the `resource-session` BroadcastChannel**, so other tabs sign out
   without calling SSO.
-- **The token going to null resets the Apollo store** (`AuthSession.tsx`), whatever ended the
+- **The token going to null clears the Apollo store** (`AuthSession.tsx`), whatever ended the
   session, so the next sign-in, by anyone, fetches every page afresh instead of reading this one's
-  cache.
+  cache. It is `clearStore`, not `resetStore`: the gate unmounts every page, so there is nothing
+  to repaint, and a reset's refetch would leave without the bearer and be refused.
 - **Every notice about the session itself comes from `auth/SessionNoticesContainer.tsx`**, mounted
   by `AuthSession` above the shell. It reads only the session status and `sessionEndingAtom`, the
   one union that `signOut` and the keeper write to say how the session ended, and hands the
@@ -98,8 +105,9 @@ Tailwind, codegen) apply unchanged and are not repeated here.
 ## Styling
 
 - **When a Tailwind utility loses to a PrimeReact control, the winner is `lucuma-ui-css`, not
-  PrimeReact.** `lucuma-ui.scss` loads the theme unlayered inside `.dark { }`, so its rules
-  (`.dark .p-tag`, 0-2-0) beat a layered utility (0-1-0) twice over. Declaring PrimeReact's layer
-  order does nothing here. Override through the theme's own variables in `shell.css` first; where
-  the theme hardcodes a value, a `.dark .p-tag`-shaped rule in `shell.css` ties on specificity and
-  wins on source order.
+  PrimeReact.** The theme wraps itself in `@layer primereact`, and `main.tsx` loads it after
+  `global.css` has declared Tailwind's layers, so `primereact` sits above `utilities` and its
+  rules (`.dark .p-tag`) beat a utility whatever the specificity. Declaring the layer order later
+  does nothing: a layer keeps the place of its first mention. Override through the theme's own
+  variables in `shell.css` first; where the theme hardcodes a value, a rule in `shell.css` wins
+  because `shell.css` is unlayered; shape it `.dark .p-tag` so it reads as the rule it replaces.

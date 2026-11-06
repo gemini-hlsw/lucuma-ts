@@ -6,11 +6,9 @@ import { type SessionEnding, useSessionEnding, useSessionStatus } from '@/compon
 
 import { SessionNotices } from './SessionNotices';
 
-const LOGIN_LABEL = 'Login with ORCID';
 const SESSION_ENDED_TOAST = {
   severity: 'warn',
   summary: 'Your session ended',
-  detail: `Choose "${LOGIN_LABEL}" from the menu to sign in again.`,
   sticky: true,
 } as const satisfies ToastMessage;
 const SIGNED_OUT_ELSEWHERE_TOAST = {

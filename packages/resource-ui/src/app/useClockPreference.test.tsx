@@ -6,7 +6,9 @@ import { renderWithRoute } from '@/test/render';
 import { setClockPreference, useClockPreference } from './useClockPreference';
 
 const openClock = async () =>
-  renderWithRoute(<Probe use={useClockPreference} readout={(clock) => ({ clock })} />, { route: '/night?site=GS' });
+  renderWithRoute(<Probe use={useClockPreference} readout={({ value }) => ({ clock: value })} />, {
+    route: '/night?site=GS',
+  });
 
 describe(useClockPreference, () => {
   it('starts on the site clock, which is what a reader at the telescope works in', async () => {

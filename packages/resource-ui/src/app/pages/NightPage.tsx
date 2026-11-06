@@ -15,10 +15,12 @@ import { buildNightChartOptions, clockLabel } from '@/features/night/nightChartO
 import { TimelineChart, TimelineLegendBar } from '@/features/timeline/TimelineChart';
 import { useNightSchedule } from '@/gql/hooks';
 
+const NIGHT_SUBJECT = 'the night';
+
 /** The view the rest of the model exists for: a run changing mid-night is drawn where it changes. */
 export default function NightPage(): JSX.Element {
   const { site, observingNight, tonight, setObservingNight, clearObservingNight } = useSelection();
-  const timeDisplay = useClockPreference();
+  const { value: timeDisplay } = useClockPreference();
   const now = useNow(nightBoundaries(site));
 
   const interval = observingNightInterval(site, observingNight);
@@ -26,6 +28,7 @@ export default function NightPage(): JSX.Element {
   const { schedule, loading, error, dataAvailable } = useNightSchedule(site, observingNight, toScheduleSpan(interval));
 
   const night = buildNightTimeline({ site, observingNight, schedule });
+  const title = `Night of ${observingNight}`;
 
   const options = buildNightChartOptions({ night, site, timeDisplay });
   // Outside the conditional JSX, or the React Compiler puts the chart options in the clock's memo scope.
@@ -34,7 +37,7 @@ export default function NightPage(): JSX.Element {
   return (
     <div className="min-w-0">
       <PageHeader
-        title={`Night of ${observingNight}`}
+        title={title}
         actions={
           <NightStepper
             value={observingNight}
@@ -52,10 +55,10 @@ export default function NightPage(): JSX.Element {
       />
 
       {when(error, (error) => (
-        <ErrorAlert what="the night" error={error} />
+        <ErrorAlert what={NIGHT_SUBJECT} error={error} />
       ))}
 
-      {loading && <Loading what="the night" />}
+      {loading && <Loading what={NIGHT_SUBJECT} />}
 
       {!loading && dataAvailable === false && (
         // I4: absence is "not recorded", never "unavailable", which is why the flag is asked for.
@@ -72,7 +75,7 @@ export default function NightPage(): JSX.Element {
           <TimelineChart
             options={options}
             continuesLabel="continues beyond tonight"
-            label={`Night of ${observingNight}`}
+            label={title}
             testId="night-timeline"
           />
         </>
