@@ -17,10 +17,10 @@ import { fakeTimeouts, openAppMenu, toastNamed } from '@/test/helpers';
 import { captureOperations, createLinkClient } from '@/test/linkClient';
 import { renderInShell } from '@/test/render';
 import { announceFromOtherTab, refuseRefresh, RENEW_AT_ONCE, staffToken } from '@/test/session';
-import { ssoCalls, ssoLogout, stubSso } from '@/test/sso';
+import { ssoCalls, ssoLogout, ssoRefreshes, stubSso } from '@/test/sso';
 
 import { AuthSession } from './AuthSession';
-import { SESSION_TIMINGS, type SessionTimings } from './session';
+import { SESSION_CHANNEL, SESSION_TIMINGS, type SessionTimings, SIGNED_OUT_MESSAGE } from './session';
 import { SessionGateContainer } from './SessionGateContainer';
 import { LOGOUT_UNREACHABLE, SESSION_ENDED, SIGNED_OUT_ELSEWHERE } from './SessionNoticesContainer';
 import { REFRESH_TIMEOUT_MS } from './ssoClient';
@@ -255,6 +255,63 @@ describe(SessionGateContainer, () => {
     await expect.element(toastNamed(SIGNED_OUT_ELSEWHERE)).not.toBeInTheDocument();
     await expect.element(screen.getByText('Loading the night…')).not.toBeInTheDocument();
     expect(screen.operations).toEqual(['NightSchedule', 'NightSchedule']);
+  });
+
+  describe('a tab that pressed Logout and then continued as guest', () => {
+    const logOutThenContinueAsGuest = async (
+      screen: Awaited<ReturnType<typeof openGate>>,
+      guestToken: string,
+    ): Promise<void> => {
+      await expect.element(screen.getByRole('heading', PAGE_HEADING)).toBeVisible();
+      await pressLogout(screen);
+      ssoLogout().answer({ status: 200 });
+      await expect.element(screen.getByRole('heading', SPLASH_HEADING)).toBeVisible();
+
+      await screen.getByRole('button', { name: 'Continue as Guest' }).click();
+      await expect.poll(guestCalls).toHaveLength(1);
+      guestCalls()[0]?.answer({ body: guestToken });
+      await expect.element(screen.getByRole('heading', PAGE_HEADING)).toBeVisible();
+    };
+
+    it('should still return to the splash when another tab signs out', async () => {
+      const screen = await openGate({ token: staffToken(), mocks: [NIGHT, NIGHT] });
+      await logOutThenContinueAsGuest(screen, fakeJwt({ type: 'guest', id: 'u-guest' }));
+
+      await announceFromOtherTab();
+
+      await expect.element(screen.getByRole('heading', SPLASH_HEADING)).toBeVisible();
+      expect(screen.getByRole('heading', PAGE_HEADING).query()).toBeNull();
+      await expect.element(toastNamed(SIGNED_OUT_ELSEWHERE)).toBeVisible();
+    });
+
+    it('should still refresh the guest token when it reaches the refresh-ahead mark', async () => {
+      fakeTimeouts();
+      const screen = await openGate({ token: staffToken(), mocks: [NIGHT, NIGHT] });
+      await logOutThenContinueAsGuest(screen, fakeJwt({ type: 'guest', id: 'u-guest' }, 120));
+
+      await vi.advanceTimersByTimeAsync(89_000);
+      expect(ssoRefreshes()).toHaveLength(0);
+
+      await vi.advanceTimersByTimeAsync(1_000);
+      expect(ssoRefreshes()).toHaveLength(1);
+    });
+
+    it('should still tell the other tabs when it presses Logout again', async () => {
+      const screen = await openGate({ token: staffToken(), mocks: [NIGHT, NIGHT] });
+      await logOutThenContinueAsGuest(screen, fakeJwt({ type: 'guest', id: 'u-guest' }));
+      const otherTab = new BroadcastChannel(SESSION_CHANNEL);
+      const heard: unknown[] = [];
+      otherTab.addEventListener('message', (event) => heard.push(event.data));
+
+      try {
+        await pressLogout(screen);
+        await expect.poll(() => heard).toEqual([SIGNED_OUT_MESSAGE]);
+        ssoLogout().answer({ status: 200 });
+        await expect.element(screen.getByRole('heading', SPLASH_HEADING)).toBeVisible();
+      } finally {
+        otherTab.close();
+      }
+    });
   });
 
   it('should show the page at its URL, never drawing the splash or the loading mark on the way, when the reader holds a token', async () => {

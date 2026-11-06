@@ -597,26 +597,33 @@ describe(signOut, () => {
     expect(await signedOut).toEqual({ reachedSso: false });
   });
 
-  it('should sign out a tab that loaded during the logout when SSO answers', async () => {
+  it('should tell the other tabs again, for one that loaded while it was still logging out, when SSO answers', async () => {
+    holdToken();
+    stop = startSession(store);
+    const heard: unknown[] = [];
+    otherTab.addEventListener('message', (event) => heard.push(event.data));
+
+    const signedOut = signOut(store);
+    await expect.poll(() => heard).toEqual([SIGNED_OUT_MESSAGE]);
+    ssoLogout().answer({ status: 500 });
+    await signedOut;
+
+    await expect.poll(() => heard).toEqual([SIGNED_OUT_MESSAGE, SIGNED_OUT_MESSAGE]);
+  });
+
+  it('should leave a guest who signed in during the logout alone when the late announcement goes out', async () => {
     holdToken();
     stop = startSession(store);
     const signedOut = signOut(store);
+    const guest = fakeJwt({ type: 'guest', id: 'u-guest' });
+    store.set(odbTokenAtom, guest);
 
-    stop = startSession(store);
-    const bootstrap = pendingRefresh();
-    const witness = new BroadcastChannel(SESSION_CHANNEL);
-    const lateAnnouncement = new Promise<void>((resolve) => {
-      witness.addEventListener('message', () => resolve(), { once: true });
-    });
-    ssoLogout().answer({ status: 500 });
+    ssoLogout().answer({ status: 200 });
     await signedOut;
-    await lateAnnouncement;
-    witness.close();
+    await announceFromOtherTab('probe');
 
-    expect(refreshes()[0]?.signal?.aborted).toBe(true);
-    refreshes()[0]?.answer({ body: fakeJwt(standardUser('staff')) });
-    await bootstrap;
-    expect(store.get(sessionStatusAtom)).toBe('signed-out');
+    expect(store.get(odbTokenAtom)).toBe(guest);
+    expect(store.get(sessionStatusAtom)).toBe('signed-in');
   });
 
   it('should post no late announcement when no keeper was running to announce the first', async () => {
@@ -682,10 +689,8 @@ describe('a logout in another tab', () => {
     }
   });
 
-  it('should leave no channel open when a keeper is started again over a running one', async () => {
-    startSession(store);
-    stop = startSession(store);
-    const token = holdToken();
+  it('should keep listening, so a guest who signs in here is signed out again, when another tab has already ended the session once', async () => {
+    const token = signedInHere();
 
     await announceFromOtherTab(SIGNED_OUT_MESSAGE);
     expect(store.get(odbTokenAtom)).toBeNull();
@@ -693,7 +698,17 @@ describe('a logout in another tab', () => {
     store.set(odbTokenAtom, token);
     await announceFromOtherTab(SIGNED_OUT_MESSAGE);
 
-    expect(store.get(odbTokenAtom)).toBe(token);
+    expect(store.get(odbTokenAtom)).toBeNull();
+  });
+
+  it('should leave no listener behind when a keeper is started again over a running one', () => {
+    holdToken(20);
+    startSession(store);
+    stop = startSession(store);
+
+    document.dispatchEvent(new Event('visibilitychange'));
+
+    expect(refreshes()).toHaveLength(1);
   });
 
   it('should ignore the message when any other message arrives on the channel', async () => {

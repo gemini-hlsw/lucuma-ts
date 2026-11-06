@@ -650,6 +650,17 @@ describe(AuthSession, () => {
       expect(noticesShowing().filter((text) => text.startsWith(SESSION_ENDED))).toHaveLength(1);
     });
 
+    it('should warn when the session ends on its own after an earlier logout and a fresh sign-in', async () => {
+      const screen = await logOutFromMenu();
+      ssoCall(0).answer({ status: 200 });
+      setToken(store, staffToken());
+      await expect.element(screen.getByTestId('account-control')).toHaveTextContent('Ada Lovelace');
+
+      setToken(store, null);
+
+      await expectShowing(SESSION_ENDED);
+    });
+
     it('should show the session-ended notice over the splash, without taking focus, when the session ends under an open About dialog', async () => {
       const screen = await renderMasthead();
       await openAppMenu(screen);
