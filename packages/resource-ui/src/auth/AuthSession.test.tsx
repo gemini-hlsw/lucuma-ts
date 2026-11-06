@@ -1,6 +1,7 @@
 import { type ApolloClient, ApolloLink, gql } from '@apollo/client';
 import { ApolloProvider } from '@apollo/client/react';
 import type { MockLink } from '@apollo/client/testing';
+import { Observable } from '@apollo/client/utilities';
 import { toastAtom } from '@gemini-hlsw/lucuma-common-ui';
 import { fakeJwt, standardUser } from '@gemini-hlsw/lucuma-common-ui/testing';
 import { createStore, Provider as JotaiProvider, type Store } from 'jotai';
@@ -16,13 +17,20 @@ import { liveLink } from '@/gql/ApolloConfigs';
 import { usePublishedSemesters } from '@/gql/hooks';
 import { nightSchedule } from '@/test/fixtures/night';
 import { publishedSemester, publishedSemesters } from '@/test/fixtures/semester';
-import { fakeTimeouts } from '@/test/helpers';
+import { fakeTimeouts, textsOf } from '@/test/helpers';
 import { captureHeader, captureOperations, createLinkClient, respondWith } from '@/test/linkClient';
 import { renderInShell } from '@/test/render';
-import { answerRefresh, ssoCalls, ssoRefreshes, stubSso } from '@/test/sso';
+import { answerRefresh, ssoCalls, ssoLogout, ssoRefreshes, stubSso } from '@/test/sso';
 
 import { AuthSession } from './AuthSession';
-import { pendingRefresh, SESSION_TIMINGS, type SessionTimings } from './session';
+import {
+  pendingRefresh,
+  SESSION_CHANNEL,
+  SESSION_TIMINGS,
+  type SessionTimings,
+  SIGNED_OUT_MESSAGE,
+  signOut,
+} from './session';
 
 function SemesterCount({ testId = 'semesters' }: { testId?: string }): JSX.Element {
   const { semesters, loading } = usePublishedSemesters();
@@ -136,6 +144,37 @@ const renderShell = async ({
 
 const sentOnce = (operations: readonly string[]): boolean => new Set(operations).size === operations.length;
 
+/** A page the reader opens beside the shell, on the shell's client, and may leave and come back to. */
+const openSemesters = (client: ApolloClient) =>
+  render(
+    <ApolloProvider client={client}>
+      <SemesterCount />
+    </ApolloProvider>,
+  );
+
+const pressLogout = async (): Promise<void> => {
+  const signedOut = signOut(store);
+  ssoLogout().answer({ status: 200 });
+  await signedOut;
+};
+
+const announceFromOtherTab = async (): Promise<void> => {
+  const otherTab = new BroadcastChannel(SESSION_CHANNEL);
+  const witness = new BroadcastChannel(SESSION_CHANNEL);
+  const delivered = new Promise<void>((resolve) => {
+    witness.addEventListener('message', () => resolve(), { once: true });
+  });
+  otherTab.postMessage(SIGNED_OUT_MESSAGE);
+  await delivered;
+  witness.close();
+  otherTab.close();
+};
+
+const refuseRefresh = async (): Promise<void> => {
+  await expect.poll(() => ssoRefreshes().length).toBe(1);
+  await answerRefresh(0, { status: 403 });
+};
+
 beforeEach(() => {
   store = createStore();
   stubSso();
@@ -217,6 +256,22 @@ describe(AuthSession, () => {
 
     expect(authorizations).toEqual([`Bearer ${token}`, `Bearer ${renewed}`]);
     expect(ssoCalls()).toHaveLength(0);
+  });
+
+  it('should refetch and bring the new answer to the page when the reader signs in', async () => {
+    store.set(sessionCheckedAtom, true);
+    const { screen, authorizations } = await renderAuthSession(
+      <SemesterCount />,
+      onSecondRequest({ data: ONE_SEMESTER }),
+    );
+    await expect.element(screen.getByTestId('semesters')).toHaveTextContent('0 semesters');
+    expect(authorizations).toEqual([null]);
+
+    const token = fakeJwt(standardUser('staff'));
+    store.set(odbTokenAtom, token);
+
+    await expect.poll(() => authorizations).toEqual([null, `Bearer ${token}`]);
+    await expect.element(screen.getByTestId('semesters')).toHaveTextContent('1 semesters');
   });
 
   it('should refetch, and the new answer reach the page, when the reader signs out', async () => {
@@ -369,5 +424,69 @@ describe(AuthSession, () => {
     expect(drawn.some((text) => text.includes('Checking sign-in'))).toBe(true);
     expect(drawn.filter((text) => text.includes('Not signed in'))).toEqual([]);
     expect(ssoRefreshes()).toHaveLength(1);
+  });
+
+  it('should answer a sign-in from the wire with the new bearer, never from the old cache, when it comes straight after a sign-out', async () => {
+    const token = signIn();
+    const { screen, authorizations } = await renderAuthSession(
+      <SemesterCount />,
+      onSecondRequest({ data: ONE_SEMESTER }),
+    );
+    await expect.element(screen.getByTestId('semesters')).toHaveTextContent('0 semesters');
+
+    const fresh = fakeJwt(standardUser('staff'), 7200);
+    store.set(odbTokenAtom, null);
+    store.set(odbTokenAtom, fresh);
+
+    await expect.element(screen.getByTestId('semesters')).toHaveTextContent('1 semesters');
+    expect(authorizations).toEqual([`Bearer ${token}`, `Bearer ${fresh}`]);
+    expect(document.querySelector('[role="alert"]')).toBeNull();
+  });
+
+  it('should show the reader no error when the session ends while a page is still loading', async () => {
+    let held = 0;
+    const holdFirst = new ApolloLink((operation, forward) => {
+      held += 1;
+      return held === 1 ? new Observable<ApolloLink.Result>(() => undefined) : forward(operation);
+    });
+    const screen = await renderShell({ token: fakeJwt(standardUser('staff')), after: holdFirst });
+    await expect.element(screen.getByText(NIGHT_LOADING)).toBeVisible();
+
+    await pressLogout();
+
+    await expect.element(screen.getByTestId('account-control')).toHaveTextContent('Not signed in');
+    await expect.element(screen.getByText(NIGHT_LOADING)).not.toBeInTheDocument();
+    expect(screen.getByText('Could not load the night', { exact: false }).query()).toBeNull();
+    expect(textsOf('.p-toast-summary')).toEqual(['Your session ended']);
+  });
+
+  describe('after the session ends', () => {
+    it.each([
+      ['a pressed Logout', 3600, pressLogout],
+      ['a sign-out in another tab', 3600, announceFromOtherTab],
+      ['a refused refresh', 20, refuseRefresh],
+      ['expiry', 1.5, () => Promise.resolve()],
+    ])(
+      'by %s, a page the reader comes back to after signing in again is fetched afresh, not read from the cache',
+      async (_, expiresInSeconds, end) => {
+        const screen = await renderShell({ token: fakeJwt(standardUser('staff'), expiresInSeconds) });
+        await expect.element(screen.getByText(NIGHT_LOADING)).not.toBeInTheDocument();
+        const page = await openSemesters(screen.client);
+        await expect.element(page.getByTestId('semesters')).toHaveTextContent('0 semesters');
+        await page.unmount();
+
+        await end();
+        await expect
+          .element(screen.getByTestId('account-control'), { timeout: 3_000 })
+          .toHaveTextContent('Not signed in');
+
+        setToken(store, fakeJwt(standardUser('staff')));
+        await expect.element(screen.getByTestId('account-control')).toHaveTextContent('Ada Lovelace');
+        const again = await openSemesters(screen.client);
+        await expect.element(again.getByTestId('semesters')).toHaveTextContent('0 semesters');
+
+        expect(screen.operations.filter((name) => name === 'PublishedSemesters')).toHaveLength(2);
+      },
+    );
   });
 });
