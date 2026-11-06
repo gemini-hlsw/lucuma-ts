@@ -1,7 +1,6 @@
 import { type ApolloClient, ApolloLink, gql } from '@apollo/client';
 import { ApolloProvider } from '@apollo/client/react';
 import type { MockLink } from '@apollo/client/testing';
-import { Observable } from '@apollo/client/utilities';
 import { toastAtom } from '@gemini-hlsw/lucuma-common-ui';
 import { fakeJwt, standardUser } from '@gemini-hlsw/lucuma-common-ui/testing';
 import { createStore, Provider as JotaiProvider, type Store } from 'jotai';
@@ -14,15 +13,16 @@ import { render } from 'vitest-browser-react';
 import NightPage from '@/app/pages/NightPage';
 import { isLoggedInAtom, odbTokenAtom, sessionCheckedAtom, sessionStatusAtom, setToken } from '@/components/atoms/auth';
 import { Layout } from '@/components/layout/Layout';
-import { Navbar } from '@/components/layout/Navbar';
+import { NavbarContainer } from '@/components/layout/NavbarContainer';
 import { ToastOutlet } from '@/components/ui/ToastOutlet';
 import { liveLink } from '@/gql/ApolloConfigs';
 import { usePublishedSemesters } from '@/gql/hooks';
 import { nightSchedule } from '@/test/fixtures/night';
 import { publishedSemester, publishedSemesters } from '@/test/fixtures/semester';
-import { fakeTimeouts, openAppMenu, textsOf } from '@/test/helpers';
+import { fakeTimeouts, openAppMenu, toastNamed } from '@/test/helpers';
 import { captureHeader, captureOperations, createLinkClient, respondWith } from '@/test/linkClient';
 import { renderInShell, type RenderResultWithRoute, renderWithRoute } from '@/test/render';
+import { announceFromOtherTab, refuseRefresh, RENEW_AT_ONCE, staffToken } from '@/test/session';
 import { answerRefresh, ssoCall, ssoCalls, ssoLogout, ssoRefreshes, stubSso } from '@/test/sso';
 
 import { AuthSession } from './AuthSession';
@@ -35,6 +35,7 @@ import {
   signOut,
   startSession,
 } from './session';
+import { SessionGateContainer } from './SessionGateContainer';
 import {
   LOGOUT_UNREACHABLE,
   SESSION_ENDED,
@@ -113,6 +114,8 @@ const signIn = (expiresInSeconds?: number): string => {
 };
 
 const NIGHT_LOADING = 'Loading the night…';
+const GATE_LOADING = 'Loading Resource…';
+const SPLASH_HEADING = { level: 1, name: 'Sign in to read the schedule' };
 
 /** Stands in for a Resource service that denies an anonymous caller, answering with an error and no data. */
 const deniesAnonymous = new ApolloLink((operation, forward) => {
@@ -143,7 +146,9 @@ const renderShell = async ({
     shell: (
       <ApolloProvider client={client}>
         <AuthSession timings={timings}>
-          <Layout />
+          <SessionGateContainer>
+            <Layout />
+          </SessionGateContainer>
           <ToastOutlet />
         </AuthSession>
       </ApolloProvider>
@@ -168,33 +173,19 @@ const pressLogout = async (): Promise<void> => {
   await signedOut;
 };
 
-const announceFromOtherTab = async (): Promise<void> => {
-  const otherTab = new BroadcastChannel(SESSION_CHANNEL);
-  const witness = new BroadcastChannel(SESSION_CHANNEL);
-  const delivered = new Promise<void>((resolve) => {
-    witness.addEventListener('message', () => resolve(), { once: true });
-  });
-  otherTab.postMessage(SIGNED_OUT_MESSAGE);
-  await delivered;
-  witness.close();
-  otherTab.close();
-};
-
-const refuseRefresh = async (): Promise<void> => {
-  await expect.poll(() => ssoRefreshes().length).toBe(1);
-  await answerRefresh(0, { status: 403 });
-};
-
-/** A function, so each token's `exp` counts from the moment the test asks for it. */
-const staffToken = () => fakeJwt(standardUser('staff'));
-
-/** The masthead under the real session keeper, so a logout, SSO's answers and other tabs' messages all reach the notices. */
-const renderMasthead = async (token: string | null = staffToken(), timings?: SessionTimings, checked = true) => {
+/** The masthead under the real session keeper and gate, so a logout, SSO's answers and other tabs' messages all reach the notices. */
+const renderMasthead = async ({
+  token = staffToken(),
+  timings,
+  checked = true,
+}: { token?: string | null; timings?: SessionTimings; checked?: boolean } = {}) => {
   setToken(store, token);
   store.set(sessionCheckedAtom, checked);
   return renderWithRoute(
     <AuthSession {...(timings ? { timings } : {})}>
-      <Navbar />
+      <SessionGateContainer>
+        <NavbarContainer />
+      </SessionGateContainer>
       <ToastOutlet />
     </AuthSession>,
     { route: '/', store },
@@ -202,9 +193,7 @@ const renderMasthead = async (token: string | null = staffToken(), timings?: Ses
 };
 
 const TEN_MINUTES = 10 * 60 * 1000;
-/** Renews a sixty-second token at once, so the refusal and not the token's own expiry ends the session. */
-const RENEW_AT_ONCE = { ...SESSION_TIMINGS, refreshAheadMs: 60_000 } as const satisfies SessionTimings;
-const FLUSH = { severity: 'info', summary: 'Flushed' } as const satisfies ToastMessage;
+const FLUSH = { severity: 'info', summary: 'Flushed' } satisfies ToastMessage;
 
 const logOutFromMenu = async () => {
   const screen = await renderMasthead();
@@ -212,8 +201,6 @@ const logOutFromMenu = async () => {
   await page.getByRole('menuitem', { name: 'Logout' }).click();
   return screen;
 };
-
-const toastNamed = (summary: string) => page.getByRole('alert').filter({ hasText: summary });
 
 /** A closing toast stays in the DOM through PrimeReact's exit transition, marked by this class. */
 async function expectShowing(summary: string): Promise<void> {
@@ -343,35 +330,20 @@ describe(AuthSession, () => {
     await expect.element(screen.getByTestId('semesters')).toHaveTextContent('1 semesters');
   });
 
-  it('should refetch, and the new answer reach the page, when the reader signs out', async () => {
-    const token = signIn();
-    const { screen, authorizations } = await renderAuthSession(
-      <SemesterCount />,
-      onSecondRequest({ data: ONE_SEMESTER }),
-    );
-    await expect.element(screen.getByTestId('semesters')).not.toHaveTextContent('loading');
-    await expect.element(screen.getByTestId('semesters')).not.toHaveTextContent('1 semesters');
-    expect(authorizations).toEqual([`Bearer ${token}`]);
-
-    store.set(odbTokenAtom, null);
-
-    await expect.poll(() => authorizations).toEqual([`Bearer ${token}`, null]);
-    await expect.element(screen.getByTestId('semesters')).toHaveTextContent('1 semesters');
-  });
-
-  it('should keep the page up when the refetch fails', async () => {
-    const token = signIn();
+  it('should keep the page up when the sign-in refetch fails', async () => {
+    store.set(sessionCheckedAtom, true);
     const { screen, authorizations } = await renderAuthSession(<SemesterCount />, onSecondRequest(new Error('down')));
-    await expect.element(screen.getByTestId('semesters')).not.toHaveTextContent('loading');
+    await expect.element(screen.getByTestId('semesters')).toHaveTextContent('0 semesters');
 
-    store.set(odbTokenAtom, null);
+    const token = fakeJwt(standardUser('staff'));
+    store.set(odbTokenAtom, token);
 
-    await expect.poll(() => authorizations).toEqual([`Bearer ${token}`, null]);
+    await expect.poll(() => authorizations).toEqual([null, `Bearer ${token}`]);
     await expect.element(screen.getByTestId('semesters')).toBeInTheDocument();
   });
 
   it('should drop the refetch subscription, leaving a query still open on its client alone, when it unmounts', async () => {
-    const token = signIn();
+    store.set(sessionCheckedAtom, true);
     const stranded = capturingApollo();
     const probe = await render(
       <ApolloProvider client={stranded.client}>
@@ -380,16 +352,17 @@ describe(AuthSession, () => {
     );
     const session = await renderInSession(stranded.client, null);
     await expect.element(probe.getByTestId('stranded')).not.toHaveTextContent('loading');
-    expect(stranded.authorizations).toEqual([`Bearer ${token}`]);
+    expect(stranded.authorizations).toEqual([null]);
     await session.unmount();
 
     const { screen, authorizations } = await renderAuthSession(<SemesterCount />);
     await expect.element(screen.getByTestId('semesters')).not.toHaveTextContent('loading');
 
-    store.set(odbTokenAtom, null);
+    const token = fakeJwt(standardUser('staff'));
+    store.set(odbTokenAtom, token);
 
-    await expect.poll(() => authorizations).toEqual([`Bearer ${token}`, null]);
-    expect(stranded.authorizations).toEqual([`Bearer ${token}`]);
+    await expect.poll(() => authorizations).toEqual([null, `Bearer ${token}`]);
+    expect(stranded.authorizations).toEqual([null]);
   });
 
   it('should stop the controller, so no refresh timer survives, when it unmounts', async () => {
@@ -403,13 +376,11 @@ describe(AuthSession, () => {
     expect(ssoCalls()).toHaveLength(0);
   });
 
-  it('should draw the shell at once and send nothing before the check settles, then each page query once with the bearer it found, when the page loads', async () => {
+  it('should draw only the loading mark and send nothing until the check settles, then the shell and each page query once with the bearer it found, when the page loads', async () => {
     const screen = await renderShell();
 
-    await expect.element(screen.getByTestId('account-control')).toHaveTextContent('Checking sign-in');
-    await expect.element(screen.getByRole('navigation', { name: 'Primary navigation' }).first()).toBeVisible();
-    await expect.element(screen.getByRole('heading', { level: 1, name: 'Night of 2025-11-14' })).toBeVisible();
-    await expect.element(screen.getByText(NIGHT_LOADING)).toBeVisible();
+    await expect.element(screen.getByText(GATE_LOADING)).toBeVisible();
+    expect(screen.getByRole('navigation', { name: 'Primary navigation' }).query()).toBeNull();
     expect(screen.operations).toEqual([]);
 
     const token = fakeJwt(standardUser('staff'));
@@ -423,9 +394,10 @@ describe(AuthSession, () => {
 
   it('should show no live-server failure when requests wait on the check', async () => {
     const screen = await renderShell({ after: deniesAnonymous });
-    await expect.element(screen.getByText(NIGHT_LOADING)).toBeVisible();
+    await expect.element(screen.getByText(GATE_LOADING)).toBeVisible();
 
     await answerRefresh(0, { body: fakeJwt(standardUser('staff')) });
+    await expect.element(screen.getByText(GATE_LOADING)).not.toBeInTheDocument();
     await expect.element(screen.getByText(NIGHT_LOADING)).not.toBeInTheDocument();
 
     expect(store.get(toastAtom)).not.toBeNull();
@@ -451,21 +423,11 @@ describe(AuthSession, () => {
 
     await vi.advanceTimersByTimeAsync(9_999);
 
-    await expect.element(screen.getByTestId('account-control')).toHaveTextContent('Checking sign-in');
-    expect(screen.getByText(NIGHT_LOADING).element()).toBeVisible();
+    expect(screen.getByText(GATE_LOADING).element()).toBeVisible();
     expect(screen.operations).toEqual([]);
   });
 
-  it('should send the data without a bearer when the first refresh goes unanswered past the bound', async () => {
-    const screen = await renderShell({ timings: { ...SESSION_TIMINGS, refreshTimeoutMs: 20 } });
-
-    await expect.element(screen.getByTestId('account-control')).toHaveTextContent('Not signed in');
-    await expect.element(screen.getByText(NIGHT_LOADING)).not.toBeInTheDocument();
-    expect(screen.operations).toEqual(['NightSchedule']);
-    expect(screen.authorizations).toEqual([null]);
-  });
-
-  it('should never draw "Not signed in" on the way to signing in when SSO answers at 9 s', async () => {
+  it('should never draw the splash on the way to signing in when SSO answers at 9 s', async () => {
     fakeTimeouts();
     const drawn: string[] = [];
     const observer = new MutationObserver((records) => {
@@ -477,7 +439,7 @@ describe(AuthSession, () => {
     observer.observe(document.body, { subtree: true, childList: true, characterData: true });
     try {
       const screen = await renderShell();
-      expect(screen.getByTestId('account-control').element()).toHaveTextContent('Checking sign-in');
+      expect(screen.getByText(GATE_LOADING).element()).toBeVisible();
 
       await vi.advanceTimersByTimeAsync(9_000);
 
@@ -490,43 +452,9 @@ describe(AuthSession, () => {
       observer.disconnect();
     }
 
-    expect(drawn.some((text) => text.includes('Checking sign-in'))).toBe(true);
-    expect(drawn.filter((text) => text.includes('Not signed in'))).toEqual([]);
+    expect(drawn.some((text) => text.includes(GATE_LOADING))).toBe(true);
+    expect(drawn.filter((text) => text.includes(SPLASH_HEADING.name))).toEqual([]);
     expect(ssoRefreshes()).toHaveLength(1);
-  });
-
-  it('should answer a sign-in from the wire with the new bearer, never from the old cache, when it comes straight after a sign-out', async () => {
-    const token = signIn();
-    const { screen, authorizations } = await renderAuthSession(
-      <SemesterCount />,
-      onSecondRequest({ data: ONE_SEMESTER }),
-    );
-    await expect.element(screen.getByTestId('semesters')).toHaveTextContent('0 semesters');
-
-    const fresh = fakeJwt(standardUser('staff'), 7200);
-    store.set(odbTokenAtom, null);
-    store.set(odbTokenAtom, fresh);
-
-    await expect.element(screen.getByTestId('semesters')).toHaveTextContent('1 semesters');
-    expect(authorizations).toEqual([`Bearer ${token}`, `Bearer ${fresh}`]);
-    expect(document.querySelector('[role="alert"]')).toBeNull();
-  });
-
-  it('should show the reader no error when the session ends while a page is still loading', async () => {
-    let held = 0;
-    const holdFirst = new ApolloLink((operation, forward) => {
-      held += 1;
-      return held === 1 ? new Observable<ApolloLink.Result>(() => undefined) : forward(operation);
-    });
-    const screen = await renderShell({ token: fakeJwt(standardUser('staff')), after: holdFirst });
-    await expect.element(screen.getByText(NIGHT_LOADING)).toBeVisible();
-
-    await pressLogout();
-
-    await expect.element(screen.getByTestId('account-control')).toHaveTextContent('Not signed in');
-    await expect.element(screen.getByText(NIGHT_LOADING)).not.toBeInTheDocument();
-    expect(screen.getByText('Could not load the night', { exact: false }).query()).toBeNull();
-    expect(textsOf('.p-toast-summary')).toEqual([]);
   });
 
   describe('after the session ends', () => {
@@ -545,9 +473,7 @@ describe(AuthSession, () => {
         await page.unmount();
 
         await end();
-        await expect
-          .element(screen.getByTestId('account-control'), { timeout: 3_000 })
-          .toHaveTextContent('Not signed in');
+        await expect.element(screen.getByRole('heading', SPLASH_HEADING), { timeout: 3_000 }).toBeVisible();
 
         setToken(store, fakeJwt(standardUser('staff')));
         await expect.element(screen.getByTestId('account-control')).toHaveTextContent('Ada Lovelace');
@@ -577,12 +503,10 @@ describe(AuthSession, () => {
       await expect.element(toastNamed(LOGOUT_UNREACHABLE)).not.toBeInTheDocument();
     });
 
-    it('should sign out before SSO answers, hand focus back to the menu button, and announce again after a fresh sign-in, when the reader logs out from the menu', async () => {
+    it('should sign out before SSO answers, and announce it again after a fresh sign-in, when the reader logs out from the menu', async () => {
       const screen = await logOutFromMenu();
-      await expect.element(screen.getByTestId('account-control')).toHaveTextContent('Not signed in');
+      await expect.element(screen.getByRole('heading', SPLASH_HEADING)).toBeVisible();
       await expect.element(screen.getByRole('status')).toHaveTextContent('Logged out');
-      const menuButton = screen.getByRole('button', { name: 'Menu' }).element();
-      await expect.poll(() => document.activeElement).toBe(menuButton);
 
       setToken(store, staffToken());
       await expect.element(screen.getByTestId('account-control')).toHaveTextContent('Ada Lovelace');
@@ -592,24 +516,18 @@ describe(AuthSession, () => {
       await expect.element(page.getByRole('menuitem', { name: 'Logout' })).toBeVisible();
       await page.getByRole('menuitem', { name: 'Logout' }).click();
 
-      await expect.element(screen.getByTestId('account-control')).toHaveTextContent('Not signed in');
+      await expect.element(screen.getByRole('heading', SPLASH_HEADING)).toBeVisible();
       await expect.element(screen.getByRole('status')).toHaveTextContent('Logged out');
     });
 
     it('should show a notice when SSO refuses to renew the session', async () => {
-      await renderMasthead(fakeJwt(standardUser('staff'), 60), RENEW_AT_ONCE);
+      await renderMasthead({ token: fakeJwt(standardUser('staff'), 60), timings: RENEW_AT_ONCE });
 
       await expect.poll(() => ssoRefreshes()).toHaveLength(1);
       ssoRefreshes()[0]?.answer({ status: 403 });
 
       await expectShowing(SESSION_ENDED);
-      await expect
-        .element(
-          toastNamed(SESSION_ENDED).getByText('Choose "Login with ORCID" from the menu to sign in again.', {
-            exact: true,
-          }),
-        )
-        .toBeVisible();
+      expect(toastNamed(SESSION_ENDED).element().querySelector('.p-toast-detail')?.textContent ?? '').toBe('');
     });
 
     it('should say the reader signed out in another tab, and after a fresh sign-in that the session ended, when each ends the session in turn', async () => {
@@ -643,11 +561,11 @@ describe(AuthSession, () => {
       ['from the first render', true],
       ['once the first check settles', false],
     ])('should show no session-ended notice when a visitor is signed out %s', async (_when, checked) => {
-      const screen = await renderMasthead(null, undefined, checked);
+      const screen = await renderMasthead({ token: null, checked });
 
       store.set(sessionCheckedAtom, true);
 
-      await expect.element(screen.getByTestId('account-control')).toHaveTextContent('Not signed in');
+      await expect.element(screen.getByRole('heading', SPLASH_HEADING)).toBeVisible();
       expect(noticesShowing()).toEqual([]);
     });
 
@@ -732,22 +650,21 @@ describe(AuthSession, () => {
       expect(noticesShowing().filter((text) => text.startsWith(SESSION_ENDED))).toHaveLength(1);
     });
 
-    it('should show the session-ended notice above the open About dialog, without taking focus from it, when the session ends under it', async () => {
+    it('should show the session-ended notice over the splash, without taking focus, when the session ends under an open About dialog', async () => {
       const screen = await renderMasthead();
       await openAppMenu(screen);
       await page.getByRole('menuitem', { name: 'About Resource' }).click();
       const dialog = page.getByTestId('about-resource');
       await expect.element(dialog).toBeVisible();
-      const copy = dialog.getByRole('button', { name: 'Copy version' }).element() as HTMLElement;
-      copy.focus();
 
       setToken(store, null);
       await expectShowing(SESSION_ENDED);
 
-      expect(document.activeElement).toBe(copy);
+      await expect.element(dialog).not.toBeInTheDocument();
+      await expect.element(screen.getByRole('heading', SPLASH_HEADING)).toBeVisible();
+      expect(document.activeElement?.closest('.p-toast')).toBeNull();
       await toastNamed(SESSION_ENDED).getByRole('button', { name: 'Close' }).click();
       await expect.element(toastNamed(SESSION_ENDED)).not.toBeInTheDocument();
-      await expect.element(dialog).toBeVisible();
     });
   });
 });

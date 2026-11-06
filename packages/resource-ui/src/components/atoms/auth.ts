@@ -14,7 +14,7 @@ export const useUser = () => ({ user: useAtomValue(userAtom) });
 
 export const sessionCheckedAtom = atom(false);
 
-/** How the last signed-in session ended, until a token arrives; `none` earns no notice. */
+/** How the last session the gate opened ended, until a token arrives; `none` earns no notice. */
 export type SessionEnding =
   'none' | 'logging-out' | 'logged-out' | 'logout-missed-sso' | 'logged-out-elsewhere' | 'lapsed';
 

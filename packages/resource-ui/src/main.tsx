@@ -9,6 +9,7 @@ import { createRoot, type Root } from 'react-dom/client';
 
 import App from './app/App';
 import { AuthSession } from './auth/AuthSession';
+import { SessionGateContainer } from './auth/SessionGateContainer';
 import { store } from './components/atoms/store';
 import { ToastOutlet } from './components/ui/ToastOutlet';
 import { createClient } from './gql/ApolloConfigs';
@@ -30,7 +31,9 @@ const app: ReactNode = (
       <JotaiProvider store={store}>
         <ApolloProvider client={client}>
           <AuthSession>
-            <App />
+            <SessionGateContainer>
+              <App />
+            </SessionGateContainer>
           </AuthSession>
           <ToastOutlet />
         </ApolloProvider>

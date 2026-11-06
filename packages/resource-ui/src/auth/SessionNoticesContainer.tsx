@@ -7,14 +7,12 @@ import { type SessionEnding, useSessionEnding, useSessionStatus } from '@/compon
 import { SessionNotices } from './SessionNotices';
 
 const LOGGED_OUT_ANNOUNCEMENT = 'Logged out';
-const LOGIN_LABEL = 'Login with ORCID';
 export const SESSION_ENDED = 'Your session ended';
 export const SIGNED_OUT_ELSEWHERE = 'You signed out in another tab';
 export const LOGOUT_UNREACHABLE = 'Logout did not reach SSO';
 const SESSION_ENDED_TOAST = {
   severity: 'warn',
   summary: SESSION_ENDED,
-  detail: `Choose "${LOGIN_LABEL}" from the menu to sign in again.`,
   sticky: true,
 } as const satisfies ToastMessage;
 const SIGNED_OUT_ELSEWHERE_TOAST = {

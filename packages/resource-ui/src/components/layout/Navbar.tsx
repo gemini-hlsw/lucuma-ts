@@ -1,28 +1,11 @@
-import {
-  ArrowRightFromBracket,
-  Bars,
-  Check,
-  cn,
-  displayName,
-  Info,
-  LayerGroup,
-  type User,
-  UserIcon,
-} from '@gemini-hlsw/lucuma-common-ui';
-import { useStore } from 'jotai';
+import { ArrowRightFromBracket, Bars, Check, cn, Info, LayerGroup, UserIcon } from '@gemini-hlsw/lucuma-common-ui';
 import { Button } from 'primereact/button';
 import { Menu } from 'primereact/menu';
 import type { MenuItem } from 'primereact/menuitem';
 import { type JSX, useRef, useState } from 'react';
-import { Link, useSearchParams } from 'react-router';
+import { Link } from 'react-router';
 
-import { carrySelection, searchString } from '@/app/carriedSelection';
-import { setClockPreference, useClockPreference } from '@/app/useClockPreference';
-import { useSelection } from '@/app/useSelection';
 import orcidLogo from '@/assets/orcid-logo.svg';
-import { signOut } from '@/auth/session';
-import { signInUrl } from '@/auth/ssoClient';
-import { type SessionStatus, useSessionStatus, useUser } from '@/components/atoms/auth';
 import { AboutResource } from '@/components/layout/AboutResource';
 import { SegmentedControl, type SegmentedOption } from '@/components/ui/SegmentedControl';
 import { FOCUS_RING } from '@/components/ui/styles';
@@ -30,10 +13,6 @@ import type { TimeDisplay } from '@/domain/siteTime';
 import { type Site, SITE_NAMES, SITES } from '@/domain/types';
 
 const BRAND_LABEL = 'Resource';
-
-const CHECKING_LABEL = 'Checking sign-in';
-
-const SIGNED_OUT_LABEL = 'Not signed in';
 
 const LOGIN_LABEL = 'Login with ORCID';
 const CLOCK_ITEM = 'xp-menu-clock';
@@ -64,48 +43,47 @@ const CLOCK_CHOICES = [
   { label: 'Site time', value: 'site' },
   { label: 'UTC', value: 'utc' },
 ] as const satisfies readonly { readonly label: string; readonly value: TimeDisplay }[];
-function accountLabelOf(status: SessionStatus, user: User | null): string {
-  switch (status) {
-    case 'checking':
-      return CHECKING_LABEL;
-    case 'signed-out':
-      return SIGNED_OUT_LABEL;
-    case 'signed-in':
-      return user === null ? SIGNED_OUT_LABEL : displayName(user);
-  }
+
+export interface NavbarProps {
+  readonly homeSearch: string;
+  readonly site: Site;
+  readonly onSiteChange: (site: Site) => void;
+  readonly timeDisplay: TimeDisplay;
+  readonly onTimeDisplayChange: (timeDisplay: TimeDisplay) => void;
+  readonly accountLabel: string;
+  readonly isGuest: boolean;
+  readonly signInHref: string;
+  readonly onSignOut: () => void;
 }
 
 /** One row at every width, under the environment banner; nothing here is conditional, so the shell below never moves. */
-export function Navbar(): JSX.Element {
-  const [params] = useSearchParams();
+export function Navbar({
+  homeSearch,
+  site,
+  onSiteChange,
+  timeDisplay,
+  onTimeDisplayChange,
+  accountLabel,
+  isGuest,
+  signInHref,
+  onSignOut,
+}: NavbarProps): JSX.Element {
   const menu = useRef<Menu>(null);
   const menuButton = useRef<Button>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
-  const home = searchString(carrySelection(params, ['site']));
-
-  const { site, setSite } = useSelection();
-  const { value: timeDisplay } = useClockPreference();
-  const { status } = useSessionStatus();
-  const { user } = useUser();
-  const store = useStore();
-
-  const isSignedIn = status === 'signed-in';
-  const accountLabel = accountLabelOf(status, user);
 
   const focusMenuButton = (): void => {
     if (menuButton.current instanceof HTMLButtonElement) menuButton.current.focus();
   };
 
-  const handleSignOut = (): void => {
-    focusMenuButton();
-    void signOut(store);
-  };
-
   const logoutItem: MenuItem = {
     label: 'Logout',
     icon: <ArrowRightFromBracket className={MENU_ICON} aria-hidden="true" />,
-    command: handleSignOut,
+    command: () => {
+      focusMenuButton();
+      onSignOut();
+    },
   };
 
   const loginItem: MenuItem = {
@@ -113,13 +91,13 @@ export function Navbar(): JSX.Element {
     icon: (
       <img src={orcidLogo} alt="" aria-hidden="true" className={cn(MENU_ICON, 'h-[1em] w-[1.25em] object-contain')} />
     ),
-    url: signInUrl(),
+    url: signInHref,
   };
 
   return (
     <header className="xp-masthead">
       <Link
-        to={{ pathname: '/night', search: home }}
+        to={{ pathname: '/night', search: homeSearch }}
         className={cn('xp-wordmark', FOCUS_RING)}
         title="GPP Resource - telescope calendar & operational-resource manager. Go to tonight."
       >
@@ -128,7 +106,13 @@ export function Navbar(): JSX.Element {
         {BRAND_LABEL}
       </Link>
 
-      <SegmentedControl value={site} options={SITE_OPTIONS} onChange={setSite} ariaLabel="Site" testId="site-toggle" />
+      <SegmentedControl
+        value={site}
+        options={SITE_OPTIONS}
+        onChange={onSiteChange}
+        ariaLabel="Site"
+        testId="site-toggle"
+      />
 
       <div className="xp-masthead-center" />
 
@@ -136,7 +120,7 @@ export function Navbar(): JSX.Element {
         <span
           data-testid="account-control"
           className="flex items-center gap-1.5 text-xs tracking-wide text-foreground-secondary"
-          title={isSignedIn ? accountLabel : undefined}
+          title={accountLabel}
         >
           {/* A glyph, not type: the name beside it is what the row says. */}
           <UserIcon size="sm" widthAuto aria-hidden="true" />
@@ -177,13 +161,13 @@ export function Navbar(): JSX.Element {
                 <Check className={cn(MENU_ICON, choice.value === timeDisplay ? '' : 'invisible')} aria-hidden="true" />
               ),
               command: () => {
-                setClockPreference(choice.value);
+                onTimeDisplayChange(choice.value);
               },
             })),
             { separator: true },
             { label: accountLabel, className: 'xp-menu-account', items: [] },
-            ...(isSignedIn ? [logoutItem] : []),
-            ...(status === 'signed-out' ? [loginItem] : []),
+            ...(isGuest ? [loginItem] : []),
+            logoutItem,
           ]}
           onShow={() => {
             setIsMenuOpen(true);

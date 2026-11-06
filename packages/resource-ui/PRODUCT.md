@@ -22,10 +22,15 @@ for a given night, week, or semester. They already know the observatory's vocabu
 instruments, observing nights, semesters, Gemini North and Gemini South. The same audiences will
 compose schedules once writing arrives.
 
-A reader signs in with a GPP SSO account from the app menu; the masthead names whoever is signed
-in and says "Not signed in" otherwise. No view is gated on a session: a signed-out reader can open
-every destination and sees it empty under a toast asking them to sign in. A page is on screen from
-the first render while the sign-in check runs. Writes will require a session.
+Every view sits behind the session check. Opening any URL shows the loading mark until the check
+settles, at most the refresh timeout, then the page at that URL for a reader with a session and the
+sign-in screen for one without. A reader signs in on the sign-in screen, with ORCID or as a guest;
+the masthead names whoever is here (the person's display name, or "Guest User"), and a guest can
+still sign in with ORCID from the app menu. Guest is SSO's own guest session, so another tab or
+another GPP app on the domain picks it up, and a guest reads what a PI reads. There is no login
+route: the URL never changes on the way in, so a deep link survives either path. A session that
+ends under a reader - expiry, a refused refresh, a sign-out in another tab - returns them to the
+sign-in screen with a one-line notice. Writes will need an ORCID account.
 
 ## Product Purpose
 

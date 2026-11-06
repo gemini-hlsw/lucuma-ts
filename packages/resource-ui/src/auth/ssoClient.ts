@@ -55,3 +55,5 @@ export const signInUrl = (returnTo: string = window.location.href): string =>
   sso.signInUrl(CURRENT_ENV.ssoUri, returnTo);
 
 export const logout = (): Promise<void> => sso.logout(CURRENT_ENV.ssoUri);
+
+export const guestLogin = (): Promise<string | null> => sso.guestLogin(CURRENT_ENV.ssoUri);
