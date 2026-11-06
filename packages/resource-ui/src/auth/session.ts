@@ -117,6 +117,11 @@ function abandon({ refreshDueAt, backoff }: Refreshing): Waiting {
   return { kind: 'waiting', refreshDueAt, backoff };
 }
 
+// A token proves SSO answers, so it ends the backoff of an earlier outage.
+function afterToken({ refreshDueAt }: Waiting | Refreshing): Waiting {
+  return { kind: 'waiting', refreshDueAt, backoff: null };
+}
+
 function withRefreshDueAt(state: KeeperState, refreshDueAt: number | null): Waiting | Refreshing {
   switch (state.kind) {
     case 'waiting':
@@ -300,10 +305,19 @@ function createKeeper(store: Store, timings: SessionTimings): Keeper {
 
   // A token that arrived by another path, such as a guest sign-in, is newer than any answer still in flight.
   const handleTokenChange = (): void => {
-    if (state.kind === 'refreshing' && store.get(odbTokenAtom) !== null) {
-      state.controller.abort();
-      state = abandon(state);
-      store.set(sessionCheckedAtom, true);
+    if (store.get(odbTokenAtom) !== null) {
+      switch (state.kind) {
+        case 'refreshing':
+          state.controller.abort();
+          state = afterToken(state);
+          store.set(sessionCheckedAtom, true);
+          break;
+        case 'waiting':
+          state = afterToken(state);
+          break;
+        case 'ended':
+          break;
+      }
     }
     arm();
   };
