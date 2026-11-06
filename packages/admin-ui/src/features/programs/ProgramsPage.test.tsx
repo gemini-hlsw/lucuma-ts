@@ -3,7 +3,7 @@ import { fakeJwt, standardUser } from '@gemini-hlsw/lucuma-common-ui/testing';
 import { describe, expect, it } from 'vitest';
 import { userEvent } from 'vitest/browser';
 
-import type { AdminProgramsResult } from '@/gql/odb/programs';
+import type { ProgramItemFragment } from '@/gql/odb/gen/graphql';
 import {
   mapPrograms,
   programPropertiesInput,
@@ -26,12 +26,10 @@ const REFERENCE = `G-${currentSemester()}-0397-D`;
 const SECOND_REFERENCE = `G-${currentSemester()}-0398-Q`;
 const THIRD_REFERENCE = `G-${currentSemester()}-0499-Q`;
 
-type RawProgram = AdminProgramsResult['programs']['matches'][number];
-
 /** A Director's Time program — the shape sc-10439 was reported against. Its
  *  proposal carries no Queue fields, and the mapper collapses the subtype to
  *  QUEUE in `programClass`, which is what made every save send a Queue block. */
-const directorsTimeProgram = (): RawProgram => ({
+const directorsTimeProgram = (): ProgramItemFragment => ({
   __typename: 'Program',
   id: 'p-1532',
   name: '2026-Sep-03 DD',
@@ -66,7 +64,7 @@ const directorsTimeProgram = (): RawProgram => ({
 /** A plain Queue program: the proposal-type fields are editable here, so the
  *  wrappers carry no title. Layout must hold in this case too -- it is the
  *  common one, and a width rule keyed on [title] would silently miss it. */
-const queueProgram = (): RawProgram => ({
+const queueProgram = (): ProgramItemFragment => ({
   ...directorsTimeProgram(),
   id: 'p-1533',
   proposal: {
@@ -80,7 +78,7 @@ const queueProgram = (): RawProgram => ({
   },
 });
 
-const matchesMock = (...matches: RawProgram[]): MockedResponseOf<typeof PROGRAMS_QUERY> => ({
+const matchesMock = (...matches: ProgramItemFragment[]): MockedResponseOf<typeof PROGRAMS_QUERY> => ({
   request: { query: PROGRAMS_QUERY },
   result: { data: { programs: { __typename: 'ProgramSelectResult', matches } } },
   maxUsageCount: Number.POSITIVE_INFINITY,
@@ -280,7 +278,7 @@ describe(ProgramsPage, () => {
   });
 
   it('falls back to the first shown program when a filter hides the selected one — sc-10137', async () => {
-    const program = (id: string, label: string): RawProgram => ({
+    const program = (id: string, label: string): ProgramItemFragment => ({
       ...queueProgram(),
       id,
       reference: { __typename: 'ScienceProgramReference', label },
@@ -301,7 +299,7 @@ describe(ProgramsPage, () => {
   });
 
   it('keeps nothing selected through a filter change after a deselect — sc-10137', async () => {
-    const second: RawProgram = {
+    const second: ProgramItemFragment = {
       ...queueProgram(),
       reference: { __typename: 'ScienceProgramReference', label: SECOND_REFERENCE },
     };
@@ -325,8 +323,8 @@ describe(ProgramsPage, () => {
 
 /** The mapped program a fixture yields, so a save mock can be built from the
  *  same values the page will send. */
-function mapped(raw: RawProgram = directorsTimeProgram()) {
-  const [p] = mapPrograms({ programs: { __typename: 'ProgramSelectResult', matches: [raw] } });
+function mapped(raw: ProgramItemFragment = directorsTimeProgram()) {
+  const [p] = mapPrograms([raw]);
   if (!p) throw new Error('fixture did not map');
   return p;
 }

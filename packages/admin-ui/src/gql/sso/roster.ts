@@ -8,9 +8,8 @@
  */
 import { useMutation, useQuery } from '@apollo/client/react';
 
-import type { DocumentType } from './gen';
 import { graphql } from './gen';
-import type { Partner, RoleType } from './gen/graphql';
+import type { Partner, RoleType, RosterUserItemFragment } from './gen/graphql';
 
 // The schema enums the roster models with, re-exported for the views.
 export type { Partner, RoleType };
@@ -49,32 +48,39 @@ export interface RosterUser {
 /** Routes an operation to the SSO endpoint (gql/ApolloConfigs.ts). */
 const SSO_CONTEXT = { context: { clientName: 'sso' } } as const;
 
+/** One user of the roster with their current roles. A named fragment so
+ *  `mapRosterUsers` is typed by it rather than by the query result. */
+export const ROSTER_USER_FRAGMENT = graphql(`
+  fragment RosterUserItem on User {
+    id
+    orcidId
+    profile {
+      givenName
+      familyName
+      email
+    }
+    roles {
+      id
+      type
+      partner
+    }
+  }
+`);
+
 /** Role assignment only applies to ORCID-backed people, so the roster leaves
  *  out guest and service users. Disabled users are excluded by the server
- *  default (`includeDisabled: false`). */
+ *  default (`includeDisabled: false`). `hasMore` is true when SSO capped the
+ *  result set (1000 users) and dropped the rest. */
 export const USERS_QUERY = graphql(`
   query AdminUserRoster {
     users(WHERE: { type: { EQ: STANDARD } }) {
       matches {
-        id
-        orcidId
-        profile {
-          givenName
-          familyName
-          email
-        }
-        roles {
-          id
-          type
-          partner
-        }
+        ...RosterUserItem
       }
       hasMore
     }
   }
 `);
-
-export type AdminUserRosterResult = DocumentType<typeof USERS_QUERY>;
 
 /** Every user + their current roles, for the Users view and the
  *  contact-scientist type-ahead. */
@@ -82,8 +88,8 @@ export function useUsers() {
   return useQuery(USERS_QUERY, { ...SSO_CONTEXT, fetchPolicy: 'cache-and-network' });
 }
 
-export function mapRosterUsers(raw: AdminUserRosterResult): RosterUser[] {
-  return raw.users.matches.map((u) => ({
+export function mapRosterUsers(matches: readonly RosterUserItemFragment[]): RosterUser[] {
+  return matches.map((u) => ({
     id: u.id,
     givenName: u.profile?.givenName ?? '',
     familyName: u.profile?.familyName ?? '',
@@ -91,11 +97,6 @@ export function mapRosterUsers(raw: AdminUserRosterResult): RosterUser[] {
     orcidId: u.orcidId ?? '',
     roles: u.roles.map((r) => ({ id: r.id, type: r.type, ...(r.partner ? { partner: r.partner } : {}) })),
   }));
-}
-
-/** `true` when SSO capped the result set (1000 users) and dropped the rest. */
-export function rosterHasMore(raw: AdminUserRosterResult): boolean {
-  return raw.users.hasMore;
 }
 
 export const ADD_ROLE_MUTATION = graphql(`

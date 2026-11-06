@@ -13,7 +13,6 @@ import { parseNumber, useAllPages } from '@gemini-hlsw/lucuma-common-ui';
 import { currentSemester } from '@/lib/semester';
 
 import type { CallForProposals, CfpDetails, Observatory, SiteCoordinateLimits } from '../types';
-import type { DocumentType } from './gen';
 import { graphql } from './gen';
 import type { CallForProposalsItemFragment, CallForProposalsPropertiesInput, SiteLimitFragment } from './gen/graphql';
 
@@ -120,15 +119,11 @@ export function useCfps() {
   return useAllPages(result, 'callsForProposals');
 }
 
-export type AdminCfpsResult = DocumentType<typeof CFPS_QUERY>;
-type RawCall = CallForProposalsItemFragment;
-type RawLimits = SiteLimitFragment;
-
 /** Map CallForProposals rows onto the view shape, one row per call regardless
  *  of observatory (sc-9608). The observatory-specific block (gemini/keck/subaru)
  *  becomes the discriminated `details`; the ODB guarantees exactly one is set. */
-export function mapCfps(raw: AdminCfpsResult): CallForProposals[] {
-  return raw.callsForProposals.matches.map((c) => ({
+export function mapCfps(matches: readonly CallForProposalsItemFragment[]): CallForProposals[] {
+  return matches.map((c) => ({
     id: c.id,
     visible: c.existence === 'PRESENT',
     title: c.title,
@@ -151,7 +146,7 @@ export function mapCfps(raw: AdminCfpsResult): CallForProposals[] {
 /** The observatory-specific `details` for a call. Exactly one of the three
  *  blocks is non-null (ODB invariant); a call with none would be a schema
  *  violation, so we surface it loudly rather than guess. */
-function mapDetails(c: RawCall): CfpDetails {
+function mapDetails(c: CallForProposalsItemFragment): CfpDetails {
   if (c.gemini) {
     return {
       observatory: 'GEMINI',
@@ -187,7 +182,7 @@ function mapDetails(c: RawCall): CfpDetails {
 
 /** The submission deadlines that determine open-ness: each partner's, plus the
  *  Gemini non-partner-PI deadline when that call allows non-partner PIs. */
-function callDeadlines(c: RawCall): string[] {
+function callDeadlines(c: CallForProposalsItemFragment): string[] {
   const partnerDeadlines = c.partners.map((p) => p.submissionDeadline).filter((d): d is string => d !== null);
   // Exchange partners (Keck/Subaru) participate in Gemini calls too (sc-9610),
   // so their windows keep the call open just like the regular partners'.
@@ -197,7 +192,7 @@ function callDeadlines(c: RawCall): string[] {
   return [...partnerDeadlines, ...exchangeDeadlines, ...nonPartner];
 }
 
-function mapLimits(limits: RawLimits): SiteCoordinateLimits {
+function mapLimits(limits: SiteLimitFragment): SiteCoordinateLimits {
   return {
     raStart: parseNumber(limits.raStart.hours),
     raEnd: parseNumber(limits.raEnd.hours),

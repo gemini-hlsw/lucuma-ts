@@ -3,20 +3,18 @@ import { describe, expect, it } from 'vitest';
 
 import { type MockedResponseOf, renderWithContext } from '@/test/render';
 
-import type { AdminChangeRequestsResult } from './changeRequests';
 import {
   CHANGE_REQUESTS_QUERY,
   PROGRAM_CONFIGURATION_REQUESTS_QUERY,
   useChangeRequests,
   useProgramConfigurationRequests,
 } from './changeRequests';
+import type { ConfigurationRequestItemFragment } from './gen/graphql';
 
 const STAFF_TOKEN = fakeJwt(standardUser('staff'));
 
-type RawRequest = AdminChangeRequestsResult['configurationRequests']['matches'][number];
-
 /** A minimal ConfigurationRequest match; only `id` and `program.id` matter here. */
-const cr = (id: string, programId: string): RawRequest => ({
+const cr = (id: string, programId: string): ConfigurationRequestItemFragment => ({
   __typename: 'ConfigurationRequest',
   id,
   status: 'REQUESTED',
@@ -47,7 +45,7 @@ const cr = (id: string, programId: string): RawRequest => ({
 
 const page = (
   offset: string | null,
-  matches: RawRequest[],
+  matches: ConfigurationRequestItemFragment[],
   hasMore: boolean,
 ): MockedResponseOf<typeof CHANGE_REQUESTS_QUERY> => ({
   request: { query: CHANGE_REQUESTS_QUERY, variables: { offset } },
@@ -94,7 +92,7 @@ describe(useChangeRequests, () => {
 describe(useProgramConfigurationRequests, () => {
   const programPage = (
     offset: string | null,
-    matches: RawRequest[],
+    matches: ConfigurationRequestItemFragment[],
     hasMore: boolean,
   ): MockedResponseOf<typeof PROGRAM_CONFIGURATION_REQUESTS_QUERY> => ({
     request: { query: PROGRAM_CONFIGURATION_REQUESTS_QUERY, variables: { programId: 'p-1', offset } },

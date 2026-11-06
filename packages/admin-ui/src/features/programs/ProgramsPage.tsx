@@ -84,7 +84,7 @@ const EMPTY_PROGRAMS: Program[] = [];
 export default function ProgramsPage(): JSX.Element {
   const toast = useToastApi();
   const { data, loading, error, refetch } = usePrograms();
-  const programs = useMemo(() => (data ? mapPrograms(data) : EMPTY_PROGRAMS), [data]);
+  const programs = useMemo(() => (data ? mapPrograms(data.programs.matches) : EMPTY_PROGRAMS), [data]);
 
   const [updateProgram, { loading: updatingProgram }] = useUpdateProgram();
   const [updateProposalType, { loading: updatingProposalType }] = useUpdateProposalType();
@@ -330,7 +330,7 @@ function ProgramEditor({
   // Roster for the contact-scientist type-ahead, from SSO. A failure here
   // just leaves suggestions empty — the field still works for removals.
   const { data: rosterData } = useUsers();
-  const roster = useMemo(() => (rosterData ? mapRosterUsers(rosterData) : []), [rosterData]);
+  const roster = useMemo(() => (rosterData ? mapRosterUsers(rosterData.users.matches) : []), [rosterData]);
 
   const [contactSuggestions, setContactSuggestions] = useState<ContactScientist[]>([]);
   function suggestContacts(query: string): void {

@@ -96,7 +96,7 @@ function sortByLabel(label: (c: CallForProposals) => string) {
 export default function CfpPage(): JSX.Element {
   const toast = useToastApi();
   const { data, loading, incomplete, error } = useCfps();
-  const cfps = useMemo(() => (data ? mapCfps(data) : EMPTY_CFPS), [data]);
+  const cfps = useMemo(() => (data ? mapCfps(data.callsForProposals.matches) : EMPTY_CFPS), [data]);
   const [updateCfp, { loading: updating }] = useUpdateCfp();
   const [createCfp, { loading: creating }] = useCreateCfp();
   const saving = updating || creating;

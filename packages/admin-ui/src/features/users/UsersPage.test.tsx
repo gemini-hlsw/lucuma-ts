@@ -7,13 +7,13 @@ import { type MockedResponseOf, renderWithContext } from '@/test/render';
 
 import UsersPage from './UsersPage';
 
-const rosterMock = (): MockedResponseOf<typeof USERS_QUERY> => ({
+const rosterMock = (hasMore = false): MockedResponseOf<typeof USERS_QUERY> => ({
   request: { query: USERS_QUERY },
   result: {
     data: {
       users: {
         __typename: 'UserSelectResult',
-        hasMore: false,
+        hasMore,
         matches: [
           {
             __typename: 'User',
@@ -48,6 +48,16 @@ describe(UsersPage, () => {
     }
     await expect.element(screen.getByRole('button', { name: 'Staff', exact: true })).toBeInTheDocument();
     await expect.element(screen.getByRole('button', { name: 'Adm', exact: true })).toBeInTheDocument();
+  });
+
+  it('marks the user count with a plus when SSO capped the roster', async () => {
+    const capped = await renderWithContext(<UsersPage />, { token: ADMIN_TOKEN, mocks: [rosterMock(true)] });
+    await expect.element(capped.getByText('2/2+', { exact: true })).toBeInTheDocument();
+  });
+
+  it('shows the plain user count when SSO returned the whole roster', async () => {
+    const whole = await renderWithContext(<UsersPage />, { token: ADMIN_TOKEN, mocks: [rosterMock()] });
+    await expect.element(whole.getByText('2/2', { exact: true })).toBeInTheDocument();
   });
 
   it('shows a filter input', async () => {
