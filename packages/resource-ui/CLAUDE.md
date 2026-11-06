@@ -65,6 +65,9 @@ Tailwind, codegen) apply unchanged and are not repeated here.
   check is bounded by `REFRESH_TIMEOUT_MS`, so a hung SSO releases the requests signed out.
 - **A logout is announced on the `resource-session` BroadcastChannel**, so other tabs sign out
   without calling SSO.
+- **The token going to null resets the Apollo store** (`AuthSession.tsx`), whatever ended the
+  session, so the next sign-in, by anyone, fetches every page afresh instead of reading this one's
+  cache.
 
 ## Testing
 

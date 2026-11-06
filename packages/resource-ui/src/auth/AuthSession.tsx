@@ -23,7 +23,7 @@ export function AuthSession({ children, timings }: AuthSessionProps): ReactNode 
     () =>
       store.sub(hasTokenAtom, () => {
         // Each query's failure already reaches its component and the toast through the link chain.
-        client.refetchObservableQueries().catch(() => undefined);
+        (store.get(hasTokenAtom) ? client.refetchObservableQueries() : client.resetStore()).catch(() => undefined);
       }),
     [client, store],
   );
