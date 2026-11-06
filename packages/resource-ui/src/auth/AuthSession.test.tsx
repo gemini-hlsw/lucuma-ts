@@ -457,7 +457,7 @@ describe(AuthSession, () => {
     await expect.element(screen.getByTestId('account-control')).toHaveTextContent('Not signed in');
     await expect.element(screen.getByText(NIGHT_LOADING)).not.toBeInTheDocument();
     expect(screen.getByText('Could not load the night', { exact: false }).query()).toBeNull();
-    expect(textsOf('.p-toast-summary')).toEqual(['Your session ended']);
+    expect(textsOf('.p-toast-summary')).toEqual([]);
   });
 
   describe('after the session ends', () => {
@@ -467,7 +467,7 @@ describe(AuthSession, () => {
       ['a refused refresh', 20, refuseRefresh],
       ['expiry', 1.5, () => Promise.resolve()],
     ])(
-      'by %s, a page the reader comes back to after signing in again is fetched afresh, not read from the cache',
+      'should fetch a page afresh, not read it from the cache, when the reader comes back to it after a session ended by %s and a fresh sign-in',
       async (_, expiresInSeconds, end) => {
         const screen = await renderShell({ token: fakeJwt(standardUser('staff'), expiresInSeconds) });
         await expect.element(screen.getByText(NIGHT_LOADING)).not.toBeInTheDocument();

@@ -3,7 +3,7 @@ import { Outlet } from 'react-router';
 
 import BottomNav from './BottomNav';
 import { EnvBanner } from './EnvBanner';
-import Navbar from './Navbar';
+import { Navbar } from './Navbar';
 import Sidebar from './Sidebar';
 
 export default function Layout(): JSX.Element {

@@ -2,7 +2,14 @@ import { fakeJwt, standardUser } from '@gemini-hlsw/lucuma-common-ui/testing';
 import { createStore, type Store } from 'jotai';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { isLoggedInAtom, odbTokenAtom, sessionCheckedAtom, sessionStatusAtom } from '@/components/atoms/auth';
+import {
+  isLoggedInAtom,
+  odbTokenAtom,
+  sessionCheckedAtom,
+  sessionEndingAtom,
+  sessionStatusAtom,
+  setToken,
+} from '@/components/atoms/auth';
 import { fakeTimeouts, UNDECODABLE_TOKEN } from '@/test/helpers';
 import { answerRefresh, ssoCall as call, ssoCalls, ssoLogout, ssoRefreshes as refreshes, stubSso } from '@/test/sso';
 
@@ -712,4 +719,64 @@ describe('a logout in another tab', () => {
     expect(store.get(sessionCheckedAtom)).toBe(true);
     expect(reported).toHaveBeenCalledTimes(1);
   });
+});
+
+describe('how the session ended', () => {
+  it('should record a lapse when SSO refuses to renew a session the gate had opened', async () => {
+    holdToken(20);
+    stop = startSession(store, FAST);
+    await expectRefreshes(1);
+
+    await answerRefresh(0, { status: 403 });
+
+    expect(store.get(sessionEndingAtom)).toBe('lapsed');
+  });
+
+  it('should record a lapse when the token of a session the gate had opened expires', async () => {
+    holdToken(0.03);
+    stop = startSession(store, { ...FAST, refreshAheadMs: 20 });
+    await expectRefreshes(1);
+
+    await expect.poll(() => store.get(odbTokenAtom)).toBeNull();
+
+    expect(store.get(sessionEndingAtom)).toBe('lapsed');
+  });
+
+  it('should record a logout in another tab when it ends a session the gate had opened', async () => {
+    holdToken();
+    stop = startSession(store);
+
+    await announceFromOtherTab(SIGNED_OUT_MESSAGE);
+
+    expect(store.get(sessionEndingAtom)).toBe('logged-out-elsewhere');
+  });
+
+  it('should keep the lapse when another tab logs out after the session already ended', async () => {
+    holdToken();
+    stop = startSession(store);
+    setToken(store, null);
+
+    await announceFromOtherTab(SIGNED_OUT_MESSAGE);
+
+    expect(store.get(sessionEndingAtom)).toBe('lapsed');
+  });
+
+  it.each([
+    ['reaches SSO', 200, 'logged-out'],
+    ['misses SSO', 500, 'logout-missed-sso'],
+  ] as const)(
+    'should record a logout in flight, then one that %s, when the reader signs out',
+    async (_, status, ending) => {
+      holdToken();
+      stop = startSession(store);
+
+      const signedOut = signOut(store);
+      expect(store.get(sessionEndingAtom)).toBe('logging-out');
+
+      ssoLogout().answer({ status });
+      await signedOut;
+
+      expect(store.get(sessionEndingAtom)).toBe(ending);
+    },
+  );
 });

@@ -4,8 +4,9 @@ import {
   isLoggedInAtom,
   odbTokenAtom,
   sessionCheckedAtom,
+  sessionEndingAtom,
+  sessionStatusAtom,
   setToken,
-  signedOutElsewhereAtom,
   tokenExpAtom,
 } from '@/components/atoms/auth';
 
@@ -177,13 +178,13 @@ function createKeeper(store: Store, timings: SessionTimings): Keeper {
     return run;
   };
 
-  const onSignedOutElsewhere = (event: MessageEvent<unknown>): void => {
+  const handleSignedOutElsewhere = (event: MessageEvent<unknown>): void => {
     if (event.data !== SIGNED_OUT_MESSAGE) return;
-    store.set(signedOutElsewhereAtom, true);
+    if (store.get(sessionStatusAtom) === 'signed-in') store.set(sessionEndingAtom, 'logged-out-elsewhere');
     endSession(store, 'Sign out in another tab');
   };
 
-  const onVisibilityChange = (): void => {
+  const handleVisibilityChange = (): void => {
     if (document.visibilityState !== 'visible') return;
     if (Date.now() - lastAttemptAt < timings.minIntervalMs) return;
     if (Date.now() < retryNotBefore) return;
@@ -192,10 +193,21 @@ function createKeeper(store: Store, timings: SessionTimings): Keeper {
     void refresh();
   };
 
+  // Only a session that was signed in earns a notice.
+  let lastStatus = store.get(sessionStatusAtom);
+  const handleStatusChange = (): void => {
+    const status = store.get(sessionStatusAtom);
+    if (lastStatus === 'signed-in' && status !== 'signed-in' && store.get(sessionEndingAtom) === 'none') {
+      store.set(sessionEndingAtom, 'lapsed');
+    }
+    lastStatus = status;
+  };
+
   const unsubscribe = store.sub(odbTokenAtom, arm);
-  document.addEventListener('visibilitychange', onVisibilityChange);
+  const unsubscribeStatus = store.sub(sessionStatusAtom, handleStatusChange);
+  document.addEventListener('visibilitychange', handleVisibilityChange);
   const channel = new BroadcastChannel(SESSION_CHANNEL);
-  channel.addEventListener('message', onSignedOutElsewhere);
+  channel.addEventListener('message', handleSignedOutElsewhere);
 
   const stop = (): void => {
     clearTimers();
@@ -203,7 +215,8 @@ function createKeeper(store: Store, timings: SessionTimings): Keeper {
     abortController = undefined;
     inFlight = undefined;
     unsubscribe();
-    document.removeEventListener('visibilitychange', onVisibilityChange);
+    unsubscribeStatus();
+    document.removeEventListener('visibilitychange', handleVisibilityChange);
     channel.close();
   };
 
@@ -230,18 +243,20 @@ export function startSession(store: Store, timings: SessionTimings = SESSION_TIM
 export async function signOut(store: Store): Promise<{ reachedSso: boolean }> {
   const announced = current !== undefined;
   current?.channel.postMessage(SIGNED_OUT_MESSAGE);
+  store.set(sessionEndingAtom, 'logging-out');
   endSession(store, 'Sign out');
-  try {
-    await logout();
-    return { reachedSso: true };
-  } catch {
-    return { reachedSso: false };
-  } finally {
-    // A tab that loaded during the logout missed the first post and may have renewed from the cookie.
-    if (announced) {
-      const late = new BroadcastChannel(SESSION_CHANNEL);
-      late.postMessage(SIGNED_OUT_MESSAGE);
-      late.close();
-    }
+  const reachedSso = await logout().then(
+    () => true,
+    () => false,
+  );
+  if (store.get(sessionEndingAtom) === 'logging-out') {
+    store.set(sessionEndingAtom, reachedSso ? 'logged-out' : 'logout-missed-sso');
   }
+  // A tab that loaded during the logout missed the first post and may have renewed from the cookie.
+  if (announced) {
+    const late = new BroadcastChannel(SESSION_CHANNEL);
+    late.postMessage(SIGNED_OUT_MESSAGE);
+    late.close();
+  }
+  return { reachedSso };
 }
