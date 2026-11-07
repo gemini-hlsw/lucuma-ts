@@ -21,7 +21,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@apollo/client": "4.3.5",
+    "@apollo/client": "4.3.6",
     "@fortawesome/fontawesome-svg-core": "7.3.1",
     "@fortawesome/pro-regular-svg-icons": "7.3.1",
     "@fortawesome/react-fontawesome": "3.5.0",
@@ -61,7 +61,7 @@
     "eslint-plugin-react-refresh": "0.5.7",
     "eslint-plugin-simple-import-sort": "14.0.0",
     "globals": "17.13.0",
-    "graphql": "16.14.2",
+    "graphql": "16.15.0",
     "playwright": "1.64.1",
     "sass": "1.107.1",
     "tailwindcss": "4.3.3",
