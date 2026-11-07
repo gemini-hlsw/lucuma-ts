@@ -1,30 +1,11 @@
-import {
-  ArrowRightFromBracket,
-  Bars,
-  Check,
-  cn,
-  displayName,
-  Info,
-  LayerGroup,
-  type User,
-  UserIcon,
-  useToast,
-} from '@gemini-hlsw/lucuma-common-ui';
-import { useStore } from 'jotai';
+import { ArrowRightFromBracket, Bars, Check, cn, Info, LayerGroup, UserIcon } from '@gemini-hlsw/lucuma-common-ui';
 import { Button } from 'primereact/button';
 import { Menu } from 'primereact/menu';
 import type { MenuItem } from 'primereact/menuitem';
-import type { ToastMessage } from 'primereact/toast';
-import { type JSX, useEffect, useRef, useState } from 'react';
-import { Link, useSearchParams } from 'react-router';
+import { type JSX, useRef, useState } from 'react';
+import { Link } from 'react-router';
 
-import { carrySelection, searchString } from '@/app/carriedSelection';
-import { setClockPreference, useClockPreference } from '@/app/useClockPreference';
-import { useSelection } from '@/app/useSelection';
 import orcidLogo from '@/assets/orcid-logo.svg';
-import { signOut } from '@/auth/session';
-import { signInUrl } from '@/auth/ssoClient';
-import { type SessionStatus, useSessionStatus, useSignedOutElsewhere, useUser } from '@/components/atoms/auth';
 import { AboutResource } from '@/components/layout/AboutResource';
 import { SegmentedControl, type SegmentedOption } from '@/components/ui/SegmentedControl';
 import { FOCUS_RING } from '@/components/ui/styles';
@@ -33,29 +14,7 @@ import { type Site, SITE_NAMES, SITES } from '@/domain/types';
 
 const BRAND_LABEL = 'Resource';
 
-const CHECKING_LABEL = 'Checking sign-in';
-
-const SIGNED_OUT_LABEL = 'Not signed in';
-
-const LOGGED_OUT_ANNOUNCEMENT = 'Logged out';
 const LOGIN_LABEL = 'Login with ORCID';
-const SESSION_ENDED_TOAST = {
-  severity: 'warn',
-  summary: 'Your session ended',
-  detail: `Choose "${LOGIN_LABEL}" from the menu to sign in again.`,
-  sticky: true,
-} satisfies ToastMessage;
-const SIGNED_OUT_ELSEWHERE_TOAST = {
-  severity: 'info',
-  summary: 'You signed out in another tab',
-  sticky: true,
-} satisfies ToastMessage;
-const LOGOUT_UNREACHABLE_TOAST = {
-  severity: 'warn',
-  summary: 'Logout did not reach SSO',
-  detail: 'Close the browser to end the session.',
-  sticky: true,
-} satisfies ToastMessage;
 const CLOCK_ITEM = 'xp-menu-clock';
 
 const CLOCK_GROUP_LABEL = 'Clock';
@@ -80,75 +39,51 @@ const SITE_OPTIONS: readonly SegmentedOption<Site>[] = SITES.map((value) => ({
 }));
 
 /** Display only: observing-night labels and evening dates are the site's calendar and never move. */
-const CLOCK_CHOICES: readonly { readonly label: string; readonly value: TimeDisplay }[] = [
+const CLOCK_CHOICES = [
   { label: 'Site time', value: 'site' },
   { label: 'UTC', value: 'utc' },
-];
-function accountLabelOf(status: SessionStatus, user: User | null): string {
-  switch (status) {
-    case 'checking':
-      return CHECKING_LABEL;
-    case 'signed-out':
-      return SIGNED_OUT_LABEL;
-    case 'signed-in':
-      return user === null ? SIGNED_OUT_LABEL : displayName(user);
-  }
+] as const satisfies readonly { readonly label: string; readonly value: TimeDisplay }[];
+
+export interface NavbarProps {
+  readonly homeSearch: string;
+  readonly site: Site;
+  readonly onSiteChange: (site: Site) => void;
+  readonly timeDisplay: TimeDisplay;
+  readonly onTimeDisplayChange: (timeDisplay: TimeDisplay) => void;
+  readonly accountLabel: string;
+  readonly isGuest: boolean;
+  readonly signInHref: string;
+  readonly onSignOut: () => void;
 }
 
 /** One row at every width, under the environment banner; nothing here is conditional, so the shell below never moves. */
-export default function Navbar(): JSX.Element {
-  const [params] = useSearchParams();
+export function Navbar({
+  homeSearch,
+  site,
+  onSiteChange,
+  timeDisplay,
+  onTimeDisplayChange,
+  accountLabel,
+  isGuest,
+  signInHref,
+  onSignOut,
+}: NavbarProps): JSX.Element {
   const menu = useRef<Menu>(null);
   const menuButton = useRef<Button>(null);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [aboutOpen, setAboutOpen] = useState(false);
-  const [announceSignOut, setAnnounceSignOut] = useState(false);
-  const signingOut = useRef(false);
-  const home = searchString(carrySelection(params, ['site']));
-
-  const { site, setSite } = useSelection();
-  const timeDisplay = useClockPreference();
-  const status = useSessionStatus();
-  const user = useUser();
-  const signedOutElsewhere = useSignedOutElsewhere();
-  const toast = useToast();
-  const store = useStore();
-
-  const signedIn = status === 'signed-in';
-  const accountLabel = accountLabelOf(status, user);
-  const announcement = !signedIn && announceSignOut ? LOGGED_OUT_ANNOUNCEMENT : '';
-
-  const previousStatus = useRef(status);
-  useEffect(() => {
-    const previous = previousStatus.current;
-    previousStatus.current = status;
-    if (status === 'signed-in') {
-      signingOut.current = false;
-      toast?.remove(SESSION_ENDED_TOAST);
-      toast?.remove(LOGOUT_UNREACHABLE_TOAST);
-      toast?.remove(SIGNED_OUT_ELSEWHERE_TOAST);
-    } else if (status === 'signed-out' && previous === 'signed-in' && !signingOut.current) {
-      toast?.show(signedOutElsewhere ? SIGNED_OUT_ELSEWHERE_TOAST : SESSION_ENDED_TOAST);
-    }
-  }, [signedOutElsewhere, status, toast]);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isAboutOpen, setIsAboutOpen] = useState(false);
 
   const focusMenuButton = (): void => {
     if (menuButton.current instanceof HTMLButtonElement) menuButton.current.focus();
   };
 
-  const onSignOut = (): void => {
-    focusMenuButton();
-    setAnnounceSignOut(true);
-    signingOut.current = true;
-    void signOut(store).then(({ reachedSso }) => {
-      if (!reachedSso && signingOut.current) toast?.show(LOGOUT_UNREACHABLE_TOAST);
-    });
-  };
-
   const logoutItem: MenuItem = {
     label: 'Logout',
     icon: <ArrowRightFromBracket className={MENU_ICON} aria-hidden="true" />,
-    command: onSignOut,
+    command: () => {
+      focusMenuButton();
+      onSignOut();
+    },
   };
 
   const loginItem: MenuItem = {
@@ -156,13 +91,13 @@ export default function Navbar(): JSX.Element {
     icon: (
       <img src={orcidLogo} alt="" aria-hidden="true" className={cn(MENU_ICON, 'h-[1em] w-[1.25em] object-contain')} />
     ),
-    url: signInUrl(),
+    url: signInHref,
   };
 
   return (
     <header className="xp-masthead">
       <Link
-        to={{ pathname: '/night', search: home }}
+        to={{ pathname: '/night', search: homeSearch }}
         className={cn('xp-wordmark', FOCUS_RING)}
         title="GPP Resource - telescope calendar & operational-resource manager. Go to tonight."
       >
@@ -171,7 +106,13 @@ export default function Navbar(): JSX.Element {
         {BRAND_LABEL}
       </Link>
 
-      <SegmentedControl value={site} options={SITE_OPTIONS} onChange={setSite} ariaLabel="Site" testId="site-toggle" />
+      <SegmentedControl
+        value={site}
+        options={SITE_OPTIONS}
+        onChange={onSiteChange}
+        ariaLabel="Site"
+        testId="site-toggle"
+      />
 
       <div className="xp-masthead-center" />
 
@@ -179,15 +120,12 @@ export default function Navbar(): JSX.Element {
         <span
           data-testid="account-control"
           className="flex items-center gap-1.5 text-xs tracking-wide text-foreground-secondary"
-          title={signedIn ? accountLabel : undefined}
+          title={accountLabel}
         >
           {/* A glyph, not type: the name beside it is what the row says. */}
           <UserIcon size="sm" widthAuto aria-hidden="true" />
           {/* Only the icon fits the phone bar; the name stays announced, and the menu carries it for the eye. */}
           <span className="xp-account-name max-md:sr-only">{accountLabel}</span>
-        </span>
-        <span role="status" className="sr-only">
-          {announcement}
         </span>
         <Button
           type="button"
@@ -197,8 +135,8 @@ export default function Navbar(): JSX.Element {
           ref={menuButton}
           aria-label="Menu"
           aria-haspopup="menu"
-          aria-expanded={menuOpen}
-          aria-controls={menuOpen ? MENU_ID : undefined}
+          aria-expanded={isMenuOpen}
+          aria-controls={isMenuOpen ? MENU_ID : undefined}
           icon={<Bars widthAuto aria-hidden="true" />}
           onClick={(event) => {
             menu.current?.toggle(event);
@@ -211,7 +149,7 @@ export default function Navbar(): JSX.Element {
               label: 'About Resource',
               icon: <Info className={MENU_ICON} aria-hidden="true" />,
               command: () => {
-                setAboutOpen(true);
+                setIsAboutOpen(true);
               },
             },
             { label: CLOCK_GROUP_LABEL, className: 'xp-menu-section', items: [] },
@@ -223,19 +161,19 @@ export default function Navbar(): JSX.Element {
                 <Check className={cn(MENU_ICON, choice.value === timeDisplay ? '' : 'invisible')} aria-hidden="true" />
               ),
               command: () => {
-                setClockPreference(choice.value);
+                onTimeDisplayChange(choice.value);
               },
             })),
             { separator: true },
             { label: accountLabel, className: 'xp-menu-account', items: [] },
-            ...(signedIn ? [logoutItem] : []),
-            ...(status === 'signed-out' ? [loginItem] : []),
+            ...(isGuest ? [loginItem] : []),
+            logoutItem,
           ]}
           onShow={() => {
-            setMenuOpen(true);
+            setIsMenuOpen(true);
           }}
           onHide={() => {
-            setMenuOpen(false);
+            setIsMenuOpen(false);
           }}
           pt={{
             menu: {
@@ -270,9 +208,9 @@ export default function Navbar(): JSX.Element {
       </div>
 
       <AboutResource
-        visible={aboutOpen}
+        visible={isAboutOpen}
         onHide={() => {
-          setAboutOpen(false);
+          setIsAboutOpen(false);
           focusMenuButton();
         }}
       />

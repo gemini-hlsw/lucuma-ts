@@ -21,8 +21,8 @@ pnpm resource-ui dev            # vite dev server on http://localhost:5173
 
 The app reads **one backend**, over HTTP, at `/resource/graphql`: the live Resource
 service. The vite proxy carries that path to the dev deployment, purely to sidestep CORS.
-Every data field needs an SSO sign-in, so signed out, `dev` shows an amber sign-in toast
-and every view is empty. Signing in from a local dev server takes the setup below.
+Every data field needs an SSO session, so signed out, `dev` lands on the sign-in screen
+(ORCID or guest) and no view loads. Signing in from a local dev server takes the setup below.
 
 To try queries by hand, the service's GraphiQL playground is at
 https://resource-api-dev.gemini.edu/resource/playground.html.
@@ -38,8 +38,9 @@ sudo sh -c 'echo "127.0.0.1 local.gemini.edu" >> /etc/hosts'   # once
 pnpm resource-ui dev:https                                         # RESOURCE_HTTPS=1 vite, self-signed
 ```
 
-Open https://local.gemini.edu:5173 (accept the certificate once), then sign in from the app
-menu with an ORCID account. A session started on any other gemini.edu app is already there.
+Open https://local.gemini.edu:5173 (accept the certificate once), then sign in on the
+sign-in screen with an ORCID account, or continue as a guest and switch to ORCID later from the
+app menu. A session started on any other gemini.edu app is already there.
 
 ### Codegen
 

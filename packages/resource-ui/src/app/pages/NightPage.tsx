@@ -18,7 +18,7 @@ import { useNightSchedule } from '@/gql/hooks';
 /** The view the rest of the model exists for: a run changing mid-night is drawn where it changes. */
 export default function NightPage(): JSX.Element {
   const { site, observingNight, tonight, setObservingNight, clearObservingNight } = useSelection();
-  const timeDisplay = useClockPreference();
+  const { value: timeDisplay } = useClockPreference();
   const now = useNow(nightBoundaries(site));
 
   const interval = observingNightInterval(site, observingNight);

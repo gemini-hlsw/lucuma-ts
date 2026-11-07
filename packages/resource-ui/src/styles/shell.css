@@ -26,8 +26,7 @@ body {
 }
 
 .xp-shell {
-  height: 100vh;
-  height: 100dvh;
+  height: 100%;
 }
 
 @media print {
@@ -228,7 +227,8 @@ body {
   color: var(--color-foreground);
 }
 
-.dark .p-button.p-button-secondary:not(.p-button-text, .p-button-outlined):enabled:hover {
+.dark .p-button.p-button-secondary:not(.p-button-text, .p-button-outlined):enabled:hover,
+.dark .xp-splash a.p-button-secondary:hover {
   background: color-mix(in srgb, var(--color-action-secondary) 85%, white);
   border-color: color-mix(in srgb, var(--color-action-secondary) 85%, white);
 }
@@ -258,6 +258,27 @@ body {
 .p-selectbutton.segmented .p-button {
   padding: 2.8px 7.7px;
   font-size: var(--text-xs);
+}
+
+/* The one control off the 28px line: a splash button is read, not scanned, so it takes Body type at 36px. */
+.dark .xp-splash .p-button {
+  padding: 4.2px 14px;
+  min-height: 36px;
+  font-size: var(--text-sm);
+}
+
+.dark .xp-splash .p-button .p-button-label {
+  flex: 0 0 auto;
+}
+
+/* The theme's :focus shadow sits in a cascade layer above Tailwind's utilities, so the ring utility never paints here. */
+.dark .xp-splash .p-button:focus {
+  box-shadow: none;
+}
+
+.dark .xp-splash .p-button:focus-visible {
+  outline: 2px solid var(--color-gpp-light);
+  outline-offset: -2px;
 }
 
 .p-button:not(

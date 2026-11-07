@@ -5,13 +5,13 @@ import { createStore, type Store } from 'jotai';
 import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
 import { page } from 'vitest/browser';
 
-import { odbTokenAtom, sessionCheckedAtom } from '@/components/atoms/auth';
+import { odbTokenAtom } from '@/components/atoms/auth';
 import { ToastOutlet } from '@/components/ui/ToastOutlet';
 import { fakeTimeouts, UNDECODABLE_TOKEN } from '@/test/helpers';
-import { captureHeader, captureOperations, createLinkClient, respondWith } from '@/test/linkClient';
+import { captureHeader, createLinkClient, respondWith } from '@/test/linkClient';
 import { renderWithContext } from '@/test/render';
 
-import { authLink, createClient, liveLink, sessionHoldLink } from './ApolloConfigs';
+import { authLink, createClient, liveLink } from './ApolloConfigs';
 
 const QUERY = gql`
   query AuthHeaderProbe {
@@ -52,35 +52,35 @@ const headerSent = async (name: string, context?: ApolloLink.OperationContext): 
 };
 
 describe(authLink, () => {
-  it('sends the signed-in user token as a bearer', async () => {
+  it('should send the user token as a bearer when signed in', async () => {
     store.set(odbTokenAtom, TOKEN);
 
     expect(await headerSent('Authorization')).toBe(`Bearer ${TOKEN}`);
   });
 
-  it('sends no Authorization header at all when signed out', async () => {
+  it('should send no Authorization header at all when signed out', async () => {
     expect(await headerSent('Authorization')).toBeNull();
   });
 
-  it('leaves headers the operation already set alone', async () => {
+  it('should leave the headers alone when the operation already set them', async () => {
     store.set(odbTokenAtom, TOKEN);
 
     expect(await headerSent('X-Probe', { headers: { 'X-Probe': 'kept' } })).toBe('kept');
   });
 
-  it('omits the header rather than sending empty credentials for an empty stored token', async () => {
+  it('should omit the header rather than send empty credentials when the stored token is empty', async () => {
     store.set(odbTokenAtom, '');
 
     expect(await headerSent('Authorization')).toBeNull();
   });
 
-  it('sends no header for a token it cannot decode', async () => {
+  it('should send no header when it cannot decode the token', async () => {
     store.set(odbTokenAtom, UNDECODABLE_TOKEN);
 
     expect(await headerSent('Authorization')).toBeNull();
   });
 
-  it('sends no Authorization header once the held token has expired', async () => {
+  it('should send no Authorization header when the held token has expired', async () => {
     store.set(odbTokenAtom, fakeJwt(standardUser('staff'), -60));
 
     expect(await headerSent('Authorization')).toBeNull();
@@ -101,51 +101,11 @@ describe('two link chains on two stores', () => {
   });
 });
 
-describe(sessionHoldLink, () => {
-  const heldApollo = () => {
-    const { link: enter, names: entered } = captureOperations();
-    const capture = captureHeader('Authorization');
-    const linkClient = createLinkClient(
-      ApolloLink.from([enter, sessionHoldLink(store), authLink(store), capture.link]),
-      ANSWERS,
-    );
-    return { linkClient, sent: capture.sent, entered };
-  };
-
-  it('holds a request until the session check settles, then sends it with the bearer the check found', async () => {
-    const { linkClient, sent, entered } = heldApollo();
-
-    const answered = linkClient.query({ query: QUERY });
-    await expect.poll(() => entered).toEqual(['AuthHeaderProbe']);
-    expect(sent).toEqual([]);
-
-    store.set(odbTokenAtom, TOKEN);
-    store.set(sessionCheckedAtom, true);
-
-    await answered;
-    expect(sent).toEqual([`Bearer ${TOKEN}`]);
-  });
-
-  it('sends nothing for a request dropped while it was held', async () => {
-    const { linkClient, sent, entered } = heldApollo();
-    const subscription = linkClient.watchQuery({ query: QUERY }).subscribe(() => undefined);
-    await expect.poll(() => entered).toEqual(['AuthHeaderProbe']);
-    subscription.unsubscribe();
-
-    store.set(sessionCheckedAtom, true);
-    await linkClient.query({ query: FOLLOW_UP, fetchPolicy: 'network-only' });
-
-    expect(entered).toEqual(['AuthHeaderProbe', 'FollowUp']);
-    expect(sent).toEqual([null]);
-  });
-});
-
 describe("the live client's request chain", () => {
   let fetchSpy: MockInstance<typeof fetch>;
   let client: ApolloClient;
 
   beforeEach(() => {
-    store.set(sessionCheckedAtom, true);
     client = createClient(store);
     fetchSpy = vi.spyOn(window, 'fetch').mockImplementation(() =>
       Promise.resolve(
@@ -166,11 +126,11 @@ describe("the live client's request chain", () => {
     return new Headers(init?.headers).get('Authorization');
   };
 
-  it('sends no Authorization header over the wire when nobody is signed in', async () => {
+  it('should send no Authorization header over the wire when nobody is signed in', async () => {
     expect(await authorizationSent()).toBeNull();
   });
 
-  it('carries a sign-in on the very next request, with no client rebuild', async () => {
+  it('should carry the sign-in on the very next request, with no client rebuild, when the reader signs in', async () => {
     expect(await authorizationSent()).toBeNull();
 
     store.set(odbTokenAtom, TOKEN);
@@ -197,7 +157,6 @@ interface LiveChain {
 
 /** The live chain over a scripted answer, with its toast outlet mounted; MockLink cannot change its answer between calls. */
 const liveChain = async (chainStore: Store): Promise<LiveChain> => {
-  chainStore.set(sessionCheckedAtom, true);
   let answer: Outcome = served;
   const client = new ApolloClient({
     link: liveLink(chainStore, new ApolloLink(() => respondWith(answer))),
@@ -228,7 +187,7 @@ describe(liveLink, () => {
     { cause: 'any other server error', next: failed, summary: 'The live server answered with an error.' },
     { cause: 'a missing sign-in', next: unauthenticated, summary: 'The live server could not verify your sign-in.' },
     { cause: 'a refused bearer', next: refused, summary: 'The live server could not verify your sign-in.' },
-  ])('shows a warning for $cause', async ({ next, summary }) => {
+  ])('should show a warning when the failure is $cause', async ({ next, summary }) => {
     await ask(next);
 
     await expect.poll(summaries).toEqual([summary]);
@@ -239,7 +198,7 @@ describe(liveLink, () => {
     { cause: 'no answer', next: unreachable, summary: 'The live server could not be reached.' },
     { cause: 'a server error', next: failed, summary: 'The live server answered with an error.' },
     { cause: 'a missing sign-in', next: unauthenticated, summary: 'The live server could not verify your sign-in.' },
-  ])('withdraws the warning for $cause on the next answer without errors', async ({ next, summary }) => {
+  ])('should withdraw the warning for $cause when the next answer has no errors', async ({ next, summary }) => {
     await ask(next);
     await expect.poll(summaries).toEqual([summary]);
 
@@ -248,7 +207,7 @@ describe(liveLink, () => {
     await expect.poll(summaries).toEqual([]);
   });
 
-  it('keeps the warning up past the default toast life', async () => {
+  it('should keep the warning up when the default toast life passes', async () => {
     fakeTimeouts();
     await ask(unreachable);
     await expect.poll(summaries).toEqual(['The live server could not be reached.']);
@@ -260,7 +219,7 @@ describe(liveLink, () => {
     expect(summaries()).toEqual(['The live server could not be reached.']);
   });
 
-  it('leaves the one warning standing while the failure repeats, keeps it closed once closed, and shows it for a failure after a success', async () => {
+  it('should leave the one warning standing, keep it closed once closed, and show it for a failure after a success when failures repeat', async () => {
     await ask(unreachable);
     await expect.poll(summaries).toEqual(['The live server could not be reached.']);
     const warning = document.querySelector('.p-toast-message');
@@ -280,7 +239,7 @@ describe(liveLink, () => {
     await expect.poll(summaries).toEqual(['The live server could not be reached.']);
   });
 
-  it('replaces the standing warning when a different failure arrives', async () => {
+  it('should replace the standing warning when a different failure arrives', async () => {
     await ask(unreachable);
     await expect.poll(summaries).toEqual(['The live server could not be reached.']);
 

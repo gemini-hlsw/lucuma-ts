@@ -1,6 +1,6 @@
 import { createBrowserRouter, Navigate, type RouteObject } from 'react-router';
 
-import Layout from '../components/layout/Layout';
+import { Layout } from '../components/layout/Layout';
 import ComponentsPage from './pages/ComponentsPage';
 import InstrumentsPage from './pages/InstrumentsPage';
 import NightPage from './pages/NightPage';

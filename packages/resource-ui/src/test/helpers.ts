@@ -42,6 +42,9 @@ export async function chooseClock(sut: LocatorSelectors, label: 'Site time' | 'U
 export const clockChoice = (label: 'Site time' | 'UTC'): Locator =>
   page.getByRole('menuitemradio', { name: `Clock: ${label}`, exact: true });
 
+/** The toasts whose text includes `summary`; PrimeReact renders them into `document.body`. */
+export const toastNamed = (summary: string): Locator => page.getByRole('alert').filter({ hasText: summary });
+
 /** The text of every element `selector` matches, in document order. */
 export const textsOf = (selector: string): readonly string[] =>
   [...document.querySelectorAll(selector)].map((node) => node.textContent ?? '');

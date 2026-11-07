@@ -1,11 +1,11 @@
 import type { Store } from 'jotai';
 
 import {
-  isLoggedInAtom,
   odbTokenAtom,
   sessionCheckedAtom,
+  sessionEndingAtom,
+  sessionStatusAtom,
   setToken,
-  signedOutElsewhereAtom,
   tokenExpAtom,
 } from '@/components/atoms/auth';
 
@@ -20,13 +20,13 @@ export interface SessionTimings {
   readonly refreshTimeoutMs: number;
 }
 
-export const SESSION_TIMINGS: SessionTimings = {
+export const SESSION_TIMINGS = {
   refreshAheadMs: 30_000,
   minIntervalMs: 30_000,
   backoffCapMs: 16 * 60_000,
   maxTimerMs: 2_147_483_647,
   refreshTimeoutMs: REFRESH_TIMEOUT_MS,
-};
+} as const satisfies SessionTimings;
 
 export const SESSION_CHANNEL = 'resource-session';
 export const SIGNED_OUT_MESSAGE = 'signed-out';
@@ -34,6 +34,7 @@ export const SIGNED_OUT_MESSAGE = 'signed-out';
 interface Keeper {
   readonly channel: BroadcastChannel;
   readonly pendingRefresh: () => Promise<void> | undefined;
+  readonly reset: () => void;
   readonly stop: () => void;
 }
 
@@ -55,7 +56,7 @@ function dropToken(store: Store, reason: string): void {
 }
 
 function endSession(store: Store, reason: string): void {
-  stopCurrent();
+  current?.reset();
   dropToken(store, reason);
   store.set(sessionCheckedAtom, true);
 }
@@ -69,6 +70,8 @@ function createKeeper(store: Store, timings: SessionTimings): Keeper {
   let retryNotBefore = 0;
   let refreshDueAt: number | null = null;
   let lastAttemptAt = 0;
+  // The SSO cookie may outlive a failed logout, so until a new token arrives nothing asks to renew.
+  let hasEnded = false;
 
   const clearTimers = (): void => {
     if (timer !== undefined) clearTimeout(timer);
@@ -106,6 +109,7 @@ function createKeeper(store: Store, timings: SessionTimings): Keeper {
     const exp = store.get(tokenExpAtom);
     // Dropping an expired token keeps its deadline, so the refresh it was waiting on still runs.
     if (store.get(odbTokenAtom) !== null) {
+      hasEnded = false;
       refreshDueAt = exp !== null && exp.getTime() > now ? exp.getTime() - timings.refreshAheadMs : null;
     }
     const backoffDue = retryNotBefore === 0 ? null : retryNotBefore;
@@ -126,6 +130,9 @@ function createKeeper(store: Store, timings: SessionTimings): Keeper {
         case 'token': {
           backoffMs = 0;
           retryNotBefore = 0;
+          // The token subscriber treats a token written mid-refresh as newer than the refresh, so this one must not look in flight.
+          inFlight = undefined;
+          abortController = undefined;
           setToken(store, result.token);
           const exp = store.get(tokenExpAtom);
           if (exp !== null && exp.getTime() <= Date.now()) {
@@ -177,14 +184,14 @@ function createKeeper(store: Store, timings: SessionTimings): Keeper {
     return run;
   };
 
-  const onSignedOutElsewhere = (event: MessageEvent<unknown>): void => {
+  const handleSignedOutElsewhere = (event: MessageEvent<unknown>): void => {
     if (event.data !== SIGNED_OUT_MESSAGE) return;
-    store.set(signedOutElsewhereAtom, true);
+    if (store.get(sessionStatusAtom) === 'signed-in') store.set(sessionEndingAtom, 'logged-out-elsewhere');
     endSession(store, 'Sign out in another tab');
   };
 
-  const onVisibilityChange = (): void => {
-    if (document.visibilityState !== 'visible') return;
+  const handleVisibilityChange = (): void => {
+    if (hasEnded || document.visibilityState !== 'visible') return;
     if (Date.now() - lastAttemptAt < timings.minIntervalMs) return;
     if (Date.now() < retryNotBefore) return;
     const exp = store.get(tokenExpAtom);
@@ -192,29 +199,58 @@ function createKeeper(store: Store, timings: SessionTimings): Keeper {
     void refresh();
   };
 
-  const unsubscribe = store.sub(odbTokenAtom, arm);
-  document.addEventListener('visibilitychange', onVisibilityChange);
-  const channel = new BroadcastChannel(SESSION_CHANNEL);
-  channel.addEventListener('message', onSignedOutElsewhere);
-
-  const stop = (): void => {
-    clearTimers();
+  const discardInFlight = (): void => {
     abortController?.abort();
     abortController = undefined;
     inFlight = undefined;
+  };
+
+  // A token that arrived by another path, such as a guest sign-in, is newer than any answer still in flight.
+  const handleTokenChange = (): void => {
+    if (inFlight !== undefined && store.get(odbTokenAtom) !== null) {
+      discardInFlight();
+      store.set(sessionCheckedAtom, true);
+    }
+    arm();
+  };
+
+  // Only a session the gate opened earns a notice, so a stored token SSO refuses at load ends nothing.
+  let lastStatus = store.get(sessionStatusAtom);
+  const handleStatusChange = (): void => {
+    const status = store.get(sessionStatusAtom);
+    if (lastStatus === 'signed-in' && status !== 'signed-in' && store.get(sessionEndingAtom) === 'none') {
+      store.set(sessionEndingAtom, 'lapsed');
+    }
+    lastStatus = status;
+  };
+
+  const unsubscribe = store.sub(odbTokenAtom, handleTokenChange);
+  const unsubscribeStatus = store.sub(sessionStatusAtom, handleStatusChange);
+  document.addEventListener('visibilitychange', handleVisibilityChange);
+  const channel = new BroadcastChannel(SESSION_CHANNEL);
+  channel.addEventListener('message', handleSignedOutElsewhere);
+
+  const reset = (): void => {
+    clearTimers();
+    discardInFlight();
+    backoffMs = 0;
+    retryNotBefore = 0;
+    refreshDueAt = null;
+    hasEnded = true;
+  };
+
+  const stop = (): void => {
+    reset();
     unsubscribe();
-    document.removeEventListener('visibilitychange', onVisibilityChange);
+    unsubscribeStatus();
+    document.removeEventListener('visibilitychange', handleVisibilityChange);
     channel.close();
   };
 
-  if (store.get(isLoggedInAtom)) {
-    store.set(sessionCheckedAtom, true);
-  } else {
-    void refresh();
-  }
+  if (!store.get(sessionCheckedAtom)) void refresh();
   arm();
 
-  return { channel, pendingRefresh: () => inFlight, stop };
+  return { channel, pendingRefresh: () => inFlight, reset, stop };
 }
 
 export function startSession(store: Store, timings: SessionTimings = SESSION_TIMINGS): () => void {
@@ -230,18 +266,25 @@ export function startSession(store: Store, timings: SessionTimings = SESSION_TIM
 export async function signOut(store: Store): Promise<{ reachedSso: boolean }> {
   const announced = current !== undefined;
   current?.channel.postMessage(SIGNED_OUT_MESSAGE);
+  store.set(sessionEndingAtom, 'logging-out');
   endSession(store, 'Sign out');
-  try {
-    await logout();
-    return { reachedSso: true };
-  } catch {
-    return { reachedSso: false };
-  } finally {
-    // A tab that loaded during the logout missed the first post and may have renewed from the cookie.
-    if (announced) {
+  const reachedSso = await logout().then(
+    () => true,
+    () => false,
+  );
+  if (store.get(sessionEndingAtom) === 'logging-out') {
+    store.set(sessionEndingAtom, reachedSso ? 'logged-out' : 'logout-missed-sso');
+  }
+  // A tab that loaded during the logout missed the first post and may have renewed from the cookie.
+  // The keeper's channel does not hear itself, so a guest who signed in here meanwhile stays.
+  if (announced) {
+    if (current === undefined) {
       const late = new BroadcastChannel(SESSION_CHANNEL);
       late.postMessage(SIGNED_OUT_MESSAGE);
       late.close();
+    } else {
+      current.channel.postMessage(SIGNED_OUT_MESSAGE);
     }
   }
+  return { reachedSso };
 }

@@ -52,6 +52,13 @@ export async function answerRefresh(index: number, response: SsoAnswer): Promise
   await settled;
 }
 
+/** Fails the call as a network error and resolves once the session has taken the failure in. */
+export async function failRefresh(index: number): Promise<void> {
+  const settled = pendingRefresh();
+  ssoCall(index).fail();
+  await settled;
+}
+
 const callsTo = (path: string): readonly PendingSsoCall[] => calls.filter((made) => made.url.includes(path));
 
 export const ssoRefreshes = (): readonly PendingSsoCall[] => callsTo('/api/v1/refresh-token');

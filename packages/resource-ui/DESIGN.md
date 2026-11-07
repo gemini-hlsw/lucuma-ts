@@ -289,7 +289,8 @@ every size; muted carries only decoration or duplication.
 ## Layout
 
 **Banner, masthead, sidebar, workspace.** A thin full-width strip (`--xp-banner-height`) sits
-above everything and names the environment; production renders none. Under it, a 35px masthead
+above everything and names the environment; production renders none. The session gate owns the
+row under it, and the shell fills that row, not the viewport. In it, a 35px masthead
 (surface, 1px subtle bottom border) carries four things and no more: the wordmark (home link),
 the GN|GS site control beside it, a flexible gap, and the right cluster of account name and
 menu. A fixed-width (196px) sidebar groups navigation under uppercase section labels
@@ -316,12 +317,14 @@ frame changes the frame, but masthead selections stay global and page controls s
     to a colleague opens in _their_ habit. The choice picks the zone every clock time renders
     in; observing-night labels and evening dates stay on the site's own calendar.
   - Page-scoped parameters live in the URL per page, defaults deleted rather than written.
-- **The account control is the right cluster's.** It names the signed-in reader, or reads "Not
-  signed in", or "Checking sign-in" while the first check is out, in the name's slot and under
-  the name's rules (drawn from `md` up, `sr-only` below). The page is drawn around it from the
-  first render and its data areas show their loading state, because requests wait for the
-  check, not the page. Signing in and out sit in the app menu's account block. Roles are not
-  shown; permission differences render as capability, never as a different theme.
+- **The account control is the right cluster's.** It names whoever is here: the signed-in
+  person's display name, or "Guest User", in the name's slot and under the name's rules (drawn
+  from `md` up, `sr-only` below), the whole name in the control's `title`. The masthead is
+  mounted only once a session exists, so the sign-in screen and the loading mark carry the
+  signed-out and checking states, and the control always has a name to show. Signing in and out
+  sit in the app menu's account block: a guest sees "Login with ORCID" then "Logout"; a person
+  sees "Logout". Roles are not shown; permission differences render as capability, never as a
+  different theme.
 - **Tonight is the front door.** The index route lands on `/night`; no night in the URL means
   the night in progress; the wordmark links home to it, and the night and week pages carry a
   Tonight button.
@@ -380,8 +383,9 @@ Below it the frame changes; at and above it the desktop shell is untouched.
   font size takes them past that, the bar wraps to a second row and grows on its `min-height`.
 - **Five destinations is the bar's ceiling.** The labels fill the 320px row, and Material's
   navigation bar is a three-to-five component. A sixth destination is a different component.
-- **The shell is `dvh`, not `vh`.** A phone browser's toolbar is inside `100vh` but outside the
-  visible viewport, so a `vh` shell hides its own bottom bar under the toolbar on first load.
+- **The gate's frame is `dvh`, not `vh`**, and the shell fills it. A phone browser's toolbar is
+  inside `100vh` but outside the visible viewport, so a `vh` frame hides the shell's own bottom
+  bar under the toolbar on first load.
 - **The bottom bar pads itself against `env(safe-area-inset-bottom)`**, and `index.html` asks
   for `viewport-fit=cover` so that inset is real rather than zero.
 
@@ -423,9 +427,9 @@ is for what PrimeReact has no component for - a caption, a live region, a line o
 
 **The One-Glyph-Set Rule.** Every icon is a FontAwesome icon rendered through the project's
 `FontAwesomeIcon`, sized by FontAwesome's own `size` prop: no inline SVG, no PrimeIcons. The one
-image is the ORCID iD logo on the login item (`src/assets/orcid-logo.svg`), in ORCID's own green
-rather than the theme's ink, because the mark identifies the sign-in provider and is used as
-ORCID publishes it.
+image is the ORCID iD logo (`src/assets/orcid-logo.svg`), on the splash's ORCID control and the
+menu's login item, in ORCID's own green rather than the theme's ink, because the mark identifies
+the sign-in provider and is used as ORCID publishes it.
 
 ### Interaction states
 
@@ -437,7 +441,10 @@ Five states, stated once because they are the app's and not any one component's.
   translucent green an active nav item fills with. A segmented control takes the light green as
   an **outline** rather than a ring: its selected segment spends its box-shadow on the
   underline, so a focus shadow would be replaced by it and the selected segment would show no
-  focus at all. A toast's close button is an exception (see Toasts). Chart bars have no keyboard
+  focus at all. The splash controls take the same outline, from `shell.css`: the theme's own
+  `:focus` shadow sits in a cascade layer above Tailwind's utilities, so the ring utility never
+  paints on a PrimeReact button, and an outline also survives forced-colors mode, where a shadow
+  does not. A toast's close button is an exception (see Toasts). Chart bars have no keyboard
   path; nights stay reachable through the date controls until bars get a focusable treatment.
 - **Hover.** A hovered surface climbs one step of the ladder, to Raised, and its text brightens
   to foreground. The primary button instead lightens its own fill to `--color-gpp-light`.
@@ -455,6 +462,10 @@ Five states, stated once because they are the app's and not any one component's.
 
 - **Shape:** 4px radius, 4.2px x 9.8px padding, Dense type; every toolbar control sits on the
   28px line.
+- **Splash buttons:** the one control off the 28px line. `.dark .xp-splash .p-button` in
+  `shell.css` gives Body type, 4.2px x 14px padding and a 36px minimum height, and pins the
+  label to its icon so the pair centres as one unit; the controls are full width within
+  `max-w-xs`.
 - **Primary:** action green fill, white text. One primary action per view at most; a view that
   only reads has none. When write actions arrive, the green goes to the one commit action.
 - **Secondary:** slate fill (`--color-action-secondary`), foreground text.
@@ -468,6 +479,9 @@ Five states, stated once because they are the app's and not any one component's.
   baseline correction a bare `font-size` does not. Masthead glyphs take `widthAuto` to drop
   FontAwesome's fixed 1.25em canvas, because the masthead budget is the constraint. The ORCID
   logo has no `size` prop, so it alone is given the menu glyphs' box, 1.25em by 1em, as utilities.
+  The splash's hero mark is the one exception, at `size="5x"` below `md` and `size="8x"` at `md`
+  and up, as two FontAwesome instances in `md:hidden` / `max-md:hidden` wrappers; those two FA
+  steps are the whole allowance, still no px or rem.
 
 ### Segmented controls (the site toggle)
 
@@ -487,7 +501,33 @@ site repeats it as an `aria-label`.
 
 A full-width strip above the masthead naming the build that is not production, in the identity
 accent with dark ink. It spans the viewport, so no width can clip it and nothing in the bar has
-to yield to make room. Production renders nothing.
+to yield to make room. Production renders nothing. It sits above the session gate, so it is the
+one element common to the splash and the app; whatever the gate draws - the loading mark, the
+splash, the shell - fills the row under it.
+
+### The splash
+
+The one full-bleed surface, drawn by the session gate under the environment banner for a reader
+with no session. At `md` and up it is a two-column grid: identity on the left on Surface with a 1px
+Subtle right border, hugging the inner edge and vertically centred (the Resource mark in action
+green at FontAwesome `size="8x"`, "RESOURCE" in the wordmark treatment, the tagline at Body in
+Secondary, right-aligned, wrapped at `max-w-2xs`); actions on the right on the canvas (the Title
+heading "Sign in to read the schedule", then two equal Secondary buttons stacked at `max-w-xs`,
+ORCID first with the ORCID iD logo, guest second with the Astronaut glyph). Below `md` it folds
+into one centred column: mark at `size="5x"`, wordmark, tagline centred, heading, both buttons the
+full width of the `max-w-xs` column; nothing below the fold at 390 by 844. Both buttons are 36px
+tall at Body type, on the phone too, with icon and label centred together as one unit rather than
+the icon pinned to the far edge of the wide control. The ORCID control is an
+anchor wearing the secondary button's classes, because SSO sign-in is a navigation and PrimeReact's
+Button renders only a `<button>`; it is the one sanctioned exception to the One-Library Rule.
+On mount, focus goes to the splash's `main` landmark (`tabIndex={-1}`, `outline-none`), not
+to the ORCID control: Chrome treats script-moved focus before any pointer input as keyboard
+focus, so a focused control would paint its outline on every load for a reader who never touched
+the keyboard. A screen reader announces the heading, and the first Tab reaches ORCID, the second
+Guest. Both controls take the shared focus outline
+(`.dark .xp-splash .p-button:focus-visible` in `shell.css`) and the secondary hover, the anchor by
+its own selector in that hover rule; the splash is the page's `main`, named by its heading; the
+logo is decorative. Nothing on it animates.
 
 ### Tables
 
@@ -523,15 +563,17 @@ for any of their nights.
 
 **The loader.** `Loading` is the one place the Resource mark (`LayerGroup`, the wordmark's
 glyph) moves. It sits centred at the top of the data area in the brand green (`text-gpp`), at
-three times the Dense size (36px), with the Dense words at Secondary beneath it; the words are
+three times the Dense size (36px), with the Dense words at Secondary beneath it; the session gate
+draws the same loader under the environment banner while the session check runs; the words are
 what a screen reader reads, and the mark is hidden from it. The mark performs `loader-hop`
-(`--animate-loader-hop`), one 1.8s cycle of squash, hop, landing, wobble and rest, because a load
-can wait up to 10 s on the sign-in check and a loop with a rest in it stays watchable that long
-where a spin or a pulse turns mechanical. It stays invisible for its first 300 ms, then fades in
+(`--animate-loader-hop`), one 1.8s cycle of squash, hop, landing, wobble and rest, because the
+gate's loader can wait the whole refresh timeout on the sign-in check (page loads no longer wait on
+it) and a loop with a rest in it stays watchable that long where a spin or a pulse turns
+mechanical. It stays invisible for its first 300 ms, then fades in
 over 200 ms (`loader-appear`, `--animate-loader-appear`), so a short load never shows it; there
 is no minimum, and the words stay in the accessibility tree while invisible. Under
 `prefers-reduced-motion` the mark stands still and the loader appears at once. Nothing else in
-the app animates the mark.
+the app animates the mark; the splash draws the same glyph, still, as its hero.
 
 ### Toasts
 
@@ -541,11 +583,12 @@ the app animates the mark.
 - **Place.** PrimeReact's bottom-right corner, 20px from the right and 36px from the bottom (the
   theme's 16px margin under each toast); on a phone, the full width inside 20px gutters.
 - **Colour.** Warn takes the warning panel triplet (`--color-warning-fill`, `-edge`, `-ink`) and
-  is opaque; it is the only severity restyled. A severity not yet shown keeps the theme's look
-  until the change that first shows one styles it.
+  is opaque; it is the only severity restyled. Info (the other-tab sign-out) and error (the guest
+  failure) keep the theme's look.
 - **Words.** The summary says what happened in the reader's terms; the detail says why, or what
-  to do next. The three live-server failure toasts (unreachable, sign-in, server error) and the
-  other-tab sign-out are the exception: a summary alone.
+  to do next. The exceptions are a summary alone: the three live-server failure toasts
+  (unreachable, sign-in, server error), the other-tab sign-out, "Your session ended", and the
+  guest failure "Could not start a guest session".
 - **Lifetime.** PrimeReact's, and a pointer resting on the toast holds it. Anything the reader
   must not miss is `sticky`.
 - **Close.** The close button is named "Close". It sits on coloured fills no single green

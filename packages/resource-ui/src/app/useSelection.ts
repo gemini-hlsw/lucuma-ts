@@ -23,7 +23,7 @@ interface SelectionControls extends Selection {
 
 export function useSelection(): SelectionControls {
   const [params, setParams] = useSearchParams();
-  const remembered = useLastSite();
+  const { value: remembered } = useLastSite();
 
   const named = params.get('site');
   const site = asSite(named, remembered);

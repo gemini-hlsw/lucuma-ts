@@ -1,4 +1,4 @@
-import { isLoggedInAtom, odbTokenAtom } from '@gemini-hlsw/lucuma-common-ui';
+import { isLoggedInAtom, odbTokenAtom, userAtom } from '@gemini-hlsw/lucuma-common-ui';
 import { atom, type Store, useAtomValue } from 'jotai';
 
 export {
@@ -7,33 +7,32 @@ export {
   odbTokenAtom,
   type OdbTokenPayload,
   tokenExpAtom,
-  useIsLoggedIn,
-  useOdbToken,
-  useOdbTokenValue,
   userAtom,
-  useSetOdbToken,
-  useTokenExp,
-  useUser,
 } from '@gemini-hlsw/lucuma-common-ui';
+
+export const useUser = () => ({ user: useAtomValue(userAtom) });
 
 export const sessionCheckedAtom = atom(false);
 
-/** True once another tab's logout ended this tab's session, until a token arrives. */
-export const signedOutElsewhereAtom = atom(false);
+/** How the last session the gate opened ended, until a token arrives; `none` earns no notice. */
+export type SessionEnding =
+  'none' | 'logging-out' | 'logged-out' | 'logout-missed-sso' | 'logged-out-elsewhere' | 'lapsed';
 
-export const useSignedOutElsewhere = () => useAtomValue(signedOutElsewhereAtom);
+export const sessionEndingAtom = atom<SessionEnding>('none');
+
+export const useSessionEnding = () => ({ ending: useAtomValue(sessionEndingAtom) });
 
 export type SessionStatus = 'checking' | 'signed-out' | 'signed-in';
 
 export const sessionStatusAtom = atom<SessionStatus>((get) => {
-  if (get(isLoggedInAtom)) return 'signed-in';
-  return get(sessionCheckedAtom) ? 'signed-out' : 'checking';
+  if (!get(sessionCheckedAtom)) return 'checking';
+  return get(isLoggedInAtom) ? 'signed-in' : 'signed-out';
 });
 
-export const useSessionStatus = () => useAtomValue(sessionStatusAtom);
+export const useSessionStatus = () => ({ status: useAtomValue(sessionStatusAtom) });
 
 export function setToken(store: Store, token: string | null): void {
-  if (token !== null) store.set(signedOutElsewhereAtom, false);
+  if (token !== null) store.set(sessionEndingAtom, 'none');
   try {
     store.set(odbTokenAtom, token);
   } catch (error) {
