@@ -63,7 +63,7 @@
     "globals": "17.14.0",
     "graphql": "16.15.0",
     "playwright": "1.65.0",
-    "sass": "1.107.1",
+    "sass": "1.108.0",
     "tailwindcss": "4.3.4",
     "typescript": "npm:@typescript/typescript6@6.0.2",
     "typescript-eslint": "8.72.1",

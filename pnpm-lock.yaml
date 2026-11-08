@@ -280,10 +280,10 @@ importers:
         version: 3.2.0(graphql@16.15.0)
       '@rolldown/plugin-babel':
         specifier: 0.3.0
-        version: 0.3.0(@babel/core@7.29.7(supports-color@10.2.2))(@babel/runtime@8.0.10)(rolldown@1.2.16)(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.107.1)(yaml@2.9.1))
+        version: 0.3.0(@babel/core@7.29.7(supports-color@10.2.2))(@babel/runtime@8.0.10)(rolldown@1.2.16)(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.108.0)(yaml@2.9.1))
       '@tailwindcss/vite':
         specifier: 4.3.4
-        version: 4.3.4(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.107.1)(yaml@2.9.1))
+        version: 4.3.4(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.108.0)(yaml@2.9.1))
       '@tsconfig/strictest':
         specifier: 2.0.8
         version: 2.0.8
@@ -301,10 +301,10 @@ importers:
         version: typescript@7.0.2
       '@vitejs/plugin-react':
         specifier: 6.2.1
-        version: 6.2.1(@rolldown/plugin-babel@0.3.0(@babel/core@7.29.7(supports-color@10.2.2))(@babel/runtime@8.0.10)(rolldown@1.2.16)(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.107.1)(yaml@2.9.1)))(babel-plugin-react-compiler@1.0.0)(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.107.1)(yaml@2.9.1))
+        version: 6.2.1(@rolldown/plugin-babel@0.3.0(@babel/core@7.29.7(supports-color@10.2.2))(@babel/runtime@8.0.10)(rolldown@1.2.16)(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.108.0)(yaml@2.9.1)))(babel-plugin-react-compiler@1.0.0)(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.108.0)(yaml@2.9.1))
       '@vitest/browser-playwright':
         specifier: 5.1.0
-        version: 5.1.0(playwright@1.65.0)(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.107.1)(yaml@2.9.1))(vitest@5.1.0)
+        version: 5.1.0(playwright@1.65.0)(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.108.0)(yaml@2.9.1))(vitest@5.1.0)
       '@vitest/eslint-plugin':
         specifier: 1.6.28
         version: 1.6.28(@typescript-eslint/eslint-plugin@8.72.1(@typescript-eslint/parser@8.72.1(@typescript/typescript6@6.0.2)(eslint@10.14.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2))(@typescript/typescript6@6.0.2)(eslint@10.14.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2))(@typescript/typescript6@6.0.2)(eslint@10.14.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)(vitest@5.1.0)
@@ -354,8 +354,8 @@ importers:
         specifier: 8.5.1
         version: 8.5.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       sass:
-        specifier: 1.107.1
-        version: 1.107.1
+        specifier: 1.108.0
+        version: 1.108.0
       tailwindcss:
         specifier: 4.3.4
         version: 4.3.4
@@ -367,13 +367,13 @@ importers:
         version: 8.72.1(@typescript/typescript6@6.0.2)(eslint@10.14.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)
       vite:
         specifier: 8.3.6
-        version: 8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.107.1)(yaml@2.9.1)
+        version: 8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.108.0)(yaml@2.9.1)
       vite-plugin-mkcert:
         specifier: 2.1.0
-        version: 2.1.0(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.107.1)(yaml@2.9.1))
+        version: 2.1.0(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.108.0)(yaml@2.9.1))
       vitest:
         specifier: 5.1.0
-        version: 5.1.0(@types/node@26.6.6)(@vitest/browser-playwright@5.1.0)(@vitest/ui@5.1.0)(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.107.1)(yaml@2.9.1))
+        version: 5.1.0(@types/node@26.6.6)(@vitest/browser-playwright@5.1.0)(@vitest/ui@5.1.0)(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.108.0)(yaml@2.9.1))
       vitest-browser-react:
         specifier: 2.3.0
         version: 2.3.0(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(vitest@5.1.0)
@@ -425,10 +425,10 @@ importers:
         version: typescript@7.0.2
       '@vitejs/plugin-react':
         specifier: 6.2.1
-        version: 6.2.1(@rolldown/plugin-babel@0.3.0(@babel/core@7.29.7(supports-color@10.2.2))(@babel/runtime@8.0.10)(rolldown@1.2.16)(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.107.1)(yaml@2.9.1)))(babel-plugin-react-compiler@1.0.0)(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.107.1)(yaml@2.9.1))
+        version: 6.2.1(@rolldown/plugin-babel@0.3.0(@babel/core@7.29.7(supports-color@10.2.2))(@babel/runtime@8.0.10)(rolldown@1.2.16)(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.108.0)(yaml@2.9.1)))(babel-plugin-react-compiler@1.0.0)(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.108.0)(yaml@2.9.1))
       '@vitest/browser-playwright':
         specifier: 5.1.0
-        version: 5.1.0(playwright@1.65.0)(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.107.1)(yaml@2.9.1))(vitest@5.1.0)
+        version: 5.1.0(playwright@1.65.0)(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.108.0)(yaml@2.9.1))(vitest@5.1.0)
       '@vitest/eslint-plugin':
         specifier: 1.6.28
         version: 1.6.28(@typescript-eslint/eslint-plugin@8.72.1(@typescript-eslint/parser@8.72.1(@typescript/typescript6@6.0.2)(eslint@10.14.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2))(@typescript/typescript6@6.0.2)(eslint@10.14.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2))(@typescript/typescript6@6.0.2)(eslint@10.14.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)(vitest@5.1.0)
@@ -479,10 +479,10 @@ importers:
         version: 8.72.1(@typescript/typescript6@6.0.2)(eslint@10.14.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)
       vite:
         specifier: 8.3.6
-        version: 8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.107.1)(yaml@2.9.1)
+        version: 8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.108.0)(yaml@2.9.1)
       vitest:
         specifier: 5.1.0
-        version: 5.1.0(@types/node@26.6.6)(@vitest/browser-playwright@5.1.0)(@vitest/ui@5.1.0)(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.107.1)(yaml@2.9.1))
+        version: 5.1.0(@types/node@26.6.6)(@vitest/browser-playwright@5.1.0)(@vitest/ui@5.1.0)(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.108.0)(yaml@2.9.1))
       vitest-browser-react:
         specifier: 2.3.0
         version: 2.3.0(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(vitest@5.1.0)
@@ -564,7 +564,7 @@ importers:
         version: 8.72.1(@typescript/typescript6@6.0.2)(eslint@10.14.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)
       vitest:
         specifier: 5.1.0
-        version: 5.1.0(@types/node@26.6.6)(@vitest/browser-playwright@5.1.0)(@vitest/ui@5.1.0)(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.107.1)(yaml@2.9.1))
+        version: 5.1.0(@types/node@26.6.6)(@vitest/browser-playwright@5.1.0)(@vitest/ui@5.1.0)(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.108.0)(yaml@2.9.1))
 
   packages/e2e:
     devDependencies:
@@ -670,10 +670,10 @@ importers:
         version: 3.2.0(graphql@16.15.0)
       '@rolldown/plugin-babel':
         specifier: 0.3.0
-        version: 0.3.0(@babel/core@7.29.7(supports-color@10.2.2))(@babel/runtime@8.0.10)(rolldown@1.2.16)(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.107.1)(yaml@2.9.1))
+        version: 0.3.0(@babel/core@7.29.7(supports-color@10.2.2))(@babel/runtime@8.0.10)(rolldown@1.2.16)(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.108.0)(yaml@2.9.1))
       '@tailwindcss/vite':
         specifier: 4.3.4
-        version: 4.3.4(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.107.1)(yaml@2.9.1))
+        version: 4.3.4(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.108.0)(yaml@2.9.1))
       '@tsconfig/strictest':
         specifier: 2.0.8
         version: 2.0.8
@@ -691,13 +691,13 @@ importers:
         version: typescript@7.0.2
       '@vitejs/plugin-basic-ssl':
         specifier: 2.3.0
-        version: 2.3.0(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.107.1)(yaml@2.9.1))
+        version: 2.3.0(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.108.0)(yaml@2.9.1))
       '@vitejs/plugin-react':
         specifier: 6.2.1
-        version: 6.2.1(@rolldown/plugin-babel@0.3.0(@babel/core@7.29.7(supports-color@10.2.2))(@babel/runtime@8.0.10)(rolldown@1.2.16)(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.107.1)(yaml@2.9.1)))(babel-plugin-react-compiler@1.0.0)(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.107.1)(yaml@2.9.1))
+        version: 6.2.1(@rolldown/plugin-babel@0.3.0(@babel/core@7.29.7(supports-color@10.2.2))(@babel/runtime@8.0.10)(rolldown@1.2.16)(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.108.0)(yaml@2.9.1)))(babel-plugin-react-compiler@1.0.0)(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.108.0)(yaml@2.9.1))
       '@vitest/browser-playwright':
         specifier: 5.1.0
-        version: 5.1.0(playwright@1.65.0)(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.107.1)(yaml@2.9.1))(vitest@5.1.0)
+        version: 5.1.0(playwright@1.65.0)(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.108.0)(yaml@2.9.1))(vitest@5.1.0)
       '@vitest/eslint-plugin':
         specifier: 1.6.28
         version: 1.6.28(@typescript-eslint/eslint-plugin@8.72.1(@typescript-eslint/parser@8.72.1(@typescript/typescript6@6.0.2)(eslint@10.14.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2))(@typescript/typescript6@6.0.2)(eslint@10.14.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2))(@typescript/typescript6@6.0.2)(eslint@10.14.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)(vitest@5.1.0)
@@ -732,8 +732,8 @@ importers:
         specifier: 1.65.0
         version: 1.65.0
       sass:
-        specifier: 1.107.1
-        version: 1.107.1
+        specifier: 1.108.0
+        version: 1.108.0
       tailwindcss:
         specifier: 4.3.4
         version: 4.3.4
@@ -745,10 +745,10 @@ importers:
         version: 8.72.1(@typescript/typescript6@6.0.2)(eslint@10.14.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)
       vite:
         specifier: 8.3.6
-        version: 8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.107.1)(yaml@2.9.1)
+        version: 8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.108.0)(yaml@2.9.1)
       vitest:
         specifier: 5.1.0
-        version: 5.1.0(@types/node@26.6.6)(@vitest/browser-playwright@5.1.0)(@vitest/ui@5.1.0)(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.107.1)(yaml@2.9.1))
+        version: 5.1.0(@types/node@26.6.6)(@vitest/browser-playwright@5.1.0)(@vitest/ui@5.1.0)(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.108.0)(yaml@2.9.1))
       vitest-browser-react:
         specifier: 2.3.0
         version: 2.3.0(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(vitest@5.1.0)
@@ -802,10 +802,10 @@ importers:
         version: 3.2.0(graphql@16.15.0)
       '@rolldown/plugin-babel':
         specifier: 0.3.0
-        version: 0.3.0(@babel/core@7.29.7(supports-color@10.2.2))(@babel/runtime@8.0.10)(rolldown@1.2.16)(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.107.1)(yaml@2.9.1))
+        version: 0.3.0(@babel/core@7.29.7(supports-color@10.2.2))(@babel/runtime@8.0.10)(rolldown@1.2.16)(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.108.0)(yaml@2.9.1))
       '@tailwindcss/vite':
         specifier: 4.3.4
-        version: 4.3.4(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.107.1)(yaml@2.9.1))
+        version: 4.3.4(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.108.0)(yaml@2.9.1))
       '@tsconfig/strictest':
         specifier: 2.0.8
         version: 2.0.8
@@ -823,10 +823,10 @@ importers:
         version: typescript@7.0.2
       '@vitejs/plugin-react':
         specifier: 6.2.1
-        version: 6.2.1(@rolldown/plugin-babel@0.3.0(@babel/core@7.29.7(supports-color@10.2.2))(@babel/runtime@8.0.10)(rolldown@1.2.16)(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.107.1)(yaml@2.9.1)))(babel-plugin-react-compiler@1.0.0)(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.107.1)(yaml@2.9.1))
+        version: 6.2.1(@rolldown/plugin-babel@0.3.0(@babel/core@7.29.7(supports-color@10.2.2))(@babel/runtime@8.0.10)(rolldown@1.2.16)(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.108.0)(yaml@2.9.1)))(babel-plugin-react-compiler@1.0.0)(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.108.0)(yaml@2.9.1))
       '@vitest/browser-playwright':
         specifier: 5.1.0
-        version: 5.1.0(playwright@1.65.0)(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.107.1)(yaml@2.9.1))(vitest@5.1.0)
+        version: 5.1.0(playwright@1.65.0)(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.108.0)(yaml@2.9.1))(vitest@5.1.0)
       '@vitest/eslint-plugin':
         specifier: 1.6.28
         version: 1.6.28(@typescript-eslint/eslint-plugin@8.72.1(@typescript-eslint/parser@8.72.1(@typescript/typescript6@6.0.2)(eslint@10.14.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2))(@typescript/typescript6@6.0.2)(eslint@10.14.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2))(@typescript/typescript6@6.0.2)(eslint@10.14.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)(vitest@5.1.0)
@@ -885,8 +885,8 @@ importers:
         specifier: 8.5.1
         version: 8.5.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       sass:
-        specifier: 1.107.1
-        version: 1.107.1
+        specifier: 1.108.0
+        version: 1.108.0
       tailwind-merge:
         specifier: 3.7.0
         version: 3.7.0
@@ -901,13 +901,13 @@ importers:
         version: 8.72.1(@typescript/typescript6@6.0.2)(eslint@10.14.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)
       vite:
         specifier: 8.3.6
-        version: 8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.107.1)(yaml@2.9.1)
+        version: 8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.108.0)(yaml@2.9.1)
       vite-plugin-mkcert:
         specifier: 2.1.0
-        version: 2.1.0(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.107.1)(yaml@2.9.1))
+        version: 2.1.0(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.108.0)(yaml@2.9.1))
       vitest:
         specifier: 5.1.0
-        version: 5.1.0(@types/node@26.6.6)(@vitest/browser-playwright@5.1.0)(@vitest/ui@5.1.0)(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.107.1)(yaml@2.9.1))
+        version: 5.1.0(@types/node@26.6.6)(@vitest/browser-playwright@5.1.0)(@vitest/ui@5.1.0)(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.108.0)(yaml@2.9.1))
       vitest-browser-react:
         specifier: 2.3.0
         version: 2.3.0(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(vitest@5.1.0)
@@ -5001,8 +5001,8 @@ packages:
   safer-buffer@2.1.2:
     resolution: {integrity: sha512-YZo3K82SD7Riyi0E1EQPojLz7kpepnSQI9IyPbHHg1XXXevb5dJI7tpyN2ADxGcQbHG7vcyRHk0cbwqcQriUtg==}
 
-  sass@1.107.1:
-    resolution: {integrity: sha512-aJ1/LvxOOb04YhmiBjzZn3jVwdHKol+OVhoMV6fFl02fF9T3i+5Mg9l/CnzqtM+NX5Jn5o3lAbs/ZJivTCLHfQ==}
+  sass@1.108.0:
+    resolution: {integrity: sha512-9HwnefouIfwY+XuA1rS5xOhALH5vsoe3SzYICG3MEwpkMbE7tpuh5ytZFRXUKPYkxY7lKdIbqxl+DxQGo8jwQQ==}
     engines: {node: '>=20.19.0'}
     hasBin: true
 
@@ -7369,7 +7369,7 @@ snapshots:
   '@rolldown/binding-win32-x64-msvc@1.2.16':
     optional: true
 
-  '@rolldown/plugin-babel@0.3.0(@babel/core@7.29.7(supports-color@10.2.2))(@babel/runtime@8.0.10)(rolldown@1.2.16)(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.107.1)(yaml@2.9.1))':
+  '@rolldown/plugin-babel@0.3.0(@babel/core@7.29.7(supports-color@10.2.2))(@babel/runtime@8.0.10)(rolldown@1.2.16)(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.108.0)(yaml@2.9.1))':
     dependencies:
       '@babel/core': 7.29.7(supports-color@10.2.2)
       artichokie: 0.4.5
@@ -7377,7 +7377,7 @@ snapshots:
       rolldown: 1.2.16
     optionalDependencies:
       '@babel/runtime': 8.0.10
-      vite: 8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.107.1)(yaml@2.9.1)
+      vite: 8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.108.0)(yaml@2.9.1)
 
   '@rolldown/pluginutils@1.0.1': {}
 
@@ -7446,12 +7446,12 @@ snapshots:
       '@tailwindcss/oxide-win32-arm64-msvc': 4.3.4
       '@tailwindcss/oxide-win32-x64-msvc': 4.3.4
 
-  '@tailwindcss/vite@4.3.4(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.107.1)(yaml@2.9.1))':
+  '@tailwindcss/vite@4.3.4(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.108.0)(yaml@2.9.1))':
     dependencies:
       '@tailwindcss/node': 4.3.4
       '@tailwindcss/oxide': 4.3.4
       tailwindcss: 4.3.4
-      vite: 8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.107.1)(yaml@2.9.1)
+      vite: 8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.108.0)(yaml@2.9.1)
 
   '@testcontainers/postgresql@12.2.1(supports-color@10.2.2)':
     dependencies:
@@ -7905,42 +7905,42 @@ snapshots:
       d3-time-format: 4.1.0
       internmap: 2.0.3
 
-  '@vitejs/plugin-basic-ssl@2.3.0(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.107.1)(yaml@2.9.1))':
+  '@vitejs/plugin-basic-ssl@2.3.0(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.108.0)(yaml@2.9.1))':
     dependencies:
-      vite: 8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.107.1)(yaml@2.9.1)
+      vite: 8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.108.0)(yaml@2.9.1)
 
-  '@vitejs/plugin-react@6.2.1(@rolldown/plugin-babel@0.3.0(@babel/core@7.29.7(supports-color@10.2.2))(@babel/runtime@8.0.10)(rolldown@1.2.16)(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.107.1)(yaml@2.9.1)))(babel-plugin-react-compiler@1.0.0)(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.107.1)(yaml@2.9.1))':
+  '@vitejs/plugin-react@6.2.1(@rolldown/plugin-babel@0.3.0(@babel/core@7.29.7(supports-color@10.2.2))(@babel/runtime@8.0.10)(rolldown@1.2.16)(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.108.0)(yaml@2.9.1)))(babel-plugin-react-compiler@1.0.0)(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.108.0)(yaml@2.9.1))':
     dependencies:
       '@rolldown/pluginutils': 1.0.1
-      vite: 8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.107.1)(yaml@2.9.1)
+      vite: 8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.108.0)(yaml@2.9.1)
     optionalDependencies:
-      '@rolldown/plugin-babel': 0.3.0(@babel/core@7.29.7(supports-color@10.2.2))(@babel/runtime@8.0.10)(rolldown@1.2.16)(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.107.1)(yaml@2.9.1))
+      '@rolldown/plugin-babel': 0.3.0(@babel/core@7.29.7(supports-color@10.2.2))(@babel/runtime@8.0.10)(rolldown@1.2.16)(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.108.0)(yaml@2.9.1))
       babel-plugin-react-compiler: 1.0.0
 
-  '@vitest/browser-playwright@5.1.0(playwright@1.65.0)(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.107.1)(yaml@2.9.1))(vitest@5.1.0)':
+  '@vitest/browser-playwright@5.1.0(playwright@1.65.0)(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.108.0)(yaml@2.9.1))(vitest@5.1.0)':
     dependencies:
-      '@vitest/browser': 5.1.0(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.107.1)(yaml@2.9.1))(vitest@5.1.0)
-      '@vitest/mocker': 5.1.0(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.107.1)(yaml@2.9.1))
+      '@vitest/browser': 5.1.0(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.108.0)(yaml@2.9.1))(vitest@5.1.0)
+      '@vitest/mocker': 5.1.0(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.108.0)(yaml@2.9.1))
       playwright: 1.65.0
       tinyrainbow: 3.2.0
-      vitest: 5.1.0(@types/node@26.6.6)(@vitest/browser-playwright@5.1.0)(@vitest/ui@5.1.0)(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.107.1)(yaml@2.9.1))
+      vitest: 5.1.0(@types/node@26.6.6)(@vitest/browser-playwright@5.1.0)(@vitest/ui@5.1.0)(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.108.0)(yaml@2.9.1))
     transitivePeerDependencies:
       - bufferutil
       - msw
       - utf-8-validate
       - vite
 
-  '@vitest/browser@5.1.0(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.107.1)(yaml@2.9.1))(vitest@5.1.0)':
+  '@vitest/browser@5.1.0(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.108.0)(yaml@2.9.1))(vitest@5.1.0)':
     dependencies:
       '@blazediff/core': 1.10.0
-      '@vitest/mocker': 5.1.0(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.107.1)(yaml@2.9.1))
+      '@vitest/mocker': 5.1.0(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.108.0)(yaml@2.9.1))
       '@vitest/ui': 5.1.0(vitest@5.1.0)
       '@vitest/utils': 5.1.0
       magic-string: 1.4.5
       pngjs: 7.0.0
       sirv: 3.0.2
       tinyrainbow: 3.2.0
-      vitest: 5.1.0(@types/node@26.6.6)(@vitest/browser-playwright@5.1.0)(@vitest/ui@5.1.0)(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.107.1)(yaml@2.9.1))
+      vitest: 5.1.0(@types/node@26.6.6)(@vitest/browser-playwright@5.1.0)(@vitest/ui@5.1.0)(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.108.0)(yaml@2.9.1))
       ws: 8.22.0
     transitivePeerDependencies:
       - bufferutil
@@ -7956,18 +7956,18 @@ snapshots:
     optionalDependencies:
       '@typescript-eslint/eslint-plugin': 8.72.1(@typescript-eslint/parser@8.72.1(@typescript/typescript6@6.0.2)(eslint@10.14.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2))(@typescript/typescript6@6.0.2)(eslint@10.14.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)
       typescript: '@typescript/typescript6@6.0.2'
-      vitest: 5.1.0(@types/node@26.6.6)(@vitest/browser-playwright@5.1.0)(@vitest/ui@5.1.0)(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.107.1)(yaml@2.9.1))
+      vitest: 5.1.0(@types/node@26.6.6)(@vitest/browser-playwright@5.1.0)(@vitest/ui@5.1.0)(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.108.0)(yaml@2.9.1))
     transitivePeerDependencies:
       - supports-color
 
-  '@vitest/mocker@5.1.0(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.107.1)(yaml@2.9.1))':
+  '@vitest/mocker@5.1.0(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.108.0)(yaml@2.9.1))':
     dependencies:
       '@jridgewell/trace-mapping': 0.3.31
       '@vitest/spy': 5.1.0
       estree-walker: 3.0.3
       magic-string: 1.4.5
     optionalDependencies:
-      vite: 8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.107.1)(yaml@2.9.1)
+      vite: 8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.108.0)(yaml@2.9.1)
 
   '@vitest/pretty-format@5.1.0':
     dependencies:
@@ -7983,7 +7983,7 @@ snapshots:
       pathe: 2.0.3
       sirv: 3.0.2
       tinyrainbow: 3.2.0
-      vitest: 5.1.0(@types/node@26.6.6)(@vitest/browser-playwright@5.1.0)(@vitest/ui@5.1.0)(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.107.1)(yaml@2.9.1))
+      vitest: 5.1.0(@types/node@26.6.6)(@vitest/browser-playwright@5.1.0)(@vitest/ui@5.1.0)(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.108.0)(yaml@2.9.1))
 
   '@vitest/utils@5.1.0':
     dependencies:
@@ -10348,7 +10348,7 @@ snapshots:
 
   safer-buffer@2.1.2: {}
 
-  sass@1.107.1:
+  sass@1.108.0:
     dependencies:
       chokidar: 5.0.0
       immutable: 5.1.9
@@ -10922,14 +10922,14 @@ snapshots:
     optionalDependencies:
       typescript: '@typescript/typescript6@6.0.2'
 
-  vite-plugin-mkcert@2.1.0(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.107.1)(yaml@2.9.1)):
+  vite-plugin-mkcert@2.1.0(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.108.0)(yaml@2.9.1)):
     dependencies:
       debug: 4.4.3(supports-color@10.2.2)
       supports-color: 10.2.2
       undici: 8.12.3
-      vite: 8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.107.1)(yaml@2.9.1)
+      vite: 8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.108.0)(yaml@2.9.1)
 
-  vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.107.1)(yaml@2.9.1):
+  vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.108.0)(yaml@2.9.1):
     dependencies:
       lightningcss: 1.33.0
       picomatch: 4.0.7
@@ -10940,22 +10940,22 @@ snapshots:
       '@types/node': 26.6.6
       fsevents: 2.3.3
       jiti: 2.7.0
-      sass: 1.107.1
+      sass: 1.108.0
       yaml: 2.9.1
 
   vitest-browser-react@2.3.0(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(vitest@5.1.0):
     dependencies:
       react: 19.3.1
       react-dom: 19.3.1(react@19.3.1)
-      vitest: 5.1.0(@types/node@26.6.6)(@vitest/browser-playwright@5.1.0)(@vitest/ui@5.1.0)(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.107.1)(yaml@2.9.1))
+      vitest: 5.1.0(@types/node@26.6.6)(@vitest/browser-playwright@5.1.0)(@vitest/ui@5.1.0)(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.108.0)(yaml@2.9.1))
     optionalDependencies:
       '@types/react': 19.3.0
       '@types/react-dom': 19.3.0(@types/react@19.3.0)
 
-  vitest@5.1.0(@types/node@26.6.6)(@vitest/browser-playwright@5.1.0)(@vitest/ui@5.1.0)(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.107.1)(yaml@2.9.1)):
+  vitest@5.1.0(@types/node@26.6.6)(@vitest/browser-playwright@5.1.0)(@vitest/ui@5.1.0)(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.108.0)(yaml@2.9.1)):
     dependencies:
       '@types/chai': 5.2.3
-      '@vitest/mocker': 5.1.0(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.107.1)(yaml@2.9.1))
+      '@vitest/mocker': 5.1.0(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.108.0)(yaml@2.9.1))
       chai: 6.3.0
       es-module-lexer: 2.3.2
       expect-type: 1.4.0
@@ -10966,11 +10966,11 @@ snapshots:
       tinybench: 6.2.2
       tinyexec: 1.3.1
       tinyglobby: 0.2.17
-      vite: 8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.107.1)(yaml@2.9.1)
+      vite: 8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.108.0)(yaml@2.9.1)
       why-is-node-running: 3.2.1
     optionalDependencies:
       '@types/node': 26.6.6
-      '@vitest/browser-playwright': 5.1.0(playwright@1.65.0)(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.107.1)(yaml@2.9.1))(vitest@5.1.0)
+      '@vitest/browser-playwright': 5.1.0(playwright@1.65.0)(vite@8.3.6(@types/node@26.6.6)(jiti@2.7.0)(sass@1.108.0)(yaml@2.9.1))(vitest@5.1.0)
       '@vitest/ui': 5.1.0(vitest@5.1.0)
     transitivePeerDependencies:
       - msw
