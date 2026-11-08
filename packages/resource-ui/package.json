@@ -50,8 +50,8 @@
     "@types/react-dom": "19.3.0",
     "@typescript/native": "npm:typescript@7.0.2",
     "@vitejs/plugin-basic-ssl": "2.3.0",
-    "@vitejs/plugin-react": "6.1.2",
-    "@vitest/browser-playwright": "5.0.5",
+    "@vitejs/plugin-react": "6.2.1",
+    "@vitest/browser-playwright": "5.1.0",
     "@vitest/eslint-plugin": "1.6.28",
     "babel-plugin-react-compiler": "1.0.0",
     "eslint": "10.14.0",
@@ -67,8 +67,8 @@
     "tailwindcss": "4.3.4",
     "typescript": "npm:@typescript/typescript6@6.0.2",
     "typescript-eslint": "8.72.1",
-    "vite": "8.3.5",
-    "vitest": "5.0.5",
+    "vite": "8.3.6",
+    "vitest": "5.1.0",
     "vitest-browser-react": "2.3.0"
   },
   "bundlemon": {
