@@ -5,13 +5,13 @@ import { createStore, type Store } from 'jotai';
 import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
 import { page } from 'vitest/browser';
 
-import { odbTokenAtom, sessionCheckedAtom } from '@/components/atoms/auth';
+import { odbTokenAtom } from '@/components/atoms/auth';
 import { ToastOutlet } from '@/components/ui/ToastOutlet';
 import { fakeTimeouts, UNDECODABLE_TOKEN } from '@/test/helpers';
-import { captureHeader, captureOperations, createLinkClient, respondWith } from '@/test/linkClient';
+import { captureHeader, createLinkClient, respondWith } from '@/test/linkClient';
 import { renderWithContext } from '@/test/render';
 
-import { authLink, createClient, liveLink, sessionHoldLink } from './ApolloConfigs';
+import { authLink, createClient, liveLink } from './ApolloConfigs';
 
 const QUERY = gql`
   query AuthHeaderProbe {
@@ -101,51 +101,11 @@ describe('two link chains on two stores', () => {
   });
 });
 
-describe(sessionHoldLink, () => {
-  const heldApollo = () => {
-    const { link: enter, names: entered } = captureOperations();
-    const capture = captureHeader('Authorization');
-    const linkClient = createLinkClient(
-      ApolloLink.from([enter, sessionHoldLink(store), authLink(store), capture.link]),
-      ANSWERS,
-    );
-    return { linkClient, sent: capture.sent, entered };
-  };
-
-  it('holds a request until the session check settles, then sends it with the bearer the check found', async () => {
-    const { linkClient, sent, entered } = heldApollo();
-
-    const answered = linkClient.query({ query: QUERY });
-    await expect.poll(() => entered).toEqual(['AuthHeaderProbe']);
-    expect(sent).toEqual([]);
-
-    store.set(odbTokenAtom, TOKEN);
-    store.set(sessionCheckedAtom, true);
-
-    await answered;
-    expect(sent).toEqual([`Bearer ${TOKEN}`]);
-  });
-
-  it('sends nothing for a request dropped while it was held', async () => {
-    const { linkClient, sent, entered } = heldApollo();
-    const subscription = linkClient.watchQuery({ query: QUERY }).subscribe(() => undefined);
-    await expect.poll(() => entered).toEqual(['AuthHeaderProbe']);
-    subscription.unsubscribe();
-
-    store.set(sessionCheckedAtom, true);
-    await linkClient.query({ query: FOLLOW_UP, fetchPolicy: 'network-only' });
-
-    expect(entered).toEqual(['AuthHeaderProbe', 'FollowUp']);
-    expect(sent).toEqual([null]);
-  });
-});
-
 describe("the live client's request chain", () => {
   let fetchSpy: MockInstance<typeof fetch>;
   let client: ApolloClient;
 
   beforeEach(() => {
-    store.set(sessionCheckedAtom, true);
     client = createClient(store);
     fetchSpy = vi.spyOn(window, 'fetch').mockImplementation(() =>
       Promise.resolve(
@@ -197,7 +157,6 @@ interface LiveChain {
 
 /** The live chain over a scripted answer, with its toast outlet mounted; MockLink cannot change its answer between calls. */
 const liveChain = async (chainStore: Store): Promise<LiveChain> => {
-  chainStore.set(sessionCheckedAtom, true);
   let answer: Outcome = served;
   const client = new ApolloClient({
     link: liveLink(chainStore, new ApolloLink(() => respondWith(answer))),

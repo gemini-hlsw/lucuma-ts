@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { userEvent } from 'vitest/browser';
 import { render } from 'vitest-browser-react';
 
 import { SegmentedControl } from './SegmentedControl';
@@ -42,6 +43,16 @@ describe(SegmentedControl, () => {
     night.focus();
     night.dispatchEvent(new KeyboardEvent('keydown', { code: 'Space', bubbles: true }));
     expect(onChange).toHaveBeenCalledWith('night');
+  });
+
+  it('selects the focused segment with Enter, the way every button does', async () => {
+    const onChange = vi.fn<(v: View) => void>();
+    const screen = await render(
+      <SegmentedControl ariaLabel="View" value="week" options={OPTIONS} onChange={onChange} />,
+    );
+    screen.getByRole('button', { name: 'Night' }).element().focus();
+    await userEvent.keyboard('{Enter}');
+    expect(onChange).toHaveBeenCalledExactlyOnceWith('night');
   });
 
   it('honours an ariaLabel override for abbreviated labels', async () => {

@@ -26,8 +26,7 @@ body {
 }
 
 .xp-shell {
-  height: 100vh;
-  height: 100dvh;
+  height: 100%;
 }
 
 @media print {
@@ -198,12 +197,18 @@ body {
   }
 }
 
-/* Scoped under .dark to match lucuma-ui-css's own specificity; the size prop does not affect sizing. */
+/* Scoped under .dark to match lucuma-ui-css's own specificity; small shares the 28px line. */
 .dark .p-button,
-.dark .p-button.p-button-sm,
-.dark .p-button.p-button-lg {
+.dark .p-button.p-button-sm {
   padding: 4.2px 9.8px;
   font-size: var(--text-xs);
+}
+
+/* The one size off the 28px line, for a control that is read rather than scanned, at the 44px touch target. */
+.dark .p-component.p-button.p-button-lg {
+  padding: 4.2px 18px;
+  min-height: 44px;
+  font-size: var(--text-sm);
 }
 
 .dark .p-button.p-button-icon-only,
@@ -228,7 +233,8 @@ body {
   color: var(--color-foreground);
 }
 
-.dark .p-button.p-button-secondary:not(.p-button-text, .p-button-outlined):enabled:hover {
+.dark .p-button.p-button-secondary:not(.p-button-text, .p-button-outlined):enabled:hover,
+.dark .xp-splash a.p-button-secondary:hover {
   background: color-mix(in srgb, var(--color-action-secondary) 85%, white);
   border-color: color-mix(in srgb, var(--color-action-secondary) 85%, white);
 }
@@ -258,6 +264,20 @@ body {
 .p-selectbutton.segmented .p-button {
   padding: 2.8px 7.7px;
   font-size: var(--text-xs);
+}
+
+.dark .xp-splash .p-button .p-button-label {
+  flex: 0 0 auto;
+}
+
+/* The theme's :focus shadow sits in a cascade layer above Tailwind's utilities, so the ring utility never paints here. */
+.dark .xp-splash .p-button:focus {
+  box-shadow: none;
+}
+
+.dark .xp-splash .p-button:focus-visible {
+  outline: 2px solid var(--color-gpp-light);
+  outline-offset: -2px;
 }
 
 .p-button:not(

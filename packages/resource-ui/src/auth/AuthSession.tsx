@@ -5,6 +5,7 @@ import { type ReactNode, useEffect } from 'react';
 import { odbTokenAtom } from '@/components/atoms/auth';
 
 import { type SessionTimings, startSession } from './session';
+import { SessionNoticesContainer } from './SessionNoticesContainer';
 
 const hasTokenAtom = atom((get) => get(odbTokenAtom) !== null);
 
@@ -23,10 +24,16 @@ export function AuthSession({ children, timings }: AuthSessionProps): ReactNode 
     () =>
       store.sub(hasTokenAtom, () => {
         // Each query's failure already reaches its component and the toast through the link chain.
-        client.refetchObservableQueries().catch(() => undefined);
+        // Sign-out clears without a refetch: the gate unmounts every page, so a refetch would only go out unauthenticated.
+        (store.get(hasTokenAtom) ? client.refetchObservableQueries() : client.clearStore()).catch(() => undefined);
       }),
     [client, store],
   );
 
-  return children;
+  return (
+    <>
+      {children}
+      <SessionNoticesContainer />
+    </>
+  );
 }

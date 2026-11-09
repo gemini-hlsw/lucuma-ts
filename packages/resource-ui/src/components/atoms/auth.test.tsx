@@ -6,6 +6,7 @@ import {
   isLoggedInAtom,
   odbTokenAtom,
   sessionCheckedAtom,
+  sessionEndingAtom,
   sessionStatusAtom,
   setToken,
   useSessionStatus,
@@ -28,10 +29,10 @@ describe(useSessionStatus, () => {
     expect(store.get(sessionStatusAtom)).toBe('signed-out');
   });
 
-  it('reads signed-in for a valid token, checked or not', () => {
+  it('should read checking until the session has been checked, then signed-in, when the token is valid', () => {
     store.set(odbTokenAtom, fakeJwt(standardUser('staff')));
 
-    expect(store.get(sessionStatusAtom)).toBe('signed-in');
+    expect(store.get(sessionStatusAtom)).toBe('checking');
 
     store.set(sessionCheckedAtom, true);
     expect(store.get(sessionStatusAtom)).toBe('signed-in');
@@ -52,6 +53,14 @@ describe(useSessionStatus, () => {
 });
 
 describe(setToken, () => {
+  it('should forget how the last session ended when a token arrives', () => {
+    store.set(sessionEndingAtom, 'lapsed');
+
+    setToken(store, fakeJwt(standardUser('staff')));
+
+    expect(store.get(sessionEndingAtom)).toBe('none');
+  });
+
   it('holds the session for the tab when storage refuses to persist it', () => {
     const jwt = fakeJwt(standardUser('staff'));
     vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
