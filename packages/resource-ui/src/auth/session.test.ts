@@ -429,6 +429,73 @@ describe(startSession, () => {
     expect(refreshes()).toHaveLength(1);
   });
 
+  it('should refresh the newer token on time when the refresh that token aborted answers unreachable later', async () => {
+    fakeTimeouts();
+    stop = startSession(store);
+    await failRefresh(0);
+    vi.advanceTimersByTime(SESSION_TIMINGS.minIntervalMs);
+    const aborted = pendingRefresh();
+
+    store.set(odbTokenAtom, fakeJwt({ type: 'guest', id: 'u-guest' }, 40));
+    vi.advanceTimersByTime(20_000);
+    call(1).fail();
+    await aborted;
+
+    vi.advanceTimersByTime(SESSION_TIMINGS.minIntervalMs - 20_000);
+    expect(refreshes()).toHaveLength(3);
+  });
+
+  it("should take the newer refresh's answer and ask nothing more when the refresh a token aborted settles after it started", async () => {
+    fakeTimeouts();
+    stop = startSession(store);
+    const aborted = pendingRefresh();
+    store.set(odbTokenAtom, fakeJwt({ type: 'guest', id: 'u-guest' }, 40));
+    vi.advanceTimersByTime(SESSION_TIMINGS.minIntervalMs);
+    expect(refreshes()).toHaveLength(2);
+
+    call(0).fail();
+    await aborted;
+    const token = fakeJwt(standardUser('staff'), 3600);
+    await answerRefresh(1, { body: token });
+
+    expect(store.get(odbTokenAtom)).toBe(token);
+    vi.advanceTimersByTime(SESSION_TIMINGS.backoffCapMs);
+    expect(refreshes()).toHaveLength(2);
+  });
+
+  it('should retry after the minimum interval when the refresh of a token that arrived mid-refresh after an outage finds SSO unreachable', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
+    const timings = { ...SESSION_TIMINGS, refreshAheadMs: 60_000 };
+    stop = startSession(store, timings);
+    await failRefresh(0);
+    vi.advanceTimersByTime(SESSION_TIMINGS.minIntervalMs);
+    await failRefresh(1);
+    vi.advanceTimersByTime(2 * SESSION_TIMINGS.minIntervalMs);
+    const aborted = pendingRefresh();
+
+    store.set(odbTokenAtom, fakeJwt({ type: 'guest', id: 'u-guest' }, 3600));
+    call(2).fail();
+    await aborted;
+    vi.advanceTimersByTime(3600_000 - timings.refreshAheadMs);
+    await failRefresh(3);
+
+    vi.advanceTimersByTime(SESSION_TIMINGS.minIntervalMs);
+    expect(refreshes()).toHaveLength(5);
+  });
+
+  it('should refresh a token at its own refresh-ahead mark when it arrives while the keeper backs off from an outage', async () => {
+    fakeTimeouts();
+    stop = startSession(store);
+    await failRefresh(0);
+    vi.advanceTimersByTime(SESSION_TIMINGS.minIntervalMs);
+    await failRefresh(1);
+
+    store.set(odbTokenAtom, fakeJwt({ type: 'guest', id: 'u-guest' }, 70));
+
+    vi.advanceTimersByTime(70_000 - SESSION_TIMINGS.refreshAheadMs);
+    expect(refreshes()).toHaveLength(3);
+  });
+
   it('settles and reports when a token subscriber throws, instead of rejecting the refresh', async () => {
     const reported = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     store.sub(odbTokenAtom, () => {
