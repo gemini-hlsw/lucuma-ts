@@ -18,7 +18,6 @@ export default {
       importExtension: '.ts',
       resolverGeneration: 'minimal',
       resolverRelativeTargetDir: '../resolvers',
-      emitLegacyCommonJSImports: false,
       scalarsOverrides: {
         PosInt: { resolver: '../resolvers/Scalars.ts.ts#PosIntResolver', type: 'number' },
         BigDecimal: { type: 'string|number', resolver: '../resolvers/Scalars.ts.ts#BigDecimalResolver' },

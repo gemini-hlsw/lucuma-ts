@@ -2,15 +2,13 @@ import fs from 'node:fs/promises';
 
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PostgreSqlContainer } from '@testcontainers/postgresql';
-import { createLogger } from 'graphql-yoga';
 import type { TestProject } from 'vitest/node';
 
+import { silentLog } from '../logger.ts';
 import type { PrismaClient as Prisma } from '../prisma/db.ts';
 import { extendPrisma } from '../prisma/extend.ts';
 import { PrismaClient } from '../prisma/gen/client.ts';
 import { populateDb } from '../prisma/queries/main.ts';
-
-const noopLogger = createLogger('silent');
 
 declare module 'vitest' {
   interface ProvidedContext {
@@ -58,5 +56,5 @@ async function migrateAndPopulateDb(client: Prisma) {
     const migrationSqlContent = await fs.readFile(`./prisma/migrations/${dir}/migration.sql`, 'utf-8');
     await client.$executeRawUnsafe(migrationSqlContent);
   }
-  await populateDb(client, noopLogger);
+  await populateDb(client, silentLog);
 }

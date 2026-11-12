@@ -2,15 +2,13 @@ import { randomUUID } from 'node:crypto';
 
 import { PrismaPg } from '@prisma/adapter-pg';
 import type { ExecutionResult } from 'graphql';
-import { createLogger } from 'graphql-yoga';
 import { expect, inject, test as baseTest } from 'vitest';
 
+import { silentLog } from '../logger.ts';
 import type { PrismaClient as Prisma } from '../prisma/db.ts';
 import { extendPrisma } from '../prisma/extend.ts';
 import { PrismaClient } from '../prisma/gen/client.ts';
 import { makeYogaServer } from '../server.ts';
-
-const noopLogger = createLogger('silent');
 
 /**
  * Execute a graphql operation and return the result.
@@ -61,7 +59,7 @@ export const test = baseTest
     return prisma;
   })
   .extend('yoga', ({ prisma }, { onCleanup }) => {
-    const yoga = makeYogaServer({ prisma, log: noopLogger });
+    const yoga = makeYogaServer({ prisma, log: silentLog });
     onCleanup(() => yoga.dispose());
 
     return yoga;

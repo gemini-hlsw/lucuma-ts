@@ -61,7 +61,7 @@
     "eslint-plugin-react-refresh": "0.5.7",
     "eslint-plugin-simple-import-sort": "14.0.0",
     "globals": "17.14.0",
-    "graphql": "17.1.0",
+    "graphql": "16.15.0",
     "playwright": "1.65.0",
     "sass": "1.108.0",
     "tailwindcss": "4.3.5",
