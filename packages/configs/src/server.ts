@@ -1,4 +1,4 @@
-import type { YogaInitialContext, YogaLogger } from 'graphql-yoga';
+import type { Logger, YogaInitialContext } from 'graphql-yoga';
 import { createSchema, createYoga, useReadinessCheck } from 'graphql-yoga';
 
 import { resolvers } from './graphql/gen/resolvers.generated.ts';
@@ -7,17 +7,16 @@ import type { PrismaClient } from './prisma/db.ts';
 
 export interface GraphQLContext extends YogaInitialContext {
   prisma: PrismaClient;
-  log: YogaLogger;
 }
 
 const schema = createSchema({ typeDefs, resolvers });
 
-export function makeYogaServer({ prisma, log }: { prisma: PrismaClient; log: YogaLogger }) {
+export function makeYogaServer({ prisma, log }: { prisma: PrismaClient; log: Logger }) {
   return createYoga<GraphQLContext>({
     id: 'navigate-configs',
     schema,
     graphqlEndpoint: '/*',
-    context: { prisma, log },
+    context: { prisma },
     logging: log,
     maskedErrors: false,
     batching: true,
