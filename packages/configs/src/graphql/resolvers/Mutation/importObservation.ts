@@ -50,7 +50,10 @@ export const importObservation: NonNullable<MutationResolvers['importObservation
     //
     // Configuration
     //
-    const selectedTarget = newTargets.find((t) => t.type === 'BLINDOFFSET' || t.type === 'SCIENCE')?.pk;
+    // Prefer the blind offset target
+    const selectedTarget = (
+      newTargets.find((t) => t.type === 'BLINDOFFSET') ?? newTargets.find((t) => t.type === 'SCIENCE')
+    )?.pk;
     const selectedOiTarget = firstIfOnlyOne(newTargets.filter((t) => t.type === 'OIWFS'))?.pk;
     const selectedP1Target = firstIfOnlyOne(newTargets.filter((t) => t.type === 'PWFS1'))?.pk;
     const selectedP2Target = firstIfOnlyOne(newTargets.filter((t) => t.type === 'PWFS2'))?.pk;

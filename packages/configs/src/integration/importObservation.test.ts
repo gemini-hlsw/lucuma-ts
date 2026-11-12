@@ -167,7 +167,8 @@ describe('importObservation', () => {
       selectedOiTarget: 3,
       selectedP1Target: null,
       selectedP2Target: null,
-      selectedTarget: 1,
+      // The blind offset target is selected over the science target
+      selectedTarget: 2,
       fpu: null,
     });
     expect(await prisma.guideLoop.findUnique({ where: { pk: 1 } })).toStrictEqual({
