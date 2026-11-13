@@ -16,22 +16,7 @@ This repository is a [monorepo](https://monorepo.tools/) for projects written in
 
 # Running a docker Navigate instance (Production and Staging)
 
-You can install a navigate cluster using the installation script provided in the deploy directory and in [this link](https://raw.githubusercontent.com/gemini-hlsw/navigate-ts/refs/heads/main/deploy/install.sh).
-
-IMPORTANT!
-A running docker service is required to install navigate, the user installing navigate should have permissions to run docker commands. Also, the docker images are hoster under `noirlab` organization, so the `nlsoftware` user should be used to pull docker images, which requires a `docker login`,
-
-After running the install.sh script, the `navigate` command will be enabled to `start`, `stop` and `update` the cluster. For more information try the command `navigate help`.
-
-`navigate update` deploys the release tag last promoted to the server's environment (`staging` or `production`, taken from `SITE` in `.env`). It reads that tag from the GitHub deployment records written by the promote script, so the server needs access to api.github.com. `navigate update --force-version <tag>` deploys another tag instead, after a warning and a confirmation prompt: anything other than the promoted version may be incompatible with the other systems of the environment.
-
-This snippet can be used in order to run the `install.sh` script.
-
-```bash
-curl https://raw.githubusercontent.com/gemini-hlsw/navigate-ts/refs/heads/main/deploy/install.sh >install.sh
-chmod +x install.sh
-./install.sh
-```
+The scripts that install and run a Navigate cluster on the staging and production servers (`install.sh`, the `navigate` command, `docker-compose.yml`) live in [lucuma-deploy](https://github.com/gemini-hlsw/lucuma-deploy/tree/main/servers/navigate), together with the promotion and rollback scripts. See the [README](https://github.com/gemini-hlsw/lucuma-deploy/blob/main/servers/navigate/README.md) there to install or update a server.
 
 ## Getting started
 
