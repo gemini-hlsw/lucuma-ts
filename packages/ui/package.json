@@ -56,7 +56,7 @@
     "globals": "17.14.0",
     "graphql": "16.15.0",
     "graphql-ws": "6.4.1",
-    "jotai": "3.0.1",
+    "jotai": "3.0.2",
     "playwright": "1.65.0",
     "primereact": "10.9.9",
     "react": "19.3.1",
