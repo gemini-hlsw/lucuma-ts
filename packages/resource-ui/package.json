@@ -29,7 +29,7 @@
     "@gemini-hlsw/lucuma-ui-css": "0.176.0",
     "@highcharts/react": "5.4.0",
     "highcharts": "13.1.1",
-    "jotai": "3.0.1",
+    "jotai": "3.0.2",
     "primereact": "10.9.9",
     "react": "19.3.1",
     "react-dom": "19.3.1",
