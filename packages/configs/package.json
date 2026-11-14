@@ -45,7 +45,7 @@
     "@graphql-codegen/cli": "7.4.6",
     "@graphql-eslint/eslint-plugin": "4.4.2",
     "@testcontainers/postgresql": "12.2.1",
-    "@tsconfig/strictest": "2.0.8",
+    "@tsconfig/strictest": "2.0.9",
     "eslint": "10.14.0",
     "eslint-import-resolver-typescript": "4.4.5",
     "eslint-plugin-simple-import-sort": "14.0.0",
