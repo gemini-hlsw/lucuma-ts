@@ -1,20 +1,39 @@
 import './ConfigurationRequestReview.css';
 
-import { Check, cn, isNullish, PaperPlane, useToastApi, XMark } from '@gemini-hlsw/lucuma-common-ui';
+import { Check, cn, isNullish, PaperPlane, useToastApi, when, XMark } from '@gemini-hlsw/lucuma-common-ui';
 import { Button } from 'primereact/button';
 import { InputTextarea } from 'primereact/inputtextarea';
-import { type JSX, type ReactNode, useLayoutEffect, useRef, useState } from 'react';
+import { type JSX, type ReactNode, useState } from 'react';
 
 import { ConflictsTable } from '@/components/ConflictsTable';
 import { DuplicatesTable } from '@/components/DuplicatesTable';
 import { Tile } from '@/components/Tile';
 import { friendlyError } from '@/gql/errors';
-import type { ChangeRequest, ObservationRow } from '@/gql/types';
+import type { ChangeRequest, ConfigurationRequestStatus, ObservationRow } from '@/gql/types';
 
 import { ConfigurationRequestTable } from './ConfigurationRequestTable';
 
 /** The reviewer's decision on a set of requests. */
-export type Decision = 'APPROVED' | 'DENIED';
+export type Decision = Extract<ConfigurationRequestStatus, 'APPROVED' | 'DENIED'>;
+
+/** The reviewer's work in progress on one request set. */
+interface Draft {
+  /** The `resetKey` it was opened for. */
+  readonly key: string;
+  /** Distinguishes reopenings of the same program. */
+  readonly opened: symbol;
+  readonly selectedIds: ReadonlySet<string>;
+  readonly decision: Decision | null;
+  readonly response: string;
+}
+
+const openDraft = (key: string): Draft => ({
+  key,
+  opened: Symbol(key),
+  selectedIds: new Set(),
+  decision: null,
+  response: '',
+});
 
 function boilerplate(items: readonly ChangeRequest[], next: Decision): string {
   const pi = items[0]?.pi ?? 'PI';
@@ -74,37 +93,15 @@ export function ConfigurationRequestReview({
 }): JSX.Element {
   const toast = useToastApi();
 
-  const [selectedIds, setSelectedIds] = useState<ReadonlySet<string>>(new Set());
-  const [decision, setDecision] = useState<Decision | null>(null);
-  const [response, setResponse] = useState('');
-
-  // Counts the draft resets, for a resolve that outlives the draft it was started
-  // for (the reviewer moved to another program, even back again): its late
-  // success must not clear the draft now showing.
-  const [epoch, setEpoch] = useState(0);
-  const latestEpoch = useRef(epoch);
-  // A layout effect, so the ref is current before any promise can settle after
-  // the render that reset the draft.
-  useLayoutEffect(() => {
-    latestEpoch.current = epoch;
-  }, [epoch]);
-
-  // Reset the draft whenever the request set changes, however it changes (a
-  // facet hiding the selected program falls back to another, with no click).
-  const [reviewedKey, setReviewedKey] = useState<string | null>(null);
-  if (resetKey !== reviewedKey) {
-    setReviewedKey(resetKey);
-    setSelectedIds(new Set());
-    setDecision(null);
-    setResponse('');
-    setEpoch((e) => e + 1);
-  }
+  // Reset on any change of request set, including a facet's silent fallback.
+  const [draft, setDraft] = useState(() => openDraft(resetKey));
+  if (draft.key !== resetKey) setDraft(openDraft(resetKey));
+  const { selectedIds, decision, response } = draft;
 
   const selectedRequests = requests.filter((r) => selectedIds.has(r.id));
 
   function choose(next: Decision): void {
-    setDecision(next);
-    setResponse(boilerplate(selectedRequests, next));
+    setDraft((d) => ({ ...d, decision: next, response: boilerplate(selectedRequests, next) }));
   }
 
   async function confirm(): Promise<void> {
@@ -113,7 +110,7 @@ export function ConfigurationRequestReview({
     // Choosing a decision seeds the boilerplate, so an empty box means the
     // reviewer cleared it deliberately: resolve without writing a response.
     const trimmed = response.trim();
-    const startedAt = epoch;
+    const { opened } = draft;
     try {
       await onResolve(ids, decision, trimmed === '' ? null : trimmed);
     } catch (err) {
@@ -124,10 +121,8 @@ export function ConfigurationRequestReview({
       `Change requests ${decision === 'APPROVED' ? 'approved' : 'denied'}`,
       `${ids.length} request${ids.length === 1 ? '' : 's'} in ${programReference}`,
     );
-    if (latestEpoch.current !== startedAt) return;
-    setSelectedIds(new Set());
-    setDecision(null);
-    setResponse('');
+    // A late success must not clear a newer draft.
+    setDraft((d) => (d.opened === opened ? openDraft(d.key) : d));
   }
 
   const requestTable = (
@@ -135,7 +130,7 @@ export function ConfigurationRequestReview({
       key={resetKey}
       requests={requests}
       observationsById={observationsById}
-      selection={{ selectedIds, onChange: setSelectedIds }}
+      selection={{ selectedIds, onChange: (ids) => setDraft((d) => ({ ...d, selectedIds: ids })) }}
     />
   );
 
@@ -149,7 +144,7 @@ export function ConfigurationRequestReview({
         </Tile>
       )}
 
-      {selectedRequests.length > 0 && (
+      {when(selectedRequests.length > 0, () => (
         <Tile title={`Selected Change Requests in ${programLabel}`}>
           <p className="cr-selected-ids">{selectedRequests.map((r) => r.id).join(', ')}</p>
 
@@ -167,7 +162,7 @@ export function ConfigurationRequestReview({
             value={response}
             disabled={!decision}
             title="The message sent to the PI, covering all selected change requests. Pre-filled with boilerplate; edit freely before confirming."
-            onChange={(e) => setResponse(e.target.value)}
+            onChange={(e) => setDraft((d) => ({ ...d, response: e.target.value }))}
           />
 
           <div className="cr-actions">
@@ -206,7 +201,7 @@ export function ConfigurationRequestReview({
             </span>
           </div>
         </Tile>
-      )}
+      ))}
     </>
   );
 }

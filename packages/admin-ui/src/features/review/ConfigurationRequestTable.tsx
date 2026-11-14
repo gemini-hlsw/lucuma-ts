@@ -1,6 +1,6 @@
 import './ConfigurationRequestReview.css';
 
-import { cn, isNotNullish } from '@gemini-hlsw/lucuma-common-ui';
+import { cn, isNotNullish, when } from '@gemini-hlsw/lucuma-common-ui';
 import { Button } from 'primereact/button';
 import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
@@ -31,9 +31,7 @@ interface WindowGroup {
   readonly windows: readonly TimingWindowRow[];
 }
 
-/** Carries the observations alongside the request because several columns
- *  (Target, Windows) describe the request through them — the request itself
- *  holds only a configuration and coordinates. */
+/** Target and Windows come from the observations; a request holds only ids. */
 type VisibleRequest = ChangeRequest & { readonly observations: readonly ObservationRow[] };
 
 /** Group a request's resolved observations by id, keeping only those that
@@ -54,13 +52,8 @@ export interface RequestSelection {
   readonly isSelectable?: (request: ChangeRequest) => boolean;
 }
 
-/**
- * A program's configuration requests as a table, shared by the Change Requests
- * tab (sc-9094), where the ticked rows are the ones about to be approved or
- * denied, and the Proposals tab (sc-9595), where they are the ones that will be
- * approved when the proposal is accepted. Without `selection` the rows are
- * read-only.
- */
+/** A program's requests, shared by Change Requests (sc-9094) and Proposals
+ *  (sc-9595). Read-only without `selection`. */
 export function ConfigurationRequestTable({
   requests,
   observationsById,
@@ -72,9 +65,7 @@ export function ConfigurationRequestTable({
   readonly observationsById: ReadonlyMap<string, ObservationRow>;
   readonly selection?: RequestSelection;
 }): JSX.Element {
-  // Scheduling windows for one request are shown on demand in an overlay,
-  // grouped by the observation they belong to (sc-9621). A single panel is
-  // reused; the click target sets which request's windows it shows.
+  // One overlay, reused for whichever request's windows were clicked (sc-9621).
   const windowsPanel = useRef<OverlayPanel>(null);
   const [windowsOf, setWindowsOf] = useState<readonly WindowGroup[]>([]);
 
@@ -98,24 +89,28 @@ export function ConfigurationRequestTable({
         value={visibleRequests}
         dataKey="id"
         className="cr-review-table"
-        // DataTable's own checkbox-selection column: a body-template Checkbox
-        // never repainted its checkmark (memoized cells; reported as "checkmark
-        // never appears").
+        // A body-template Checkbox never repainted (memoized cells).
         selectionMode="checkbox"
         selection={ticked}
         onSelectionChange={(e) => selection?.onChange(new Set(e.value.map((r) => r.id)))}
         isDataSelectable={(e) => selection?.isSelectable?.(e.data as VisibleRequest) ?? true}
         emptyMessage="No configuration requests to show."
       >
-        {selection && <Column selectionMode="multiple" style={{ width: '2.5rem' }} />}
+        {/* Columns without a `field` need a `columnKey`: PrimeReact keys cells by either plus
+            index, so when the selection column goes (on Accept) they'd reuse a neighbour's cell. */}
+        {when(selection, () => (
+          <Column columnKey="selection" selectionMode="multiple" style={{ width: '2.5rem' }} />
+        ))}
         <Column field="id" header="ID" sortable style={{ width: '6rem' }} />
         <Column
+          columnKey="received"
           header="Received"
           style={{ width: '10rem' }}
           body={(r: ChangeRequest) => formatUtcMinute(r.createdAt)}
           headerTooltip="When the PI submitted the request (UTC)."
         />
         <Column
+          columnKey="target"
           header="Target"
           style={{ width: '9rem' }}
           body={(r: VisibleRequest) => joinTargetNames(r.observations.map((o) => o.target))}
@@ -126,11 +121,13 @@ export function ConfigurationRequestTable({
         <Column field="instrument" header="Config" style={{ width: '7rem' }} />
         <Column field="conditions" header="Conditions" style={{ width: '9rem' }} />
         <Column
+          columnKey="observations"
           header="Observations"
           style={{ width: '8rem' }}
           body={(r: ChangeRequest) => r.observationIds.join(', ') || '—'}
         />
         <Column
+          columnKey="windows"
           header="Windows"
           style={{ width: '6rem' }}
           headerTooltip="Scheduling windows across this request's observations. Click the count to see each window."
@@ -152,14 +149,15 @@ export function ConfigurationRequestTable({
           }}
         />
         <Column
+          columnKey="justification"
           header="Justification"
-          // The only column without a width, so the table squeezed it to a few
-          // words per line and ran it into the status dot.
+          // Without a width it was squeezed into the status dot.
           style={{ minWidth: '16rem' }}
           body={(r: ChangeRequest) => truncate(r.justification, 60)}
           headerTooltip="The PI's justification for the request."
         />
         <Column
+          columnKey="status"
           header="Status"
           style={{ width: '5rem' }}
           body={(r: ChangeRequest) => {
@@ -172,8 +170,7 @@ export function ConfigurationRequestTable({
               />
             );
           }}
-          // Staff may leave feedback before resolving, so this is not limited to
-          // resolved requests.
+          // Not only resolved requests: staff may leave feedback before deciding.
           headerTooltip="Hover a request's status to see the reviewer's response, when one has been given."
         />
       </DataTable>

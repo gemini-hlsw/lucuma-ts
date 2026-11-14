@@ -79,9 +79,7 @@ describe(ConfigurationRequestReview, () => {
     const onResolve = vi.fn().mockResolvedValue(true);
     const { screen } = await setup(onResolve);
 
-    // Select just cr-1 via its row checkbox (accessible name set by PrimeReact),
-    // not the header select-all. The role resolves to the wrapper + input; click
-    // the input.
+    // The row checkbox, not select-all; the role matches wrapper and input, so take the input.
     await userEvent.click(screen.getByRole('checkbox', { name: 'Row Selected cr-1' }).last());
 
     await userEvent.click(screen.getByRole('button', { name: 'Approve' }));
@@ -95,7 +93,7 @@ describe(ConfigurationRequestReview, () => {
     await expect.element(screen.getByRole('button', { name: 'Approve' })).not.toBeInTheDocument();
   });
 
-  it('resolves without a response when the reviewer clears the box, so a stored one is kept', async () => {
+  it('resolves without a response when the box is cleared', async () => {
     const onResolve = vi.fn().mockResolvedValue(true);
     const { screen } = await setup(onResolve);
 
@@ -108,7 +106,7 @@ describe(ConfigurationRequestReview, () => {
     expect(onResolve).toHaveBeenCalledWith(['cr-1'], 'DENIED', null);
   });
 
-  it('keeps the draft and reports the failure when the resolve is rejected', async () => {
+  it('keeps the draft and reports a failed resolve', async () => {
     const onResolve = vi.fn().mockRejectedValue(new Error('ODB unavailable'));
     const { screen } = await setup(onResolve);
 
@@ -121,7 +119,7 @@ describe(ConfigurationRequestReview, () => {
     await expect.element(screen.getByRole('button', { name: 'Confirm' })).toBeVisible();
   });
 
-  it('drops the draft when the request set changes, so it never carries to another program', async () => {
+  it('drops the draft when the request set changes', async () => {
     function Harness() {
       const [key, setKey] = useState('p-1');
       return (
@@ -167,7 +165,7 @@ describe(ConfigurationRequestReview, () => {
     await expect.element(screen.getByText('1 request in G-2027B-0042-DD')).toBeVisible();
   });
 
-  it('leaves the draft of the program now showing alone when an earlier resolve lands late', async () => {
+  it('keeps the current draft when an earlier resolve lands late', async () => {
     let finish: () => void = () => undefined;
     const slow = vi.fn().mockReturnValue(new Promise<void>((resolve) => (finish = resolve)));
     function Harness() {
@@ -197,14 +195,12 @@ describe(ConfigurationRequestReview, () => {
     await userEvent.click(screen.getByRole('button', { name: 'Deny' }));
 
     finish();
-    // Wait for the late resolve to land (it announces itself), so the check below
-    // cannot pass merely because it ran first.
+    // Wait for its toast, so the check below can't pass by running first.
     await expect.element(screen.getByText('1 request in G-2027B-0042-DD')).toBeVisible();
-    // It must not have cleared the second program's draft.
     await expect.element(screen.getByRole('button', { name: 'Confirm' })).toBeVisible();
   });
 
-  it('leaves the draft of the program now showing alone when an earlier resolve lands late, even after returning to the first program', async () => {
+  it('keeps a new draft on the same program when an earlier resolve lands late', async () => {
     let finish: () => void = () => undefined;
     const slow = vi.fn().mockReturnValue(new Promise<void>((resolve) => (finish = resolve)));
     function Harness() {
@@ -236,10 +232,8 @@ describe(ConfigurationRequestReview, () => {
     await userEvent.click(screen.getByRole('button', { name: 'Deny' }));
 
     finish();
-    // Wait for the late resolve to land (it announces itself), so the check below
-    // cannot pass merely because it ran first.
+    // Wait for its toast, so the check below can't pass by running first.
     await expect.element(screen.getByText('1 request in G-2027B-0042-DD')).toBeVisible();
-    // It must not have cleared the second program's draft.
     await expect.element(screen.getByRole('button', { name: 'Confirm' })).toBeVisible();
   });
 });

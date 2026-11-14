@@ -2,7 +2,7 @@
  * Change Requests view (sc-9094): ODB ConfigurationRequest, presented as a
  * program → request master-detail — see ChangeRequestsPage.
  */
-import { skipToken, useMutation, useQuery } from '@apollo/client/react';
+import { skipToken, useApolloClient, useMutation, useQuery } from '@apollo/client/react';
 import { isNullish, parseNumber, useAllPages } from '@gemini-hlsw/lucuma-common-ui';
 import { useCallback, useMemo } from 'react';
 
@@ -284,13 +284,10 @@ export const RESOLVE_KEEPING_FEEDBACK_MUTATION = graphql(`
   }
 `);
 
-/** Approve and deny a proposal's configuration requests when the proposal is
- *  accepted (sc-9595): the reviewer's ticked requests become APPROVED, the rest
- *  DENIED. Both groups go by explicit id and only where the request is still
- *  REQUESTED, so a request the reviewer never saw, or one withdrawn or decided
- *  since the page loaded, keeps its outcome. A group may be empty (`IN: []`
- *  matches nothing, checked against dev). `feedback` is left out of SET, so any
- *  stored response survives. */
+/** Approve and deny a proposal's requests on Accept (sc-9595). Only still-REQUESTED
+ *  ones change, so a request decided or withdrawn meanwhile keeps its outcome;
+ *  `IN: []` matches nothing (checked on dev). `feedback` is left out of SET, since
+ *  naming it would overwrite a stored note. */
 export const RESOLVE_PROPOSAL_REQUESTS_MUTATION = graphql(`
   mutation AdminResolveProposalRequests($approved: [ConfigurationRequestId!]!, $denied: [ConfigurationRequestId!]!) {
     approved: updateConfigurationRequests(
@@ -350,7 +347,10 @@ export function groupChangeRequestsByProgram(requests: readonly ChangeRequest[])
   });
 }
 
-const RELOAD_CHANGE_REQUESTS = { refetchQueries: [CHANGE_REQUESTS_QUERY], awaitRefetchQueries: true };
+const RELOAD_CHANGE_REQUESTS: Pick<useMutation.Options, 'refetchQueries' | 'awaitRefetchQueries'> = {
+  refetchQueries: [CHANGE_REQUESTS_QUERY],
+  awaitRefetchQueries: true,
+};
 
 /** Resolve the requests, writing `response` as the staff feedback.
  *
@@ -371,18 +371,28 @@ export function useResolveChangeRequests() {
   return { resolve, loading: withState.loading || keepState.loading };
 }
 
-/** Resolve a proposal's configuration requests as it is accepted (sc-9595). The
- *  program's own requests are refetched so the table shows the outcome, but the
- *  reload is not awaited: it is only a refresh, and a failure of it must not make
- *  writes that landed read as a failed resolve. */
+/** Reload one program's requests if they are on screen; `refetch` would reload
+ *  whichever program is selected by then. Off screen there is nothing to reload:
+ *  reopening it fetches afresh (cache-and-network). A failure shows as the query's error. */
+export function useReloadProgramConfigurationRequests() {
+  const client = useApolloClient();
+  return useCallback(
+    (programId: string) =>
+      client.refetchQueries({
+        include: [PROGRAM_CONFIGURATION_REQUESTS_QUERY],
+        onQueryUpdated: (query) => query.variables.programId === programId && query.refetch(),
+      }),
+    [client],
+  );
+}
+
+/** No `refetchQueries`: Apollo skips them on error, so the page reloads itself (sc-9595). */
 export function useResolveProposalRequests() {
-  const [mutate, { loading }] = useMutation(RESOLVE_PROPOSAL_REQUESTS_MUTATION, {
-    refetchQueries: [PROGRAM_CONFIGURATION_REQUESTS_QUERY],
-  });
+  const [mutate] = useMutation(RESOLVE_PROPOSAL_REQUESTS_MUTATION);
   const resolve = useCallback(
     (approved: readonly string[], denied: readonly string[]) =>
       mutate({ variables: { approved: [...approved], denied: [...denied] } }),
     [mutate],
   );
-  return { resolve, loading };
+  return { resolve };
 }

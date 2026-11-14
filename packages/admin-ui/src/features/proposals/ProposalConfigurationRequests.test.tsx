@@ -30,8 +30,15 @@ const observationsMock = (): MockedResponseOf<typeof PROGRAM_OBSERVATIONS_QUERY>
 });
 
 /** The component as the page drives it: the real loading hook, and the unticked ids held by the caller. */
-function Harness({ decided = false, locked = false }: { readonly decided?: boolean; readonly locked?: boolean }) {
+function Harness({
+  decided: initial = false,
+  locked = false,
+}: {
+  readonly decided?: boolean;
+  readonly locked?: boolean;
+}) {
   const proposalRequests = useProposalRequests('p-1');
+  const [decided, setDecided] = useState(initial);
   const [declined, setDeclined] = useState<ReadonlySet<string>>(new Set());
   return (
     <>
@@ -43,6 +50,7 @@ function Harness({ decided = false, locked = false }: { readonly decided?: boole
         decided={decided}
         locked={locked}
       />
+      <button onClick={() => setDecided(true)}>decide</button>
       <output data-testid="declined">{[...declined].sort().join(',')}</output>
     </>
   );
@@ -52,7 +60,7 @@ const render = (mocks: readonly MockLink.MockedResponse[], decided = false, lock
   renderWithContext(<Harness decided={decided} locked={locked} />, { token: STAFF_TOKEN, mocks });
 
 describe(ProposalConfigurationRequests, () => {
-  it('shows the proposal’s configuration requests for review', async () => {
+  it('shows the proposal’s requests', async () => {
     const screen = await render([requestsMock([configurationRequest('x-9')]), observationsMock()]);
     await expect.element(screen.getByText('Configuration Requests')).toBeVisible();
     await expect.element(screen.getByText('x-9')).toBeVisible();
@@ -63,7 +71,7 @@ describe(ProposalConfigurationRequests, () => {
     await expect.element(screen.getByText('Configuration Requests')).not.toBeInTheDocument();
   });
 
-  it('ticks every pending request to start with, and unticking one records it as declined', async () => {
+  it('starts all pending requests ticked and records unticked ones as declined', async () => {
     const screen = await render([
       requestsMock([configurationRequest('x-1'), configurationRequest('x-2')]),
       observationsMock(),
@@ -80,7 +88,19 @@ describe(ProposalConfigurationRequests, () => {
     await expect.element(screen.getByTestId('declined')).toHaveTextContent('');
   });
 
-  it('offers no ticking once the proposal has its decision, and shows each request’s outcome', async () => {
+  it('keeps each column’s cells in place when the proposal becomes decided', async () => {
+    const screen = await render([requestsMock([configurationRequest('x-1')]), observationsMock()]);
+    await expect.poll(() => ticks(screen)).toEqual([true]);
+    await userEvent.click(screen.getByRole('button', { name: 'decide' }));
+    await expect.poll(() => rowBoxes(screen).length).toBe(0);
+    await expect.element(screen.getByTitle('Pending')).toBeInTheDocument();
+    const headers = [...screen.container.querySelectorAll('.cr-review-table thead th')].map((th) => th.textContent);
+    const cells = [...screen.container.querySelectorAll('.cr-review-table tbody tr:first-child td')];
+    expect(cells[headers.indexOf('Received')]?.textContent).toBe('2027-06-01 12:30 UTC');
+    expect(cells[headers.indexOf('Target')]?.textContent).not.toBe('2027-06-01 12:30 UTC');
+  });
+
+  it('is read-only once the proposal is decided', async () => {
     const screen = await render(
       [
         requestsMock([configurationRequest('x-1', 'APPROVED'), configurationRequest('x-2', 'DENIED')]),
@@ -91,12 +111,12 @@ describe(ProposalConfigurationRequests, () => {
     await expect.element(screen.getByText('x-1')).toBeVisible();
     await expect.element(screen.getByRole('checkbox')).not.toBeInTheDocument();
     await expect.element(screen.getByText('Tick the requests to approve')).not.toBeInTheDocument();
-    // The outcome of each request stays visible as its status dot.
+    // Each outcome shows as its status dot.
     await expect.element(screen.getByTitle('Approved')).toBeVisible();
     await expect.element(screen.getByTitle('Denied')).toBeVisible();
   });
 
-  it('keeps the ticks as they are while a resolve is in flight', async () => {
+  it('locks the ticks while a resolve is in flight', async () => {
     const screen = await render(
       [requestsMock([configurationRequest('x-1'), configurationRequest('x-2')]), observationsMock()],
       false,
@@ -106,7 +126,7 @@ describe(ProposalConfigurationRequests, () => {
     expect(rowBoxes(screen).map((box) => box.disabled)).toEqual([true, true]);
   });
 
-  it('does not offer a withdrawn request for ticking', async () => {
+  it('does not offer a withdrawn request', async () => {
     const screen = await render([
       requestsMock([configurationRequest('x-1'), configurationRequest('x-2', 'WITHDRAWN')]),
       observationsMock(),
@@ -115,7 +135,7 @@ describe(ProposalConfigurationRequests, () => {
     expect(rowBoxes(screen).map((box) => box.disabled)).toEqual([false, true]);
   });
 
-  it('says so when the requests fail to load, rather than reading as no requests', async () => {
+  it('says so when the requests fail to load', async () => {
     const failing: MockedResponseOf<typeof PROGRAM_CONFIGURATION_REQUESTS_QUERY> = {
       request: { query: PROGRAM_CONFIGURATION_REQUESTS_QUERY, variables: { programId: 'p-1', offset: null } },
       error: new Error('ODB unavailable'),
@@ -124,7 +144,7 @@ describe(ProposalConfigurationRequests, () => {
     await expect.element(screen.getByText(/Could not load this proposal’s configuration requests/)).toBeVisible();
   });
 
-  it('says so when a later page of requests fails to load, not showing a truncated list as complete', async () => {
+  it('says so when a later page fails to load', async () => {
     const firstPage: MockedResponseOf<typeof PROGRAM_CONFIGURATION_REQUESTS_QUERY> = {
       request: { query: PROGRAM_CONFIGURATION_REQUESTS_QUERY, variables: { programId: 'p-1', offset: null } },
       result: {
@@ -145,8 +165,8 @@ describe(ProposalConfigurationRequests, () => {
     await expect.element(screen.getByText(/Could not load this proposal’s configuration requests/)).toBeVisible();
   });
 
-  it('says so, and stops asking, when a page of requests repeats and the walk cannot move on', async () => {
-    // The ODB can answer a cursor with a page that ends on the cursor itself and still say hasMore (sc-10723).
+  it('says so, and stops asking, when the page walk stalls', async () => {
+    // A cursor answered with itself and hasMore stalls the walk (sc-10723).
     const page = (offset: string | null): MockedResponseOf<typeof PROGRAM_CONFIGURATION_REQUESTS_QUERY> => ({
       request: { query: PROGRAM_CONFIGURATION_REQUESTS_QUERY, variables: { programId: 'p-1', offset } },
       result: {
@@ -159,17 +179,17 @@ describe(ProposalConfigurationRequests, () => {
         },
       },
     });
-    // One answer for each cursor: a walk that asked again would meet "no more mocked responses" and fail the test.
+    // One answer per cursor, so asking again fails the test.
     const screen = await render([page(null), page('x-9'), observationsMock()]);
     await expect.element(screen.getByText(/Could not load this proposal’s configuration requests\./)).toBeVisible();
   });
 
-  it('says so when the observations that name Target and Windows cannot all be loaded', async () => {
+  it('says so when the observations cannot all be loaded', async () => {
     const obsPage = (offset: string | null, hasMore: boolean): MockedResponseOf<typeof PROGRAM_OBSERVATIONS_QUERY> => ({
       request: { query: PROGRAM_OBSERVATIONS_QUERY, variables: { programId: 'p-1', offset } },
       result: { data: { observations: { __typename: 'ObservationSelectResult', matches: [], hasMore } } },
     });
-    // A first page with no rows that claims more leaves the walk no cursor to ask from.
+    // An empty page with hasMore leaves no cursor.
     const screen = await render([requestsMock([configurationRequest('x-9')]), obsPage(null, true)]);
     await expect
       .element(screen.getByText(/Could not load the program’s observations, so Target and Windows may be blank/))

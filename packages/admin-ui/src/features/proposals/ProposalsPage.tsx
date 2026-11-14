@@ -1,15 +1,15 @@
-import { isNotNullish, type Labelled, NumberInput, useToastApi } from '@gemini-hlsw/lucuma-common-ui';
+import { isNotNullish, type Labelled, NumberInput, useToastApi, when } from '@gemini-hlsw/lucuma-common-ui';
 import { AutoComplete } from 'primereact/autocomplete';
 import { Dropdown } from 'primereact/dropdown';
 import { InputText } from 'primereact/inputtext';
-import { type JSX, useMemo, useState } from 'react';
+import { type JSX, useMemo, useRef, useState } from 'react';
 
 import { DataSourceBadge } from '@/components/DataSourceBadge';
 import { SearchInput } from '@/components/SearchInput';
 import { TimeAwardsGrid } from '@/components/TimeAwardsGrid';
 import { useRowSelection } from '@/components/useRowSelection';
 import { friendlyError } from '@/gql/errors';
-import { useResolveProposalRequests } from '@/gql/odb/changeRequests';
+import { useReloadProgramConfigurationRequests, useResolveProposalRequests } from '@/gql/odb/changeRequests';
 import type { ProgramPropertiesInput } from '@/gql/odb/gen/graphql';
 import { allocationsInput, useAssignContactScientists, useSetAllocations, useUpdateProgram } from '@/gql/odb/programs';
 import { mapProposals, useProposals, useSetProposalStatus } from '@/gql/odb/proposals';
@@ -55,15 +55,22 @@ const STATUS_OPTIONS: Labelled<ProposalStatus | typeof ALL>[] = [
   { label: 'Not submitted', value: 'NOT_SUBMITTED' },
 ];
 
-/** What the reviewer grants alongside acceptance, per Andy's updated sc-9092
- *  mockup: the Time Awards table plus active period, proprietary period, and
- *  contact scientists. */
+/** What the reviewer grants alongside acceptance (sc-9092 mockup): the Time
+ *  Awards table plus active period, proprietary period, and contact scientists. */
 interface AwardDraft {
   allocations: readonly Allocation[];
   activeStart: string;
   activeEnd: string;
   proprietaryMonths: number;
   contactScientists: readonly ContactScientist[];
+}
+
+/** One write of an acceptance, named for the toast if it fails. */
+interface Step {
+  readonly name: string;
+  /** What the reviewer does instead, as a lower-case clause. */
+  readonly remedy: string;
+  readonly run: () => Promise<unknown>;
 }
 
 const BLANK_AWARD: AwardDraft = {
@@ -75,22 +82,24 @@ const BLANK_AWARD: AwardDraft = {
 };
 
 /**
- * Proposals view (sc-9092): review & respond to special proposals — Director's
- * Time and Poor Weather. Built on the shared ReviewView with status / type /
- * semester facets. Accepting records the decision via setProposalStatus and
- * applies the reviewer's award (setAllocations + updatePrograms); rejecting
- * records NOT_ACCEPTED.
+ * Proposals view (sc-9092): review & respond to Director's Time and Poor Weather
+ * proposals, with status / type / semester facets. Accepting sets the status,
+ * decides the configuration requests (sc-9595) and applies the award
+ * (allocations, periods, contact scientists); rejecting sets NOT_ACCEPTED.
  */
 export default function ProposalsPage(): JSX.Element {
   const toast = useToastApi();
   const { data, loading, incomplete, error, refetch } = useProposals();
   const proposals = useMemo(() => (data ? mapProposals(data.programs.matches) : EMPTY), [data]);
-  const [setProposalStatus, { loading: settingStatus }] = useSetProposalStatus();
-  const [setAllocations, { loading: settingAllocations }] = useSetAllocations();
-  const [updateProgram, { loading: updatingProgram }] = useUpdateProgram();
-  const { assign: assignContactScientists, loading: assigningContacts } = useAssignContactScientists();
-  const { resolve: resolveRequests, loading: resolvingRequests } = useResolveProposalRequests();
-  const resolving = settingStatus || settingAllocations || updatingProgram || assigningContacts || resolvingRequests;
+  const [setProposalStatus] = useSetProposalStatus();
+  const [setAllocations] = useSetAllocations();
+  const [updateProgram] = useUpdateProgram();
+  const { assign: assignContactScientists } = useAssignContactScientists();
+  const { resolve: resolveRequests } = useResolveProposalRequests();
+  const reloadRequests = useReloadProgramConfigurationRequests();
+  // Held across the whole resolve, which Apollo's per-mutation flags are not.
+  const inFlight = useRef(false);
+  const [resolving, setResolving] = useState(false);
 
   const [statusFilter, setStatusFilter] = useState<ProposalStatus | typeof ALL>(ALL);
   const [typeFilter, setTypeFilter] = useState<SpecialProposalType | typeof ALL>(ALL);
@@ -115,8 +124,7 @@ export default function ProposalsPage(): JSX.Element {
 
   const [selected, select] = useRowSelection(items, 'id');
   const proposalRequests = useProposalRequests(selected?.id ?? null);
-  // The requests the reviewer unticked, per proposal (keyed by program id): on
-  // accepting, the pending ones left ticked are approved and these are denied.
+  // Unticked request ids per program: denied on Accept.
   const [declined, setDeclined] = useState<ReadonlyMap<string, ReadonlySet<string>>>(new Map());
 
   // The award being drafted per proposal (keyed by program id). State, and
@@ -131,78 +139,112 @@ export default function ProposalsPage(): JSX.Element {
       : `Dear ${p.pi},\n\nAfter review, your ${SPECIAL_PROPOSAL_TYPE_LABEL[p.type]} proposal "${p.title}" (${p.reference}) has not been accepted at this time.\n\nRegards,\nGemini Science Operations`;
   }
 
-  /** Record the decision. Accept also applies the drafted award (allocations
-   *  via setAllocations, active period + proprietary months via
-   *  updatePrograms, contact scientists) and approves or denies the proposal's
-   *  configuration requests; a rejection leaves the requests as they are.
-   *  Returns true once the proposal is decided. After the acceptance the
-   *  requests and the award are independent, so each is attempted whatever
-   *  becomes of the other, and a failure of either is named in a toast rather
-   *  than undoing or skipping the rest. */
+  /** Each query shows its own error, so a failed reload isn't reported again. */
+  async function reload(acceptedId?: string): Promise<void> {
+    await Promise.allSettled([refetch(), ...(acceptedId ? [reloadRequests(acceptedId)] : [])]);
+  }
+
+  /** Accept waits for the whole request list; Reject is never blocked. */
+  function resolveBlocked(decision: Decision): string | null {
+    if (decision === 'REJECT' || proposalRequests.ready) return null;
+    const { requestsError, requestsIncomplete } = proposalRequests;
+    if (requestsError) return `Could not load this proposal’s configuration requests: ${friendlyError(requestsError)}`;
+    if (requestsIncomplete) return 'Could not load all of this proposal’s configuration requests.';
+    return 'Waiting for this proposal’s configuration requests to load.';
+  }
+
+  /** True once the status is set; false keeps the draft for a retry. */
   async function onResolve(p: ReviewProposal, decision: Decision): Promise<boolean> {
+    // A ref, so a second click in the same render is refused too.
+    if (inFlight.current) return false;
+    inFlight.current = true;
+    setResolving(true);
     try {
-      if (decision === 'ACCEPT') {
-        // Accepting decides every request on screen, so it waits for a list that
-        // is known to be the whole set rather than approve a part of it.
-        if (!proposalRequests.ready) {
-          toast.error('Resolve failed', 'This proposal’s configuration requests have not loaded.');
+      // Built before any write, so a bug here leaves nothing half done.
+      const steps = decision === 'ACCEPT' ? acceptSteps(p) : [];
+      const status = decision === 'ACCEPT' ? 'ACCEPTED' : 'NOT_ACCEPTED';
+      const statusSet = await setProposalStatus({ variables: { programId: p.id, status } }).then(
+        () => true,
+        (err: unknown) => {
+          toast.error('Resolve failed', friendlyError(err));
           return false;
-        }
-        const award = awards.get(p.id) ?? BLANK_AWARD;
-        const allocations = allocationsInput(award.allocations);
-        const set: ProgramPropertiesInput = {
-          goa: { proprietaryMonths: award.proprietaryMonths },
-          ...(award.activeStart ? { activeStart: award.activeStart } : {}),
-          ...(award.activeEnd ? { activeEnd: award.activeEnd } : {}),
-        };
-        // Status first — it validates the proposal is decidable before any
-        // program properties are touched.
-        await setProposalStatus({ variables: { programId: p.id, status: 'ACCEPTED' } });
-
-        const problems: string[] = [];
-        const attempt = async (what: string, remedy: string, step: () => Promise<unknown>): Promise<void> => {
-          try {
-            await step();
-          } catch (err) {
-            // friendlyError may end in a full stop of its own.
-            problems.push(`${what}: ${friendlyError(err).replace(/\.$/, '')}. ${remedy}`);
-          }
-        };
-        const pending = proposalRequests.requests.filter((r) => r.status === 'REQUESTED');
-        const unticked = declined.get(p.id) ?? NO_IDS;
-        await attempt('Configuration requests', 'Finish them on the Change Requests tab.', async () => {
-          if (pending.length === 0) return;
-          await resolveRequests(
-            pending.filter((r) => !unticked.has(r.id)).map((r) => r.id),
-            pending.filter((r) => unticked.has(r.id)).map((r) => r.id),
-          );
-        });
-        await attempt('Award details', 'Set them again in Programs.', async () => {
-          if (allocations.length > 0) {
-            await setAllocations({ variables: { programId: p.id, allocations } });
-          }
-          await updateProgram({ variables: { programId: p.id, set } });
-          // Assign the drafted contact scientists. Only additions are made here —
-          // this is a fresh award, so there is nothing to remove.
-          await assignContactScientists(p.id, award.contactScientists.map((c) => c.userId).filter(isNotNullish));
-        });
-
-        if (problems.length > 0) {
-          toast.error('Proposal accepted, but a later step failed', problems.join(' '));
-        } else {
-          toast.success('Proposal accepted', p.reference);
-        }
-      } else {
-        await setProposalStatus({ variables: { programId: p.id, status: 'NOT_ACCEPTED' } });
+        },
+      );
+      if (!statusSet) return false;
+      if (decision === 'REJECT') {
         toast.success('Proposal rejected', p.reference);
+        // Awaited, so the row shows decided before the buttons unlock.
+        await reload();
+        return true;
       }
-      // The proposal is decided either way, so reload it.
-      void refetch();
+      // Stop at the first failure: each step follows from the ones before it.
+      let failed = false;
+      for (const [i, step] of steps.entries()) {
+        // Via a promise, so a synchronous throw is reported like any step failure.
+        failed = await Promise.resolve()
+          .then(step.run)
+          .then(
+            () => false,
+            (err: unknown) => {
+              const skipped = steps.slice(i + 1).map((s) => `${s.name} (${s.remedy})`);
+              const notDone = skipped.length > 0 ? ` Not done: ${skipped.join(', ')}.` : '';
+              toast.error(
+                `Proposal accepted, but ${step.name} failed`,
+                `${friendlyError(err).replace(/\.$/, '')}. To fix, ${step.remedy}.${notDone}`,
+              );
+              return true;
+            },
+          );
+        if (failed) break;
+      }
+      if (!failed) toast.success('Proposal accepted', p.reference);
+      // Also after a failure: it may have partly landed, and Apollo skips refetches after errors.
+      await reload(p.id);
       return true;
     } catch (err) {
+      // Only before the status: building the steps threw, so nothing was sent.
       toast.error('Resolve failed', friendlyError(err));
       return false;
+    } finally {
+      inFlight.current = false;
+      setResolving(false);
     }
+  }
+
+  /** Accept's steps after the status: the requests the PI made first, then the award built on them. */
+  function acceptSteps(p: ReviewProposal): readonly Step[] {
+    const { approved, denied } = proposalRequests.split(declined.get(p.id) ?? NO_IDS);
+    const award = awards.get(p.id) ?? BLANK_AWARD;
+    const allocations = allocationsInput(award.allocations);
+    const contactIds = award.contactScientists.map((c) => c.userId).filter(isNotNullish);
+    const set: ProgramPropertiesInput = {
+      goa: { proprietaryMonths: award.proprietaryMonths },
+      ...(award.activeStart ? { activeStart: award.activeStart } : {}),
+      ...(award.activeEnd ? { activeEnd: award.activeEnd } : {}),
+    };
+    return [
+      when(approved.length + denied.length > 0, () => ({
+        name: 'deciding the configuration requests',
+        remedy: 'finish them on the Change Requests tab',
+        run: () => resolveRequests(approved, denied),
+      })),
+      when(allocations.length > 0, () => ({
+        name: 'setting the time awards',
+        remedy: 'set them again in Programs',
+        run: () => setAllocations({ variables: { programId: p.id, allocations } }),
+      })),
+      {
+        name: 'setting the active and proprietary periods',
+        remedy: 'set them again in Programs',
+        run: () => updateProgram({ variables: { programId: p.id, set } }),
+      },
+      // A fresh award, so contact scientists are only added.
+      when(contactIds.length > 0, () => ({
+        name: 'assigning the contact scientists',
+        remedy: 'assign them again in Programs',
+        run: () => assignContactScientists(p.id, contactIds),
+      })),
+    ].filter(isNotNullish);
   }
 
   const controls = (
@@ -256,7 +298,7 @@ export default function ProposalsPage(): JSX.Element {
       onSelect={select}
       columns={COLUMNS}
       noun="proposal"
-      resolveMutation="setProposalStatus + setAllocations + updatePrograms + updateConfigurationRequests"
+      resolveMutation="setProposalStatus; Accept then also decides the configuration requests and applies the award"
       detailTitle={(p) => `${p.reference} · ${p.pi}`}
       renderDetail={(p) => (
         <>
@@ -280,16 +322,17 @@ export default function ProposalsPage(): JSX.Element {
         </>
       )}
       renderExtra={(p, decision) =>
-        decision === 'ACCEPT' && (
+        when(decision === 'ACCEPT', () => (
           <AwardForm
             key={p.id}
             requestedHours={p.observations.reduce((s, o) => s + o.hours, 0)}
             award={awards.get(p.id) ?? BLANK_AWARD}
             onChange={(award) => setAwards((prev) => new Map(prev).set(p.id, award))}
           />
-        )
+        ))
       }
       boilerplate={boilerplate}
+      resolveBlocked={resolveBlocked}
       onResolve={onResolve}
     />
   );
