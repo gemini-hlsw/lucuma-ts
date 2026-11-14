@@ -1,4 +1,4 @@
-import type { ApolloCache } from '@apollo/client';
+import type { ApolloCache, ApolloLink } from '@apollo/client';
 import type { MockLink } from '@apollo/client/testing';
 import { MockedProvider } from '@apollo/client/testing/react';
 import type { Store, WritableAtom } from 'jotai';
@@ -16,7 +16,8 @@ import type { PropsWithChildren } from 'react';
  * render. Each value is type-checked against its atom.
  *
  * Each mock answers once unless it sets `maxUsageCount`, so a repeated request fails.
- * Pass `cache` to start from pre-written data.
+ * Pass `cache` to start from pre-written data, and `link` to replace the mock link
+ * (for instance one that wraps a `MockLink` of `mocks`).
  */
 export function AtomsAndApollo<T extends AtomTuples>({
   children,
@@ -25,16 +26,18 @@ export function AtomsAndApollo<T extends AtomTuples>({
   initialValues = [] as InferAtomTuples<T>,
   mocks = [],
   cache,
+  link,
 }: PropsWithChildren<{
   store?: Store;
   initialValues?: InferAtomTuples<T>;
   mocks?: readonly MockLink.MockedResponse[];
   cache?: ApolloCache;
+  link?: ApolloLink;
 }>) {
   return (
     <JotaiProvider store={store}>
       <HydrateAtoms initialValues={initialValues}>
-        <MockedProvider {...(cache ? { cache } : {})} mocks={[...mocks]}>
+        <MockedProvider {...(cache ? { cache } : {})} {...(link ? { link } : {})} mocks={[...mocks]}>
           {children}
         </MockedProvider>
       </HydrateAtoms>

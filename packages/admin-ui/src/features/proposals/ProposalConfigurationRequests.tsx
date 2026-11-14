@@ -1,49 +1,46 @@
-import { TriangleExclamation } from '@gemini-hlsw/lucuma-common-ui';
+import { TriangleExclamation, when } from '@gemini-hlsw/lucuma-common-ui';
 import { type JSX, useMemo } from 'react';
 
 import { friendlyError } from '@/gql/errors';
-import {
-  observationsByIdFrom,
-  PROGRAM_CONFIGURATION_REQUESTS_QUERY,
-  useProgramConfigurationRequests,
-  useProgramObservations,
-  useResolveChangeRequests,
-} from '@/gql/odb/changeRequests';
 
-import { ConfigurationRequestReview } from '../review/ConfigurationRequestReview';
+import { ConfigurationRequestTable } from '../review/ConfigurationRequestTable';
+import type { ProposalRequests } from './useProposalRequests';
 
-/**
- * A proposal's configuration requests, approved or denied per request before the
- * proposal itself is decided (sc-9595) — the Change Requests tab's flow, reused.
- * Loaded for the selected proposal only: the Proposals query already walks every
- * program, and a program's requests are not needed until it is opened. Renders
- * nothing while there are none, since most proposals have none, but says so when
- * a query fails: a load error must not read as "nothing to review".
- */
+/** A proposal's requests, ticked to approve on Accept (sc-9595). Renders nothing
+ *  when there are none, but reports a load error so it can't read as "none". */
 export function ProposalConfigurationRequests({
   programId,
-  programLabel,
+  proposalRequests,
+  declined,
+  onDeclinedChange,
+  decided,
+  locked,
 }: {
   readonly programId: string;
-  readonly programLabel: string;
+  readonly proposalRequests: ProposalRequests;
+  /** Ids of the pending requests the reviewer unticked. */
+  readonly declined: ReadonlySet<string>;
+  readonly onDeclinedChange: (declined: ReadonlySet<string>) => void;
+  /** The proposal is decided, so the requests are read-only. */
+  readonly decided: boolean;
+  /** A resolve is in flight and sends the ticks it started with. */
+  readonly locked: boolean;
 }): JSX.Element | null {
   const {
     requests,
+    isPending,
+    declinedFrom,
+    split,
+    requestsError,
+    requestsIncomplete,
     partial,
-    incomplete: requestsIncomplete,
-    error: requestsError,
-  } = useProgramConfigurationRequests(programId);
-  // Every observation of the program, paged like the Change Requests tab, so a
-  // request's Target and Windows resolve however many observations there are.
-  const {
-    matches: observations,
-    error: observationsError,
-    incomplete: observationsIncomplete,
-  } = useProgramObservations(programId);
-  const observationsById = useMemo(() => observationsByIdFrom(observations), [observations]);
-  // Refetch this program's requests — not the Change Requests list — so the
-  // resolved statuses reload in place.
-  const { resolve, loading: saving } = useResolveChangeRequests(PROGRAM_CONFIGURATION_REQUESTS_QUERY);
+    observations,
+    observationsById,
+    observationsError,
+    observationsIncomplete,
+  } = proposalRequests;
+
+  const approvedIds = useMemo(() => new Set(split(declined).approved), [split, declined]);
 
   // A walk that cannot finish leaves only some of the requests: say so, rather than show them as all.
   if (requestsError || requestsIncomplete) {
@@ -54,30 +51,37 @@ export function ProposalConfigurationRequests({
       </p>
     );
   }
-  // Nothing until the first load has finished, and nothing while only some pages
-  // are in: a partial list must not pass for the whole set, and a loading line
-  // would flash on the many proposals that have none. A reload after a resolve
-  // keeps what is on screen, so the review is not torn down under the reviewer.
+  // A partial list must not pass for the whole set; a loading line would flash on most proposals.
   if (partial || requests.length === 0) return null;
   return (
     <>
       <h3 className="review-obs-title">Configuration Requests</h3>
+      {when(!decided, () => (
+        <p className="review-blurb">
+          Tick the requests to approve when the proposal is accepted; the other pending ones are denied.
+        </p>
+      ))}
       {/* With errorPolicy 'all' a benign per-observation warning arrives alongside
           good data, so only an error with nothing loaded counts as a failure. */}
-      {(observationsIncomplete || (observationsError && observations.length === 0)) && (
+      {when(observationsIncomplete || (observationsError && observations.length === 0), () => (
         <p className="check-error">
           <TriangleExclamation /> Could not load the program’s observations, so Target and Windows may be blank
           {observationsError ? <>: {friendlyError(observationsError)}</> : '.'}
         </p>
-      )}
-      <ConfigurationRequestReview
+      ))}
+      <ConfigurationRequestTable
+        key={programId}
         requests={requests}
-        programLabel={programLabel}
-        kind="proposal"
         observationsById={observationsById}
-        resetKey={programId}
-        saving={saving}
-        onResolve={resolve}
+        selection={
+          decided
+            ? undefined
+            : {
+                selectedIds: approvedIds,
+                isSelectable: (r) => !locked && isPending(r),
+                onChange: (ticked) => onDeclinedChange(declinedFrom(ticked)),
+              }
+        }
       />
     </>
   );

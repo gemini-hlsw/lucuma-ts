@@ -1,6 +1,6 @@
 import './ReviewView.css';
 
-import { Check, CircleCheck, cn, PaperPlane, XMark } from '@gemini-hlsw/lucuma-common-ui';
+import { Check, CircleCheck, cn, PaperPlane, when, XMark } from '@gemini-hlsw/lucuma-common-ui';
 import { Button } from 'primereact/button';
 import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
@@ -10,7 +10,6 @@ import { type JSX, type ReactNode, useState } from 'react';
 import { ConflictsTable } from '@/components/ConflictsTable';
 import { DuplicatesTable } from '@/components/DuplicatesTable';
 import { Tile } from '@/components/Tile';
-import { useRowSelection } from '@/components/useRowSelection';
 import type { ObservationRow } from '@/gql/types';
 
 /** Minimal shape a reviewed item satisfies. Proposals is the only page that
@@ -35,12 +34,16 @@ export interface ReviewViewProps<T extends ReviewItem> {
   readonly badge: ReactNode;
   /** Facet controls (status/type/semester dropdowns…) shown in the list tile's
    *  control strip. The page owns the filtering and passes `items` already
-   *  narrowed — per Andy's sc-9092 note the old Resolved/Unresolved toggle is
-   *  gone in favour of status filtering. */
+   *  narrowed (sc-9092 replaced the Resolved/Unresolved toggle with status
+   *  filtering). */
   readonly controls?: ReactNode;
-  /** True while the page's resolve mutation is in flight (disables Resolve). */
+  /** True while a resolve is in flight: the decision and response are locked. */
   readonly resolving?: boolean;
   readonly items: readonly T[];
+  /** The selected item, owned by the page because what it shows beside the
+   *  table (a proposal's configuration requests) belongs to that item. */
+  readonly selected: T | null;
+  readonly onSelect: (id: string | null) => void;
   /** Columns for the master list table. */
   readonly columns: readonly ReviewColumn<T>[];
   /** The detail panel's body for the selected item (abstract, justification…). */
@@ -54,6 +57,8 @@ export interface ReviewViewProps<T extends ReviewItem> {
    *  mutation landed (clears the decision/response), false to keep the
    *  reviewer's draft so they can retry. */
   readonly onResolve: (item: T, decision: Decision, response: string) => Promise<boolean>;
+  /** Why `decision` can't be resolved yet (shown as Resolve's hint), or null. */
+  readonly resolveBlocked?: (decision: Decision) => string | null;
   /** Short label for the selected item, shown in the Detail tile title. */
   readonly detailTitle: (item: T) => string;
   /** Singular noun for this item type ("proposal" / "change request"), used in
@@ -64,6 +69,14 @@ export interface ReviewViewProps<T extends ReviewItem> {
 }
 
 export type Decision = 'ACCEPT' | 'REJECT';
+
+interface Draft {
+  readonly id: string;
+  /** New on each choice; a resolve clears only the draft it was sent from. */
+  readonly opened: symbol;
+  readonly decision: Decision;
+  readonly response: string;
+}
 
 /**
  * Shared review surface for proposal-style decisions (sc-9092): a faceted
@@ -80,44 +93,38 @@ export function ReviewView<T extends ReviewItem>(props: ReviewViewProps<T>): JSX
     controls,
     resolving = false,
     items,
+    selected,
+    onSelect,
     columns,
     renderDetail,
     renderExtra,
     boilerplate,
     onResolve,
+    resolveBlocked,
     detailTitle,
     noun,
     resolveMutation,
   } = props;
 
   const nounTitle = `${noun[0]!.toUpperCase()}${noun.slice(1)}`;
-  const visible = items;
-  const [selected, setSelectedId] = useRowSelection(visible, 'id');
-
-  const [decision, setDecision] = useState<Decision | null>(null);
-  const [response, setResponse] = useState('');
-
-  /** Select an item, clearing any in-progress decision/response from the
-   *  previously selected one (they belong to that item, not the new one). */
-  function select(id: string | null): void {
-    setSelectedId(id);
-    setDecision(null);
-    setResponse('');
-  }
+  // Dropped on any selection move, including a facet's silent fallback.
+  const [draft, setDraft] = useState<Draft | null>(null);
+  if (draft && draft.id !== selected?.id) setDraft(null);
+  const decision = draft?.decision ?? null;
+  const response = draft?.response ?? '';
+  const blocked = decision ? (resolveBlocked?.(decision) ?? null) : null;
 
   /** Pick accept/reject and seed the response box with boilerplate. */
   function choose(item: T, next: Decision): void {
-    setDecision(next);
-    setResponse(boilerplate(item, next));
+    setDraft({ id: item.id, opened: Symbol(item.id), decision: next, response: boilerplate(item, next) });
   }
 
   function resolve(item: T): void {
-    if (!decision) return;
-    void onResolve(item, decision, response).then((ok) => {
-      if (ok) {
-        setDecision(null);
-        setResponse('');
-      }
+    if (!draft) return;
+    const { opened } = draft;
+    void onResolve(item, draft.decision, draft.response).then((ok) => {
+      // A late success must not clear a newer draft.
+      if (ok) setDraft((d) => (d?.opened === opened ? null : d));
     });
   }
 
@@ -133,11 +140,11 @@ export function ReviewView<T extends ReviewItem>(props: ReviewViewProps<T>): JSX
       <Tile title={title} controls={listControls} flush>
         <p className="review-blurb">{blurb}</p>
         <DataTable
-          value={visible as T[]}
+          value={items as T[]}
           dataKey="id"
           selectionMode="single"
           selection={selected ?? undefined}
-          onSelectionChange={(e) => select((e.value as T | null)?.id ?? null)}
+          onSelectionChange={(e) => onSelect((e.value as T | null)?.id ?? null)}
           emptyMessage={`No ${noun}s match the filters.`}
           className="review-table"
         >
@@ -153,7 +160,7 @@ export function ReviewView<T extends ReviewItem>(props: ReviewViewProps<T>): JSX
         </DataTable>
       </Tile>
 
-      {selected && (
+      {when(selected, (selected) => (
         <Tile title={detailTitle(selected)}>
           <div className="review-detail-body">{renderDetail(selected)}</div>
 
@@ -207,7 +214,7 @@ export function ReviewView<T extends ReviewItem>(props: ReviewViewProps<T>): JSX
 
           {renderExtra?.(selected, decision)}
 
-          {!selected.resolved && (
+          {when(!selected.resolved, () => (
             <div className="review-respond">
               <div className="review-decision">
                 <Button
@@ -215,6 +222,7 @@ export function ReviewView<T extends ReviewItem>(props: ReviewViewProps<T>): JSX
                   icon={<Check />}
                   severity="success"
                   outlined={decision !== 'ACCEPT'}
+                  disabled={resolving}
                   tooltip={`Mark this ${noun} for acceptance and seed an approval response to the PI below.`}
                   tooltipOptions={{ position: 'top' }}
                   onClick={() => choose(selected, 'ACCEPT')}
@@ -224,6 +232,7 @@ export function ReviewView<T extends ReviewItem>(props: ReviewViewProps<T>): JSX
                   icon={<XMark />}
                   severity="danger"
                   outlined={decision !== 'REJECT'}
+                  disabled={resolving}
                   tooltip={`Mark this ${noun} for rejection and seed a decline response to the PI below.`}
                   tooltipOptions={{ position: 'top' }}
                   onClick={() => choose(selected, 'REJECT')}
@@ -235,39 +244,40 @@ export function ReviewView<T extends ReviewItem>(props: ReviewViewProps<T>): JSX
                 rows={5}
                 placeholder="Choose accept or reject to seed a response to the PI…"
                 value={response}
-                disabled={!decision}
+                disabled={!decision || resolving}
                 title="The message sent to the PI. Pre-filled with boilerplate from your accept/reject choice; edit freely before resolving."
-                onChange={(e) => setResponse(e.target.value)}
+                onChange={(e) => setDraft((d) => d && { ...d, response: e.target.value })}
               />
 
               <div className="review-resolve">
                 {/* title-span so the hint shows even before a decision enables it. */}
                 <span
                   title={
-                    decision
+                    blocked ??
+                    (decision
                       ? `Record the decision and notify the PI (${resolveMutation}).`
-                      : 'Choose Accept or Reject first to enable resolving.'
+                      : 'Choose Accept or Reject first to enable resolving.')
                   }
                 >
                   <Button
                     label="Resolve"
                     icon={<PaperPlane />}
-                    disabled={!decision || resolving}
+                    disabled={!decision || resolving || blocked !== null}
                     loading={resolving}
                     onClick={() => resolve(selected)}
                   />
                 </span>
               </div>
             </div>
-          )}
+          ))}
 
-          {selected.resolved && (
+          {when(selected.resolved, () => (
             <p className="review-resolved-note">
               <CircleCheck /> This {noun} has been resolved.
             </p>
-          )}
+          ))}
         </Tile>
-      )}
+      ))}
     </>
   );
 }
