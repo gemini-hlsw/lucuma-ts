@@ -22,7 +22,7 @@
     "lint:eslint": "eslint ."
   },
   "dependencies": {
-    "@gemini-hlsw/lucuma-core": "0.277.8",
+    "@gemini-hlsw/lucuma-core": "0.277.9",
     "date-fns": "4.4.0",
     "tailwind-merge": "3.7.0"
   },
