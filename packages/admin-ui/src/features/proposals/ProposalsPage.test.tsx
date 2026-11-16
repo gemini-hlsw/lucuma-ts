@@ -21,7 +21,7 @@ import { PROPOSALS_QUERY, SET_PROPOSAL_STATUS_MUTATION } from '@/gql/odb/proposa
 import { USERS_QUERY } from '@/gql/sso/roster';
 import { configurationRequest, emptyRoster } from '@/test/factories';
 import { type MockedResponseOf, renderWithContext } from '@/test/render';
-import { boxOf, rowBoxes } from '@/test/requestTable';
+import { boxOf, rowBoxes, ticks } from '@/test/requestTable';
 
 import ProposalsPage from './ProposalsPage';
 
@@ -434,6 +434,34 @@ describe(ProposalsPage, () => {
       expect(setStatus).toHaveBeenCalledTimes(1);
     });
 
+    it('locks the ticks while a resolve is in flight', async () => {
+      const held = Promise.withResolvers<undefined>();
+      const screen = await renderWithContext(<ProposalsPage />, {
+        token: STAFF_TOKEN,
+        hold: { AdminSetProposalStatus: held.promise },
+        mocks: [
+          proposalsMock(),
+          requests(),
+          observationsAnswer(),
+          setStatusMock('ACCEPTED'),
+          resolveRequestsMock(['x-1', 'x-2'], []),
+          updateProgramMock(),
+          emptyRoster(),
+        ],
+      });
+      await expect.poll(() => ticks(screen)).toEqual([true, true]);
+      await accept(screen);
+      const selectAll = screen.container.querySelector<HTMLInputElement>('thead input[type="checkbox"]')!;
+      await expect.poll(() => rowBoxes(screen).map((box) => box.disabled)).toEqual([true, true]);
+      expect(selectAll.disabled).toBe(true);
+      rowBoxes(screen)[1]!.click();
+      selectAll.click();
+      expect(ticks(screen)).toEqual([true, true]);
+
+      held.resolve(undefined);
+      await expect.element(screen.getByText('Proposal accepted', { exact: true })).toBeVisible();
+    });
+
     it('keeps the buttons locked until the list shows the decision', async () => {
       const reloaded = Promise.withResolvers<undefined>();
       let loads = 0;
@@ -577,7 +605,7 @@ describe(ProposalsPage, () => {
       await expect.element(screen.getByText('Proposal accepted', { exact: true })).toBeVisible();
     });
 
-    it('stops at a failed requests step, says what is left, and still reloads', async () => {
+    it('stops at a failed requests step and still reloads', async () => {
       const award = vi.fn(programUpdated);
       // The reloads return the server's state: accepted, with x-1 approved before the error.
       const screen = await renderPageWith(
@@ -595,13 +623,7 @@ describe(ProposalsPage, () => {
       await expect
         .element(screen.getByText('Proposal accepted, but deciding the configuration requests failed'))
         .toBeVisible();
-      await expect
-        .element(
-          screen.getByText(
-            'ODB unavailable. To fix, finish them on the Change Requests tab. Not done: setting the active and proprietary periods (set them again in Programs).',
-          ),
-        )
-        .toBeVisible();
+      await expect.element(screen.getByText('ODB unavailable', { exact: true })).toBeVisible();
       await expect.element(screen.getByRole('cell', { name: 'ACCEPTED' })).toBeVisible();
       await expect.element(screen.getByTitle('Approved')).toBeInTheDocument();
       expect(award).not.toHaveBeenCalled();
@@ -621,7 +643,7 @@ describe(ProposalsPage, () => {
       await expect
         .element(screen.getByText('Proposal accepted, but setting the active and proprietary periods failed'))
         .toBeVisible();
-      await expect.element(screen.getByText('ODB unavailable. To fix, set them again in Programs.')).toBeVisible();
+      await expect.element(screen.getByText('ODB unavailable', { exact: true })).toBeVisible();
       expect(decide).toHaveBeenCalledTimes(1);
     });
 
@@ -775,18 +797,12 @@ describe(ProposalsPage, () => {
       await expect.element(screen.getByRole('cell', { name: 'ACCEPTED' })).toBeVisible();
     });
 
-    it('lists every step left undone', async () => {
+    it('stops at the first failed step', async () => {
       const log: string[] = [];
       const screen = await renderPage(undefined, setStatusMock('ACCEPTED'), roster, ...awardMocks(log, true));
       await acceptWithAward(screen);
       await expect.element(screen.getByText('Proposal accepted, but setting the time awards failed')).toBeVisible();
-      await expect
-        .element(
-          screen.getByText(
-            'ODB unavailable. To fix, set them again in Programs. Not done: setting the active and proprietary periods (set them again in Programs), assigning the contact scientists (assign them again in Programs).',
-          ),
-        )
-        .toBeVisible();
+      await expect.element(screen.getByText('ODB unavailable', { exact: true })).toBeVisible();
       expect(log).toEqual([]);
     });
 

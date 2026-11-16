@@ -38,7 +38,7 @@ export interface ReviewViewProps<T extends ReviewItem> {
    *  filtering). */
   readonly controls?: ReactNode;
   /** True while a resolve is in flight: the decision and response are locked. */
-  readonly resolving?: boolean;
+  readonly resolving: boolean;
   readonly items: readonly T[];
   /** The selected item, owned by the page because what it shows beside the
    *  table (a proposal's configuration requests) belongs to that item. */
@@ -72,8 +72,6 @@ export type Decision = 'ACCEPT' | 'REJECT';
 
 interface Draft {
   readonly id: string;
-  /** New on each choice; a resolve clears only the draft it was sent from. */
-  readonly opened: symbol;
   readonly decision: Decision;
   readonly response: string;
 }
@@ -91,7 +89,7 @@ export function ReviewView<T extends ReviewItem>(props: ReviewViewProps<T>): JSX
     blurb,
     badge,
     controls,
-    resolving = false,
+    resolving,
     items,
     selected,
     onSelect,
@@ -116,15 +114,16 @@ export function ReviewView<T extends ReviewItem>(props: ReviewViewProps<T>): JSX
 
   /** Pick accept/reject and seed the response box with boilerplate. */
   function choose(item: T, next: Decision): void {
-    setDraft({ id: item.id, opened: Symbol(item.id), decision: next, response: boilerplate(item, next) });
+    setDraft({ id: item.id, decision: next, response: boilerplate(item, next) });
   }
 
   function resolve(item: T): void {
     if (!draft) return;
-    const { opened } = draft;
+    // Captured, so a late success cannot clear another item's draft. The
+    // decision stays locked while `resolving`, so no newer draft of this item exists.
+    const selectedId = item.id;
     void onResolve(item, draft.decision, draft.response).then((ok) => {
-      // A late success must not clear a newer draft.
-      if (ok) setDraft((d) => (d?.opened === opened ? null : d));
+      if (ok) setDraft((d) => (d?.id === selectedId ? null : d));
     });
   }
 

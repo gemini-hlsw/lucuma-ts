@@ -62,7 +62,8 @@ export function useProposalRequests(programId: string | null) {
     observationsById,
     observationsError,
     observationsIncomplete,
-    // Observations only fill display columns, so they don't hold Accept back.
+    // Observations only fill display columns, so neither their loading nor their
+    // errors hold Accept back (as on the Change Requests tab).
     // `walking`, not the displayed `partial`: a held list must not pass for a fresh one.
     ready: !loading && !walking && !requestsError && !requestsIncomplete,
   };

@@ -83,23 +83,31 @@ export function ConfigurationRequestTable({
     [visibleRequests, selection?.selectedIds],
   );
 
+  const selectable = (r: ChangeRequest) => selection?.isSelectable?.(r) ?? true;
+  // PrimeReact only disables select-all on an empty table, and it would clear locked rows.
+  const selectAllPt = when(!visibleRequests.some(selectable), () => ({
+    headerCheckbox: { root: { className: 'p-disabled' }, input: { disabled: true } },
+  }));
+
   return (
     <>
       <DataTable
         value={visibleRequests}
         dataKey="id"
         className="cr-review-table"
-        // A body-template Checkbox never repainted (memoized cells).
+        // Memoized cells never repainted a body-template Checkbox, hence PrimeReact's own
+        // checkbox column; they also miss a change in `isDataSelectable`, so memo is off where rows can lock.
         selectionMode="checkbox"
+        cellMemo={!selection?.isSelectable}
         selection={ticked}
         onSelectionChange={(e) => selection?.onChange(new Set(e.value.map((r) => r.id)))}
-        isDataSelectable={(e) => selection?.isSelectable?.(e.data as VisibleRequest) ?? true}
+        isDataSelectable={(e) => selectable(e.data as VisibleRequest)}
         emptyMessage="No configuration requests to show."
       >
         {/* Columns without a `field` need a `columnKey`: PrimeReact keys cells by either plus
             index, so when the selection column goes (on Accept) they'd reuse a neighbour's cell. */}
         {when(selection, () => (
-          <Column columnKey="selection" selectionMode="multiple" style={{ width: '2.5rem' }} />
+          <Column columnKey="selection" selectionMode="multiple" style={{ width: '2.5rem' }} pt={selectAllPt} />
         ))}
         <Column field="id" header="ID" sortable style={{ width: '6rem' }} />
         <Column

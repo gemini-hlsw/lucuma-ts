@@ -68,8 +68,6 @@ interface AwardDraft {
 /** One write of an acceptance, named for the toast if it fails. */
 interface Step {
   readonly name: string;
-  /** What the reviewer does instead, as a lower-case clause. */
-  readonly remedy: string;
   readonly run: () => Promise<unknown>;
 }
 
@@ -163,13 +161,12 @@ export default function ProposalsPage(): JSX.Element {
       // Built before any write, so a bug here leaves nothing half done.
       const steps = decision === 'ACCEPT' ? acceptSteps(p) : [];
       const status = decision === 'ACCEPT' ? 'ACCEPTED' : 'NOT_ACCEPTED';
-      const statusSet = await setProposalStatus({ variables: { programId: p.id, status } }).then(
-        () => true,
-        (err: unknown) => {
+      const statusSet = await setProposalStatus({ variables: { programId: p.id, status } })
+        .then(() => true)
+        .catch((err: unknown) => {
           toast.error('Resolve failed', friendlyError(err));
           return false;
-        },
-      );
+        });
       if (!statusSet) return false;
       if (decision === 'REJECT') {
         toast.success('Proposal rejected', p.reference);
@@ -177,24 +174,16 @@ export default function ProposalsPage(): JSX.Element {
         await reload();
         return true;
       }
-      // Stop at the first failure: each step follows from the ones before it.
+      // Stop at the first failure, so the reviewer sees exactly which step failed.
       let failed = false;
-      for (const [i, step] of steps.entries()) {
-        // Via a promise, so a synchronous throw is reported like any step failure.
-        failed = await Promise.resolve()
-          .then(step.run)
-          .then(
-            () => false,
-            (err: unknown) => {
-              const skipped = steps.slice(i + 1).map((s) => `${s.name} (${s.remedy})`);
-              const notDone = skipped.length > 0 ? ` Not done: ${skipped.join(', ')}.` : '';
-              toast.error(
-                `Proposal accepted, but ${step.name} failed`,
-                `${friendlyError(err).replace(/\.$/, '')}. To fix, ${step.remedy}.${notDone}`,
-              );
-              return true;
-            },
-          );
+      for (const step of steps) {
+        failed = await step
+          .run()
+          .then(() => false)
+          .catch((err: unknown) => {
+            toast.error(`Proposal accepted, but ${step.name} failed`, friendlyError(err));
+            return true;
+          });
         if (failed) break;
       }
       if (!failed) toast.success('Proposal accepted', p.reference);
@@ -211,7 +200,7 @@ export default function ProposalsPage(): JSX.Element {
     }
   }
 
-  /** Accept's steps after the status: the requests the PI made first, then the award built on them. */
+  /** Accept's steps after the status: the PI's requests, then the award. */
   function acceptSteps(p: ReviewProposal): readonly Step[] {
     const { approved, denied } = proposalRequests.split(declined.get(p.id) ?? NO_IDS);
     const award = awards.get(p.id) ?? BLANK_AWARD;
@@ -222,27 +211,24 @@ export default function ProposalsPage(): JSX.Element {
       ...(award.activeStart ? { activeStart: award.activeStart } : {}),
       ...(award.activeEnd ? { activeEnd: award.activeEnd } : {}),
     };
+    // Each run is async, so a synchronous throw fails its step like a rejection.
     return [
       when(approved.length + denied.length > 0, () => ({
         name: 'deciding the configuration requests',
-        remedy: 'finish them on the Change Requests tab',
-        run: () => resolveRequests(approved, denied),
+        run: async () => resolveRequests(approved, denied),
       })),
       when(allocations.length > 0, () => ({
         name: 'setting the time awards',
-        remedy: 'set them again in Programs',
-        run: () => setAllocations({ variables: { programId: p.id, allocations } }),
+        run: async () => setAllocations({ variables: { programId: p.id, allocations } }),
       })),
       {
         name: 'setting the active and proprietary periods',
-        remedy: 'set them again in Programs',
-        run: () => updateProgram({ variables: { programId: p.id, set } }),
+        run: async () => updateProgram({ variables: { programId: p.id, set } }),
       },
       // A fresh award, so contact scientists are only added.
       when(contactIds.length > 0, () => ({
         name: 'assigning the contact scientists',
-        remedy: 'assign them again in Programs',
-        run: () => assignContactScientists(p.id, contactIds),
+        run: async () => assignContactScientists(p.id, contactIds),
       })),
     ].filter(isNotNullish);
   }

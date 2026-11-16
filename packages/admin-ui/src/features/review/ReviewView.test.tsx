@@ -15,16 +15,20 @@ const items: readonly Item[] = [
   { id: 'b', name: 'Second', resolved: false, observations: [] },
 ];
 
-/** The view as a page drives it, listing each returned resolve for tests to wait on. */
+/** The view as a page drives it, listing each returned resolve for tests to wait on.
+ *  `unlocked` leaves the decision open during a resolve, as a page must not. */
 function Harness({
   onResolve,
   resolveBlocked,
+  unlocked = false,
 }: {
   readonly onResolve: (item: Item) => Promise<boolean>;
   readonly resolveBlocked?: (decision: Decision) => string | null;
+  readonly unlocked?: boolean;
 }): JSX.Element {
   const [selectedId, setSelectedId] = useState<string>('a');
   const [returned, setReturned] = useState<readonly string[]>([]);
+  const [resolving, setResolving] = useState(false);
   return (
     <>
       <ReviewView<Item>
@@ -37,8 +41,11 @@ function Harness({
         columns={[{ header: 'Name', value: (i) => i.name }]}
         renderDetail={() => null}
         boilerplate={(i, decision) => `${decision} ${i.name}`}
+        resolving={resolving && !unlocked}
         onResolve={async (item) => {
+          setResolving(true);
           const ok = await onResolve(item);
+          setResolving(false);
           setReturned((r) => [...r, item.id]);
           return ok;
         }}
@@ -80,7 +87,8 @@ describe(ReviewView, () => {
   it('keeps the current draft when an earlier resolve succeeds late', async () => {
     const first = Promise.withResolvers<boolean>();
     const onResolve = vi.fn<(item: Item) => Promise<boolean>>().mockReturnValueOnce(first.promise);
-    const screen = await renderWithContext(<Harness onResolve={onResolve} />);
+    // Unlocked, so the newer draft can exist at all.
+    const screen = await renderWithContext(<Harness onResolve={onResolve} unlocked />);
 
     // Resolve the first item, then move on to the second and start a draft there while it is still in flight.
     await userEvent.click(screen.getByRole('button', { name: 'Accept' }));
@@ -96,7 +104,7 @@ describe(ReviewView, () => {
     expect(onResolve).toHaveBeenCalledTimes(1);
   });
 
-  it('keeps a new draft on the same item when an earlier resolve succeeds late', async () => {
+  it('locks the decision on the same item until an earlier resolve lands', async () => {
     const first = Promise.withResolvers<boolean>();
     const onResolve = vi.fn<(item: Item) => Promise<boolean>>().mockReturnValueOnce(first.promise);
     const screen = await renderWithContext(<Harness onResolve={onResolve} />);
@@ -105,13 +113,12 @@ describe(ReviewView, () => {
     await userEvent.click(screen.getByRole('button', { name: 'Resolve' }));
     await userEvent.click(screen.getByRole('cell', { name: 'Second' }));
     await userEvent.click(screen.getByRole('cell', { name: 'First' }));
-    await userEvent.click(screen.getByRole('button', { name: 'Reject' }));
-    await expect.element(screen.getByRole('textbox')).toHaveValue('REJECT First');
+    await expect.element(screen.getByRole('button', { name: 'Reject' })).toBeDisabled();
 
     first.resolve(true);
-    // Wait until it has landed, so the check below can't pass by running first.
     await expect.element(screen.getByTestId('returned')).toHaveTextContent('a');
-    await expect.element(screen.getByRole('textbox')).toHaveValue('REJECT First');
+    await expect.element(screen.getByRole('button', { name: 'Reject' })).toBeEnabled();
+    await expect.element(screen.getByRole('textbox')).toHaveValue('');
   });
 
   it('disables Resolve with the reason while the decision is blocked', async () => {
