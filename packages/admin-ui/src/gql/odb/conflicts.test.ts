@@ -23,6 +23,7 @@ describe(similarModeTypes, () => {
   it('is empty for mode-less sources', () => {
     expect(similarModeTypes(null)).toEqual([]);
     expect(similarModeTypes('FLAMINGOS_2_IMAGING')).toEqual(['FLAMINGOS_2_IMAGING']);
+    expect(similarModeTypes('SCORPIO_LONG_SLIT')).toEqual(['SCORPIO_LONG_SLIT']);
     expect(similarModeTypes('DAYTIME_CALIBRATION')).toEqual(['DAYTIME_CALIBRATION']);
     expect(similarModeTypes('GMOS_SOUTH_IMAGING')).toEqual(['GMOS_SOUTH_IMAGING', 'GMOS_NORTH_IMAGING']);
     expect(similarModeTypes('ALOPEKE_WIDE_FIELD')).toEqual(['ALOPEKE_WIDE_FIELD', 'ZORRO_WIDE_FIELD']);
@@ -33,6 +34,7 @@ describe(formatModeType, () => {
   it('renders instrument + configuration style', () => {
     expect(formatModeType('GMOS_SOUTH_LONG_SLIT')).toBe('GMOS-S LongSlit');
     expect(formatModeType('FLAMINGOS_2_IMAGING')).toBe('Flamingos-2 Imaging');
+    expect(formatModeType('SCORPIO_LONG_SLIT')).toBe('SCORPIO LongSlit');
     expect(formatModeType('MAROON_X')).toBe('MAROON-X');
     expect(formatModeType('DAYTIME_CALIBRATION')).toBe('Daytime calibration');
     expect(formatModeType(null)).toBe('—');

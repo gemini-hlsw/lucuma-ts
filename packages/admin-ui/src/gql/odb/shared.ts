@@ -107,6 +107,7 @@ export const MODE_TYPE_FORMAT: Record<ObservingModeType, { readonly instrument: 
   GNIRS_LONG_SLIT: { instrument: 'GNIRS', mode: 'LongSlit' },
   IGRINS_2_LONG_SLIT: { instrument: 'IGRINS-2', mode: 'LongSlit' },
   MAROON_X: { instrument: 'MAROON-X', mode: '' },
+  SCORPIO_LONG_SLIT: { instrument: 'SCORPIO', mode: 'LongSlit' },
   VISITOR_NORTH: { instrument: 'Visitor North', mode: '' },
   VISITOR_SOUTH: { instrument: 'Visitor South', mode: '' },
   ZORRO_SPECKLE: { instrument: 'Zorro', mode: 'Speckle' },
