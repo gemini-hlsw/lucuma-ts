@@ -1,6 +1,6 @@
 import './checkTables.css';
 
-import { Spinner, TriangleExclamation } from '@gemini-hlsw/lucuma-common-ui';
+import { Spinner, TriangleExclamation, when } from '@gemini-hlsw/lucuma-common-ui';
 import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
 import { type JSX, useMemo } from 'react';
@@ -12,7 +12,9 @@ import {
   type ConflictSource,
   conflictTargetLabel,
   isCheckable,
+  type ObservationSource,
   type PositionedSource,
+  useBasePosition,
   useConflictCandidates,
   useConflictTargetNames,
 } from '@/gql/odb/conflicts';
@@ -30,37 +32,72 @@ export function ConflictsTable({
   sources,
 }: {
   readonly title: string;
-  readonly sources: readonly ConflictSource[];
+  readonly sources: readonly (ConflictSource | ObservationSource)[];
 }): JSX.Element {
-  const checkable = useMemo(() => sources.filter(isCheckable), [sources]);
-  const unchecked = useMemo(() => sources.filter((s) => !isCheckable(s)), [sources]);
+  const [checkable, unchecked] = useMemo(() => {
+    const checkable: (PositionedSource | ObservationSource)[] = [];
+    const unchecked: (ConflictSource | ObservationSource)[] = [];
+    for (const s of sources) (isCheckable(s) ? checkable : unchecked).push(s);
+    return [checkable, unchecked] as const;
+  }, [sources]);
 
   return (
     <section className="check-section">
       <h3 className="check-title" title="Similar-mode plans in other active programs within half the field of view.">
         {title}
       </h3>
-      {checkable.map((source) => (
-        <SourceConflicts key={source.id} source={source} />
+      {when(sources.length === 0, () => (
+        <p className="check-note">Nothing to check.</p>
       ))}
-      {unchecked.length > 0 && (
+      {checkable.map((source) =>
+        'atBase' in source ? (
+          <BaseConflicts key={source.id} source={source} />
+        ) : (
+          <SourceConflicts key={source.id} source={source} />
+        ),
+      )}
+      {when(unchecked.length > 0, () => (
         <p className="check-error">
           <TriangleExclamation /> Not checked, for lack of a position or a similar observing mode:{' '}
           {unchecked.map((s) => s.id).join(', ')}.
         </p>
-      )}
+      ))}
     </section>
   );
 }
 
-/** Callers build their sources afresh on every render, so a section is compared by what it checks. */
+/** An asterism's section: its cone waits for the ODB's base position. */
+function BaseConflicts({ source }: { readonly source: ObservationSource }): JSX.Element {
+  const { position, notFound, loading, error } = useBasePosition(source.id);
+  const { id, programId, modeType } = source;
+  const placed = useMemo(
+    () => position && { id, programId, modeType, ...position },
+    [id, programId, modeType, position],
+  );
+  if (placed) return <SourceConflicts source={placed} />;
+
+  return (
+    <div>
+      <h4 className="check-title">{source.id}</h4>
+      {loading ? (
+        <p className="check-note">
+          <Spinner spin className="check-spinner" /> Reading the base position…
+        </p>
+      ) : (
+        <p className="check-error">
+          <TriangleExclamation /> Not checked:{' '}
+          {error ? friendlyError(error) : notFound ? 'observation not found.' : 'no fixed base position.'}
+        </p>
+      )}
+    </div>
+  );
+}
+
 function SourceConflicts({ source }: { readonly source: PositionedSource }): JSX.Element {
   const { candidates, loading, error, truncated } = useConflictCandidates(source);
   const matched = useMemo(() => conflictRows(source, candidates), [source, candidates]);
   const targetsById = useConflictTargetNames(matched);
-  // Fold the resolved target names into the rows so the DataTable's `value`
-  // identity changes when they arrive — a body closure over `targetsById`
-  // wouldn't repaint, since PrimeReact memoizes cells on the row value.
+  // Folded into the rows: PrimeReact memoizes cells on the row value, so a closure would not repaint.
   const rows = useMemo(
     () => matched.map((r) => ({ ...r, target: conflictTargetLabel(r, targetsById) })),
     [matched, targetsById],
@@ -69,28 +106,26 @@ function SourceConflicts({ source }: { readonly source: PositionedSource }): JSX
   return (
     <div>
       <h4 className="check-title">{source.id}</h4>
-      {error && (
+      {when(error, (e) => (
         <p className="check-error">
-          <TriangleExclamation /> Conflict check failed: {friendlyError(error)}
+          <TriangleExclamation /> Conflict check failed: {friendlyError(e)}
         </p>
-      )}
-      {truncated && (
+      ))}
+      {when(truncated, () => (
         <p className="check-error">
           <TriangleExclamation /> More candidates matched than this check can list. The result is incomplete.
         </p>
-      )}
-      {loading && (
+      ))}
+      {when(loading, () => (
         <p className="check-note">
           <Spinner spin className="check-spinner" /> Checking active programs…
         </p>
-      )}
-      {/* A source with nothing to show is one line, not an empty table; and never an all-clear
-        on an incomplete pool, since a failed or truncated check that reads "no conflicts
-        found" is what a missed duplicate looks like. */}
-      {rows.length === 0 && !loading && !error && !truncated && (
+      ))}
+      {/* Never an all-clear on a failed or truncated check. */}
+      {when(rows.length === 0 && !loading && !error && !truncated, () => (
         <p className="check-note">No conflicting plans found in other active programs.</p>
-      )}
-      {rows.length > 0 && (
+      ))}
+      {when(rows.length > 0, () => (
         <DataTable value={rows} dataKey="key" className="pl-striped-table">
           <Column
             header="Program ID"
@@ -140,7 +175,7 @@ function SourceConflicts({ source }: { readonly source: PositionedSource }): JSX
           />
           <Column header="Config" style={{ width: '10rem' }} body={(r: ConflictRow) => formatModeType(r.modeType)} />
         </DataTable>
-      )}
+      ))}
     </div>
   );
 }

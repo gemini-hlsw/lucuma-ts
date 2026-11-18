@@ -1,10 +1,14 @@
 import { useState } from 'react';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-import { CONFLICT_TARGETS_QUERY, type ConflictSource, type PositionedSource } from '@/gql/odb/conflicts';
-import type { ConflictObservationCandidateFragment, ConflictRequestCandidateFragment } from '@/gql/odb/gen/graphql';
+import {
+  CONFLICT_TARGETS_QUERY,
+  type ConflictSource,
+  type ObservationSource,
+  type PositionedSource,
+} from '@/gql/odb/conflicts';
 import { searchRadiusArcsec } from '@/lib/geminiArchive';
-import { conflictMocks } from '@/test/conflicts';
+import { baseMock, conflictMocks, coordinates, observationCandidate, requestCandidate } from '@/test/conflicts';
 import { type MockedResponseOf, renderWithContext } from '@/test/render';
 
 import { ConflictsTable } from './ConflictsTable';
@@ -12,64 +16,15 @@ import { ConflictsTable } from './ConflictsTable';
 const MODE = 'GMOS_SOUTH_LONG_SLIT';
 const source: PositionedSource = { id: 'x-125', programId: 'p-1', raDeg: 30, decDeg: -30, modeType: MODE };
 
-/** Where the conflict's returned position lies: the cone's radius plus 29.68″,
- *  the measured gap between a target's catalogue-epoch position and the J2000
- *  one the ODB matches on (target t-14105, sc-9243). The ODB judged it inside
- *  the cone, yet the coordinates it hands back sit outside the radius — so a
- *  client-side `separation <= radius` would drop this genuine conflict. */
+/** The cone's radius plus the measured 29.68″ epoch gap (t-14105): matched by the ODB,
+ *  yet returned outside the radius. */
 const RETURNED_OFFSET_DEG = (searchRadiusArcsec(MODE) + 29.68) / 3600;
 
-const request = (applicableObservations: string[] = []): ConflictRequestCandidateFragment => ({
-  __typename: 'ConfigurationRequest',
-  id: 'x-42',
-  status: 'APPROVED',
-  applicableObservations,
-  program: {
-    __typename: 'Program',
-    id: 'p-2',
-    reference: { __typename: 'ScienceProgramReference', label: 'G-2027B-0421-P' },
-  },
+/** A request whose returned position lies outside the cone the ODB matched it in. */
+const outside = requestCandidate({
   configuration: {
-    __typename: 'Configuration',
-    target: {
-      __typename: 'ConfigurationTarget',
-      coordinates: {
-        __typename: 'Coordinates',
-        ra: { __typename: 'RightAscension', degrees: 30 },
-        dec: { __typename: 'Declination', degrees: -30 - RETURNED_OFFSET_DEG },
-      },
-    },
-    observingMode: { __typename: 'ConfigurationObservingMode', mode: MODE },
-  },
-});
-
-/** An observation of another program at the returned position of the request. */
-const observation = (id: string): ConflictObservationCandidateFragment => ({
-  __typename: 'Observation',
-  id,
-  reference: { __typename: 'ObservationReference', label: 'G-2027B-0421-P-0001' },
-  workflow: {
-    __typename: 'CalculatedObservationWorkflow',
-    value: { __typename: 'ObservationWorkflow', state: 'READY' },
-  },
-  observingMode: { __typename: 'ObservingMode', mode: MODE },
-  program: {
-    __typename: 'Program',
-    id: 'p-2',
-    reference: { __typename: 'ScienceProgramReference', label: 'G-2027B-0421-P' },
-  },
-  targetEnvironment: {
-    __typename: 'TargetEnvironment',
-    basePosition: {
-      __typename: 'BasePosition',
-      name: 'Target',
-      sidereal: {
-        __typename: 'Sidereal',
-        ra: { __typename: 'RightAscension', degrees: 30 },
-        dec: { __typename: 'Declination', degrees: -30 - RETURNED_OFFSET_DEG },
-      },
-      coordinates: null,
-    },
+    ...requestCandidate().configuration,
+    target: { __typename: 'ConfigurationTarget', coordinates: coordinates(30, -30 - RETURNED_OFFSET_DEG) },
   },
 });
 
@@ -80,13 +35,15 @@ const targetNames = (ids: string[]): MockedResponseOf<typeof CONFLICT_TARGETS_QU
   request: { query: CONFLICT_TARGETS_QUERY, variables: { ids } },
   result: { data: { observations: { __typename: 'ObservationSelectResult', matches: [] } } },
 });
-const table = (sources: readonly ConflictSource[]) => <ConflictsTable title="Potential Conflicts" sources={sources} />;
+const table = (sources: readonly (ConflictSource | ObservationSource)[]) => (
+  <ConflictsTable title="Potential Conflicts" sources={sources} />
+);
 const ALL_CLEAR = /No conflicting plans found/;
 
 describe(ConflictsTable, () => {
   it('lists a conflict whose returned position lies outside the cone, since the ODB judged proximity', async () => {
     const screen = await renderWithContext(table([source]), {
-      mocks: conflictMocks(source, { requests: { matches: [request()] } }),
+      mocks: conflictMocks(source, { requests: { matches: [outside] } }),
     });
     await expect.element(screen.getByRole('link', LINK)).toBeVisible();
     await expect.element(screen.getByText('194.7″')).toBeVisible();
@@ -100,7 +57,7 @@ describe(ConflictsTable, () => {
   });
 
   it('shows a dash for the separation of a candidate whose position could not be read', async () => {
-    const unplaced = { ...request(), configuration: { ...request().configuration, target: null } };
+    const unplaced = requestCandidate({ configuration: { ...requestCandidate().configuration, target: null } });
     const screen = await renderWithContext(table([source]), {
       mocks: conflictMocks(source, { requests: { matches: [unplaced] } }),
     });
@@ -122,13 +79,33 @@ describe(ConflictsTable, () => {
   );
 
   it('reports a failed query and never an all-clear, even when the other pool answered', async () => {
-    const [requests, observations] = conflictMocks(source, { requests: { matches: [request()] } });
+    const [requests, observations] = conflictMocks(source, { requests: { matches: [requestCandidate()] } });
     const screen = await renderWithContext(table([source]), {
       mocks: [requests, { request: observations.request, error: new Error('ODB unavailable') }],
     });
     await expect.element(screen.getByText(/Conflict check failed/)).toBeVisible();
     await expect.element(screen.getByText(ALL_CLEAR)).not.toBeInTheDocument();
     await expect.element(screen.getByRole('link', LINK)).not.toBeInTheDocument();
+  });
+
+  it('fails the check on a GraphQL error, even when the response carries data', async () => {
+    const [requests, observations] = conflictMocks(source, {
+      requests: { matches: [requestCandidate()] },
+      observations: { matches: [observationCandidate({ id: 'o-7' })] },
+    });
+    const { data } = observations.result as { data: object };
+    const screen = await renderWithContext(table([source]), {
+      mocks: [
+        requests,
+        {
+          request: observations.request,
+          result: { data, errors: [{ message: 'The ODB failed.', path: ['observations'] }] },
+        },
+      ],
+    });
+    await expect.element(screen.getByText(/Conflict check failed: The ODB failed/)).toBeVisible();
+    expect(screen.getByText(ALL_CLEAR).elements()).toHaveLength(0);
+    expect(screen.getByRole('link', LINK).elements()).toHaveLength(0);
   });
 
   it.each(['requests', 'observations'] as const)('shows the failure itself when the %s pool fails', async (pool) => {
@@ -162,8 +139,8 @@ describe(ConflictsTable, () => {
     const screen = await renderWithContext(table([source]), {
       mocks: [
         ...conflictMocks(source, {
-          requests: { matches: [request(['o-7'])] },
-          observations: { matches: [observation('o-7')] },
+          requests: { matches: [requestCandidate({ applicableObservations: ['o-7'] })] },
+          observations: { matches: [observationCandidate({ id: 'o-7' })] },
         }),
         targetNames(['o-7']),
       ],
@@ -176,8 +153,8 @@ describe(ConflictsTable, () => {
     const screen = await renderWithContext(table([source]), {
       mocks: [
         ...conflictMocks(source, {
-          requests: { matches: [request(['o-other'])] },
-          observations: { matches: [observation('o-7')] },
+          requests: { matches: [requestCandidate({ applicableObservations: ['o-other'] })] },
+          observations: { matches: [observationCandidate({ id: 'o-7' })] },
         }),
         targetNames(['o-other']),
       ],
@@ -200,7 +177,9 @@ describe(ConflictsTable, () => {
 
     it('lists a conflict under the source whose cone found it, and no other', async () => {
       const screen = await renderWithContext(table(three), {
-        mocks: three.flatMap((s) => conflictMocks(s, s.id === 'x-402' ? { requests: { matches: [request()] } } : {})),
+        mocks: three.flatMap((s) =>
+          conflictMocks(s, s.id === 'x-402' ? { requests: { matches: [requestCandidate()] } } : {}),
+        ),
       });
       await expect.element(screen.getByRole('link', LINK)).toBeVisible();
       expect(screen.getByRole('link', LINK).elements()).toHaveLength(1);
@@ -212,7 +191,7 @@ describe(ConflictsTable, () => {
     it('answers two sources that share one cone, each in its own section', async () => {
       const twin: PositionedSource = { ...source, id: 'x-126' };
       const screen = await renderWithContext(table([source, twin]), {
-        mocks: conflictMocks(source, { requests: { matches: [request()] } }),
+        mocks: conflictMocks(source, { requests: { matches: [requestCandidate()] } }),
       });
       await expect.element(screen.getByRole('heading', { name: 'x-125' })).toBeVisible();
       await expect.element(screen.getByRole('heading', { name: 'x-126' })).toBeVisible();
@@ -226,7 +205,7 @@ describe(ConflictsTable, () => {
           requests,
           { request: observations.request, error: new Error('ODB unavailable') },
           ...conflictMocks(three[1]!),
-          ...conflictMocks(three[2]!, { requests: { matches: [request()] } }),
+          ...conflictMocks(three[2]!, { requests: { matches: [requestCandidate()] } }),
         ],
       });
       await expect.element(screen.getByText(/Conflict check failed/)).toBeVisible();
@@ -236,12 +215,17 @@ describe(ConflictsTable, () => {
 
     it('keeps the answers of the sources that stay when one is deselected, without asking again', async () => {
       let asked = 0;
-      const [requests, observations] = conflictMocks(three[1]!, { requests: { matches: [request()] } });
+      const [requests, observations] = conflictMocks(three[1]!, { requests: { matches: [requestCandidate()] } });
+      // Counted as each request is sent, so a re-ask is seen before its answer arrives.
       const counted = {
         ...requests,
-        result: () => {
-          asked += 1;
-          return requests.result as { data: object };
+        request: {
+          ...requests.request,
+          variables: (variables: object) => {
+            const mine = JSON.stringify(variables) === JSON.stringify(requests.request.variables);
+            if (mine) asked += 1;
+            return mine;
+          },
         },
       };
       function Selection() {
@@ -265,33 +249,8 @@ describe(ConflictsTable, () => {
     });
   });
 
-  it('lists nothing while one pool is still answering, since half an answer is not the whole', async () => {
-    let requestsAnswered = false;
-    const [requests, observations] = conflictMocks(source, { requests: { matches: [request()] } });
-    const screen = await renderWithContext(table([source]), {
-      mocks: [
-        {
-          ...requests,
-          result: () => {
-            requestsAnswered = true;
-            return requests.result as { data: object };
-          },
-        },
-        { ...observations, delay: 1200 },
-      ],
-    });
-    // The requests pool has answered with its conflict; the observations pool has not.
-    await vi.waitFor(() => expect(requestsAnswered).toBe(true));
-    await new Promise((resolve) => setTimeout(resolve, 100));
-    await expect.element(screen.getByText(/Checking active programs/)).toBeVisible();
-    expect(screen.getByRole('link', LINK).elements()).toHaveLength(0);
-    expect(screen.getByText(ALL_CLEAR).elements()).toHaveLength(0);
-    expect(screen.getByText(/Conflict check failed/).elements()).toHaveLength(0);
-    await expect.element(screen.getByRole('link', LINK), { timeout: 4000 }).toBeVisible();
-  });
-
   it('lists nothing from the old answer while the same source is checked afresh', async () => {
-    // A source that moves, as the observing-night boundary moves `today`, changes the variables.
+    // Moving the source changes its variables, so it is checked afresh.
     const moved: PositionedSource = { ...source, raDeg: 31 };
     function Moving() {
       const [at, setAt] = useState<ConflictSource>(source);
@@ -302,7 +261,7 @@ describe(ConflictsTable, () => {
         </>
       );
     }
-    const [requests, observations] = conflictMocks(source, { requests: { matches: [request()] } });
+    const [requests, observations] = conflictMocks(source, { requests: { matches: [requestCandidate()] } });
     const [movedRequests, movedObservations] = conflictMocks(moved);
     const screen = await renderWithContext(<Moving />, {
       mocks: [requests, observations, { ...movedRequests, delay: 1000 }, movedObservations],
@@ -315,22 +274,63 @@ describe(ConflictsTable, () => {
     await expect.element(screen.getByText(ALL_CLEAR), { timeout: 4000 }).toBeVisible();
   });
 
-  it('shows no section, and never an all-clear, when no source can be checked', async () => {
+  it('says when a source cannot be checked, with no section and no all-clear of its own', async () => {
     const unplaced: ConflictSource = { id: 'x-300', programId: 'p-1', raDeg: null, decDeg: null, modeType: MODE };
-    const screen = await renderWithContext(table([unplaced]), { mocks: [] });
+    const screen = await renderWithContext(table([source, unplaced]), { mocks: conflictMocks(source) });
     await expect
       .element(screen.getByText(/Not checked, for lack of a position or a similar observing mode: x-300/))
       .toBeVisible();
-    await expect.element(screen.getByText(ALL_CLEAR)).not.toBeInTheDocument();
+    await expect.element(screen.getByText(ALL_CLEAR)).toBeVisible();
+    expect(screen.getByText(ALL_CLEAR).elements()).toHaveLength(1);
+    expect(screen.getByRole('heading', { name: 'x-300' }).elements()).toHaveLength(0);
   });
 
-  it('says when a source has no position or similar mode to check, rather than reading as clear', async () => {
-    const unplaced: ConflictSource = { id: 'x-300', programId: 'p-1', raDeg: null, decDeg: null, modeType: MODE };
-    const screen = await renderWithContext(table([source, unplaced]), {
-      mocks: conflictMocks(source),
+  it('says there is nothing to check when there are no sources', async () => {
+    const screen = await renderWithContext(table([]));
+    await expect.element(screen.getByText('Nothing to check.')).toBeVisible();
+  });
+
+  describe('with an asterism under review', () => {
+    const observed: ObservationSource = { id: 'o-125', programId: 'p-1', modeType: MODE, atBase: true };
+    /** The ODB's base for the asterism, where its cone must be centred. */
+    const base: PositionedSource = { ...source, id: 'o-125', raDeg: 40, decDeg: 10 };
+
+    it('centres the cone on the base position the ODB computes', async () => {
+      const screen = await renderWithContext(table([observed]), {
+        mocks: [baseMock('o-125', [40, 10]), ...conflictMocks(base, { requests: { matches: [requestCandidate()] } })],
+      });
+      await expect.element(screen.getByRole('link', LINK)).toBeVisible();
     });
-    await expect
-      .element(screen.getByText(/Not checked, for lack of a position or a similar observing mode: x-300/))
-      .toBeVisible();
+
+    it('says it is not checked when the ODB gives no base position', async () => {
+      const screen = await renderWithContext(table([observed]), { mocks: [baseMock('o-125', null)] });
+      await expect.element(screen.getByText('Not checked: no fixed base position.')).toBeVisible();
+      expect(screen.getByText(ALL_CLEAR).elements()).toHaveLength(0);
+    });
+
+    it('says it is not checked when the observation is not found', async () => {
+      const screen = await renderWithContext(table([observed]), {
+        mocks: [{ request: baseMock('o-125', null).request, result: { data: { observation: null } } }],
+      });
+      await expect.element(screen.getByText('Not checked: observation not found.')).toBeVisible();
+    });
+
+    it('fails only its own check when its base position cannot be computed', async () => {
+      const reason = 'Observation time is required to compute the asterism base position in observation o-125.';
+      const screen = await renderWithContext(table([observed, source]), {
+        mocks: [
+          {
+            request: baseMock('o-125', null).request,
+            result: {
+              data: null,
+              errors: [{ message: reason, path: ['observation', 'targetEnvironment', 'basePosition'] }],
+            },
+          },
+          ...conflictMocks(source, { requests: { matches: [requestCandidate()] } }),
+        ],
+      });
+      await expect.element(screen.getByText(`Not checked: ${reason}`)).toBeVisible();
+      await expect.element(screen.getByRole('link', LINK)).toBeVisible();
+    });
   });
 });

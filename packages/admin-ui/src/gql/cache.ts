@@ -1,14 +1,7 @@
 import { InMemoryCache } from '@apollo/client';
 
-/**
- * The app's cache. A target environment has no id, so a query that writes one
- * replaces what another query wrote: the conflict check reads `basePosition`,
- * its target-name lookup reads `firstScienceTarget`, and each wrote the other's
- * answer incomplete and refetched to restore its own. A request's configuration
- * and its observing mode are the same: the change requests page and the conflict
- * check read different parts of them. Merging keeps both; navigate does the same
- * for `Observation.targetEnvironment`.
- */
+/** The app's cache. These objects have no id, so queries reading different fields of
+ *  one would overwrite each other and refetch; merging keeps both. */
 export const makeCache = (): InMemoryCache =>
   new InMemoryCache({
     typePolicies: {

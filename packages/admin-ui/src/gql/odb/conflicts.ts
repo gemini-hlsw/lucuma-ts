@@ -1,11 +1,10 @@
 /*
  * Observation Conflict Check (sc-9243): before a request is approved, look for
  * equivalent plans in other active programs. Two pools: configuration requests,
- * and the observations of every active program, since a ToO program's requests
- * carry no coordinates and a query cannot select ToO programs (WhereProgram has
- * no such filter). The ODB judges proximity, one cone per source, so no distance is
- * re-tested here. A ToO still awaiting its alert has no position and is not seen.
+ * and the live observations of accepted science programs, since a ToO program's
+ * requests carry no coordinates. The ODB judges proximity, one cone per source.
  */
+import type { ErrorLike } from '@apollo/client';
 import { skipToken, useQuery } from '@apollo/client/react';
 import { parseNumber } from '@gemini-hlsw/lucuma-common-ui';
 import { dateToLocalObservingNight } from '@gemini-hlsw/lucuma-core';
@@ -13,6 +12,7 @@ import { useMemo } from 'react';
 
 import { searchRadiusArcsec, separationArcsec } from '@/lib/geminiArchive';
 
+import type { ObservationRow } from '../types';
 import { graphql } from './gen';
 import type {
   AdminConflictObservationsQueryVariables,
@@ -25,13 +25,10 @@ import type {
   WhereConfigurationRequest,
   WhereObservation,
 } from './gen/graphql';
-import { asObservingModeType, formatDec, formatRa, joinTargetNames } from './shared';
+import { asObservingModeType, basePositionOf, degreesOf, formatDec, formatRa, joinTargetNames } from './shared';
 
-/** sc-9243's "similar" observing modes: the same configuration style on the
- *  paired instrument yields equivalent data (GMOS-N ~ GMOS-S, GNIRS ~
- *  Flamingos-2, Alopeke ~ Zorro, GHOST ~ MAROON-X). The complete enum
- *  (enforced by the Record) so a new mode is a compile error, not a silent
- *  gap; a mode with no similar partner maps to just itself. */
+/** sc-9243's similar modes: the same configuration on the paired instrument.
+ *  The Record covers the whole enum, so a new mode is a compile error. */
 const SIMILAR_MODE_TYPES: Record<ObservingModeType, readonly ObservingModeType[]> = {
   ALOPEKE_SPECKLE: ['ALOPEKE_SPECKLE', 'ZORRO_SPECKLE'],
   ALOPEKE_WIDE_FIELD: ['ALOPEKE_WIDE_FIELD', 'ZORRO_WIDE_FIELD'],
@@ -121,42 +118,12 @@ export const CONFLICT_OBSERVATION_FRAGMENT = graphql(`
       }
     }
     targetEnvironment {
-      # The position the telescope would slew to, which is what the story means
-      # by the base coordinate. Unlike firstScienceTarget, it also covers an
-      # explicit base and an asterism.
-      basePosition {
-        name
-        # At most one of these is set: a single sidereal target fills sidereal,
-        # an asterism composite or an explicit base fills coordinates.
-        sidereal {
-          ra {
-            degrees
-          }
-          dec {
-            degrees
-          }
-        }
-        coordinates {
-          ra {
-            degrees
-          }
-          dec {
-            degrees
-          }
-        }
-      }
+      ...ConflictBase
     }
   }
 `);
 
-/*
- * Each source is two operations, one per pool (configuration requests, observations), each with
- * the source's cone, so rows stay attributed to the source whose cone found them. A cone is
- * required, not an optimisation: an observation with no targets fails the whole query
- * ("No targets are defined for o-190") when its base position is read, and a cone over
- * the whole sky fails past 10,000 matches. The WHERE filters are built in TypeScript
- * (requestsVariables, observationsVariables).
- */
+/* One operation per pool and source, each with the source's cone. */
 export const CONFLICT_REQUESTS_QUERY = graphql(`
   query AdminConflictRequests($where: WhereConfigurationRequest!) {
     configurationRequests(WHERE: $where, LIMIT: 1000) {
@@ -206,7 +173,14 @@ export function observationsVariables(
   today: string,
 ): AdminConflictObservationsQueryVariables {
   const where: WhereObservation = {
-    program: { activeEnd: { GT: today }, id: { NEQ: source.programId } },
+    // Plans of accepted science programs. A completed observation stays: the design lists Observed conflicts.
+    program: {
+      activeEnd: { GT: today },
+      id: { NEQ: source.programId },
+      proposalStatus: { EQ: 'ACCEPTED' },
+      type: { EQ: 'SCIENCE' },
+    },
+    workflow: { workflowState: { NEQ: 'INACTIVE' } },
     observingModeType: { IN: [...similarModeTypes(source.modeType)] },
     // Science observations only: calibrations aren't conflicts (sc-9591).
     calibrationRole: { IS_NULL: true },
@@ -217,16 +191,101 @@ export function observationsVariables(
 
 /** A source that can be checked: it has a position and at least one similar mode.
  *  The rest are reported as not checked, rather than as clear. */
-export function isCheckable(source: ConflictSource): source is PositionedSource {
-  return source.raDeg !== null && source.decDeg !== null && similarModeTypes(source.modeType).length > 0;
+export function isCheckable(
+  source: ConflictSource | ObservationSource,
+): source is PositionedSource | ObservationSource {
+  const placed = 'atBase' in source || (source.raDeg !== null && source.decDeg !== null);
+  return placed && similarModeTypes(source.modeType).length > 0;
 }
 
-/**
- * Fetch both candidate pools for one source, live from the ODB (check-time data, never served
- * from the cache). A failed or incomplete pool is reported, never read as an all-clear: a
- * source whose operation failed, or came back without data, has no candidates and an error.
+/*
+ * The base position of an asterism under review, which only the ODB can compute. One
+ * observation per request: a failing base nulls `basePosition` for every row of a response.
  */
-export function useConflictCandidates(source: PositionedSource) {
+export const CONFLICT_BASE_QUERY = graphql(`
+  query AdminConflictBase($id: ObservationId!) {
+    observation(observationId: $id) {
+      id
+      targetEnvironment {
+        basePosition {
+          # An asterism's centre: the ODB fills coordinates, never sidereal.
+          coordinates {
+            ra {
+              degrees
+            }
+            dec {
+              degrees
+            }
+          }
+        }
+      }
+    }
+  }
+`);
+
+/** The ODB's base position for one observation under review, live. */
+export function useBasePosition(id: string) {
+  const { data, loading, error } = useQuery(CONFLICT_BASE_QUERY, {
+    variables: { id },
+    fetchPolicy: 'network-only',
+  });
+  const position = useMemo(() => {
+    return degreesOf(data?.observation?.targetEnvironment.basePosition?.coordinates);
+  }, [data]);
+  return { position, notFound: data?.observation === null, loading, error };
+}
+
+/** An observation under review as a source: at its stored base, or one the ODB must compute. */
+export function observationSource(
+  row: Pick<ObservationRow, 'id' | 'modeType' | 'base'>,
+  programId: string,
+): ConflictSource | ObservationSource {
+  const { id, modeType, base } = row;
+  if (base === 'lookup') return { id, programId, modeType, atBase: true };
+  const at = base === 'none' ? null : base;
+  return { id, programId, modeType, raDeg: at?.raDeg ?? null, decDeg: at?.decDeg ?? null };
+}
+
+/** One pool's answer for a source. */
+interface Pool<T> {
+  readonly page: { readonly hasMore: boolean; readonly matches: readonly T[] } | undefined;
+  readonly loading: boolean;
+  readonly error: ErrorLike | undefined;
+}
+
+export interface ConflictCheck {
+  readonly candidates: readonly ConflictCandidate[];
+  readonly loading: boolean;
+  readonly error: ErrorLike | null;
+  readonly truncated: boolean;
+}
+
+/** One source's check from its two pools. Nothing is listed until both have answered, and a
+ *  pool that answered without a page is an error: neither may read as an all-clear. */
+export function combinePools(
+  requests: Pool<ConflictRequestCandidateFragment>,
+  observations: Pool<ConflictObservationCandidateFragment>,
+): ConflictCheck {
+  const loading = requests.loading || observations.loading;
+  const error = requests.error ?? observations.error ?? null;
+  if (error) return { candidates: [], loading, error, truncated: false };
+  if (!requests.page || !observations.page) {
+    const noData = loading ? null : new Error('The ODB returned no data for a conflict query.');
+    return { candidates: [], loading, error: noData, truncated: false };
+  }
+  return {
+    candidates: withoutRequestedObservations([
+      ...mapRequestCandidates(requests.page.matches),
+      ...mapObservationCandidates(observations.page.matches),
+    ]),
+    loading,
+    error: null,
+    truncated: requests.page.hasMore || observations.page.hasMore,
+  };
+}
+
+/** Both candidate pools for one source. `network-only`: an approval is decided on the ODB as it stands now. */
+export function useConflictCandidates(source: PositionedSource): ConflictCheck {
   // Read on each render, so a page left open past the observing-night boundary refetches on its next one.
   const today = dateToLocalObservingNight(new Date());
   const requests = useQuery(CONFLICT_REQUESTS_QUERY, {
@@ -237,28 +296,14 @@ export function useConflictCandidates(source: PositionedSource) {
     variables: observationsVariables(source, today),
     fetchPolicy: 'network-only',
   });
-  const loading = requests.loading || observations.loading;
-
-  return useMemo(() => {
-    const requestPage = requests.data?.configurationRequests;
-    const observationPage = observations.data?.observations;
-    const error = requests.error ?? observations.error ?? null;
-    if (error) return { candidates: [], loading, error, truncated: false };
-    // Nothing is listed until both pools have answered: a half-answered check must not read as the whole.
-    if (!requestPage || !observationPage) {
-      const noData = loading ? null : new Error('The ODB returned no data for a conflict query.');
-      return { candidates: [], loading, error: noData, truncated: false };
-    }
-    return {
-      candidates: withoutRequestedObservations([
-        ...mapRequestCandidates(requestPage.matches),
-        ...mapObservationCandidates(observationPage.matches),
-      ]),
-      loading,
-      error: null,
-      truncated: requestPage.hasMore || observationPage.hasMore,
-    };
-  }, [loading, requests.data, requests.error, observations.data, observations.error]);
+  return useMemo(
+    () =>
+      combinePools(
+        { page: requests.data?.configurationRequests, loading: requests.loading, error: requests.error },
+        { page: observations.data?.observations, loading: observations.loading, error: observations.error },
+      ),
+    [requests.data, requests.loading, requests.error, observations.data, observations.loading, observations.error],
+  );
 }
 
 /** One planned observation elsewhere that could yield equivalent data. */
@@ -295,10 +340,7 @@ const CR_STATUS_LABEL: Partial<Record<ConfigurationRequestStatus, string>> = {
   DENIED: 'Denied',
 };
 
-/** The candidates in one pool's result. Every row is already inside the source's
- *  cone, of a similar mode and in another active program — the ODB applied all
- *  three. What remains for the client is the de-duplication of the two pools,
- *  see `withoutRequestedObservations`. */
+/** The candidates in one pool's result. The ODB has applied the cone, mode and program filters. */
 export function mapRequestCandidates(matches: readonly ConflictRequestCandidateFragment[]): ConflictCandidate[] {
   return matches.map((c): ConflictCandidate => {
     const coords = c.configuration.target?.coordinates;
@@ -325,29 +367,25 @@ export function mapObservationCandidates(
   matches: readonly ConflictObservationCandidateFragment[],
 ): ConflictCandidate[] {
   return matches.map((o): ConflictCandidate => {
-    const base = o.targetEnvironment.basePosition;
-    const coords = base?.sidereal ?? base?.coordinates;
+    // An asterism's centre is not fetched for candidates: the ODB's cone already matched it.
+    const base = basePositionOf(o.targetEnvironment);
+    const raDeg = typeof base === 'object' ? base.raDeg : null;
+    const decDeg = typeof base === 'object' ? base.decDeg : null;
     const state = o.workflow?.value?.state ?? 'UNDEFINED';
-    const raDeg = parseNumber(coords?.ra.degrees) ?? null;
-    const decDeg = parseNumber(coords?.dec.degrees) ?? null;
     const programLabel = o.program.reference?.label ?? null;
     const obsRef = o.reference?.label ?? o.id;
     return {
       observationId: o.id,
       programLabel,
-      // An observation reference embeds its program reference
-      // ("G-2027B-0057-Q-0311"); drop that prefix, and the hyphen joining it,
-      // so the linked program label isn't shown twice. Falls back to the full
-      // reference/id when it doesn't carry the prefix.
-      // `|| obsRef` keeps a malformed reference ("…-Q-") from stripping to
-      // nothing, which would render a bare link and weaken the row key.
+      // "G-2027B-0057-Q-0311" shows as "0311" beside its linked program label.
+      // `|| obsRef` keeps a malformed reference ("…-Q-") from stripping to nothing.
       detailLabel:
         (programLabel !== null && obsRef.startsWith(`${programLabel}-`)
           ? obsRef.slice(programLabel.length + 1)
           : obsRef) || obsRef,
       programId: o.program.id,
       status: state.charAt(0) + state.slice(1).toLowerCase(),
-      target: base?.name ?? '—',
+      target: joinTargetNames(o.targetEnvironment.asterism.map((t) => t.name)),
       applicableObservations: [],
       ra: raDeg === null ? '—' : formatRa(raDeg),
       dec: decDeg === null ? '—' : formatDec(decDeg),
@@ -369,7 +407,7 @@ export function withoutRequestedObservations(candidates: readonly ConflictCandid
   return candidates.filter((c) => c.observationId === null || !requested.has(c.observationId));
 }
 
-/** A request/observation under review, checked against the candidate pools. */
+/** A request or observation under review, checked at its position. */
 export interface ConflictSource {
   readonly id: string;
   /** The source's own program — its candidates aren't conflicts. */
@@ -379,20 +417,24 @@ export interface ConflictSource {
   readonly modeType: string | null;
 }
 
+/** An observation under review whose base the ODB computes (an asterism), read by id. */
+export interface ObservationSource {
+  readonly id: string;
+  readonly programId: string;
+  readonly modeType: string | null;
+  readonly atBase: true;
+}
+
 /** One row of the "Potential Conflicts" table. */
 export interface ConflictRow extends ConflictCandidate {
   /** Row identity for the table: the candidate's program and trailing label. */
   readonly key: string;
-  /** Separation from the source, for display. Null when the candidate's base
-   *  position could not be read — the ODB has already judged proximity, so a
-   *  row with no separation to show is still a genuine conflict. */
+  /** Separation from the source, for display; null when the candidate has no position. */
   readonly sepArcsec: number | null;
 }
 
-/** The source's candidates as table rows, nearest first. Proximity is not
- *  re-tested: the ODB matched each candidate on the stored J2000 position, while
- *  the coordinates it returns are at the target's own catalogue epoch, so a
- *  comparison here would drop real conflicts. */
+/** The source's candidates as table rows, nearest first. Proximity is not re-tested: the ODB
+ *  matched on the J2000 position, but returns the catalogue-epoch one. */
 export function conflictRows(source: PositionedSource, candidates: readonly ConflictCandidate[]): ConflictRow[] {
   const rows = candidates.map((c): ConflictRow => ({
     ...c,
@@ -409,14 +451,9 @@ export function conflictRows(source: PositionedSource, candidates: readonly Conf
   );
 }
 
-/*
- * A configuration request carries no target name, only coordinates — the name
- * lives on its applicable observations (sc-10159 items 4-5). We resolve names
- * only for the requests that actually surface as conflict rows (never every
- * candidate fetched), in one id-batched query per section that has request rows.
- * `id: { IN: [...] }` is bounded by the number of displayed rows, so it can't
- * approach Postgres's bind-param limit the way a program-wide fetch could.
- */
+/* A configuration request carries no target name; it lives on its applicable observations
+ * (sc-10159). Names are read only for the rows shown, in one query per section.
+ * The id list is bounded by the rows shown, so it stays clear of Postgres's bind-parameter limit. */
 export const CONFLICT_TARGETS_QUERY = graphql(`
   query AdminConflictTargets($ids: [ObservationId!]!) {
     observations(WHERE: { id: { IN: $ids } }, LIMIT: 1000) {
@@ -433,17 +470,8 @@ export const CONFLICT_TARGETS_QUERY = graphql(`
   }
 `);
 
-/** Resolve display target names for the change-request conflict rows: an id →
- *  name map over the union of their applicable observations (sc-10159). Observation
- *  rows already carry a name and contribute no ids, so the query is skipped
- *  entirely when there are none.
- *
- *  `network-only` rather than the app's usual `cache-and-network`: the conflict
- *  check is consulted to decide whether to approve a request, so it reads the
- *  ODB as it stands now — the same reason the candidate query above does. A
- *  name cached from an earlier visit would be shown without any indication it
- *  is stale. (Not reachable by a test here: every render builds a cold cache,
- *  which makes the two policies indistinguishable.) */
+/** Target names of the request rows' applicable observations, by observation id; skipped
+ *  when no row has any. `network-only`, as the check reads the ODB as it stands now. */
 export function useConflictTargetNames(rows: readonly ConflictRow[]): ReadonlyMap<string, string> {
   const ids = useMemo(() => Array.from(new Set(rows.flatMap((r) => r.applicableObservations))).sort(), [rows]);
   const { data } = useQuery(

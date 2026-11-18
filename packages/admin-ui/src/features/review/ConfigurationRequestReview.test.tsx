@@ -33,8 +33,6 @@ function request(id: string, overrides: Partial<ChangeRequest> = {}): ChangeRequ
   };
 }
 
-/** The conflict check runs once a request is selected; an empty result keeps the
- *  sub-table quiet so the test can focus on the approve/deny flow. */
 async function setup(onResolve = vi.fn().mockResolvedValue(true)) {
   const screen = await renderWithContext(
     <ConfigurationRequestReview

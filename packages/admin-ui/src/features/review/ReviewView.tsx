@@ -10,6 +10,7 @@ import { type JSX, type ReactNode, useState } from 'react';
 import { ConflictsTable } from '@/components/ConflictsTable';
 import { DuplicatesTable } from '@/components/DuplicatesTable';
 import { Tile } from '@/components/Tile';
+import { observationSource } from '@/gql/odb/conflicts';
 import type { ObservationRow } from '@/gql/types';
 
 /** Minimal shape a reviewed item satisfies. Proposals is the only page that
@@ -203,7 +204,7 @@ export function ReviewView<T extends ReviewItem>(props: ReviewViewProps<T>): JSX
 
           <ConflictsTable
             title={`Potential Conflicts of this ${nounTitle}’s Observations`}
-            sources={selected.observations.map((o) => ({ ...o, programId: selected.id }))}
+            sources={selected.observations.map((o) => observationSource(o, selected.id))}
           />
 
           <DuplicatesTable
