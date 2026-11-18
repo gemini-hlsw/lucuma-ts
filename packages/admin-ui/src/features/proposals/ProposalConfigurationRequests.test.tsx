@@ -8,6 +8,7 @@ import {
   PROGRAM_OBSERVATIONS_QUERY,
   RESOLVE_WITH_FEEDBACK_MUTATION,
 } from '@/gql/odb/changeRequests';
+import { emptyConflicts } from '@/test/conflicts';
 import { type MockedResponseOf, renderWithContext } from '@/test/render';
 
 import { ProposalConfigurationRequests } from './ProposalConfigurationRequests';
@@ -107,6 +108,7 @@ describe(ProposalConfigurationRequests, () => {
       requestsMock([rawRequest('REQUESTED')]),
       requestsMock([rawRequest('APPROVED', 'Reloaded from the ODB.')]),
       observationsMock(),
+      ...emptyConflicts(),
       approveMock(),
     ]);
 
@@ -188,6 +190,7 @@ describe(ProposalConfigurationRequests, () => {
       requestsMock([rawRequest('REQUESTED')]),
       slowReload,
       observationsMock(),
+      ...emptyConflicts(),
       approveMock(),
     ]);
     await expect.element(screen.getByText('Configuration Requests')).toBeVisible();

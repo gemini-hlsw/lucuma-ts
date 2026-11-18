@@ -7,6 +7,7 @@ import { MemoryRouter } from 'react-router';
 import { render } from 'vitest-browser-react';
 
 import { odbTokenAtom } from '@/components/atoms/auth';
+import { makeCache } from '@/gql/cache';
 
 // The typed-mock helper is shared from common-ui; re-exported so tests can keep
 // importing it alongside renderWithContext from this module.
@@ -14,9 +15,10 @@ export type { MockedResponseOf } from '@gemini-hlsw/lucuma-common-ui/testing';
 
 /**
  * Render helper for Admin tests: common-ui's Jotai + Apollo core wrapped in the
- * providers this app needs (PrimeReact, toasts, a memory router). Pass GraphQL
- * `mocks` to drive Apollo-backed components and `token` to render as a signed-in
- * user (build one with fakeJwt from @gemini-hlsw/lucuma-common-ui/testing).
+ * providers this app needs (PrimeReact, toasts, a memory router) and the app's
+ * cache. Pass GraphQL `mocks` to drive Apollo-backed components and `token` to
+ * render as a signed-in user (build one with fakeJwt from
+ * @gemini-hlsw/lucuma-common-ui/testing).
  */
 export function renderWithContext(
   ui: ReactElement,
@@ -27,7 +29,7 @@ export function renderWithContext(
   }: { mocks?: readonly MockLink.MockedResponse[]; route?: string; token?: string | null } = {},
 ) {
   return render(
-    <AtomsAndApollo initialValues={[[odbTokenAtom, token]]} mocks={mocks}>
+    <AtomsAndApollo initialValues={[[odbTokenAtom, token]]} mocks={mocks} cache={makeCache()}>
       <PrimeReactProvider>
         <ToastOutlet position="bottom-right" />
         <MemoryRouter initialEntries={[route]}>{ui}</MemoryRouter>

@@ -9,6 +9,7 @@ import {
   RESOLVE_WITH_FEEDBACK_MUTATION,
 } from '@/gql/odb/changeRequests';
 import type { ConfigurationRequestItemFragment } from '@/gql/odb/gen/graphql';
+import { emptyConflicts } from '@/test/conflicts';
 import { type MockedResponseOf, renderWithContext } from '@/test/render';
 
 import ChangeRequestsPage from './ChangeRequestsPage';
@@ -118,7 +119,7 @@ describe(ChangeRequestsPage, () => {
     // stored earlier, so a cleared box must omit the field entirely.
     const screen = await renderWithContext(<ChangeRequestsPage />, {
       token: STAFF_TOKEN,
-      mocks: [requests(), observations(), resolveKeepingFeedback()],
+      mocks: [requests(), observations(), ...emptyConflicts(), resolveKeepingFeedback()],
     });
     const box = await denyDraft(screen);
     await userEvent.clear(box);
@@ -130,7 +131,7 @@ describe(ChangeRequestsPage, () => {
     // "   " is as empty as "" to a reviewer, and just as invalid to the ODB.
     const screen = await renderWithContext(<ChangeRequestsPage />, {
       token: STAFF_TOKEN,
-      mocks: [requests(), observations(), resolveKeepingFeedback()],
+      mocks: [requests(), observations(), ...emptyConflicts(), resolveKeepingFeedback()],
     });
     const box = await denyDraft(screen);
     await userEvent.fill(box, '   ');
@@ -142,7 +143,7 @@ describe(ChangeRequestsPage, () => {
     const note = 'No dark time left this semester';
     const screen = await renderWithContext(<ChangeRequestsPage />, {
       token: STAFF_TOKEN,
-      mocks: [requests(), observations(), resolveExpecting(note)],
+      mocks: [requests(), observations(), ...emptyConflicts(), resolveExpecting(note)],
     });
     const box = await denyDraft(screen);
     await userEvent.fill(box, note);

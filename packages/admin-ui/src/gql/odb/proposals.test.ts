@@ -25,6 +25,8 @@ function observation(id: string, targetName: string, hours: number | null): Obse
     schedulingConstraints: { __typename: 'SchedulingConstraints', timingWindows: [] },
     targetEnvironment: {
       __typename: 'TargetEnvironment',
+      explicitBase: null,
+      asterism: [],
       firstScienceTarget: { __typename: 'Target', id: `t-${id}`, name: targetName, sidereal: null },
     },
   };

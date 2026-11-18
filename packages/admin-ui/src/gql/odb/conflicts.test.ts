@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
 import { searchRadiusArcsec } from '@/lib/geminiArchive';
+import { environment, observationCandidate, requestCandidate, target } from '@/test/conflicts';
 
 import {
+  combinePools,
   type ConflictCandidate,
   type ConflictRow,
   conflictRows,
@@ -15,7 +17,7 @@ import {
   similarModeTypes,
   withoutRequestedObservations,
 } from './conflicts';
-import type { ConflictObservationCandidateFragment, ConflictRequestCandidateFragment } from './gen/graphql';
+import type { ConflictObservationCandidateFragment } from './gen/graphql';
 import { formatModeType } from './shared';
 
 describe(similarModeTypes, () => {
@@ -47,112 +49,20 @@ describe(formatModeType, () => {
   });
 });
 
-type RawObservation = ConflictObservationCandidateFragment;
-type RawBasePosition = RawObservation['targetEnvironment']['basePosition'];
-
-/** A single sidereal target's base position — the ordinary case. */
-function siderealBase(name: string, raDeg: number, decDeg: number): RawBasePosition {
+/** Overrides for an observation's reference and its program's, set independently. */
+function labels(reference: string | null, programLabel: string | null): Partial<ConflictObservationCandidateFragment> {
   return {
-    __typename: 'BasePosition',
-    name,
-    sidereal: {
-      __typename: 'Sidereal',
-      ra: { __typename: 'RightAscension', degrees: raDeg },
-      dec: { __typename: 'Declination', degrees: decDeg },
-    },
-    coordinates: null,
-  };
-}
-
-function observation(
-  id: string,
-  target: RawBasePosition,
-  reference: string | null,
-  workflow: RawObservation['workflow'],
-): RawObservation {
-  return {
-    __typename: 'Observation',
-    id,
     reference: reference === null ? null : { __typename: 'ObservationReference', label: reference },
-    workflow,
-    observingMode: { __typename: 'ObservingMode', mode: 'GMOS_NORTH_LONG_SLIT' },
     program: {
-      __typename: 'Program',
-      id: `p-${id}`,
-      // The program reference is the observation reference without its trailing
-      // observation index, so the display can strip the shared prefix.
-      reference:
-        reference === null ? null : { __typename: 'ScienceProgramReference', label: reference.replace(/-\d+$/, '') },
+      ...observationCandidate().program,
+      reference: programLabel === null ? null : { __typename: 'ScienceProgramReference', label: programLabel },
     },
-    targetEnvironment: { __typename: 'TargetEnvironment', basePosition: target },
   };
 }
 
-describe('mapping the candidates of a pool', () => {
-  /** An observation whose reference and program label are set independently, to
-   *  exercise the prefix strip's edges (the observation helper derives one
-   *  from the other, so it cannot express these). */
-  function withLabels(reference: string | null, programLabel: string | null): RawObservation {
-    const base = observation('o-e', null, reference, {
-      __typename: 'CalculatedObservationWorkflow',
-      value: { __typename: 'ObservationWorkflow', state: 'READY' },
-    });
-    return {
-      ...base,
-      program: {
-        ...base.program,
-        reference: programLabel === null ? null : { __typename: 'ScienceProgramReference', label: programLabel },
-      },
-    };
-  }
-
-  const detailLabelOf = (reference: string | null, programLabel: string | null): string =>
-    mapObservationCandidates([withLabels(reference, programLabel)])[0]!.detailLabel;
-
-  it.each([
-    // Normal case: the shared program prefix and its hyphen come off.
-    ['G-2027B-0057-Q-0311', 'G-2027B-0057-Q', '0311'],
-    // A reference that is all prefix would strip to nothing, leaving a bare
-    // link; it keeps the full reference instead.
-    ['G-2027B-0057-Q-', 'G-2027B-0057-Q', 'G-2027B-0057-Q-'],
-    // The reference IS the program label — nothing to strip.
-    ['G-2027B-0057-Q', 'G-2027B-0057-Q', 'G-2027B-0057-Q'],
-    // A reference that doesn't carry the prefix is shown whole. Deliberately
-    // longer than the program label: an equal-length one would slice to "" and
-    // be rescued by the `|| obsRef` guard, hiding a missing prefix check.
-    ['GS-2025B-FT-218-0007', 'G-2027B-0057-Q', 'GS-2025B-FT-218-0007'],
-    // No program reference to strip: the observation id is the whole label.
-    [null, null, 'o-e'],
-  ])('derives the detail label for %s under %s', (reference, programLabel, expected) => {
-    expect(detailLabelOf(reference, programLabel)).toBe(expected);
-  });
-
+describe(mapRequestCandidates, () => {
   it('reads a configuration request from its reference coordinates', () => {
-    const requests: ConflictRequestCandidateFragment[] = [
-      {
-        __typename: 'ConfigurationRequest',
-        id: 'x-42',
-        status: 'APPROVED',
-        applicableObservations: ['o-42a', 'o-42b'],
-        program: {
-          __typename: 'Program',
-          id: 'p-2',
-          reference: { __typename: 'ScienceProgramReference', label: 'G-2027B-0421-P' },
-        },
-        configuration: {
-          __typename: 'Configuration',
-          target: {
-            __typename: 'ConfigurationTarget',
-            coordinates: {
-              __typename: 'Coordinates',
-              ra: { __typename: 'RightAscension', degrees: 30 },
-              dec: { __typename: 'Declination', degrees: -30 },
-            },
-          },
-          observingMode: { __typename: 'ConfigurationObservingMode', mode: 'GMOS_SOUTH_LONG_SLIT' },
-        },
-      },
-    ];
+    const requests = [requestCandidate({ applicableObservations: ['o-42a', 'o-42b'] })];
     expect(mapRequestCandidates(requests)).toEqual([
       expect.objectContaining({
         programLabel: 'G-2027B-0421-P',
@@ -165,20 +75,47 @@ describe('mapping the candidates of a pool', () => {
       }),
     ]);
   });
+});
 
-  it('keeps every observation, whatever its program’s ToO status', () => {
-    const observations: ConflictObservationCandidateFragment[] = [
-      observation('o-1', siderealBase('NGC 1027', 30.001, -30), 'G-2027B-0057-Q-0311', {
-        __typename: 'CalculatedObservationWorkflow',
-        value: { __typename: 'ObservationWorkflow', state: 'READY' },
+describe(mapObservationCandidates, () => {
+  const detailLabelOf = (reference: string | null, programLabel: string | null): string =>
+    mapObservationCandidates([observationCandidate({ id: 'o-e', ...labels(reference, programLabel) })])[0]!.detailLabel;
+
+  it.each([
+    // Normal case: the shared program prefix and its hyphen come off.
+    ['G-2027B-0057-Q-0311', 'G-2027B-0057-Q', '0311'],
+    // All prefix: keeps the full reference rather than a bare link.
+    ['G-2027B-0057-Q-', 'G-2027B-0057-Q', 'G-2027B-0057-Q-'],
+    // The reference IS the program label — nothing to strip.
+    ['G-2027B-0057-Q', 'G-2027B-0057-Q', 'G-2027B-0057-Q'],
+    // No prefix: shown whole. Longer than the label, so the `|| obsRef` guard cannot mask it.
+    ['GS-2025B-FT-218-0007', 'G-2027B-0057-Q', 'GS-2025B-FT-218-0007'],
+    // No program reference to strip: the observation id is the whole label.
+    [null, null, 'o-e'],
+  ])('derives the detail label for %s under %s', (reference, programLabel, expected) => {
+    expect(detailLabelOf(reference, programLabel)).toBe(expected);
+  });
+
+  it('maps every match it is given, in order, with its labels, status and target', () => {
+    const at = (name: string, raDeg: number, decDeg: number) => environment([target(name, [raDeg, decDeg])]);
+    const candidates = mapObservationCandidates([
+      observationCandidate({
+        id: 'o-1',
+        targetEnvironment: at('NGC 1027', 30.001, -30),
+        ...labels('G-2027B-0057-Q-0311', 'G-2027B-0057-Q'),
       }),
-      observation('o-2', siderealBase('Vega', 31, -31), null, null),
-      observation('o-3', siderealBase('SN 2027aa', 31, -31), 'G-2027B-0058-Q-0001', {
-        __typename: 'CalculatedObservationWorkflow',
-        value: { __typename: 'ObservationWorkflow', state: 'READY' },
+      observationCandidate({
+        id: 'o-2',
+        targetEnvironment: at('Vega', 31, -31),
+        workflow: null,
+        ...labels(null, null),
       }),
-    ];
-    const candidates = mapObservationCandidates(observations);
+      observationCandidate({
+        id: 'o-3',
+        targetEnvironment: at('SN 2027aa', 31, -31),
+        ...labels('G-2027B-0058-Q-0001', 'G-2027B-0058-Q'),
+      }),
+    ]);
     expect(candidates).toHaveLength(3);
     expect(candidates.map((c) => c.observationId)).toEqual(['o-1', 'o-2', 'o-3']);
     expect(candidates[0]).toMatchObject({
@@ -197,60 +134,34 @@ describe('mapping the candidates of a pool', () => {
     });
   });
 
-  it('reads the base position of the reporter’s observation (sc-9243)', () => {
-    // o-62ca on dev: a single sidereal target, read from the base position the
-    // story names (the position the telescope would slew to).
-    const candidates = mapObservationCandidates([
-      observation('o-62ca', siderealBase('YYG A', 39.66225, 16.615939), 'G-2026B-0134-Q-0276', {
-        __typename: 'CalculatedObservationWorkflow',
-        value: { __typename: 'ObservationWorkflow', state: 'READY' },
-      }),
-    ]);
-    expect(candidates[0]).toMatchObject({ target: 'YYG A', raDeg: 39.66225, decDeg: 16.615939 });
+  it.each([
+    // o-62ca on dev: a single sidereal target.
+    [
+      'the reporter’s single sidereal target (sc-9243)',
+      environment([target('YYG A', [39.66225, 16.615939])]),
+      'YYG A',
+      39.66225,
+      16.615939,
+    ],
+    [
+      'an explicit base',
+      environment([target('M31', [10, 41]), target('M32', [10.6, 40.8])], [10.7, 41.3]),
+      'M31, M32',
+      10.7,
+      41.3,
+    ],
+  ])('reads the base position of %s', (_, targetEnvironment, name, raDeg, decDeg) => {
+    const [candidate] = mapObservationCandidates([observationCandidate({ targetEnvironment })]);
+    expect(candidate).toMatchObject({ target: name, raDeg, decDeg });
   });
 
-  it('reads an explicit base or asterism composite, which fills coordinates rather than sidereal', () => {
-    // BasePosition fills exactly one of the two by type, so reading only
-    // `sidereal` would lose every observation with an explicit base.
-    const candidates = mapObservationCandidates([
-      observation(
-        'o-9',
-        {
-          __typename: 'BasePosition',
-          name: 'M31, M32',
-          sidereal: null,
-          coordinates: {
-            __typename: 'Coordinates',
-            ra: { __typename: 'RightAscension', degrees: 10.7 },
-            dec: { __typename: 'Declination', degrees: 41.3 },
-          },
-        },
-        'G-2027B-0059-Q-0001',
-        {
-          __typename: 'CalculatedObservationWorkflow',
-          value: { __typename: 'ObservationWorkflow', state: 'READY' },
-        },
-      ),
-    ]);
-    expect(candidates[0]).toMatchObject({ target: 'M31, M32', raDeg: 10.7, decDeg: 41.3 });
-  });
-
-  it('reads a positionless observation without failing', () => {
-    // A non-sidereal target fills neither field. The cone should keep these out
-    // of the pool entirely, so this is defence in depth rather than a case the
-    // table is expected to show.
-    const candidates = mapObservationCandidates([
-      observation(
-        'o-10',
-        { __typename: 'BasePosition', name: 'Ceres', sidereal: null, coordinates: null },
-        'G-2027B-0060-Q-0001',
-        {
-          __typename: 'CalculatedObservationWorkflow',
-          value: { __typename: 'ObservationWorkflow', state: 'READY' },
-        },
-      ),
-    ]);
-    expect(candidates[0]).toMatchObject({ target: 'Ceres', raDeg: null, decDeg: null });
+  it.each([
+    // The ODB's cone matched them on its own base, so they stay listed with no position to show.
+    ['a non-sidereal target', environment([target('Ceres', null)]), 'Ceres'],
+    ['an asterism without an explicit base', environment([target('A', [10, 20]), target('B', [11, 21])]), 'A, B'],
+  ])('lists %s without a position', (_, targetEnvironment, name) => {
+    const [candidate] = mapObservationCandidates([observationCandidate({ targetEnvironment })]);
+    expect(candidate).toMatchObject({ target: name, raDeg: null, decDeg: null, ra: '—', dec: '—' });
   });
 });
 
@@ -276,18 +187,14 @@ describe(conflictRows, () => {
   const source = { id: 'x-125', programId: 'p-1', raDeg: 30, decDeg: -30, modeType: 'GMOS_SOUTH_LONG_SLIT' };
 
   it('reports each candidate’s separation from the source', () => {
-    // 0.02° of dec is 72″. The separation is shown in the table; it is not a
-    // test the candidate had to pass, the ODB's cone having already applied it.
+    // 0.02° of dec is 72″: shown, not tested; the ODB's cone already applied.
     const rows = conflictRows(source, [candidate({ decDeg: -30.02 })]);
     expect(rows).toHaveLength(1);
     expect(rows[0]?.sepArcsec).toBeCloseTo(72, 0);
   });
 
   it('keeps a distant candidate, since the ODB is the only judge of proximity', () => {
-    // 1800″ away, which the cone would never have returned. Trimming it here
-    // would use the coordinates the ODB hands back — at the target's own
-    // catalogue epoch — rather than the J2000 position it matched on, and the
-    // narrower of two tests is the one that drops real conflicts.
+    // 1800″ away. Trimming here would use the catalogue-epoch coordinates, not the J2000 ones the ODB matched.
     expect(conflictRows(source, [candidate({ decDeg: -30.5 })])).toHaveLength(1);
   });
 
@@ -299,6 +206,29 @@ describe(conflictRows, () => {
 
   it('keys a row by its program and its trailing label', () => {
     expect(conflictRows(source, [candidate({})]).map((r) => r.key)).toEqual(['p-2:x-42']);
+  });
+
+  it('sorts rows nearest first, those with no separation last', () => {
+    const rows = conflictRows(source, [
+      candidate({ detailLabel: 'unknown', programId: 'p-unknown', raDeg: null, decDeg: null }),
+      candidate({ detailLabel: 'far', programId: 'p-far', decDeg: -30.02 }),
+      candidate({ detailLabel: 'near', programId: 'p-near', decDeg: -30.005 }),
+    ]);
+    expect(rows.map((r) => r.detailLabel)).toEqual(['near', 'far', 'unknown']);
+  });
+
+  it('orders rows with no separation by program label, then detail label', () => {
+    const unknown = (programLabel: string, detailLabel: string) =>
+      candidate({ programLabel, detailLabel, programId: `p-${programLabel}${detailLabel}`, raDeg: null, decDeg: null });
+    const rows = conflictRows(source, [unknown('G-B', 'x-1'), unknown('G-A', 'x-2'), unknown('G-A', 'x-1')]);
+    expect(rows.map((r) => `${r.programLabel}:${r.detailLabel}`)).toEqual(['G-A:x-1', 'G-A:x-2', 'G-B:x-1']);
+  });
+
+  it('breaks a separation tie by program label, then detail label', () => {
+    const tied = (programLabel: string, detailLabel: string) =>
+      candidate({ programLabel, detailLabel, programId: `p-${programLabel}${detailLabel}`, decDeg: -30.01 });
+    const rows = conflictRows(source, [tied('G-B', 'x-2'), tied('G-A', 'x-9'), tied('G-B', 'x-1')]);
+    expect(rows.map((r) => `${r.programLabel}:${r.detailLabel}`)).toEqual(['G-A:x-9', 'G-B:x-1', 'G-B:x-2']);
   });
 });
 
@@ -328,33 +258,6 @@ describe(conflictTargetLabel, () => {
   });
 });
 
-describe('conflictRows ordering', () => {
-  const source = { id: 'x-125', programId: 'p-1', raDeg: 30, decDeg: -30, modeType: 'GMOS_SOUTH_LONG_SLIT' };
-
-  it('sorts rows nearest first, those with no separation last', () => {
-    const rows = conflictRows(source, [
-      candidate({ detailLabel: 'unknown', programId: 'p-unknown', raDeg: null, decDeg: null }),
-      candidate({ detailLabel: 'far', programId: 'p-far', decDeg: -30.02 }),
-      candidate({ detailLabel: 'near', programId: 'p-near', decDeg: -30.005 }),
-    ]);
-    expect(rows.map((r) => r.detailLabel)).toEqual(['near', 'far', 'unknown']);
-  });
-
-  it('orders rows with no separation by program label, then detail label', () => {
-    const unknown = (programLabel: string, detailLabel: string) =>
-      candidate({ programLabel, detailLabel, programId: `p-${programLabel}${detailLabel}`, raDeg: null, decDeg: null });
-    const rows = conflictRows(source, [unknown('G-B', 'x-1'), unknown('G-A', 'x-2'), unknown('G-A', 'x-1')]);
-    expect(rows.map((r) => `${r.programLabel}:${r.detailLabel}`)).toEqual(['G-A:x-1', 'G-A:x-2', 'G-B:x-1']);
-  });
-
-  it('breaks a separation tie by program label, then detail label', () => {
-    const tied = (programLabel: string, detailLabel: string) =>
-      candidate({ programLabel, detailLabel, programId: `p-${programLabel}${detailLabel}`, decDeg: -30.01 });
-    const rows = conflictRows(source, [tied('G-B', 'x-2'), tied('G-A', 'x-9'), tied('G-B', 'x-1')]);
-    expect(rows.map((r) => `${r.programLabel}:${r.detailLabel}`)).toEqual(['G-A:x-9', 'G-B:x-1', 'G-B:x-2']);
-  });
-});
-
 describe(withoutRequestedObservations, () => {
   const request = (applicable: string[]) => candidate({ applicableObservations: applicable });
   const obs = (observationId: string) =>
@@ -369,6 +272,40 @@ describe(withoutRequestedObservations, () => {
     const denied = { ...request(['o-1']), status: 'Denied' };
     const kept = withoutRequestedObservations([denied, obs('o-1')]);
     expect(kept.map((c) => c.observationId)).toEqual([null, 'o-1']);
+  });
+});
+
+describe(combinePools, () => {
+  const page = <T>(matches: readonly T[]) => ({ page: { hasMore: false, matches }, loading: false, error: undefined });
+  const pending = { page: undefined, loading: true, error: undefined };
+
+  it('lists nothing while one pool is still answering, since half an answer is not the whole', () => {
+    const check = combinePools(page([requestCandidate()]), pending);
+    expect(check).toEqual({ candidates: [], loading: true, error: null, truncated: false });
+  });
+
+  it('lists both pools once both have answered', () => {
+    const check = combinePools(page([requestCandidate()]), page([observationCandidate()]));
+    expect(check.candidates.map((c) => c.detailLabel)).toEqual(['x-42', '0001']);
+  });
+
+  it('lists nothing and reports the error when a pool failed, even if the other answered', () => {
+    const error = new Error('ODB unavailable');
+    const check = combinePools(page([requestCandidate()]), { page: undefined, loading: false, error });
+    expect(check).toEqual({ candidates: [], loading: false, error, truncated: false });
+  });
+
+  it('reports a pool that finished without a page as a failure', () => {
+    const check = combinePools(page([requestCandidate()]), { page: undefined, loading: false, error: undefined });
+    expect(check.candidates).toEqual([]);
+    expect(check.error?.message).toMatch(/no data/);
+  });
+
+  it('flags a pool cut at its limit as truncated, keeping what it listed', () => {
+    const cut = { page: { hasMore: true, matches: [observationCandidate()] }, loading: false, error: undefined };
+    const check = combinePools(page([]), cut);
+    expect(check).toMatchObject({ truncated: true, error: null });
+    expect(check.candidates).toHaveLength(1);
   });
 });
 
@@ -389,23 +326,22 @@ describe(isCheckable, () => {
   });
 });
 
-describe('the variables of a source', () => {
-  const TODAY = '2027-01-15';
-  const a = { id: 'x-1', programId: 'p-1', raDeg: 30, decDeg: -30, modeType: 'GMOS_SOUTH_LONG_SLIT' };
-  const b = { id: 'x-2', programId: 'p-1', raDeg: 150, decDeg: 20, modeType: 'GNIRS_LONG_SLIT' };
+const TODAY = '2027-01-15';
+const a = { id: 'x-1', programId: 'p-1', raDeg: 30, decDeg: -30, modeType: 'GMOS_SOUTH_LONG_SLIT' };
+const b = { id: 'x-2', programId: 'p-1', raDeg: 150, decDeg: 20, modeType: 'GNIRS_LONG_SLIT' };
 
-  it.each([
-    ['requests', requestsVariables],
-    ['observations', observationsVariables],
-  ])('puts the source’s own cone in the %s pool', (_, variables) => {
-    expect(variables(a, TODAY).where.targetCoordinates).toEqual({
-      center: { ra: { degrees: 30 }, dec: { degrees: -30 } },
-      distance: { arcseconds: searchRadiusArcsec(a.modeType) },
-    });
-    expect(variables(b, TODAY).where.targetCoordinates?.center).toEqual({
-      ra: { degrees: 150 },
-      dec: { degrees: 20 },
-    });
+/** Each source's own cone, from either pool's variables. */
+function expectOwnCone(variables: typeof requestsVariables | typeof observationsVariables) {
+  expect(variables(a, TODAY).where.targetCoordinates).toEqual({
+    center: { ra: { degrees: 30 }, dec: { degrees: -30 } },
+    distance: { arcseconds: searchRadiusArcsec(a.modeType) },
+  });
+  expect(variables(b, TODAY).where.targetCoordinates?.center).toEqual({ ra: { degrees: 150 }, dec: { degrees: 20 } });
+}
+
+describe(requestsVariables, () => {
+  it('puts the source’s own cone in the requests pool', () => {
+    expectOwnCone(requestsVariables);
   });
 
   it('asks only for the source’s similar modes, in other active programs, without withdrawn requests', () => {
@@ -414,11 +350,23 @@ describe('the variables of a source', () => {
     expect(where.program).toEqual({ activeEnd: { GT: TODAY }, id: { NEQ: b.programId } });
     expect(where.status).toEqual({ NEQ: 'WITHDRAWN' });
   });
+});
 
-  it('asks the observation pool for science observations only', () => {
+describe(observationsVariables, () => {
+  it('puts the source’s own cone in the observations pool', () => {
+    expectOwnCone(observationsVariables);
+  });
+
+  it('asks the observation pool for live science observations of accepted programs only', () => {
     const { where } = observationsVariables(a, TODAY);
     expect(where.calibrationRole).toEqual({ IS_NULL: true });
     expect(where.observingModeType).toEqual({ IN: [...similarModeTypes(a.modeType)] });
-    expect(where.program).toEqual({ activeEnd: { GT: TODAY }, id: { NEQ: a.programId } });
+    expect(where.program).toEqual({
+      activeEnd: { GT: TODAY },
+      id: { NEQ: a.programId },
+      proposalStatus: { EQ: 'ACCEPTED' },
+      type: { EQ: 'SCIENCE' },
+    });
+    expect(where.workflow).toEqual({ workflowState: { NEQ: 'INACTIVE' } });
   });
 });
