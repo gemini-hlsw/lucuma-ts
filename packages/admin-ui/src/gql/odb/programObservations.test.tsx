@@ -28,7 +28,7 @@ const obs = (id: string): ObservationItemFragment => ({
     waterVapor: 'WET',
   },
   schedulingConstraints: { __typename: 'SchedulingConstraints', timingWindows: [] },
-  targetEnvironment: { __typename: 'TargetEnvironment', firstScienceTarget: null },
+  targetEnvironment: { __typename: 'TargetEnvironment', explicitBase: null, asterism: [], firstScienceTarget: null },
 });
 
 const page = (

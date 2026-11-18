@@ -1,10 +1,12 @@
 import { dms2deg, hms2deg } from '@gemini-hlsw/lucuma-core';
 import { describe, expect, it } from 'vitest';
 
+import { environment, target } from '@/test/conflicts';
 import { executionDigest } from '@/test/factories';
 
 import type { GroupElementItemFragment, ObservationItemFragment } from './gen/graphql';
 import {
+  basePositionOf,
   formatConditions,
   formatDec,
   formatRa,
@@ -34,6 +36,8 @@ function observation(overrides: Partial<ObservationItemFragment>): ObservationIt
     schedulingConstraints: { __typename: 'SchedulingConstraints', timingWindows: [] },
     targetEnvironment: {
       __typename: 'TargetEnvironment',
+      explicitBase: null,
+      asterism: [],
       firstScienceTarget: {
         __typename: 'Target',
         id: 't-1',
@@ -49,7 +53,39 @@ function observation(overrides: Partial<ObservationItemFragment>): ObservationIt
   };
 }
 
+describe(basePositionOf, () => {
+  it.each([
+    ['no targets', environment([]), 'none'],
+    ['a single sidereal target', environment([target('A', [10, 20])]), { raDeg: 10, decDeg: 20 }],
+    ['a single non-sidereal target', environment([target('Ceres', null)]), 'none'],
+    ['an explicit base', environment([target('A', [10, 20])], [30, 40]), { raDeg: 30, decDeg: 40 }],
+    [
+      'an asterism with an explicit base',
+      environment([target('A', [10, 20]), target('B', [11, 21])], [30, 40]),
+      { raDeg: 30, decDeg: 40 },
+    ],
+    ['an asterism', environment([target('A', [10, 20]), target('B', [11, 21])]), 'lookup'],
+    [
+      'an explicit base on a non-sidereal target',
+      environment([target('Ceres', null)], [30, 40]),
+      { raDeg: 30, decDeg: 40 },
+    ],
+    ['an asterism led by a non-sidereal target', environment([target('Ceres', null), target('B', [11, 21])]), 'lookup'],
+    ['an explicit base with no targets', environment([], [30, 40]), 'none'],
+  ])('reads %s', (_, env, expected) => {
+    expect(basePositionOf(env)).toEqual(expected);
+  });
+});
+
 describe(mapObservationRow, () => {
+  it('takes the conflict check’s base from the stored fields, and RA/Dec from the first target', () => {
+    const { __typename, explicitBase, asterism } = environment([target('A', [13.723, -37.684])], [40, 10]);
+    const row = mapObservationRow(
+      observation({ targetEnvironment: { ...observation({}).targetEnvironment, explicitBase, asterism, __typename } }),
+    );
+    expect(row).toMatchObject({ base: { raDeg: 40, decDeg: 10 }, raDeg: 13.723, decDeg: -37.684 });
+  });
+
   it('states the instrument once, with the observing mode as a short suffix', () => {
     expect(mapObservationRow(observation({})).config).toBe('GMOS-S, LongSlit');
   });
@@ -72,6 +108,8 @@ describe(mapObservationRow, () => {
       observation({
         targetEnvironment: {
           __typename: 'TargetEnvironment',
+          explicitBase: null,
+          asterism: [],
           firstScienceTarget: {
             __typename: 'Target',
             id: 't-3',
@@ -94,6 +132,8 @@ describe(mapObservationRow, () => {
       observation({
         targetEnvironment: {
           __typename: 'TargetEnvironment',
+          explicitBase: null,
+          asterism: [],
           firstScienceTarget: { __typename: 'Target', id: 't-2', name: 'Ceres', sidereal: null },
         },
       }),
