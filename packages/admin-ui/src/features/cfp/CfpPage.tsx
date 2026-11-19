@@ -13,11 +13,11 @@ import {
 import { Button } from 'primereact/button';
 import { Checkbox } from 'primereact/checkbox';
 import { Column, type ColumnSortEvent } from 'primereact/column';
-import { DataTable } from 'primereact/datatable';
+import { DataTable, type DataTableValueArray } from 'primereact/datatable';
 import { Dropdown } from 'primereact/dropdown';
 import { InputText } from 'primereact/inputtext';
 import { SplitButton } from 'primereact/splitbutton';
-import { Fragment, type JSX, useMemo, useState } from 'react';
+import { Fragment, type JSX, useEffect, useMemo, useRef, useState } from 'react';
 
 import { DataSourceBadge } from '@/components/DataSourceBadge';
 import { Tile } from '@/components/Tile';
@@ -118,6 +118,22 @@ export default function CfpPage(): JSX.Element {
 
   const [original, setSelectedId] = useRowSelection(visibleCfps, 'id');
 
+  // The call just created, until its row has been brought into view (sc-10136). A new
+  // call joins the end of a long list, out of view above the editor the user clicked
+  // Create in, so selecting it is not enough: the highlighted row must be on screen.
+  // Held as the id, not a flag, so only the new call's row triggers the scroll, even
+  // if the selection reaches it late. If it never does (the list has not caught up, or
+  // the draft was created Invisible and the facets hide it), the id waits harmlessly:
+  // the scroll happens when the call is first selected.
+  const tableRef = useRef<DataTable<DataTableValueArray>>(null);
+  const revealId = useRef<string | null>(null);
+  const selectedId = original?.id;
+  useEffect(() => {
+    if (revealId.current !== selectedId) return;
+    revealId.current = null;
+    tableRef.current?.getElement()?.querySelector('tr[aria-selected="true"]')?.scrollIntoView({ block: 'center' });
+  }, [selectedId]);
+
   // A brand-new call being drafted before it's created (sc-10136). While set,
   // the editor shows this blank draft with a Create button instead of the
   // selected ODB-backed call; creating clears it and selects the real call.
@@ -141,13 +157,21 @@ export default function CfpPage(): JSX.Element {
 
   /** Persist a call and select it. `set` is the serialized create input; `verb`
    *  is the toast wording. Copy passes the selected call's full properties; the
-   *  New flow passes a drafted blank call's createCfpInput (sc-10136). */
-  async function create(set: CallForProposalsPropertiesInput, verb: string): Promise<void> {
+   *  New flow passes a drafted blank call's createCfpInput (sc-10136). `showAll`
+   *  clears the facets first: a new call may be hidden by them (a call with no
+   *  deadline yet counts as closed, and a Keck call is not a Gemini one), where a
+   *  copy resembles the call it was made from and stays where the user put the facets. */
+  async function create(set: CallForProposalsPropertiesInput, verb: string, showAll: boolean): Promise<void> {
     try {
       const res = await createCfp({ variables: { set } });
       const newId = res.data?.createCallForProposals.callForProposals?.id;
       if (newId) {
         setNewDraft(null);
+        if (showAll) {
+          setOpenFilter('all');
+          setObservatoryFilter('all');
+        }
+        revealId.current = newId;
         setSelectedId(newId);
       }
       toast.success(`Call ${verb}`, newId ?? '');
@@ -197,7 +221,7 @@ export default function CfpPage(): JSX.Element {
               tooltipOptions={{ position: 'bottom' }}
               onClick={() => {
                 if (!original) return;
-                void create({ ...cfpPropertiesInput(original), title: `${original.title} (copy)` }, 'copied');
+                void create({ ...cfpPropertiesInput(original), title: `${original.title} (copy)` }, 'copied', false);
               }}
             />
             <SplitButton
@@ -220,6 +244,7 @@ export default function CfpPage(): JSX.Element {
         }
       >
         <DataTable
+          ref={tableRef}
           value={visibleCfps}
           dataKey="id"
           selectionMode="single"
@@ -315,7 +340,7 @@ export default function CfpPage(): JSX.Element {
           original={newDraft.call}
           mode="create"
           saving={saving}
-          onSave={(d) => create(createCfpInput(d), 'created')}
+          onSave={(d) => create(createCfpInput(d), 'created', true)}
           onCancel={() => setNewDraft(null)}
         />
       ) : (
@@ -414,7 +439,13 @@ function CfpEditor({
             <label htmlFor="cfp-title" title="The call's display title (e.g. “2027B Regular Semester”).">
               Title
             </label>
-            <InputText id="cfp-title" value={draft.title} onChange={(e) => set('title', e.target.value)} />
+            <InputText
+              id="cfp-title"
+              value={draft.title}
+              // A new call's title is filled in by the ODB; one typed by hand invites typos.
+              placeholder={creating ? 'default' : undefined}
+              onChange={(e) => set('title', e.target.value)}
+            />
 
             {details.observatory === 'GEMINI' && (
               <>
@@ -487,7 +518,10 @@ function CfpEditor({
                 <div className="cfp-suffixed">
                   <NumberInput
                     inputId="cfp-prop"
-                    value={details.proprietaryMonths}
+                    // Zero is the "unset" sentinel on a new call (createCfpInput leaves it out), so
+                    // the field shows the ODB's per-type default rather than a 0 nobody chose.
+                    value={creating && details.proprietaryMonths === 0 ? null : details.proprietaryMonths}
+                    placeholder={creating ? 'default' : undefined}
                     min={0}
                     max={36}
                     onValueChange={(e) => setDetails(details, { proprietaryMonths: e.value ?? 0 })}
