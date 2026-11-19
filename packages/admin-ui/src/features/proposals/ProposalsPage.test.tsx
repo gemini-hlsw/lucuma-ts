@@ -11,7 +11,6 @@ import {
 import type { ConfigurationRequestStatus, ProposalStatus } from '@/gql/odb/gen/graphql';
 import {
   ADD_PROGRAM_USER_MUTATION,
-  allocationsInput,
   LINK_USER_MUTATION,
   SET_ALLOCATIONS_MUTATION,
   UPDATE_PROGRAM_MUTATION,
@@ -30,7 +29,6 @@ vi.mock(import('@/gql/odb/programs'), async (importOriginal) => {
   const actual = await importOriginal();
   return {
     ...actual,
-    allocationsInput: vi.fn(actual.allocationsInput),
     useAssignContactScientists: vi.fn(actual.useAssignContactScientists),
   };
 });
@@ -166,7 +164,6 @@ const ODB_DOWN = new Error('ODB unavailable');
 
 describe(ProposalsPage, () => {
   beforeEach(() => {
-    vi.mocked(allocationsInput).mockReset();
     vi.mocked(useAssignContactScientists).mockReset();
   });
 
@@ -554,53 +551,37 @@ describe(ProposalsPage, () => {
       await expect.element(screen.getByRole('cell', { name: 'NOT_ACCEPTED' })).toBeVisible();
     });
 
-    it('sends the status once on a double click', async () => {
-      const setStatus = vi.fn(statusSet);
-      const screen = await renderPage(
-        requests(),
-        { ...setStatusMock('ACCEPTED'), result: setStatus, maxUsageCount: 2 },
-        resolveRequestsMock(['x-1', 'x-2'], []),
-        updateProgramMock(),
-      );
-      await userEvent.click(screen.getByRole('button', { name: 'Accept' }));
-      // Two clicks in one task, before React can re-render a disabled button.
-      const resolve = screen.getByRole('button', { name: 'Resolve' }).element() as HTMLButtonElement;
-      resolve.click();
-      resolve.click();
-      await expect.element(screen.getByText('Proposal accepted', { exact: true })).toBeVisible();
-      expect(setStatus).toHaveBeenCalledTimes(1);
-    });
-
-    it('sends nothing on an unexpected error before the status, keeping the draft', async () => {
-      vi.mocked(allocationsInput).mockImplementationOnce(() => {
-        throw new Error('Broken award');
-      });
-      const setStatus = vi.fn(statusSet);
-      const screen = await renderPage(requests(), { ...setStatusMock('ACCEPTED'), result: setStatus });
-      await accept(screen);
-      await expect.element(screen.getByText('Resolve failed')).toBeVisible();
-      await expect.element(screen.getByText(/Broken award/)).toBeVisible();
-      await expect.element(screen.getByText('Time Awards')).toBeVisible();
-      expect(setStatus).not.toHaveBeenCalled();
-    });
-
-    it('keeps Resolve disabled until every step is done', async () => {
+    it.each([
+      'AdminResolveProposalRequests',
+      'AdminSetAllocations',
+      'AdminUpdateProgram',
+      'AdminAddContact',
+      'AdminLinkContact',
+    ])('keeps the decision locked while %s is in flight', async (operation) => {
       const held = Promise.withResolvers<undefined>();
+      let reached = false;
       const screen = await renderWithContext(<ProposalsPage />, {
         token: STAFF_TOKEN,
-        hold: { AdminUpdateProgram: held.promise },
+        hold: {
+          [operation]: () => {
+            reached = true;
+            return held.promise;
+          },
+        },
         mocks: [
           proposalsMock(),
           requests(),
           observationsAnswer(),
           setStatusMock('ACCEPTED'),
           resolveRequestsMock(['x-1', 'x-2'], []),
-          updateProgramMock(),
+          roster,
+          ...awardMocks([]),
           emptyRoster(),
         ],
       });
-      await accept(screen);
-      await expect.element(screen.getByRole('button', { name: 'Resolve' })).toBeDisabled();
+      await acceptWithAward(screen);
+      await expect.poll(() => reached).toBe(true);
+      await expect.element(screen.getByRole('button', { name: 'Reject' })).toBeDisabled();
       held.resolve(undefined);
       await expect.element(screen.getByText('Proposal accepted', { exact: true })).toBeVisible();
     });

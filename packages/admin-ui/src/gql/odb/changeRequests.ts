@@ -388,11 +388,11 @@ export function useReloadProgramConfigurationRequests() {
 
 /** No `refetchQueries`: Apollo skips them on error, so the page reloads itself (sc-9595). */
 export function useResolveProposalRequests() {
-  const [mutate] = useMutation(RESOLVE_PROPOSAL_REQUESTS_MUTATION);
+  const [mutate, { loading }] = useMutation(RESOLVE_PROPOSAL_REQUESTS_MUTATION);
   const resolve = useCallback(
     (approved: readonly string[], denied: readonly string[]) =>
       mutate({ variables: { approved: [...approved], denied: [...denied] } }),
     [mutate],
   );
-  return { resolve };
+  return { resolve, loading };
 }

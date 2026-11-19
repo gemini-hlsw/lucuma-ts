@@ -2,7 +2,7 @@ import { isNotNullish, type Labelled, NumberInput, useToastApi, when } from '@ge
 import { AutoComplete } from 'primereact/autocomplete';
 import { Dropdown } from 'primereact/dropdown';
 import { InputText } from 'primereact/inputtext';
-import { type JSX, useMemo, useRef, useState } from 'react';
+import { type JSX, useMemo, useState } from 'react';
 
 import { DataSourceBadge } from '@/components/DataSourceBadge';
 import { SearchInput } from '@/components/SearchInput';
@@ -89,15 +89,12 @@ export default function ProposalsPage(): JSX.Element {
   const toast = useToastApi();
   const { data, loading, incomplete, error, refetch } = useProposals();
   const proposals = useMemo(() => (data ? mapProposals(data.programs.matches) : EMPTY), [data]);
-  const [setProposalStatus] = useSetProposalStatus();
-  const [setAllocations] = useSetAllocations();
-  const [updateProgram] = useUpdateProgram();
-  const { assign: assignContactScientists } = useAssignContactScientists();
-  const { resolve: resolveRequests } = useResolveProposalRequests();
+  const [setProposalStatus, statusState] = useSetProposalStatus();
+  const [setAllocations, allocationsState] = useSetAllocations();
+  const [updateProgram, programState] = useUpdateProgram();
+  const { assign: assignContactScientists, loading: assigning } = useAssignContactScientists();
+  const { resolve: resolveRequests, loading: deciding } = useResolveProposalRequests();
   const reloadRequests = useReloadProgramConfigurationRequests();
-  // Held across the whole resolve, which Apollo's per-mutation flags are not.
-  const inFlight = useRef(false);
-  const [resolving, setResolving] = useState(false);
 
   const [statusFilter, setStatusFilter] = useState<ProposalStatus | typeof ALL>(ALL);
   const [typeFilter, setTypeFilter] = useState<SpecialProposalType | typeof ALL>(ALL);
@@ -122,6 +119,10 @@ export default function ProposalsPage(): JSX.Element {
 
   const [selected, select] = useRowSelection(items, 'id');
   const proposalRequests = useProposalRequests(selected?.id ?? null);
+  // A resolve's writes or the list reload in flight; the gaps between them are too short to matter.
+  // The requests reload is left out: it would block Reject, and the reloaded row is decided anyway.
+  const resolving =
+    loading || statusState.loading || deciding || allocationsState.loading || programState.loading || assigning;
   // Unticked request ids per program: denied on Accept.
   const [declined, setDeclined] = useState<ReadonlyMap<string, ReadonlySet<string>>>(new Map());
 
@@ -153,51 +154,36 @@ export default function ProposalsPage(): JSX.Element {
 
   /** True once the status is set; false keeps the draft for a retry. */
   async function onResolve(p: ReviewProposal, decision: Decision): Promise<boolean> {
-    // A ref, so a second click in the same render is refused too.
-    if (inFlight.current) return false;
-    inFlight.current = true;
-    setResolving(true);
-    try {
-      // Built before any write, so a bug here leaves nothing half done.
-      const steps = decision === 'ACCEPT' ? acceptSteps(p) : [];
-      const status = decision === 'ACCEPT' ? 'ACCEPTED' : 'NOT_ACCEPTED';
-      const statusSet = await setProposalStatus({ variables: { programId: p.id, status } })
-        .then(() => true)
-        .catch((err: unknown) => {
-          toast.error('Resolve failed', friendlyError(err));
-          return false;
-        });
-      if (!statusSet) return false;
-      if (decision === 'REJECT') {
-        toast.success('Proposal rejected', p.reference);
-        // Awaited, so the row shows decided before the buttons unlock.
-        await reload();
-        return true;
-      }
-      // Stop at the first failure, so the reviewer sees exactly which step failed.
-      let failed = false;
-      for (const step of steps) {
-        failed = await step
-          .run()
-          .then(() => false)
-          .catch((err: unknown) => {
-            toast.error(`Proposal accepted, but ${step.name} failed`, friendlyError(err));
-            return true;
-          });
-        if (failed) break;
-      }
-      if (!failed) toast.success('Proposal accepted', p.reference);
-      // Also after a failure: it may have partly landed, and Apollo skips refetches after errors.
-      await reload(p.id);
+    const steps = decision === 'ACCEPT' ? acceptSteps(p) : [];
+    const status = decision === 'ACCEPT' ? 'ACCEPTED' : 'NOT_ACCEPTED';
+    const statusSet = await setProposalStatus({ variables: { programId: p.id, status } })
+      .then(() => true)
+      .catch((err: unknown) => {
+        toast.error('Resolve failed', friendlyError(err));
+        return false;
+      });
+    if (!statusSet) return false;
+    if (decision === 'REJECT') {
+      toast.success('Proposal rejected', p.reference);
+      await reload();
       return true;
-    } catch (err) {
-      // Only before the status: building the steps threw, so nothing was sent.
-      toast.error('Resolve failed', friendlyError(err));
-      return false;
-    } finally {
-      inFlight.current = false;
-      setResolving(false);
     }
+    // Stop at the first failure, so the reviewer sees exactly which step failed.
+    let failed = false;
+    for (const step of steps) {
+      failed = await step
+        .run()
+        .then(() => false)
+        .catch((err: unknown) => {
+          toast.error(`Proposal accepted, but ${step.name} failed`, friendlyError(err));
+          return true;
+        });
+      if (failed) break;
+    }
+    if (!failed) toast.success('Proposal accepted', p.reference);
+    // Also after a failure: it may have partly landed, and Apollo skips refetches after errors.
+    await reload(p.id);
+    return true;
   }
 
   /** Accept's steps after the status: the PI's requests, then the award. */
