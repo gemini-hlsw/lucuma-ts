@@ -317,4 +317,105 @@ describe(CfpPage, () => {
     await expect.element(row).toHaveAttribute('aria-selected', 'true');
     await expect.poll(() => scrollIntoView.mock.contexts).toContain(row.element());
   });
+
+  describe('default partners (sc-11165)', () => {
+    const partnerBox = (screen: Awaited<ReturnType<typeof renderWithContext>>, code: string, name: string) =>
+      screen.getByTitle(`Include ${name} (${code}) in this call.`).getByRole('checkbox');
+
+    const exchangeBox = (screen: Awaited<ReturnType<typeof renderWithContext>>, name: string) =>
+      screen.getByTitle(`Include ${name} in this call.`).getByRole('checkbox');
+
+    // PrimeReact keeps the Dropdown's input hidden; the visible control is its root.
+    const typeDropdown = (screen: Awaited<ReturnType<typeof renderWithContext>>) =>
+      screen.container.querySelector('#cfp-type')!.closest('.p-dropdown')!;
+
+    async function startNew() {
+      const screen = await renderWithContext(<CfpPage />, { token: STAFF_TOKEN, mocks: [cfpsMock()] });
+      await userEvent.click(screen.getByRole('button', { name: 'New' }));
+      return screen;
+    }
+
+    it('starts a new call with the Regular partners and Subaru ticked, and Keck not', async () => {
+      const screen = await startNew();
+      await expect.element(partnerBox(screen, 'CL', 'Chile')).toBeChecked();
+      await expect.element(partnerBox(screen, 'KR', 'Korea')).toBeChecked();
+      await expect.element(exchangeBox(screen, 'Subaru')).toBeChecked();
+      await expect.element(exchangeBox(screen, 'Keck')).not.toBeChecked();
+    });
+
+    it('follows the type to Fast Turnaround until the partners are edited', async () => {
+      const screen = await startNew();
+      await userEvent.click(typeDropdown(screen));
+      await userEvent.click(screen.getByRole('option', { name: 'Fast Turnaround' }));
+      await expect
+        .element(typeDropdown(screen).querySelector<HTMLElement>('.p-dropdown-label'))
+        .toHaveTextContent('Fast Turnaround');
+      await expect.element(partnerBox(screen, 'CL', 'Chile')).not.toBeChecked();
+      await expect.element(partnerBox(screen, 'UH', 'University of Hawaii')).not.toBeChecked();
+      await expect.element(partnerBox(screen, 'KR', 'Korea')).toBeChecked();
+      await expect.element(exchangeBox(screen, 'Subaru')).toBeChecked();
+    });
+
+    it('keeps the partners the user edited when the type changes', async () => {
+      const screen = await startNew();
+      await userEvent.click(partnerBox(screen, 'US', 'United States'));
+      await userEvent.click(typeDropdown(screen));
+      await userEvent.click(screen.getByRole('option', { name: 'Fast Turnaround' }));
+      await expect.element(partnerBox(screen, 'CL', 'Chile')).toBeChecked();
+      await expect.element(partnerBox(screen, 'US', 'United States')).not.toBeChecked();
+    });
+
+    it('drops Subaru when an untouched call moves to a type with no defaults', async () => {
+      const screen = await startNew();
+      await userEvent.click(typeDropdown(screen));
+      await userEvent.click(screen.getByRole('option', { name: 'Poor Weather' }));
+      await expect.element(exchangeBox(screen, 'Subaru')).not.toBeChecked();
+      await expect.element(partnerBox(screen, 'CL', 'Chile')).not.toBeChecked();
+    });
+
+    it('keeps an edited exchange partner when the type changes', async () => {
+      const screen = await startNew();
+      await userEvent.click(exchangeBox(screen, 'Subaru'));
+      await userEvent.click(typeDropdown(screen));
+      await userEvent.click(screen.getByRole('option', { name: 'Fast Turnaround' }));
+      await expect.element(exchangeBox(screen, 'Subaru')).not.toBeChecked();
+      await expect.element(partnerBox(screen, 'CL', 'Chile')).toBeChecked();
+    });
+
+    it('does not touch the partners of an existing call when its type changes, even one holding the Regular defaults', async () => {
+      const regular = ['AR', 'BR', 'CA', 'CL', 'KR', 'UH', 'US'] as const;
+      const call = existingCall();
+      const screen = await renderWithContext(<CfpPage />, {
+        token: STAFF_TOKEN,
+        mocks: [
+          cfpsMock([
+            {
+              ...call,
+              gemini: {
+                ...call.gemini!,
+                exchangePartners: [
+                  {
+                    __typename: 'CallForProposalsExchangePartner' as const,
+                    exchangePartner: 'SUBARU' as const,
+                    submissionDeadline: null,
+                    submissionDeadlineOverride: null,
+                  },
+                ],
+              },
+              partners: regular.map((geminiPartner) => ({
+                __typename: 'CallForProposalsPartner' as const,
+                geminiPartner,
+                submissionDeadline: null,
+                submissionDeadlineOverride: null,
+              })),
+            },
+          ]),
+        ],
+      });
+      await expect.element(partnerBox(screen, 'CL', 'Chile')).toBeChecked();
+      await userEvent.click(typeDropdown(screen));
+      await userEvent.click(screen.getByRole('option', { name: 'Fast Turnaround' }));
+      await expect.element(partnerBox(screen, 'CL', 'Chile')).toBeChecked();
+    });
+  });
 });
