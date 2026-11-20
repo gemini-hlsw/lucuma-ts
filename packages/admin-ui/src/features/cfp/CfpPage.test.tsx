@@ -1,8 +1,8 @@
 import { fakeJwt, standardUser } from '@gemini-hlsw/lucuma-common-ui/testing';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { userEvent } from 'vitest/browser';
 
-import { CFPS_QUERY } from '@/gql/odb/cfp';
+import { blankCall, cfpPropertiesInput, CFPS_QUERY, CREATE_CFP_MUTATION, createCfpInput, mapCfps } from '@/gql/odb/cfp';
 import type { CallForProposalsItemFragment } from '@/gql/odb/gen/graphql';
 import { type MockedResponseOf, renderWithContext } from '@/test/render';
 
@@ -58,6 +58,10 @@ const cfpsMock = (matches: CallForProposalsItemFragment[] = [existingCall()]): M
 });
 
 describe(CfpPage, () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it('starts each New on a blank draft, discarding the one in progress (sc-10136)', async () => {
     const screen = await renderWithContext(<CfpPage />, { token: STAFF_TOKEN, mocks: [cfpsMock()] });
 
@@ -96,5 +100,221 @@ describe(CfpPage, () => {
     });
 
     await expect.element(screen.getByRole('textbox', { name: 'Title' })).toHaveValue('An existing call');
+  });
+
+  it('shows "default" in the Title and Proprietary Period of a new call, not a value nobody chose — sc-10136', async () => {
+    const screen = await renderWithContext(<CfpPage />, { token: STAFF_TOKEN, mocks: [cfpsMock()] });
+    await userEvent.click(screen.getByRole('button', { name: 'New' }));
+
+    await expect.element(screen.getByRole('textbox', { name: 'Title' })).toHaveAttribute('placeholder', 'default');
+    const months = screen.getByRole('spinbutton', { name: 'Proprietary Period' });
+    await expect.element(months).toHaveAttribute('placeholder', 'default');
+    await expect.element(months).toHaveValue('');
+  });
+
+  it('shows the real title and months of an existing call — sc-10136', async () => {
+    const screen = await renderWithContext(<CfpPage />, { token: STAFF_TOKEN, mocks: [cfpsMock()] });
+    await expect.element(screen.getByRole('textbox', { name: 'Title' })).toHaveValue('An existing call');
+    await expect.element(screen.getByRole('textbox', { name: 'Title' })).not.toHaveAttribute('placeholder', 'default');
+    await expect.element(screen.getByRole('spinbutton', { name: 'Proprietary Period' })).toHaveValue('12');
+    await expect
+      .element(screen.getByRole('spinbutton', { name: 'Proprietary Period' }))
+      .not.toHaveAttribute('placeholder');
+  });
+
+  it('shows a stored 0 months as 0 on an existing call, not as "default" — sc-10136', async () => {
+    const zero = existingCall();
+    const screen = await renderWithContext(<CfpPage />, {
+      token: STAFF_TOKEN,
+      mocks: [cfpsMock([{ ...zero, gemini: { ...zero.gemini!, proprietaryMonths: 0 } }])],
+    });
+    await expect.element(screen.getByRole('spinbutton', { name: 'Proprietary Period' })).toHaveValue('0');
+  });
+
+  /** Create a call at the end of a long list. `chooseFacetAndNew` sets up the facet and starts the draft; the
+   *  create mutation for `set` answers with `created`. Returns the new call's row and the scroll spy. */
+  async function createAtEndOfLongList(
+    created: CallForProposalsItemFragment,
+    set: ReturnType<typeof createCfpInput>,
+    chooseFacetAndNew: (screen: Awaited<ReturnType<typeof renderWithContext>>) => Promise<void>,
+  ) {
+    // A long list: the new call joins the end of it, far below the editor the user is looking at.
+    const many = Array.from({ length: 80 }, (_, i) => ({
+      ...existingCall(),
+      id: `c-${100 + i}`,
+      title: `Call ${i + 1}`,
+    }));
+    let listed = many;
+    const list: MockedResponseOf<typeof CFPS_QUERY> = {
+      request: { query: CFPS_QUERY, variables: { offset: null } },
+      maxUsageCount: Infinity,
+      result: () => ({
+        data: { callsForProposals: { __typename: 'CallsForProposalsSelectResult', matches: listed, hasMore: false } },
+      }),
+    };
+    const create: MockedResponseOf<typeof CREATE_CFP_MUTATION> = {
+      request: { query: CREATE_CFP_MUTATION, variables: { set } },
+      result: () => {
+        listed = [...many, created];
+        return {
+          data: {
+            createCallForProposals: {
+              __typename: 'CreateCallForProposalsResult',
+              callForProposals: { __typename: 'CallForProposals', id: created.id },
+            },
+          },
+        };
+      },
+    };
+    const scrollIntoView = vi.spyOn(Element.prototype, 'scrollIntoView');
+    const screen = await renderWithContext(<CfpPage />, { token: STAFF_TOKEN, mocks: [list, create] });
+
+    await chooseFacetAndNew(screen);
+    await userEvent.click(screen.getByRole('button', { name: 'Create' }));
+
+    await expect.element(screen.getByText(/Selected Call/)).toBeInTheDocument();
+    return { row: screen.getByRole('row', { name: new RegExp(created.title) }), scrollIntoView, screen };
+  }
+
+  it('does not scroll when an ordinary row is selected — sc-10136', async () => {
+    const two = [existingCall(), { ...existingCall(), id: 'c-101', title: 'Another call' }];
+    const scrollIntoView = vi.spyOn(Element.prototype, 'scrollIntoView');
+    const screen = await renderWithContext(<CfpPage />, { token: STAFF_TOKEN, mocks: [cfpsMock(two)] });
+    await userEvent.click(screen.getByRole('cell', { name: 'Another call' }));
+    await expect.element(screen.getByRole('textbox', { name: 'Title' })).toHaveValue('Another call');
+    expect(scrollIntoView).not.toHaveBeenCalled();
+  });
+
+  it('does not scroll to another row when the new call has not reached the list — sc-10136', async () => {
+    // The list answer lacks the call the create returned, so the selection falls back to the first row.
+    const two = [existingCall(), { ...existingCall(), id: 'c-101', title: 'Another call' }];
+    const create: MockedResponseOf<typeof CREATE_CFP_MUTATION> = {
+      request: { query: CREATE_CFP_MUTATION, variables: { set: createCfpInput(blankCall('GEMINI')) } },
+      result: {
+        data: {
+          createCallForProposals: {
+            __typename: 'CreateCallForProposalsResult',
+            callForProposals: { __typename: 'CallForProposals', id: 'c-900' },
+          },
+        },
+      },
+    };
+    const scrollIntoView = vi.spyOn(Element.prototype, 'scrollIntoView');
+    const screen = await renderWithContext(<CfpPage />, { token: STAFF_TOKEN, mocks: [cfpsMock(two), create] });
+
+    // A different row is selected, so the fallback to the first row is a change of selection.
+    await userEvent.click(screen.getByRole('cell', { name: 'Another call' }));
+    await userEvent.click(screen.getByRole('button', { name: 'New' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Create' }));
+    await expect.element(screen.getByRole('textbox', { name: 'Title' })).toHaveValue('An existing call');
+    expect(scrollIntoView).not.toHaveBeenCalled();
+  });
+
+  it('scrolls only once for a created call, not each time it is selected again — sc-10136', async () => {
+    const created = { ...existingCall(), id: 'c-900', title: 'A brand new call' };
+    const { row, scrollIntoView, screen } = await createAtEndOfLongList(
+      created,
+      createCfpInput(blankCall('GEMINI')),
+      async (s) => {
+        await userEvent.click(s.getByRole('button', { name: 'New' }));
+      },
+    );
+    await expect.poll(() => scrollIntoView.mock.contexts).toContain(row.element());
+    // Select another row, then the created one again.
+    await userEvent.click(screen.getByRole('cell', { name: 'Call 1' }));
+    await expect.element(screen.getByRole('textbox', { name: 'Title' })).toHaveValue('Call 1');
+    await userEvent.click(row);
+    await expect.element(screen.getByRole('textbox', { name: 'Title' })).toHaveValue('A brand new call');
+    expect(scrollIntoView).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the facets as they are when a call is copied, and still shows the copy — sc-10136', async () => {
+    const original = existingCall();
+    const copy = { ...existingCall(), id: 'c-902', title: 'An existing call (copy)' };
+    let listed = [original];
+    const list: MockedResponseOf<typeof CFPS_QUERY> = {
+      request: { query: CFPS_QUERY, variables: { offset: null } },
+      maxUsageCount: Infinity,
+      result: () => ({
+        data: { callsForProposals: { __typename: 'CallsForProposalsSelectResult', matches: listed, hasMore: false } },
+      }),
+    };
+    const create: MockedResponseOf<typeof CREATE_CFP_MUTATION> = {
+      request: {
+        query: CREATE_CFP_MUTATION,
+        variables: { set: { ...cfpPropertiesInput(mapCfps([original])[0]!), title: 'An existing call (copy)' } },
+      },
+      result: () => {
+        listed = [original, copy];
+        return {
+          data: {
+            createCallForProposals: {
+              __typename: 'CreateCallForProposalsResult',
+              callForProposals: { __typename: 'CallForProposals', id: copy.id },
+            },
+          },
+        };
+      },
+    };
+    const scrollIntoView = vi.spyOn(Element.prototype, 'scrollIntoView');
+    const screen = await renderWithContext(<CfpPage />, { token: STAFF_TOKEN, mocks: [list, create] });
+
+    // Both calls have no deadline, so both count as closed: the Closed facet shows them.
+    await userEvent.click(screen.container.querySelector('.cfp-facet .p-dropdown-trigger')!);
+    await userEvent.click(screen.getByRole('option', { name: 'Closed' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Copy' }));
+
+    const row = screen.getByRole('row', { name: /An existing call \(copy\)/ });
+    await expect.element(row).toHaveAttribute('aria-selected', 'true');
+    await expect.poll(() => scrollIntoView.mock.contexts).toContain(row.element());
+    // The facet the user chose is still the one in force.
+    expect(screen.container.querySelector('.cfp-facet .p-dropdown-label')?.textContent).toBe('Closed');
+  });
+
+  it('brings the newly created call into view and selects it, even when the Open facet would hide it — sc-10136', async () => {
+    const { row, scrollIntoView } = await createAtEndOfLongList(
+      { ...existingCall(), id: 'c-900', title: 'A brand new call' },
+      createCfpInput(blankCall('GEMINI')),
+      async (screen) => {
+        // A new call has no deadline, so it counts as closed: the Open facet would hide it.
+        await userEvent.click(screen.container.querySelector('.cfp-facet .p-dropdown-trigger')!);
+        await userEvent.click(screen.getByRole('option', { name: 'Open' }));
+        await userEvent.click(screen.getByRole('button', { name: 'New' }));
+      },
+    );
+    // The new call is selected, and its row was asked to scroll into view (a test window is as tall as
+    // the page, so every row is "in view" and only the request can be observed).
+    await expect.element(row).toHaveAttribute('aria-selected', 'true');
+    await expect.poll(() => scrollIntoView.mock.contexts).toContain(row.element());
+  });
+
+  it('brings the newly created call into view and selects it, even when the observatory facet would hide it — sc-10136', async () => {
+    const keck: CallForProposalsItemFragment = {
+      ...existingCall(),
+      id: 'c-901',
+      title: 'A brand new Keck call',
+      observatory: 'KECK',
+      gemini: null,
+      keck: {
+        __typename: 'KeckCallProperties',
+        instruments: [],
+        coordinateLimits: limits(),
+      },
+    };
+    const { row, scrollIntoView } = await createAtEndOfLongList(
+      keck,
+      createCfpInput(blankCall('KECK')),
+      async (screen) => {
+        // Only Gemini calls are listed, so a Keck call would be hidden.
+        await userEvent.click(screen.container.querySelectorAll('.cfp-facet .p-dropdown-trigger')[1]!);
+        await userEvent.click(screen.getByRole('option', { name: 'Gemini' }));
+        await userEvent.click(screen.container.querySelector('.p-splitbutton-menubutton')!);
+        await userEvent.click(screen.getByRole('menuitem', { name: 'Keck call' }));
+      },
+    );
+    // The new call is selected, and its row was asked to scroll into view (a test window is as tall as
+    // the page, so every row is "in view" and only the request can be observed).
+    await expect.element(row).toHaveAttribute('aria-selected', 'true');
+    await expect.poll(() => scrollIntoView.mock.contexts).toContain(row.element());
   });
 });
