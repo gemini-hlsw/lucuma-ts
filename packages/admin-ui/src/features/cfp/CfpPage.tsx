@@ -27,6 +27,7 @@ import {
   blankCall,
   cfpPropertiesInput,
   createCfpInput,
+  defaultPartners,
   mapCfps,
   useCfps,
   useCreateCfp,
@@ -382,6 +383,21 @@ function CfpEditor({
   function setDetails<D extends CfpDetails>(current: D, patch: Partial<D>): void {
     setDraft((d) => ({ ...d, details: { ...current, ...patch } }));
   }
+  /** A new call's partners follow its type (sc-11165) until the user edits them. */
+  function setGeminiType(current: GeminiDetails, type: CfpType): void {
+    setDraft((d) => {
+      const was = defaultPartners(current.type);
+      const untouched =
+        creating &&
+        JSON.stringify([d.partners, current.exchangePartners]) === JSON.stringify([was.partners, was.exchangePartners]);
+      const next = untouched ? defaultPartners(type) : undefined;
+      return {
+        ...d,
+        partners: next ? next.partners : d.partners,
+        details: { ...current, type, exchangePartners: next ? next.exchangePartners : current.exchangePartners },
+      };
+    });
+  }
   function partnerEnabled(p: Partner): boolean {
     return draft.partners.some((x) => x.partner === p);
   }
@@ -459,7 +475,7 @@ function CfpEditor({
                   inputId="cfp-type"
                   value={details.type}
                   options={CFP_TYPES.map((t) => ({ label: CFP_TYPE_LABEL[t], value: t }))}
-                  onChange={(e) => setDetails(details, { type: e.value as CfpType })}
+                  onChange={(e) => setGeminiType(details, e.value as CfpType)}
                 />
               </>
             )}

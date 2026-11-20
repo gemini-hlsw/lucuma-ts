@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { CallForProposals } from '../types';
-import { blankCall, cfpPropertiesInput, createCfpInput, mapCfps, semesterDates } from './cfp';
+import { blankCall, cfpPropertiesInput, createCfpInput, defaultPartners, mapCfps, semesterDates } from './cfp';
 import type { CallForProposalsItemFragment } from './gen/graphql';
 
 type RawLimits = NonNullable<CallForProposalsItemFragment['keck']>['coordinateLimits'];
@@ -354,35 +354,118 @@ describe(blankCall, () => {
     const c = blankCall('GEMINI');
     expect(c.id).toBe('');
     expect(c.title).toBe('');
-    expect(c.partners).toEqual([]);
     expect(c.semester).toMatch(/^\d{4}[AB]$/);
     expect(c.activeStart).not.toBe('');
     expect(c.activeEnd).not.toBe('');
   });
 
-  it('carries the right observatory block, blank instruments/limits, and a seeded type', () => {
-    expect(blankCall('GEMINI').details).toMatchObject({
-      observatory: 'GEMINI',
-      type: 'REGULAR_SEMESTER',
-      instruments: [],
-    });
+  it('carries the right observatory block, blank limits, and a seeded type', () => {
+    expect(blankCall('GEMINI').details).toMatchObject({ observatory: 'GEMINI', type: 'REGULAR_SEMESTER' });
     expect(blankCall('KECK').details).toMatchObject({ observatory: 'KECK', instruments: [] });
     expect(blankCall('SUBARU').details).toMatchObject({ observatory: 'SUBARU', type: 'NORMAL', instruments: [] });
   });
+
+  it('starts a Gemini call with the Regular partners, Subaru and the default instruments (sc-11165)', () => {
+    const c = blankCall('GEMINI');
+    expect(c.partners.map((p) => p.partner)).toEqual(['AR', 'BR', 'CA', 'CL', 'KR', 'UH', 'US']);
+    expect(c.details).toMatchObject({
+      exchangePartners: [{ partner: 'SUBARU' }],
+      instruments: [
+        'ALOPEKE',
+        'FLAMINGOS2',
+        'GHOST',
+        'GMOS_NORTH',
+        'GMOS_SOUTH',
+        'GNIRS',
+        'IGRINS2',
+        'MAROON_X',
+        'ZORRO',
+      ],
+    });
+  });
+
+  it('leaves Keck and Subaru calls without partners (sc-11165)', () => {
+    expect(blankCall('KECK').partners).toEqual([]);
+    expect(blankCall('SUBARU').partners).toEqual([]);
+  });
+});
+
+describe(defaultPartners, () => {
+  it('gives Regular Semester its seven partners and Subaru (sc-11165)', () => {
+    const d = defaultPartners('REGULAR_SEMESTER');
+    expect(d.partners.map((p) => p.partner)).toEqual(['AR', 'BR', 'CA', 'CL', 'KR', 'UH', 'US']);
+    expect(d.exchangePartners).toEqual([{ partner: 'SUBARU' }]);
+  });
+
+  it('gives Fast Turnaround five partners and Subaru (sc-11165)', () => {
+    const d = defaultPartners('FAST_TURNAROUND');
+    expect(d.partners.map((p) => p.partner)).toEqual(['AR', 'BR', 'CA', 'KR', 'US']);
+    expect(d.exchangePartners).toEqual([{ partner: 'SUBARU' }]);
+  });
+
+  it.each(['POOR_WEATHER', 'DIRECTORS_TIME', 'LARGE_PROGRAM', 'DEMO_SCIENCE', 'SYSTEM_VERIFICATION'] as const)(
+    'leaves %s to the ODB default (sc-11165)',
+    (type) => {
+      expect(defaultPartners(type)).toEqual({ partners: [], exchangePartners: [] });
+    },
+  );
 });
 
 describe(createCfpInput, () => {
   it('omits blanks so the ODB defaults them, keeping only the create-required fields (sc-10136)', () => {
-    const input = createCfpInput(blankCall('GEMINI'));
+    const input = createCfpInput(blankCall('KECK'));
     expect(input.semester).toMatch(/^\d{4}[AB]$/);
     expect(input.activeStart).toBeDefined();
     expect(input.activeEnd).toBeDefined();
     // Title, partners, and coordinate limits are left to the ODB defaults.
     expect(input.title).toBeUndefined();
     expect(input.partners).toBeUndefined();
-    expect(input.gemini).toEqual({ type: 'REGULAR_SEMESTER' }); // no instruments/limits/proprietary
-    expect(input.keck).toBeUndefined();
+    expect(input.keck).toEqual({}); // no instruments/limits
+    expect(input.gemini).toBeUndefined();
     expect(input.subaru).toBeUndefined();
+  });
+
+  it('sends a new Gemini call its default partners, Subaru and instruments, but no limits or months (sc-11165)', () => {
+    const input = createCfpInput(blankCall('GEMINI'));
+    expect(input.partners?.map((p) => p.geminiPartner)).toEqual(['AR', 'BR', 'CA', 'CL', 'KR', 'UH', 'US']);
+    expect(input.gemini).toEqual({
+      type: 'REGULAR_SEMESTER',
+      instruments: [
+        'ALOPEKE',
+        'FLAMINGOS2',
+        'GHOST',
+        'GMOS_NORTH',
+        'GMOS_SOUTH',
+        'GNIRS',
+        'IGRINS2',
+        'MAROON_X',
+        'ZORRO',
+      ],
+      exchangePartners: [{ exchangePartner: 'SUBARU' }],
+    });
+  });
+
+  it("sends an exchange partner's deadline override on create (sc-11165)", () => {
+    const draft = blankCall('GEMINI');
+    const input = createCfpInput({
+      ...draft,
+      details: {
+        ...(draft.details as Extract<typeof draft.details, { observatory: 'GEMINI' }>),
+        exchangePartners: [{ partner: 'SUBARU', deadlineOverride: '2027-01-15 00:00:00' }],
+      },
+    });
+    expect(input.gemini?.exchangePartners).toEqual([
+      { exchangePartner: 'SUBARU', submissionDeadlineOverride: '2027-01-15 00:00:00' },
+    ]);
+  });
+
+  it('omits exchange partners when a Gemini draft has none (sc-11165)', () => {
+    const draft = blankCall('GEMINI');
+    const input = createCfpInput({
+      ...draft,
+      details: { ...(draft.details as Extract<typeof draft.details, { observatory: 'GEMINI' }>), exchangePartners: [] },
+    });
+    expect(input.gemini).not.toHaveProperty('exchangePartners');
   });
 
   it('includes fields the user set (title, instruments, partners)', () => {
