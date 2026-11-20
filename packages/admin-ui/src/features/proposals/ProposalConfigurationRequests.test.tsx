@@ -1,56 +1,21 @@
 import type { MockLink } from '@apollo/client/testing';
 import { fakeJwt, standardUser } from '@gemini-hlsw/lucuma-common-ui/testing';
-import { dateToLocalObservingNight } from '@gemini-hlsw/lucuma-core';
+import { useState } from 'react';
 import { describe, expect, it } from 'vitest';
 import { userEvent } from 'vitest/browser';
 
-import {
-  PROGRAM_CONFIGURATION_REQUESTS_QUERY,
-  PROGRAM_OBSERVATIONS_QUERY,
-  RESOLVE_WITH_FEEDBACK_MUTATION,
-} from '@/gql/odb/changeRequests';
-import { CONFLICTS_QUERY, similarModeTypes } from '@/gql/odb/conflicts';
+import { PROGRAM_CONFIGURATION_REQUESTS_QUERY, PROGRAM_OBSERVATIONS_QUERY } from '@/gql/odb/changeRequests';
+import { configurationRequest } from '@/test/factories';
 import { type MockedResponseOf, renderWithContext } from '@/test/render';
+import { boxOf, rowBoxes, ticks } from '@/test/requestTable';
 
 import { ProposalConfigurationRequests } from './ProposalConfigurationRequests';
+import { useProposalRequests } from './useProposalRequests';
 
 const STAFF_TOKEN = fakeJwt(standardUser('staff'));
 
-const rawRequest = (status: 'REQUESTED' | 'APPROVED', justification = 'Please observe.') => ({
-  __typename: 'ConfigurationRequest' as const,
-  id: 'x-9',
-  status,
-  justification,
-  feedback: null,
-  createdAt: '2027-06-01T12:30:00Z',
-  applicableObservations: [],
-  program: {
-    __typename: 'Program' as const,
-    id: 'p-1',
-    name: 'A proposal',
-    reference: { __typename: 'ScienceProgramReference' as const, label: 'G-2027B-0042-DD' },
-    pi: null,
-  },
-  configuration: {
-    __typename: 'Configuration' as const,
-    target: null,
-    observingMode: {
-      __typename: 'ConfigurationObservingMode' as const,
-      instrument: 'GMOS_NORTH' as const,
-      mode: 'GMOS_NORTH_LONG_SLIT' as const,
-    },
-    conditions: {
-      __typename: 'ConfigurationConditions' as const,
-      imageQuality: 'POINT_EIGHT' as const,
-      cloudExtinction: 'POINT_THREE' as const,
-      skyBackground: 'GRAY' as const,
-      waterVapor: 'WET' as const,
-    },
-  },
-});
-
 const requestsMock = (
-  matches: ReturnType<typeof rawRequest>[],
+  matches: ReturnType<typeof configurationRequest>[],
 ): MockedResponseOf<typeof PROGRAM_CONFIGURATION_REQUESTS_QUERY> => ({
   request: { query: PROGRAM_CONFIGURATION_REQUESTS_QUERY, variables: { programId: 'p-1', offset: null } },
   result: {
@@ -64,51 +29,39 @@ const observationsMock = (): MockedResponseOf<typeof PROGRAM_OBSERVATIONS_QUERY>
   maxUsageCount: Infinity,
 });
 
-const emptyConflicts = (): MockedResponseOf<typeof CONFLICTS_QUERY> => ({
-  request: {
-    query: CONFLICTS_QUERY,
-    variables: {
-      modeTypes: [...similarModeTypes('GMOS_NORTH_LONG_SLIT')].sort(),
-      today: dateToLocalObservingNight(new Date()),
-    },
-  },
-  maxUsageCount: Infinity,
-  result: {
-    data: {
-      configurationRequests: { __typename: 'ConfigurationRequestSelectResult', matches: [] },
-      observations: { __typename: 'ObservationSelectResult', matches: [] },
-    },
-  },
-});
+/** The component as the page drives it: the real loading hook, and the unticked ids held by the caller. */
+function Harness({
+  decided: initial = false,
+  locked = false,
+}: {
+  readonly decided?: boolean;
+  readonly locked?: boolean;
+}) {
+  const proposalRequests = useProposalRequests('p-1');
+  const [decided, setDecided] = useState(initial);
+  const [declined, setDeclined] = useState<ReadonlySet<string>>(new Set());
+  return (
+    <>
+      <ProposalConfigurationRequests
+        programId="p-1"
+        proposalRequests={proposalRequests}
+        declined={declined}
+        onDeclinedChange={setDeclined}
+        decided={decided}
+        locked={locked}
+      />
+      <button onClick={() => setDecided(true)}>decide</button>
+      <output data-testid="declined">{[...declined].sort().join(',')}</output>
+    </>
+  );
+}
 
-const render = (mocks: readonly MockLink.MockedResponse[]) =>
-  renderWithContext(<ProposalConfigurationRequests programId="p-1" programLabel="G-2027B-0042-DD" />, {
-    token: STAFF_TOKEN,
-    mocks,
-  });
-
-/** The decision a reviewer's Approve + Confirm sends: the seeded approval wording. */
-const approveMock = (): MockedResponseOf<typeof RESOLVE_WITH_FEEDBACK_MUTATION> => {
-  // The seeded approval boilerplate is what goes out as the PI response.
-  const feedback =
-    'Dear (unknown PI),\n\nThanks for submitting your proposal. The configurations you requested (x-9) have been approved.\n\nRegards,\nGemini Science Operations';
-  const approve: MockedResponseOf<typeof RESOLVE_WITH_FEEDBACK_MUTATION> = {
-    request: { query: RESOLVE_WITH_FEEDBACK_MUTATION, variables: { ids: ['x-9'], status: 'APPROVED', feedback } },
-    result: {
-      data: {
-        updateConfigurationRequests: {
-          __typename: 'UpdateConfigurationRequestsResult',
-          requests: [{ __typename: 'ConfigurationRequest', id: 'x-9', status: 'APPROVED', feedback }],
-        },
-      },
-    },
-  };
-  return approve;
-};
+const render = (mocks: readonly MockLink.MockedResponse[], decided = false, locked = false) =>
+  renderWithContext(<Harness decided={decided} locked={locked} />, { token: STAFF_TOKEN, mocks });
 
 describe(ProposalConfigurationRequests, () => {
-  it('shows the proposal’s configuration requests for review', async () => {
-    const screen = await render([requestsMock([rawRequest('REQUESTED')]), observationsMock()]);
+  it('shows the proposal’s requests', async () => {
+    const screen = await render([requestsMock([configurationRequest('x-9')]), observationsMock()]);
     await expect.element(screen.getByText('Configuration Requests')).toBeVisible();
     await expect.element(screen.getByText('x-9')).toBeVisible();
   });
@@ -118,29 +71,71 @@ describe(ProposalConfigurationRequests, () => {
     await expect.element(screen.getByText('Configuration Requests')).not.toBeInTheDocument();
   });
 
-  it('records a decision and reloads this program’s requests in place', async () => {
-    // The second answer is what the post-resolve refetch returns. The mutation's
-    // own response already updates the cached status, so the justification is
-    // what tells a refetch of this program's query from no refetch at all.
+  it('starts all pending requests ticked and records unticked ones as declined', async () => {
     const screen = await render([
-      requestsMock([rawRequest('REQUESTED')]),
-      requestsMock([rawRequest('APPROVED', 'Reloaded from the ODB.')]),
+      requestsMock([configurationRequest('x-1'), configurationRequest('x-2')]),
       observationsMock(),
-      emptyConflicts(),
-      approveMock(),
     ]);
+    await expect.poll(() => ticks(screen)).toEqual([true, true]);
+    await expect.element(screen.getByTestId('declined')).toHaveTextContent('');
 
-    // PrimeReact names both the cell wrapper and the input; click the input.
-    await userEvent.click(screen.getByRole('checkbox', { name: 'Row Selected x-9' }).last());
-    await userEvent.click(screen.getByRole('button', { name: 'Approve' }));
-    await userEvent.click(screen.getByRole('button', { name: 'Confirm' }));
+    await userEvent.click(boxOf(screen, 'x-2'));
+    await expect.poll(() => ticks(screen)).toEqual([true, false]);
+    await expect.element(screen.getByTestId('declined')).toHaveTextContent('x-2');
 
-    await expect.element(screen.getByText('Reloaded from the ODB.')).toBeVisible();
-    // A proposal's requests are configuration requests, not change requests.
-    await expect.element(screen.getByText('Configuration requests approved')).toBeVisible();
+    await userEvent.click(boxOf(screen, 'x-2'));
+    await expect.poll(() => ticks(screen)).toEqual([true, true]);
+    await expect.element(screen.getByTestId('declined')).toHaveTextContent('');
   });
 
-  it('says so when the requests fail to load, rather than reading as no requests', async () => {
+  it('keeps each column’s cells in place when the proposal becomes decided', async () => {
+    const screen = await render([requestsMock([configurationRequest('x-1')]), observationsMock()]);
+    await expect.poll(() => ticks(screen)).toEqual([true]);
+    await userEvent.click(screen.getByRole('button', { name: 'decide' }));
+    await expect.poll(() => rowBoxes(screen).length).toBe(0);
+    await expect.element(screen.getByTitle('Pending')).toBeInTheDocument();
+    const headers = [...screen.container.querySelectorAll('.cr-review-table thead th')].map((th) => th.textContent);
+    const cells = [...screen.container.querySelectorAll('.cr-review-table tbody tr:first-child td')];
+    expect(cells[headers.indexOf('Received')]?.textContent).toBe('2027-06-01 12:30 UTC');
+    expect(cells[headers.indexOf('Target')]?.textContent).not.toBe('2027-06-01 12:30 UTC');
+  });
+
+  it('is read-only once the proposal is decided', async () => {
+    const screen = await render(
+      [
+        requestsMock([configurationRequest('x-1', 'APPROVED'), configurationRequest('x-2', 'DENIED')]),
+        observationsMock(),
+      ],
+      true,
+    );
+    await expect.element(screen.getByText('x-1')).toBeVisible();
+    await expect.element(screen.getByRole('checkbox')).not.toBeInTheDocument();
+    await expect.element(screen.getByText('Tick the requests to approve')).not.toBeInTheDocument();
+    // Each outcome shows as its status dot.
+    await expect.element(screen.getByTitle('Approved')).toBeVisible();
+    await expect.element(screen.getByTitle('Denied')).toBeVisible();
+  });
+
+  it('locks the ticks while a resolve is in flight', async () => {
+    const screen = await render(
+      [requestsMock([configurationRequest('x-1'), configurationRequest('x-2')]), observationsMock()],
+      false,
+      true,
+    );
+    await expect.poll(() => ticks(screen)).toEqual([true, true]);
+    expect(rowBoxes(screen).map((box) => box.disabled)).toEqual([true, true]);
+  });
+
+  it('does not offer a withdrawn request', async () => {
+    const screen = await render([
+      requestsMock([configurationRequest('x-1'), configurationRequest('x-2', 'WITHDRAWN')]),
+      observationsMock(),
+    ]);
+    await expect.poll(() => ticks(screen)).toEqual([true, false]);
+    expect(rowBoxes(screen).map((box) => box.disabled)).toEqual([false, true]);
+  });
+
+  it('says so when the requests fail to load', async () => {
     const failing: MockedResponseOf<typeof PROGRAM_CONFIGURATION_REQUESTS_QUERY> = {
       request: { query: PROGRAM_CONFIGURATION_REQUESTS_QUERY, variables: { programId: 'p-1', offset: null } },
       error: new Error('ODB unavailable'),
@@ -149,14 +144,14 @@ describe(ProposalConfigurationRequests, () => {
     await expect.element(screen.getByText(/Could not load this proposal’s configuration requests/)).toBeVisible();
   });
 
-  it('says so when a later page of requests fails to load, not showing a truncated list as complete', async () => {
+  it('says so when a later page fails to load', async () => {
     const firstPage: MockedResponseOf<typeof PROGRAM_CONFIGURATION_REQUESTS_QUERY> = {
       request: { query: PROGRAM_CONFIGURATION_REQUESTS_QUERY, variables: { programId: 'p-1', offset: null } },
       result: {
         data: {
           configurationRequests: {
             __typename: 'ConfigurationRequestSelectResult',
-            matches: [rawRequest('REQUESTED')],
+            matches: [configurationRequest('x-9')],
             hasMore: true,
           },
         },
@@ -170,61 +165,34 @@ describe(ProposalConfigurationRequests, () => {
     await expect.element(screen.getByText(/Could not load this proposal’s configuration requests/)).toBeVisible();
   });
 
-  it('says so, and stops asking, when a page of requests repeats and the walk cannot move on', async () => {
-    // The ODB can answer a cursor with a page that ends on the cursor itself and still say hasMore (sc-10723).
+  it('says so, and stops asking, when the page walk stalls', async () => {
+    // A cursor answered with itself and hasMore stalls the walk (sc-10723).
     const page = (offset: string | null): MockedResponseOf<typeof PROGRAM_CONFIGURATION_REQUESTS_QUERY> => ({
       request: { query: PROGRAM_CONFIGURATION_REQUESTS_QUERY, variables: { programId: 'p-1', offset } },
       result: {
         data: {
           configurationRequests: {
             __typename: 'ConfigurationRequestSelectResult',
-            matches: [rawRequest('REQUESTED')],
+            matches: [configurationRequest('x-9')],
             hasMore: true,
           },
         },
       },
     });
-    // One answer for each cursor: a walk that asked again would meet "no more mocked responses" and fail the test.
+    // One answer per cursor, so asking again fails the test.
     const screen = await render([page(null), page('x-9'), observationsMock()]);
     await expect.element(screen.getByText(/Could not load this proposal’s configuration requests\./)).toBeVisible();
   });
 
-  it('says so when the observations that name Target and Windows cannot all be loaded', async () => {
+  it('says so when the observations cannot all be loaded', async () => {
     const obsPage = (offset: string | null, hasMore: boolean): MockedResponseOf<typeof PROGRAM_OBSERVATIONS_QUERY> => ({
       request: { query: PROGRAM_OBSERVATIONS_QUERY, variables: { programId: 'p-1', offset } },
       result: { data: { observations: { __typename: 'ObservationSelectResult', matches: [], hasMore } } },
     });
-    // A first page with no rows that claims more leaves the walk no cursor to ask from.
-    const screen = await render([requestsMock([rawRequest('REQUESTED')]), obsPage(null, true)]);
+    // An empty page with hasMore leaves no cursor.
+    const screen = await render([requestsMock([configurationRequest('x-9')]), obsPage(null, true)]);
     await expect
       .element(screen.getByText(/Could not load the program’s observations, so Target and Windows may be blank/))
       .toBeVisible();
-  });
-
-  it('keeps the review on screen while the requests reload after a decision', async () => {
-    // The reload is slow enough to be caught mid-flight.
-    const slowReload = { ...requestsMock([rawRequest('APPROVED', 'Reloaded from the ODB.')]), delay: 300 };
-    const screen = await render([
-      requestsMock([rawRequest('REQUESTED')]),
-      slowReload,
-      observationsMock(),
-      emptyConflicts(),
-      approveMock(),
-    ]);
-    await expect.element(screen.getByText('Configuration Requests')).toBeVisible();
-
-    let tornDown = false;
-    const watch = new MutationObserver(() => {
-      if (screen.container.querySelector('.review-obs-title') === null) tornDown = true;
-    });
-    watch.observe(screen.container, { childList: true, subtree: true });
-
-    await userEvent.click(screen.getByRole('checkbox', { name: 'Row Selected x-9' }).last());
-    await userEvent.click(screen.getByRole('button', { name: 'Approve' }));
-    await userEvent.click(screen.getByRole('button', { name: 'Confirm' }));
-    await expect.element(screen.getByText('Reloaded from the ODB.')).toBeVisible();
-
-    watch.disconnect();
-    expect(tornDown).toBe(false);
   });
 });
