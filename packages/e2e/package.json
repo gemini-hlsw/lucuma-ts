@@ -21,7 +21,7 @@
     "@eslint/js": "10.0.1",
     "@gemini-hlsw/navigate-configs": "workspace:*",
     "@gemini-hlsw/navigate-ui": "workspace:*",
-    "@playwright/test": "1.65.0",
+    "@playwright/test": "1.65.1",
     "@tsconfig/strictest": "2.0.9",
     "@tsconfig/vite-react": "8.1.2",
     "eslint": "10.14.0",

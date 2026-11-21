@@ -52,7 +52,7 @@
     "globals": "17.14.0",
     "graphql": "16.15.0",
     "jotai": "3.0.2",
-    "playwright": "1.65.0",
+    "playwright": "1.65.1",
     "primereact": "10.9.9",
     "react": "19.3.1",
     "react-dom": "19.3.1",
