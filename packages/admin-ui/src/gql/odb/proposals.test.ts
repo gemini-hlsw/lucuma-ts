@@ -1,34 +1,10 @@
 import { print } from 'graphql';
 import { describe, expect, it } from 'vitest';
 
-import { executionDigest } from '@/test/factories';
+import { observationItem } from '@/test/factories';
 
-import type { GroupElementItemFragment, ObservationItemFragment, ProposalItemFragment } from './gen/graphql';
+import type { GroupElementItemFragment, ProposalItemFragment } from './gen/graphql';
 import { mapProposals, PROPOSALS_QUERY, semesterOfReference } from './proposals';
-
-function observation(id: string, targetName: string, hours: number | null): ObservationItemFragment {
-  return {
-    __typename: 'Observation',
-    id,
-    calibrationRole: null,
-    groupId: null,
-    execution: executionDigest(hours),
-    instrument: 'FLAMINGOS2',
-    observingMode: null,
-    constraintSet: {
-      __typename: 'ConstraintSet',
-      imageQuality: 'POINT_EIGHT',
-      cloudExtinction: 'POINT_THREE',
-      skyBackground: 'GRAY',
-      waterVapor: 'WET',
-    },
-    schedulingConstraints: { __typename: 'SchedulingConstraints', timingWindows: [] },
-    targetEnvironment: {
-      __typename: 'TargetEnvironment',
-      firstScienceTarget: { __typename: 'Target', id: `t-${id}`, name: targetName, sidereal: null },
-    },
-  };
-}
 
 function specialProgram(overrides: Partial<ProposalItemFragment>): ProposalItemFragment {
   return {
@@ -45,10 +21,16 @@ function specialProgram(overrides: Partial<ProposalItemFragment>): ProposalItemF
         id: 'u-pi',
         profile: { __typename: 'UserProfile', givenName: 'Bryan', familyName: 'Miller' },
       },
+      partnerLink: { __typename: 'HasGeminiPartner', geminiPartner: 'US' },
     },
     proposal: {
       __typename: 'Proposal',
       reference: { __typename: 'ProposalReference', label: 'G-2027B-0042-DD' },
+      call: {
+        __typename: 'CallForProposals',
+        id: 'c-1',
+        active: { __typename: 'DateInterval', start: '2027-08-01', end: '2028-01-31' },
+      },
       gemini: { __typename: 'DirectorsTime', scienceSubtype: 'DIRECTORS_TIME' },
     },
     observations: { __typename: 'ObservationSelectResult', matches: [] },
@@ -73,7 +55,10 @@ describe(mapProposals, () => {
       specialProgram({
         observations: {
           __typename: 'ObservationSelectResult',
-          matches: [observation('o-1db', 'Gaia DR2 2342904698625661824', 0.4), observation('o-459a', 'HIP 3320', null)],
+          matches: [
+            observationItem('o-1db', 'Gaia DR2 2342904698625661824', 0.4),
+            observationItem('o-459a', 'HIP 3320', null),
+          ],
         },
       }),
       // A regular Queue proposal — excluded even if the ODB's call filter
@@ -84,6 +69,7 @@ describe(mapProposals, () => {
         proposal: {
           __typename: 'Proposal',
           reference: null,
+          call: null,
           gemini: { __typename: 'Queue', scienceSubtype: 'QUEUE' },
         },
       }),
@@ -95,6 +81,8 @@ describe(mapProposals, () => {
     expect(p?.pi).toBe('Bryan Miller');
     expect(p?.abstract).toBe('This is for testing F2 telluric generation.');
     expect(p?.semester).toBe('2027B'); // parsed from the reference label
+    expect(p?.activePeriod).toEqual({ start: '2027-08-01', end: '2028-01-31' });
+    expect(p?.piPartner).toBe('US');
     // Rows carry the full shared shape; fields absent from the fixture (no
     // sidereal coordinates or mode) degrade to em-dashes.
     expect(p?.observations[0]).toMatchObject({
@@ -109,6 +97,27 @@ describe(mapProposals, () => {
       hours: 0.4,
     });
     expect(p?.observations[1]).toMatchObject({ id: 'o-459a', target: 'HIP 3320', hours: 0 });
+  });
+
+  it('leaves the active period and partner empty when the proposal has no call and the PI no partner', () => {
+    const [p] = mapProposals([
+      specialProgram({
+        pi: {
+          __typename: 'ProgramUser',
+          id: 'm-pi',
+          user: null,
+          partnerLink: { __typename: 'HasExchangePartner' },
+        },
+        proposal: {
+          __typename: 'Proposal',
+          reference: null,
+          call: null,
+          gemini: { __typename: 'PoorWeather', scienceSubtype: 'POOR_WEATHER' },
+        },
+      }),
+    ]);
+    expect(p?.activePeriod).toBeNull();
+    expect(p?.piPartner).toBeNull();
   });
 
   it("uses a science observation's telluric-group total for its Time (sc-9598)", () => {
@@ -130,7 +139,7 @@ describe(mapProposals, () => {
     };
     // The science observation's own digest is 0.27h, but it sits in a telluric
     // group whose combined estimate is 0.53h — that total is its Time.
-    const science = { ...observation('o-sci', 'NGC 4038', 0.27), groupId: 'g-tel' };
+    const science = { ...observationItem('o-sci', 'NGC 4038', 0.27), groupId: 'g-tel' };
     const [p] = mapProposals([
       specialProgram({
         observations: { __typename: 'ObservationSelectResult', matches: [science] },

@@ -20,6 +20,7 @@ const dd = (id: string): ProposalItemFragment => ({
   proposal: {
     __typename: 'Proposal',
     reference: null,
+    call: null,
     gemini: { __typename: 'DirectorsTime', scienceSubtype: 'DIRECTORS_TIME' },
   },
   observations: { __typename: 'ObservationSelectResult', matches: [] },
