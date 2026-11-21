@@ -28,10 +28,24 @@ export const PROPOSAL_ITEM_FRAGMENT = graphql(`
           familyName
         }
       }
+      # The PI's partner names the category of a Poor Weather award (sc-11161).
+      partnerLink {
+        ... on HasGeminiPartner {
+          geminiPartner
+        }
+      }
     }
     proposal {
       reference {
         label
+      }
+      # The call's active period is the award's default (sc-11159).
+      call {
+        id # Apollo's cache key for the call
+        active {
+          start
+          end
+        }
       }
       gemini {
         scienceSubtype
@@ -113,6 +127,8 @@ export function mapProposals(programs: readonly ProposalItemFragment[]): Proposa
       type,
       status: p.proposalStatus,
       abstract: p.description ?? '',
+      activePeriod: p.proposal.call ? { start: p.proposal.call.active.start, end: p.proposal.call.active.end } : null,
+      piPartner: p.pi?.partnerLink.__typename === 'HasGeminiPartner' ? p.pi.partnerLink.geminiPartner : null,
       observations: p.observations.matches.filter(isScienceObservation).map((o) => mapObservationRow(o, groupHours)),
     });
   }

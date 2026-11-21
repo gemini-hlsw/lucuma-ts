@@ -31,6 +31,31 @@ export function executionDigest(hours: number | null): ObservationItemFragment['
   };
 }
 
+/** A Flamingos-2 science observation of `targetName` costing `hours` of program time. */
+export function observationItem(id: string, targetName: string, hours: number | null): ObservationItemFragment {
+  return {
+    __typename: 'Observation',
+    id,
+    calibrationRole: null,
+    groupId: null,
+    execution: executionDigest(hours),
+    instrument: 'FLAMINGOS2',
+    observingMode: null,
+    constraintSet: {
+      __typename: 'ConstraintSet',
+      imageQuality: 'POINT_EIGHT',
+      cloudExtinction: 'POINT_THREE',
+      skyBackground: 'GRAY',
+      waterVapor: 'WET',
+    },
+    schedulingConstraints: { __typename: 'SchedulingConstraints', timingWindows: [] },
+    targetEnvironment: {
+      __typename: 'TargetEnvironment',
+      firstScienceTarget: { __typename: 'Target', id: `t-${id}`, name: targetName, sidereal: null },
+    },
+  };
+}
+
 /** An empty SSO user roster, for pages that load it in tests about something else. */
 export const emptyRoster = (): MockedResponseOf<typeof USERS_QUERY> => ({
   request: { query: USERS_QUERY },

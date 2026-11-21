@@ -445,6 +445,10 @@ export interface Proposal {
   readonly type: SpecialProposalType;
   readonly status: ProposalStatus;
   readonly abstract: string;
+  /** The call's active period (ISO dates); null when the proposal has no call. */
+  readonly activePeriod: { readonly start: string; readonly end: string } | null;
+  /** The PI's Gemini partner; null for an exchange partner, no partner or none set. */
+  readonly piPartner: Partner | null;
   readonly observations: readonly ObservationRow[];
 }
 
