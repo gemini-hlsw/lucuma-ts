@@ -250,7 +250,7 @@ importers:
     devDependencies:
       '@apollo/client':
         specifier: 4.3.8
-        version: 4.3.8(graphql-ws@6.4.2(graphql@16.15.0)(ws@8.23.0))(graphql@16.15.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(rxjs@7.8.2)
+        version: 4.3.8(graphql-ws@6.4.3(graphql@16.15.0)(ws@8.23.0))(graphql@16.15.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(rxjs@7.8.2)
       '@eslint/js':
         specifier: 10.0.1
         version: 10.0.1(eslint@10.14.0(jiti@2.7.0)(supports-color@10.2.2))
@@ -401,7 +401,7 @@ importers:
     devDependencies:
       '@apollo/client':
         specifier: 4.3.8
-        version: 4.3.8(graphql-ws@6.4.2(graphql@16.15.0)(ws@8.23.0))(graphql@16.15.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(rxjs@7.8.2)
+        version: 4.3.8(graphql-ws@6.4.3(graphql@16.15.0)(ws@8.23.0))(graphql@16.15.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(rxjs@7.8.2)
       '@eslint/js':
         specifier: 10.0.1
         version: 10.0.1(eslint@10.14.0(jiti@2.7.0)(supports-color@10.2.2))
@@ -621,7 +621,7 @@ importers:
     dependencies:
       '@apollo/client':
         specifier: 4.3.8
-        version: 4.3.8(graphql-ws@6.4.2(graphql@16.15.0)(ws@8.23.0))(graphql@16.15.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(rxjs@7.8.2)
+        version: 4.3.8(graphql-ws@6.4.3(graphql@16.15.0)(ws@8.23.0))(graphql@16.15.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(rxjs@7.8.2)
       '@fortawesome/fontawesome-svg-core':
         specifier: 7.3.1
         version: 7.3.1
@@ -766,7 +766,7 @@ importers:
     devDependencies:
       '@apollo/client':
         specifier: 4.3.8
-        version: 4.3.8(graphql-ws@6.4.2(graphql@16.15.0)(ws@8.23.0))(graphql@16.15.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(rxjs@7.8.2)
+        version: 4.3.8(graphql-ws@6.4.3(graphql@16.15.0)(ws@8.23.0))(graphql@16.15.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(rxjs@7.8.2)
       '@eslint/js':
         specifier: 10.0.1
         version: 10.0.1(eslint@10.14.0(jiti@2.7.0)(supports-color@10.2.2))
@@ -873,8 +873,8 @@ importers:
         specifier: 16.15.0
         version: 16.15.0
       graphql-ws:
-        specifier: 6.4.2
-        version: 6.4.2(graphql@16.15.0)(ws@8.23.0)
+        specifier: 6.4.3
+        version: 6.4.3(graphql@16.15.0)(ws@8.23.0)
       jotai:
         specifier: 3.0.2
         version: 3.0.2(@types/react@19.3.0)(react@19.3.1)
@@ -4157,8 +4157,8 @@ packages:
     peerDependencies:
       graphql: ^0.9.0 || ^0.10.0 || ^0.11.0 || ^0.12.0 || ^0.13.0 || ^14.0.0 || ^15.0.0 || ^16.0.0 || ^17.0.0
 
-  graphql-ws@6.4.2:
-    resolution: {integrity: sha512-wxhPhhOGJo8PbGDkBYVE76sZLDrS+GkyrR4bZECSLVbo0pZZNKs0HtBh2Ip/uaUuiVUxwO9ssI9R92buQfNSqQ==}
+  graphql-ws@6.4.3:
+    resolution: {integrity: sha512-wdnv6+iQF0U3rPeaoCALqyFHLE7zansTAqBnsrbwyzgj/Iu0kaglAsA8k3nGDHu9AmeGOQI3uH6C+ojz3DO9AA==}
     engines: {node: '>=20'}
     peerDependencies:
       '@fastify/websocket': ^10 || ^11
@@ -5932,7 +5932,7 @@ packages:
 
 snapshots:
 
-  '@apollo/client@4.3.8(graphql-ws@6.4.2(graphql@16.15.0)(ws@8.23.0))(graphql@16.15.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(rxjs@7.8.2)':
+  '@apollo/client@4.3.8(graphql-ws@6.4.3(graphql@16.15.0)(ws@8.23.0))(graphql@16.15.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(rxjs@7.8.2)':
     dependencies:
       '@graphql-typed-document-node/core': 3.2.0(graphql@16.15.0)
       '@wry/caches': 1.0.1
@@ -5944,7 +5944,7 @@ snapshots:
       rxjs: 7.8.2
       tslib: 2.9.1
     optionalDependencies:
-      graphql-ws: 6.4.2(graphql@16.15.0)(ws@8.23.0)
+      graphql-ws: 6.4.3(graphql@16.15.0)(ws@8.23.0)
       react: 19.3.1
       react-dom: 19.3.1(react@19.3.1)
 
@@ -6809,7 +6809,7 @@ snapshots:
       '@graphql-tools/utils': 12.1.0(graphql@16.15.0)
       '@whatwg-node/disposablestack': 0.0.6
       graphql: 16.15.0
-      graphql-ws: 6.4.2(graphql@16.15.0)(ws@8.23.0)
+      graphql-ws: 6.4.3(graphql@16.15.0)(ws@8.23.0)
       isows: 1.0.8(ws@8.23.0)
       tslib: 2.9.1
       ws: 8.23.0
@@ -6825,7 +6825,7 @@ snapshots:
       '@graphql-tools/utils': 12.1.0(graphql@17.1.0)
       '@whatwg-node/disposablestack': 0.0.6
       graphql: 17.1.0
-      graphql-ws: 6.4.2(graphql@17.1.0)(ws@8.23.0)
+      graphql-ws: 6.4.3(graphql@17.1.0)(ws@8.23.0)
       isows: 1.0.8(ws@8.23.0)
       tslib: 2.9.1
       ws: 8.23.0
@@ -9844,13 +9844,13 @@ snapshots:
       graphql: 17.1.0
       tslib: 2.9.1
 
-  graphql-ws@6.4.2(graphql@16.15.0)(ws@8.23.0):
+  graphql-ws@6.4.3(graphql@16.15.0)(ws@8.23.0):
     dependencies:
       graphql: 16.15.0
     optionalDependencies:
       ws: 8.23.0
 
-  graphql-ws@6.4.2(graphql@17.1.0)(ws@8.23.0):
+  graphql-ws@6.4.3(graphql@17.1.0)(ws@8.23.0):
     dependencies:
       graphql: 17.1.0
     optionalDependencies:

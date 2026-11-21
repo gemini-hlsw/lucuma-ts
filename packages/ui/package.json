@@ -55,7 +55,7 @@
     "eslint-plugin-simple-import-sort": "14.0.0",
     "globals": "17.14.0",
     "graphql": "16.15.0",
-    "graphql-ws": "6.4.2",
+    "graphql-ws": "6.4.3",
     "jotai": "3.0.2",
     "playwright": "1.65.0",
     "primereact": "10.9.9",
