@@ -1,4 +1,4 @@
-import '@xyflow/react/dist/style.css';
+import '@xyflow/react/style.css';
 
 import { useConfiguration } from '@gql/configs/Configuration';
 import type { WfsType } from '@gql/configs/gen/graphql';
@@ -378,7 +378,7 @@ function Flow() {
         defaultNodes={initialNodes}
         defaultEdges={initialEdges}
         proOptions={{ hideAttribution: true }}
-        colorMode={theme}
+        forceColorMode={theme}
         fitViewOptions={{ padding: '30px' }}
         fitView
       >
