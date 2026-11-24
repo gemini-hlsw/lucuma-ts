@@ -1,0 +1,2 @@
+-- AlterEnum
+ALTER TYPE "Fpu" ADD VALUE 'BLANK_MASK';

@@ -40,6 +40,7 @@ enum Fpu {
   IFU_NS2_SLITS
   IFU_NS_BLUE
   IFU_NS_RED
+  BLANK_MASK
 }
 
 type Configuration {
