@@ -1,5 +1,5 @@
 import type { Logger, YogaInitialContext } from 'graphql-yoga';
-import { createSchema, createYoga, useReadinessCheck } from 'graphql-yoga';
+import { createSchema, createYoga } from 'graphql-yoga';
 
 import { resolvers } from './graphql/gen/resolvers.generated.ts';
 import { typeDefs } from './graphql/gen/typeDefs.generated.ts';
@@ -21,14 +21,5 @@ export function makeYogaServer({ prisma, log }: { prisma: PrismaClient; log: Log
     maskedErrors: false,
     batching: true,
     healthCheckEndpoint: '/health',
-    plugins: [
-      useReadinessCheck({
-        endpoint: '/ready',
-        check: async () => {
-          log.debug('Performing readiness check');
-          await prisma.$queryRaw`SELECT 1`;
-        },
-      }),
-    ],
   });
 }
