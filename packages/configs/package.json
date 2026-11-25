@@ -28,8 +28,8 @@
     "production": "pnpm prisma migrate deploy && pnpm prisma db seed && pnpm preview"
   },
   "dependencies": {
-    "@gemini-hlsw/lucuma-core": "0.287.0",
     "@gemini-hlsw/lucuma-apps-schemas": "0.177.2-20261120-05eefbd3",
+    "@gemini-hlsw/lucuma-core": "0.287.0",
     "@gemini-hlsw/lucuma-odb-schemas": "0.112.2-45.1d14afe",
     "@prisma/adapter-pg": "7.10.1",
     "@prisma/client": "7.10.1",
@@ -46,12 +46,12 @@
     "@graphql-eslint/eslint-plugin": "4.4.2",
     "@testcontainers/postgresql": "12.2.2",
     "@tsconfig/strictest": "2.0.9",
+    "@typescript/native": "npm:typescript@7.0.2",
+    "@vitest/eslint-plugin": "1.6.28",
     "eslint": "10.15.0",
     "eslint-import-resolver-typescript": "4.4.5",
     "eslint-plugin-simple-import-sort": "14.0.0",
     "globals": "17.14.0",
-    "@vitest/eslint-plugin": "1.6.28",
-    "@typescript/native": "npm:typescript@7.0.2",
     "typescript": "npm:@typescript/typescript6@6.0.2",
     "typescript-eslint": "8.73.0",
     "vitest": "5.1.1"
