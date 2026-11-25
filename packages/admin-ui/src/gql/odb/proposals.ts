@@ -4,7 +4,7 @@
  * token can see.
  */
 import { useMutation, useQuery } from '@apollo/client/react';
-import { useAllPages } from '@gemini-hlsw/lucuma-common-ui';
+import { useAllPages, when } from '@gemini-hlsw/lucuma-common-ui';
 
 import type { Proposal, SpecialProposalType } from '../types';
 import { graphql } from './gen';
@@ -127,8 +127,16 @@ export function mapProposals(programs: readonly ProposalItemFragment[]): Proposa
       type,
       status: p.proposalStatus,
       abstract: p.description ?? '',
-      activePeriod: p.proposal.call ? { start: p.proposal.call.active.start, end: p.proposal.call.active.end } : null,
-      piPartner: p.pi?.partnerLink.__typename === 'HasGeminiPartner' ? p.pi.partnerLink.geminiPartner : null,
+      activePeriod: when(
+        p.proposal.call,
+        ({ active }) => ({ start: active.start, end: active.end }),
+        () => null,
+      ),
+      piPartner: when(
+        p.pi?.partnerLink.__typename === 'HasGeminiPartner' && p.pi.partnerLink,
+        ({ geminiPartner }) => geminiPartner,
+        () => null,
+      ),
       observations: p.observations.matches.filter(isScienceObservation).map((o) => mapObservationRow(o, groupHours)),
     });
   }
