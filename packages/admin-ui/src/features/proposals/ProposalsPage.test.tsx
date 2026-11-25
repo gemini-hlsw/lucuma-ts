@@ -8,7 +8,13 @@ import {
   PROGRAM_OBSERVATIONS_QUERY,
   RESOLVE_PROPOSAL_REQUESTS_MUTATION,
 } from '@/gql/odb/changeRequests';
-import type { ConfigurationRequestStatus, ProposalStatus } from '@/gql/odb/gen/graphql';
+import type {
+  ConfigurationRequestStatus,
+  ProposalItemFragment,
+  ProposalStatus,
+  ScienceBand,
+  TimeAccountingCategory,
+} from '@/gql/odb/gen/graphql';
 import {
   ADD_PROGRAM_USER_MUTATION,
   LINK_USER_MUTATION,
@@ -18,7 +24,7 @@ import {
 } from '@/gql/odb/programs';
 import { PROPOSALS_QUERY, SET_PROPOSAL_STATUS_MUTATION } from '@/gql/odb/proposals';
 import { USERS_QUERY } from '@/gql/sso/roster';
-import { configurationRequest, emptyRoster } from '@/test/factories';
+import { configurationRequest, emptyRoster, observationItem } from '@/test/factories';
 import { type MockedResponseOf, renderWithContext } from '@/test/render';
 import { boxOf, rowBoxes, ticks } from '@/test/requestTable';
 
@@ -37,7 +43,7 @@ const STAFF_TOKEN = fakeJwt(standardUser('staff'));
 
 type Status = Extract<ProposalStatus, 'SUBMITTED' | 'ACCEPTED' | 'NOT_ACCEPTED'>;
 
-const program = (id: string, reference: string, status: Status) => ({
+const program = (id: string, reference: string, status: Status): ProposalItemFragment => ({
   __typename: 'Program' as const,
   id,
   name: 'A snap of a supernova',
@@ -51,17 +57,23 @@ const program = (id: string, reference: string, status: Status) => ({
       id: 'u-1',
       profile: { __typename: 'UserProfile' as const, givenName: 'Grace', familyName: 'Hopper' },
     },
+    partnerLink: { __typename: 'HasUnspecifiedPartner' as const },
   },
   proposal: {
     __typename: 'Proposal' as const,
     reference: { __typename: 'ProposalReference' as const, label: reference },
+    call: null,
     gemini: { __typename: 'DirectorsTime' as const, scienceSubtype: 'DIRECTORS_TIME' as const },
   },
   observations: { __typename: 'ObservationSelectResult' as const, matches: [] },
   allGroupElements: [],
 });
 
-const proposalsMock = (status: Status = 'SUBMITTED', withSecond = false): MockedResponseOf<typeof PROPOSALS_QUERY> => ({
+const proposalsMock = (
+  status: Status = 'SUBMITTED',
+  withSecond = false,
+  first: ProposalItemFragment = program('p-1', 'G-2027B-0042', status),
+): MockedResponseOf<typeof PROPOSALS_QUERY> => ({
   request: { query: PROPOSALS_QUERY, variables: { offset: null } },
   // Accepting reloads the list.
   maxUsageCount: Infinity,
@@ -70,10 +82,7 @@ const proposalsMock = (status: Status = 'SUBMITTED', withSecond = false): Mocked
       programs: {
         __typename: 'ProgramSelectResult',
         hasMore: false,
-        matches: [
-          program('p-1', 'G-2027B-0042', status),
-          ...(withSecond ? [program('p-2', 'G-2027B-0043', 'SUBMITTED')] : []),
-        ],
+        matches: [first, ...(withSecond ? [program('p-2', 'G-2027B-0043', 'SUBMITTED')] : [])],
       },
     },
   },
@@ -722,12 +731,9 @@ describe(ProposalsPage, () => {
       ];
     };
 
-    /** Accept with two hours of Calibration time and Ada Lovelace as contact scientist. */
+    /** Accept with two hours of Director's Time and Ada Lovelace as contact scientist. */
     async function acceptWithAward(screen: Screen) {
       await userEvent.click(screen.getByRole('button', { name: 'Accept' }));
-      await userEvent.click(screen.getByText('Add category').last());
-      await userEvent.click(screen.getByText('CAL — Calibration'));
-      await userEvent.click(screen.getByRole('button', { name: 'Add', exact: true }));
       await userEvent.fill(screen.getByRole('spinbutton').first(), '2');
       await userEvent.tab();
       await userEvent.fill(screen.container.querySelector('#award-contacts')!, 'Ada');
@@ -846,6 +852,160 @@ describe(ProposalsPage, () => {
     it('accepts a proposal with no requests without the requests mutation', async () => {
       const screen = await renderPage(undefined, setStatusMock('ACCEPTED'), updateProgramMock());
       await accept(screen);
+      await expect.element(screen.getByText('Proposal accepted', { exact: true })).toBeVisible();
+    });
+  });
+
+  describe('the default award — sc-11159, sc-11161', () => {
+    /** A submitted proposal of `type` under a call active over 2027B, one observation per `hours`. */
+    const proposal = (
+      type: 'DIRECTORS_TIME' | 'POOR_WEATHER',
+      pi: ProposalItemFragment['pi'],
+      hours: readonly number[] = [1.5],
+    ) => {
+      const base = program('p-1', 'G-2027B-0042', 'SUBMITTED');
+      return proposalsMock('SUBMITTED', false, {
+        ...base,
+        pi,
+        proposal: {
+          __typename: 'Proposal',
+          reference: base.proposal!.reference,
+          call: {
+            __typename: 'CallForProposals',
+            id: 'c-1',
+            active: { __typename: 'DateInterval', start: '2027-08-01', end: '2028-01-31' },
+          },
+          gemini:
+            type === 'DIRECTORS_TIME'
+              ? { __typename: 'DirectorsTime', scienceSubtype: 'DIRECTORS_TIME' }
+              : { __typename: 'PoorWeather', scienceSubtype: 'POOR_WEATHER' },
+        },
+        observations: {
+          __typename: 'ObservationSelectResult',
+          matches: hours.map((h, i) => observationItem(`o-${i}`, 'SN 2027abc', h)),
+        },
+      });
+    };
+
+    const pi = (partnerLink: NonNullable<ProposalItemFragment['pi']>['partnerLink']) => ({
+      ...program('p-1', 'G-2027B-0042', 'SUBMITTED').pi!,
+      partnerLink,
+    });
+
+    const allocationsMock = (
+      category: TimeAccountingCategory,
+      scienceBand: ScienceBand,
+      hours = 1.5,
+    ): MockedResponseOf<typeof SET_ALLOCATIONS_MUTATION> => ({
+      request: {
+        query: SET_ALLOCATIONS_MUTATION,
+        variables: { programId: 'p-1', allocations: [{ category, scienceBand, duration: { hours } }] },
+      },
+      result: {
+        data: {
+          setAllocations: {
+            __typename: 'SetAllocationsResult',
+            allocations: [{ __typename: 'Allocation', category }],
+          },
+        },
+      },
+    });
+
+    const periodsMock = (activeStart: string): MockedResponseOf<typeof UPDATE_PROGRAM_MUTATION> => ({
+      request: {
+        query: UPDATE_PROGRAM_MUTATION,
+        variables: { programId: 'p-1', set: { goa: { proprietaryMonths: 12 }, activeStart, activeEnd: '2028-01-31' } },
+      },
+      result: programUpdated(),
+    });
+
+    it("gives Director's Time the call's active period and the requested time in Band 1", async () => {
+      const screen = await renderPageWith(
+        proposal('DIRECTORS_TIME', pi({ __typename: 'HasGeminiPartner', geminiPartner: 'US' })),
+        undefined,
+        setStatusMock('ACCEPTED'),
+        allocationsMock('DD', 'BAND1'),
+        periodsMock('2027-08-01'),
+      );
+      await userEvent.click(screen.getByRole('button', { name: 'Accept' }));
+      await expect.element(screen.getByPlaceholder('YYYY-MM-DD').first()).toHaveValue('2027-08-01');
+      await expect.element(screen.getByPlaceholder('YYYY-MM-DD').last()).toHaveValue('2028-01-31');
+      await expect.element(screen.getByRole('cell', { name: "DD Director's Time" })).toBeVisible();
+      await userEvent.click(screen.getByRole('button', { name: 'Resolve' }));
+      await expect.element(screen.getByText('Proposal accepted', { exact: true })).toBeVisible();
+    });
+
+    it("gives Poor Weather the requested time in Band 4 under the PI's partner", async () => {
+      const screen = await renderPageWith(
+        proposal('POOR_WEATHER', pi({ __typename: 'HasGeminiPartner', geminiPartner: 'US' })),
+        undefined,
+        setStatusMock('ACCEPTED'),
+        allocationsMock('US', 'BAND4'),
+        periodsMock('2027-08-01'),
+      );
+      await userEvent.click(screen.getByRole('button', { name: 'Accept' }));
+      await expect.element(screen.getByRole('cell', { name: 'US United States' })).toBeVisible();
+      await userEvent.click(screen.getByRole('button', { name: 'Resolve' }));
+      await expect.element(screen.getByText('Proposal accepted', { exact: true })).toBeVisible();
+    });
+
+    it('leaves the time awards to the reviewer when a Poor Weather PI has no partner', async () => {
+      const screen = await renderPageWith(
+        proposal('POOR_WEATHER', pi({ __typename: 'HasNonPartner' })),
+        undefined,
+        setStatusMock('ACCEPTED'),
+        periodsMock('2027-08-01'),
+      );
+      await userEvent.click(screen.getByRole('button', { name: 'Accept' }));
+      await expect.element(screen.getByPlaceholder('YYYY-MM-DD').first()).toHaveValue('2027-08-01');
+      await expect.element(screen.getByTitle(/^Remove /)).not.toBeInTheDocument();
+      await userEvent.click(screen.getByRole('button', { name: 'Resolve' }));
+      await expect.element(screen.getByText('Proposal accepted', { exact: true })).toBeVisible();
+    });
+
+    it('sends the requested time as the grid shows it', async () => {
+      // 0.1 + 0.2 is 0.30000000000000004 in floating point; the grid shows 0.3.
+      const screen = await renderPageWith(
+        proposal('DIRECTORS_TIME', pi({ __typename: 'HasUnspecifiedPartner' }), [0.1, 0.2]),
+        undefined,
+        setStatusMock('ACCEPTED'),
+        allocationsMock('DD', 'BAND1', 0.3),
+        periodsMock('2027-08-01'),
+      );
+      await userEvent.click(screen.getByRole('button', { name: 'Accept' }));
+      await userEvent.click(screen.getByRole('button', { name: 'Resolve' }));
+      await expect.element(screen.getByText('Proposal accepted', { exact: true })).toBeVisible();
+    });
+
+    it("sends the reviewer's hours in place of the default", async () => {
+      const screen = await renderPageWith(
+        proposal('DIRECTORS_TIME', pi({ __typename: 'HasUnspecifiedPartner' })),
+        undefined,
+        setStatusMock('ACCEPTED'),
+        allocationsMock('DD', 'BAND1', 2),
+        periodsMock('2027-08-01'),
+      );
+      await userEvent.click(screen.getByRole('button', { name: 'Accept' }));
+      await userEvent.fill(screen.getByRole('spinbutton').first(), '2');
+      await userEvent.tab();
+      await userEvent.click(screen.getByRole('button', { name: 'Resolve' }));
+      await expect.element(screen.getByText('Proposal accepted', { exact: true })).toBeVisible();
+    });
+
+    it("keeps the reviewer's change to a default", async () => {
+      const screen = await renderPageWith(
+        proposal('DIRECTORS_TIME', pi({ __typename: 'HasUnspecifiedPartner' })),
+        undefined,
+        setStatusMock('ACCEPTED'),
+        allocationsMock('DD', 'BAND1'),
+        periodsMock('2027-09-01'),
+      );
+      await userEvent.click(screen.getByRole('button', { name: 'Accept' }));
+      await userEvent.fill(screen.getByPlaceholder('YYYY-MM-DD').first(), '2027-09-01');
+      await userEvent.click(screen.getByRole('button', { name: 'Reject' }));
+      await userEvent.click(screen.getByRole('button', { name: 'Accept' }));
+      await expect.element(screen.getByPlaceholder('YYYY-MM-DD').first()).toHaveValue('2027-09-01');
+      await userEvent.click(screen.getByRole('button', { name: 'Resolve' }));
       await expect.element(screen.getByText('Proposal accepted', { exact: true })).toBeVisible();
     });
   });

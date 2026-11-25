@@ -71,13 +71,33 @@ interface Step {
   readonly run: () => Promise<unknown>;
 }
 
-const BLANK_AWARD: AwardDraft = {
-  allocations: [],
-  activeStart: '',
-  activeEnd: '',
-  proprietaryMonths: 12,
-  contactScientists: [],
-};
+/** Hours asked for: the sum of the observations' times. */
+function requestedHours(p: Proposal): number {
+  return p.observations.reduce((s, o) => s + o.hours, 0);
+}
+
+/** The requested time in the one cell its type awards, rounded to the grid's
+ *  tenths so a floating-point sum is not sent with a tail the grid hides. */
+function defaultAllocations(p: Proposal): Allocation[] {
+  const hours = Math.round(requestedHours(p) * 10) / 10;
+  if (p.type === 'DIRECTORS_TIME') return [{ category: 'DD', scienceBand: 'BAND1', hours }];
+  if (p.piPartner) return [{ category: p.piPartner, scienceBand: 'BAND4', hours }];
+  return [];
+}
+
+/** The award a proposal starts from until the reviewer edits it: the call's
+ *  active period (sc-11159) and the requested time in one cell (sc-11161) —
+ *  Director's Time in Band 1, Poor Weather under the PI's partner in Band 4.
+ *  A Poor Weather PI without a partner leaves the grid for the reviewer. */
+function defaultAward(p: Proposal): AwardDraft {
+  return {
+    allocations: defaultAllocations(p),
+    activeStart: p.activePeriod?.start ?? '',
+    activeEnd: p.activePeriod?.end ?? '',
+    proprietaryMonths: 12,
+    contactScientists: [],
+  };
+}
 
 /**
  * Proposals view (sc-9092): review & respond to Director's Time and Poor Weather
@@ -189,7 +209,7 @@ export default function ProposalsPage(): JSX.Element {
   /** Accept's steps after the status: the PI's requests, then the award. */
   function acceptSteps(p: ReviewProposal): readonly Step[] {
     const { approved, denied } = proposalRequests.split(declined.get(p.id) ?? NO_IDS);
-    const award = awards.get(p.id) ?? BLANK_AWARD;
+    const award = awards.get(p.id) ?? defaultAward(p);
     const allocations = allocationsInput(award.allocations);
     const contactIds = award.contactScientists.map((c) => c.userId).filter(isNotNullish);
     const set: ProgramPropertiesInput = {
@@ -297,8 +317,8 @@ export default function ProposalsPage(): JSX.Element {
         when(decision === 'ACCEPT', () => (
           <AwardForm
             key={p.id}
-            requestedHours={p.observations.reduce((s, o) => s + o.hours, 0)}
-            award={awards.get(p.id) ?? BLANK_AWARD}
+            requested={requestedHours(p)}
+            award={awards.get(p.id) ?? defaultAward(p)}
             onChange={(award) => setAwards((prev) => new Map(prev).set(p.id, award))}
           />
         ))
@@ -315,11 +335,11 @@ export default function ProposalsPage(): JSX.Element {
  *  owns the draft, so it survives Accept/Reject toggles and is exactly what
  *  gets submitted at resolve time. */
 function AwardForm({
-  requestedHours,
+  requested,
   award,
   onChange,
 }: {
-  readonly requestedHours: number;
+  readonly requested: number;
   readonly award: AwardDraft;
   readonly onChange: (award: AwardDraft) => void;
 }): JSX.Element {
@@ -349,7 +369,7 @@ function AwardForm({
     <section className="decision-panel">
       <h3 className="review-obs-title">Time Awards</h3>
       <p className="decision-hint">
-        {requestedHours.toFixed(1)} hours requested · {awarded.toFixed(1)} awarded — enter each partner’s award by band.
+        {requested.toFixed(1)} hours requested · {awarded.toFixed(1)} awarded — enter each partner’s award by band.
       </p>
       <TimeAwardsGrid allocations={award.allocations} onChange={(a) => update({ allocations: a })} />
 
