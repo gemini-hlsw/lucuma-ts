@@ -523,8 +523,8 @@ importers:
         specifier: 2.0.1
         version: 2.0.1(graphql@17.1.0)
       graphql-yoga:
-        specifier: 6.1.0
-        version: 6.1.0(graphql@17.1.0)
+        specifier: 6.1.1
+        version: 6.1.1(graphql@17.1.0)
       prisma:
         specifier: 7.10.1
         version: 7.10.1(@types/node@26.6.6)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(@typescript/typescript6@6.0.2)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
@@ -3977,8 +3977,8 @@ packages:
       ws:
         optional: true
 
-  graphql-yoga@6.1.0:
-    resolution: {integrity: sha512-YID0cgrgx3oyh5fJA98414kU3x9cx88ZXGascBGrBkpibQkKRkkb4okMMCLx9n5HCMLiBdaWaFbi31D/7JvqPw==}
+  graphql-yoga@6.1.1:
+    resolution: {integrity: sha512-N5LXp9W6o0sStOI7ILkhzYr4NSlf1PXgxHFH3/iCqaJDxm+xPT41nYOGtK+3brpUfVmjfDtJk1yd57qLshKj1w==}
     engines: {node: '>=22.15.0'}
     peerDependencies:
       graphql: ^16.0.0 || ^17.0.0
@@ -9033,7 +9033,7 @@ snapshots:
     optionalDependencies:
       ws: 8.23.0
 
-  graphql-yoga@6.1.0(graphql@17.1.0):
+  graphql-yoga@6.1.1(graphql@17.1.0):
     dependencies:
       '@envelop/core': 6.0.1
       '@envelop/instrumentation': 2.0.1
