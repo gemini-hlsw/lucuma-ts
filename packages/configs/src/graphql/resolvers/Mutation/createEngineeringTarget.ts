@@ -17,6 +17,6 @@ export const createEngineeringTarget: NonNullable<MutationResolvers['createEngin
   }
   return prisma.engineeringTarget.create({
     data: args as typeof args & { coord1: number; coord2: number },
-    ...resolveSelectFields<'EngineeringTarget'>(info),
+    select: resolveSelectFields(info),
   }) as Promise<EngineeringTarget>;
 };

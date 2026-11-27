@@ -10,6 +10,6 @@ export const updateGemsGuideLoop: NonNullable<MutationResolvers['updateGemsGuide
   return prisma.gemsGuideLoop.update({
     where: { pk: args.pk },
     data: args,
-    ...resolveSelectFields<'GemsGuideLoop'>(info),
+    select: resolveSelectFields(info),
   });
 };

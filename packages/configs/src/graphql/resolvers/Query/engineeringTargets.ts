@@ -10,6 +10,6 @@ export const engineeringTargets: NonNullable<QueryResolvers['engineeringTargets'
   return prisma.engineeringTarget.findMany({
     where: args,
     orderBy: { pk: 'asc' },
-    ...resolveSelectFields<'EngineeringTarget'>(info),
+    select: resolveSelectFields(info),
   }) as Promise<EngineeringTarget[]>;
 };

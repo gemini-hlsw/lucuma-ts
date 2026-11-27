@@ -11,6 +11,6 @@ export const updateTarget: NonNullable<MutationResolvers['updateTarget']> = (_pa
         : undefined,
       nonsidereal: args.nonsidereal ? { update: { where: { targetPk: args.pk }, data: args.nonsidereal } } : undefined,
     },
-    ...resolveSelectFields<'Target'>(info),
+    select: resolveSelectFields(info),
   });
 };

@@ -5,6 +5,6 @@ export const targets: NonNullable<QueryResolvers['targets']> = (_parent, args, {
   return prisma.target.findMany({
     where: args,
     orderBy: { pk: 'asc' },
-    ...resolveSelectFields<'Target'>(info),
+    select: resolveSelectFields(info),
   });
 };

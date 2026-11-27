@@ -7,5 +7,5 @@ export const deleteInstrument: NonNullable<MutationResolvers['deleteInstrument']
   { prisma },
   info,
 ) => {
-  await prisma.instrument.delete({ where: { pk: args.pk }, ...resolveSelectFields<'Instrument'>(info) });
+  await prisma.instrument.delete({ where: { pk: args.pk }, select: resolveSelectFields(info) });
 };

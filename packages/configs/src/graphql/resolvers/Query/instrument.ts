@@ -5,15 +5,13 @@ import { resolveSelectFields } from '../query-fields.ts';
 import type { InstrumentConfig, QueryResolvers } from './../../gen/types.generated.ts';
 
 export const instrument: NonNullable<QueryResolvers['instrument']> = async (_parent, args, { prisma, log }, info) => {
-  const fieldsToQuery = resolveSelectFields<'Instrument'>(info);
-
   const baseWhereArgs = {
     ...args,
     extraParams: createExtraParamsFilter(args.extraParams ?? {}),
   } satisfies InstrumentWhereInput;
 
   let instrument = await prisma.instrument.findFirst({
-    ...fieldsToQuery,
+    select: resolveSelectFields(info),
     where: baseWhereArgs,
     orderBy: [{ isTemporary: 'desc' }, { createdAt: 'desc' }],
   });
@@ -24,7 +22,7 @@ export const instrument: NonNullable<QueryResolvers['instrument']> = async (_par
   // Try to get the instrument using wfs NONE
   if (args.wfs !== 'NONE') {
     instrument = await prisma.instrument.findFirst({
-      ...fieldsToQuery,
+      select: resolveSelectFields(info),
       where: {
         ...baseWhereArgs,
         wfs: 'NONE',
@@ -38,7 +36,7 @@ export const instrument: NonNullable<QueryResolvers['instrument']> = async (_par
   if (!instrument) {
     log.debug(`No instrument found for ${JSON.stringify(args, undefined, 2)}, creating default configuration`);
     instrument = await prisma.instrument.create({
-      ...fieldsToQuery,
+      select: resolveSelectFields(info),
       data: {
         name: args.name ?? '',
         issPort: args.issPort ?? 1,
@@ -68,7 +66,7 @@ export const instrument: NonNullable<QueryResolvers['instrument']> = async (_par
         extraParams: {},
         comment: 'Default fallback configuration, using parameters from previous configuration',
       },
-      ...fieldsToQuery,
+      select: resolveSelectFields(info),
     });
   }
   return instrument as InstrumentConfig;

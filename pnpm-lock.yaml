@@ -516,9 +516,6 @@ importers:
       graphql:
         specifier: 17.1.0
         version: 17.1.0
-      graphql-parse-resolve-info:
-        specifier: 4.14.1
-        version: 4.14.1(graphql@17.1.0)(supports-color@10.2.2)
       graphql-scalars:
         specifier: 2.0.1
         version: 2.0.1(graphql@17.1.0)
@@ -3942,12 +3939,6 @@ packages:
     peerDependenciesMeta:
       cosmiconfig-toml-loader:
         optional: true
-
-  graphql-parse-resolve-info@4.14.1:
-    resolution: {integrity: sha512-WKHukfEuZamP1ZONR84b8iT+4sJgEhtXMDArm1jpXEsU2vTb5EgkCZ4Obfl+v09oNTKXm0CJjPfBUZ5jcJ2Ykg==}
-    engines: {node: '>=8.6'}
-    peerDependencies:
-      graphql: '>=0.9 <0.14 || ^14.0.2 || ^15.4.0 || ^16.3.0'
 
   graphql-scalars@2.0.1:
     resolution: {integrity: sha512-/BkY0J5/1L9e+mTfCTzmpV78mNh95ZpiJWfAkaIYHE5B7hrvgRpB5//rXVTFD1aaKGcRUCHj/vpNcgtrenwZNA==}
@@ -9008,14 +8999,6 @@ snapshots:
       - crossws
       - typescript
       - utf-8-validate
-
-  graphql-parse-resolve-info@4.14.1(graphql@17.1.0)(supports-color@10.2.2):
-    dependencies:
-      debug: 4.4.3(supports-color@10.2.2)
-      graphql: 17.1.0
-      tslib: 2.9.1
-    transitivePeerDependencies:
-      - supports-color
 
   graphql-scalars@2.0.1(graphql@17.1.0):
     dependencies:

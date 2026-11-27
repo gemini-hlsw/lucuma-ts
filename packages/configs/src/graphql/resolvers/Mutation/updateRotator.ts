@@ -5,6 +5,6 @@ export const updateRotator: NonNullable<MutationResolvers['updateRotator']> = (_
   return prisma.rotator.update({
     where: { pk: args.pk },
     data: args,
-    ...resolveSelectFields<'Rotator'>(info),
+    select: resolveSelectFields(info),
   });
 };

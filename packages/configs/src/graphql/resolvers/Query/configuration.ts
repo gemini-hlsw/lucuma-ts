@@ -4,6 +4,6 @@ import type { Configuration, QueryResolvers } from './../../gen/types.generated.
 export const configuration: NonNullable<QueryResolvers['configuration']> = (_parent, args, { prisma }, info) => {
   return prisma.configuration.findFirst({
     where: args,
-    ...resolveSelectFields<'Configuration'>(info),
+    select: resolveSelectFields(info),
   }) as Promise<Configuration | null>;
 };

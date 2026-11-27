@@ -9,6 +9,6 @@ export const createConfiguration: NonNullable<MutationResolvers['createConfigura
 ) => {
   return prisma.configuration.create({
     data: args,
-    ...resolveSelectFields<'Configuration'>(info),
+    select: resolveSelectFields(info),
   }) as Promise<Configuration>;
 };

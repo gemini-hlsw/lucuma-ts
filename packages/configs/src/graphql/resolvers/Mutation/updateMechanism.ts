@@ -5,6 +5,6 @@ export const updateMechanism: NonNullable<MutationResolvers['updateMechanism']> 
   return prisma.mechanism.update({
     where: { pk: args.pk },
     data: args,
-    ...resolveSelectFields<'Mechanism'>(info),
+    select: resolveSelectFields(info),
   });
 };

@@ -5,6 +5,6 @@ export const updateGuideLoop: NonNullable<MutationResolvers['updateGuideLoop']> 
   return prisma.guideLoop.update({
     where: { pk: args.pk },
     data: args,
-    ...resolveSelectFields<'GuideLoop'>(info),
+    select: resolveSelectFields(info),
   });
 };

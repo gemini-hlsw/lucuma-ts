@@ -9,6 +9,6 @@ export const engineeringTarget: NonNullable<QueryResolvers['engineeringTarget']>
 ) => {
   return prisma.engineeringTarget.findFirst({
     where: args,
-    ...resolveSelectFields<'EngineeringTarget'>(info),
+    select: resolveSelectFields(info),
   }) as Promise<EngineeringTarget | null>;
 };

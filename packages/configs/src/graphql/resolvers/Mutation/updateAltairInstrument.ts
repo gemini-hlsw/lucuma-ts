@@ -10,6 +10,6 @@ export const updateAltairInstrument: NonNullable<MutationResolvers['updateAltair
   return prisma.altairInstrument.update({
     where: { pk: args.pk },
     data: args,
-    ...resolveSelectFields<'AltairInstrument'>(info),
+    select: resolveSelectFields(info),
   });
 };

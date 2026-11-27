@@ -9,7 +9,7 @@ export const calParamsHistory: NonNullable<QueryResolvers['calParamsHistory']> =
 ) => {
   return prisma.calParams.findMany({
     where: args,
-    ...resolveSelectFields<'CalParams'>(info),
+    select: resolveSelectFields(info),
     orderBy: { createdAt: 'desc' },
   });
 };

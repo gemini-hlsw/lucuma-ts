@@ -9,7 +9,6 @@ export const revertCalParams: NonNullable<MutationResolvers['revertCalParams']> 
   { prisma },
   info,
 ) => {
-  const selectFields = resolveSelectFields<'CalParams'>(info);
   const oldCalParams = await prisma.calParams.findFirst({
     where: { pk: args.pk },
     omit: {
@@ -17,7 +16,7 @@ export const revertCalParams: NonNullable<MutationResolvers['revertCalParams']> 
       comment: true,
       createdAt: true,
     },
-    ...selectFields,
+    select: resolveSelectFields(info),
   });
 
   if (!oldCalParams) {
@@ -30,6 +29,6 @@ export const revertCalParams: NonNullable<MutationResolvers['revertCalParams']> 
       createdAt: undefined, // Let the database set the createdAt to now
       comment: args.comment,
     },
-    ...selectFields,
+    select: resolveSelectFields(info),
   });
 };
