@@ -6,6 +6,7 @@ export default {
   schema: './src/graphql/schema/*.graphql',
   generates: {
     'src/graphql/gen': defineConfig({
+      mode: 'merged',
       typesPluginsConfig: {
         contextType: '../../server.ts#GraphQLContext',
         enumsAsTypes: true,
