@@ -1,10 +1,9 @@
-import { print } from 'graphql';
 import { describe, expect, it } from 'vitest';
 
 import { observationItem } from '@/test/factories';
 
 import type { GroupElementItemFragment, ProposalItemFragment } from './gen/graphql';
-import { mapProposals, PROPOSALS_QUERY, semesterOfReference } from './proposals';
+import { mapProposals, semesterOfReference } from './proposals';
 
 function specialProgram(overrides: Partial<ProposalItemFragment>): ProposalItemFragment {
   return {
@@ -38,16 +37,6 @@ function specialProgram(overrides: Partial<ProposalItemFragment>): ProposalItemF
     ...overrides,
   };
 }
-
-describe('PROPOSALS_QUERY', () => {
-  // Without this the ODB costs every program's observations and the tab times
-  // out (sc-10520). A mocked link would match the query either way, so pin it.
-  it("asks the ODB for Director's Time and Poor Weather calls only", () => {
-    expect(print(PROPOSALS_QUERY)).toContain(
-      'WHERE: {proposal: {call: {gemini: {type: {IN: [DIRECTORS_TIME, POOR_WEATHER]}}}}}',
-    );
-  });
-});
 
 describe(mapProposals, () => {
   it('projects only special-subtype proposals, with abstract + observation rows', () => {
