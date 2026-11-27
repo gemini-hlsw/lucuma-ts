@@ -133,9 +133,8 @@ export const client = createClient();
 export function makeCache() {
   return new InMemoryCache({
     dataIdFromObject(responseObject) {
-      // Configure primary-key fields for cache normalization to use 'pk' field
+      // Normalize configs rows by their 'pk' field, even when they also have an 'id'.
       if (
-        !('id' in responseObject && responseObject.id !== null) &&
         'pk' in responseObject &&
         (typeof responseObject.pk === 'string' || typeof responseObject.pk === 'number') &&
         responseObject.__typename
