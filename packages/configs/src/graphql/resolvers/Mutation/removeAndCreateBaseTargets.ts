@@ -23,7 +23,7 @@ export const removeAndCreateBaseTargets: NonNullable<MutationResolvers['removeAn
           sidereal: t.sidereal ? { create: { ...t.sidereal, type: t.type } } : undefined,
           nonsidereal: t.nonsidereal ? { create: t.nonsidereal } : undefined,
         },
-        ...resolveSelectFields<'Target'>(info),
+        select: resolveSelectFields(info),
       });
       newTargets.push(result);
     }

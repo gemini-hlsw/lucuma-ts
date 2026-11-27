@@ -7,8 +7,9 @@ export const guideAlarms: NonNullable<QueryResolvers['guideAlarms']> = async (
   { prisma, log },
   info,
 ) => {
-  const resolvedFields = resolveSelectFields<'GuideAlarm'>(info);
-  const wfsTypesToQuery = Object.keys(resolvedFields.select ?? {}) as WfsType[];
+  // The GraphQL fields are WFS types, so only the keys of the select are used, not passed to Prisma.
+  const selectedWfs = resolveSelectFields<Partial<Record<WfsType, unknown>> | undefined>(info);
+  const wfsTypesToQuery = Object.keys(selectedWfs ?? {}) as WfsType[];
   const alarms = await prisma.guideAlarm.findMany({
     where: {
       wfs: {

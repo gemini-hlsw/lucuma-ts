@@ -34,7 +34,6 @@
     "@prisma/adapter-pg": "7.10.1",
     "@prisma/client": "7.10.1",
     "graphql": "17.1.0",
-    "graphql-parse-resolve-info": "4.14.1",
     "graphql-scalars": "2.0.1",
     "graphql-yoga": "6.1.1",
     "prisma": "7.10.1"

@@ -9,6 +9,6 @@ export const deleteCalParams: NonNullable<MutationResolvers['deleteCalParams']> 
 ) => {
   await prisma.calParams.delete({
     where: { pk: args.pk },
-    ...resolveSelectFields<'CalParams'>(info),
+    select: resolveSelectFields(info),
   });
 };

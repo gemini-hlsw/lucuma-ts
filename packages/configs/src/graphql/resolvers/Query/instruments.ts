@@ -5,7 +5,7 @@ import { createExtraParamsFilter } from './instrument.ts';
 export const instruments: NonNullable<QueryResolvers['instruments']> = (_parent, args, { prisma }, info) => {
   return prisma.instrument.findMany({
     where: { ...args, extraParams: createExtraParamsFilter(args.extraParams) },
-    ...resolveSelectFields<'Instrument'>(info),
+    select: resolveSelectFields(info),
     orderBy: [{ isTemporary: 'desc' }, { createdAt: 'desc' }],
   }) as Promise<InstrumentConfig[]>;
 };

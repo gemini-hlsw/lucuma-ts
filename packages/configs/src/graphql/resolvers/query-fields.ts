@@ -1,87 +1,80 @@
-/* eslint-disable  */
-import type { GraphQLResolveInfo } from 'graphql';
-import { parseResolveInfo, type ResolveTree } from 'graphql-parse-resolve-info';
+import {
+  getDirectiveValues,
+  GraphQLIncludeDirective,
+  type GraphQLResolveInfo,
+  GraphQLSkipDirective,
+  Kind,
+  type SelectionNode,
+  type SelectionSetNode,
+} from 'graphql';
 
-import type {
-  AltairGuideLoopSelect,
-  AltairInstrumentSelect,
-  CalParamsSelect,
-  ConfigurationSelect,
-  EngineeringTargetSelect,
-  GemsGuideLoopSelect,
-  GemsInstrumentSelect,
-  GuideAlarmSelect,
-  GuideLoopSelect,
-  InstrumentSelect,
-  MechanismSelect,
-  NonsiderealTargetSelect,
-  RotatorSelect,
-  SiderealTargetSelect,
-  SlewFlagsSelect,
-  TargetSelect,
-} from '../../prisma/gen/models.ts';
-
-// Mapping of all Prisma models to their corresponding select types. This is used to ensure type safety when constructing select objects from GraphQLResolveInfo.
-type ModelSelectMap = {
-  Configuration: ConfigurationSelect;
-  EngineeringTarget: EngineeringTargetSelect;
-  Target: TargetSelect;
-  SiderealTarget: SiderealTargetSelect;
-  NonsiderealTarget: NonsiderealTargetSelect;
-  Instrument: InstrumentSelect;
-  Rotator: RotatorSelect;
-  SlewFlags: SlewFlagsSelect;
-  Mechanism: MechanismSelect;
-  AltairInstrument: AltairInstrumentSelect;
-  GemsInstrument: GemsInstrumentSelect;
-  GuideLoop: GuideLoopSelect;
-  AltairGuideLoop: AltairGuideLoopSelect;
-  GemsGuideLoop: GemsGuideLoopSelect;
-  GuideAlarm: GuideAlarmSelect;
-  CalParams: CalParamsSelect;
-};
-
-type SelectQuery = { select: Record<string, SelectFields> };
-
-type SelectFields = boolean | SelectQuery;
+type Select = Record<string, true | { select: Select }>;
 
 /**
  * Create a Prisma select object from given GraphQLResolveInfo to only query requested fields.
  *
- * Works recursively, as long as the GraphQL model resembles the Prisma model.
+ * Works recursively, as long as the GraphQL model resembles the Prisma model:
+ * - fields are keyed by schema name, not alias
+ * - named and inline fragments are expanded, and `@skip`/`@include` are applied
+ * - `__typename` is ignored, and a relation with only `__typename` selects all its scalars
+ * - a field without a selection set (a scalar) gives `undefined`, which selects everything
  */
-export function resolveSelectFields<T extends keyof ModelSelectMap>(
-  info: GraphQLResolveInfo,
-): T extends keyof ModelSelectMap ? { select: ModelSelectMap[T] } : { select: undefined } {
-  const variableValues = info.variableValues;
-  const patchedInfo = (
-    'coerced' in variableValues ? info : { ...info, variableValues: { coerced: variableValues, sources: {} } }
-  ) satisfies GraphQLResolveInfo;
-  const parsedInfo = parseResolveInfo(patchedInfo);
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- `S` is inferred from the Prisma call that receives the select.
+export function resolveSelectFields<S>(info: GraphQLResolveInfo): S {
+  const select = collectSelect(info, selectionSetsOf(info.fieldNodes));
 
-  const extractAllFields = (tree: ResolveTree) => {
-    const result: SelectQuery = { select: {} };
-    for (const typename in tree.fieldsByTypeName) {
-      const fieldsOfType = tree.fieldsByTypeName[typename];
-      for (const key in fieldsOfType) {
-        if (key.startsWith('__')) continue; // Skip the __typename field
-        const fieldInfo = fieldsOfType[key];
-        if (fieldInfo && Object.keys(fieldInfo?.fieldsByTypeName ?? {}).length) {
-          result.select![key] = extractAllFields(fieldInfo);
-        } else {
-          result.select![key] = true;
+  return (Object.keys(select).length ? select : undefined) as S;
+}
+
+/**
+ * Merge the selection sets of one field into a Prisma select.
+ */
+function collectSelect(info: GraphQLResolveInfo, selectionSets: readonly SelectionSetNode[]): Select {
+  // Sub-selection sets by field name. Empty for scalar fields.
+  const fields = new Map<string, SelectionSetNode[]>();
+
+  const visit = (selectionSet: SelectionSetNode) => {
+    for (const selection of selectionSet.selections) {
+      if (!isIncluded(selection, info)) continue;
+
+      switch (selection.kind) {
+        case Kind.FIELD: {
+          const name = selection.name.value;
+          if (name.startsWith('__')) break;
+          const subSelectionSets = fields.getOrInsert(name, []);
+          if (selection.selectionSet) subSelectionSets.push(selection.selectionSet);
+          break;
+        }
+        case Kind.INLINE_FRAGMENT:
+          visit(selection.selectionSet);
+          break;
+        case Kind.FRAGMENT_SPREAD: {
+          // Validation already rejects fragment cycles and unknown fragments.
+          const fragment = info.fragments[selection.name.value];
+          if (fragment) visit(fragment.selectionSet);
+          break;
         }
       }
     }
-    return result;
   };
+  selectionSets.forEach(visit);
 
-  if (parsedInfo && 'fieldsByTypeName' in parsedInfo && Object.keys(parsedInfo.fieldsByTypeName).length) {
-    return extractAllFields(parsedInfo as ResolveTree) as T extends keyof ModelSelectMap
-      ? { select: ModelSelectMap[T] }
-      : { select: undefined };
+  const select: Select = {};
+  for (const [name, subSelectionSets] of fields) {
+    const nested = collectSelect(info, subSelectionSets);
+    select[name] = Object.keys(nested).length ? { select: nested } : true;
   }
-  return { select: undefined } as T extends keyof ModelSelectMap
-    ? { select: ModelSelectMap[T] }
-    : { select: undefined };
+  return select;
+}
+
+function selectionSetsOf(nodes: readonly { selectionSet?: SelectionSetNode | undefined }[]): SelectionSetNode[] {
+  return nodes.flatMap((node) => (node.selectionSet ? [node.selectionSet] : []));
+}
+
+/**
+ * Apply `@skip` and `@include` like the GraphQL executor.
+ */
+function isIncluded(node: SelectionNode, { variableValues }: GraphQLResolveInfo): boolean {
+  if (getDirectiveValues(GraphQLSkipDirective, node, variableValues)?.if === true) return false;
+  return getDirectiveValues(GraphQLIncludeDirective, node, variableValues)?.if !== false;
 }

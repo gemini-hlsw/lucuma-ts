@@ -5,6 +5,6 @@ export const updateSlewFlags: NonNullable<MutationResolvers['updateSlewFlags']> 
   return prisma.slewFlags.update({
     where: { pk: args.pk },
     data: args,
-    ...resolveSelectFields<'SlewFlags'>(info),
+    select: resolveSelectFields(info),
   });
 };

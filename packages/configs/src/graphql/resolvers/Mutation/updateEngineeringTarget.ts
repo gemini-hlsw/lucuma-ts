@@ -10,6 +10,6 @@ export const updateEngineeringTarget: NonNullable<MutationResolvers['updateEngin
   return prisma.engineeringTarget.update({
     where: { pk: args.pk },
     data: args,
-    ...resolveSelectFields<'EngineeringTarget'>(info),
+    select: resolveSelectFields(info),
   }) as Promise<EngineeringTarget>;
 };

@@ -10,6 +10,6 @@ export const updateInstrument: NonNullable<MutationResolvers['updateInstrument']
   return prisma.instrument.update({
     where: { pk: args.pk },
     data: args,
-    ...resolveSelectFields<'Instrument'>(info),
+    select: resolveSelectFields(info),
   }) as Promise<InstrumentConfig>;
 };

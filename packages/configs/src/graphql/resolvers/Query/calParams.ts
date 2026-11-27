@@ -8,7 +8,7 @@ export const calParams: NonNullable<QueryResolvers['calParams']> = async (_paren
   const calParams = await prisma.calParams.findFirst({
     where: { site: args.site },
     orderBy: { createdAt: 'desc' },
-    ...resolveSelectFields<'CalParams'>(info),
+    select: resolveSelectFields(info),
   });
 
   if (calParams) {
@@ -18,6 +18,7 @@ export const calParams: NonNullable<QueryResolvers['calParams']> = async (_paren
     if (initialCalParams) {
       return prisma.calParams.create({
         data: initialCalParams,
+        select: resolveSelectFields(info),
       });
     } else {
       throw new GraphQLError(`No initial CalParams found for site ${args.site}`);

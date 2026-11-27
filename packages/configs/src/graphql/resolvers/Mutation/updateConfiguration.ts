@@ -10,6 +10,6 @@ export const updateConfiguration: NonNullable<MutationResolvers['updateConfigura
   return prisma.configuration.update({
     where: { pk: args.pk },
     data: args,
-    ...resolveSelectFields<'Configuration'>(info),
+    select: resolveSelectFields(info),
   }) as Promise<Configuration>;
 };

@@ -9,6 +9,6 @@ export const createInstrument: NonNullable<MutationResolvers['createInstrument']
 ) => {
   return prisma.instrument.create({
     data: { extraParams: {}, ...args },
-    ...resolveSelectFields<'Instrument'>(info),
+    select: resolveSelectFields(info),
   }) as Promise<InstrumentConfig>;
 };

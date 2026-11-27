@@ -10,6 +10,6 @@ export const updateGemsInstrument: NonNullable<MutationResolvers['updateGemsInst
   return prisma.gemsInstrument.update({
     where: { pk: args.pk },
     data: args,
-    ...resolveSelectFields<'GemsInstrument'>(info),
+    select: resolveSelectFields(info),
   });
 };

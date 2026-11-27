@@ -10,6 +10,6 @@ export const updateGuideAlarm: NonNullable<MutationResolvers['updateGuideAlarm']
   return prisma.guideAlarm.update({
     where: { wfs: args.wfs },
     data: args,
-    ...resolveSelectFields<'GuideAlarm'>(info),
+    select: resolveSelectFields(info),
   });
 };

@@ -16,12 +16,12 @@ export const setTemporaryInstrument: NonNullable<MutationResolvers['setTemporary
     return prisma.instrument.update({
       where: { pk: tempInstrument.pk },
       data: args,
-      ...resolveSelectFields<'Instrument'>(info),
+      select: resolveSelectFields(info),
     }) as Promise<InstrumentConfig>;
   } else {
     return prisma.instrument.create({
       data: { extraParams: {}, ...args, isTemporary: true },
-      ...resolveSelectFields<'Instrument'>(info),
+      select: resolveSelectFields(info),
     }) as Promise<InstrumentConfig>;
   }
 };
