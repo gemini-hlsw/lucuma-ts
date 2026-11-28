@@ -1,5 +1,6 @@
 import { useToastApi } from '@gemini-hlsw/lucuma-common-ui';
 import { useSetAtom } from 'jotai';
+import { useMountEffect } from 'primereact/hooks';
 import { useEffect, useRef } from 'react';
 
 import { odbTokenAtom, useOdbTokenValue, useTokenExp, useUser } from '@/components/atoms/auth';
@@ -25,18 +26,16 @@ export function AuthSession(): null {
   // Guard so the role auto-switch happens once per token, not per render.
   const switchedFor = useRef<string | null>(null);
 
-  // Silent bootstrap: with no live session, try the refresh-token cookie once.
-  const isLoggedIn = user !== null && exp !== null && exp > new Date();
-  useEffect(() => {
-    if (isLoggedIn) return;
-    const controller = new AbortController();
-    void sso.refreshToken(controller.signal).then((fresh) => {
-      if (fresh && !controller.signal.aborted) setToken(fresh);
+  // Silent sign-in, once on mount: a returning user with a live SSO cookie is
+  // signed in without clicking. Only on mount, as navigate does: re-running it
+  // whenever the token drops would race a sign-out, refreshing from the cookie
+  // before the logout request has cleared it.
+  useMountEffect(() => {
+    if (user !== null && exp !== null && exp > new Date()) return;
+    void sso.refreshToken().then((fresh) => {
+      if (fresh) setToken(fresh);
     });
-    return () => {
-      controller.abort();
-    };
-  }, [isLoggedIn, setToken]);
+  });
 
   // Proactive refresh: check every second; refresh shortly before expiry.
   // Guard against overlapping attempts and back off after a failure so a
