@@ -12,7 +12,17 @@ import { parseNumber, useAllPages } from '@gemini-hlsw/lucuma-common-ui';
 
 import { currentSemester } from '@/lib/semester';
 
-import type { CallForProposals, CfpDetails, Observatory, SiteCoordinateLimits } from '../types';
+import type { Partner } from '../sso/roster';
+import type {
+  CallForProposals,
+  CfpDetails,
+  CfpExchangePartner,
+  CfpPartner,
+  CfpType,
+  Instrument,
+  Observatory,
+  SiteCoordinateLimits,
+} from '../types';
 import { graphql } from './gen';
 import type { CallForProposalsItemFragment, CallForProposalsPropertiesInput, SiteLimitFragment } from './gen/graphql';
 
@@ -266,10 +276,7 @@ function observatoryInput(d: CfpDetails): Pick<CallForProposalsPropertiesInput, 
           proprietaryMonths: d.proprietaryMonths,
           coordinateLimits: { north: coordinateLimitsInput(d.north), south: coordinateLimitsInput(d.south) },
           instruments: [...d.instruments],
-          exchangePartners: d.exchangePartners.map((p) => ({
-            exchangePartner: p.partner,
-            ...(p.deadlineOverride ? { submissionDeadlineOverride: p.deadlineOverride } : {}),
-          })),
+          exchangePartners: exchangePartnersInput(d.exchangePartners),
         },
       };
     case 'KECK':
@@ -283,6 +290,13 @@ function observatoryInput(d: CfpDetails): Pick<CallForProposalsPropertiesInput, 
         },
       };
   }
+}
+
+function exchangePartnersInput(list: readonly CfpExchangePartner[]) {
+  return list.map((p) => ({
+    exchangePartner: p.partner,
+    ...(p.deadlineOverride ? { submissionDeadlineOverride: p.deadlineOverride } : {}),
+  }));
 }
 
 function coordinateLimitsInput(l: SiteCoordinateLimits) {
@@ -308,20 +322,63 @@ export function semesterDates(semester: string): { activeStart: string; activeEn
  *  the active period; the user can still enter real values before creating. */
 const BLANK_LIMITS: SiteCoordinateLimits = { raStart: 0, raEnd: 0, decStart: 0, decEnd: 0 };
 
+/** The Gemini instruments a new call offers (sc-11165); the ODB stores none for a create that omits them. */
+const DEFAULT_GEMINI_INSTRUMENTS: readonly Instrument[] = [
+  'ALOPEKE',
+  'FLAMINGOS2',
+  'GHOST',
+  'GMOS_NORTH',
+  'GMOS_SOUTH',
+  'GNIRS',
+  'IGRINS2',
+  'MAROON_X',
+  'ZORRO',
+];
+
+/** The type a new Gemini call starts as: the type has no ODB default (sc-10136). */
+const NEW_GEMINI_TYPE: CfpType = 'REGULAR_SEMESTER';
+
+export interface PartnerDefaults {
+  readonly partners: readonly CfpPartner[];
+  readonly exchangePartners: readonly CfpExchangePartner[];
+}
+
+const partnersOf = (ps: readonly Partner[]): readonly CfpPartner[] => ps.map((partner) => ({ partner }));
+const NO_DEFAULTS: PartnerDefaults = { partners: [], exchangePartners: [] };
+
+/** The partners a new Gemini call of each type starts with (sc-11165). The types the
+ *  story does not name start with none, which leaves the ODB to apply its own default
+ *  (every partner). Keyed over every type so a new one fails to compile until decided. */
+const DEFAULT_PARTNERS = {
+  REGULAR_SEMESTER: {
+    partners: partnersOf(['AR', 'BR', 'CA', 'CL', 'KR', 'UH', 'US']),
+    exchangePartners: [{ partner: 'SUBARU' }],
+  },
+  FAST_TURNAROUND: { partners: partnersOf(['AR', 'BR', 'CA', 'KR', 'US']), exchangePartners: [{ partner: 'SUBARU' }] },
+  DEMO_SCIENCE: NO_DEFAULTS,
+  DIRECTORS_TIME: NO_DEFAULTS,
+  LARGE_PROGRAM: NO_DEFAULTS,
+  POOR_WEATHER: NO_DEFAULTS,
+  SYSTEM_VERIFICATION: NO_DEFAULTS,
+} satisfies Record<CfpType, PartnerDefaults>;
+
+export const defaultPartners = (type: CfpType): PartnerDefaults => DEFAULT_PARTNERS[type];
+
 /** The observatory-specific `details` for a brand-new, unsaved call (sc-10136):
- *  empty instrument checklist and blank coordinate limits, so the ODB fills in
- *  its defaults unless the user sets them. Gemini's call type has no default,
- *  so it starts at REGULAR_SEMESTER; Subaru's defaults to NORMAL. */
+ *  blank coordinate limits, so the ODB derives them unless the user sets them.
+ *  A Gemini call starts as REGULAR_SEMESTER (the type has no ODB default) with
+ *  its default instruments and exchange partners (sc-11165); Keck and Subaru
+ *  start with no instruments, and Subaru's type defaults to NORMAL. */
 function blankDetails(observatory: Observatory): CfpDetails {
   switch (observatory) {
     case 'GEMINI':
       return {
         observatory: 'GEMINI',
-        type: 'REGULAR_SEMESTER',
+        type: NEW_GEMINI_TYPE,
         proprietaryMonths: 0,
         allowsNonPartnerPi: false,
-        instruments: [],
-        exchangePartners: [],
+        instruments: DEFAULT_GEMINI_INSTRUMENTS,
+        exchangePartners: defaultPartners(NEW_GEMINI_TYPE).exchangePartners,
         north: BLANK_LIMITS,
         south: BLANK_LIMITS,
       };
@@ -334,9 +391,10 @@ function blankDetails(observatory: Observatory): CfpDetails {
 
 /** A brand-new, not-yet-created call for the given observatory (sc-10136), as
  *  the editor's draft. Seeded with the current semester and its active dates
- *  (both required on create) and an otherwise-blank observatory block; the id is
- *  empty until the ODB assigns one. `createCfpInput` turns this into the create
- *  mutation input, omitting the blanks so the ODB applies its defaults. */
+ *  (both required on create), a Gemini call's default partners (sc-11165) and
+ *  the observatory block of `blankDetails`; the id is empty until the ODB assigns
+ *  one. `createCfpInput` turns this into the create mutation input, omitting the
+ *  blanks so the ODB applies its defaults. */
 export function blankCall(observatory: Observatory): CallForProposals {
   const semester = currentSemester();
   const { activeStart, activeEnd } = semesterDates(semester);
@@ -349,7 +407,7 @@ export function blankCall(observatory: Observatory): CallForProposals {
     activeEnd,
     active: false,
     defaultDeadline: '',
-    partners: [],
+    partners: observatory === 'GEMINI' ? defaultPartners(NEW_GEMINI_TYPE).partners : [],
     details: blankDetails(observatory),
   };
 }
@@ -357,13 +415,16 @@ export function blankCall(observatory: Observatory): CallForProposals {
 /** Serialize a brand-new call's draft into the create mutation input (sc-10136).
  *  Unlike `cfpPropertiesInput` (which sends every field for an edit), this omits
  *  what the user left blank — empty title, partners, instruments, and zeroed
- *  coordinate limits — so the ODB applies its defaults (all partners, all
- *  instruments, limits derived from the active period). Only the create-required
+ *  coordinate limits — so the ODB applies its defaults (every partner, limits
+ *  derived from the active period; it stores no instruments for a create that
+ *  omits them, hence the seeded list below). A Gemini call is seeded with the
+ *  partners and instruments of `defaultPartners` and `DEFAULT_GEMINI_INSTRUMENTS`,
+ *  so those are sent. Only the create-required
  *  fields (semester, active dates, the observatory block + its type) are always
  *  present. */
 export function createCfpInput(draft: CallForProposals): CallForProposalsPropertiesInput {
   const d = draft.details;
-  // Omit an empty instrument list so the ODB defaults to all; generic so each
+  // Omit an empty instrument list (the ODB stores none); generic so each
   // observatory keeps its own instrument enum (Instrument / Keck / Subaru).
   const instruments = <T>(list: readonly T[]) => (list.length > 0 ? { instruments: [...list] } : {});
   const observatoryBlock: Pick<CallForProposalsPropertiesInput, 'gemini' | 'keck' | 'subaru'> =
@@ -373,6 +434,7 @@ export function createCfpInput(draft: CallForProposals): CallForProposalsPropert
             type: d.type,
             ...(d.proprietaryMonths > 0 ? { proprietaryMonths: d.proprietaryMonths } : {}),
             ...instruments(d.instruments),
+            ...(d.exchangePartners.length > 0 ? { exchangePartners: exchangePartnersInput(d.exchangePartners) } : {}),
             ...geminiLimitsPatch(d.north, d.south),
           },
         }
