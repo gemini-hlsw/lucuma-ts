@@ -1,7 +1,10 @@
 import { type JSX, useState } from 'react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { userEvent } from 'vitest/browser';
 
+import type { PositionedSource } from '@/gql/odb/conflicts';
+import type { ObservationRow } from '@/gql/types';
+import { baseMock, conflictMocks, requestCandidate } from '@/test/conflicts';
 import { renderWithContext } from '@/test/render';
 
 import { type Decision, type ReviewItem, ReviewView } from './ReviewView';
@@ -58,6 +61,48 @@ function Harness({
     </>
   );
 }
+
+const MODE = 'GMOS_SOUTH_LONG_SLIT';
+
+/** An observation whose first target is at (30°, -30°) but whose explicit base is at (40°, 10°). */
+const observation: ObservationRow = {
+  id: 'o-1',
+  target: 'NGC 300',
+  ra: '02:00:00.00',
+  dec: '-30:00:00.0',
+  raDeg: 30,
+  decDeg: -30,
+  base: { raDeg: 40, decDeg: 10 },
+  modeType: MODE,
+  instrument: 'GMOS-S',
+  config: 'GMOS-S, LongSlit',
+  conditions: '',
+  hours: 1,
+  windows: [],
+};
+
+/** One proposal holding `row`, already selected, so its conflicts table shows. */
+const conflictView = (row: ObservationRow) => {
+  const item = { id: 'p-1', resolved: false, observations: [row] };
+  return (
+    <ReviewView
+      title="Proposals"
+      blurb=""
+      badge={null}
+      items={[item]}
+      selected={item}
+      onSelect={() => undefined}
+      columns={[]}
+      renderDetail={() => null}
+      boilerplate={() => ''}
+      resolving={false}
+      onResolve={() => Promise.resolve(true)}
+      detailTitle={(i) => i.id}
+      noun="proposal"
+      resolveMutation="setProposalStatus"
+    />
+  );
+};
 
 describe(ReviewView, () => {
   it('seeds the response on a decision and clears it when the selection moves', async () => {
@@ -134,5 +179,37 @@ describe(ReviewView, () => {
     await expect.element(screen.getByRole('button', { name: 'Resolve' })).toBeEnabled();
     await userEvent.click(screen.getByRole('button', { name: 'Resolve' }));
     expect(onResolve).toHaveBeenCalledTimes(1);
+  });
+
+  describe('the conflict check', () => {
+    beforeEach(() => {
+      // The duplicates check asks the Gemini archive; it finds nothing here.
+      vi.spyOn(globalThis, 'fetch').mockImplementation(() => Promise.resolve(new Response('[]')));
+    });
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it('checks an observation for conflicts at its base position', async () => {
+      const base: PositionedSource = { id: 'o-1', programId: 'p-1', raDeg: 40, decDeg: 10, modeType: MODE };
+      const screen = await renderWithContext(conflictView(observation), {
+        mocks: conflictMocks(base, { requests: { matches: [requestCandidate()] } }),
+      });
+      await expect.element(screen.getByRole('link', { name: 'G-2027B-0421-P' })).toBeVisible();
+    });
+
+    it('checks an asterism at the base position the ODB computes', async () => {
+      const base: PositionedSource = { id: 'o-1', programId: 'p-1', raDeg: 50, decDeg: 20, modeType: MODE };
+      const screen = await renderWithContext(conflictView({ ...observation, base: 'lookup' }), {
+        mocks: [baseMock('o-1', [50, 20]), ...conflictMocks(base, { requests: { matches: [requestCandidate()] } })],
+      });
+      await expect.element(screen.getByRole('link', { name: 'G-2027B-0421-P' })).toBeVisible();
+    });
+
+    it('reports an observation with no base position as not checked', async () => {
+      const screen = await renderWithContext(conflictView({ ...observation, base: 'none' }));
+      await expect.element(screen.getByText(/Not checked, for lack of a position .*: o-1/)).toBeVisible();
+    });
   });
 });

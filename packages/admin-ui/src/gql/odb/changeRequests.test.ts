@@ -144,6 +144,8 @@ describe(observationsByIdFrom, () => {
         schedulingConstraints: { __typename: 'SchedulingConstraints', timingWindows: [] },
         targetEnvironment: {
           __typename: 'TargetEnvironment',
+          explicitBase: null,
+          asterism: [],
           firstScienceTarget: {
             __typename: 'Target',
             id: 't-1',
@@ -165,6 +167,7 @@ describe(observationsByIdFrom, () => {
       dec: '+41:14:37.0',
       raDeg: 10.35,
       decDeg: 41.243611,
+      base: 'none',
       modeType: 'GMOS_NORTH_LONG_SLIT',
       instrument: 'GMOS-N',
       config: 'GMOS-N, LongSlit',

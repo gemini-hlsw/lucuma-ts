@@ -411,6 +411,14 @@ export interface TimingWindowRow {
   readonly label: string;
 }
 
+export interface Degrees {
+  readonly raDeg: number;
+  readonly decDeg: number;
+}
+
+/** A base position: degrees, `none` (no fixed position) or `lookup` (only the ODB can compute it). */
+export type BasePlace = Degrees | 'none' | 'lookup';
+
 /** One observation row in a proposal/change-request detail table. */
 export interface ObservationRow {
   readonly id: string;
@@ -418,10 +426,12 @@ export interface ObservationRow {
   /** RA "02:39:12" / Dec "+10:50:49"; "—" for non-sidereal targets. */
   readonly ra: string;
   readonly dec: string;
-  /** Coordinates in degrees for the sc-9243/9244 checks; null for
-   *  non-sidereal targets (nothing fixed to cone-search around). */
+  /** The first science target's position in degrees, for the RA/Dec columns and the
+   *  duplicates check (sc-9244); null for non-sidereal targets. */
   readonly raDeg: number | null;
   readonly decDeg: number | null;
+  /** Base position, the conflict check's cone centre (sc-9243). */
+  readonly base: BasePlace;
   /** ODB ObservingModeType ("GMOS_SOUTH_LONG_SLIT"), driving the checks'
    *  similar-instrument + mode search; null when mode-less. */
   readonly modeType: string | null;

@@ -1,11 +1,19 @@
 /** Selections and mapping helpers shared by more than one view. */
-import { isNotNullish, parseNumber } from '@gemini-hlsw/lucuma-common-ui';
+import { isNotNullish, isNullish, parseNumber } from '@gemini-hlsw/lucuma-common-ui';
 import { deg2dms, deg2hms } from '@gemini-hlsw/lucuma-core';
 
-import { type Instrument, INSTRUMENT_LABEL, type ObservationRow, type TimingWindowRow } from '../types';
+import {
+  type BasePlace,
+  type Degrees,
+  type Instrument,
+  INSTRUMENT_LABEL,
+  type ObservationRow,
+  type TimingWindowRow,
+} from '../types';
 import { graphql } from './gen';
 import type {
   CloudExtinctionPreset,
+  ConflictBaseFragment,
   GroupElementItemFragment,
   ImageQualityPreset,
   ObservationItemFragment,
@@ -135,6 +143,55 @@ function observingModeSuffix(mode: string | null): string {
   return modeType ? MODE_TYPE_FORMAT[modeType].mode : '';
 }
 
+/** The stored fields the base position derives from. Unlike `basePosition`, they never fail
+ *  to resolve: one failing `basePosition` nulls it for every row of a response. */
+export const CONFLICT_BASE_FRAGMENT = graphql(`
+  fragment ConflictBase on TargetEnvironment {
+    explicitBase {
+      ra {
+        degrees
+      }
+      dec {
+        degrees
+      }
+    }
+    asterism {
+      id
+      name
+      sidereal {
+        ra {
+          degrees
+        }
+        dec {
+          degrees
+        }
+      }
+    }
+  }
+`);
+
+interface StoredCoordinates {
+  readonly ra: { readonly degrees: string | number };
+  readonly dec: { readonly degrees: string | number };
+}
+
+/** Coordinates in degrees, or null when absent or unreadable. */
+export function degreesOf(coords: StoredCoordinates | null | undefined): Degrees | null {
+  const raDeg = parseNumber(coords?.ra.degrees);
+  const decDeg = parseNumber(coords?.dec.degrees);
+  return isNullish(raDeg) || isNullish(decDeg) ? null : { raDeg, decDeg };
+}
+
+/** The ODB's base position rule: no targets, none; an explicit base; a single target's
+ *  sidereal position (none if non-sidereal); an asterism's centre only the ODB can compute. */
+export function basePositionOf(env: ConflictBaseFragment): BasePlace {
+  const [first, ...rest] = env.asterism;
+  if (!first) return 'none';
+  if (env.explicitBase) return degreesOf(env.explicitBase) ?? 'none';
+  if (rest.length > 0) return 'lookup';
+  return degreesOf(first.sidereal) ?? 'none';
+}
+
 /** Selection for one observation row — shared by the Proposals query and the
  *  Change Requests id-batch query so both views show identical columns
  *  (target, RA/Dec, time, config, conditions). */
@@ -194,6 +251,8 @@ export const OBSERVATION_ROW_FRAGMENT = graphql(`
       }
     }
     targetEnvironment {
+      # The conflict check's cone centre (sc-9243); the target below feeds the other columns.
+      ...ConflictBase
       firstScienceTarget {
         id
         name
@@ -384,6 +443,7 @@ export function mapObservationRow(
     dec: decDeg === null ? '—' : formatDec(decDeg),
     raDeg,
     decDeg,
+    base: basePositionOf(o.targetEnvironment),
     modeType: o.observingMode?.mode ?? null,
     instrument,
     config: modeSuffix ? `${instrument}, ${modeSuffix}` : instrument,
