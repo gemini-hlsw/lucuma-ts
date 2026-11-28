@@ -32,7 +32,7 @@
     "@gemini-hlsw/lucuma-ui-css": "0.176.0",
     "@gemini-hlsw/navigate-configs": "workspace:*",
     "@graphql-codegen/cli": "8.0.0",
-    "@graphql-codegen/client-preset": "7.0.0",
+    "@graphql-codegen/client-preset": "7.0.1",
     "@graphql-eslint/eslint-plugin": "5.0.0",
     "@graphql-typed-document-node/core": "3.2.0",
     "@rolldown/plugin-babel": "0.3.1",
